@@ -175,10 +175,16 @@ mod tests {
                 },
             })
             .collect();
+        let mut terrain = crate::terrain::HeightPatch::flat([3_906_249_998; 2]);
+        terrain.span_chunks = 4;
+        terrain.heights = vec![0.; 129 * 129];
+        terrain.weights = vec![crate::painting::GRASS; 129 * 129];
         let zone = Zone {
+            schema: 11,
             origin,
             spawn: origin,
             objects,
+            terrain: Some(terrain),
             ..Zone::default()
         };
         let mut editor = Editor::new(zone.clone()).unwrap();

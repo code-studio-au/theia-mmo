@@ -1,5 +1,5 @@
-//! One 128 m, 33x33 or 65x65 height patch. Flat locked borders meet the implicit flat
-//! ground. Full multi-tile seams/export/streaming are separate authoring slices.
+//! One bounded 128..512 m authoring height patch, at most 129x129 samples.
+//! Flat locked borders meet implicit flat ground; this is not runtime streaming.
 use super::{Result, Zone, require};
 use serde::{Deserialize, Serialize};
 use theia_core::coordinates::ChunkId;
@@ -7,6 +7,13 @@ pub const AXIS: usize = 33;
 pub const SAMPLE_COUNT: usize = AXIS * AXIS;
 pub const TILE_METRES: f64 = 128.;
 pub const SAMPLE_METRES: f64 = 4.;
+pub const MAX_AXIS: usize = 129;
+fn default_span() -> u8 {
+    1
+}
+fn single_span(span: &u8) -> bool {
+    *span == 1
+}
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Resolution {
@@ -37,6 +44,9 @@ impl Resolution {
 #[serde(deny_unknown_fields)]
 pub struct HeightPatch {
     pub chunk: [i64; 2],
+    /// Number of logical 128 m chunks along each side; one finite authoring mesh.
+    #[serde(default = "default_span", skip_serializing_if = "single_span")]
+    pub span_chunks: u8,
     #[serde(default, skip_serializing_if = "Resolution::is_default")]
     pub resolution: Resolution,
     /// Local height above zone-origin Y, Z-major, including both border samples.
@@ -63,13 +73,17 @@ impl HeightPatch {
     pub fn flat(chunk: [i64; 2]) -> Self {
         Self {
             chunk,
+            span_chunks: 1,
             resolution: Resolution::default(),
             heights: vec![0.; SAMPLE_COUNT],
             weights: vec![],
         }
     }
     pub fn axis(&self) -> usize {
-        self.resolution.axis()
+        (self.resolution.axis() - 1) * usize::from(self.span_chunks) + 1
+    }
+    pub fn extent_metres(&self) -> f64 {
+        TILE_METRES * f64::from(self.span_chunks)
     }
     pub fn sample_metres(&self) -> f64 {
         self.resolution.metres()
@@ -84,7 +98,19 @@ impl HeightPatch {
         .ok_or("Invalid terrain chunk".into())
     }
     pub fn validate(&self, zone: &Zone) -> Result<()> {
+        require(
+            (1..=4).contains(&self.span_chunks),
+            "Terrain span must be 1..4 chunks",
+        )?;
+        require(
+            self.span_chunks == 1 || zone.schema >= 11,
+            "Expanded terrain requires zone schema 11",
+        )?;
         let axis = self.axis();
+        require(
+            axis <= MAX_AXIS,
+            "Terrain sample budget exceeded; use 4 m samples for patches wider than 256 m",
+        )?;
         let count = axis * axis;
         require(
             self.resolution == Resolution::FourMetres || zone.schema >= 7,
@@ -121,9 +147,9 @@ impl HeightPatch {
         zone.check_position([start[0], zone.origin[1], start[2]], 0.)?;
         zone.check_position(
             [
-                start[0] + TILE_METRES,
+                start[0] + self.extent_metres(),
                 zone.origin[1],
-                start[2] + TILE_METRES,
+                start[2] + self.extent_metres(),
             ],
             0.,
         )?;
@@ -184,8 +210,8 @@ impl HeightPatch {
         )?;
         let origin = self.origin()?;
         require(
-            (origin[0]..=origin[0] + TILE_METRES).contains(&centre[0])
-                && (origin[2]..=origin[2] + TILE_METRES).contains(&centre[1]),
+            (origin[0]..=origin[0] + self.extent_metres()).contains(&centre[0])
+                && (origin[2]..=origin[2] + self.extent_metres()).contains(&centre[1]),
             "Brush centre outside terrain patch",
         )?;
         let mut influence = vec![0.; axis * axis];
@@ -532,5 +558,84 @@ mod influence_tests {
         broken.heights.pop();
         assert!(broken.brush_influence([64., 64.], 8.).is_err());
         assert_eq!(patch, HeightPatch::flat([0, 0]));
+    }
+}
+
+#[cfg(test)]
+mod expanded_tests {
+    use super::*;
+    use crate::{Command, Edit, Editor};
+    #[test]
+    fn expanded_footprints_resample_preserve_surface_and_refuse_oversized_fine_grids_atomically() {
+        let mut patch = HeightPatch::flat([62, 62]);
+        patch.span_chunks = 2;
+        patch.heights = vec![0.; 65 * 65];
+        patch.weights = vec![crate::painting::GRASS; 65 * 65];
+        patch.heights[40 * 65 + 40] = 4.;
+        patch.weights[40 * 65 + 40] = [0, 255, 0, 0];
+        let zone = Zone {
+            schema: 11,
+            origin: [8064., 0., 8064.],
+            spawn: [8064., 0.1, 8064.],
+            terrain: Some(patch),
+            ..Zone::default()
+        };
+        zone.validate().unwrap();
+        let fine = crate::resampling::resample(&zone, Resolution::TwoMetres).unwrap();
+        assert_eq!(fine.axis(), 129);
+        assert_eq!(fine.extent_metres(), 256.);
+        assert_eq!(fine.height(8096., 8096.).unwrap(), Some(4.));
+        assert_eq!(fine.weights[80 * 129 + 80], [0, 255, 0, 0]);
+        let mut large = HeightPatch::flat([62, 62]);
+        large.span_chunks = 4;
+        large.heights = vec![0.; 129 * 129];
+        large.weights = vec![crate::painting::GRASS; 129 * 129];
+        let zone = Zone {
+            schema: 11,
+            origin: [8192., 0., 8192.],
+            spawn: [8192., 0.1, 8192.],
+            terrain: Some(large),
+            ..Zone::default()
+        };
+        zone.validate().unwrap();
+        let patch = zone.terrain.as_ref().unwrap();
+        assert!(
+            patch
+                .brush_influence([8400., 8400.], 8.)
+                .unwrap()
+                .iter()
+                .any(|v| *v > 0.)
+        );
+        assert_eq!(patch.height(8448., 8448.).unwrap(), Some(0.));
+        assert_eq!(patch.height(8448.1, 8448.).unwrap(), None);
+        let mut editor = Editor::new(zone.clone()).unwrap();
+        assert!(
+            editor
+                .execute(Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![Edit::ResampleTerrain {
+                        resolution: Resolution::TwoMetres
+                    }]
+                })
+                .unwrap_err()
+                .contains("sample budget")
+        );
+        assert_eq!(editor.zone(), &zone);
+        assert_eq!(editor.history(), (0, 0));
+        for span in [0, 5, 255] {
+            let mut invalid = zone.clone();
+            invalid.terrain.as_mut().unwrap().span_chunks = span;
+            assert!(invalid.validate().is_err());
+        }
+        let mut old = zone.clone();
+        old.schema = 10;
+        assert!(old.validate().is_err());
+        let original = HeightPatch::flat([0, 0]);
+        let encoded = serde_json::to_string(&original).unwrap();
+        assert!(!encoded.contains("span_chunks"));
+        assert_eq!(
+            serde_json::from_str::<HeightPatch>(&encoded).unwrap(),
+            original
+        );
     }
 }

@@ -721,6 +721,46 @@ mod tests {
     use theia_network::{client::State, renet_runtime as runtime, simulation::World, wire::Intent};
     use tokio::sync::watch;
     #[test]
+    fn expanded_valley_export_retains_surface_across_the_full_512_metre_patch() {
+        let folder = Folder::new();
+        let mut editor = theia_zone::Editor::new(Zone {
+            origin: [8192., 0., 8192.],
+            spawn: [8192., 0.1, 8192.],
+            ..default()
+        })
+        .unwrap();
+        editor
+            .execute(theia_zone::Command::Apply {
+                expected_revision: 0,
+                edits: vec![theia_zone::Edit::CreateStarterValley],
+            })
+            .unwrap();
+        let zone = editor.zone();
+        let path = folder.0.join("valley");
+        publish(zone, &path, "theia.test.valley", 1).unwrap();
+        let loaded = Terrain::load(&path.join("terrain.json")).unwrap();
+        let patch = zone.terrain.as_ref().unwrap();
+        for z in (-256..256).step_by(8) {
+            for x in (-256..256).step_by(8) {
+                let p = [x as f32 + 1.25, z as f32 + 2.5];
+                let source = patch
+                    .height(8192. + f64::from(p[0]), 8192. + f64::from(p[1]))
+                    .unwrap()
+                    .unwrap();
+                assert!(
+                    (loaded.height(p).unwrap() - source).abs() < 0.0001,
+                    "surface changed at {p:?}"
+                );
+            }
+        }
+        let store = theia_network::authored_world::Store::open(&path).unwrap();
+        assert_eq!(store.origin().metres(), zone.origin);
+        assert_eq!(
+            fs::read(path.join("authoring.zone.json")).unwrap(),
+            serde_json::to_vec_pretty(zone).unwrap()
+        );
+    }
+    #[test]
     fn scenery_export_shares_visuals_retains_document_and_refuses_unresolved_assets() {
         let folder = Folder::new();
         let path = folder.0.join("published");

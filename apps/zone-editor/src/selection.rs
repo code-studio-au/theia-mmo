@@ -1,7 +1,7 @@
 //! Editor-only selection and framing, independent of document history.
 use super::*;
 
-pub(super) const MAX_VIEW_DISTANCE: f32 = 512.;
+pub(super) const MAX_VIEW_DISTANCE: f32 = 1536.;
 
 pub(super) fn keyboard(
     keys: &ButtonInput<KeyCode>,
@@ -66,12 +66,13 @@ pub(super) fn frame(session: &mut Session, view: &mut View) -> bool {
                 .iter()
                 .copied()
                 .fold(f32::NEG_INFINITY, f32::max);
+            let half = patch.extent_metres() / 2.;
             let centre = [
-                start[0] + 64.,
+                start[0] + half,
                 zone.origin[1] + f64::from((minimum + maximum) / 2.),
-                start[2] + 64.,
+                start[2] + half,
             ];
-            let radius = Vec3::new(64., (maximum - minimum) / 2., 64.).length();
+            let radius = Vec3::new(half as f32, (maximum - minimum) / 2., half as f32).length();
             Some((centre, radius))
         })
     } else if session.vegetation_mode {

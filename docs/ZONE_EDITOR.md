@@ -1,3 +1,22 @@
+# Expanded terrain and model controls — 12 November 2026
+
+Imported scenery uses the existing XYZ move arrows, XZ body drag, yaw ring and
+uniform scale handle. Release applies one undoable edit; Escape cancels the live
+preview. Numeric fields, duplicate/delete and explicit Save share the same data.
+F5 playtest uses the game's Classic binding sampler and camera orbit controls.
+
+Add → Starter valley terrain starts a blank zone with a 512 m editable valley.
+For the prepared origin, use `content/zones/starter-valley.base.json` with
+`content/zones/starter-valley.commands.jsonl`. This terrain blockout still needs
+village dressing and working quest/NPC/patrol bindings. Old examples stay valid.
+
+Current terrain format: schema 11 adds optional `span_chunks` (default 1), up to
+4 logical 128 m chunks per side and 129 samples per axis. A 512 m patch uses 4 m
+spacing; selecting 2 m on patches wider than 256 m refuses atomically. Locked
+outer height/paint edges remain. Document and command input limits are now 2 MiB;
+older qualification notes below accurately describe their former 1 MiB cap.
+World/asset export budgets and runtime navigation coverage are unchanged.
+
 # Editor export update — 11 November 2026
 
 ## Starter-zone implementation target — 12 November 2026

@@ -1,3 +1,25 @@
+P5-17 / P3-15 expanded starter valley, 12 November 2026:
+Add → Starter valley terrain creates an editable 512 × 512 m patch with a village
+clearing, curved paths, uneven surrounding ridges and one +Z pass. Schema 11 adds
+an optional 1..4-chunk span while preserving old one-chunk documents. At most
+129 × 129 samples are admitted: 512 m uses 4 m samples; 2 m remains available up
+to 256 m. Sculpt, paint, resampling, framing, flat-ground cutout and world export
+use the actual extent. The document/command cap is now 2 MiB; the saved valley is
+1,266,785 bytes, so the earlier 1 MiB cap was insufficient. This is a bounded
+finite authoring patch, with runtime streaming and navigation coverage unchanged.
+66 zone tests and 193 ordinary editor tests pass; final ridge adjustments also
+pass the two focused geometry/Classic-containment checks. All 24 sampled radial
+walk/jump routes exit only through the +Z pass. Actual RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 Vulkan offscreen rendering verifies terrain/paint without a window.
+An additional export regression compares 4,096 surface samples against the
+authoring patch within 0.1 mm and preserves the full saved document and origin.
+Strict workspace Clippy, formatting, editor build and updated bounded stdin
+qualification pass. Evidence: build/starter-valley-*, including the v2 zone,
+world export, preflight and terrain image. The tracked base/command recipe is
+content/zones/starter-valley.*; older starter-zone/basin examples are preserved.
+Village buildings/trees, NPC quest assignment, multiple wolf patrols and combined
+authored gameplay remain pending. The current image is a terrain blockout.
+
 P5-17 model gizmos and Classic playtest controls, 12 November 2026:
 imported scenery now uses the same viewport XYZ arrows, XZ body drag, yaw ring
 and uniform-scale handle as primitives. Shared commands retain the source asset,

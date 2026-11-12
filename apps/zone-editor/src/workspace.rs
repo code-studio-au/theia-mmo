@@ -209,6 +209,11 @@ pub(super) fn setup(
                     "Add",
                     &[
                         (
+                            Control::Command(Action::CreateStarterValley),
+                            "Starter valley terrain (512 m)",
+                            "",
+                        ),
+                        (
                             Control::Command(Action::CreateStarterBasin),
                             "Starter basin terrain",
                             "",
@@ -526,7 +531,7 @@ impl Control {
             .or(session.scenery_selected)
             .is_some();
         match self {
-            Self::Command(Action::CreateStarterBasin) => {
+            Self::Command(Action::CreateStarterBasin | Action::CreateStarterValley) => {
                 theia_zone::starter_basin::available(session.editor.zone())
             }
             Self::GizmoTool(_) => {

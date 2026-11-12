@@ -16,7 +16,11 @@ pub fn resample(zone: &Zone, resolution: Resolution) -> Result<HeightPatch> {
         "Terrain already uses that resolution",
     )?;
     let origin = previous.origin()?;
-    let axis = resolution.axis();
+    let axis = (resolution.axis() - 1) * usize::from(previous.span_chunks) + 1;
+    require(
+        axis <= crate::terrain::MAX_AXIS,
+        "Terrain sample budget exceeded; use 4 m samples for patches wider than 256 m",
+    )?;
     let old_axis = previous.axis();
     let mut next = previous.clone();
     next.resolution = resolution;

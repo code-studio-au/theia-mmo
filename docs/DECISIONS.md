@@ -2587,3 +2587,15 @@ flows, and actual new-art streamed traversal. Seven final native starts have
 zero Linux GPU diagnostics. Preserve
 `build/classic-directional-client-qualified-v1-20261103`; do not infer full
 animation, skin-production fidelity, Windows or population capacity.
+
+## 12 November 2026 — bounded larger starter-zone authoring
+
+Following the user's request for a village and distinct quest outskirts, extend
+the finite editor height patch to 512 m using schema-11 chunk spans. Reuse height
+samples, brushes, standard Bevy meshes and actual static collision; do not infer
+MMO streaming from this authoring footprint. Bound grids at 129² samples and
+encoded documents/command inputs at 2 MiB (the current painted valley is 1.27 MB).
+Keep two-metre spacing for patches up to 256 m; reject oversized resampling with
+source/history intact. Preserve the smaller existing scenes and explicit Save.
+Actual quest contacts, wolf patrols, navigation residency and authored spawn
+selection need their own runtime slices before this becomes a connected zone.

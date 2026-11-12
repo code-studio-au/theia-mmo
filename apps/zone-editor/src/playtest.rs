@@ -763,3 +763,118 @@ mod starter_basin_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod starter_valley_tests {
+    use super::*;
+    #[test]
+    fn valley_classic_walk_and_jump_routes_cross_only_the_southern_pass() {
+        let mut editor = Editor::new(Zone {
+            origin: [8192., 0., 8192.],
+            spawn: [8192., 0.1, 8192.],
+            ..default()
+        })
+        .unwrap();
+        editor
+            .execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![Edit::CreateStarterValley],
+            })
+            .unwrap();
+        let zone = editor.zone();
+        let mut play = Playtest::new(zone).unwrap();
+        for jump in [false, true] {
+            for bearing in (0..360).step_by(30) {
+                let radians = (bearing as f64).to_radians();
+                let direction = [radians.sin() as f32, radians.cos() as f32];
+                let ground = play
+                    .scene
+                    .ground([direction[0] * 120., direction[1] * 120.], 64.)
+                    .unwrap()
+                    .0;
+                play.feet = kinematic::spawn(
+                    &play.scene,
+                    LocalPosition::new([direction[0] * 120., ground + 0.03, direction[1] * 120.])
+                        .unwrap(),
+                )
+                .unwrap();
+                play.motion = Motion::default();
+                let mut escaped = false;
+                for tick in 0..750 {
+                    play.feet = kinematic::advance_classic(
+                        &play.scene,
+                        &mut play.motion,
+                        play.feet,
+                        Intent {
+                            axes: [
+                                (direction[0] * 1000.).round() as i16,
+                                (direction[1] * 1000.).round() as i16,
+                            ],
+                            jump: jump && tick % 30 == 0,
+                            sprint: true,
+                            facing: theia_core::facing::Facing::from_radians(
+                                radians + std::f64::consts::PI,
+                            ),
+                            ..default()
+                        },
+                        TickRate::Hz30,
+                        None,
+                    )
+                    .unwrap();
+                    let p = play.feet.metres();
+                    if p[0].hypot(p[2]) > 252. {
+                        assert!(
+                            p[2] > 0. && p[0].abs() < 20.,
+                            "Unexpected exit bearing={bearing} jump={jump} feet={p:?}"
+                        );
+                        escaped = true;
+                        break;
+                    }
+                }
+                assert_eq!(escaped, bearing == 0, "bearing={bearing} jump={jump}");
+            }
+        }
+        println!(
+            "512m valley: 24 Classic walk/jump routes use only +Z pass; sampled containment only"
+        );
+    }
+    #[test]
+    fn valley_mesh_and_ground_cutout_preserve_full_authored_footprint() {
+        let mut editor = Editor::new(Zone {
+            origin: [8192., 0., 8192.],
+            spawn: [8192., 0.1, 8192.],
+            ..default()
+        })
+        .unwrap();
+        editor
+            .execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![Edit::CreateStarterValley],
+            })
+            .unwrap();
+        let zone = editor.zone();
+        let geometry = terrain::geometry(zone).unwrap();
+        assert_eq!(geometry.positions.len(), 129 * 129);
+        assert_eq!(geometry.triangles.len(), 128 * 128 * 2);
+        assert_eq!(geometry.positions[0], [-256., 0., -256.]);
+        assert_eq!(*geometry.positions.last().unwrap(), [256., 0., 256.]);
+        for (centre, size) in terrain::ground_boxes(zone) {
+            let min = centre - size / 2.;
+            let max = centre + size / 2.;
+            assert!(max.x <= -256. || min.x >= 256. || max.z <= -256. || min.z >= 256.);
+        }
+        let saved = zone.clone();
+        let mut session = Session::new(editor, "unused.json".into(), Some(saved));
+        session.terrain_mode = true;
+        let mut view = View {
+            target: Vec3::ZERO,
+            distance: 20.,
+            yaw: 0.6,
+            pitch: 0.8,
+            preset: default(),
+            show_grid: true,
+        };
+        selection::frame(&mut session, &mut view);
+        assert!(view.distance > 1000.);
+    }
+}

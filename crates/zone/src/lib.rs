@@ -12,6 +12,7 @@ pub mod quest_areas;
 pub mod resampling;
 pub mod scenery;
 pub mod starter_basin;
+pub mod starter_valley;
 pub mod terrain;
 mod translation;
 pub mod vegetation;
@@ -21,7 +22,7 @@ use std::{collections::BTreeSet, fs, io::Read, path::Path};
 use theia_core::coordinates::{GlobalPosition, LocalFrame, LocalPosition};
 
 pub const MAX_OBJECTS: usize = 1024;
-pub const MAX_DOCUMENT_BYTES: u64 = 1024 * 1024;
+pub const MAX_DOCUMENT_BYTES: u64 = 2 * 1024 * 1024;
 pub const MAX_HISTORY: usize = 64;
 pub const MAX_EDITS: usize = 128;
 pub const ZONE_EXTENT: f64 = 512.;
@@ -140,7 +141,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=10), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=11), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -368,6 +369,7 @@ pub enum Edit {
         position: [f64; 3],
     },
     CreateStarterBasin,
+    CreateStarterValley,
     SetTerrain {
         terrain: Option<terrain::HeightPatch>,
     },
@@ -553,8 +555,15 @@ impl Editor {
                         Edit::RenameZone { name } => candidate.name = name,
                         Edit::SetSpawn { position } => candidate.spawn = position,
                         Edit::CreateStarterBasin => starter_basin::apply(&mut candidate)?,
+                        Edit::CreateStarterValley => starter_valley::apply(&mut candidate)?,
                         Edit::SetTerrain { terrain } => {
-                            candidate.schema = candidate.schema.max(2);
+                            candidate.schema = candidate.schema.max(
+                                if terrain.as_ref().is_some_and(|p| p.span_chunks > 1) {
+                                    11
+                                } else {
+                                    2
+                                },
+                            );
                             candidate.terrain = terrain;
                         }
                         Edit::ProjectToSurface { projection } => {

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "name": "Starter valley",
+  "origin": [
+    8192,
+    0,
+    8192
+  ],
+  "spawn": [
+    8192,
+    0.1,
+    8192
+  ],
+  "objects": []
+}

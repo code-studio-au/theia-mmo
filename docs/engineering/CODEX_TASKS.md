@@ -1,3 +1,10 @@
+P5-17 / P3-15 larger starter terrain, 12 November 2026: schema-11 bounded
+128..512 m patches now support sculpt/paint, resampling admission, focus, offline
+Classic collision and export. A separate 512 m valley recipe preserves existing
+examples. Runtime navigation stays at its qualified coverage; village dressing,
+multiple NPC quest contacts/patrols and authored gameplay launch remain open.
+See ../STATUS.md and ../ZONE_EDITOR.md for exact limits and evidence.
+
 P5-17 model transforms / Classic playtest, 12 November 2026: reuse existing
 viewport gestures/history for imported scenery and the actual game binding/orbit
 code for offline playtest. Local/far model commands and cancellation checks plus

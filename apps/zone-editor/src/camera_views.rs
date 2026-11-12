@@ -54,6 +54,9 @@ pub(super) fn projection(view: &View, play: bool, projection: &mut Projection) {
         if !matches!(projection, Projection::Perspective(_)) {
             *projection = Projection::Perspective(PerspectiveProjection::default());
         }
+        if let Projection::Perspective(perspective) = projection {
+            perspective.far = if play { 1000. } else { 4096. };
+        }
     } else if let Projection::Orthographic(orthographic) = projection {
         if !matches!(orthographic.scaling_mode,ScalingMode::FixedVertical { viewport_height } if viewport_height==view.distance)
         {

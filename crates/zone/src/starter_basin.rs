@@ -26,6 +26,7 @@ pub(crate) fn apply(zone: &mut Zone) -> Result<()> {
         .ok_or("Invalid basin origin")?;
     let mut patch = HeightPatch {
         chunk: [chunk.x, chunk.z],
+        span_chunks: 1,
         resolution: Resolution::TwoMetres,
         heights: vec![0.; 65 * 65],
         weights: vec![crate::painting::GRASS; 65 * 65],

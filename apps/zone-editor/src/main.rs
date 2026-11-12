@@ -54,6 +54,8 @@ mod status_bar;
 mod terrain;
 mod theme;
 mod transform_target;
+#[cfg(test)]
+mod valley_gpu_test;
 mod vegetation;
 mod viewport;
 mod viewport_tools;
@@ -513,6 +515,7 @@ enum Action {
     AddParticle,
     AddQuestArea,
     CreateStarterBasin,
+    CreateStarterValley,
     TerrainToggle,
     TerrainResolution,
     Brush(terrain::Tool),
@@ -988,15 +991,18 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
     }
     match action {
         Action::Duplicate => selection::duplicate(session),
-        Action::CreateStarterBasin => {
+        Action::CreateStarterBasin | Action::CreateStarterValley => {
             let revision = session.editor.revision();
-            session.edit(vec![Edit::CreateStarterBasin]);
+            session.edit(vec![if matches!(action, Action::CreateStarterValley) {
+                Edit::CreateStarterValley
+            } else {
+                Edit::CreateStarterBasin
+            }]);
             if session.editor.revision() != revision {
                 session.set_mode(EditorMode::Sculpt);
                 selection::frame(session, view);
                 session.status =
-                    "Starter basin created · sculpt and paint its terrain to refine the zone"
-                        .into();
+                    "Starter terrain created · sculpt and paint to refine the zone".into();
             }
         }
         Action::AddQuestArea => quest_area_authoring::add(session),

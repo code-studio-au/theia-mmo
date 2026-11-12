@@ -116,9 +116,9 @@ pub(super) fn geometry(zone: &Zone) -> Option<theia_network::procedural::Geometr
         .expect("Validated local patch");
     let mut geometry = theia_network::procedural::grid(patch.axis() - 1);
     for (i, point) in geometry.positions.iter_mut().enumerate() {
-        point[0] += offset[0];
+        point[0] = point[0] * f32::from(patch.span_chunks) + offset[0];
         point[1] = patch.heights[i];
-        point[2] += offset[2];
+        point[2] = point[2] * f32::from(patch.span_chunks) + offset[2];
     }
     Some(geometry)
 }
@@ -132,11 +132,12 @@ pub(super) fn ground_boxes(zone: &Zone) -> Vec<(Vec3, Vec3)> {
         .local([start[0], zone.origin[1], start[2]])
         .expect("Validated patch frame");
     let (x, z) = (start[0], start[2]);
+    let extent = patch.extent_metres() as f32;
     [
         (-512., x, -512., 512.),
-        (x + 128., 512., -512., 512.),
-        (x, x + 128., -512., z),
-        (x, x + 128., z + 128., 512.),
+        (x + extent, 512., -512., 512.),
+        (x, x + extent, -512., z),
+        (x, x + extent, z + extent, 512.),
     ]
     .into_iter()
     .filter(|(a, b, c, d)| b - a > 0. && d - c > 0.)
@@ -617,8 +618,8 @@ pub(super) fn pointer(
             let Ok(global) = zone.global(point.to_array()) else {
                 return false;
             };
-            (origin[0]..=origin[0] + 128.).contains(&global[0])
-                && (origin[2]..=origin[2] + 128.).contains(&global[2])
+            (origin[0]..=origin[0] + patch.extent_metres()).contains(&global[0])
+                && (origin[2]..=origin[2] + patch.extent_metres()).contains(&global[2])
         });
         if point.is_none() {
             stroke.last = None;

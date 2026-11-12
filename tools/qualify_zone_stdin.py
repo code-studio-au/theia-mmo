@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-LIMIT = 1024 * 1024
+LIMIT = 2 * 1024 * 1024
 
 
 def run(output, binary):
