@@ -14,6 +14,7 @@ pub mod scenery;
 pub mod starter_basin;
 pub mod starter_valley;
 pub mod terrain;
+pub mod test_players;
 mod translation;
 pub mod vegetation;
 
@@ -77,6 +78,8 @@ pub struct Zone {
     pub quest_areas: Vec<quest_areas::QuestArea>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scenery: Vec<scenery::SceneryPlacement>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub test_players: Vec<test_players::TestPlayer>,
 }
 
 fn require(condition: bool, message: &str) -> Result<()> {
@@ -100,6 +103,7 @@ impl Default for Zone {
             particles: vec![],
             quest_areas: vec![],
             scenery: vec![],
+            test_players: vec![],
         }
     }
 }
@@ -141,7 +145,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=11), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=12), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -193,6 +197,14 @@ impl Zone {
         require(
             self.scenery.len() <= scenery::MAX_SCENERY_PLACEMENTS,
             "Scenery placement budget exceeded",
+        )?;
+        require(
+            self.schema >= 12 || self.test_players.is_empty(),
+            "Test players require zone schema 12",
+        )?;
+        require(
+            self.test_players.len() <= test_players::MAX_TEST_PLAYERS,
+            "Test player budget exceeded",
         )?;
         require(label(&self.name), "Invalid zone name")?;
         self.frame()?;
@@ -252,6 +264,15 @@ impl Zone {
             require(ids.insert(placement.id), "Duplicate authoring ID")?;
             placement.validate(self)?;
         }
+        let mut client_ids = BTreeSet::new();
+        for player in &self.test_players {
+            require(ids.insert(player.id), "Duplicate authoring ID")?;
+            require(
+                client_ids.insert(player.client_id),
+                "Duplicate test player slot",
+            )?;
+            player.validate(self)?;
+        }
         let mut area_ids = BTreeSet::new();
         let mut links = 0;
         for area in &self.quest_areas {
@@ -286,6 +307,7 @@ impl Zone {
             .chain(self.particles.iter().map(|p| p.id))
             .chain(self.quest_areas.iter().map(|a| a.id))
             .chain(self.scenery.iter().map(|p| p.id))
+            .chain(self.test_players.iter().map(|p| p.id))
             .max()
             .unwrap_or(0)
             .checked_add(1)
@@ -427,6 +449,12 @@ pub enum Edit {
         area: quest_areas::QuestArea,
     },
     DeleteQuestArea {
+        id: u64,
+    },
+    PutTestPlayer {
+        player: test_players::TestPlayer,
+    },
+    DeleteTestPlayer {
         id: u64,
     },
     PutScenery {
@@ -697,6 +725,30 @@ impl Editor {
                                 .position(|a| a.id == id)
                                 .ok_or("Unknown quest area ID")?;
                             candidate.quest_areas.remove(index);
+                        }
+                        Edit::PutTestPlayer { player } => {
+                            candidate.schema = candidate.schema.max(12);
+                            if let Some(existing) = candidate
+                                .test_players
+                                .iter_mut()
+                                .find(|p| p.id == player.id)
+                            {
+                                *existing = player;
+                            } else {
+                                require(
+                                    candidate.test_players.len() < test_players::MAX_TEST_PLAYERS,
+                                    "Test player budget exceeded",
+                                )?;
+                                candidate.test_players.push(player);
+                            }
+                        }
+                        Edit::DeleteTestPlayer { id } => {
+                            let index = candidate
+                                .test_players
+                                .iter()
+                                .position(|p| p.id == id)
+                                .ok_or("Unknown test player ID")?;
+                            candidate.test_players.remove(index);
                         }
                         Edit::PutScenery { scenery } => {
                             candidate.schema = candidate.schema.max(10);

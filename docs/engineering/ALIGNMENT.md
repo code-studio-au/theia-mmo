@@ -1,3 +1,14 @@
+P5-17 / P1-06 test-player direction, 12 November 2026: editor test pawns
+configure enabled independent clients, checked authoritative spawns, optional
+bounded normal-input controllers and per-connection network impairment. Retain
+one local authoritative server, encrypted development tickets, shared Classic
+controls and bounded queues. Initial cap is two actual clients, separate native
+windows; F5 remains offline. CLI launch/controller checks are implemented; zone
+schema 12 records setup, while editor placement/Start/Stop and embedded views are
+pending. These are developer scenarios, not player/NPC collision, production AI,
+account-backed admission or MMO capacity evidence. See ../STATUS.md and
+../RENET_QUALIFICATION.md for exact implemented scope and devices.
+
 P3-07 / P4-03, 12 November 2026: actual dressed-valley collision requires
 Recast contour hole joining before the pinned Rust backend triangulator. A bounded,
 licensed upstream adaptation preserves obstacle holes and existing runtime limits.

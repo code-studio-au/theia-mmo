@@ -14,6 +14,7 @@ pub fn available(zone: &Zone) -> bool {
         && zone.particles.is_empty()
         && zone.quest_areas.is_empty()
         && zone.scenery.is_empty()
+        && zone.test_players.is_empty()
 }
 
 pub(crate) fn apply(zone: &mut Zone) -> Result<()> {

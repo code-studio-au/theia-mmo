@@ -24,7 +24,8 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, new_id: u64, offset: [f64; 3]) -> 
         .chain(zone.plants.iter().map(|p| p.id))
         .chain(zone.particles.iter().map(|p| p.id))
         .chain(zone.quest_areas.iter().map(|a| a.id))
-        .chain(zone.scenery.iter().map(|p| p.id));
+        .chain(zone.scenery.iter().map(|p| p.id))
+        .chain(zone.test_players.iter().map(|p| p.id));
     require(!occupied.any(|id| id == new_id), "Copy ID already exists")?;
     require(
         offset
@@ -90,6 +91,16 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, new_id: u64, offset: [f64; 3]) -> 
         copy.name = copy_name(&copy.name);
         copy.position = shift(copy.position);
         zone.scenery.push(copy);
+    } else if let Some(source) = zone.test_players.iter().find(|p| p.id == id) {
+        let slot = (1..=2)
+            .find(|slot| zone.test_players.iter().all(|p| p.client_id != *slot))
+            .ok_or("Both test player slots are occupied")?;
+        let mut copy = source.clone();
+        copy.id = new_id;
+        copy.client_id = slot;
+        copy.name = copy_name(&copy.name);
+        copy.position = shift(copy.position);
+        zone.test_players.push(copy);
     } else {
         return Err("Unknown authoring ID to copy".into());
     }

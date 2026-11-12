@@ -1,3 +1,19 @@
+P5-17 / P1-06 saved test-player definitions, 12 November 2026:
+Zone schema 12 stores at most two Test Players, separate from NPC markers and
+production player spawn. Each has an exact global feet position, shared authoring
+ID, unique development client slot, enabled flag, optional stable controller ID
+and bounded delay/jitter/loss/seed/outages. Existing schemas serialize unchanged.
+Put/delete, translate, rename, terrain grounding, duplicate into the free client
+slot and undo/redo use the same transactional document history. Validation checks
+all entries including disabled slots; physical support remains a launch-time
+server check. Blank-terrain recipes refuse a zone containing test pawns.
+All 70 zone tests, formatting and strict workspace/all-target Clippy pass, including
+far signed origins, atomic rejection, history, metadata, schema/ID/slot budgets
+and impairment limits. No rendering change or new native/Windows claim. Evidence:
+build/test-player-authoring-{tests,clippy}.log. UI selection/placement/inspector,
+controller catalogue resolution and managed editor launch remain pending; this
+slice is the persisted authoring foundation. See ZONE_EDITOR.md. Continue locally.
+
 P5-17 / P1-06 attachable movement controllers, 12 November 2026:
 Enabled scenario players may bind a bounded JSON movement script; the launcher
 preflights it and the native client drives the shared Classic input/controller,

@@ -1,3 +1,22 @@
+P5-17 / P1-06 test-player authoring foundation, 12 November 2026:
+Zone schema 12 adds optional `test_players` (at most two). Entries contain `id`,
+`name`, `client_id` (unique 1/2), `enabled` (defaults true), global f64 feet
+`position`, optional stable catalogue `controller` ID (null/absent means manual),
+and `network` (defaults to no impairment). Network fields match the local relay:
+`delay_ms` and `jitter_ms` 0..5000, `loss_percent` 0..100, u32 `seed`, and at most
+16 ordered nonoverlapping `[start_ms,duration_ms]` outages within one hour, each
+lasting at most 60 seconds. Delay is one-way; twice it is only the added base RTT.
+
+`PutTestPlayer`/`DeleteTestPlayer`, shared rename/translate/duplicate and terrain
+grounding commands are transactional and undoable. Duplication assigns the free
+client slot and preserves settings; it refuses when both slots are occupied,
+including disabled pawns. IDs share the authoring namespace. Physical spawn
+support/capsule clearance is checked by the server at launch; document bounds
+alone do not establish a valid gameplay spawn. Test pawns do not become NPCs or
+production spawns. Current editor visibility/inspector/launch integration and
+controller-ID resolution are still pending. Explicit Save remains the only disk
+write; all 70 zone tests and strict workspace checks pass. See STATUS.md.
+
 # Scenery asset browser — 12 November 2026
 
 Open **Assets** in the top bar (or **View → Asset browser**). This lower dock

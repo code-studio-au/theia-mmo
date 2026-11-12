@@ -42,6 +42,8 @@ impl Projection {
                         (m.position, 0.)
                     } else if let Some(p) = zone.particles.iter().find(|p| p.id == id) {
                         (p.position, 0.)
+                    } else if let Some(p) = zone.test_players.iter().find(|p| p.id == id) {
+                        (p.position, 0.)
                     } else {
                         return Err("Unknown placement ID".into());
                     }
@@ -70,6 +72,8 @@ impl Projection {
                     } else if let Some(m) = zone.markers.iter_mut().find(|m| m.id == id) {
                         m.position = next;
                     } else if let Some(p) = zone.particles.iter_mut().find(|p| p.id == id) {
+                        p.position = next;
+                    } else if let Some(p) = zone.test_players.iter_mut().find(|p| p.id == id) {
                         p.position = next;
                     }
                 }
