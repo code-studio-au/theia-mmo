@@ -667,3 +667,80 @@ mod scenery_tests {
         );
     }
 }
+
+#[cfg(test)]
+mod starter_basin_tests {
+    use super::*;
+    #[test]
+    fn starter_basin_radial_walk_and_jump_attempts_use_only_the_positive_z_exit() {
+        for origin in [[0.; 3], [128_000_000_000.125, 20., -128_000_000_000.25]] {
+            let mut editor = Editor::new(Zone {
+                origin,
+                spawn: origin,
+                ..default()
+            })
+            .unwrap();
+            editor
+                .execute(Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![Edit::CreateStarterBasin],
+                })
+                .unwrap();
+            let zone = editor.zone();
+            let mut play = Playtest::new(zone).unwrap();
+            let center = Vec3::from_array(zone.local(zone.spawn).unwrap());
+            let mut escapes = 0;
+            for jump in [false, true] {
+                for bearing in (0..360).step_by(15) {
+                    play.feet = play.spawn;
+                    play.motion = Motion::default();
+                    let radians = (bearing as f64).to_radians();
+                    let axes = [
+                        (radians.sin() * 1000.).round() as i16,
+                        (radians.cos() * 1000.).round() as i16,
+                    ];
+                    let mut escaped = false;
+                    for tick in 0..480 {
+                        play.feet = kinematic::advance(
+                            &play.scene,
+                            &mut play.motion,
+                            play.feet,
+                            Intent {
+                                axes,
+                                jump: jump && tick % 30 == 0,
+                                ..default()
+                            },
+                            TickRate::Hz30,
+                        )
+                        .unwrap();
+                        let offset = Vec3::from_array(play.feet.metres()) - center;
+                        if offset.x.hypot(offset.z) > 48. {
+                            assert!(
+                                offset.z > 0. && offset.x.abs() < 10.,
+                                "Unexpected basin exit bearing={bearing} jump={jump} offset={offset:?}"
+                            );
+                            escaped = true;
+                            escapes += 1;
+                            break;
+                        }
+                    }
+                    // Near-opening approaches can slide along its sides into
+                    // the same opening; they are not additional exits.
+                    if bearing == 0 {
+                        assert!(escaped, "Central exit must remain open");
+                    }
+                    if (45..=315).contains(&bearing) {
+                        assert!(
+                            !escaped,
+                            "Closed-side route escaped bearing={bearing} jump={jump}"
+                        );
+                    }
+                }
+            }
+            assert!((2..=10).contains(&escapes));
+            println!(
+                "basin origin={origin:?}: 48 walk/jump routes; {escapes} leave through the one +Z opening"
+            );
+        }
+    }
+}

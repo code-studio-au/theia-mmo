@@ -11,6 +11,7 @@ pub mod projection;
 pub mod quest_areas;
 pub mod resampling;
 pub mod scenery;
+pub mod starter_basin;
 pub mod terrain;
 mod translation;
 pub mod vegetation;
@@ -366,6 +367,7 @@ pub enum Edit {
     SetSpawn {
         position: [f64; 3],
     },
+    CreateStarterBasin,
     SetTerrain {
         terrain: Option<terrain::HeightPatch>,
     },
@@ -550,6 +552,7 @@ impl Editor {
                         Edit::Rename { id, name } => naming::apply(&mut candidate, id, name)?,
                         Edit::RenameZone { name } => candidate.name = name,
                         Edit::SetSpawn { position } => candidate.spawn = position,
+                        Edit::CreateStarterBasin => starter_basin::apply(&mut candidate)?,
                         Edit::SetTerrain { terrain } => {
                             candidate.schema = candidate.schema.max(2);
                             candidate.terrain = terrain;

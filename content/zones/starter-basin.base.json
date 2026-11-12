@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "name": "Starter basin",
+  "origin": [
+    0,
+    0,
+    0
+  ],
+  "spawn": [
+    0,
+    0.1,
+    0
+  ],
+  "objects": []
+}

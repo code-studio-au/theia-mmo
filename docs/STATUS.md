@@ -1,3 +1,19 @@
+P5-17 / P3-15 / P3-16 starter basin terrain, 12 November 2026:
+Add → Starter basin terrain creates a 128 m editable 2 m height patch with a
+painted clearing, 16 m high surrounding slopes and one broad +Z opening. It
+requires a blank zone, sets the central spawn, preserves locked borders and is
+one shared undo/redo transaction. A tracked starter-basin base/command recipe
+adds the eight Synty placements, including the arch at the opening. All 64 zone
+tests pass; 48 radial walk/jump routes at each of local/far origins leave only
+through the intended opening (`build/starter-basin-routes.log`). This samples
+offline movement, not exhaustive navigation or connected Classic containment.
+Actual saved-scene spawn and runtime export checks pass; artifacts are
+`build/starter-basin.zone.json`, `build/starter-basin-world-v1/`,
+`build/starter-basin-preflight.json` and `build/starter-basin-source-comparison.json`.
+The exported scene has 16,945 visual triangles and unchanged staged scenery
+attributes/materials/images. Formatting, strict workspace Clippy and editor build
+pass. Native appearance, navigation, NPC quest assignments and pickups remain next.
+
 P5-17 starter library launcher integration, 12 November 2026: normal
 `tools/edit_zone.py` launches automatically use the locally staged v2 scenery
 catalog when present. Explicit catalog arguments win; `--no-scenery-library`

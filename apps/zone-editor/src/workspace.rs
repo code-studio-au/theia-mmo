@@ -209,6 +209,11 @@ pub(super) fn setup(
                     "Add",
                     &[
                         (
+                            Control::Command(Action::CreateStarterBasin),
+                            "Starter basin terrain",
+                            "",
+                        ),
+                        (
                             Control::Command(Action::AddParticle),
                             "Particle reference at spawn",
                             "",
@@ -521,6 +526,9 @@ impl Control {
             .or(session.scenery_selected)
             .is_some();
         match self {
+            Self::Command(Action::CreateStarterBasin) => {
+                theia_zone::starter_basin::available(session.editor.zone())
+            }
             Self::GizmoTool(_) => {
                 mode(session) == EditorMode::Objects
                     && session.particle_selected.is_none()

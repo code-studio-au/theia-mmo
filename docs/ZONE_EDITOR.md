@@ -4,11 +4,11 @@
 
 | Capability | Current boundary | Next acceptance |
 | --- | --- | --- |
-| Terrain and boundary geometry | Sculpting, primitive placement, static collision export exist | Author a bounded basin/cliff perimeter and verify one intended traversable exit with gameplay movement/navigation |
-| Quest areas | Runtime volumes and minimap links exist; editor quest markers are annotations | Explicit area volumes with stable IDs, objective links, undo/redo and validated runtime catalog export |
+| Terrain and boundary geometry | Blank-zone starter basin preset, sculpt/paint, Synty scenery and static collision export; local/far offline walk/jump routes use one opening | Connected Classic movement/navigation and native appearance qualification |
+| Quest areas | Explicit bounds/IDs/objective links, Explorer/inline editing, undo/redo and validated combined gameplay export | Connected area credit/minimap acceptance for the authored starter scene |
 | NPCs and quest assignment | Editor NPC markers are unresolved annotations; runtime dialogue uses a guide binding | Resolve contact/quest catalogs, place supported contacts and validate giver/turn-in assignments; expand runtime placements where required |
 | Quest pickups | Inventory/quest-item and corpse-loot runtime paths exist | Audit and implement placed world-item pickup authority, then authoring and persistence; do not equate corpse loot with placed pickups |
-| Playable publication | Geometry and particles export; editor F5 is an offline sandbox | Export a coherent gameplay bundle and launch authoritative playtest with quests, minimap and persistence |
+| Playable publication | Geometry, particles, scenery and validated gameplay bundle export; editor F5 is an offline sandbox | Export a coherent gameplay bundle and launch authoritative playtest with quests, minimap and persistence |
 
 Execute through P5-17 / P3-15, reusing P3-11/12 and targeting the bounded P3-16
 starter-zone milestone. Each slice needs positive and rejection-path tests; native
@@ -4079,3 +4079,24 @@ blocks picking nor adds collision. The implementation uses one standard Bevy mes
 and material for twelve reusable entities. Far-coordinate and lifecycle checks
 pass headlessly. Native rendering/appearance remains to be checked when display
 use is available; no pixel or GPU acceptance is claimed for this addition.
+
+## Starter basin recipe — 12 November 2026
+
+In a blank document, Add → Starter basin terrain builds an editable painted
+height patch and central spawn with one undo action. Existing authoring content
+is never overwritten by this preset. Its large opening faces +Z; a narrow arch
+can be used as a landmark without replacing the entire opening with a collider.
+The small dressed example uses the locally staged Synty library:
+
+```sh
+python3 tools/edit_zone.py --zone content/zones/starter-basin.base.json \
+  --commands content/zones/starter-basin.commands.jsonl \
+  --save-path build/starter-basin-draft.zone.json
+```
+
+The normal launcher discovers `build/starter-forest-scenery-v2/catalog.json`.
+Keep original asset payloads local. The current recipe is terrain/scenery only;
+NPC quest assignments and pickups are still separate work. Offline radial
+walk/jump tests exercise the intended opening and closed sides at local/far
+origins. This is not exhaustive navigation, connected Classic containment or
+native appearance acceptance.

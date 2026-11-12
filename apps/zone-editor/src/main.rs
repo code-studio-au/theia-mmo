@@ -504,6 +504,7 @@ enum Action {
     Duplicate,
     AddParticle,
     AddQuestArea,
+    CreateStarterBasin,
     TerrainToggle,
     TerrainResolution,
     Brush(terrain::Tool),
@@ -977,6 +978,17 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
     }
     match action {
         Action::Duplicate => selection::duplicate(session),
+        Action::CreateStarterBasin => {
+            let revision = session.editor.revision();
+            session.edit(vec![Edit::CreateStarterBasin]);
+            if session.editor.revision() != revision {
+                session.set_mode(EditorMode::Sculpt);
+                selection::frame(session, view);
+                session.status =
+                    "Starter basin created · sculpt and paint its terrain to refine the zone"
+                        .into();
+            }
+        }
         Action::AddQuestArea => quest_area_authoring::add(session),
         Action::AddParticle => {
             let id = session.next_id;
