@@ -105,3 +105,15 @@ The Markdown review recorded 184 campaign entries, 684 unique stage IDs and 684 
 ```
 
 **The null actor IDs, XP and currency are intentional unresolved inputs.** Do not import this illustration into production.
+
+## Creator-locked cross-race migration safety — 12 November 2026
+
+**Important migration boundary:** The legacy `HUMAN_Q001_DONE`–`HUMAN_Q184_DONE` strings in the derived dependency reference are editorial completion aliases, **not approved runtime IDs or proof that shared Q035–Q184 require a human character**. Do not mechanically compile or enforce them as human-only gates.
+
+**Racial entry:** The player's race-specific level 1–20 storyline must be complete before the common Q035 `The Covenant Calls` summons. Stable completion facts for dwarf, Aelari and Korrath have not been approved because their campaigns are not yet authored. An empty legacy `prerequisites` array for Q035 must not mean unconditional availability.
+
+**Shared progression:** After Q035, common Covenant quests must not require the human-only Q031 flag or the Cassian ledger. Shared quest progress and completion must be race-neutral. Q032–Q034 remain optional human aftermath after Q031 and do not block Q035.
+
+**Q184:** One common quest identity/completion and race-specific homeland, contact and dialogue bindings. Never grant the human Millhaven/Elara history to other races.
+
+**Implementation acceptance checks:** Validate four distinct racial completions unlocking the same Q035; reject premature Q035 access; verify Q036–Q037 without Q031; verify Q032–Q034 remain optional; validate Q184's race-specific actors and a single shared completion; preserve saved journal/catalogue migration semantics. Until stable IDs and all race variants exist, the JSON inventories remain planning material, not importable executable quests.
