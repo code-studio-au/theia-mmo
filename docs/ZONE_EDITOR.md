@@ -36,7 +36,11 @@ target/debug/theia-nav-bake spawns-zone WORLD NAVIGATION ZONE_JSON GROUP_ID 3 AC
 feet anchor. Disabled/unknown groups refuse. The checker uses saved bounds/count/
 seed and reports group metadata plus a canonical draft digest. It does not save
 the zone or prove that its other draft geometry matches the supplied world.
-Creature/model resolution and live spawning remain separate.
+The shared runtime startup adapter can additionally resolve a passive creature
+profile and the saved respawn delay for one selected group. It currently refuses
+explicit model references and more than 16 actors. Headless World tests cover
+saved-draft admission and death/respawn at 20/30/60 Hz; this is not yet wired to
+normal editor Play/export or the launcher.
 
 It verifies development-capsule standing space, custom bounds, spacing and sampled
 access routes; reports rejection counts and insufficient results; and creates no

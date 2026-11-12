@@ -7777,6 +7777,7 @@ dependencies = [
  "serde",
  "serde_json",
  "theia-core",
+ "theia-zone",
  "tokio",
 ]
 

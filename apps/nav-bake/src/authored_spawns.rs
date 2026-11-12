@@ -53,25 +53,9 @@ fn zone_request(
     spacing: f64,
     access: [f64; 3],
 ) -> Result<(spawn_candidates::Request, serde_json::Value)> {
-    zone.validate()?;
-    let group = zone
-        .spawn_groups
-        .iter()
-        .find(|g| g.id == id)
-        .ok_or("Unknown saved spawn group ID")?;
-    if !group.enabled {
-        return Err("Selected spawn group is disabled".into());
-    }
-    let request = spawn_candidates::Request {
-        schema: 1,
-        id: format!("theia.zone.spawn.{}", group.id),
-        volume: group.volume.clone(),
-        count: usize::from(group.target_alive),
-        seed: group.seed,
-        minimum_spacing_metres: spacing,
-        access_from: access,
-    };
-    request.validate()?;
+    let request =
+        theia_network::simulation::population::authoring::request(zone, id, spacing, access)?;
+    let group = zone.spawn_groups.iter().find(|g| g.id == id).unwrap();
     let authoring = serde_json::json!({
         "zone_digest": theia_network::terrain::sha256(&serde_json::to_vec(zone)?),
         "group": group,

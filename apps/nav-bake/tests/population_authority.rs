@@ -39,8 +39,41 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
     .unwrap()
     .definition()
     .clone();
+    // Load a real serialized editor draft: runtime inputs are not copied into
+    // a separate candidate request or hard-coded lifecycle binding.
+    let mut zone = theia_zone::Zone::load(&world_path.join("authoring.zone.json")).unwrap();
+    zone.schema = 14;
+    let group_id = zone.next_id().unwrap();
+    zone.spawn_groups
+        .push(theia_zone::spawn_groups::SpawnGroup {
+            id: group_id,
+            name: "Passive qualification grove".into(),
+            enabled: true,
+            creature: definition.id().as_str().into(),
+            model: None,
+            volume: request.volume.clone(),
+            target_alive: request.count as u16,
+            respawn_seconds: 30,
+            seed: request.seed,
+        });
+    zone.validate().unwrap();
+    let file =
+        std::env::temp_dir().join(format!("theia-population-zone-{}.json", std::process::id()));
+    std::fs::write(&file, serde_json::to_vec(&zone).unwrap()).unwrap();
+    let loaded = theia_zone::Zone::load(&file);
+    std::fs::remove_file(&file).unwrap();
+    let zone = loaded.unwrap();
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
-        let prepared = prepare(&request);
+        let (prepared, binding) = theia_network::simulation::population::authoring::prepare(
+            &zone,
+            group_id,
+            definition.clone(),
+            &store,
+            &navigation,
+            request.minimum_spacing_metres,
+            request.access_from,
+        )
+        .unwrap();
         let feet = prepared.points().to_vec();
         let expected_identity =
             prepared.profile_identity(theia_network::targeting::profile_identity(store.identity()));
@@ -50,12 +83,6 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
         assert!(world.set_tick_rate(rate));
         world.enable_prediction().unwrap();
         world.enable_classic().unwrap();
-        let binding = theia_network::simulation::population::Binding::new(
-            definition.id(),
-            definition.clone(),
-            30,
-        )
-        .unwrap();
         let expected_identity = binding.profile_identity(expected_identity);
         let keys = world.enable_defined_population(prepared, binding).unwrap();
         assert!(

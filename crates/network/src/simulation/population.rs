@@ -1,5 +1,6 @@
 //! Atomic admission of one checked stationary population before players/combat.
 //! This does not bind creature AI, models, group-specific rewards or roaming.
+pub mod authoring;
 use super::World;
 use crate::{
     Result,

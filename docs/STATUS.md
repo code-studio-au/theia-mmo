@@ -1,3 +1,20 @@
+P3-07 saved editor population admission adapter, 13 November 2026:
+A shared startup adapter now derives placement requests and passive lifecycle
+bindings directly from validated zone groups. The read-only spawns-zone CLI uses
+that same request conversion. Admission requires a known enabled group, matching
+creature definition and at most 16 targets; explicit model references refuse until
+model catalog integration exists. Placement-only inspection still accepts those
+model-bearing drafts. Other zone geometry is not asserted to match an exported
+world, and selecting one group does not implicitly activate other groups.
+The actual World qualification now serializes/reloads a schema-14 draft and passes
+its saved bounds/count/seed/creature/30-second respawn through the adapter, proving
+five deaths and fresh-ID respawns at 20/30/60 Hz. Adapter rejection tests and the
+actual CLI source-preservation regression pass. Strict workspace/all-target Clippy
+and fmt pass. Evidence: build/saved-population-{tests,authority,cli,clippy}.log.
+The network crate depends only on the engine-independent zone data crate for this
+startup validation; no editor UI or Recast bake dependency enters the server.
+No mouse/display used. Normal launcher and editor export remain pending/gated.
+
 P3-07 passive creature definition and population lifecycle binding, 13 November 2026:
 Separate validated creature behavior from its patrol route while retaining legacy
 exact-byte patrol identities. Canonical definition identity covers logical ID,
