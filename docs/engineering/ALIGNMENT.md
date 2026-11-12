@@ -1,3 +1,25 @@
+P5-17 / P3-07 / P4-03 bounded spawn-candidate validation, 12 November 2026:
+A read-only `theia-nav-bake spawns-authored WORLD NAVIGATION REQUEST_JSON` command
+now samples seeded points from detailed navigation triangles within a custom
+polygon/height volume. Canonical tile order, bounded draws and area weighting are
+explicit. Require the exact world/navigation identity and development capsule,
+then check grounded standing clearance, final containment, spacing and an access
+route with the existing strict 0.2 m sampled navigation/collision checks. Caps are
+64 requested points, 4,096 proposals, 256 access queries and 8,192 clearance
+samples. Insufficient results are reported and return failure; never force points
+or infer a roaming boundary. Preparation remains outside the fixed simulation.
+Two focused network unit tests and an opt-in actual CLI test pass; fmt, strict
+workspace/all-target Clippy and baker build pass. The saved valley patrol world/nav
+pair yields five points in the concave western grove and 299 access samples.
+Repeated output is exact; wrong height, invalid access, foreign navigation and
+insufficient candidate count refuse, with source files preserved. No rendering
+change, actor population, respawn timing, model binding or Windows claim.
+Evidence: build/spawn-candidates-{tests,clippy,build}.log and
+build/spawn-candidates-valley-v1/{result.json,cli-test.log}; example request is
+content/navigation/starter-valley-spawn-candidates.json. This request is a checker
+input, not a shipped spawn-group manifest. Schema-14 zone population drafts still
+refuse world export. Next: editor authoring/preview, then validated runtime binding.
+
 P5-17 / P5-18 NPC quest inspection, 12 November 2026:
 Selecting a bound NPC now shows expandable quest offers/turn-ins in Attributes,
 including description, prerequisite quest names, ordered stages/completion rules,

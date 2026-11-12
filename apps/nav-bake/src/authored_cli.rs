@@ -163,18 +163,18 @@ pub(super) fn route(source: &Path, navigation: &Path, request_path: &Path) -> Re
     );
     Ok(())
 }
-struct Grounding<'a> {
+pub(super) struct Grounding<'a> {
     store: &'a Store,
     patches: BTreeMap<theia_core::coordinates::ChunkId, procedural::Patch>,
 }
 impl<'a> Grounding<'a> {
-    fn new(store: &'a Store) -> Self {
+    pub(super) fn new(store: &'a Store) -> Self {
         Self {
             store,
             patches: BTreeMap::new(),
         }
     }
-    fn at(&mut self, point: GlobalPosition) -> Result<GlobalPosition> {
+    pub(super) fn at(&mut self, point: GlobalPosition) -> Result<GlobalPosition> {
         let id = procedural::owner(point).ok_or("Route outside prediction domain")?;
         if let std::collections::btree_map::Entry::Vacant(entry) = self.patches.entry(id) {
             entry.insert(self.store.patch(id)?);
@@ -244,7 +244,7 @@ pub(super) fn verify(source: &Path, output: &Path) -> Result<()> {
     Ok(())
 }
 
-fn clearance(
+pub(super) fn clearance(
     query: &theia_nav_bake::Query,
     grounding: &mut Grounding<'_>,
     points: &[[f64; 3]],

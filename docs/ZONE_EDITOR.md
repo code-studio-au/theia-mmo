@@ -1,3 +1,23 @@
+NPC spawn-group groundwork (12 November 2026): schema-14 zone drafts can store
+validated custom polygon/height bounds, creature/model IDs, alive count, respawn
+delay and seed through the shared command API. They are not yet exposed as editor
+controls and are explicitly refused by world export until population integration
+exists. An offline placement checker can now test a separate request against an
+existing exported world/navigation pair:
+
+```sh
+target/debug/theia-nav-bake spawns-authored \
+  build/valley-patrol-binding-v1/world \
+  build/valley-patrol-binding-v1/navigation \
+  content/navigation/starter-valley-spawn-candidates.json
+```
+
+It verifies development-capsule standing space, custom bounds, spacing and sampled
+access routes; reports rejection counts and insufficient results; and creates no
+NPCs or files. Its vertical limits apply to feet, and the access anchor does not
+set roaming/chase limits. This is bounded offline placement evidence, not live
+population capacity or support for arbitrary creature collision sizes.
+
 NPC quest inspection (P5-17 / P5-18, 12 November 2026): select an NPC in the
 explorer, choose Attributes and expand an entry under Quests. Entries show whether
 that NPC offers the quest, accepts turn-in or both; requirements, stages/objectives
