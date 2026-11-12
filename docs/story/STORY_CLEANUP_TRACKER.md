@@ -191,3 +191,10 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] Added an explicit BLOCKING migration warning to the derived JSON reference, preserving the old labels as provenance rather than silently renaming persistent completion facts.
 - [x] Added cross-race acceptance criteria to the Rust quest authoring contract: race-specific Q035 unlock; no human Q031 gate; shared Q036+ progression; optional Q032–Q034; race-specific Q184; catalogue/journal migration checks.
 - [ ] Stable cross-race runtime IDs, saved-progress migrations and engine tests remain to be designed and implemented; do not mark them complete from documentation alone.
+
+### Cinematic and repository-wide reference sweep — 12 November 2026
+
+- [x] Found and corrected `Human_1_80_Encounter_Barks_and_Cinematic_Timing.md`: Elara's Q184 homecoming bark was not explicitly scoped to humans. It now states that the shared epilogue requires race-specific homelands and familiar NPCs.
+- [x] Searched the repository for Q035, Q184, `HUMAN_Q035_DONE` and the superseded title `A Ledger Reaches the Sea`. Historical quest registers, decision recovery, legacy comparisons and Chronicle retain historical title strings as provenance; those are not automatically active quest definitions.
+- [ ] Repository search is keyword-based and may miss semantic contradictions without the exact searched terms. Continue context-aware review of active production-facing files.
+- [ ] The Chronicle remains intentionally untouched pending explicit creator authorization.
