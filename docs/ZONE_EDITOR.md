@@ -6,8 +6,13 @@ Use the category dropdown and case-insensitive, multi-word search over names,
 categories and IDs. Select a card, then **Place at spawn**; the placed model uses
 existing XYZ/yaw/scale controls and undo/redo. Browsing alone does not edit the zone.
 Filtering clears an invisible selection, and stale placement requests refuse.
-The card identifies solid scenery versus decoration; model image previews and
-drag-to-place remain follow-ups. The flat Scenery menu is replaced by this browser.
+The card identifies solid scenery versus decoration. Selecting a card renders the
+actual model in a separate preview at the right of the dock. The preview fits its
+verified bounds and uses its original materials, with separate presentation lighting.
+Closing the browser, filtering out the selection or entering playtest/particle
+workspace releases that instance and disables its camera. Preview errors do not
+change placement/history. Per-card thumbnails and drag-to-place remain follow-ups.
+The flat Scenery menu is replaced by this browser.
 
 Drag the browser's top divider to resize it, or Close to restore viewport space.
 The left explorer/properties divider remains independent. F5 temporarily hides

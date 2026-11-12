@@ -84,6 +84,9 @@ def run(args):
             assert len(cards) == 2, cards
             click(cards[0]['centre'])
             assert state()['document'] == initial
+            wait(lambda: state()['asset_preview']['active'], 45)
+            preview = state()['asset_preview']['node']
+            assert min(preview['size']) > 0
             click(control('AssetPlace')['centre'])
             wait(lambda: len(state()['document'].get('scenery', [])) == len(initial.get('scenery', [])) + 1)
             chord('z')
@@ -108,9 +111,11 @@ def run(args):
             wait(lambda: capture_ready(report.with_suffix('.png')))
             click(control('AssetBrowser')['centre'])
             wait(lambda: not state()['ui_layout']['asset_browser']['open'])
+            wait(lambda: not state()['asset_preview']['active'] and state()['asset_preview']['selected'] is None)
             assert source.read_bytes() == original
             result = dict(passed=True, gpu=state()['gpu'], category_selection=True,
-                          search=True, placement_undo=True, independent_resize=True,
+                          search=True, model_preview=True, preview_stops_on_close=True,
+                          placement_undo=True, independent_resize=True,
                           source_unchanged=True, native_linux=True, windows_tested=False)
         finally:
             if desktop is not None: desktop.close()

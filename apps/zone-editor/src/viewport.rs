@@ -640,6 +640,7 @@ pub(super) fn report(
         Res<property_tabs::State>,
         TabControls,
         crate::export_dialog::Report,
+        crate::asset_preview::Report,
         Query<
             (
                 &ComputedNode,
@@ -662,7 +663,8 @@ pub(super) fn report(
     content: Res<outliner::Content>,
     content_controls: ContentControls,
 ) {
-    let (keys, focus, particles, tabs, tab_controls, export_dialog, asset_search) = input;
+    let (keys, focus, particles, tabs, tab_controls, export_dialog, asset_preview, asset_search) =
+        input;
     let Some(mut report) = report else {
         return;
     };
@@ -815,6 +817,7 @@ pub(super) fn report(
             "value":selector.kind.value(&session,&view),"enabled":selector.kind.enabled(&session,&view),"hovered":hovered.0,
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
+    value["asset_preview"] = asset_preview.snapshot();
     value["attribute_summary"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,_,_,_,_,field,_,_,text),_,_,_,node,t,..)| {
         let field = field?; let text = text?;
         if node.size().min_element() <= 0. { return None; }

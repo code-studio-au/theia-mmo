@@ -1,3 +1,24 @@
+P5-17 selected model preview, 12 November 2026:
+Selecting an asset card now shows its actual verified GLB through a standard Bevy
+camera in the browser's right-hand preview. Only that presentation instance is
+normalized to fit; original materials, authoring coordinates and source bytes are
+preserved. Imported descendants receive isolated render/picking ownership before
+visibility. Changing/filtering selection or hiding the browser/playtest/particle
+workspace releases the instance and stops the camera; loading failures show a
+fallback without changing placement/history. Per-card thumbnails and drag-to-place
+remain follow-ups.
+All 207 ordinary editor tests pass (seven opt-in skips), formatting and denied-
+warning workspace/all-target Clippy pass, and client/server/editor builds pass.
+Offscreen Vulkan renders a real hut and verifies layer isolation, filtered-instance
+removal and camera shutdown. Native Linux input passes category/search/model preview,
+placement/undo, independent resize, close/release and exact source preservation,
+with zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6. The owned test
+editor is closed; no Windows execution claim. Evidence: build/asset-preview-
+{tests,gpu,clippy,build}.log, asset-preview-offscreen.png and
+asset-preview-native-v1/{qualification.json,state.png}. Next: prerequisites for
+editor Test Player network playtests; existing multi-client launch support does not
+yet bind authored pawns/controllers/per-client spawns or impairment settings.
+
 P5-17 terrain startup framing, 12 November 2026:
 Initial view and terrain creation now target the actual patch midpoint and sampled
 surface height instead of a fixed 64 m offset. Five camera tests pass, including

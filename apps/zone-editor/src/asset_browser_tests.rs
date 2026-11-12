@@ -210,6 +210,7 @@ fn actual_scenery_browser_renders_search_tiles_and_resizable_dock() {
     s.assets.selected = Some(0);
     let original = s.editor.zone().clone();
     let mut app = App::new();
+    library.register(&mut app);
     app.add_plugins(
         DefaultPlugins
             .set(WindowPlugin {
@@ -274,6 +275,32 @@ fn actual_scenery_browser_renders_search_tiles_and_resizable_dock() {
         app.update();
         std::thread::sleep(Duration::from_millis(16));
     }
+    let preview_camera = app.world().resource::<asset_preview::Preview>().camera;
+    assert!(app.world().get::<Camera>(preview_camera).unwrap().is_active);
+    let first_root = app
+        .world()
+        .resource::<asset_preview::Preview>()
+        .root
+        .unwrap()
+        .1;
+    let descendants: Vec<_> = app
+        .world()
+        .get::<Children>(first_root)
+        .unwrap()
+        .iter()
+        .collect();
+    assert!(!descendants.is_empty());
+    assert!(
+        app.world_mut()
+            .query::<(&Mesh3d, &bevy::camera::visibility::RenderLayers, &Pickable)>()
+            .iter(app.world())
+            .all(|(_, layers, pick)| {
+                !layers.intersects(&bevy::camera::visibility::RenderLayers::layer(0))
+                    && !layers.intersects(&bevy::camera::visibility::RenderLayers::layer(1))
+                    && layers.intersects(&bevy::camera::visibility::RenderLayers::layer(2))
+                    && !pick.is_hoverable
+            })
+    );
     let (entity, node) = app
         .world_mut()
         .query::<(Entity, &panels::Region)>()
@@ -327,6 +354,28 @@ fn actual_scenery_browser_renders_search_tiles_and_resizable_dock() {
     for _ in 0..5 {
         app.update();
     }
+    assert!(app.world().get_entity(first_root).is_err());
+    assert!(
+        descendants
+            .iter()
+            .all(|e| app.world().get_entity(*e).is_err())
+    );
+    assert!(!app.world().get::<Camera>(preview_camera).unwrap().is_active);
+    // Select a different actual GLB after filtering removed the first preview.
+    let hut = app
+        .world()
+        .resource::<scenery_library::Library>()
+        .assets
+        .values()
+        .position(|a| a.entry.name.to_lowercase().contains("hut"))
+        .unwrap();
+    app.world_mut().resource_mut::<Session>().assets.selected = Some(hut);
+    let start = Instant::now();
+    while start.elapsed() < Duration::from_secs(4) {
+        app.update();
+        std::thread::sleep(Duration::from_millis(16));
+    }
+    assert!(app.world().get::<Camera>(preview_camera).unwrap().is_active);
     // The bottom-dock dropdown uses native popover placement and stays on screen.
     let trigger = app
         .world_mut()
@@ -385,6 +434,25 @@ fn actual_scenery_browser_renders_search_tiles_and_resizable_dock() {
         assert!(start.elapsed() < Duration::from_secs(30));
         std::thread::sleep(Duration::from_millis(16));
     }
+    // Hiding the browser releases its instantiated model and stops the camera.
+    let root = app
+        .world()
+        .resource::<asset_preview::Preview>()
+        .root
+        .unwrap()
+        .1;
+    app.world_mut().resource_mut::<Session>().ui.assets_open = false;
+    for _ in 0..5 {
+        app.update();
+    }
+    assert!(!app.world().get::<Camera>(preview_camera).unwrap().is_active);
+    assert!(app.world().get_entity(root).is_err());
+    assert!(
+        app.world()
+            .resource::<asset_preview::Preview>()
+            .root
+            .is_none()
+    );
     assert_eq!(app.world().resource::<Session>().editor.zone(), &original);
     println!("asset_tiles={count} filtered_tiles={shown} source_unchanged=true os_windows=0");
 }

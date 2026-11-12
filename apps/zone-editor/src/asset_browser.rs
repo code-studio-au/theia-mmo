@@ -49,7 +49,11 @@ fn control(control: workspace::Control, title: &str) -> impl Bundle {
         children![(Pickable::IGNORE, theme::label(title, 12., theme::BODY))],
     )
 }
-fn setup(mut commands: Commands, library: Res<scenery_library::Library>) {
+fn setup(
+    mut commands: Commands,
+    library: Res<scenery_library::Library>,
+    preview: Res<asset_preview::Preview>,
+) {
     let categories = categories(&library);
     commands
         .spawn((
@@ -119,70 +123,81 @@ fn setup(mut commands: Commands, library: Res<scenery_library::Library>) {
                 min_height: px(0),
                 flex_grow: 1.,
                 position_type: PositionType::Relative,
-                flex_direction: FlexDirection::Column,
+                flex_direction: FlexDirection::Row,
                 ..default()
             })
             .with_children(|body| {
-                scrolling::pane(body, 10., scrolling::Pane::Browser, |body| {
-                    body.spawn(Node {
-                        flex_wrap: FlexWrap::Wrap,
-                        column_gap: px(8),
-                        row_gap: px(8),
-                        width: percent(100),
-                        ..default()
-                    })
-                    .with_children(|grid| {
-                        for (index, asset) in library.assets.values().enumerate() {
-                            grid.spawn((
-                                Tile(index),
-                                Node {
-                                    width: px(156),
-                                    ..default()
-                                },
-                            ))
-                            .with_children(|tile| {
-                                tile.spawn((
-                                    workspace::Control::AssetSelect(index),
-                                    Button,
-                                    Hovered::default(),
+                body.spawn(Node {
+                    min_width: px(0),
+                    min_height: px(0),
+                    flex_grow: 1.,
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                })
+                .with_children(|body| {
+                    scrolling::pane(body, 10., scrolling::Pane::Browser, |body| {
+                        body.spawn(Node {
+                            flex_wrap: FlexWrap::Wrap,
+                            column_gap: px(8),
+                            row_gap: px(8),
+                            width: percent(100),
+                            ..default()
+                        })
+                        .with_children(|grid| {
+                            for (index, asset) in library.assets.values().enumerate() {
+                                grid.spawn((
+                                    Tile(index),
                                     Node {
-                                        width: percent(100),
-                                        min_height: px(100),
-                                        padding: UiRect::all(px(8)),
-                                        row_gap: px(6),
-                                        flex_direction: FlexDirection::Column,
+                                        width: px(156),
                                         ..default()
                                     },
-                                    BackgroundColor(theme::Variant::Default.background(false)),
                                 ))
-                                .with_children(|card| {
-                                    card.spawn((
-                                        Pickable::IGNORE,
-                                        theme::label(&asset.entry.name, 13., theme::BODY),
-                                    ));
-                                    card.spawn((
-                                        Pickable::IGNORE,
-                                        theme::Secondary,
-                                        theme::label(&asset.entry.category, 11., theme::MUTED),
-                                    ));
-                                    card.spawn((
-                                        Pickable::IGNORE,
-                                        theme::Secondary,
-                                        theme::label(
-                                            if asset.collision.is_some() {
-                                                "Solid scenery"
-                                            } else {
-                                                "Decoration"
-                                            },
-                                            11.,
-                                            theme::MUTED,
-                                        ),
-                                    ));
+                                .with_children(|tile| {
+                                    tile.spawn((
+                                        workspace::Control::AssetSelect(index),
+                                        Button,
+                                        Hovered::default(),
+                                        Node {
+                                            width: percent(100),
+                                            min_height: px(100),
+                                            padding: UiRect::all(px(8)),
+                                            row_gap: px(6),
+                                            flex_direction: FlexDirection::Column,
+                                            ..default()
+                                        },
+                                        BackgroundColor(theme::Variant::Default.background(false)),
+                                    ))
+                                    .with_children(|card| {
+                                        card.spawn((
+                                            Pickable::IGNORE,
+                                            theme::label(&asset.entry.name, 13., theme::BODY),
+                                        ));
+                                        card.spawn((
+                                            Pickable::IGNORE,
+                                            theme::Secondary,
+                                            theme::label(&asset.entry.category, 11., theme::MUTED),
+                                        ));
+                                        card.spawn((
+                                            Pickable::IGNORE,
+                                            theme::Secondary,
+                                            theme::label(
+                                                if asset.collision.is_some() {
+                                                    "Solid scenery"
+                                                } else {
+                                                    "Decoration"
+                                                },
+                                                11.,
+                                                theme::MUTED,
+                                            ),
+                                        ));
+                                    });
                                 });
-                            });
-                        }
+                            }
+                        });
                     });
                 });
+                asset_preview::panel(body, preview.camera);
             });
             root.spawn(Node {
                 min_height: px(40),
@@ -284,7 +299,8 @@ fn sync(
     }
 }
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Startup, setup)
+    app.add_plugins(asset_preview::plugin)
+        .add_systems(Startup, setup.after(asset_preview::setup))
         .add_zone_systems(
             sync.before(panels::resize)
                 .before(workspace::sync)
