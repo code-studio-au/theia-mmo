@@ -269,8 +269,10 @@ pub fn tick(world: &mut World) {
         return;
     };
     let owner = procedural::owner(global).unwrap();
+    let authored = world.contains_resource::<crate::authored_scene::Scene>();
     let desired: BTreeMap<_, _> = procedural::neighbours(owner, procedural::VISUAL_RADIUS)
         .into_iter()
+        .filter(|_| !authored)
         .map(|id| {
             let dist = (id.x - owner.x).abs().max((id.z - owner.z).abs());
             (id, if dist <= 2 { 32 } else { 8 })
@@ -446,9 +448,13 @@ pub fn tick(world: &mut World) {
             p.ids
                 .iter()
                 .filter(|id| {
-                    current.get(id) == Some(&32)
-                        && world.resource::<Graybox>().prepared_visuals.contains(id)
-                        && world.resource::<Graybox>().terrain_pipeline_clear_frames >= 3
+                    if authored {
+                        world.resource::<crate::authored_scene::Scene>().ready()
+                    } else {
+                        current.get(id) == Some(&32)
+                            && world.resource::<Graybox>().prepared_visuals.contains(id)
+                            && world.resource::<Graybox>().terrain_pipeline_clear_frames >= 3
+                    }
                 })
                 .copied()
                 .collect()
@@ -594,6 +600,9 @@ fn report(
     gray.last_report = Instant::now();
 }
 pub fn install(app: &mut App, source: procedural::Source) {
+    if let procedural::Source::Authored(store) = &source {
+        crate::authored_scene::install(app, store.clone());
+    }
     crate::minimap::install(app);
     app.insert_resource(Graybox::new(source))
         .add_systems(Startup, setup)

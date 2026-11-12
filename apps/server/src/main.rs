@@ -210,6 +210,8 @@ async fn main() -> Result<()> {
                 targeted=true;
             }
             "--dev-tour" => {dev_tour=true;}
+            "--authored-world" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true;
+                terrain_source=theia_network::procedural::Source::Authored(std::sync::Arc::new(theia_network::authored_world::Store::open(&PathBuf::from(args.next().ok_or("Missing authored world directory")?))?)); }
             "--saved-terrain" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true;
                 terrain_source=theia_network::procedural::Source::Saved(std::sync::Arc::new(theia_network::saved_terrain::Store::open(&PathBuf::from(args.next().ok_or("Missing saved terrain directory")?))?)); }
             "--graybox-world" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true; }

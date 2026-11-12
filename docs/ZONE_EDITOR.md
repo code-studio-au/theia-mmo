@@ -4117,3 +4117,31 @@ the same terrain/scenery recipe centred near [8000, 0, 8000], within the current
 quest-runtime domain. They are logical source data only; Synty payloads remain
 in ignored build directories. Next: standard GLB presentation with readiness
 gates, secure client/server launch, then validated NPC/quest authoring.
+
+## Bounded authored client presentation — 12 November 2026
+
+Client/server and `tools/play.py` now accept an explicit `--authored-world` export.
+It uses the existing secure predicted movement path, with immutable Bevy GLB
+presentation and origin-aware static collision. The normal generated/saved modes
+are retained. For a manual session when display use is available:
+
+```sh
+python3 tools/play.py --authored-world build/starter-zone-world-v1 --classic
+```
+
+The starter export is built from `starter-zone.base.json` plus its commands and
+the staged Synty library. The launcher does not silently select saved terrain for
+this mode. It currently rejects full gameplay bundles, account persistence and
+creature patrols requiring saved-terrain navigation. This is a bounded walking/
+dialogue preparation mode, not completed starter-zone gameplay. Native interactive
+and connected acceptance remain separate. The minimap's existing height-grid
+raster is not yet adapted to this scene; quest-area data support is unchanged.
+
+An opt-in actual-asset test renders offscreen (no desktop/input access), verifies
+13 mesh instances, readiness withdrawal/restoration when a mesh is removed, and
+root placement after a 128 m frame change. It ran on RX 7900 XTX / RADV NAVI31,
+Mesa 26.2.6 Vulkan. `build/authored-gpu-test.log` and
+`build/starter-zone-offscreen-v3.png` record the result. This test disables pipelined
+render scheduling and does not exercise an interactive client or network session.
+An earlier offscreen harness used unsupported default tonemapping; the final run
+uses the runtime's Reinhard tonemapping and has no logged rendering errors.

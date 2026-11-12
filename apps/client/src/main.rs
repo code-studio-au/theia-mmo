@@ -1,5 +1,6 @@
 //! Bevy presentation: offline sandbox or server-owned multiplayer walking.
 mod asset_preview;
+mod authored_scene;
 mod camera;
 mod capture_ready;
 mod chunk_scene;
@@ -114,20 +115,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let authored = if let Some(i) = args.iter().position(|a| a == "--authored-world") {
+        args.remove(i);
+        if i >= args.len() {
+            return Err("Missing authored world directory".into());
+        }
+        Some(std::sync::Arc::new(
+            theia_network::authored_world::Store::open(std::path::Path::new(&args.remove(i)))
+                .map_err(|e| e.to_string())?,
+        ))
+    } else {
+        None
+    };
     let graybox_flag = if let Some(i) = args.iter().position(|a| a == "--graybox-world") {
         args.remove(i);
         true
     } else {
         false
     };
-    if graybox_flag && saved.is_some() {
-        return Err("Choose generated or saved terrain".into());
+    if usize::from(graybox_flag) + usize::from(saved.is_some()) + usize::from(authored.is_some())
+        > 1
+    {
+        return Err("Choose generated, saved or authored terrain".into());
     }
-    let graybox = graybox_flag || saved.is_some();
-    let source = saved.map_or(
-        theia_network::procedural::Source::Procedural,
-        theia_network::procedural::Source::Saved,
-    );
+    let graybox = graybox_flag || saved.is_some() || authored.is_some();
+    let source = if let Some(store) = authored {
+        theia_network::procedural::Source::Authored(store)
+    } else {
+        saved.map_or(
+            theia_network::procedural::Source::Procedural,
+            theia_network::procedural::Source::Saved,
+        )
+    };
     let prediction = if let Some(i) = args.iter().position(|a| a == "--prediction") {
         args.remove(i);
         true
@@ -1308,6 +1327,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_plugins(physics::WorldPhysicsPlugin)
         .add_plugins(capture_ready::CaptureReadyPlugin)
         .add_plugins(graybox::ReadinessPlugin)
+        .add_plugins(authored_scene::ReadinessPlugin)
         .add_plugins((
             triplanar::TriplanarPlugin,
             runtime_materials::RuntimeMaterialsPlugin,

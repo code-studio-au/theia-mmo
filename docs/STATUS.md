@@ -1,3 +1,19 @@
+P5-17 / P3-16 authored client presentation, 12 November 2026:
+client/server accept explicit `--authored-world` through the existing prediction
+path. The client loads the immutable standard GLB with Bevy world assets, updates
+its root from the global frame and gates chunk readiness on scene instantiation,
+CPU/GPU meshes, prepared materials and observed PBR pipelines. Removing a mesh
+retracts readiness; restoration and a 128 m frame change pass the actual offscreen
+GPU test. The exported eight-placement Synty starter scene instantiates 13 meshes
+on AMD RX 7900 XTX / RADV NAVI31, Mesa 26.2.6, Vulkan, without a window or OS input.
+Evidence: `build/authored-gpu-test.log`, `build/starter-zone-offscreen-v3.png`.
+All 241 ordinary client tests pass (two explicit opt-ins ignored); three launcher
+selection/rejection checks, formatting, strict workspace Clippy and client/server
+builds pass. Client configuration admission passes without starting a renderer or
+connection. No connected authored gameplay is claimed yet.
+The launcher keeps gameplay-bundle navigation/account paths restricted pending
+qualification; authored minimap terrain raster support also remains next.
+
 P5-17 / P3-16 authored prediction foundation, 12 November 2026:
 editor exports now include a hash-bound `authored.world.json` companion carrying
 the original f64 origin. A bounded immutable network source preserves exported

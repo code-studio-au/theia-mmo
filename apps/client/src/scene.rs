@@ -24,7 +24,10 @@ pub fn setup(
         Option<Res<crate::terrain_scene::Config>>,
         Option<Res<crate::graybox::Graybox>>,
     ),
-    chunks: Option<Res<crate::chunk_world::Config>>,
+    (chunks, authored): (
+        Option<Res<crate::chunk_world::Config>>,
+        Option<Res<crate::authored_scene::Scene>>,
+    ),
 ) {
     if terrain.is_some() || chunks.is_some() {
         commands.insert_resource(GlobalAmbientLight {
@@ -105,7 +108,7 @@ pub fn setup(
     ));
     commands.spawn((
         Camera3d::default(),
-        if references.is_some() || terrain.is_some() || chunks.is_some() {
+        if references.is_some() || terrain.is_some() || chunks.is_some() || authored.is_some() {
             Tonemapping::Reinhard
         } else {
             Tonemapping::None
