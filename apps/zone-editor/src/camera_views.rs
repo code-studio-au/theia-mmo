@@ -2,6 +2,17 @@
 use super::*;
 use bevy::camera::ScalingMode;
 
+/// Centre the actual authored patch, including its height, in the local frame.
+pub(super) fn terrain_target(zone: &Zone) -> Option<Vec3> {
+    let patch = zone.terrain.as_ref()?;
+    let start = patch.origin().ok()?;
+    let half = patch.extent_metres() / 2.;
+    let centre = zone
+        .surface_position([start[0] + half, start[2] + half])
+        .ok()?;
+    Some(Vec3::from_array(zone.local(centre).ok()?))
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(super) enum Preset {
     #[default]
@@ -106,6 +117,37 @@ pub(super) fn pan(view: &mut View, delta: Vec2, viewport_height: f32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn terrain_start_view_uses_full_span_and_surface_height_at_local_and_far_origins() {
+        for xz in [8192., 128_000_000_000., -128_000_000_000.] {
+            for span in 1..=4 {
+                let mut patch = theia_zone::terrain::HeightPatch::flat([
+                    (xz / 128.) as i64,
+                    (-xz / 128.) as i64,
+                ]);
+                patch.span_chunks = span;
+                patch.heights = vec![0.; patch.axis() * patch.axis()];
+                let centre = patch.axis() / 2;
+                let index = centre * patch.axis() + centre;
+                patch.heights[index] = 7.;
+                let zone = Zone {
+                    schema: 11,
+                    origin: [xz, 32., -xz],
+                    spawn: [xz, 32.1, -xz],
+                    terrain: Some(patch),
+                    ..default()
+                };
+                zone.validate().unwrap();
+                let before = zone.clone();
+                assert_eq!(
+                    terrain_target(&zone),
+                    Some(Vec3::new(64. * f32::from(span), 7., 64. * f32::from(span)))
+                );
+                assert_eq!(zone, before);
+            }
+        }
+        assert_eq!(terrain_target(&Zone::default()), None);
+    }
     fn view() -> View {
         View {
             target: Vec3::new(64., 20., 64.),

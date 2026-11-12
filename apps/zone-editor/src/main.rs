@@ -641,14 +641,7 @@ fn run() -> Result<(), String> {
         println!("{}", cli::summary(&editor));
         return Ok(());
     }
-    let initial_target = editor.zone().terrain.as_ref().map(|patch| {
-        let start = patch.origin().expect("Validated terrain");
-        let local = editor
-            .zone()
-            .local([start[0], editor.zone().origin[1], start[2]])
-            .expect("Validated terrain frame");
-        Vec3::new(local[0] + 64., 0., local[2] + 64.)
-    });
+    let initial_target = camera_views::terrain_target(editor.zone());
     let path = options.editor_path();
     let saved_zone = Zone::load(&path).ok();
     let mut app = App::new();
@@ -1229,14 +1222,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::TerrainToggle => {
             let creating = session.editor.zone().terrain.is_none();
             terrain::toggle(session);
-            if creating && let Some(patch) = &session.editor.zone().terrain {
-                let start = patch.origin().unwrap();
-                let offset = session
-                    .editor
-                    .zone()
-                    .local([start[0], session.editor.zone().origin[1], start[2]])
-                    .unwrap();
-                view.target = Vec3::new(offset[0] + 64., 0., offset[2] + 64.);
+            if creating && let Some(target) = camera_views::terrain_target(session.editor.zone()) {
+                view.target = target;
                 view.distance = 120.;
             }
         }

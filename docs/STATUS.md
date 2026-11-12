@@ -1,3 +1,16 @@
+P5-17 terrain startup framing, 12 November 2026:
+Initial view and terrain creation now target the actual patch midpoint and sampled
+surface height instead of a fixed 64 m offset. Five camera tests pass, including
+all supported spans and positive/negative distant origins without authoring edits.
+Formatting, denied-warning workspace/all-target Clippy and client/server/editor
+builds pass. A settled owned native Linux capture on RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 Vulkan shows the village and foliage at the correct centre, preserves
+the exact source file and reports zero GPU diagnostics. The test editor is closed.
+Evidence: build/terrain-start-view-{tests,build,clippy}.log and
+build/terrain-start-view-settled.{json,log,png}. No Windows execution claim.
+Next: model previews in the asset browser; proposed network-test players remain
+unimplemented. Continue local work across commits.
+
 P5-17 scenery browser, 12 November 2026:
 Assets / View → Asset browser replaces the flat Scenery menu with a collapsible,
 height-resizable lower dock, category dropdown, case-insensitive multi-word search,
