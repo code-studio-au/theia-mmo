@@ -1,3 +1,22 @@
+P5-17 / P1-06 zone-to-network-test export, 12 November 2026:
+The editor CLI --export DIR --network-test publishes a fresh world/scenario and
+bundled controller snapshot from enabled schema-12 Test Players. Resolve the
+curated test.walk-turn controller, retain unique client slots and per-connection
+conditions, verify exact world identity and real collision/landing support, and
+remove owned partial output on failure. Disabled players remain in the authoring
+snapshot but do not launch. Quest areas retain the required gameplay template;
+the movement launcher does not activate its quest/account/combat profiles.
+All 210 ordinary editor tests pass (seven opt-in skips); focused final export
+checks, fmt, strict workspace/all-target Clippy and client/server/editor builds
+pass. Actual full Synty valley export preserves 65 scenery models, its quest area
+and contact template. Its generated scenario drives two native scripted clients,
+including 80 ms each-way delay + 0..20 ms jitter on client 2. Both finish; zero
+rejected inputs, recoveries, relay overflow or GPU diagnostics. Owned session
+closes and tickets are removed. Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6;
+no Windows execution claim. Evidence: build/network-test-export-* and
+build/network-export-native-v1/. Next: editor pawn selection/inspector/placement
+and managed Start/Stop. CLI export is connected; editor buttons remain pending.
+
 P5-17 / P1-06 saved test-player definitions, 12 November 2026:
 Zone schema 12 stores at most two Test Players, separate from NPC markers and
 production player spawn. Each has an exact global feet position, shared authoring

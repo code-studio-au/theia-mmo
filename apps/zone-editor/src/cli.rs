@@ -27,6 +27,7 @@ pub struct Options {
     pub report: Option<PathBuf>,
     pub mailbox: Option<PathBuf>,
     pub export: Option<PathBuf>,
+    pub network_test: bool,
     pub export_quest_areas: Option<PathBuf>,
     pub quest_catalog: Option<PathBuf>,
     pub gameplay_template: Option<PathBuf>,
@@ -120,6 +121,7 @@ impl Options {
                             .into(),
                     );
                 }
+                "--network-test" => result.network_test = true,
                 "--export" => {
                     result.export = Some(
                         args.next()
@@ -145,12 +147,15 @@ impl Options {
                 }
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
                 _ => return Err(format!("Unknown argument: {arg}")),
             }
+        }
+        if result.network_test && (result.export.is_none() || result.output.is_some()) {
+            return Err("--network-test requires --export and excludes --output".into());
         }
         if result.check_scenery
             && (result.scenery_library.is_none()
@@ -259,7 +264,7 @@ impl Options {
 }
 
 pub(super) fn summary(editor: &Editor) -> serde_json::Value {
-    serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"markers":editor.zone().markers.len(),"quest_areas":editor.zone().quest_areas.len(),"scenery":editor.zone().scenery.len(),"plants":editor.zone().plants.len(),"history":editor.history(),"valid":true})
+    serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"markers":editor.zone().markers.len(),"quest_areas":editor.zone().quest_areas.len(),"scenery":editor.zone().scenery.len(),"test_players":editor.zone().test_players.len(),"plants":editor.zone().plants.len(),"history":editor.history(),"valid":true})
 }
 
 #[cfg(test)]

@@ -20,6 +20,7 @@ mod headless_ui;
 mod markers;
 mod menus;
 mod naming;
+mod network_test_export;
 mod outliner;
 mod panels;
 mod particle_anchors;
@@ -624,14 +625,25 @@ fn run() -> Result<(), String> {
         return Ok(());
     }
     if let Some(path) = &options.export {
-        let report = export::publish_with_assets(
-            editor.zone(),
-            path,
-            options.content_id.as_deref().expect("Checked export ID"),
-            options.revision.expect("Checked export revision"),
-            options.gameplay_template.as_deref(),
-            &scenery_library,
-        )?;
+        let report = if options.network_test {
+            network_test_export::publish(
+                editor.zone(),
+                path,
+                options.content_id.as_deref().expect("Checked export ID"),
+                options.revision.expect("Checked export revision"),
+                options.gameplay_template.as_deref(),
+                &scenery_library,
+            )?
+        } else {
+            export::publish_with_assets(
+                editor.zone(),
+                path,
+                options.content_id.as_deref().expect("Checked export ID"),
+                options.revision.expect("Checked export revision"),
+                options.gameplay_template.as_deref(),
+                &scenery_library,
+            )?
+        };
         println!(
             "{}",
             serde_json::to_string(&report).map_err(|e| e.to_string())?

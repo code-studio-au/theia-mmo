@@ -1,3 +1,38 @@
+P5-17 / P1-06 network-test export bridge, 12 November 2026:
+Use `--export NEW_DIRECTORY --network-test --content-id ID --revision N` to turn
+enabled saved Test Players into a managed-launcher scenario. Supply the usual
+`--scenery-library` and, for zones containing quest areas, `--gameplay-template`.
+The new directory contains `world/`, `scenario.json`, assigned controller copies
+under `controllers/`, and `network-test.json`. It refuses an existing output,
+missing enabled pawns, unknown enabled controller IDs, unsupported network worlds
+and blocked/unsupported spawns; owned partial output is removed. The source zone
+is unchanged. Currently `test.walk-turn` resolves to the bundled movement example;
+null means manual input. Disabled pawns retain their setup but do not launch.
+
+For the current local test-pawn copy (the user's original village is preserved):
+
+```sh
+target/debug/theia-zone-editor \
+  --zone build/starter-valley-test-pawns-v1.zone.json \
+  --scenery-library build/starter-valley-scenery-v2/catalog.json \
+  --gameplay-template build/starter-valley-contact-world-v3/gameplay/gameplay.manifest.json \
+  --export build/my-new-network-test --network-test \
+  --content-id theia.starter.valley.network-test --revision 1
+python3 tools/network_playtest.py \
+  --scenario build/my-new-network-test/scenario.json \
+  --world build/my-new-network-test/world \
+  --players build/classic-directional-client-qualified-v1-20261103/art/player \
+  --output build/my-new-network-session
+```
+
+World export retains authored gameplay data, but this launcher currently exercises
+movement with local development tickets; it does not activate account/quest/combat
+profiles. Per-pawn script paths are relative to the exported scenario, so later
+edits to the repository example cannot silently change this snapshot. Runtime
+preflight and authoritative spawn admission still run on every launch. Native
+Linux two-client scripted movement, impairment and cleanup pass; see STATUS.md.
+The in-editor pawn UI and managed Start/Stop controls remain the next slice.
+
 P5-17 / P1-06 test-player authoring foundation, 12 November 2026:
 Zone schema 12 adds optional `test_players` (at most two). Entries contain `id`,
 `name`, `client_id` (unique 1/2), `enabled` (defaults true), global f64 feet
