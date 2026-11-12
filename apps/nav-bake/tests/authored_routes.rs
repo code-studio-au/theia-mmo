@@ -111,3 +111,71 @@ fn actual_authored_patrol_completes_a_loop_with_authoritative_static_collision()
         serde_json::json!({"authored_patrol":snapshot,"scope":"900 authoritative fixed steps with actual Synty static collision; no network, rendering, quest or persistence acceptance"})
     );
 }
+
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD dressed 512m valley near 8192,8192"]
+fn actual_dressed_valley_hut_and_grove_tiles_bake_without_dropping_collision() {
+    let source = std::env::var_os("THEIA_AUTHORED_WORLD").expect("Dressed valley");
+    let store = authored_world::Store::open(std::path::Path::new(&source)).unwrap();
+    for id in [
+        theia_core::coordinates::ChunkId { x: 63, z: 64 },
+        theia_core::coordinates::ChunkId { x: 64, z: 63 },
+    ] {
+        let patch = store.patch(id).unwrap();
+        let geometry = theia_nav_bake::authored::geometry(&patch.scene.colliders).unwrap();
+        println!(
+            "tile={id:?} vertices={} triangles={}",
+            geometry.positions.len(),
+            geometry.triangles.len()
+        );
+        let tile = theia_nav_bake::bake(
+            id,
+            store.identity(),
+            navigation::Agent::development(),
+            geometry,
+        )
+        .unwrap();
+        tile.validate().unwrap();
+        println!("tile={id:?} polygons={}", tile.polygons.len());
+    }
+}
+
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD valley and THEIA_AUTHORED_NAV west-grove package"]
+fn actual_valley_patrol_completes_its_route_on_authoritative_scenery_collision() {
+    use std::sync::Arc;
+    use theia_network::{
+        procedural,
+        simulation::{World, creatures},
+    };
+    let world_path = std::env::var_os("THEIA_AUTHORED_WORLD").unwrap();
+    let nav_path = std::env::var_os("THEIA_AUTHORED_NAV").unwrap();
+    let store = Arc::new(authored_world::Store::open(std::path::Path::new(&world_path)).unwrap());
+    let spawn = store.spawn(0).unwrap().metres();
+    let source = procedural::Source::Authored(store);
+    let nav = navigation::Store::open(std::path::Path::new(&nav_path), source.identity()).unwrap();
+    let profile = creatures::Profile::from_json(
+        br#"{
+        "schema":1,"id":"theia.starter.west-grove-wolf",
+        "route":"theia.starter.west-grove-patrol",
+        "speed_metres_per_second":2.0,"wait_ms":1000
+    }"#,
+    )
+    .unwrap();
+    let prepared = creatures::Prepared::load(profile, &nav, &source).unwrap();
+    let mut world = World::with_terrain_source([spawn[0], spawn[2]], 1., source).unwrap();
+    world.enable_prediction().unwrap();
+    world.enable_classic().unwrap();
+    world.enable_patrol(prepared).unwrap();
+    for _ in 0..1200 {
+        world.step();
+    }
+    let snapshot = world.patrol_snapshot().unwrap();
+    assert_eq!(snapshot.blocked, 0);
+    assert!(snapshot.loops >= 1 && snapshot.travelled_metres > 40.);
+    println!(
+        "{}",
+        serde_json::json!({"valley_patrol":snapshot,
+        "scope":"1200 authoritative fixed steps; no network, art, combat, quest or persistence acceptance"})
+    );
+}

@@ -73,8 +73,10 @@ impl Builder {
                 });
             }
             self.geometry.triangles.push(indices);
-            if self.geometry.positions.len() > 16_384 || self.geometry.triangles.len() > 32_768 {
-                return Err("Authored tile exceeds the existing navigation geometry budget".into());
+            if self.geometry.positions.len() > crate::MAX_INPUT_VERTICES
+                || self.geometry.triangles.len() > crate::MAX_INPUT_TRIANGLES
+            {
+                return Err("Authored tile exceeds the navigation geometry budget".into());
             }
         }
         Ok(())

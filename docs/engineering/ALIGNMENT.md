@@ -1,3 +1,10 @@
+P3-07 / P4-03, 12 November 2026: actual dressed-valley collision requires
+Recast contour hole joining before the pinned Rust backend triangulator. A bounded,
+licensed upstream adaptation preserves obstacle holes and existing runtime limits.
+The nine-tile bake and one authoritative patrol now pass; connected wolf/quest
+integration remains separate. See [navigation adapter](../../apps/nav-bake/README.md)
+and [current evidence](../STATUS.md). No backend replacement or MMO-scale claim.
+
 P5-17 gradient point and particle-delete investigation, 11 November 2026:
 a deliberate gradient-point click can open its nested color picker, while drag
 and post-drag clicks do not; a new press clears a stale drag marker. Headless

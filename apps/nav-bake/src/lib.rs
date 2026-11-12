@@ -2,6 +2,7 @@
 //! Pipeline uses the published Rerecast 0.5 API, reviewed against its C++ comparison
 //! test. World-facing geometry remains Y-up; Landmass's internal frame is Z-up.
 pub mod authored;
+mod contour_holes;
 
 use nav_glam::{UVec3, Vec3A};
 use rerecast::{AreaType, ConfigBuilder, DetailNavmesh, HeightfieldBuilder, TriMesh};
@@ -11,13 +12,18 @@ use theia_network::{
     navigation::{Agent, Tile},
     procedural::Geometry,
 };
+// The dressed valley needs more source triangles than the terrain-only profile.
+// These offline input caps do not change the runtime polygon/tile budgets.
+pub(crate) const MAX_INPUT_VERTICES: usize = 32_768;
+pub(crate) const MAX_INPUT_TRIANGLES: usize = 65_536;
+
 pub fn bake(id: ChunkId, source: [u8; 32], agent: Agent, geometry: Geometry) -> Result<Tile> {
     if !agent.valid()
         || !theia_network::procedural::contains(id)
         || geometry.positions.is_empty()
-        || geometry.positions.len() > 16_384
+        || geometry.positions.len() > MAX_INPUT_VERTICES
         || geometry.triangles.is_empty()
-        || geometry.triangles.len() > 32_768
+        || geometry.triangles.len() > MAX_INPUT_TRIANGLES
     {
         return Err("Navigation bake input exceeds supported profile/geometry bounds".into());
     }
@@ -80,13 +86,13 @@ pub fn bake(id: ChunkId, source: [u8; 32], agent: Agent, geometry: Geometry) -> 
         config.min_region_area,
         config.merge_region_area,
     )?;
-    let mesh = compact
-        .build_contours(
-            config.max_simplification_error,
-            config.max_edge_len,
-            config.contour_flags,
-        )
-        .into_polygon_mesh(config.max_vertices_per_polygon)?;
+    let mut contours = compact.build_contours(
+        config.max_simplification_error,
+        config.max_edge_len,
+        config.contour_flags,
+    );
+    contour_holes::join(&mut contours)?;
+    let mesh = contours.into_polygon_mesh(config.max_vertices_per_polygon)?;
     let detail = DetailNavmesh::new(
         &mesh,
         &compact,

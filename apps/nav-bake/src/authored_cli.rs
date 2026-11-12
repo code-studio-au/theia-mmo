@@ -40,7 +40,15 @@ pub(super) fn bake(source: &Path, output: &Path, route: &Path) -> Result<()> {
         let patch = store.patch(id)?;
         let geometry = theia_nav_bake::authored::geometry(&patch.scene.colliders)?;
         inputs.push(serde_json::json!({"tile":[id.x,id.z],"vertices":geometry.positions.len(),"triangles":geometry.triangles.len()}));
-        let tile = theia_nav_bake::bake(id, store.identity(), agent, geometry)?;
+        eprintln!(
+            "authored_navigation_input x={} z={} vertices={} triangles={}",
+            id.x,
+            id.z,
+            geometry.positions.len(),
+            geometry.triangles.len()
+        );
+        let tile = theia_nav_bake::bake(id, store.identity(), agent, geometry)
+            .map_err(|error| format!("Authored navigation tile [{},{}]: {error}", id.x, id.z))?;
         eprintln!(
             "authored_navigation_tile x={} z={} polygons={}",
             id.x,

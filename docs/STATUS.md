@@ -1,3 +1,24 @@
+P3-07 / P4-03 dressed-valley navigation repair, 12 November 2026:
+The missing contour hole-joining step in Rerecast 0.5 caused InvalidContour near
+scenery. A bounded adapter of Recast 1.6.0 now joins holes to their region outline
+before the unchanged backend triangulator; it never discards obstacle boundaries.
+Three new synthetic tests verify excluded area, rejection and work limits. Eight
+ordinary baker checks, formatting and denied-warning workspace/all-target Clippy
+pass. Both dense actual hut/grove tiles bake; the full nine-tile publication takes
+33.2 s and verifies 231 capsule-clearance samples at 0.2 m spacing. A headless
+1,200-step authoritative patrol completes one loop, travels 70.01 m and has zero
+blocked steps. Offline input caps increase to 32,768 vertices / 65,536 triangles
+because one tile measures 24,272 / 45,146; runtime tile/polygon limits are unchanged.
+Artifact: build/starter-valley-navigation-v1; logs: starter-valley-navigation-v1.log,
+starter-valley-authoritative-patrol.log, starter-valley-navigation-{tests,clippy}.log.
+Reproduction: apps/nav-bake/README.md and content/navigation/starter-valley-west-patrol.json.
+This covers the village/groves, not the whole 512 m enclosure. No new renderer,
+desktop, multiplayer NPC, combat, quest or Windows qualification. Earlier tuning
+and border diagnostics failed and were removed; the isolated contour diagnostic
+stalled and was terminated. The production bake retains all admitted collision.
+Next: expose an actual authored-world wolf patrol in the normal connected client,
+then expand bounded NPC/quest/pickup authoring and runtime beyond a single contact.
+
 P5-17 / P3-15 authored player spawn and valley walking launch, 12 November 2026:
 server admission now uses the exported, validated full XYZ player spawn. Ground
 and rooftop slots retain their support layer; restored admissions keep their
