@@ -4,6 +4,7 @@ pub mod combat;
 pub mod creatures;
 pub mod dialogue;
 mod dodging;
+mod population;
 pub mod progression;
 pub mod quest_journal;
 pub mod quests;
@@ -36,6 +37,7 @@ pub struct World {
     combat: Option<combat::Authority>,
     patrol: Option<creatures::Patrol>,
     patrol_identity: Option<[u8; 32]>,
+    population: Option<crate::navigation::spawn_preparation::Prepared>,
     quest_journal: Option<std::sync::Arc<crate::quest_journal::Profile>>,
     quest: Option<std::sync::Arc<crate::quest_wire::Profile>>,
     quest_lifecycle: Option<std::sync::Arc<crate::quest_lifecycle_wire::Profile>>,
@@ -99,6 +101,7 @@ impl Default for World {
             combat: None,
             patrol: None,
             patrol_identity: None,
+            population: None,
             quest_journal: None,
             quest: None,
             quest_lifecycle: None,
@@ -282,6 +285,9 @@ impl World {
             }
             positions.extend_from_slice(additional);
             positions.extend(respawns);
+            if let Some(population) = &self.population {
+                positions.extend_from_slice(population.points());
+            }
             if let Some(patrol) = &self.patrol {
                 positions.push(patrol.home());
             }
@@ -579,6 +585,7 @@ impl World {
             || !self.players.is_empty()
             || self.combat.is_some()
             || self.patrol_identity.is_some()
+            || self.population.is_some()
         {
             return false;
         }
@@ -735,6 +742,10 @@ impl World {
                 identity
             };
             let identity = self.patrol_identity.unwrap_or(identity);
+            let identity = self
+                .population
+                .as_ref()
+                .map_or(identity, |p| p.profile_identity(identity));
             let identity = self
                 .combat
                 .as_ref()
@@ -909,6 +920,7 @@ impl World {
         if self.tick != 0
             || !self.players.is_empty()
             || self.combat.is_some()
+            || self.population.is_some()
             || self.targets.len() >= crate::targeting::MAX_TARGETS
         {
             return Err(
@@ -936,6 +948,7 @@ impl World {
         if self.tick != 0
             || !self.players.is_empty()
             || self.combat.is_some()
+            || self.population.is_some()
             || self.targets.len() >= crate::targeting::MAX_TARGETS
         {
             return Err("Targets require inactive world and available target budget".into());

@@ -449,6 +449,7 @@ impl World {
             || !self.players.is_empty()
             || self.combat.is_some()
             || self.patrol_identity.is_some()
+            || self.population.is_some()
             || self.targets.len() >= crate::targeting::MAX_TARGETS
             || self.next_id == u64::MAX
             || (prepared.profile.aggro.is_some() && prepared.worker.is_none())

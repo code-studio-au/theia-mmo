@@ -1,3 +1,26 @@
+P3-07 / P4-03 bounded authoritative population admission, 13 November 2026:
+World now atomically consumes one complete prepared spawn pool before player or
+combat admission. Validate source identity, empty population/target state, current
+16-target protocol ceiling, checked body positions and fresh identity capacity
+before publishing any target or static patch. Retain prepared static collision and
+home demand across deaths; actors add no collision bodies. Placement identity binds
+request, source/navigation and exact checked points. Existing combat applies health
+and a shared respawn policy afterward; saved group/creature/model binding is not
+connected yet and normal editor world export still refuses population drafts.
+Actual valley World/Avian tests at 20/30/60 Hz enable Classic prediction and admit
+five collision-validated player restores. Five checked targets each take five
+unaltered 20-damage development casts from full 100 health, die, clear selections
+and respawn exactly 30 simulation seconds later with fresh IDs at the same checked
+positions. Reject stale IDs, duplicate admission, foreign source and a checked
+17-point pool; failed admission preserves identity and the next actor ID.
+This is headless authority evidence, not five network clients, production wolf AI,
+model/reward binding, group-specific lifecycle settings or native presentation.
+Ten existing combat and 13 creature-authority regressions, nine baker tests, fmt
+and strict workspace/all-target Clippy pass. Evidence:
+build/population-admission-{authority,combat-tests,creature-tests,baker-tests,clippy}.log.
+No mouse/display use. Next: actual secure replication/selection of the prepared
+population, then complete creature/profile and editor export binding.
+
 P3-07 / P4-03 shared spawn preparation, 13 November 2026:
 Move authored standing/route-clearance and bounded spawn checking from the baker
 binary into the shared network navigation library. The CLI uses that same path.

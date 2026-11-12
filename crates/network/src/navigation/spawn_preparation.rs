@@ -22,6 +22,7 @@ pub struct Prepared {
     navigation: [u8; 32],
     request: spawn_candidates::Request,
     points: Vec<GlobalPosition>,
+    patches: Vec<std::sync::Arc<crate::procedural::Patch>>,
 }
 impl Check {
     pub fn report(&self) -> &serde_json::Value {
@@ -35,6 +36,24 @@ impl Check {
     }
 }
 impl Prepared {
+    pub(crate) fn patches(&self) -> &[std::sync::Arc<crate::procedural::Patch>] {
+        &self.patches
+    }
+    /// Placement-specific identity layered over the ordinary target profile.
+    pub fn profile_identity(&self, base: [u8; 32]) -> [u8; 32] {
+        let mut bytes = b"theia-prepared-population-v1\0".to_vec();
+        bytes.extend(base);
+        bytes.extend(self.source);
+        bytes.extend(self.navigation);
+        bytes.extend(serde_json::to_vec(&self.request).expect("Validated finite request"));
+        for point in &self.points {
+            for value in point.metres() {
+                bytes.extend(value.to_le_bytes());
+            }
+        }
+        crate::terrain::sha256(&bytes)
+    }
+
     pub fn source_identity(&self) -> [u8; 32] {
         self.source
     }
@@ -172,6 +191,7 @@ pub fn check_authored(
             source: store.identity(),
             navigation: navigation.identity(),
             request: request.clone(),
+            patches: grounding.into_patches(),
             points: accepted
                 .into_iter()
                 .map(|p| GlobalPosition::new(p).expect("Checked grounded point"))

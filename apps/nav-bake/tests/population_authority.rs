@@ -1,0 +1,193 @@
+//! Actual authored collision/preparation and authoritative combat, without a renderer.
+use std::{path::PathBuf, sync::Arc};
+use theia_core::{content::ContentId, time::TickRate};
+use theia_network::{
+    authored_world,
+    navigation::{self, spawn_candidates::Request, spawn_preparation},
+    procedural,
+    simulation::{World, combat},
+    wire::{ChunkReady, VERSION},
+};
+const ABILITIES: &[u8] = include_bytes!("../../../content/gameplay/development-abilities.json");
+
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates() {
+    let world_path = PathBuf::from(std::env::var_os("THEIA_AUTHORED_WORLD").unwrap());
+    let nav_path = PathBuf::from(std::env::var_os("THEIA_AUTHORED_NAV").unwrap());
+    let request: Request = serde_json::from_slice(
+        &std::fs::read(std::env::var_os("THEIA_AUTHORED_SPAWNS").unwrap()).unwrap(),
+    )
+    .unwrap();
+    let store = Arc::new(authored_world::Store::open(&world_path).unwrap());
+    let navigation = navigation::Store::open(&nav_path, store.identity()).unwrap();
+    let prepare = |request: &Request| {
+        spawn_preparation::check_authored(&store, &navigation, request)
+            .unwrap()
+            .into_prepared()
+            .unwrap()
+    };
+    assert_eq!(
+        request.count, 5,
+        "This qualification uses five independent actors/targets"
+    );
+    let saved_spawn = store.spawn(0).unwrap().metres();
+    let spawn = [saved_spawn[0], saved_spawn[2]];
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let prepared = prepare(&request);
+        let feet = prepared.points().to_vec();
+        let expected_identity =
+            prepared.profile_identity(theia_network::targeting::profile_identity(store.identity()));
+        let mut world =
+            World::with_terrain_source(spawn, 1., procedural::Source::Authored(store.clone()))
+                .unwrap();
+        assert!(world.set_tick_rate(rate));
+        world.enable_prediction().unwrap();
+        world.enable_classic().unwrap();
+        let keys = world.enable_prepared_population(prepared).unwrap();
+        assert_eq!(keys.len(), 5);
+        assert_eq!(
+            world.identity(),
+            theia_network::classic::profile_identity(expected_identity)
+        );
+        assert!(!world.set_tick_rate(rate));
+        let identity = world.identity();
+        assert!(world.spawn_development_target(spawn).is_err());
+        assert!(world.enable_prepared_population(prepare(&request)).is_err());
+        assert_eq!(world.identity(), identity);
+        world
+            .enable_combat(ABILITIES, combat::DEVELOPMENT_HEALTH, 30_000)
+            .unwrap();
+        let mut actors = Vec::new();
+        for key in &keys {
+            let mut body = feet[0].metres();
+            body[1] += f64::from(theia_network::world::PAWN_Y);
+            let id = world
+                .join_restored(theia_core::coordinates::GlobalPosition::new(body).unwrap())
+                .unwrap();
+            let position = world.global_position(id).unwrap();
+            let chunks = world
+                .procedural()
+                .unwrap()
+                .patch(position)
+                .unwrap()
+                .ids
+                .iter()
+                .map(|c| [c.x, c.z])
+                .collect();
+            assert!(world.client_ready(
+                id,
+                &ChunkReady {
+                    version: VERSION,
+                    epoch: world.epoch(),
+                    sequence: 1,
+                    chunks
+                }
+            ));
+            assert!(world.select_target(id, Some(*key)));
+            actors.push(id);
+        }
+        let initial = world.combat_snapshot(actors[0]).unwrap();
+        assert_eq!(initial.targets.len(), 5);
+        for (health, feet) in initial.targets.iter().zip(&feet) {
+            let mut body = feet.metres();
+            body[1] += f64::from(theia_network::world::PAWN_Y);
+            assert_eq!(health.position.metres(), body);
+        }
+        let hz = u64::from(rate.hz());
+        for sequence in 1..=5 {
+            for (&actor, &target) in actors.iter().zip(&keys) {
+                let result = world.cast(
+                    actor,
+                    combat::Request {
+                        epoch: world.epoch(),
+                        sequence,
+                        target,
+                        ability: ContentId::new("theia.dev.arcane-bolt").unwrap(),
+                    },
+                );
+                assert!(
+                    matches!(result.reply.outcome, combat::Outcome::Started { .. }),
+                    "{:?}",
+                    result.reply
+                );
+            }
+            for _ in 0..2 * hz {
+                world.step();
+            }
+        }
+        let dead = world.combat_snapshot(actors[0]).unwrap();
+        assert!(dead.targets.iter().all(|t| t.current == 0));
+        let deadline = dead.targets[0].respawn_at.unwrap();
+        assert_eq!(deadline, 39 * hz);
+        assert!(dead.targets.iter().all(|t| t.respawn_at == Some(deadline)));
+        for &actor in &actors {
+            let targets = world.targeting_snapshot(actor).unwrap();
+            assert!(targets.targets.is_empty());
+            assert!(targets.selected.is_none());
+        }
+        while world.completed_tick() + 1 < deadline {
+            world.step();
+        }
+        assert!(
+            world
+                .combat_snapshot(actors[0])
+                .unwrap()
+                .targets
+                .iter()
+                .all(|t| t.current == 0)
+        );
+        world.step();
+        let alive = world.combat_snapshot(actors[0]).unwrap();
+        assert_eq!(alive.targets.len(), 5);
+        for (i, health) in alive.targets.iter().enumerate() {
+            assert_eq!(health.current, combat::DEVELOPMENT_HEALTH);
+            assert_eq!(health.respawn_at, None);
+            assert!(!keys.contains(&health.key));
+            assert_eq!(health.position, initial.targets[i].position);
+        }
+        for (&actor, &old) in actors.iter().zip(&keys) {
+            assert!(!world.select_target(actor, Some(old)));
+        }
+        assert_eq!(
+            world.targeting_snapshot(actors[0]).unwrap().targets.len(),
+            5
+        );
+        world.poll_terrain();
+        for point in &feet {
+            assert!(world.procedural().unwrap().patch(*point).is_some());
+        }
+        println!(
+            "checked_population hz={} classic=true actors=5 targets=5 full_health=100 damage_per_cast=20 casts_per_target=5 respawn_seconds=30 stale_ids_rejected=true",
+            rate.hz()
+        );
+    }
+    let mut foreign = World::with_procedural([8000., 8000.], 1.).unwrap();
+    let identity = foreign.identity();
+    assert!(
+        foreign
+            .enable_prepared_population(prepare(&request))
+            .is_err()
+    );
+    assert_eq!(foreign.identity(), identity);
+    assert!(!foreign.targeting_enabled());
+    let mut excessive = request.clone();
+    excessive.count = theia_network::targeting::MAX_TARGETS + 1;
+    excessive.minimum_spacing_metres = 0.25;
+    let mut world =
+        World::with_terrain_source(spawn, 1., procedural::Source::Authored(store.clone())).unwrap();
+    let identity = world.identity();
+    assert!(
+        world
+            .enable_prepared_population(prepare(&excessive))
+            .is_err()
+    );
+    assert_eq!(world.identity(), identity);
+    assert!(!world.targeting_enabled());
+    assert_eq!(
+        world.enable_prepared_population(prepare(&request)).unwrap()[0]
+            .entity
+            .value(),
+        1
+    );
+}

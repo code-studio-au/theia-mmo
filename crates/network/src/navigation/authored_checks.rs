@@ -2,12 +2,12 @@
 //! May load collision patches; never call from the fixed simulation step.
 use super::query::Query;
 use crate::{Result, authored_world::Store, procedural};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 use theia_core::coordinates::GlobalPosition;
 
 pub struct Grounding<'a> {
     store: &'a Store,
-    patches: BTreeMap<theia_core::coordinates::ChunkId, procedural::Patch>,
+    patches: BTreeMap<theia_core::coordinates::ChunkId, Arc<procedural::Patch>>,
 }
 impl<'a> Grounding<'a> {
     pub fn new(store: &'a Store) -> Self {
@@ -16,10 +16,13 @@ impl<'a> Grounding<'a> {
             patches: BTreeMap::new(),
         }
     }
+    pub(crate) fn into_patches(self) -> Vec<Arc<procedural::Patch>> {
+        self.patches.into_values().collect()
+    }
     pub fn at(&mut self, point: GlobalPosition) -> Result<GlobalPosition> {
         let id = procedural::owner(point).ok_or("Route outside prediction domain")?;
         if let std::collections::btree_map::Entry::Vacant(entry) = self.patches.entry(id) {
-            entry.insert(self.store.patch(id)?);
+            entry.insert(Arc::new(self.store.patch(id)?));
         }
         let patch = &self.patches[&id];
         let mut local = patch
