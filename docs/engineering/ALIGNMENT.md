@@ -4,8 +4,8 @@ bounded normal-input controllers and per-connection network impairment. Retain
 one local authoritative server, encrypted development tickets, shared Classic
 controls and bounded queues. Initial cap is two actual clients, separate native
 windows; F5 remains offline. CLI launch/controller checks are implemented; zone
-schema 12 records setup, while editor placement/Start/Stop and embedded views are
-pending. These are developer scenarios, not player/NPC collision, production AI,
+schema 12 records setup, and editor placement/properties plus managed Start/Stop
+are implemented. Embedded camera views remain pending. These are developer scenarios, not player/NPC collision, production AI,
 account-backed admission or MMO capacity evidence. See ../STATUS.md and
 ../RENET_QUALIFICATION.md for exact implemented scope and devices.
 

@@ -20,6 +20,7 @@ mod headless_ui;
 mod markers;
 mod menus;
 mod naming;
+mod network_playtest;
 mod network_test_export;
 mod outliner;
 mod panels;
@@ -133,6 +134,7 @@ struct Session {
     drag: Option<Drag>,
     play: Option<playtest::Playtest>,
     player_model: bool,
+    network_active: bool,
     player_animation: playtest_avatar::Preview,
     player_clips: Vec<String>,
     heading: f32,
@@ -215,6 +217,7 @@ impl Session {
             next_id,
             drag: None,
             play: None,
+            network_active: false,
             player_model: true,
             player_animation: playtest_avatar::Preview::Auto,
             player_clips: vec![],
@@ -731,6 +734,10 @@ fn run() -> Result<(), String> {
         distance: if initial_target.is_some() { 120. } else { 32. },
         preset: camera_views::Preset::Perspective,
     })
+    .insert_resource(network_playtest::Manager::new(
+        options.player_assets.clone(),
+    ))
+    .add_systems(Update, network_playtest::poll)
     .init_resource::<test_players::Scene>()
     .init_resource::<scenery_scene::Scene>()
     .insert_resource(Time::<Fixed>::from_hz(30.))
@@ -1020,6 +1027,10 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             | Action::Snap
     ) {
         session.path_draft = None;
+    }
+    if matches!(action, Action::Play) && session.network_active {
+        session.status = "Stop the network playtest before starting offline F5".into();
+        return;
     }
     if matches!(action, Action::Play) {
         if session.play.take().is_some() {

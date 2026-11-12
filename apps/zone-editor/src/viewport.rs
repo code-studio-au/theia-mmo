@@ -758,6 +758,7 @@ pub(super) fn report(
     value["placement_ghost"] = serde_json::json!(scene_visuals.iter().find_map(|(_,_,_,visibility,_,transform,_,_,_,ghost)| {
         ghost.then(||serde_json::json!({"visible":*visibility!=Visibility::Hidden,"position":transform.map(|t|t.translation.to_array()),"scale":transform.map(|t|t.scale.to_array())}))
     }));
+    value["network_playtest"] = serde_json::json!({"active":session.network_active});
     value["move_preview"] = serde_json::json!(session.drag.as_ref().map(|d| &d.preview));
     value["move_handles"] = serde_json::json!(
         scene_visuals

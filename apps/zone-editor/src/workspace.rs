@@ -26,6 +26,8 @@ pub(super) struct Requests {
     pub file_open: bool,
     pub file_save_as: bool,
     pub export_world: bool,
+    pub network_playtest: bool,
+    pub stop_network_playtest: bool,
     pub export_particle_chunks: bool,
     pub replace_particle_chunks: bool,
     pub particle_workspace: bool,
@@ -55,6 +57,8 @@ pub(super) enum Control {
     FileOpen,
     FileSaveAs,
     ExportWorld,
+    NetworkPlaytest,
+    StopNetworkPlaytest,
     ExportParticleChunks,
     ReplaceParticleChunks,
     ParticleWorkspace,
@@ -270,6 +274,8 @@ pub(super) fn setup(
                     &[
                         (Control::Command(Action::Spawn), "Spawn at view centre", ""),
                         (Control::SpawnTransform, "Edit spawn…", ""),
+                        (Control::NetworkPlaytest, "Start network playtest…", ""),
+                        (Control::StopNetworkPlaytest, "Stop network playtest", ""),
                         (Control::Command(Action::Delete), "Delete selected", "Del"),
                     ],
                 );
@@ -324,7 +330,7 @@ pub(super) fn setup(
                     flex_grow: 1.,
                     ..default()
                 });
-                row.spawn(button(Control::Command(Action::Play), "Playtest"));
+                row.spawn(button(Control::Command(Action::Play), "Offline playtest"));
                 row.spawn(button(Control::Command(Action::Save), "Save"));
             });
         });
@@ -582,6 +588,9 @@ impl Control {
         if matches!(self, Self::Command(Action::Play)) && session.play.is_some() {
             return !session.has_modal();
         }
+        if matches!(self, Self::StopNetworkPlaytest) {
+            return session.network_active;
+        }
         if busy(session) {
             return false;
         }
@@ -600,6 +609,11 @@ impl Control {
                 session.test_player_selected.is_some()
             }
             Self::Command(Action::AddTestPlayer) => session.editor.zone().test_players.len() < 2,
+            Self::NetworkPlaytest => {
+                !session.network_active
+                    && session.editor.zone().test_players.iter().any(|p| p.enabled)
+            }
+            Self::Command(Action::Play) => !session.network_active,
             Self::AssetPlace => session.ui.assets_open && session.assets.selected.is_some(),
             Self::Command(Action::CreateStarterBasin | Action::CreateStarterValley) => {
                 theia_zone::starter_basin::available(session.editor.zone())
@@ -804,6 +818,7 @@ pub(super) fn execute(
     if busy(session)
         && !(session.play.is_some() && matches!(control, Control::Command(Action::Play)))
         && !control.player_control()
+        && !matches!(control, Control::StopNetworkPlaytest)
     {
         session.status =
             "Finish or cancel the preview / leave playtest before using workspace controls".into();
@@ -884,6 +899,8 @@ pub(super) fn execute(
         Control::SpawnTransform => requests.spawn_transform = true,
         Control::FileOpen => requests.file_open = true,
         Control::FileSaveAs => requests.file_save_as = true,
+        Control::NetworkPlaytest => requests.network_playtest = true,
+        Control::StopNetworkPlaytest => requests.stop_network_playtest = true,
         Control::ExportWorld => requests.export_world = true,
         Control::ExportParticleChunks => requests.export_particle_chunks = true,
         Control::ReplaceParticleChunks => requests.replace_particle_chunks = true,
@@ -1118,7 +1135,7 @@ pub(super) fn sync(
             Control::Command(Action::Play) => Some(if session.play.is_some() {
                 "Return to editing"
             } else {
-                "Playtest"
+                "Offline playtest"
             }),
             _ => None,
         };

@@ -18,9 +18,10 @@ per enabled authored Test Player pawn, initially capped at two. Pawns hold spawn
 controller and per-connection impairment settings. Keep ordinary F5 offline.
 Start/Stop manages the test processes and separate identities; separate windows
 can precede an embedded split-view dashboard. This is a proposed P5-17 testing
-workflow, not implemented behavior or a
-decision to add an unrestricted scripting engine. Scope/task mapping should be
-checked against the engineering queue before implementation.
+workflow, not a decision to add an unrestricted scripting engine. The subsequent
+P5-17 / P1-06 bounded implementation and its exact qualification are recorded at
+the top of STATUS.md and in ZONE_EDITOR.md; embedded camera views and scripted
+combat remain future work.
 
 ## 12 November 2026 — Bevy editor design inspiration
 

@@ -153,7 +153,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
     processes, relays = [], []
     launched_ids = set()
     reason = 'startup failure'
-    # Editor Stop writes this file; Ctrl-C and CLI SIGTERM also clean up children.
+    # Stop file, private owner EOF, Ctrl-C and CLI SIGTERM all clean up children.
     stop_file = output / 'stop'
     cleanup_errors = []
     def cleanup(action, *args, **kwargs):

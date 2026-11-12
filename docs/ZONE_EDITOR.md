@@ -1,3 +1,28 @@
+P5-17 / P1-06 managed editor Network Playtest, 12 November 2026:
+Add and enable one or two Test Players, then choose **Zone -> Start network
+playtest**. Choose a fresh output folder, the player model/animation directory
+(containing character.glb), and a matching gameplay template when the zone has
+quest areas or bound NPC contacts. The player path defaults from --player-assets;
+the current editor process remembers the last template/player directory.
+The dialog exports the current immutable zone/scenery/controller snapshot and
+launches one local authoritative server plus one independent encrypted client per
+enabled pawn. Test-player attributes determine spawn, controller and network
+conditions. **Zone -> Stop network playtest** ends the whole owned session.
+Closing or losing the editor also closes its private launcher pipe and cleans up
+its server/clients. F5 / Offline playtest is separate and disabled during a
+network session. Setup edits affect the next launch; only Save writes the zone.
+
+This development workflow requires Python 3, tools/network_playtest.py in the
+checkout, and the client/server binaries beside the editor. Build all three
+applications together. THEIA_NETWORK_TEST_PYTHON can select the interpreter.
+Each snapshot keeps runs/session-*/ logs and a completion summary; failures name
+the launcher log in the status bar. Exports remain for inspection, temporary
+connection tickets are removed on cleanup. No account-backed quests/combat or
+embedded split-camera view is enabled by this movement-testing launcher.
+Native Start/Stop/restart and abrupt owner-exit cleanup pass on the current Linux
+Vulkan machine; tools/qualify_editor_network_playtest.py reproduces the check.
+See STATUS.md for exact evidence and limitations.
+
 P5-17 / P1-06 Test Player setup in the editor, 12 November 2026:
 Use Add -> Test player at spawn (maximum two), then Explorer -> Test players to
 filter/select the setup pawns. These are nonblocking capsule badges. Move them
@@ -19,7 +44,7 @@ controller/enabled selection, inline position/delay edits, axis dragging and
 undo/duplicate/delete. Source bytes remain unchanged without Save; all 213
 ordinary editor tests pass. `tools/qualify_test_player_ui.py --output NEW_DIR`
 repeats the native check; see STATUS.md for device/evidence. Network test export
-and launch are currently CLI paths below; in-editor managed Start/Stop is next.
+and launch are also available through the CLI paths below.
 
 P5-17 / P1-06 network-test export bridge, 12 November 2026:
 Use `--export NEW_DIRECTORY --network-test --content-id ID --revision N` to turn

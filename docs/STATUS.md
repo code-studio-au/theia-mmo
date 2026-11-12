@@ -1,3 +1,26 @@
+P5-17 / P1-06 managed Network Playtest in the editor, 12 November 2026:
+Zone -> Start network playtest exports the current immutable authoring snapshot,
+then owns one real server and one encrypted native client per enabled Test Player.
+The dialog takes a fresh folder, player assets and optional/required-by-content
+gameplay template; hidden content metadata stays automatic. Stop ends the whole
+session. Private owner-pipe EOF also cleans up after abrupt editor death. F5 is
+explicitly Offline playtest and blocked while the network session runs. Source
+zones remain untouched without Save; setup edits affect the next launch only.
+All 214 ordinary editor tests (seven opt-in skips), fmt, strict workspace/all-target
+Clippy and client/server/editor builds pass. Native Start/Stop/restart and abrupt
+owner-kill checks pass with two scripted Synty valley clients, including 80 ms
+one-way delay + 0..20 ms jitter on client 2. Both runs admit two players with zero
+rejected inputs/readiness, movement recoveries, relay overflow, cleanup errors or
+GPU diagnostics. Tickets removed and exact source bytes preserved. All owned
+windows/processes closed. Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan;
+Windows, embedded views and account-backed quest/combat launch remain unqualified.
+Evidence: build/editor-network-{tests,clippy,build}.log and
+build/editor-network-native-v4/{qualification.json,state.png,editor.log}.
+Native harness uses report barriers between complete key presses; earlier v1-v3
+attempts exposed automation timing/repeat issues, not failed network sessions.
+Reproduce with tools/qualify_editor_network_playtest.py. Next: arrange/distinguish
+the two native client views, then return to authored MMO gameplay integration.
+
 P5-17 / P1-06 editor-owned network session lifetime, 12 November 2026:
 The managed launcher accepts --stop-on-stdin-eof: a private editor-owned stdin
 pipe closing requests whole-session cleanup, including when the editor exits

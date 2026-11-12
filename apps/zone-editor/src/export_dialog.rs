@@ -17,14 +17,28 @@ pub(super) struct Draft {
     task: Option<Task<Result<serde_json::Value, String>>>,
     finished: bool,
     target: Option<PathBuf>,
+    player_assets: Option<PathBuf>,
     message: String,
     action: Option<Control>,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Mode {
     World,
+    NetworkTest,
     ParticleChunks,
     ReplaceParticleChunks,
+}
+impl Mode {
+    fn world(self) -> bool {
+        matches!(self, Self::World | Self::NetworkTest)
+    }
+    fn fields(self) -> &'static [usize] {
+        match self {
+            Self::World => &[0, 1, 2, 3],
+            Self::NetworkTest => &[0, 3, 4],
+            _ => &[0, 1],
+        }
+    }
 }
 #[derive(Component)]
 pub(super) struct Root;
@@ -98,6 +112,7 @@ pub(super) fn setup(mut commands: Commands) {
                             "Content ID",
                             "Revision",
                             "Gameplay template (optional)",
+                            "Player asset directory",
                         ]
                         .into_iter()
                         .enumerate()
@@ -183,11 +198,13 @@ pub(super) fn open(
     windows: Query<&Window>,
     mut fields: Query<(Entity, &Field, &mut EditableText)>,
     mut focus: ResMut<InputFocus>,
+    manager: Option<Res<network_playtest::Manager>>,
 ) {
+    let network = std::mem::take(&mut requests.network_playtest);
     let world = std::mem::take(&mut requests.export_world);
     let chunks = std::mem::take(&mut requests.export_particle_chunks);
     let replace = std::mem::take(&mut requests.replace_particle_chunks);
-    if !(world || chunks || replace)
+    if !(world || chunks || replace || network)
         || session.has_modal()
         || !windows.single().is_ok_and(|window| window.focused)
     {
@@ -202,23 +219,52 @@ pub(super) fn open(
         return;
     }
     let slug = slug(&session.editor.zone().name);
-    let mode = if replace {
+    if network
+        && (session.network_active || !session.editor.zone().test_players.iter().any(|p| p.enabled))
+    {
+        session.status = "Enable a test player and stop any existing network session first".into();
+        return;
+    }
+    let mode = if network {
+        Mode::NetworkTest
+    } else if replace {
         Mode::ReplaceParticleChunks
     } else if chunks {
         Mode::ParticleChunks
     } else {
         Mode::World
     };
-    let values = if mode == Mode::World {
+    let values = if mode.world() {
         [
-            format!("build/{slug}-v1"),
+            if network {
+                format!(
+                    "build/{slug}-network-{}",
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map_or(0, |d| d.as_nanos())
+                )
+            } else {
+                format!("build/{slug}-v1")
+            },
             format!("theia.zone.{slug}"),
             "1".to_string(),
-            String::new(),
+            if network {
+                manager
+                    .as_ref()
+                    .and_then(|m| m.template.as_ref())
+                    .map_or_else(String::new, |p| p.display().to_string())
+            } else {
+                String::new()
+            },
+            manager
+                .as_ref()
+                .and_then(|m| m.player_assets.as_ref())
+                .map_or_else(String::new, |p| p.display().to_string()),
         ]
     } else {
         [
             format!("build/{slug}-particles"),
+            String::new(),
             String::new(),
             String::new(),
             String::new(),
@@ -238,6 +284,7 @@ pub(super) fn open(
         task: None,
         finished: false,
         target: None,
+        player_assets: None,
         message: "Choose a new folder; existing exports are never overwritten.".into(),
         action: None,
     });
@@ -270,7 +317,9 @@ struct WorldInput {
 fn values(fields: &Query<(Entity, &Field, &mut EditableText)>) -> Result<WorldInput, String> {
     let mut values: [String; 4] = std::array::from_fn(|_| String::new());
     for (_, field, text) in fields.iter() {
-        values[field.0] = text.value().to_string().trim().to_owned();
+        if field.0 < values.len() {
+            values[field.0] = text.value().to_string().trim().to_owned();
+        }
     }
     if values[0].is_empty() || values[0].contains(['\0', '\n', '\r']) {
         return Err("Enter a valid new output folder".into());
@@ -309,6 +358,7 @@ pub(super) fn finish(
     assets: Res<Assets<ParticlesAsset>>,
     operation: ProjectOperation,
     scenery: Option<Res<scenery_library::Library>>,
+    mut manager: Option<ResMut<network_playtest::Manager>>,
 ) {
     let Some(mut draft) = session.export_dialog.take() else {
         for mut root in &mut roots {
@@ -320,7 +370,7 @@ pub(super) fn finish(
         root.display = Display::Flex;
     }
     for (row, mut node) in &mut rows {
-        node.display = if draft.mode != Mode::World && row.0 >= 2 {
+        node.display = if !draft.mode.fields().contains(&row.0) {
             Display::None
         } else {
             Display::Flex
@@ -333,12 +383,43 @@ pub(super) fn finish(
         match result {
             Ok(_) => {
                 draft.finished = true;
-                let target = draft
-                    .target
-                    .as_ref()
-                    .map_or_else(String::new, |path| path.display().to_string());
-                draft.message = format!("Exported {target}. Close to return to the editor.");
-                session.status = format!("World exported to {target}");
+                if draft.mode == Mode::NetworkTest {
+                    let result = manager
+                        .as_deref_mut()
+                        .ok_or_else(|| "Network launcher is unavailable".to_string())
+                        .and_then(|m| {
+                            m.start(
+                                draft.target.as_deref().expect("Export target"),
+                                draft
+                                    .player_assets
+                                    .as_deref()
+                                    .expect("Checked player assets"),
+                            )
+                        });
+                    match result {
+                        Ok(()) => {
+                            session.network_active = true;
+                            session.status="Network playtest starting; Zone -> Stop network playtest ends the server and clients".into();
+                            focus.clear();
+                            for mut root in &mut roots {
+                                root.display = Display::None;
+                            }
+                            return;
+                        }
+                        Err(error) => {
+                            draft.message =
+                                format!("Network snapshot exported, but launch failed: {error}");
+                            session.status = draft.message.clone();
+                        }
+                    }
+                } else {
+                    let target = draft
+                        .target
+                        .as_ref()
+                        .map_or_else(String::new, |path| path.display().to_string());
+                    draft.message = format!("Exported {target}. Close to return to the editor.");
+                    session.status = format!("World exported to {target}");
+                }
             }
             Err(error) => draft.message = format!("Export failed: {error}"),
         }
@@ -361,12 +442,16 @@ pub(super) fn finish(
             .iter()
             .find(|(entity, _, _)| Some(*entity) == current)
             .map_or(0, |(_, field, _)| {
-                let count = if draft.mode == Mode::World { 4 } else { 2 };
-                if keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight) {
-                    (field.0 + count - 1) % count
+                let visible = draft.mode.fields();
+                let current = visible
+                    .iter()
+                    .position(|index| *index == field.0)
+                    .unwrap_or(0);
+                visible[if keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight) {
+                    (current + visible.len() - 1) % visible.len()
                 } else {
-                    (field.0 + 1) % count
-                }
+                    (current + 1) % visible.len()
+                }]
             });
         if let Some((entity, _, _)) = fields.iter().find(|(_, field, _)| field.0 == index) {
             focus.set(entity, FocusCause::Navigated);
@@ -387,7 +472,7 @@ pub(super) fn finish(
         {
             draft.message = "Save particle edits before exporting.".into();
         } else {
-            let input = if draft.mode == Mode::World {
+            let input = if draft.mode.world() {
                 values(&fields).map(|input| {
                     (
                         input.path,
@@ -415,16 +500,54 @@ pub(super) fn finish(
                     ))
                 }
             };
+            let input = input.and_then(|input| {
+                if draft.mode == Mode::NetworkTest {
+                    let manager = manager
+                        .as_deref_mut()
+                        .ok_or("Network launcher is unavailable")?;
+                    if manager.running() {
+                        return Err("Stop the current network playtest first".into());
+                    }
+                    let value = fields
+                        .iter()
+                        .find(|(_, f, _)| f.0 == 4)
+                        .map(|(_, _, t)| t.value().to_string())
+                        .unwrap_or_default();
+                    if value.trim().is_empty() || value.contains(['\0', '\n', '\r']) {
+                        return Err("Choose a player asset directory".into());
+                    }
+                    let path = PathBuf::from(value.trim());
+                    if !path.join("character.glb").is_file() {
+                        return Err("Player asset directory must contain character.glb".into());
+                    }
+                    draft.player_assets = Some(path);
+                    manager.template = input
+                        .1
+                        .as_ref()
+                        .and_then(|(_, _, template)| template.clone());
+                }
+                Ok(input)
+            });
             match input {
                 Ok((path, world, chunks)) => {
                     let zone = session.editor.zone().clone();
                     let replace = draft.mode == Mode::ReplaceParticleChunks;
+                    let network = draft.mode == Mode::NetworkTest;
                     draft.message = format!("Exporting {}…", path.display());
                     draft.target = Some(path.clone());
                     let scenery = scenery.as_deref().cloned().unwrap_or_default();
                     draft.task = Some(IoTaskPool::get().spawn(async move {
                         if let Some((id, revision, template)) = world {
-                            if !zone.scenery.is_empty() {
+                            if network {
+                                network_test_export::publish(
+                                    &zone,
+                                    &path,
+                                    &id,
+                                    revision,
+                                    template.as_deref(),
+                                    &scenery,
+                                )
+                            } else if !zone.scenery.is_empty() {
                                 export::publish_with_assets(
                                     &zone,
                                     &path,
@@ -464,6 +587,7 @@ pub(super) fn finish(
             **text = draft.message.clone();
         } else if title {
             **text = match draft.mode {
+                Mode::NetworkTest => "Start network playtest",
                 Mode::World => "Export world",
                 Mode::ParticleChunks => "Export particles to chunks",
                 Mode::ReplaceParticleChunks => "Replace all world particles",
@@ -471,6 +595,7 @@ pub(super) fn finish(
             .into();
         } else if submit {
             **text = match draft.mode {
+                Mode::NetworkTest => "Start network playtest",
                 Mode::World => "Export world",
                 Mode::ParticleChunks => "Export particles",
                 Mode::ReplaceParticleChunks => "Replace all particles",
@@ -478,12 +603,13 @@ pub(super) fn finish(
             .into();
         } else if description {
             **text = match draft.mode {
+                Mode::NetworkTest => "Starts one server and a client per enabled Test Player from this zone snapshot. Stop from the Zone menu. Zone files change only with Save.",
                 Mode::World => "Exports the current zone. Use a matching gameplay template for quest areas and NPC references. Save particle edits first.",
                 Mode::ParticleChunks => "Copies a particle-free chunk world with these placements. Save particle edits first.",
                 Mode::ReplaceParticleChunks => "Replaces ALL particle placements in a new copy of the chunk world with this zone's placements. An empty zone removes all world particles. Save particle edits first."
             }.into();
         } else if caption.is_some_and(|caption| caption.0 == 1) {
-            **text = if draft.mode == Mode::World {
+            **text = if draft.mode.world() {
                 "Content ID"
             } else {
                 "Existing chunk world folder"
@@ -640,6 +766,83 @@ mod tests {
                 .unwrap()
                 .0
                 .contains("ALL particle placements")
+        );
+    }
+    #[test]
+    fn network_dialog_filters_fields_and_rejects_missing_player_assets_before_export() {
+        let mut zone = Zone {
+            schema: 12,
+            ..default()
+        };
+        zone.test_players
+            .push(theia_zone::test_players::TestPlayer {
+                id: 1,
+                name: "Test player".into(),
+                client_id: 1,
+                enabled: true,
+                position: zone.spawn,
+                controller: None,
+                network: default(),
+            });
+        let original = zone.clone();
+        let mut app = App::new();
+        app.add_plugins(bevy::app::TaskPoolPlugin::default())
+            .insert_resource(Session::new(
+                Editor::new(zone).unwrap(),
+                PathBuf::from("zone.json"),
+                None,
+            ))
+            .init_resource::<network_playtest::Manager>()
+            .init_resource::<workspace::Requests>()
+            .init_resource::<DirtyState>()
+            .init_resource::<EditorState>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<InputFocus>()
+            .add_systems(Startup, setup)
+            .add_systems(Update, open)
+            .add_systems(PostUpdate, finish);
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
+        app.update();
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .network_playtest = true;
+        app.update();
+        let mut rows = app.world_mut().query::<(&FieldRow, &Node)>();
+        for (row, node) in rows.iter(app.world()) {
+            assert_eq!(node.display == Display::Flex, [0, 3, 4].contains(&row.0));
+        }
+        // Keyboard navigation must skip the hidden manifest metadata fields.
+        for expected in [3, 4, 0] {
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .press(KeyCode::Tab);
+            app.update();
+            let focused = app.world().resource::<InputFocus>().get().unwrap();
+            assert_eq!(app.world().get::<Field>(focused).unwrap().0, expected);
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .reset_all();
+        }
+        app.world_mut()
+            .resource_mut::<Session>()
+            .export_dialog
+            .as_mut()
+            .unwrap()
+            .action = Some(Control::Export);
+        app.update();
+        let session = app.world().resource::<Session>();
+        let draft = session.export_dialog.as_ref().unwrap();
+        assert!(draft.message.contains("Choose a player asset directory"));
+        assert!(draft.task.is_none());
+        assert_eq!(session.editor.zone(), &original);
+        assert!(
+            !app.world()
+                .resource::<network_playtest::Manager>()
+                .running()
         );
     }
     #[test]
