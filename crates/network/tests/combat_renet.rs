@@ -168,8 +168,8 @@ impl Peer {
         .unwrap_or_else(|_| {
             let state = self.state.borrow();
             panic!(
-                "Combat client observation timed out: error={:?} chunk_ack={:?} combat={:?}",
-                state.error, state.chunk_ack, state.combat
+                "Combat client observation timed out: error={:?} chunk_ack={:?} combat={:?} players={:?} targeting={:?}",
+                state.error, state.chunk_ack, state.combat, state.snapshot.as_ref().map(|s| s.players.len()), state.targeting
             )
         })
     }
@@ -1399,4 +1399,190 @@ async fn encrypted_patrol_consumers_share_moving_hit_positions_and_a_fresh_home_
     for worker in workers {
         worker.await.unwrap();
     }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+async fn checked_authored_population_replicates_to_two_encrypted_peers_with_independent_selection()
+{
+    use theia_network::{
+        authored_world,
+        navigation::{self, spawn_candidates, spawn_preparation},
+        procedural,
+    };
+    let store = Arc::new(
+        authored_world::Store::open(&PathBuf::from(
+            std::env::var_os("THEIA_AUTHORED_WORLD").unwrap(),
+        ))
+        .unwrap(),
+    );
+    let navigation = navigation::Store::open(
+        &PathBuf::from(std::env::var_os("THEIA_AUTHORED_NAV").unwrap()),
+        store.identity(),
+    )
+    .unwrap();
+    let request: spawn_candidates::Request = serde_json::from_slice(
+        &fs::read(std::env::var_os("THEIA_AUTHORED_SPAWNS").unwrap()).unwrap(),
+    )
+    .unwrap();
+    let prepared = spawn_preparation::check_authored(&store, &navigation, &request)
+        .unwrap()
+        .into_prepared()
+        .unwrap();
+    let expected: Vec<_> = prepared
+        .points()
+        .iter()
+        .map(|p| {
+            let mut body = p.metres();
+            body[1] += f64::from(theia_network::world::PAWN_Y);
+            body
+        })
+        .collect();
+    assert_eq!(expected.len(), 5);
+    let spawn = store.spawn(0).unwrap();
+    let source = procedural::Source::Authored(store);
+    let mut world =
+        World::with_terrain_source([spawn.metres()[0], spawn.metres()[2]], 1., source).unwrap();
+    let keys = world.enable_prepared_population(prepared).unwrap();
+    world.enable_combat(DATA, 100, 30_000).unwrap();
+    let identity = world.identity();
+    let chunks: Vec<_> = world
+        .procedural()
+        .unwrap()
+        .patch(spawn)
+        .unwrap()
+        .ids
+        .iter()
+        .copied()
+        .collect();
+    let catalog = Arc::new(Catalog::from_json(DATA).unwrap());
+    let profile = Profile {
+        name: "population-wifi",
+        delay_ms: 15,
+        jitter_ms: 10,
+        loss_every: 10,
+        duplicate_every: 17,
+    };
+    let relays: Vec<_> = (0..3).map(|_| Relay::bind(profile)).collect();
+    let addresses: Vec<_> = relays.iter().map(|r| r.address).collect();
+    let controls: Vec<_> = relays.iter().map(|r| r.control.clone()).collect();
+    let tickets = tickets();
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let backend = socket.local_addr().unwrap();
+    let transport = net::issue_local_advertised(socket, &tickets.0, addresses.clone()).unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let guard = Stop(stop);
+    let workers: Vec<_> = relays
+        .into_iter()
+        .map(|r| tokio::spawn(r.run(backend, shutdown.clone())))
+        .collect();
+    let server = tokio::spawn(net::run_server_measured(transport, shutdown, world));
+    let start = |slot: usize| {
+        Peer::start(
+            addresses[slot],
+            fs::read(tickets.0.join(format!("client-{}.token", slot + 1))).unwrap(),
+            identity,
+            chunks.clone(),
+            catalog.clone(),
+            16,
+        )
+    };
+    let mut a = start(0);
+    let mut b = start(1);
+    let ready = |s: &State, _: &[Event]| {
+        s.chunk_ack.is_some()
+            && s.snapshot.as_ref().is_some_and(|s| s.players.len() == 2)
+            && s.targeting.as_ref().is_some_and(|s| s.targets.len() == 5)
+            && s.combat.as_ref().is_some_and(|s| s.targets.len() == 5)
+    };
+    let first = a.until(ready).await;
+    let second = b.until(ready).await;
+    assert_ne!(first.id, second.id);
+    for state in [&first, &second] {
+        let targets = &state.targeting.as_ref().unwrap().targets;
+        for (index, target) in targets.iter().enumerate() {
+            assert_eq!(target.key, keys[index]);
+            assert!((0..3).all(
+                |axis| (target.position.metres()[axis] - expected[index][axis]).abs() < 0.0001
+            ));
+        }
+        assert!(
+            state
+                .combat
+                .as_ref()
+                .unwrap()
+                .targets
+                .iter()
+                .all(|t| t.current == 100 && t.maximum == 100)
+        );
+    }
+    a.choice.send_replace(Some(Choice {
+        target: Some(keys[0].entity),
+    }));
+    b.choice.send_replace(Some(Choice {
+        target: Some(keys[4].entity),
+    }));
+    a.until(|s, _| {
+        s.targeting
+            .as_ref()
+            .is_some_and(|s| s.selected == Some(keys[0].entity))
+    })
+    .await;
+    b.until(|s, _| {
+        s.targeting
+            .as_ref()
+            .is_some_and(|s| s.selected == Some(keys[4].entity))
+    })
+    .await;
+    a.choice.send_replace(Some(Choice { target: None }));
+    a.until(|s, _| s.targeting.as_ref().is_some_and(|s| s.selected.is_none()))
+        .await;
+    let tick = b.state.borrow().snapshot.as_ref().unwrap().tick;
+    b.until(|s, _| {
+        s.snapshot.as_ref().is_some_and(|s| s.tick >= tick + 30)
+            && s.targeting
+                .as_ref()
+                .is_some_and(|s| s.selected == Some(keys[4].entity) && s.targets.len() == 5)
+    })
+    .await;
+    a.finish().await.unwrap();
+    b.until(|s, _| s.snapshot.as_ref().is_some_and(|s| s.players.len() == 1))
+        .await;
+    let mut fresh = start(2);
+    let fresh_state = fresh.until(ready).await;
+    assert_ne!(fresh_state.id, first.id);
+    assert!(fresh_state.targeting.as_ref().unwrap().selected.is_none());
+    assert_eq!(
+        fresh_state
+            .targeting
+            .as_ref()
+            .unwrap()
+            .targets
+            .iter()
+            .map(|t| t.key)
+            .collect::<Vec<_>>(),
+        keys
+    );
+    fresh.finish().await.unwrap();
+    b.finish().await.unwrap();
+    drop(guard);
+    let stats = server.await.unwrap().unwrap();
+    for worker in workers {
+        worker.await.unwrap();
+    }
+    assert_eq!(stats.max_players, 2);
+    assert_eq!(stats.combat_backpressure_disconnects, 0);
+    for control in &controls {
+        let relay = control.lock().unwrap();
+        assert_eq!(relay.stats.overflow, 0);
+    }
+    assert!(
+        controls[..2]
+            .iter()
+            .all(|c| c.lock().unwrap().stats.configured_drops > 0)
+    );
+    println!(
+        "checked_population_network passed=true targets=5 encrypted_peers=2 independent_selection=true fresh_session=true profile={profile:?} max_players={} scope=target_and_health_replication_not_connected_combat_or_rendering",
+        stats.max_players
+    );
 }

@@ -1,3 +1,23 @@
+P3-07 / P1-07 prepared population over secure transport, 13 November 2026:
+Two actual encrypted Renet peers receive all five checked valley targets and their
+100-health states, with coordinates agreeing within 0.1 mm. Independent selection
+and clearing, retained selection across normal world ticks, disconnect and a fresh
+third session pass under 15 ms delay, 10 ms jitter, every-tenth packet loss and
+every-seventeenth duplication. Fresh session has a new player identity, no selected
+target and the same five population identities. Maximum connected players is two;
+no event backpressure disconnect or relay overflow. Owned relays/server/tickets end.
+The first test incorrectly expected unchanged targeting timestamps to advance;
+static targeting intentionally suppresses timestamp-only updates. Observe ordinary
+world snapshot ticks instead; runtime behavior is unchanged. This is connected
+target/health/selection qualification at 30 Hz, not connected multi-creature combat,
+Classic movement, rendering, model binding, MMO capacity or native Windows.
+The preceding actual World test separately proves Classic death/respawn at all
+three rates. Normal source/configuration/export integration remains pending.
+Evidence: build/population-network-{tests,clippy}.log; opt-in test
+`checked_authored_population_replicates_to_two_encrypted_peers_with_independent_selection`
+in crates/network/tests/combat_renet.rs. Fmt and strict workspace/all-target Clippy
+pass. Local UDP sockets require sandbox escalation; no mouse/display was used.
+
 P3-07 / P4-03 bounded authoritative population admission, 13 November 2026:
 World now atomically consumes one complete prepared spawn pool before player or
 combat admission. Validate source identity, empty population/target state, current
