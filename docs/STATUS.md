@@ -1,3 +1,13 @@
+P5-17 / P1-10 / P2-08 starter scenery preparation, 12 November 2026:
+the user authorized using local Downloads/Synty assets for the starter-zone work.
+The actual folder is `Downloads/Synty Models`. Seven existing verified Enchanted
+Forest prototypes (archway, ruins, table, chair, lantern, log, pebbles) are staged
+under ignored `build/starter-forest-scenery-v1/` with exact hashes and bounds
+(8,731,372 bytes). Three staging regression tests pass. Assets remain local;
+editor model placement/export is the next slice. This is staging, not native
+rendering or collision qualification. Medieval Camp is supplied as Unreal assets;
+cliff projected materials need their supported binding path.
+
 P5-17 / P3-15 selected quest-area preview, 12 November 2026: selecting an
 area now builds a standard Bevy mesh outline of its bounds. Twelve fixed edges
 share one mesh/material, ignore picking, have no collider and hide during offline

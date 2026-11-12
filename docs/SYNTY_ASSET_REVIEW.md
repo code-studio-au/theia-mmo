@@ -75,3 +75,30 @@ The subsequent [Elven import checkpoint](SYNTY_ELVEN_IMPORT.md) stages selected
 source payloads with metadata, recursively audits the demo's dependencies and
 qualifies one pillar's base-colour GLB in native Bevy. Full assembled-scene import
 remains open, including model-prefab internal-ID mapping and complete materials.
+
+## Starter-zone reuse — 12 November 2026
+
+The user renewed authorization to use this asset library during starter-zone and
+editor development. The active source is still `/home/steven/Downloads/Synty Models`.
+Enchanted Forest supplies useful boundary and nature pieces; seven previously
+verified standard-material prototypes are selected in
+`content/scenery/starter-forest.selection.json`: archway, ruins, table, chair,
+lantern, log and pebbles. `tools/stage_editor_scenery.py` verifies each source
+prototype against its batch and independent geometry/material report, retains
+embedded GLB bytes and metre bounds, and refuses changed assets or ambiguous
+bindings. It does not infer collision or claim a native viewport check.
+
+```sh
+build/asset-tools/bin/python tools/stage_editor_scenery.py \
+  build/synty-forest-static-batch-v2 \
+  content/scenery/starter-forest.selection.json \
+  build/starter-forest-scenery-v1
+```
+
+The executed selection produced seven assets totalling 8,731,372 bytes. Proprietary
+payloads remain under ignored `build/`; the tracked selection contains only names
+and logical IDs. Three regression tests cover exact copying, bounds, changed
+source, ambiguous bindings and existing-output refusal. The local Medieval Camp
+folder contains Unreal `.uasset` files, so it is not yet part of this FBX/GLB
+pipeline. Forest cliffs have qualified projected-material work to reuse after the
+standard model-placement path; no material substitution is claimed here.
