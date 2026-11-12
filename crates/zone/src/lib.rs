@@ -11,6 +11,7 @@ pub mod projection;
 pub mod quest_areas;
 pub mod resampling;
 pub mod scenery;
+pub mod spawn_groups;
 pub mod starter_basin;
 pub mod starter_valley;
 pub mod terrain;
@@ -80,6 +81,8 @@ pub struct Zone {
     pub scenery: Vec<scenery::SceneryPlacement>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub test_players: Vec<test_players::TestPlayer>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spawn_groups: Vec<spawn_groups::SpawnGroup>,
 }
 
 fn require(condition: bool, message: &str) -> Result<()> {
@@ -104,6 +107,7 @@ impl Default for Zone {
             quest_areas: vec![],
             scenery: vec![],
             test_players: vec![],
+            spawn_groups: vec![],
         }
     }
 }
@@ -145,7 +149,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=13), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=14), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -209,6 +213,23 @@ impl Zone {
         require(
             self.test_players.len() <= test_players::MAX_TEST_PLAYERS,
             "Test player budget exceeded",
+        )?;
+        require(
+            self.schema >= 14 || self.spawn_groups.is_empty(),
+            "NPC spawn groups require zone schema 14",
+        )?;
+        require(
+            self.spawn_groups.len() <= spawn_groups::MAX_GROUPS,
+            "Spawn group budget exceeded",
+        )?;
+        require(
+            self.spawn_groups
+                .iter()
+                .filter(|g| g.enabled)
+                .map(|g| usize::from(g.target_alive))
+                .sum::<usize>()
+                <= spawn_groups::MAX_REQUESTED_ALIVE,
+            "Requested NPC population budget exceeded",
         )?;
         require(label(&self.name), "Invalid zone name")?;
         self.frame()?;
@@ -277,6 +298,10 @@ impl Zone {
             )?;
             player.validate(self)?;
         }
+        for group in &self.spawn_groups {
+            require(ids.insert(group.id), "Duplicate authoring ID")?;
+            group.validate(self)?;
+        }
         let mut area_ids = BTreeSet::new();
         let mut links = 0;
         for area in &self.quest_areas {
@@ -312,6 +337,7 @@ impl Zone {
             .chain(self.quest_areas.iter().map(|a| a.id))
             .chain(self.scenery.iter().map(|p| p.id))
             .chain(self.test_players.iter().map(|p| p.id))
+            .chain(self.spawn_groups.iter().map(|g| g.id))
             .max()
             .unwrap_or(0)
             .checked_add(1)
@@ -453,6 +479,12 @@ pub enum Edit {
         area: quest_areas::QuestArea,
     },
     DeleteQuestArea {
+        id: u64,
+    },
+    PutSpawnGroup {
+        group: spawn_groups::SpawnGroup,
+    },
+    DeleteSpawnGroup {
         id: u64,
     },
     PutTestPlayer {
@@ -736,6 +768,28 @@ impl Editor {
                                 .position(|a| a.id == id)
                                 .ok_or("Unknown quest area ID")?;
                             candidate.quest_areas.remove(index);
+                        }
+                        Edit::PutSpawnGroup { group } => {
+                            candidate.schema = candidate.schema.max(14);
+                            if let Some(existing) =
+                                candidate.spawn_groups.iter_mut().find(|g| g.id == group.id)
+                            {
+                                *existing = group;
+                            } else {
+                                require(
+                                    candidate.spawn_groups.len() < spawn_groups::MAX_GROUPS,
+                                    "Spawn group budget exceeded",
+                                )?;
+                                candidate.spawn_groups.push(group);
+                            }
+                        }
+                        Edit::DeleteSpawnGroup { id } => {
+                            let index = candidate
+                                .spawn_groups
+                                .iter()
+                                .position(|g| g.id == id)
+                                .ok_or("Unknown spawn group ID")?;
+                            candidate.spawn_groups.remove(index);
                         }
                         Edit::PutTestPlayer { player } => {
                             candidate.schema = candidate.schema.max(12);

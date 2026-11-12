@@ -22,6 +22,7 @@ pub mod quests;
 pub mod resources;
 pub mod retaliation;
 pub mod rewards;
+pub mod spawn_volume;
 pub mod statuses;
 pub mod target_search;
 pub mod threat;

@@ -1,3 +1,17 @@
+P5-17 / P3-07 spawn-group data foundation, 12 November 2026:
+Schema 14 adds bounded custom-polygon population drafts with creature/model IDs,
+alive count, respawn delay and seed. Pure f64 polygon validation accepts concave
+bounds and both windings, rejects crossings/touches/degenerate edges, and preserves
+far-origin precision. Shared commands support atomic history, translation, copy and
+rename. World export explicitly refuses population drafts until runtime binding
+exists. No editor controls, candidate placement or live population are claimed.
+Prerequisites are existing zone history and checked coordinates; the next slices
+need supported navigation/collision candidates and multi-creature authority.
+Two polygon tests and 73 zone tests pass; strict workspace/all-target Clippy passes.
+Evidence: build/spawn-volume-tests.log, spawn-group-zone-tests.log and
+spawn-foundation-clippy.log. No rendering change. NPC quest inspection is now the
+immediate UI priority after the user's missing-quest-information report.
+
 P5-17 / P3-07 / P4-03 patrol-to-gameplay export binding, 12 November 2026:
 With a gameplay template and exactly one Patrol guide, world export now binds the
 copied creature profile to that guide's stable route ID. Preserve the creature ID,

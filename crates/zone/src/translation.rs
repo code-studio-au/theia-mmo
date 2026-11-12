@@ -25,6 +25,8 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, offset: [f64; 3]) -> Result<()> {
         placement.position = shift(placement.position);
     } else if let Some(player) = zone.test_players.iter_mut().find(|p| p.id == id) {
         player.position = shift(player.position);
+    } else if let Some(group) = zone.spawn_groups.iter_mut().find(|g| g.id == id) {
+        group.volume = group.volume.translated(offset)?;
     } else if let Some(area) = zone.quest_areas.iter_mut().find(|a| a.id == id) {
         area.min = shift(area.min);
         area.max = shift(area.max);

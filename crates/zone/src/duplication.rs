@@ -25,7 +25,8 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, new_id: u64, offset: [f64; 3]) -> 
         .chain(zone.particles.iter().map(|p| p.id))
         .chain(zone.quest_areas.iter().map(|a| a.id))
         .chain(zone.scenery.iter().map(|p| p.id))
-        .chain(zone.test_players.iter().map(|p| p.id));
+        .chain(zone.test_players.iter().map(|p| p.id))
+        .chain(zone.spawn_groups.iter().map(|g| g.id));
     require(!occupied.any(|id| id == new_id), "Copy ID already exists")?;
     require(
         offset
@@ -101,6 +102,16 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, new_id: u64, offset: [f64; 3]) -> 
         copy.name = copy_name(&copy.name);
         copy.position = shift(copy.position);
         zone.test_players.push(copy);
+    } else if let Some(source) = zone.spawn_groups.iter().find(|g| g.id == id) {
+        require(
+            zone.spawn_groups.len() < crate::spawn_groups::MAX_GROUPS,
+            "Spawn group budget exceeded",
+        )?;
+        let mut copy = source.clone();
+        copy.id = new_id;
+        copy.name = copy_name(&copy.name);
+        copy.volume = copy.volume.translated(offset)?;
+        zone.spawn_groups.push(copy);
     } else {
         return Err("Unknown authoring ID to copy".into());
     }

@@ -371,6 +371,11 @@ pub(super) fn geometry(
     gameplay_areas: bool,
 ) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
+    if !zone.spawn_groups.is_empty() {
+        return Err(
+            "NPC spawn groups are authoring drafts; population export is not connected yet".into(),
+        );
+    }
     if !zone.scenery.is_empty() {
         return Err("Scenery asset publication is not connected yet".into());
     }
@@ -1806,6 +1811,38 @@ mod tests {
             assert!(!destination.exists());
         }
         assert_eq!(fs::read_dir(&root.0).unwrap().count(), 1);
+    }
+    #[test]
+    fn population_drafts_refuse_export_until_runtime_binding_exists() {
+        let mut zone = Zone {
+            schema: 14,
+            ..Zone::default()
+        };
+        zone.spawn_groups
+            .push(theia_zone::spawn_groups::SpawnGroup {
+                id: 50,
+                name: "Wolves".into(),
+                enabled: true,
+                creature: "theia.dev.training-creature".into(),
+                model: None,
+                volume: theia_core::spawn_volume::PolygonVolume::new(
+                    vec![[0., 0.], [8., 0.], [0., 8.]],
+                    -2.,
+                    8.,
+                )
+                .unwrap(),
+                target_alive: 3,
+                respawn_seconds: 30,
+                seed: 42,
+            });
+        zone.validate().unwrap();
+        for gameplay in [false, true] {
+            assert!(
+                geometry(&zone, gameplay)
+                    .unwrap_err()
+                    .contains("population export")
+            );
+        }
     }
     #[test]
     fn gameplay_area_drafts_cannot_be_silently_omitted_from_world_export() {
