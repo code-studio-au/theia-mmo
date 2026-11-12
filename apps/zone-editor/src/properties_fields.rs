@@ -125,6 +125,16 @@ pub(super) fn prefix(target: &Target, index: usize) -> Option<(&'static str, f32
     if matches!(target, Target::Path { point: None, .. }) {
         return Some(("Width", 44., "m"));
     }
+    if matches!(target, Target::SpawnGroup(_)) {
+        return Some(match index {
+            0 => ("X", 16., "m"),
+            1 => ("Z", 16., "m"),
+            2 => ("Min Y", 44., "m"),
+            3 => ("Max Y", 44., "m"),
+            4 => ("Alive", 44., ""),
+            _ => ("Respawn", 58., "s"),
+        });
+    }
     if index < 3 {
         return Some((["X", "Y", "Z"][index], 16., "m"));
     }

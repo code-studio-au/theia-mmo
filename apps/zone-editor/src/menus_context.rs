@@ -35,6 +35,7 @@ fn editable(target: outliner::Target) -> bool {
             | outliner::Target::Plant(_)
             | outliner::Target::Particle(_)
             | outliner::Target::QuestArea(_)
+            | outliner::Target::SpawnGroup(_)
             | outliner::Target::Scenery(_)
             | outliner::Target::TestPlayer(_)
     )

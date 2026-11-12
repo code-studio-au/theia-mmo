@@ -94,6 +94,10 @@ pub(super) fn description(session: &Session) -> Option<String> {
             }
         )),
         Target::Scenery(model) => subject.push_str(&format!("\n{}", model.asset)),
+        Target::SpawnGroup(ref g) => subject.push_str(&format!(
+            "\n{} boundary vertices · population draft",
+            g.volume.polygon().len()
+        )),
         Target::QuestArea(_) => subject.push_str("\nQuest references checked on catalog export"),
         Target::Marker(ref m)
             if m.kind == theia_zone::markers::MarkerKind::Npc && m.definition.is_some() =>
@@ -180,7 +184,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
             super::area::spawn(root);
             crate::quest_inspector::spawn(root);
             for index in 0..7 {
-                if matches!(index, 0 | 3 | 4) {
+                if matches!(index, 0 | 2 | 3 | 4) {
                     root.spawn((
                         Heading(index),
                         theme::label("", 12., theme::DISPLAY),
@@ -261,7 +265,9 @@ pub(super) fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Inp
                         super::inline::Input::Name => 80,
                         super::inline::Input::Effect
                         | super::inline::Input::AreaDefinition
-                        | super::inline::Input::MarkerDefinition => 96,
+                        | super::inline::Input::MarkerDefinition
+                        | super::inline::Input::SpawnCreature
+                        | super::inline::Input::SpawnModel => 96,
                         super::inline::Input::AreaObjectives => {
                             theia_core::quests::areas::MAX_MAP_OBJECTIVES_PER_AREA * 98
                         }
@@ -297,7 +303,10 @@ pub(super) fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Inp
                 }
                 super::inline::Input::AreaDefinition
                 | super::inline::Input::AreaObjectives
-                | super::inline::Input::MarkerDefinition => {
+                | super::inline::Input::MarkerDefinition
+                | super::inline::Input::SpawnCreature
+                | super::inline::Input::SpawnModel
+                | super::inline::Input::SpawnSeed => {
                     entity.insert(super::area::TextField);
                 }
             }
@@ -442,6 +451,11 @@ fn sync(
     let fields = target.values();
     for (heading, mut node, mut text) in &mut headings {
         let title = match (&target, heading.0) {
+            (Target::SpawnGroup(_), 0) => "Boundary position",
+            (Target::SpawnGroup(_), 2) => "Height limits",
+            (Target::SpawnGroup(_), 4) => "Population",
+            (Target::SpawnGroup(_), _) => "",
+            (_, 2) => "",
             (Target::TestPlayer(_), 3) => "Network conditions",
             (Target::QuestArea(_), 0) => "Minimum bounds",
             (Target::QuestArea(_), 3) => "Maximum bounds",

@@ -29,6 +29,7 @@ pub(super) fn bounds(window: &Window, session: &Session) -> Option<Rect> {
         || session.terrain_mode
         || session.particle_selected.is_some()
         || session.quest_area_selected.is_some()
+        || session.spawn_group_selected.is_some()
         || outliner::selection(session) == Some(outliner::Target::Spawn)
         || outliner::selection(session).is_none()
     {

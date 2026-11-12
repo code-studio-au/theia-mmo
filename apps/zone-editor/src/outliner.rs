@@ -21,6 +21,7 @@ pub(super) enum Target {
     Plant(u64),
     Particle(u64),
     QuestArea(u64),
+    SpawnGroup(u64),
     Scenery(u64),
     TestPlayer(u64),
 }
@@ -34,6 +35,7 @@ pub(super) enum Filter {
     Plants,
     Particles,
     QuestAreas,
+    SpawnGroups,
     Scenery,
     TestPlayers,
     Terrain,
@@ -48,6 +50,7 @@ impl Filter {
             Self::Plants => "Plants",
             Self::Particles => "Particles",
             Self::QuestAreas => "Quest areas",
+            Self::SpawnGroups => "NPC spawn zones",
             Self::Scenery => "Scenery",
             Self::TestPlayers => "Test players",
             Self::Terrain => "Terrain",
@@ -63,6 +66,7 @@ impl Filter {
                 | (Self::Plants, Target::Plant(_))
                 | (Self::Particles, Target::Particle(_))
                 | (Self::QuestAreas, Target::QuestArea(_))
+                | (Self::SpawnGroups, Target::SpawnGroup(_))
                 | (Self::Scenery, Target::Scenery(_))
                 | (Self::TestPlayers, Target::TestPlayer(_))
                 | (Self::Terrain, Target::Terrain)
@@ -181,6 +185,15 @@ fn entries(zone: &Zone) -> Vec<Entry> {
         target: Target::QuestArea(a.id),
         label: format!("Quest area #{} | {}", a.id, a.name),
     }));
+    rows.extend(zone.spawn_groups.iter().map(|g| Entry {
+        target: Target::SpawnGroup(g.id),
+        label: format!(
+            "NPC spawn zone #{} | {}{}",
+            g.id,
+            g.name,
+            if g.enabled { "" } else { " (disabled)" }
+        ),
+    }));
     rows
 }
 pub(super) fn selection(session: &Session) -> Option<Target> {
@@ -203,6 +216,8 @@ pub(super) fn selection(session: &Session) -> Option<Target> {
         Some(Target::Object(id))
     } else if let Some(id) = session.particle_selected {
         Some(Target::Particle(id))
+    } else if let Some(id) = session.spawn_group_selected {
+        Some(Target::SpawnGroup(id))
     } else if let Some(id) = session.quest_area_selected {
         Some(Target::QuestArea(id))
     } else if let Some(id) = session.scenery_selected {
@@ -408,6 +423,7 @@ pub(super) fn select_row(
         Target::TestPlayer(id) => zone.test_players.iter().any(|v| v.id == id),
         Target::Scenery(id) => zone.scenery.iter().any(|v| v.id == id),
         Target::QuestArea(id) => zone.quest_areas.iter().any(|v| v.id == id),
+        Target::SpawnGroup(id) => zone.spawn_groups.iter().any(|v| v.id == id),
     };
     if !present {
         session.status = "Content changed; select an updated row".into();
@@ -451,6 +467,10 @@ pub(super) fn select_row(
         Target::Scenery(id) => {
             session.set_mode(EditorMode::Objects);
             session.scenery_selected = Some(id);
+        }
+        Target::SpawnGroup(id) => {
+            session.set_mode(EditorMode::Objects);
+            session.spawn_group_selected = Some(id);
         }
         Target::QuestArea(id) => {
             session.set_mode(EditorMode::Objects);

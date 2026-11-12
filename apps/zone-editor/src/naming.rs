@@ -174,6 +174,7 @@ pub(super) fn keyboard(
         .or(session.plant_selected)
         .or(session.particle_selected)
         .or(session.quest_area_selected)
+        .or(session.spawn_group_selected)
         .or(session.scenery_selected)
         .or(session.test_player_selected);
     let target = if find {

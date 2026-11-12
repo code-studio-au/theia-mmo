@@ -352,6 +352,7 @@ pub(super) fn pointer(
             session.selected = None;
             session.particle_selected = Some(particle.0);
             session.quest_area_selected = None;
+            session.spawn_group_selected = None;
             session.scenery_selected = None;
             session.test_player_selected = None;
             session.status = format!("Selected particle reference #{}", particle.0);
@@ -362,6 +363,7 @@ pub(super) fn pointer(
             session.selected = id;
             session.particle_selected = None;
             session.quest_area_selected = None;
+            session.spawn_group_selected = None;
             session.scenery_selected = None;
             session.test_player_selected = None;
             if already_selected
@@ -651,6 +653,7 @@ pub(super) fn report(
         crate::export_dialog::Report,
         crate::asset_preview::Report,
         crate::quest_inspector::Report,
+        crate::spawn_groups::Report,
         Query<
             (
                 &ComputedNode,
@@ -682,6 +685,7 @@ pub(super) fn report(
         export_dialog,
         asset_preview,
         quests,
+        spawn_groups,
         asset_search,
     ) = input;
     let Some(mut report) = report else {
@@ -741,6 +745,7 @@ pub(super) fn report(
         "terrain_points":[project(Vec3::new(64.,0.,64.)),project(Vec3::new(72.,0.,64.)),project(Vec3::new(48.,0.,64.))],
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
+    value["spawn_group_selected"] = session.spawn_group_selected.into();
     value["particle_selected"] = session.particle_selected.into();
     value["exit_confirmation"] = session.exit_confirmation.into();
     value["grid"] = serde_json::json!({"enabled":view.show_grid,"spacing":authoring_grid::spacing(&session,&view),"surface":authoring_grid::surface(&session,&view),"surface_visible":scene_visuals.iter().any(|(_,_,_,v,_,_,_,_,grid,..)|grid && *v!=Visibility::Hidden),
@@ -846,6 +851,15 @@ pub(super) fn report(
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
     value["npc_quests"] = quests.snapshot(&session, scale.0);
+    value["spawn_group_preview"] = spawn_groups.snapshot();
+    value["spawn_group_fields"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,_,_,_,_,_,field,text),_,_,_,node,t,..)| {
+        let field = field?;
+        if !matches!(field, properties::InlineInput::SpawnCreature | properties::InlineInput::SpawnModel | properties::InlineInput::SpawnSeed) || node.size().min_element() <= 0. { return None; }
+        let text = text?;
+        let factor = node.inverse_scale_factor() * scale.0;
+        Some(serde_json::json!({"field":format!("{field:?}"),"value":text.value().to_string(),"focused":focus.get()==Some(entity),
+            "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
+    }).collect::<Vec<_>>());
     value["inline_attributes"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,_,_,_,_,_,field,text),_,_,_,node,t,..)| {
         let properties::InlineInput::Number(field) = field? else { return None }; let text = text?;
         if node.size().min_element() <= 0. { return None; }

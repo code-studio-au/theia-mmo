@@ -110,6 +110,7 @@ enum Target {
     Scenery(theia_zone::scenery::SceneryPlacement),
     TestPlayer(theia_zone::test_players::TestPlayer),
     QuestArea(theia_zone::quest_areas::QuestArea),
+    SpawnGroup(theia_zone::spawn_groups::SpawnGroup),
     Marker(Marker),
     Path {
         path: GuidePath,
@@ -172,6 +173,14 @@ impl Target {
     fn labels(&self) -> &'static [&'static str] {
         match self {
             Self::Object(_) => &LABELS,
+            Self::SpawnGroup(_) => &[
+                "Centre X (m)",
+                "Centre Z (m)",
+                "Minimum Y (m)",
+                "Maximum Y (m)",
+                "Alive count",
+                "Respawn (s)",
+            ],
             Self::QuestArea(_) => &[
                 "Min X (m)",
                 "Min Y (m)",
@@ -227,6 +236,19 @@ impl Target {
     fn values(&self) -> Vec<String> {
         match self {
             Self::Object(pose) => values(pose).to_vec(),
+            Self::SpawnGroup(group) => {
+                let c = spawn_groups::centre(group);
+                [
+                    c[0],
+                    c[2],
+                    group.volume.min_y(),
+                    group.volume.max_y(),
+                    f64::from(group.target_alive),
+                    f64::from(group.respawn_seconds),
+                ]
+                .map(|v| v.to_string())
+                .to_vec()
+            }
             Self::QuestArea(area) => area
                 .min
                 .into_iter()
@@ -291,6 +313,30 @@ impl Target {
     }
     fn edit(&self, id: Option<u64>, fields: &[String]) -> Result<Option<Edit>, String> {
         match self {
+            Self::SpawnGroup(original) => {
+                let v = numbers(fields, self.labels())?;
+                if v[4].fract() != 0.
+                    || !(1. ..=64.).contains(&v[4])
+                    || v[5].fract() != 0.
+                    || !(1. ..=86400.).contains(&v[5])
+                {
+                    return Err(
+                        "Alive count needs 1..64 and respawn needs 1..86400 whole seconds".into(),
+                    );
+                }
+                let c = spawn_groups::centre(original);
+                let polygon = original
+                    .volume
+                    .polygon()
+                    .iter()
+                    .map(|p| [p[0] + (v[0] - c[0]), p[1] + (v[1] - c[2])])
+                    .collect();
+                let mut group = original.clone();
+                group.volume = theia_core::spawn_volume::PolygonVolume::new(polygon, v[2], v[3])?;
+                group.target_alive = v[4] as u16;
+                group.respawn_seconds = v[5] as u32;
+                Ok((group != *original).then_some(Edit::PutSpawnGroup { group }))
+            }
             Self::QuestArea(original) => {
                 let v = numbers(fields, self.labels())?;
                 let mut area = original.clone();
@@ -789,6 +835,16 @@ fn capture(session: &Session, spawn_requested: bool) -> Option<(Option<u64>, Tar
             Some(p.id),
             Target::TestPlayer(p.clone()),
             format!("Test player {} | {}", p.client_id, p.name),
+        )
+    } else if let Some(group) = zone
+        .spawn_groups
+        .iter()
+        .find(|g| Some(g.id) == session.spawn_group_selected)
+    {
+        (
+            Some(group.id),
+            Target::SpawnGroup(group.clone()),
+            format!("NPC spawn zone #{} | {}", group.id, group.name),
         )
     } else if let Some(area) = zone
         .quest_areas

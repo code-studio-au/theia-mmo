@@ -1,8 +1,12 @@
 NPC spawn-group groundwork (12 November 2026): schema-14 zone drafts can store
 validated custom polygon/height bounds, creature/model IDs, alive count, respawn
-delay and seed through the shared command API. They are not yet exposed as editor
-controls and are explicitly refused by world export until population integration
-exists. An offline placement checker can now test a separate request against an
+delay and seed through the shared command API. Add → NPC spawn zone at spawn
+creates a rectangle; use the NPC spawn zones explorer filter and Attributes for
+inline IDs, seed, enabled, centre X/Z, height limits, alive count and respawn delay.
+Select a group and press F to frame its polygon; rename, copy, delete, undo and
+explicit Save use the normal controls. Imported custom polygons are previewed,
+but individual vertex editing is the next slice. Drafts remain explicitly refused
+by world export until population integration exists. An offline placement checker can now test a separate request against an
 existing exported world/navigation pair:
 
 ```sh

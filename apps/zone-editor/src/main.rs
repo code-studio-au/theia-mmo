@@ -57,6 +57,7 @@ mod selection;
 mod sidebar;
 mod snapping;
 mod spawn;
+mod spawn_groups;
 mod status_bar;
 mod terrain;
 mod test_players;
@@ -116,6 +117,7 @@ struct Session {
     selected: Option<u64>,
     particle_selected: Option<u64>,
     quest_area_selected: Option<u64>,
+    spawn_group_selected: Option<u64>,
     scenery_selected: Option<u64>,
     test_player_selected: Option<u64>,
     scenery_ground_requested: Option<(u64, u64, u64)>,
@@ -201,6 +203,7 @@ impl Session {
             selected: None,
             particle_selected: None,
             quest_area_selected: None,
+            spawn_group_selected: None,
             scenery_selected: None,
             test_player_selected: None,
             scenery_ground_requested: None,
@@ -370,6 +373,7 @@ impl Session {
         self.selected = None;
         self.particle_selected = None;
         self.quest_area_selected = None;
+        self.spawn_group_selected = None;
         self.scenery_selected = None;
         self.test_player_selected = None;
         self.status = if self.terrain_paint {
@@ -491,6 +495,15 @@ impl Session {
         if !self
             .editor
             .zone()
+            .spawn_groups
+            .iter()
+            .any(|g| Some(g.id) == self.spawn_group_selected)
+        {
+            self.spawn_group_selected = None;
+        }
+        if !self
+            .editor
+            .zone()
             .scenery
             .iter()
             .any(|p| Some(p.id) == self.scenery_selected)
@@ -550,6 +563,8 @@ enum Action {
     Duplicate,
     AddParticle,
     AddQuestArea,
+    AddSpawnGroup,
+    ToggleSpawnGroup,
     AddTestPlayer,
     TestPlayerEnabled,
     TestPlayerController(bool),
@@ -777,6 +792,7 @@ fn run() -> Result<(), String> {
     .add_plugins(browser_icons::plugin)
     .add_plugins(asset_browser::plugin)
     .add_plugins(scrolling::plugin)
+    .add_plugins(spawn_groups::plugin)
     .add_plugins(properties::summary_plugin)
     .add_plugins(menus::plugin)
     .add_plugins(particle_workspace::plugin)
@@ -1084,6 +1100,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             test_players::configure(action, session)
         }
         Action::AddQuestArea => quest_area_authoring::add(session),
+        Action::AddSpawnGroup => spawn_groups::add(session),
+        Action::ToggleSpawnGroup => spawn_groups::toggle(session),
         Action::AddParticle => {
             let id = session.next_id;
             let Some(next) = id.checked_add(1) else {
@@ -1126,6 +1144,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             session.inspect_spawn = false;
             session.particle_selected = None;
             session.quest_area_selected = None;
+            session.spawn_group_selected = None;
             session.scenery_selected = None;
             session.test_player_selected = None;
             session.terrain_mode = false;
@@ -1230,6 +1249,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                     session.selected = None;
                     session.particle_selected = None;
                     session.quest_area_selected = None;
+                    session.spawn_group_selected = None;
                     session.scenery_selected = None;
                     session.test_player_selected = None;
                     session.inspect_spawn = false;
@@ -1259,6 +1279,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 session.edit(vec![Edit::DeleteScenery { id }]);
             } else if let Some(id) = session.test_player_selected {
                 session.edit(vec![Edit::DeleteTestPlayer { id }]);
+            } else if let Some(id) = session.spawn_group_selected {
+                session.edit(vec![Edit::DeleteSpawnGroup { id }]);
             } else if let Some(id) = session.quest_area_selected {
                 session.edit(vec![Edit::DeleteQuestArea { id }]);
             } else {

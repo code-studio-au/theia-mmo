@@ -41,6 +41,7 @@ pub(super) struct Requests {
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
     PlayerModel,
+    SpawnEnabled,
     PlayerAnimation(playtest_avatar::Preview),
     New,
     AssetBrowser,
@@ -244,6 +245,11 @@ pub(super) fn setup(
                         (
                             Control::Command(Action::AddTestPlayer),
                             "Test player at spawn",
+                            "",
+                        ),
+                        (
+                            Control::Command(Action::AddSpawnGroup),
+                            "NPC spawn zone at spawn",
                             "",
                         ),
                         (
@@ -606,6 +612,7 @@ impl Control {
             .or(session.quest_area_selected)
             .or(session.scenery_selected)
             .or(session.test_player_selected)
+            .or(session.spawn_group_selected)
             .is_some();
         match self {
             Self::Command(Action::TestPlayerEnabled | Action::TestPlayerController(_)) => {
@@ -628,6 +635,7 @@ impl Control {
                 mode(session) == EditorMode::Objects
                     && session.particle_selected.is_none()
                     && session.quest_area_selected.is_none()
+                    && session.spawn_group_selected.is_none()
                     && outliner::selection(session) != Some(outliner::Target::Spawn)
             }
             Self::Transform => {
@@ -672,9 +680,12 @@ impl Control {
             Self::Frame => {
                 (session.terrain_mode && session.editor.zone().terrain.is_some()) || selected
             }
-            Self::Command(Action::Duplicate | Action::Ground) => {
-                selected && session.quest_area_selected.is_none()
+            Self::Command(Action::Ground) => {
+                selected
+                    && session.quest_area_selected.is_none()
+                    && session.spawn_group_selected.is_none()
             }
+            Self::Command(Action::Duplicate) => selected && session.quest_area_selected.is_none(),
             Self::Command(Action::Undo) => session.editor.history().0 > 0,
             Self::Command(Action::Redo) => session.editor.history().1 > 0,
             Self::Command(Action::Load) => session.path.is_some(),
@@ -812,7 +823,10 @@ pub(super) fn execute(
     requests: &mut Requests,
     content: &mut outliner::Content,
 ) {
-    if matches!(control, Control::Snap | Control::Handles | Control::Grid) {
+    if matches!(
+        control,
+        Control::Snap | Control::Handles | Control::Grid | Control::SpawnEnabled
+    ) {
         return;
     }
     if session.has_modal() {
@@ -912,7 +926,7 @@ pub(super) fn execute(
         Control::ParticlePreview => requests.particle_preview = true,
         Control::BindParticle => requests.bind_particle = true,
         Control::PreviewLibraryParticle => requests.preview_library_particle = true,
-        Control::Snap | Control::Handles | Control::Grid => {}
+        Control::Snap | Control::Handles | Control::Grid | Control::SpawnEnabled => {}
     }
 }
 pub(super) fn change(
@@ -966,6 +980,7 @@ pub(super) fn toggle(
         Ok(Control::Grid) => view.show_grid = event.value,
         Ok(Control::Snap) => session.snap = event.value,
         Ok(Control::Handles) => session.show_move_handles = event.value,
+        Ok(Control::SpawnEnabled) => perform(Action::ToggleSpawnGroup, &mut session, &mut view),
         _ => {}
     }
 }
@@ -1090,6 +1105,12 @@ pub(super) fn sync(
             Control::Snap => session.snap,
             Control::Handles => session.show_move_handles,
             Control::Grid => view.show_grid,
+            Control::SpawnEnabled => session
+                .editor
+                .zone()
+                .spawn_groups
+                .iter()
+                .any(|g| Some(g.id) == session.spawn_group_selected && g.enabled),
             Control::GizmoTool(tool) => session.gizmo_tool == tool,
             Control::View(preset) => view.preset == preset,
             Control::Help => requests.help,
@@ -1100,21 +1121,27 @@ pub(super) fn sync(
             Control::Command(Action::Play) => session.play.is_some(),
             _ => false,
         };
-        background.0 =
-            if rail || matches!(control, Control::Snap | Control::Handles | Control::Grid) {
-                Color::NONE
-            } else if !enabled {
-                theme::Variant::Disabled.background(false)
-            } else if active {
-                theme::Variant::Active.background(false)
-            } else if menu_item {
-                theme::Variant::Ghost.background(hovered.0)
-            } else if hovered.0 {
-                theme::Variant::Default.background(true)
-            } else {
-                theme::Variant::Default.background(false)
-            };
-        if matches!(control, Control::Snap | Control::Handles | Control::Grid) && checked != active
+        background.0 = if rail
+            || matches!(
+                control,
+                Control::Snap | Control::Handles | Control::Grid | Control::SpawnEnabled
+            ) {
+            Color::NONE
+        } else if !enabled {
+            theme::Variant::Disabled.background(false)
+        } else if active {
+            theme::Variant::Active.background(false)
+        } else if menu_item {
+            theme::Variant::Ghost.background(hovered.0)
+        } else if hovered.0 {
+            theme::Variant::Default.background(true)
+        } else {
+            theme::Variant::Default.background(false)
+        };
+        if matches!(
+            control,
+            Control::Snap | Control::Handles | Control::Grid | Control::SpawnEnabled
+        ) && checked != active
         {
             if active {
                 commands.entity(entity).insert(Checked);
@@ -1207,6 +1234,7 @@ pub(super) fn sync(
                     outliner::Target::Plant(_) => "Plant",
                     outliner::Target::Particle(_) => "Particle",
                     outliner::Target::QuestArea(_) => "Quest area",
+                    outliner::Target::SpawnGroup(_) => "NPC spawn zone",
                     outliner::Target::Scenery(_) => "Scenery",
                     outliner::Target::TestPlayer(_) => "Test player",
                 }

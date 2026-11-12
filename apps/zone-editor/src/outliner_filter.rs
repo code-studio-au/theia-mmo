@@ -96,6 +96,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                     Filter::Plants,
                     Filter::Particles,
                     Filter::QuestAreas,
+                    Filter::SpawnGroups,
                     Filter::Scenery,
                     Filter::TestPlayers,
                     Filter::Terrain,

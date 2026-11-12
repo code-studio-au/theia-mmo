@@ -1,3 +1,23 @@
+P5-17 / P3-07 spawn-zone editor drafts, 12 November 2026:
+Add → NPC spawn zone at spawn creates a bounded rectangular population draft.
+Explorer has an NPC spawn zones filter; select a draft to see its custom polygon
+prism and permanent inline creature/model IDs, exact u64 seed, enabled checkbox,
+centre X/Z, feet height limits, alive count and respawn seconds. Existing rename,
+copy, delete, undo and explicit Save apply. Source files stay unchanged until Save.
+Preview shares one mesh/material across a bounded 192-edge pool, uses local
+coordinates after f64 origin subtraction, has no collision and hides in playtest.
+Unsupported gizmo/ground operations are disabled. Imported concave polygons remain
+intact; per-vertex boundary editing is next. These drafts do not spawn NPCs and
+world export still explicitly refuses them pending runtime population binding.
+Acceptance: 223 ordinary editor tests pass (seven optional skips); fmt, strict
+workspace/all-target Clippy and build pass. Native creation/filtering, concave
+preview, numeric/seed edits, enabled toggle, copy/delete/undo, playtest hiding and
+explicit Save pass on RX 7900 XTX / RADV NAVI31 / Vulkan with zero GPU diagnostics.
+Captures visually inspected; source preserved. Windows remains unqualified.
+Evidence: build/spawn-group-editor-{tests-final,clippy,build}.log and
+build/editor-spawn-groups-native-v1/qualification.json; reproduce with
+tools/qualify_editor_spawn_groups.py.
+
 P5-17 / P3-07 / P4-03 bounded spawn-candidate validation, 12 November 2026:
 A read-only `theia-nav-bake spawns-authored WORLD NAVIGATION REQUEST_JSON` command
 now samples seeded points from detailed navigation triangles within a custom

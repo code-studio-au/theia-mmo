@@ -906,3 +906,77 @@ fn scenery_inline_transforms_keep_selection_and_save_explicitly() {
     });
     assert_eq!(session.editor.zone(), &before);
 }
+
+#[test]
+fn spawn_population_attributes_commit_exact_values_and_reject_invalid_drafts() {
+    let (mut app, _) = super::tests::fixture([128_000_000_000.125, 20.25, -128_000_000_000.5], 0);
+    let saved = app.world().resource::<Session>().saved_zone.clone();
+    spawn_groups::add(&mut app.world_mut().resource_mut::<Session>());
+    for _ in 0..3 {
+        app.update();
+    }
+    let original = app.world().resource::<Session>().editor.zone().spawn_groups[0].clone();
+    let input = open(&mut app, 4);
+    type_value(&mut app, input, "7");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    assert_eq!(
+        app.world().resource::<Session>().editor.zone().spawn_groups[0].target_alive,
+        7
+    );
+    let accepted = app.world().resource::<Session>().editor.zone().clone();
+    for (index, value) in [(4, "65"), (4, "2.5"), (5, "0"), (5, "86401"), (2, "NaN")] {
+        let input = open(&mut app, index);
+        type_value(&mut app, input, value);
+        key(&mut app, KeyCode::Enter, Key::Enter);
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &accepted);
+        key(&mut app, KeyCode::Escape, Key::Escape);
+    }
+    let centre = spawn_groups::centre(&original);
+    let input = open(&mut app, 0);
+    type_value(&mut app, input, &(centre[0] + 0.125).to_string());
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    let group = &app.world().resource::<Session>().editor.zone().spawn_groups[0];
+    for (old, new) in original.volume.polygon().iter().zip(group.volume.polygon()) {
+        assert_eq!(new[0] - old[0], 0.125);
+        assert_eq!(new[1], old[1]);
+    }
+    for (kind, value, valid) in [
+        (0, "theia.creature.wolf", true),
+        (0, "../wolf.json", false),
+        (1, "theia.model.wolf", true),
+        (1, "", true),
+        (2, "18446744073709551615", true),
+        (2, "18446744073709551616", false),
+    ] {
+        let field = app
+            .world_mut()
+            .query::<(Entity, &Input)>()
+            .iter(app.world())
+            .find_map(|(e, i)| match (kind, i) {
+                (0, Input::SpawnCreature) | (1, Input::SpawnModel) | (2, Input::SpawnSeed) => {
+                    Some(e)
+                }
+                _ => None,
+            })
+            .unwrap();
+        let before = app.world().resource::<Session>().editor.zone().clone();
+        app.world_mut()
+            .resource_mut::<InputFocus>()
+            .set(field, FocusCause::Navigated);
+        app.update();
+        type_value(&mut app, field, value);
+        key(&mut app, KeyCode::Enter, Key::Enter);
+        let after = app.world().resource::<Session>().editor.zone();
+        if valid {
+            assert_ne!(&before, after);
+        } else {
+            assert_eq!(&before, after);
+            key(&mut app, KeyCode::Escape, Key::Escape);
+        }
+    }
+    assert_eq!(
+        app.world().resource::<Session>().editor.zone().spawn_groups[0].seed,
+        u64::MAX
+    );
+    assert_eq!(app.world().resource::<Session>().saved_zone, saved);
+}

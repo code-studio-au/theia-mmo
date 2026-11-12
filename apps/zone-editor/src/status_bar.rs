@@ -114,7 +114,8 @@ fn context(session: &Session) -> String {
             | outliner::Target::Particle(id)
             | outliner::Target::Scenery(id)
             | outliner::Target::TestPlayer(id)
-            | outliner::Target::QuestArea(id) => {
+            | outliner::Target::QuestArea(id)
+            | outliner::Target::SpawnGroup(id) => {
                 single_line(zone.authoring_name(id).unwrap_or("Selection"), 48)
             }
             outliner::Target::Terrain => "Terrain".into(),

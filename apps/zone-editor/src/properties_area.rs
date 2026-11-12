@@ -6,6 +6,7 @@ use crate::particle_workspace::ZoneAppExt;
 enum Group {
     Area,
     Marker,
+    Population,
 }
 #[derive(Component)]
 pub(super) struct TextField;
@@ -13,10 +14,18 @@ pub(super) struct TextField;
 pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
     spawn_group(parent, Group::Area);
     spawn_group(parent, Group::Marker);
+    spawn_group(parent, Group::Population);
 }
 fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
     let marker = matches!(group, Group::Marker);
-    let fields = if marker {
+    let spawn = matches!(group, Group::Population);
+    let fields = if spawn {
+        vec![
+            (inline::Input::SpawnCreature, "Creature ID", 2),
+            (inline::Input::SpawnModel, "Model ID", 3),
+            (inline::Input::SpawnSeed, "Seed", 4),
+        ]
+    } else if marker {
         vec![(inline::Input::MarkerDefinition, "Catalog ID", 2)]
     } else {
         vec![
@@ -40,7 +49,9 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
         .with_children(|group| {
             group.spawn((
                 theme::label(
-                    if marker {
+                    if spawn {
+                        "Population reference"
+                    } else if marker {
                         "Gameplay reference"
                     } else {
                         "Quest binding"
@@ -50,6 +61,9 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
                 ),
                 Pickable::IGNORE,
             ));
+            if spawn {
+                theme::checkbox::spawn(group, workspace::Control::SpawnEnabled, "Enabled");
+            }
             for (input, title, order) in fields {
                 group
                     .spawn(Node {
@@ -73,7 +87,9 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
             }
             group.spawn((
                 theme::label(
-                    if marker {
+                    if spawn {
+                        "Draft only · live population is not connected"
+                    } else if marker {
                         "Blank leaves this marker unbound"
                     } else {
                         "Objective IDs, separated by commas"
@@ -102,7 +118,9 @@ fn sync(
         let visible = snapshot.as_ref().is_some_and(|(_, target, _)| {
             matches!(
                 (group, target),
-                (Group::Area, Target::QuestArea(_)) | (Group::Marker, Target::Marker(_))
+                (Group::Area, Target::QuestArea(_))
+                    | (Group::Marker, Target::Marker(_))
+                    | (Group::Population, Target::SpawnGroup(_))
             )
         });
         node.display = if visible {

@@ -26,6 +26,7 @@ pub(super) fn keyboard(
         session.inspect_spawn = false;
         session.particle_selected = None;
         session.quest_area_selected = None;
+        session.spawn_group_selected = None;
         session.scenery_selected = None;
         session.test_player_selected = None;
         let objects = &session.editor.zone().objects;
@@ -96,6 +97,15 @@ pub(super) fn frame(session: &mut Session, view: &mut View) -> bool {
             .iter()
             .find(|m| Some(m.id) == session.marker_selected)
             .map(|m| (m.position, m.radius_metres.max(2.) as f32))
+    } else if let Some(id) = session.spawn_group_selected {
+        zone.spawn_groups.iter().find(|g| g.id == id).map(|g| {
+            let (min, max) = spawn_groups::bounds(g);
+            (
+                spawn_groups::centre(g),
+                Vec3::from_array(std::array::from_fn(|i| ((max[i] - min[i]) * 0.5) as f32))
+                    .length(),
+            )
+        })
     } else if let Some(id) = session.quest_area_selected {
         zone.quest_areas.iter().find(|a| a.id == id).map(|a| {
             let centre = std::array::from_fn(|i| a.min[i] + (a.max[i] - a.min[i]) / 2.);
@@ -169,6 +179,7 @@ pub(super) fn duplicate(session: &mut Session) {
             .or(session.particle_selected)
             .or(session.scenery_selected)
             .or(session.test_player_selected)
+            .or(session.spawn_group_selected)
     } else {
         None
     };
@@ -205,6 +216,8 @@ pub(super) fn duplicate(session: &mut Session) {
         session.scenery_selected = Some(new_id);
     } else if session.test_player_selected.is_some() {
         session.test_player_selected = Some(new_id);
+    } else if session.spawn_group_selected.is_some() {
+        session.spawn_group_selected = Some(new_id);
     } else if session.particle_selected.is_some() {
         session.particle_selected = Some(new_id);
     } else {
