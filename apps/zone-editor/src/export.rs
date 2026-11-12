@@ -648,6 +648,16 @@ fn publish_combined(
         fs::write(stage.join("world.manifest.json"), manifest).map_err(|e| e.to_string())?;
         zone.save(&stage.join("authoring.zone.json"))?;
         fs::write(
+            stage.join(theia_network::authored_world::ANCHOR_FILE),
+            serde_json::to_vec_pretty(&theia_network::authored_world::Anchor {
+                schema: 1,
+                origin: zone.origin,
+                world_identity: checked.identity(),
+            })
+            .map_err(|e| e.to_string())?,
+        )
+        .map_err(|e| e.to_string())?;
+        fs::write(
             stage.join("export.json"),
             serde_json::to_vec_pretty(&report).unwrap(),
         )
@@ -680,6 +690,7 @@ fn publish_combined(
             "terrain.glb",
             "terrain.json",
             "authoring.zone.json",
+            theia_network::authored_world::ANCHOR_FILE,
             "export.json",
             "world.manifest.json",
         ] {
@@ -748,6 +759,8 @@ mod tests {
         );
         let mut zone = Zone {
             schema: 10,
+            origin: [8000., 0., 8000.],
+            spawn: [8000., 0.1, 8000.],
             ..default()
         };
         zone.scenery = (1..=2)
@@ -755,7 +768,7 @@ mod tests {
                 id: i,
                 name: format!("Cube {i}"),
                 asset: id.into(),
-                position: [i as f64 * 4., 0.5, 0.],
+                position: [8000. + i as f64 * 4., 0.5, 8000.],
                 yaw_degrees: 30.,
                 scale: 1.,
             })
@@ -778,6 +791,9 @@ mod tests {
         assert_eq!(report["scenery"]["solid_instances"], 0);
         assert_eq!(Zone::load(&path.join("authoring.zone.json")).unwrap(), zone);
         let output = fs::read(path.join("terrain.glb")).unwrap();
+        let admitted = theia_network::authored_world::Store::open(&path).unwrap();
+        assert_eq!(admitted.origin().metres(), zone.origin);
+        assert_eq!(admitted.visual().as_slice(), output.as_slice());
         let document = scenery_glb::Glb::read(&output).unwrap().document;
         assert_eq!(document["nodes"].as_array().unwrap().len(), 3);
         assert_eq!(document["meshes"].as_array().unwrap().len(), 2);

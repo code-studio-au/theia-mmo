@@ -4100,3 +4100,20 @@ NPC quest assignments and pickups are still separate work. Offline radial
 walk/jump tests exercise the intended opening and closed sides at local/far
 origins. This is not exhaustive navigation, connected Classic containment or
 native appearance acceptance.
+
+## Authored prediction source foundation — 12 November 2026
+
+Exports now also write `authored.world.json` (schema 1), binding the document's
+original global origin to the exported world manifest identity. The optional
+network source consumes immutable collision/visual snapshots and translates only
+collider centres into existing local prediction frames. It rejects origins with
+nonzero Y, packages outside the current continental domain, particle catalogs,
+shared images and material-profile dependencies. Existing offline and monolithic
+export paths retain their prior supported scope. No authored client launch or
+quest-playtest acceptance is claimed yet.
+
+`content/zones/starter-zone.base.json` and `starter-zone.commands.jsonl` contain
+the same terrain/scenery recipe centred near [8000, 0, 8000], within the current
+quest-runtime domain. They are logical source data only; Synty payloads remain
+in ignored build directories. Next: standard GLB presentation with readiness
+gates, secure client/server launch, then validated NPC/quest authoring.

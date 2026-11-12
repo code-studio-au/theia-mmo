@@ -82,18 +82,24 @@ pub fn grid(cells: usize) -> Geometry {
 pub enum Source {
     Procedural,
     Saved(Arc<crate::saved_terrain::Store>),
+    Authored(Arc<crate::authored_world::Store>),
 }
 impl Source {
     pub fn identity(&self) -> [u8; 32] {
         match self {
             Self::Procedural => IDENTITY,
             Self::Saved(s) => s.identity(),
+            Self::Authored(s) => s.identity(),
         }
     }
     pub fn geometry(&self, id: ChunkId, cells: usize) -> crate::Result<Geometry> {
         match self {
             Self::Procedural => Ok(geometry(id, cells)),
             Self::Saved(s) => s.geometry(id, cells),
+            Self::Authored(_) => Err(
+                "Authored visuals require their bound standard GLB, not generated height meshes"
+                    .into(),
+            ),
         }
     }
 }
@@ -108,6 +114,9 @@ impl Patch {
         Self::load(owner, &Source::Procedural).expect("Procedural patch")
     }
     pub fn load(owner: ChunkId, source: &Source) -> crate::Result<Self> {
+        if let Source::Authored(store) = source {
+            return store.patch(owner);
+        }
         if !contains(owner) {
             return Err("Patch outside terrain".into());
         }

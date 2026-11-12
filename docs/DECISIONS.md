@@ -1,3 +1,17 @@
+## 12 November 2026 — authored worlds through existing prediction
+
+The quest runtime currently depends on procedural/saved-terrain patch preparation;
+a validated monolithic editor export alone cannot run that gameplay loop. Bridge
+bounded authored worlds through the existing `Source`/`Patch` worker and Classic
+prediction pipeline before presenting NPC markers as playable quest contacts.
+Preserve exact static collision, immutable standard GLB bytes and original global
+origin. Bind the origin companion and package identity into admission identity.
+Do not silently resample the editor's 2 m height grid into the saved-terrain 4 m
+grid, replace scenery materials, or change original authoring coordinates.
+The first source retains the existing continental domain and explicitly rejects
+unsupported presentation dependencies. Client readiness must still wait for actual
+scene/dependency/GPU preparation; CPU admission is not native rendering evidence.
+
 ## 12 November 2026 — curated Synty scenery collision
 
 Reuse the locally staged Enchanted Forest standard-material assets in the

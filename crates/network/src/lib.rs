@@ -1,5 +1,6 @@
 //! Small local walking protocol, not an MMO service stack.
 pub mod appearance_wire;
+pub mod authored_world;
 pub mod avatar_life_wire;
 pub mod chunk_world;
 pub mod chunks;

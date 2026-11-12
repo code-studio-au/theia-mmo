@@ -1,3 +1,17 @@
+P5-17 / P3-16 authored prediction foundation, 12 November 2026:
+editor exports now include a hash-bound `authored.world.json` companion carrying
+the original f64 origin. A bounded immutable network source preserves exported
+collision and visual bytes in the existing asynchronous prediction-patch path;
+it does not resample terrain or replace the renderer. Two CPU tests cover frame
+changes, ground/wall contact, Classic/guide preparation and changed-origin/content
+rejection. The scenery export regression verifies the companion and visual
+snapshot. Strict workspace Clippy passes. Client rendering/CLI/launcher support
+is not connected yet, so this is not a playable authored quest world. Initial
+admission requires zero origin Y, bounds inside the existing 16 km domain and
+standard embedded visuals without particle/shared-image/material-profile
+extensions. A separate `starter-zone` base/command recipe preserves the earlier
+basin example and anchors the starter scene around [8000, 0, 8000].
+
 P5-17 / P3-15 / P3-16 starter basin terrain, 12 November 2026:
 Add → Starter basin terrain creates a 128 m editable 2 m height patch with a
 painted clearing, 16 m high surrounding slopes and one broad +Z opening. It

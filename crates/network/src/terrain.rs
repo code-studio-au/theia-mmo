@@ -379,6 +379,9 @@ impl Terrain {
         Ok(terrain)
     }
     /// Chunks may have no spawn points. Normal-world consumers require one.
+    pub fn bounds(&self) -> [[f32; 2]; 2] {
+        self.bounds
+    }
     pub fn has_spawns(&self) -> bool {
         !self.spawns.is_empty()
     }
