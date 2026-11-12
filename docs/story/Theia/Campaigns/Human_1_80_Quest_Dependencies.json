@@ -3107,5 +3107,13 @@
     }
   ],
   "classificationPolicy": "Critical plot evidence and permission on main path; independent local adventures optional. Explicit regional access checks to be authored. This is a derived dependency/classification reference, not a second authoring inventory. minLevel is historical planning pace, not eligibility; approved eligibility belongs to the sole manifest. The 156/28 classification remains provisional.",
-  "authority": "Human_1_80_Current_Quest_Authoring_Manifest.json"
+  "authority": "Human_1_80_Current_Quest_Authoring_Manifest.json",
+  "shared_campaign_migration_warning_2026_11_12": {
+    "status": "BLOCKING_NOT_EXECUTABLE",
+    "scope": "Q035 onward Covenant shared campaign",
+    "legacy_completion_aliases": "HUMAN_Q035_DONE through HUMAN_Q184_DONE are legacy historical labels, not approved human-only runtime gates. Do not bind shared quests to human-only flags.",
+    "race_specific_entry": "Q035 requires completion of the active character's own racial 1–20 campaign; specific stable runtime identifiers remain unapproved.",
+    "common_progression": "After race-aware Q035 completion, Q036 onward uses shared Covenant progression independent of starting race; preserve legacy aliases only as migration provenance until stable IDs and journal migration are approved.",
+    "runtime_action": "Allocate stable cross-race IDs and migration mappings, validate accepted/completed journals against exact catalogue bytes, and test all four racial entry paths before import."
+  }
 }
