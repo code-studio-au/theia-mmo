@@ -1,3 +1,24 @@
+P5-17 / P2-14 authored-world adapter, 12 November 2026:
+Authored packages do not create the old regular visual-grid Tile components.
+Their map now uses the loaded immutable package's ground surfaces, projected
+from global XZ and limited to its declared bounds. The highest supported surface
+can include a roof; map height never selects an actor's floor or changes physics.
+Wait for authored-scene readiness. Keep existing quest overlays/owner filtering,
+heading, image/node counts and four-Hz raster schedule. No disk read, terrain
+request, extra camera or worker is added by the minimap.
+
+A 65x65 maximum CPU cache uses world-aligned four-metre cell centres. It fills at
+most 128 cells per frame, prioritizing the player; an initially unknown map fills
+over several frames. Pan overlap is reused, unknown cells are cached, and cells
+outside the current local map are removed. Cache samples approximate a four-metre
+texel; do not interpret them as collision/navigation precision. Actual out-of-zone
+pixel positions remain dark even if their nearest cached cell lies inside.
+The existing image pair remains 17,408 RGBA bytes; CPU cache allocation is extra.
+Unit checks cover budgets, cold start, unknowns, pan reuse, teleport and signed
+far coordinates. Native two-client valley captures and cost/resource counters
+pass; see STATUS.md and build/authored-minimap-native-v2/. Terrain layers on
+Windows and other GPUs remain unqualified.
+
 # Local minimap — initial Classic playable qualified
 
 ## Requested quest guidance — 6 November 2026

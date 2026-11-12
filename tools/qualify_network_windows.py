@@ -15,6 +15,7 @@ from gpu_validation import check_gpu_diagnostics
 parser = argparse.ArgumentParser(description=__doc__)
 for name in ('scenario', 'world', 'players', 'output'):
     parser.add_argument('--' + name, type=Path, required=True)
+parser.add_argument('--require-authored-map', action='store_true')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -52,13 +53,24 @@ with (out / 'launcher.log').open('w') as log:
             title = subprocess.check_output(['xprop', '-id', hex(w), '_NET_WM_NAME'], text=True)
             assert 'Theia network playtest - Player ' in title, title
             index = int(re.search(r'view ([12])/2', title)[1])
-            layout = next(json.loads(line)['test_window'] for line in (session / f'client-{index}.log').read_text().splitlines() if line.startswith('{"test_window":'))
+            lines = (session / f'client-{index}.log').read_text().splitlines()
+            layout = next(json.loads(line)['test_window'] for line in lines if line.startswith('{"test_window":'))
+            map_metrics = None
+            if args.require_authored_map:
+                observations = [json.loads(line)['graybox'] for line in lines if line.startswith('{"graybox":')]
+                map_metrics = observations[-1]['minimap']
+                assert map_metrics['visible'] and map_metrics['known_pixels'] > 0, map_metrics
+                assert map_metrics['resident_tiles_read'] == 0 and map_metrics['texture_bytes'] == 17408
+                assert 0 < map_metrics['authored_cached_samples'] <= 4225
+                assert map_metrics['authored_height_queries'] >= map_metrics['authored_cached_samples']
+                assert all(o['loaded'] == 0 and o['unloaded'] == 0 for o in observations)
+
             mx, my = layout['monitor_position']
             mw, mh = layout['monitor_size']
             assert mx <= left and my <= top and left + width <= mx + mw and top + height <= my + mh
             assert [width, height] == layout['physical_size']
             ImageGrab.grab(bbox=(left, top, left + width, top + height), xdisplay=':0').save(out / f'view-{index}.png')
-            results.append(dict(pid=pid, title=title.strip(), bounds=[left, top, width, height], requested=layout))
+            results.append(dict(pid=pid, title=title.strip(), bounds=[left, top, width, height], requested=layout, minimap=map_metrics))
         a, b = (r['bounds'] for r in sorted(results, key=lambda r: r['bounds'][0]))
         assert a[0] + a[2] <= b[0] or a[1] + a[3] <= b[1] or b[1] + b[3] <= a[1], results
         p.stdin.close()

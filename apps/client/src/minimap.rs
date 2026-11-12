@@ -1,4 +1,5 @@
 //! Bounded standard Bevy map presentation; never requests terrain or gameplay.
+mod authored;
 mod guidance;
 pub(crate) mod hints;
 mod projection;
@@ -25,6 +26,9 @@ pub(crate) struct Metrics {
     pub objective_regions: usize,
     pub objective_pixels: usize,
     pub resident_tiles_read: usize,
+    pub authored_cached_samples: usize,
+    pub authored_height_queries: u64,
+    pub max_authored_warm_us: u64,
     pub max_raster_us: u64,
     pub max_present_us: u64,
     pub present_samples: u64,
@@ -47,6 +51,7 @@ struct Map {
     view: Option<View>,
     epoch: Option<u64>,
     updated: f64,
+    authored: authored::Cache,
 }
 #[derive(Component)]
 pub(crate) struct Root;
@@ -121,6 +126,7 @@ fn setup(
         view: None,
         epoch: None,
         updated: 0.,
+        authored: default(),
     });
     commands
         .spawn((
@@ -267,7 +273,7 @@ fn seed_hover_preview(world: &mut World) {
         Some("Quest contact (fixture)\nAvailable quests\nMeet the guide".into()),
     );
 }
-fn raster(world: &mut World, view: View) -> (Vec<u8>, usize, usize) {
+fn raster(world: &mut World, view: View, cache: &authored::Cache) -> (Vec<u8>, usize, usize) {
     let mut query = world.query::<&crate::graybox::Tile>();
     let meshes = world.resource::<Assets<Mesh>>();
     let tiles: BTreeMap<_, _> = query
@@ -290,13 +296,18 @@ fn raster(world: &mut World, view: View) -> (Vec<u8>, usize, usize) {
             ))
         })
         .collect();
+    let authored = world.get_resource::<crate::authored_scene::Scene>();
     let mut data = vec![0; PIXELS * PIXELS * 4];
     let mut known = 0;
     for z in 0..PIXELS {
         for x in 0..PIXELS {
             let height = view.pixel(x, z).and_then(|p| {
-                let id = theia_network::procedural::owner(p)?;
-                tiles.get(&id)?.height(p)
+                if let Some(scene) = authored {
+                    scene.map_contains(p).then(|| cache.height(p)).flatten()
+                } else {
+                    let id = theia_network::procedural::owner(p)?;
+                    tiles.get(&id)?.height(p)
+                }
             });
             let color = match height {
                 Some(h) => {
@@ -407,11 +418,28 @@ fn present_inner(world: &mut World) {
     let now = world.resource::<Time>().elapsed_secs_f64();
     let epoch = state.welcome.as_ref().unwrap().epoch;
     let mut map = world.remove_resource::<Map>().unwrap();
+    if map.epoch != Some(epoch) {
+        map.authored = default();
+    }
+    if let Some(scene) = world
+        .get_resource::<crate::authored_scene::Scene>()
+        .filter(|s| s.ready())
+    {
+        let started = Instant::now();
+        let queries = map
+            .authored
+            .warm(View { centre: position }, |p| scene.map_height(p));
+        let elapsed = started.elapsed().as_micros() as u64;
+        let mut metrics = world.resource_mut::<Metrics>();
+        metrics.authored_cached_samples = map.authored.len();
+        metrics.authored_height_queries += queries as u64;
+        metrics.max_authored_warm_us = metrics.max_authored_warm_us.max(elapsed);
+    }
     let update = map.epoch != Some(epoch) || now - map.updated >= 0.25;
     if update {
         let started = Instant::now();
         let view = View { centre: position };
-        let (mut data, known, tiles) = raster(world, view);
+        let (mut data, known, tiles) = raster(world, view, &map.authored);
         let (objective_regions, objective_pixels) = world
             .get_resource::<crate::quest_journal::Definitions>()
             .map_or((0, 0), |definitions| {

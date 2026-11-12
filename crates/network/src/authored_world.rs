@@ -142,6 +142,28 @@ impl Store {
     pub fn visual(&self) -> Arc<Vec<u8>> {
         self.visual.clone()
     }
+    pub fn map_contains(&self, position: GlobalPosition) -> bool {
+        let [x, _, z] = position.metres();
+        let origin = self.origin.metres();
+        let bounds = self.terrain.bounds();
+        [x - origin[0], z - origin[2]]
+            .into_iter()
+            .enumerate()
+            .all(|(i, p)| p >= f64::from(bounds[0][i]) && p <= f64::from(bounds[1][i]))
+    }
+    /// Read-only topographic presentation sample from already admitted ground.
+    /// This is the highest ground surface, not actor support/navigation or a
+    /// terrain request. Global Y is irrelevant to the map's downward projection.
+    pub fn map_height(&self, position: GlobalPosition) -> Option<f32> {
+        if !self.map_contains(position) {
+            return None;
+        }
+        let [x, _, z] = position.metres();
+        let local = LocalFrame::new(self.origin)
+            .to_local(GlobalPosition::new([x, 0., z])?)?
+            .metres();
+        self.terrain.height([local[0], local[2]])
+    }
     pub fn patch(&self, owner: ChunkId) -> Result<procedural::Patch> {
         if !procedural::contains(owner) {
             return Err("Authored patch leaves supported domain".into());
@@ -227,6 +249,40 @@ mod tests {
             std::fs::write(root.join(name), bytes).unwrap();
         }
         (Folder(root), anchor)
+    }
+    #[test]
+    fn map_samples_use_checked_global_origin_and_do_not_extend_the_world() {
+        let (folder, _) = spawn_fixture([8192., 0., 8064.], true, false);
+        let store = Store::open(&folder.0).unwrap();
+        let identity = store.identity();
+        let spawn = store.spawn(0).unwrap();
+        // A topographic map shows the upper roof even when an actor stands
+        // below it. Requested Y must not select a different support layer or
+        // change the immutable world's identity.
+        for y in [0., 4.6, -100.] {
+            assert_eq!(
+                store.map_height(GlobalPosition::new([8192., y, 8064.]).unwrap()),
+                Some(4.5)
+            );
+        }
+        assert_eq!(
+            store.map_height(GlobalPosition::new([8200., 0., 8064.]).unwrap()),
+            Some(0.)
+        );
+        for xz in [
+            [8159.9, 8064.],
+            [8224.1, 8064.],
+            [8192., 8031.9],
+            [8192., 8096.1],
+            [0., 0.],
+        ] {
+            assert_eq!(
+                store.map_height(GlobalPosition::new([xz[0], 0., xz[1]]).unwrap()),
+                None
+            );
+        }
+        assert_eq!(store.identity(), identity);
+        assert_eq!(store.spawn(0).unwrap(), spawn);
     }
     #[test]
     fn contact_metadata_is_versioned_supported_profile_checked_and_identity_bound() {

@@ -24,6 +24,12 @@ pub(crate) struct Scene {
     started: Instant,
 }
 impl Scene {
+    pub(crate) fn map_contains(&self, point: theia_core::coordinates::GlobalPosition) -> bool {
+        self.ready() && self.store.map_contains(point)
+    }
+    pub(crate) fn map_height(&self, point: theia_core::coordinates::GlobalPosition) -> Option<f32> {
+        self.ready().then(|| self.store.map_height(point)).flatten()
+    }
     pub(crate) fn ready(&self) -> bool {
         self.cpu_ready && self.gpu_clear_frames >= 3
     }

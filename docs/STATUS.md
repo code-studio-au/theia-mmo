@@ -1,3 +1,27 @@
+P5-17 / P2-14 authored-valley minimap terrain, 12 November 2026:
+The minimap now samples already admitted authored-world ground after scene readiness,
+with checked global XZ bounds and topographic highest-surface semantics. No world,
+collision, quest guidance, readiness or loading authority changes. A bounded
+four-metre presentation cache holds at most 4,225 samples, warms at most 128 per
+frame near the player first, retains overlap during panning and drops old cells.
+Unknown/outside-zone pixels remain dark. The existing 64x64/16x16 image pair stays
+17,408 bytes and refreshes at most four times per second. CPU sample cache is
+additional; this is a coarse topographic map, not actor support or navigation.
+All 250 ordinary client tests (two skips), eight authored-world tests, formatting,
+strict workspace/all-target Clippy and client/server/editor builds pass. Native
+Linux two-client scripted valley checks show 4,096 known pixels, 4,225 cached
+samples, 4,451/4,419 total height queries and zero tile loads/retirements. Peak
+raster costs are 4.197/4.063 ms, cache warming 3.492/3.997 ms, complete presentation
+5.068/6.874 ms. The initial uncached experiment peaked at 37.052/38.665 ms and was
+replaced before commit. These are local debug-build measurements, not general FPS
+or MMO capacity claims. Both routes finish; owned cleanup and zero GPU diagnostics
+pass on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan. No Windows qualification.
+Evidence: build/authored-minimap-{network-tests,client-tests,client-suite,clippy,build}.log
+and build/authored-minimap-native-v2/{qualification.json,view-1.png,view-2.png}.
+Reproduce with tools/qualify_network_windows.py --require-authored-map and the
+exported scripted scenario. Next: authored account/quest/NPC launch prerequisites;
+the development network-test launcher still exercises movement only.
+
 P5-17 / P1-06 independent network camera windows, 12 November 2026:
 Managed playtests pass each client a bounded --test-window INDEX/COUNT. Standard
 Bevy monitor/window APIs arrange two views horizontally where space allows,
