@@ -1,4 +1,6 @@
 //! Actual encrypted production runtime; no mocked health or connections.
+#[path = "support/population_launch.rs"]
+mod population_launch;
 #[path = "support/relay.rs"]
 #[allow(dead_code)]
 mod relay;
@@ -56,6 +58,7 @@ struct Peer {
     stop: watch::Sender<bool>,
     task: JoinHandle<theia_network::Result<()>>,
     _ready: watch::Sender<Option<Vec<ChunkId>>>,
+    _commands: Option<mpsc::Sender<theia_network::prediction_wire::Commands>>,
     catalog: Arc<Catalog>,
 }
 impl Peer {
@@ -86,6 +89,32 @@ impl Peer {
         event_capacity: usize,
         statuses: Option<Arc<theia_core::statuses::Catalog>>,
     ) -> Self {
+        Self::start_mode(
+            address,
+            ticket,
+            identity,
+            chunks,
+            catalog,
+            event_capacity,
+            (statuses, None),
+        )
+    }
+    fn start_mode(
+        address: SocketAddr,
+        ticket: Vec<u8>,
+        identity: [u8; 32],
+        chunks: Vec<ChunkId>,
+        catalog: Arc<Catalog>,
+        event_capacity: usize,
+        profiles: (Option<Arc<theia_core::statuses::Catalog>>, Option<[u8; 32]>),
+    ) -> Self {
+        let (statuses, classic_source) = profiles;
+        let (command_sender, commands) = if classic_source.is_some() {
+            let (tx, rx) = mpsc::channel(8);
+            (Some(tx), Some(rx))
+        } else {
+            (None, None)
+        };
         let (input, inputs) = watch::channel(Intent::default());
         let (ready, readiness) = watch::channel(Some(chunks));
         let (choice, choices) = watch::channel(None);
@@ -107,7 +136,7 @@ impl Peer {
                     avatar_life: None,
                     public_attacks: None,
                     journal: None,
-                    classic_source: None,
+                    classic_source,
                     dodge: None,
                     player_life: None,
                     lifecycle: None,
@@ -115,7 +144,7 @@ impl Peer {
                     quest: None,
                     progression: None,
                     ready: readiness,
-                    commands: None,
+                    commands,
                     choices: Some(choices),
                     combat: Some(net::CombatActions {
                         melee: None,
@@ -143,6 +172,7 @@ impl Peer {
             stop,
             task,
             _ready: ready,
+            _commands: command_sender,
             catalog,
         }
     }

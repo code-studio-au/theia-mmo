@@ -58,6 +58,8 @@ use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args: Vec<_> = std::env::args().skip(1).collect();
+    theia_network::simulation::population::configuration::validate_launch(&args)
+        .map_err(|e| e.to_string())?;
     if args.first().is_some_and(|a| a == "--preview-fantasy-ui") {
         return fantasy_ui::preview::run(&args);
     }
@@ -241,6 +243,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let population = if let Some(i) = args.iter().position(|a| a == "--population-config") {
+        args.remove(i);
+        if i >= args.len() {
+            return Err("Missing population configuration".into());
+        }
+        Some(
+            theia_network::simulation::population::configuration::Loaded::open(
+                std::path::Path::new(&args.remove(i)),
+                &source,
+            )
+            .map_err(|e| e.to_string())?,
+        )
+    } else {
+        None
+    };
+    let respawn_ms = population.as_ref().map_or(
+        theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS,
+        |p| p.respawn_ms(),
+    );
     let patrol_binding = if let Some(i) = args.iter().position(|a| a == "--creature-profile") {
         use std::io::Read;
         use theia_network::simulation::creatures;
@@ -984,17 +1005,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map_or(base, |(profile, navigation, _)| {
                 theia_network::simulation::creatures::profile_identity(base, profile, *navigation)
             });
+        let base = population
+            .as_ref()
+            .map_or(base, |p| p.profile_identity(base));
         let base = if let Some((bytes, _)) = &combat_catalog {
-            use theia_network::simulation::combat::{
-                self, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS,
-            };
+            use theia_network::simulation::combat::{self, DEVELOPMENT_HEALTH};
             if let Some((stats, _)) = &character_stats {
                 if let Some((statuses, _)) = &status_catalog {
                     combat::status_profile_identity(
                         base,
                         bytes,
                         DEVELOPMENT_HEALTH,
-                        DEVELOPMENT_RESPAWN_MS,
+                        respawn_ms,
                         stats,
                         statuses,
                     )
@@ -1003,12 +1025,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         base,
                         bytes,
                         DEVELOPMENT_HEALTH,
-                        DEVELOPMENT_RESPAWN_MS,
+                        respawn_ms,
                         stats,
                     )
                 }
             } else {
-                combat::profile_identity(base, bytes, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS)
+                combat::profile_identity(base, bytes, DEVELOPMENT_HEALTH, respawn_ms)
             }
             .map_err(|e| e.to_string())?
         } else {
@@ -1122,6 +1144,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "progression_profile": progression_profile.as_ref().map(|p|p.hash()),
                 "interface": {"enabled": fantasy_ui.is_some(), "preferred_scale": ui_scale, "saved_preferences": ui_preferences.is_some(), "world_effects_visible": world_effects_visible},
                 "fixed_reward_catalog": journal_profile.as_ref().and_then(|p|p.item_rewards()).map(|r|r.id().as_str()),
+                "population": population.as_ref().map(|p| serde_json::json!({"count":p.count(), "respawn_ms":p.respawn_ms()})),
                 "renderer_started": false, "network_started": false, "saved_state_admitted": false
             }))?
         );

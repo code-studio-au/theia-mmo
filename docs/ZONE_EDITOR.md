@@ -42,6 +42,32 @@ explicit model references and more than 16 actors. Headless World tests cover
 saved-draft admission and death/respawn at 20/30/60 Hz; this is not yet wired to
 normal editor Play/export or the launcher.
 
+For explicit binary startup, both server and client accept `--population-config FILE`
+alongside `--authored-world WORLD --prediction --classic --combat-catalog ABILITIES`.
+Use normal secure Renet admission. The client also supports `--configuration-report`
+for this setup without opening a window or network connection. A configuration is:
+
+```json
+{
+  "schema": 1,
+  "zone": "zone.json",
+  "group": 7,
+  "creature": "creature.json",
+  "navigation": "navigation",
+  "minimum_spacing_metres": 3,
+  "access_from": [8000, 0, 8000]
+}
+```
+
+Replace the example group/access anchor with validated project values. Paths are
+relative to the configuration directory and must remain inside it. The selected
+saved group must be enabled, reference the supplied passive creature definition,
+have no explicit model reference and contain at most 16 actors. Its saved respawn
+delay controls combat. The profile's patrol route is not activated for this passive
+pool. Conflicting singleton creature/pursuit/loot options refuse. This explicit
+startup works headlessly with two actual encrypted peers; normal editor Play/export
+and `tools/play.py` population convenience wiring are still pending.
+
 It verifies development-capsule standing space, custom bounds, spacing and sampled
 access routes; reports rejection counts and insufficient results; and creates no
 NPCs or files. Its vertical limits apply to feet, and the access anchor does not

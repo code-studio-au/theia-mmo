@@ -4,7 +4,9 @@ use theia_network::{Result, server, tls};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut args = std::env::args().skip(1);
+    let arguments: Vec<_> = std::env::args().skip(1).collect();
+    theia_network::simulation::population::configuration::validate_launch(&arguments)?;
+    let mut args = arguments.into_iter();
     let bind: SocketAddr = args
         .next()
         .unwrap_or_else(|| "127.0.0.1:5000".into())
@@ -45,6 +47,8 @@ async fn main() -> Result<()> {
     let mut patrol_bytes = None;
     let mut status_catalog = None;
     let mut patrol_profile = None;
+    let mut population_config = None;
+    let mut respawn_ms = theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS;
     let mut navigation = None;
     let mut item_catalog = None;
     let mut reward_catalog = None;
@@ -193,6 +197,9 @@ async fn main() -> Result<()> {
             "--item-catalog" => {
                 if item_catalog.is_some() {return Err("Choose one item catalog".into());}
                 item_catalog=Some(PathBuf::from(args.next().ok_or("Missing item catalog")?));
+            }
+            "--population-config" => {
+                population_config=Some(PathBuf::from(args.next().ok_or("Missing population configuration")?));targeted=true;
             }
             "--creature-profile" => {
                 if patrol_profile.is_some() {return Err("Choose one creature profile".into());}
@@ -355,44 +362,65 @@ async fn main() -> Result<()> {
         if !graybox || (tickets.is_none() && !account_login) {
             return Err("Targeting requires a graybox world and secure Renet".into());
         }
-        let target = if let Some(path) = patrol_profile {
-            use std::io::Read;
-            use theia_network::simulation::creatures;
-            let mut bytes = Vec::new();
-            std::fs::File::open(path)?
-                .take(creatures::MAX_PROFILE_BYTES as u64 + 1)
-                .read_to_end(&mut bytes)?;
-            let profile = creatures::Profile::from_json(&bytes)?;
-            if profile.aggro().is_some() && creature_retaliation.is_none() {
-                return Err(
-                    "Creature pursuit requires player life and retaliation profiles".into(),
-                );
-            }
-            let source = world
+        if let Some(path) = population_config {
+            let source = &world
                 .procedural()
-                .ok_or("Creature patrol requires terrain")?
-                .source
-                .clone();
-            let navigation =
-                theia_network::navigation::Store::open(&navigation.unwrap(), source.identity())?;
-            println!("development_creature profile={}", profile.id().as_str());
-            let target =
-                world.enable_patrol(creatures::Prepared::load(profile, &navigation, &source)?)?;
-            patrol_bytes = Some(bytes);
-            target
+                .ok_or("Population requires authored terrain")?
+                .source;
+            let loaded =
+                theia_network::simulation::population::configuration::Loaded::open(&path, source)?;
+            respawn_ms = loaded.respawn_ms();
+            let (prepared, binding) = loaded.into_parts();
+            let targets = world.enable_defined_population(prepared, binding)?;
+            println!(
+                "development_population count={} respawn_ms={respawn_ms}",
+                targets.len()
+            );
         } else {
-            let x = if dev_spawn[0] + 8. <= 15999. {
-                dev_spawn[0] + 8.
+            let target = if let Some(path) = patrol_profile {
+                use std::io::Read;
+                use theia_network::simulation::creatures;
+                let mut bytes = Vec::new();
+                std::fs::File::open(path)?
+                    .take(creatures::MAX_PROFILE_BYTES as u64 + 1)
+                    .read_to_end(&mut bytes)?;
+                let profile = creatures::Profile::from_json(&bytes)?;
+                if profile.aggro().is_some() && creature_retaliation.is_none() {
+                    return Err(
+                        "Creature pursuit requires player life and retaliation profiles".into(),
+                    );
+                }
+                let source = world
+                    .procedural()
+                    .ok_or("Creature patrol requires terrain")?
+                    .source
+                    .clone();
+                let navigation = theia_network::navigation::Store::open(
+                    &navigation.unwrap(),
+                    source.identity(),
+                )?;
+                println!("development_creature profile={}", profile.id().as_str());
+                let target = world.enable_patrol(creatures::Prepared::load(
+                    profile,
+                    &navigation,
+                    &source,
+                )?)?;
+                patrol_bytes = Some(bytes);
+                target
             } else {
-                dev_spawn[0] - 8.
+                let x = if dev_spawn[0] + 8. <= 15999. {
+                    dev_spawn[0] + 8.
+                } else {
+                    dev_spawn[0] - 8.
+                };
+                world.spawn_development_target([x, dev_spawn[1]])?
             };
-            world.spawn_development_target([x, dev_spawn[1]])?
-        };
-        println!("development_target id={}", target.entity.value());
+            println!("development_target id={}", target.entity.value());
+        }
     }
     if let Some(path) = combat_catalog {
         use std::io::Read;
-        use theia_network::simulation::combat::{DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS};
+        use theia_network::simulation::combat::DEVELOPMENT_HEALTH;
         let mut bytes = Vec::new();
         std::fs::File::open(path)?
             .take(theia_core::abilities::MAX_CATALOG_BYTES as u64 + 1)
@@ -411,21 +439,16 @@ async fn main() -> Result<()> {
                 world.enable_status_combat(
                     &bytes,
                     DEVELOPMENT_HEALTH,
-                    DEVELOPMENT_RESPAWN_MS,
+                    respawn_ms,
                     &stats,
                     &statuses,
                 )?;
             } else {
-                world.enable_resource_combat(
-                    &bytes,
-                    DEVELOPMENT_HEALTH,
-                    DEVELOPMENT_RESPAWN_MS,
-                    &stats,
-                )?;
+                world.enable_resource_combat(&bytes, DEVELOPMENT_HEALTH, respawn_ms, &stats)?;
             }
             player_stats_bytes = Some(stats);
         } else {
-            world.enable_combat(&bytes, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS)?;
+            world.enable_combat(&bytes, DEVELOPMENT_HEALTH, respawn_ms)?;
         }
         println!(
             "development_combat abilities={}",

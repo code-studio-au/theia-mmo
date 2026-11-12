@@ -6,6 +6,52 @@ use std::path::{Component, Path, PathBuf};
 
 const MAX_BYTES: u64 = 4096;
 
+/// Keep the initial passive pool separate from singleton patrol/encounter modes.
+pub fn validate_launch(args: &[String]) -> Result<()> {
+    let count = args
+        .iter()
+        .filter(|a| a.as_str() == "--population-config")
+        .count();
+    if count == 0 {
+        return Ok(());
+    }
+    if count != 1 {
+        return Err("Choose one population configuration".into());
+    }
+    for required in [
+        "--authored-world",
+        "--prediction",
+        "--classic",
+        "--combat-catalog",
+    ] {
+        if !args.iter().any(|a| a == required) {
+            return Err(format!("Population configuration requires {required}").into());
+        }
+    }
+    for unsupported in [
+        "--creature-profile",
+        "--navigation",
+        "--creature-asset",
+        "--creature-retaliation",
+        "--player-respawn",
+        "--progression-catalog",
+        "--creature-loot",
+        "--quest-loot",
+        "--creature-threat",
+        "--creature-reset",
+        "--creature-credit",
+        "--combat-membership",
+        "--public-creature-attacks",
+    ] {
+        if args.iter().any(|a| a == unsupported) {
+            return Err(
+                format!("Passive population configuration does not support {unsupported}").into(),
+            );
+        }
+    }
+    Ok(())
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Document {
@@ -95,6 +141,57 @@ fn contained(root: &Path, value: &str) -> Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn passive_launch_requires_classic_authored_combat_and_refuses_singleton_modes() {
+        let valid: Vec<String> = [
+            "--population-config",
+            "population.json",
+            "--authored-world",
+            "world",
+            "--prediction",
+            "--classic",
+            "--combat-catalog",
+            "abilities.json",
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+        assert!(validate_launch(&valid).is_ok());
+        assert!(validate_launch(&[]).is_ok());
+        for removed in [
+            "--authored-world",
+            "--prediction",
+            "--classic",
+            "--combat-catalog",
+        ] {
+            let args = valid
+                .iter()
+                .filter(|a| a.as_str() != removed)
+                .cloned()
+                .collect::<Vec<_>>();
+            assert!(validate_launch(&args).is_err(), "{removed}");
+        }
+        for extra in [
+            "--population-config",
+            "--creature-profile",
+            "--navigation",
+            "--creature-asset",
+            "--creature-retaliation",
+            "--player-respawn",
+            "--progression-catalog",
+            "--creature-loot",
+            "--quest-loot",
+            "--creature-threat",
+            "--creature-reset",
+            "--creature-credit",
+            "--combat-membership",
+            "--public-creature-attacks",
+        ] {
+            let mut args = valid.clone();
+            args.push(extra.into());
+            assert!(validate_launch(&args).is_err(), "{extra}");
+        }
+    }
     #[test]
     fn configuration_paths_reject_escape_and_invalid_forms_before_reading() {
         for path in [

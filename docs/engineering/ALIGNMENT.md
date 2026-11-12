@@ -1,3 +1,22 @@
+P3-07 real server/client passive population startup, 13 November 2026:
+Both binaries now accept --population-config FILE with authored world, prediction,
+Classic controls and combat. Server consumes checked actors and the group's respawn
+policy before combat/network admission. Client computes the same population/combat
+identity and includes count/delay in its renderer-free --configuration-report.
+Shared guards reject duplicate configuration, missing prerequisites and conflicting
+singleton patrol, pursuit, credit, loot or creature-model presentation options.
+The real server executable and actual client configuration report agree exactly;
+two encrypted Classic peers admit, receive all five healthy actors and select
+independent targets. Test peers retain the required Classic prediction command
+channel; no movement, rendered presentation or connected combat is claimed by this
+startup test. The existing World test separately qualifies deaths/respawns at all
+rates. Eight ordinary encrypted combat regressions and 58 launcher/profile Python
+tests pass; five adapter/config tests, binary builds, fmt and strict workspace/
+all-target Clippy pass. Evidence: build/population-launch-{build,network,regressions,
+tool-tests,tests,clippy}.log. Local loopback tests required sandbox socket escalation.
+No mouse/display. Owned server/test peers/tickets are cleaned up; review editor
+untouched. tools/play.py convenience wiring and editor export remain pending.
+
 P3-07 bounded population startup configuration, 13 November 2026:
 A shared schema-1 loader resolves a saved zone/group, passive creature definition
 and navigation directory beneath the configuration directory. Bound configuration
