@@ -24293,7 +24293,13 @@
         "prerequisite_quest_refs": [
           "Q173"
         ],
-        "prerequisite_runtime_ids": null
+        "prerequisite_runtime_ids": null,
+        "finale_authorization_gate": {
+          "status": "CREATOR_LOCKED_NOT_EXECUTABLE",
+          "required_character_level": 80,
+          "condition": "The Q174 finale-authorization objective cannot complete and unlock Q175 until the player reaches level 80. Earlier Q174 readiness tasks may be performed at their intended story pace.",
+          "runtime_binding": "Pending level-check completion evidence and server-authoritative gating. Do not infer from planning_level_band_start=75 or minimum_level=null that the finale can begin early."
+        }
       },
       "stages": [
         {
@@ -24407,7 +24413,8 @@
         "stable_npc_target_ids_unassigned",
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
-        "inventory_and_choice_semantics_require_quest_specific_review"
+        "inventory_and_choice_semantics_require_quest_specific_review",
+        "level_80_finale_authorization_runtime_gate_required"
       ],
       "authoring_eligibility_review": {
         "status": "canonical_finale_authorization_requirement_not_executable",
