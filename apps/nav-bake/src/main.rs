@@ -161,12 +161,17 @@ fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     if args.first().is_some_and(|v| v == "--help") {
         println!(
-            "theia-nav-bake bake SOURCE OUTPUT [CENTRE_X CENTRE_Z]\ntheia-nav-bake verify SOURCE OUTPUT\ntheia-nav-bake bake-authored SOURCE OUTPUT ROUTE_JSON\ntheia-nav-bake verify-authored SOURCE OUTPUT\nBakes at most nine 128m tiles; authored route input uses global f64 waypoints."
+            "theia-nav-bake bake SOURCE OUTPUT [CENTRE_X CENTRE_Z]\ntheia-nav-bake verify SOURCE OUTPUT\ntheia-nav-bake bake-authored SOURCE OUTPUT ROUTE_JSON\ntheia-nav-bake verify-authored SOURCE OUTPUT\ntheia-nav-bake route-authored SOURCE NAVIGATION ROUTE_JSON\nBakes at most nine 128m tiles; authored route input uses global f64 waypoints."
         );
         return Ok(());
     }
     match args.first().map(String::as_str) {
         Some("bake-authored") if args.len() == 4 => authored_cli::bake(
+            Path::new(&args[1]),
+            Path::new(&args[2]),
+            Path::new(&args[3]),
+        ),
+        Some("route-authored") if args.len() == 4 => authored_cli::route(
             Path::new(&args[1]),
             Path::new(&args[2]),
             Path::new(&args[3]),

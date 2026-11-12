@@ -1,3 +1,20 @@
+P5-17 / P4-03 authored route inspection, 12 November 2026:
+Add read-only `theia-nav-bake route-authored WORLD NAVIGATION ROUTE_JSON`, using the
+same bounded route reader, strict floor sampling and collision checks as publication.
+It verifies world identity/tile hashes and returns grounded waypoints only after
+0.2 m sampled capsule clearance. No package or actor is changed. The western village
+trail passes 679 samples / 35 output points; wrong-floor input is rejected and source
+bytes are preserved by the actual CLI integration check. Nine ordinary baker tests,
+fmt and strict workspace/all-target Clippy pass; no rendering change/GPU claim.
+The initial direct route was correctly rejected at a cottage edge; a southward
+alternative also failed strict height agreement on a slope. These are unresolved
+coverage limitations, not relaxed tolerances or evidence of exhaustive navigation.
+Use the checked western trail for the next normal-input quest qualification.
+Evidence: build/authored-route-{tests,cli-test,clippy,build}.log and
+build/authored-valley-route-v1/west-result.json. Route input is preserved at
+content/navigation/starter-valley-quest-trail.json, bound by qualification to the
+contact-v3 world/navigation pair. No native traversal claim yet.
+
 P5-17 / P3-01 / P3-09 authored gameplay bundle and introduction quest, 12 November 2026:
 The normal launcher now accepts an authored gameplay manifest with explicit matching
 navigation and the world's bound guide. Configuration preflight checks the real

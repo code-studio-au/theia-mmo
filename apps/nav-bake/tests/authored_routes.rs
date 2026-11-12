@@ -175,3 +175,64 @@ fn actual_valley_patrol_completes_its_route_on_authoritative_scenery_collision()
         "scope":"1200 authoritative fixed steps; no network, art, combat, quest or persistence acceptance"})
     );
 }
+
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_ROUTE"]
+fn actual_authored_route_cli_checks_clearance_and_rejects_wrong_floor_without_writes() {
+    use std::{fs, path::PathBuf, process::Command};
+    let source = PathBuf::from(std::env::var_os("THEIA_AUTHORED_WORLD").unwrap());
+    let nav = PathBuf::from(std::env::var_os("THEIA_AUTHORED_NAV").unwrap());
+    let request = PathBuf::from(std::env::var_os("THEIA_AUTHORED_ROUTE").unwrap());
+    let paths = [
+        source.join("authored.world.json"),
+        nav.join(navigation::MANIFEST),
+        request.clone(),
+    ];
+    let before = paths.each_ref().map(|p| fs::read(p).unwrap());
+    let run = |request: &std::path::Path| {
+        Command::new(env!("CARGO_BIN_EXE_theia-nav-bake"))
+            .arg("route-authored")
+            .arg(&source)
+            .arg(&nav)
+            .arg(request)
+            .output()
+            .unwrap()
+    };
+    let result = run(&request);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let text = String::from_utf8(result.stdout).unwrap();
+    let report: serde_json::Value = serde_json::from_str(text.lines().last().unwrap()).unwrap();
+    let report = &report["authored_navigation_route"];
+    assert_eq!(report["passed"], true);
+    assert!(report["clearance_samples"].as_u64().unwrap() > 0);
+    assert!(report["route"]["points"].as_array().unwrap().len() >= 2);
+    let mut wrong: navigation::Route = serde_json::from_slice(&before[2]).unwrap();
+    for point in &mut wrong.points {
+        point[1] += 32.;
+    }
+    let temporary =
+        std::env::temp_dir().join(format!("theia-wrong-floor-{}.json", std::process::id()));
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary)
+        .unwrap();
+    use std::io::Write;
+    file.write_all(&serde_json::to_vec(&wrong).unwrap())
+        .unwrap();
+    drop(file);
+    let refused = run(&temporary);
+    fs::remove_file(&temporary).unwrap();
+    assert!(!refused.status.success());
+    assert!(String::from_utf8_lossy(&refused.stderr).contains("Route"));
+    for (path, bytes) in paths.iter().zip(before) {
+        assert_eq!(fs::read(path).unwrap(), bytes);
+    }
+    println!(
+        "authored_route_cli passed=true wrong_floor_refused=true source_preserved=true report={report}"
+    );
+}

@@ -14,24 +14,7 @@ pub(super) fn bake(source: &Path, output: &Path, route: &Path) -> Result<()> {
         return Err("Navigation output exists; choose a new directory".into());
     }
     let store = Store::open(source)?;
-    let mut bytes = Vec::new();
-    fs::File::open(route)?
-        .take(32 * 1024 + 1)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() > 32 * 1024 {
-        return Err("Authored route file exceeds budget".into());
-    }
-    let request: Route = serde_json::from_slice(&bytes)?;
-    if ContentId::new(&request.id).is_none()
-        || !(2..=nav::MAX_ROUTE_POINTS).contains(&request.points.len())
-    {
-        return Err("Authored route requires a logical ID and 2..256 global waypoints".into());
-    }
-    let endpoints = request
-        .points
-        .iter()
-        .map(|&p| GlobalPosition::new(p).ok_or("Invalid route waypoint".into()))
-        .collect::<Result<Vec<_>>>()?;
+    let (request, endpoints) = request(route)?;
     let centre = procedural::owner(endpoints[0]).ok_or("Route outside prediction domain")?;
     let agent = Agent::development();
     let mut tiles = Vec::new();
@@ -58,19 +41,7 @@ pub(super) fn bake(source: &Path, output: &Path, route: &Path) -> Result<()> {
         tiles.push(tile);
     }
     let query = theia_nav_bake::Query::new(&tiles)?;
-    let mut grounding = Grounding::new(&store);
-    let mut points = Vec::new();
-    for pair in endpoints.windows(2) {
-        for point in query.route(pair[0], pair[1])? {
-            let point = grounding.at(point)?.metres();
-            if points.last() != Some(&point) {
-                points.push(point);
-            }
-            if points.len() > nav::MAX_ROUTE_POINTS {
-                return Err("Authored patrol route exceeds point budget".into());
-            }
-        }
-    }
+    let points = routed_points(&store, &query, &endpoints)?;
     let encoded = tiles
         .iter()
         .map(nav::Tile::encode)
@@ -117,6 +88,81 @@ pub(super) fn bake(source: &Path, output: &Path, route: &Path) -> Result<()> {
     );
     Ok(())
 }
+// Read-only queries reuse the same route limits, strict layer sampling and
+// collision checks as published patrols. They never modify a package or actor.
+fn request(route: &Path) -> Result<(Route, Vec<GlobalPosition>)> {
+    let mut bytes = Vec::new();
+    fs::File::open(route)?
+        .take(32 * 1024 + 1)
+        .read_to_end(&mut bytes)?;
+    if bytes.len() > 32 * 1024 {
+        return Err("Authored route file exceeds budget".into());
+    }
+    let request: Route = serde_json::from_slice(&bytes)?;
+    if ContentId::new(&request.id).is_none()
+        || !(2..=nav::MAX_ROUTE_POINTS).contains(&request.points.len())
+    {
+        return Err("Authored route requires a logical ID and 2..256 global waypoints".into());
+    }
+    let endpoints = request
+        .points
+        .iter()
+        .map(|&p| GlobalPosition::new(p).ok_or("Invalid route waypoint".into()))
+        .collect::<Result<Vec<_>>>()?;
+    Ok((request, endpoints))
+}
+fn routed_points(
+    store: &Store,
+    query: &theia_nav_bake::Query,
+    endpoints: &[GlobalPosition],
+) -> Result<Vec<[f64; 3]>> {
+    let mut grounding = Grounding::new(store);
+    let mut points = Vec::new();
+    for pair in endpoints.windows(2) {
+        for point in query.route(pair[0], pair[1]).map_err(|error| {
+            format!(
+                "Route {:?} -> {:?}: {error}",
+                pair[0].metres(),
+                pair[1].metres()
+            )
+        })? {
+            let point = grounding.at(point)?.metres();
+            if points.last() != Some(&point) {
+                points.push(point);
+            }
+            if points.len() > nav::MAX_ROUTE_POINTS {
+                return Err("Authored patrol route exceeds point budget".into());
+            }
+        }
+    }
+    Ok(points)
+}
+pub(super) fn route(source: &Path, navigation: &Path, request_path: &Path) -> Result<()> {
+    let store = Store::open(source)?;
+    let nav = nav::Store::open(navigation, store.identity())?;
+    nav.verify()?;
+    let (request, endpoints) = request(request_path)?;
+    let tiles = nav
+        .manifest()
+        .tiles
+        .iter()
+        .map(|t| nav.tile(t.id))
+        .collect::<Result<Vec<_>>>()?;
+    let query = theia_nav_bake::Query::new(&tiles)?;
+    let points = routed_points(&store, &query, &endpoints)?;
+    let mut grounding = Grounding::new(&store);
+    let mut samples = 0;
+    clearance(&query, &mut grounding, &points, &mut samples)?;
+    println!(
+        "{}",
+        serde_json::json!({"authored_navigation_route": {
+            "passed": true, "source": store.identity(),
+            "route": Route { id: request.id, points }, "clearance_samples": samples,
+            "scope": "Read-only offline route with 0.2 m sampled capsule clearance; no actor movement or continuous sweep proof"
+        }})
+    );
+    Ok(())
+}
 struct Grounding<'a> {
     store: &'a Store,
     patches: BTreeMap<theia_core::coordinates::ChunkId, procedural::Patch>,
@@ -144,7 +190,12 @@ impl<'a> Grounding<'a> {
             .ground([local[0], local[2]], local[1] + 0.3)
             .ok_or("Route has no close collision surface")?;
         if !walkable || (height - local[1]).abs() > 0.3 {
-            return Err("Navigation route disagrees with collision surface".into());
+            return Err(format!(
+                "Navigation route at {:?} disagrees with collision height {} (walkable={walkable})",
+                point.metres(),
+                height
+            )
+            .into());
         }
         local[1] = height + 0.03;
         let local =
@@ -178,30 +229,42 @@ pub(super) fn verify(source: &Path, output: &Path) -> Result<()> {
             grounding.at(p)?;
             points += 1;
         }
-        for segment in route.points.windows(2) {
-            let distance = (0..3)
-                .map(|i| (segment[1][i] - segment[0][i]).powi(2))
-                .sum::<f64>()
-                .sqrt();
-            let steps = (distance / 0.2).ceil().max(1.) as usize;
-            samples = samples
-                .checked_add(steps + 1)
-                .filter(|n| *n <= 8192)
-                .ok_or("Authored route clearance sample budget exceeded")?;
-            for step in 0..=steps {
-                let fraction = step as f64 / steps as f64;
-                let point = GlobalPosition::new(std::array::from_fn(|i| {
-                    segment[0][i] + (segment[1][i] - segment[0][i]) * fraction
-                }))
-                .ok_or("Invalid route interpolation")?;
-                query.sample(point)?;
-                grounding.at(point)?;
-            }
-        }
+        clearance(&query, &mut grounding, &route.points, &mut samples)?;
     }
     println!(
         "{}",
         serde_json::json!({"authored_navigation_verify":{"passed":true,"tiles":tiles.len(),"route_points":points,"clearance_samples":samples,"source":store.identity(),"scope":"Package, navigation and 0.2 m sampled route capsule clearance; native creature acceptance remains separate"}})
     );
+    Ok(())
+}
+
+fn clearance(
+    query: &theia_nav_bake::Query,
+    grounding: &mut Grounding<'_>,
+    points: &[[f64; 3]],
+    samples: &mut usize,
+) -> Result<()> {
+    for segment in points.windows(2) {
+        let distance = (0..3)
+            .map(|i| (segment[1][i] - segment[0][i]).powi(2))
+            .sum::<f64>()
+            .sqrt();
+        let steps = (distance / 0.2).ceil().max(1.) as usize;
+        *samples = samples
+            .checked_add(steps + 1)
+            .filter(|n| *n <= 8192)
+            .ok_or("Authored route clearance sample budget exceeded")?;
+        for step in 0..=steps {
+            let fraction = step as f64 / steps as f64;
+            let point = GlobalPosition::new(std::array::from_fn(|i| {
+                segment[0][i] + (segment[1][i] - segment[0][i]) * fraction
+            }))
+            .ok_or("Invalid route interpolation")?;
+            query
+                .sample(point)
+                .map_err(|error| format!("Route clearance at {:?}: {error}", point.metres()))?;
+            grounding.at(point)?;
+        }
+    }
     Ok(())
 }

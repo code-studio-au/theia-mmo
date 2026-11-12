@@ -61,3 +61,23 @@ obstacle exclusion and malformed input; opt-in local tests bake the dense hut/
 grove tiles and run an authoritative patrol. Full publication verifies 0.2 m
 sampled capsule clearance along the requested route. This is not proof that
 every navigable polygon is traversable or that multiplayer quest gameplay works.
+
+## Read-only authored route inspection
+
+```sh
+target/debug/theia-nav-bake route-authored build/starter-valley-contact-world-v3 build/starter-valley-contact-navigation-v3 content/navigation/starter-valley-quest-trail.json
+```
+
+The request uses the same logical ID and 2..256 global f64 waypoints as a patrol
+request (32 KiB maximum). Existing navigation/source identity and tile hashes must
+match. The command prints grounded route points after strict layer sampling and
+0.2 m sampled capsule clearance (8,192 samples maximum); it writes no package and
+moves no actor. Samples do not prove continuous swept clearance. Long chords over
+curved terrain can fail strict height checks: supply supported intermediate points,
+never relax floor/clearance checks to make a test pass. The example western trail is
+qualified against the contact-v3 valley only; it is not a new published NPC patrol.
+The direct shortcut near a cottage and a southward slope alternative currently fail
+these checks. Native traversal and broader navigation coverage are separate checks.
+Opt-in integration test `actual_authored_route_cli` uses absolute paths in
+THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_ROUTE; it verifies the
+positive route, wrong-floor rejection and unchanged source/request manifests.
