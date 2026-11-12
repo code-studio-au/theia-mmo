@@ -40,6 +40,11 @@ pub(super) fn add_requested(
     library: Res<scenery_library::Library>,
     mut tabs: Option<ResMut<property_tabs::State>>,
 ) {
+    if let Some(request) = session.scenery_ground_requested.take()
+        && let Err(error) = ground(&mut session, &library, request)
+    {
+        session.status = error;
+    }
     let Some(index) = requests.add_scenery.take() else {
         return;
     };
@@ -57,6 +62,49 @@ pub(super) fn add_requested(
         tabs.active = property_tabs::Tab::Attributes;
     }
 }
+/// Ground the model's lowest local bound at the terrain sample under its anchor.
+/// This is an authoring convenience, not a collision/contact qualification.
+fn grounded(
+    zone: &Zone,
+    placement: &theia_zone::scenery::SceneryPlacement,
+    entry: &scenery_library::Entry,
+) -> Result<theia_zone::scenery::SceneryPlacement, String> {
+    let mut result = placement.clone();
+    let surface = zone.surface_position([placement.position[0], placement.position[2]])?;
+    result.position[1] = surface[1] - entry.bounds[0][1] * placement.scale;
+    result.validate(zone)?;
+    transform(zone, &result, entry)?;
+    Ok(result)
+}
+fn ground(
+    session: &mut Session,
+    library: &scenery_library::Library,
+    (document, revision, id): (u64, u64, u64),
+) -> Result<(), String> {
+    if workspace::busy(session)
+        || session.document_id != document
+        || session.editor.revision() != revision
+        || session.scenery_selected != Some(id)
+    {
+        return Err("Selection changed; ground the current scenery again".into());
+    }
+    let zone = session.editor.zone();
+    let placement = zone
+        .scenery
+        .iter()
+        .find(|p| p.id == id)
+        .ok_or("Selected scenery no longer exists")?;
+    let asset = library
+        .assets
+        .get(&placement.asset)
+        .ok_or("Load the scenery library before grounding this model")?;
+    let grounded = grounded(zone, placement, &asset.entry)?;
+    if &grounded != placement {
+        session.edit(vec![Edit::PutScenery { scenery: grounded }]);
+    }
+    Ok(())
+}
+
 fn add(session: &mut Session, entry: &scenery_library::Entry) {
     let id = session.next_id;
     if id == u64::MAX {
@@ -72,10 +120,13 @@ fn add(session: &mut Session, entry: &scenery_library::Entry) {
         yaw_degrees: 0.,
         scale: 1.,
     };
-    if let Err(error) = transform(zone, &placement, entry) {
-        session.status = error;
-        return;
-    }
+    let placement = match grounded(zone, &placement, entry) {
+        Ok(placement) => placement,
+        Err(error) => {
+            session.status = error;
+            return;
+        }
+    };
     let revision = session.editor.revision();
     session.edit(vec![Edit::PutScenery { scenery: placement }]);
     if session.editor.revision() != revision {
@@ -196,6 +247,68 @@ mod tests {
         assert_eq!(session.editor.zone(), &zone);
         assert!(!session.is_dirty());
     }
+    #[test]
+    fn scenery_grounding_uses_scaled_bottom_and_refuses_stale_or_missing_assets() {
+        let origin = [128_000_000_000., 12., -128_000_000_000.];
+        let zone = Zone {
+            origin,
+            spawn: origin,
+            ..default()
+        };
+        let mut session = Session::new(Editor::new(zone).unwrap(), PathBuf::new(), None);
+        let entry = scenery_library::Entry {
+            id: "theia.asset.hanging".into(),
+            name: "Hanging model".into(),
+            category: "Props".into(),
+            file: String::new(),
+            bytes: 1,
+            sha256: String::new(),
+            bounds: [[-0.1, -0.25, -0.1], [0.1, 0., 0.1]],
+            triangles: 1,
+            source: serde_json::json!({}),
+        };
+        add(&mut session, &entry);
+        let original = session.editor.zone().scenery[0].clone();
+        assert_eq!(original.position[1], 12.25);
+        let mut changed = original.clone();
+        changed.scale = 4.;
+        changed.position[1] = 20.;
+        changed.yaw_degrees = 90.;
+        session.edit(vec![Edit::PutScenery {
+            scenery: changed.clone(),
+        }]);
+        let request = (session.document_id, session.editor.revision(), original.id);
+        let mut library = scenery_library::Library::default();
+        assert!(ground(&mut session, &library, request).is_err());
+        library.assets.insert(
+            entry.id.clone(),
+            scenery_library::Asset {
+                entry,
+                bytes: std::sync::Arc::new(vec![]),
+            },
+        );
+        assert!(
+            ground(
+                &mut session,
+                &library,
+                (request.0 + 1, request.1, request.2)
+            )
+            .is_err()
+        );
+        assert_eq!(session.editor.zone().scenery[0], changed);
+        ground(&mut session, &library, request).unwrap();
+        assert_eq!(
+            session.editor.zone().scenery[0].position,
+            [origin[0], 13., origin[2]]
+        );
+        assert_eq!(session.scenery_selected, Some(original.id));
+        session.execute(Command::Undo {
+            expected_revision: session.editor.revision(),
+        });
+        assert_eq!(session.editor.zone().scenery[0], changed);
+        assert!(ground(&mut session, &library, request).is_err());
+    }
+
     #[test]
     fn far_model_transforms_preserve_anchor_and_reject_rotated_geometry_outside_zone() {
         let origin = [128_000_000_000., -4., -128_000_000_000.];

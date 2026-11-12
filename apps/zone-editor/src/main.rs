@@ -91,6 +91,7 @@ struct Session {
     particle_selected: Option<u64>,
     quest_area_selected: Option<u64>,
     scenery_selected: Option<u64>,
+    scenery_ground_requested: Option<(u64, u64, u64)>,
     inspect_spawn: bool,
     palette: Option<Primitive>,
     placement_size: [f64; 3],
@@ -167,6 +168,7 @@ impl Session {
             particle_selected: None,
             quest_area_selected: None,
             scenery_selected: None,
+            scenery_ground_requested: None,
             inspect_spawn: false,
             palette: None,
             placement_size: [1.; 3],
@@ -1020,6 +1022,11 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             session.status = "Click the ground to place".into();
         }
         Action::Ground => {
+            if let Some(id) = session.scenery_selected {
+                session.scenery_ground_requested =
+                    Some((session.document_id, session.editor.revision(), id));
+                return;
+            }
             use theia_zone::projection::{Projection, Target};
             if session.path_draft.is_some() {
                 session.status = "Finish or cancel the guide draft before grounding".into();

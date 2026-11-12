@@ -114,7 +114,8 @@ python3 tools/edit_zone.py --zone content/zones/forest-scenery.zone.json \
   --scenery-library build/starter-forest-scenery-v1/catalog.json
 ```
 
-The Scenery menu places a named model at spawn. Explorer selection and direct
+The Scenery menu places a named model at spawn, aligning its scaled lower bound
+to the terrain sample under the anchor. Ground repeats that alignment after edits. Explorer selection and direct
 position/yaw/scale/name fields support editing, duplication and deletion with
 undo; Save writes the document explicitly. Eight example placements include a
 small table/chair/lantern group and nearby arch, ruins, log and rocks. Geometry

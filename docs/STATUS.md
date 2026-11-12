@@ -1,3 +1,11 @@
+P5-17 / P1-10 model grounding, 12 November 2026: new scenery is grounded
+using its scaled lower bound at the terrain sample under its anchor. Existing
+scenery supports the same Ground action and undo. Stale document/revision/selection
+requests and missing libraries are refused. Five focused scenery tests pass,
+including far-origin hanging pivots and preserved saved-file state; formatting
+and strict workspace Clippy pass. This is anchor-sample alignment, not full
+footprint fitting, stacking or collision admission.
+
 P5-17 / P1-10 Synty scenery placement UI, 12 November 2026:
 loading a scenery catalog adds a Scenery menu with named models. Placements appear
 in Explorer with a type filter, resolve viewport mesh clicks to their authoring

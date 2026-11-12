@@ -569,7 +569,6 @@ impl Control {
             Self::Frame => {
                 (session.terrain_mode && session.editor.zone().terrain.is_some()) || selected
             }
-            Self::Command(Action::Ground) if session.scenery_selected.is_some() => false,
             Self::Command(Action::Duplicate | Action::Ground) => {
                 selected && session.quest_area_selected.is_none()
             }
