@@ -31,6 +31,7 @@ mod particle_preview;
 mod particle_texture_draft;
 mod particle_workspace;
 mod paths;
+mod patrol_export;
 mod placement;
 #[path = "../../common/orbit.rs"]
 pub mod play_orbit;

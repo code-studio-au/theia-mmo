@@ -204,6 +204,20 @@ impl Target {
                 "Yaw (degrees)",
                 "Radius (m)",
             ],
+            Self::Path { path, point: None }
+                if path.kind == theia_zone::paths::PathKind::Patrol =>
+            {
+                &["Preview width (m)"]
+            }
+            Self::Path {
+                path,
+                point: Some(_),
+            } if path.kind == theia_zone::paths::PathKind::Patrol => &[
+                "World X (m)",
+                "World Y (m)",
+                "World Z (m)",
+                "Preview width (m)",
+            ],
             Self::Path { point: None, .. } => &["Width (m)"],
             Self::Path { point: Some(_), .. } => {
                 &["World X (m)", "World Y (m)", "World Z (m)", "Width (m)"]
@@ -1232,7 +1246,7 @@ mod tests {
     fn guide_width_and_point_properties_share_validation_and_preserve_other_points() {
         use theia_zone::paths::PathKind;
         for origin in [[0.; 3], [128_000_000_000., 20., -128_000_000_000.]] {
-            for kind in [PathKind::Road, PathKind::Stream] {
+            for kind in [PathKind::Road, PathKind::Stream, PathKind::Patrol] {
                 let path = GuidePath {
                     id: 9,
                     name: "Walking route".into(),
@@ -1253,7 +1267,7 @@ mod tests {
                     assert!(target.edit(Some(9), &fields).unwrap().is_none());
                     assert!(target.edit(Some(9), &[]).is_err());
                     let mut zone = Zone {
-                        schema: 7,
+                        schema: 13,
                         origin,
                         spawn: origin,
                         ..default()

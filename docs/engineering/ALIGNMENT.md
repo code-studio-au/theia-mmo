@@ -1,3 +1,9 @@
+P5-17 / P3-07 / P4-03, 12 November 2026: schema-13 patrol guides are explicit
+navigation requests, not runtime authority. Reuse transactional path editing and the
+existing offline Recast/Landmass/collision pipeline; previews never become collision
+or shipped world ribbons. Keep failed support checks strict. Automatic creature
+binding/baking remain next; see ../STATUS.md for native authoring and offline evidence.
+
 P5-17 / P3-09, 12 November 2026: the dressed authored valley now qualifies
 normal introduction, three-kill and reach-area quest completion plus durable
 restart/rejoin. Keep one-guide/one-respawning-creature limits explicit. Normal

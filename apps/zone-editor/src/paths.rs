@@ -1,4 +1,4 @@
-//! Visual road/stream guides. Every committed edit uses the shared zone commands.
+//! Visual road/stream guides and editor-only patrol requests. Every committed edit uses the shared zone commands.
 use super::*;
 use bevy::{
     asset::RenderAssetUsages,
@@ -19,10 +19,12 @@ pub(super) struct Draft {
 pub(super) struct Scene {
     road: Handle<StandardMaterial>,
     stream: Handle<StandardMaterial>,
+    patrol: Handle<StandardMaterial>,
     selected: Handle<StandardMaterial>,
     cache: BTreeMap<u64, (Entity, Handle<Mesh>)>,
     revision: Option<u64>,
     selection: Option<u64>,
+    playing: bool,
     draft_entity: Entity,
     draft_mesh: Handle<Mesh>,
     draft: Option<GuidePath>,
@@ -35,6 +37,7 @@ pub(super) fn actions() -> [(Action, &'static str); 12] {
     [
         (Action::NewPath(PathKind::Road), "New road guide"),
         (Action::NewPath(PathKind::Stream), "New stream guide"),
+        (Action::NewPath(PathKind::Patrol), "New patrol route"),
         (Action::FinishPath, "Finish guide [Enter]"),
         (Action::GradePath, "Grade terrain to guide"),
         (Action::NextPath, "Select next guide"),
@@ -44,7 +47,6 @@ pub(super) fn actions() -> [(Action, &'static str); 12] {
         (Action::Undo, "Undo [Ctrl Z]"),
         (Action::Redo, "Redo [Ctrl Y]"),
         (Action::Save, "Save zone [Ctrl S]"),
-        (Action::Play, "Enter / leave playtest [F5]"),
     ]
 }
 /// Straight, explicit-height guide ribbon. It is render-only, never world collision.
@@ -77,6 +79,12 @@ pub(super) fn setup(
     let road = materials.add(Color::srgb(0.48, 0.31, 0.15));
     let stream = materials.add(StandardMaterial {
         base_color: Color::srgba(0.04, 0.36, 0.75, 0.8),
+        unlit: true,
+        alpha_mode: AlphaMode::Blend,
+        ..default()
+    });
+    let patrol = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.55, 0.28, 0.95, 0.8),
         unlit: true,
         alpha_mode: AlphaMode::Blend,
         ..default()
@@ -123,10 +131,12 @@ pub(super) fn setup(
     commands.insert_resource(Scene {
         road,
         stream,
+        patrol,
         selected,
         cache: BTreeMap::new(),
         revision: None,
         selection: None,
+        playing: false,
         draft_entity,
         draft_mesh,
         draft: None,
@@ -162,10 +172,10 @@ pub(super) fn sync(
                 *meshes.get_mut(handle).expect("Resident guide mesh") = mesh;
             } else {
                 let handle = meshes.add(mesh);
-                let material = if path.kind == PathKind::Road {
-                    scene.road.clone()
-                } else {
-                    scene.stream.clone()
+                let material = match path.kind {
+                    PathKind::Road => scene.road.clone(),
+                    PathKind::Stream => scene.stream.clone(),
+                    PathKind::Patrol => scene.patrol.clone(),
                 };
                 let entity = commands
                     .spawn((
@@ -181,20 +191,33 @@ pub(super) fn sync(
         }
     }
     let selected = session.path_selected.filter(|_| session.path_mode);
-    if scene.revision != Some(session.editor.revision()) || scene.selection != selected {
+    if scene.revision != Some(session.editor.revision())
+        || scene.selection != selected
+        || scene.playing != session.play.is_some()
+    {
         for path in &session.editor.zone().paths {
             let material = if session.path_selected == Some(path.id) && session.path_mode {
                 scene.selected.clone()
-            } else if path.kind == PathKind::Road {
-                scene.road.clone()
             } else {
-                scene.stream.clone()
+                match path.kind {
+                    PathKind::Road => scene.road.clone(),
+                    PathKind::Stream => scene.stream.clone(),
+                    PathKind::Patrol => scene.patrol.clone(),
+                }
             };
             let entity = scene.cache[&path.id].0;
-            commands.entity(entity).insert(MeshMaterial3d(material));
+            commands.entity(entity).insert((
+                MeshMaterial3d(material),
+                if path.kind == PathKind::Patrol && session.play.is_some() {
+                    Visibility::Hidden
+                } else {
+                    Visibility::Visible
+                },
+            ));
         }
         scene.revision = Some(session.editor.revision());
         scene.selection = selected;
+        scene.playing = session.play.is_some();
     }
     let draft = session.path_draft.as_ref().map(|d| d.path.clone());
     if scene.draft != draft {
@@ -277,7 +300,11 @@ pub(super) fn perform(action: Action, session: &mut Session) {
                     id,
                     name: format!("{kind:?} {id}"),
                     kind,
-                    width_metres: if kind == PathKind::Road { 4. } else { 2. },
+                    width_metres: match kind {
+                        PathKind::Road => 4.,
+                        PathKind::Stream => 2.,
+                        PathKind::Patrol => 0.7,
+                    },
                     points: vec![],
                 },
                 revision: session.editor.revision(),

@@ -201,7 +201,13 @@ impl<'a> Grounding<'a> {
         let local =
             theia_core::coordinates::LocalPosition::new(local).ok_or("Invalid route pose")?;
         let local = theia_network::kinematic::spawn(&patch.scene, local)?;
-        theia_network::kinematic::validate_pose(&patch.scene, local, true)?;
+        theia_network::kinematic::validate_pose(&patch.scene, local, true).map_err(|error| {
+            format!(
+                "Route grounding at {:?}, local feet {:?}: {error}",
+                point.metres(),
+                local.metres()
+            )
+        })?;
         patch
             .frame
             .to_global(local)

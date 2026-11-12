@@ -1,3 +1,26 @@
+P5-17 / P3-07 / P4-03 editable patrol requests, 12 November 2026:
+Schema 13 adds Patrol to the existing guide tools. Create ground points, edit exact
+inline coordinates/preview width, rename, insert/remove points and use normal
+selection/history/Save. Stable route IDs derive from authoring IDs, independent of
+names. Purple previews hide in offline playtest; patrol ribbons never enter exported
+world geometry/collision. Terrain grading refuses patrol requests. World export writes
+exact navigation-requests/patrol-ID.json requests, explicitly marked not baked;
+the existing offline baker resolves/checks them separately. No runtime creature
+assignment or automatic editor bake is implied by this first authoring slice.
+All 71 zone and 215 ordinary editor tests (seven skips), fmt, strict workspace/all-target
+Clippy and editor/nav builds pass. Native creation, inline point edit/undo, source
+preservation, explicit Save and preview checks pass; the exported request then bakes
+nine tiles and passes existing clearance verification. Zero GPU diagnostics on Linux
+RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6; no Windows or runtime patrol claim.
+Evidence: build/editor-patrol-{tests,clippy,build}.log and
+build/editor-patrol-native-v2/{qualification.json,patrol-editor.png,patrol-offline-preview.png,bake.log}.
+Reproduce with tools/qualify_editor_patrol.py. The earlier empty-zone fixture's single
+1024 m box floor fails strict grounded-support verification at [8196.454545454546,
+0.0057672614401037044,8196]; this remains an explicit coverage limitation. The positive
+fixture uses authored height-patch terrain, as the starter valley does. No tolerance
+was relaxed. Baker errors now identify the sampled point and local capsule feet.
+Next: bind the exported creature profile to its authored patrol and qualify that path.
+
 P5-17 / P3-09 authored valley quest loop, 12 November 2026:
 Native connected account play now qualifies all three existing development quests
 in the dressed valley: guide introduction, three kills of the single respawning

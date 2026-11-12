@@ -1,5 +1,5 @@
-//! Nonblocking road/stream authoring guides. These are neither navigation links
-//! nor water volumes, terrain carving or an authoritative route/quest system.
+//! Nonblocking road/stream guides and patrol route requests. Patrol points need
+//! a separate source-bound navigation bake and clearance check before runtime use.
 use super::{Result, Zone, label, require};
 use serde::{Deserialize, Serialize};
 pub const MAX_PATHS: usize = 128;
@@ -9,6 +9,7 @@ pub const MAX_POINTS: usize = 64;
 pub enum PathKind {
     Road,
     Stream,
+    Patrol,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -21,6 +22,10 @@ pub struct GuidePath {
     pub points: Vec<[f64; 3]>,
 }
 impl GuidePath {
+    /// Stable logical identity, independent of the display name and point edits.
+    pub fn patrol_route_id(&self) -> Option<String> {
+        (self.kind == PathKind::Patrol).then(|| format!("theia.zone.patrol.{}", self.id))
+    }
     pub fn validate(&self, zone: &Zone) -> Result<()> {
         require(self.id > 0 && label(&self.name), "Invalid path ID/name")?;
         require(
@@ -101,6 +106,70 @@ mod tests {
             })
             .unwrap();
         assert_eq!(editor.zone(), &placed);
+    }
+    #[test]
+    fn patrol_requests_upgrade_schema_and_keep_identity_through_history_and_rename() {
+        let mut editor = Editor::new(Zone::default()).unwrap();
+        let mut patrol = path(12);
+        patrol.kind = PathKind::Patrol;
+        let id = patrol.patrol_route_id().unwrap();
+        assert!(theia_core::content::ContentId::new(&id).is_some());
+        apply(
+            &mut editor,
+            vec![Edit::PutPath {
+                path: patrol.clone(),
+            }],
+        )
+        .unwrap();
+        assert_eq!(editor.zone().schema, 13);
+        let saved = serde_json::to_vec(editor.zone()).unwrap();
+        assert_eq!(Zone::from_json(&saved).unwrap(), *editor.zone());
+        let mut old = editor.zone().clone();
+        old.schema = 12;
+        assert!(old.validate().is_err());
+        patrol.name = "Western grove circuit".into();
+        patrol.points[1][0] += 1.;
+        apply(&mut editor, vec![Edit::PutPath { path: patrol }]).unwrap();
+        assert_eq!(
+            editor.zone().paths[0].patrol_route_id().as_deref(),
+            Some(id.as_str())
+        );
+        let before_grade = editor.zone().clone();
+        let error = apply(
+            &mut editor,
+            vec![Edit::GradePath {
+                grade: crate::grading::Grade {
+                    path_id: 12,
+                    surface_offset_metres: 0.,
+                    falloff_metres: 2.,
+                    blend: 1.,
+                },
+            }],
+        )
+        .unwrap_err();
+        assert!(error.contains("Patrol requests do not grade"));
+        assert_eq!(editor.zone(), &before_grade);
+        editor
+            .execute(Command::Undo {
+                expected_revision: 2,
+            })
+            .unwrap();
+        editor
+            .execute(Command::Undo {
+                expected_revision: 3,
+            })
+            .unwrap();
+        assert_eq!(editor.zone(), &Zone::default());
+        editor
+            .execute(Command::Redo {
+                expected_revision: 4,
+            })
+            .unwrap();
+        assert_eq!(
+            editor.zone().paths[0].patrol_route_id().as_deref(),
+            Some(id.as_str())
+        );
+        assert!(path(99).patrol_route_id().is_none());
     }
     #[test]
     fn malformed_paths_and_cross_kind_ids_refuse_without_history_changes() {
@@ -305,7 +374,7 @@ mod point_structure_tests {
     use crate::{Command, Edit, Editor};
     fn fixture(origin: [f64; 3], kind: PathKind) -> Zone {
         Zone {
-            schema: 7,
+            schema: if kind == PathKind::Patrol { 13 } else { 7 },
             origin,
             spawn: [origin[0], origin[1] + 0.1, origin[2] + 6.],
             paths: vec![GuidePath {
@@ -330,7 +399,7 @@ mod point_structure_tests {
     #[test]
     fn insert_remove_round_trip_preserves_metadata_and_far_global_positions() {
         for sign in [-1., 0., 1.] {
-            for kind in [PathKind::Road, PathKind::Stream] {
+            for kind in [PathKind::Road, PathKind::Stream, PathKind::Patrol] {
                 let origin = [sign * 128_000_000_000., 20., -sign * 128_000_000_000.];
                 let original = fixture(origin, kind);
                 let mut e = Editor::new(original.clone()).unwrap();

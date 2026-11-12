@@ -455,7 +455,11 @@ pub(super) fn geometry(
         };
         glb.add(&object.name, mesh, transform, 1)?;
     }
-    for path in &zone.paths {
+    for path in zone
+        .paths
+        .iter()
+        .filter(|p| p.kind != theia_zone::paths::PathKind::Patrol)
+    {
         let material = if path.kind == theia_zone::paths::PathKind::Road {
             2
         } else {
@@ -483,7 +487,7 @@ pub(super) fn geometry(
     let visual = glb.finish(guide_kinds, !zone.plants.is_empty(), painted)?;
     let profile = json!({"schema":4,"source_origin":[0,0,0],"bounds":[[-512,-512],[512,512]],"spawns":[zone.local(zone.spawn)?],
         "visual_sha256":sha256(&visual),"triangles":triangles,"static_shapes":{"meshes":pool,"objects":bodies}});
-    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),"authoring_markers":zone.markers.len(),"greybox_plants":zone.plants.len(),"painted_terrain":painted,"terrain_sample_metres":zone.terrain.as_ref().map(|p|p.sample_metres()),
+    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.iter().filter(|p| p.kind != theia_zone::paths::PathKind::Patrol).count(),"authoring_markers":zone.markers.len(),"greybox_plants":zone.plants.len(),"painted_terrain":painted,"terrain_sample_metres":zone.terrain.as_ref().map(|p|p.sample_metres()),
         "maximum_cylinder_radial_error_metres":maximum_cylinder_error,"collision_weld_tolerance_metres":0.0001,"scope":"existing bounded GLB/schema-4 content; requires authority admission; default game world unchanged"});
     Ok((visual, profile, report))
 }
@@ -671,6 +675,7 @@ fn publish_combined(
             .map_err(|e| e.to_string())?,
         )
         .map_err(|e| e.to_string())?;
+        report["patrol_route_requests"] = crate::patrol_export::write(zone, &stage)?;
         fs::write(
             stage.join("export.json"),
             serde_json::to_vec_pretty(&report).unwrap(),
@@ -695,6 +700,13 @@ fn publish_combined(
         destination_created = true;
         if gameplay.is_some() {
             fs::rename(stage.join("gameplay"), path.join("gameplay")).map_err(|e| e.to_string())?;
+        }
+        if stage.join("navigation-requests").exists() {
+            fs::rename(
+                stage.join("navigation-requests"),
+                path.join("navigation-requests"),
+            )
+            .map_err(|e| e.to_string())?;
         }
         if particle.is_some() {
             fs::rename(stage.join("particles"), path.join("particles"))
@@ -1359,6 +1371,46 @@ mod tests {
             Zone::load(&destination.join("authoring.zone.json")).unwrap(),
             zone
         );
+    }
+    #[test]
+    fn patrol_requests_publish_exact_points_without_changing_world_visuals_or_collision() {
+        use theia_zone::paths::{GuidePath, PathKind};
+        let mut zone = fixture();
+        let (visual, profile, _) = geometry(&zone, false).unwrap();
+        zone.schema = 13;
+        let points = vec![
+            [-3., 0.03, 4.],
+            [3., 0.03, 4.],
+            [3., 0.03, 8.],
+            [-3., 0.03, 4.],
+        ];
+        zone.paths.push(GuidePath {
+            id: 100,
+            name: "Grove circuit".into(),
+            kind: PathKind::Patrol,
+            width_metres: 0.7,
+            points: points.clone(),
+        });
+        let (after, after_profile, report) = geometry(&zone, false).unwrap();
+        assert_eq!(visual, after);
+        assert_eq!(profile, after_profile);
+        assert_eq!(report["guide_paths"], 0);
+        let folder = Folder::new();
+        let output = folder.0.join("patrol");
+        let report = publish(&zone, &output, "theia.test.patrol-requests", 1).unwrap();
+        let request = &report["patrol_route_requests"][0];
+        assert_eq!(request["navigation_baked"], false);
+        let route: theia_network::navigation::Route = serde_json::from_slice(
+            &fs::read(output.join(request["file"].as_str().unwrap())).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(route.id, "theia.zone.patrol.100");
+        assert_eq!(route.points, points);
+        assert_eq!(
+            Zone::load(&output.join("authoring.zone.json")).unwrap(),
+            zone
+        );
+        assert!(!output.join("navigation.manifest.json").exists());
     }
     #[test]
     fn guide_ribbons_export_visually_and_never_enter_authoritative_collision() {

@@ -30,6 +30,10 @@ impl Grade {
             .find(|p| p.id == self.path_id)
             .ok_or("Unknown guide ID for grading")?;
         path.validate(zone)?;
+        require(
+            path.kind != super::paths::PathKind::Patrol,
+            "Patrol requests do not grade terrain; use a road or stream guide",
+        )?;
         let patch = zone
             .terrain
             .as_ref()

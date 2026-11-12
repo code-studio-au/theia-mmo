@@ -1,3 +1,25 @@
+P5-17 patrol route requests, 12 November 2026:
+Choose **Guides -> Tools -> New patrol route**, click ground points and press Enter.
+Select its Explorer row or point handles; Attributes edits coordinates and Preview
+width directly. The width changes only the authoring ribbon, not NPC clearance.
+Normal rename, point insert/remove, movement, undo and explicit Save apply. Patrols
+are purple (gold when selected), hidden during F5 offline playtest, and omitted from
+exported visual/collision geometry. Grade terrain refuses this guide kind.
+
+World export now writes `navigation-requests/patrol-ID.json`. Its stable logical ID
+is `theia.zone.patrol.ID`; names/point edits retain it. These files are requests, not
+validated navigation or spawned NPCs. Bake/check one against its matching world:
+
+```sh
+target/debug/theia-nav-bake bake-authored WORLD NEW_NAVIGATION WORLD/navigation-requests/patrol-ID.json
+```
+
+The baker keeps its nine-tile/256-output-point and sampled collision checks. Use
+actual authored terrain: strict support checks currently reject some points on the
+empty-zone fallback's giant single box floor. Existing terrain valley checks remain
+qualified. Creature-profile assignment and a native Bake button are separate work.
+See STATUS.md and tools/qualify_editor_patrol.py for exact scope and evidence.
+
 P5-17 authored valley gameplay acceptance, 12 November 2026:
 The introduction, three-kill follow-up and western-grove area quest now all complete
 through ordinary connected play and survive database restart/rejoin (150 XP,

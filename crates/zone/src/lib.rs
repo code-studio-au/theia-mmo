@@ -145,7 +145,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=12), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=13), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -158,6 +158,10 @@ impl Zone {
             "Paths require zone schema 3",
         )?;
         require(self.paths.len() <= paths::MAX_PATHS, "Path budget exceeded")?;
+        require(
+            self.schema >= 13 || self.paths.iter().all(|p| p.kind != paths::PathKind::Patrol),
+            "Patrol route requests require zone schema 13",
+        )?;
         require(
             self.schema >= 4 || self.markers.is_empty(),
             "Markers require zone schema 4",
@@ -660,7 +664,14 @@ impl Editor {
                                 !candidate.objects.iter().any(|o| o.id == path.id),
                                 "Authoring ID belongs to an object",
                             )?;
-                            candidate.schema = candidate.schema.max(3);
+                            candidate.schema =
+                                candidate
+                                    .schema
+                                    .max(if path.kind == paths::PathKind::Patrol {
+                                        13
+                                    } else {
+                                        3
+                                    });
                             if let Some(existing) =
                                 candidate.paths.iter_mut().find(|p| p.id == path.id)
                             {
