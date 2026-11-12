@@ -4152,3 +4152,34 @@ driver. It checks withheld-readiness immobility, movement after readiness and a
 stale-identity client's mismatch detection. `build/authored-renet-test.log` records
 the four-second run. CPU readiness is explicitly supplied by the harness; this
 does not combine the separate GPU test into native-client or quest acceptance.
+
+## Authored navigation and patrol — 12 November 2026
+
+```sh
+target/debug/theia-nav-bake bake-authored build/starter-zone-world-v1 \
+  build/starter-zone-navigation-v1 content/zones/starter-zone.patrol.json
+target/debug/theia-nav-bake verify-authored build/starter-zone-world-v1 \
+  build/starter-zone-navigation-v1
+```
+
+The route input has a logical ID and global f64 waypoints. Bake uses the existing
+agent dimensions, nine 128 m tiles around its first waypoint, actual admitted
+static surfaces, 8 m clipping padding and existing input/output budgets. It supports
+triangle meshes, oriented boxes, hulls and heightfields; other collision shapes
+currently refuse the bake. Camera-only shapes are excluded. There is no terrain
+resampling or render-mesh-to-box substitution. Published navigation binds the
+origin-aware source identity; original source files and existing outputs stay
+unchanged. The exported world and navigation are still separate artifacts.
+
+Verification checks package integrity, navigation sampling, nearby collision
+support and capsule clearance at 0.2 m route intervals (bounded to 8192 samples).
+The actual starter patrol passes 158 samples. A separate source-backed test uses
+the existing authoritative patrol implementation for 900 fixed steps: one loop,
+47.98 m travelled, zero blocks and unchanged static collider count. Four navigation
+routes to clear exterior ground 70 m from the centre use the same +Z opening.
+Initial requests at the cliff toe (60 m) were outside the strict navigation
+sampling tolerance; no tolerance was widened to accept those boundary points.
+These are bounded offline/simulation qualifications, not native creature/quest
+playback or exhaustive route coverage. See `build/authored-nav-routes.log`,
+`build/authored-nav-verify.log`, `build/authored-nav-rejections.json` and
+`build/authored-patrol-test.log`. Route authoring UI remains separate work.

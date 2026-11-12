@@ -1,3 +1,19 @@
+P5-17 / P3-16 authored navigation, 12 November 2026:
+`theia-nav-bake bake-authored` consumes the admitted Avian static meshes/boxes/
+hulls/heightfields, clips their surfaces to each tile plus padding, and preserves
+the existing nine-tile Recast/Landmass format and budgets. Unsupported shapes
+refuse rather than disappear. The actual Synty starter package bakes to nine
+navigation tiles; its patrol passes 158 capsule-clearance samples at 0.2 m spacing.
+Four routes to clear exterior ground at radius 70 m leave through the +Z opening;
+this is sampled routing evidence, not exhaustive navigation. A real authoritative
+patrol completes one loop over 900 fixed steps, travels 47.98 m and reports zero
+blocks, without adding actor colliders. Two geometry tests and three existing
+backend tests pass, alongside the two explicitly invoked local-asset checks;
+blocked endpoints and existing outputs are refused without partial publication.
+Formatting and strict workspace Clippy pass. Evidence: `build/authored-nav-*`,
+`build/authored-patrol-test.log`, `build/starter-zone-navigation-v1/`.
+Creature launch/gameplay-bundle wiring, minimap and NPC authoring remain next.
+
 P5-17 / P3-16 authored encrypted-loopback qualification, 12 November 2026:
 two real Renet peers load independent snapshots of the exported Synty starter
 world, use the Classic prediction driver, remain still before readiness, then

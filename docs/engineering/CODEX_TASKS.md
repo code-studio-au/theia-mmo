@@ -1,3 +1,13 @@
+P5-17 / P3-16 starter-world bridge, 12 November 2026: origin-bound authored
+exports now reuse prediction collision, immutable standard GLB presentation and
+explicit client/server selection. Actual Synty assets pass offscreen GPU readiness
+(RX 7900 XTX), separate two-peer encrypted Classic movement, nine-tile navigation
+bake and a 900-step authoritative patrol loop. These are separate bounded checks,
+not complete connected quest/persistence acceptance. Next prerequisites for NPC
+and quest authoring: wire authored navigation/gameplay launch, adapt minimap
+terrain presentation, resolve supported contact bindings and publish coherent
+quest/area catalogs. Keep explicit Save, local commits and no desktop/input use.
+
 P5-17 / P1-10 curated starter scenery, 12 November 2026: seven locally
 verified Synty forest assets now support integrated placement, Explorer selection,
 inline transform/name edits, grounding, duplicate/delete/undo, offline playtest and

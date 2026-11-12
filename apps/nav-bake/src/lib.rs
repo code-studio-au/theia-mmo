@@ -1,6 +1,8 @@
 //! Offline-only Recast bake/query adapter. No backend dependency enters the server.
 //! Pipeline uses the published Rerecast 0.5 API, reviewed against its C++ comparison
 //! test. World-facing geometry remains Y-up; Landmass's internal frame is Z-up.
+pub mod authored;
+
 use nav_glam::{UVec3, Vec3A};
 use rerecast::{AreaType, ConfigBuilder, DetailNavmesh, HeightfieldBuilder, TriMesh};
 use theia_core::coordinates::ChunkId;
