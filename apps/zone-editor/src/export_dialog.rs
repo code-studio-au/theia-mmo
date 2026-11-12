@@ -93,9 +93,14 @@ pub(super) fn setup(mut commands: Commands) {
                                 theme::MUTED,
                             ),
                         ));
-                        for (index, caption) in ["New output folder", "Content ID", "Revision"]
-                            .into_iter()
-                            .enumerate()
+                        for (index, caption) in [
+                            "New output folder",
+                            "Content ID",
+                            "Revision",
+                            "Gameplay template (optional)",
+                        ]
+                        .into_iter()
+                        .enumerate()
                         {
                             body.spawn((
                                 FieldRow(index),
@@ -116,7 +121,7 @@ pub(super) fn setup(mut commands: Commands) {
                                     TextInput,
                                     SelectAllOnFocus,
                                     EditableText {
-                                        max_characters: Some(if index <= 1 { 512 } else { 96 }),
+                                        max_characters: Some(if index == 2 { 96 } else { 512 }),
                                         allow_newlines: false,
                                         ..default()
                                     },
@@ -209,10 +214,12 @@ pub(super) fn open(
             format!("build/{slug}-v1"),
             format!("theia.zone.{slug}"),
             "1".to_string(),
+            String::new(),
         ]
     } else {
         [
             format!("build/{slug}-particles"),
+            String::new(),
             String::new(),
             String::new(),
         ]
@@ -254,10 +261,14 @@ fn slug(name: &str) -> String {
         result.into()
     }
 }
-fn values(
-    fields: &Query<(Entity, &Field, &mut EditableText)>,
-) -> Result<(PathBuf, String, u32), String> {
-    let mut values = [String::new(), String::new(), String::new()];
+struct WorldInput {
+    path: PathBuf,
+    id: String,
+    revision: u32,
+    template: Option<PathBuf>,
+}
+fn values(fields: &Query<(Entity, &Field, &mut EditableText)>) -> Result<WorldInput, String> {
+    let mut values: [String; 4] = std::array::from_fn(|_| String::new());
     for (_, field, text) in fields.iter() {
         values[field.0] = text.value().to_string().trim().to_owned();
     }
@@ -272,7 +283,15 @@ fn values(
         .ok()
         .filter(|n| *n > 0)
         .ok_or("Revision must be a positive whole number")?;
-    Ok((PathBuf::from(&values[0]), values[1].clone(), revision))
+    if values[3].contains(['\0', '\n', '\r']) {
+        return Err("Enter a valid gameplay manifest path".into());
+    }
+    Ok(WorldInput {
+        path: PathBuf::from(&values[0]),
+        id: values[1].clone(),
+        revision,
+        template: (!values[3].is_empty()).then(|| PathBuf::from(&values[3])),
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -300,7 +319,7 @@ pub(super) fn finish(
         root.display = Display::Flex;
     }
     for (row, mut node) in &mut rows {
-        node.display = if draft.mode != Mode::World && row.0 == 2 {
+        node.display = if draft.mode != Mode::World && row.0 >= 2 {
             Display::None
         } else {
             Display::Flex
@@ -341,7 +360,7 @@ pub(super) fn finish(
             .iter()
             .find(|(entity, _, _)| Some(*entity) == current)
             .map_or(0, |(_, field, _)| {
-                let count = if draft.mode == Mode::World { 3 } else { 2 };
+                let count = if draft.mode == Mode::World { 4 } else { 2 };
                 if keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight) {
                     (field.0 + count - 1) % count
                 } else {
@@ -368,7 +387,13 @@ pub(super) fn finish(
             draft.message = "Save particle edits before exporting.".into();
         } else {
             let input = if draft.mode == Mode::World {
-                values(&fields).map(|(path, id, revision)| (path, Some((id, revision)), None))
+                values(&fields).map(|input| {
+                    (
+                        input.path,
+                        Some((input.id, input.revision, input.template)),
+                        None,
+                    )
+                })
             } else {
                 let mut input = [String::new(), String::new()];
                 for (_, field, text) in fields.iter() {
@@ -396,8 +421,18 @@ pub(super) fn finish(
                     draft.message = format!("Exporting {}…", path.display());
                     draft.target = Some(path.clone());
                     draft.task = Some(IoTaskPool::get().spawn(async move {
-                        if let Some((id, revision)) = world {
-                            export::publish(&zone, &path, &id, revision)
+                        if let Some((id, revision, template)) = world {
+                            if template.is_some() {
+                                export::publish_with_gameplay(
+                                    &zone,
+                                    &path,
+                                    &id,
+                                    revision,
+                                    template.as_deref(),
+                                )
+                            } else {
+                                export::publish(&zone, &path, &id, revision)
+                            }
                         } else {
                             export::publish_particles_to_chunks(
                                 &zone,
@@ -432,7 +467,7 @@ pub(super) fn finish(
             .into();
         } else if description {
             **text = match draft.mode {
-                Mode::World => "Exports the current zone snapshot. Save particle edits first.",
+                Mode::World => "Exports the current zone. Quest areas require a gameplay template manifest. Save particle edits first.",
                 Mode::ParticleChunks => "Copies a particle-free chunk world with these placements. Save particle edits first.",
                 Mode::ReplaceParticleChunks => "Replaces ALL particle placements in a new copy of the chunk world with this zone's placements. An empty zone removes all world particles. Save particle edits first."
             }.into();
@@ -598,6 +633,10 @@ mod tests {
     }
     #[test]
     fn dialog_validates_and_exports_without_overwriting_or_saving_zone() {
+        check_dialog_export(false);
+        check_dialog_export(true);
+    }
+    fn check_dialog_export(gameplay: bool) {
         use std::time::{Duration, Instant};
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let root = std::env::temp_dir().join(format!(
@@ -607,7 +646,16 @@ mod tests {
         ));
         std::fs::create_dir_all(&root).unwrap();
         let output = root.join("world");
-        let zone = Zone::default();
+        let template = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../content/development-gameplay-classic-quest-areas.json");
+        let zone = if gameplay {
+            serde_json::from_slice(include_bytes!(
+                "../../../content/zones/quest-areas.zone.json"
+            ))
+            .unwrap()
+        } else {
+            Zone::default()
+        };
         let mut app = App::new();
         app.add_plugins(bevy::app::TaskPoolPlugin::default())
             .insert_resource(Session::new(
@@ -640,7 +688,9 @@ mod tests {
             text.editor_mut().set_text(match field.0 {
                 0 => output.to_str().unwrap(),
                 1 => "theia.test.dialog",
-                _ => "0",
+                2 => "0",
+                _ if gameplay => template.to_str().unwrap(),
+                _ => "",
             });
         }
         app.world_mut()
@@ -719,6 +769,16 @@ mod tests {
             app.update();
         }
         assert!(output.join("world.manifest.json").is_file());
+        assert_eq!(
+            output.join("gameplay/gameplay.manifest.json").is_file(),
+            gameplay
+        );
+        if gameplay {
+            theia_network::gameplay_bundle::validate(
+                &output.join("gameplay/gameplay.manifest.json"),
+            )
+            .unwrap();
+        }
         assert!(
             app.world()
                 .resource::<Session>()
@@ -747,7 +807,9 @@ mod tests {
             text.editor_mut().set_text(match field.0 {
                 0 => output.to_str().unwrap(),
                 1 => "theia.test.dialog",
-                _ => "2",
+                2 => "2",
+                _ if gameplay => template.to_str().unwrap(),
+                _ => "",
             });
         }
         app.world_mut()

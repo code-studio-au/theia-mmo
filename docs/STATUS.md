@@ -1,3 +1,11 @@
+P5-17 / P3-15 integrated gameplay export dialog, 12 November 2026:
+File → Export world now offers an optional gameplay-template manifest field;
+quest-area zones require it. The existing background export route publishes the
+same validated combined artifacts as the CLI. Headless dialog tests cover both
+ordinary and gameplay exports, particle-save gating, invalid revisions and
+existing-output refusal. Chunk export retains its two-field form. Native visual
+and keyboard acceptance remain pending; no display or OS input was used.
+
 P5-17 / P3-15 combined world/gameplay export, 12 November 2026:
 `--export NEW_FOLDER --gameplay-template MANIFEST` now publishes terrain/collision,
 particles when present, full authoring source and a validated gameplay copy with

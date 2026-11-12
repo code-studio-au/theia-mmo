@@ -4065,3 +4065,10 @@ prove connected quest credit, creature navigation, placed quest NPCs or pickups.
 The template retains its existing quest/contact/creature definitions; area editing
 does not automatically move those entities or rewrite quests. Native UI/GPU
 acceptance remains pending while the display is reserved.
+
+The same combined export is available through **File → Export world → Gameplay
+template (optional)**. Supply the existing manifest path when the zone contains
+quest areas; leave it blank for ordinary geometry/particle exports. The worker
+uses the same validated snapshot path and reports errors in the dialog. This
+four-field form supports Tab/Shift-Tab; chunk export keeps two visible fields.
+Headless dialog qualification covers both modes; native appearance remains open.
