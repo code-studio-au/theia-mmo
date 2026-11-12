@@ -4,10 +4,25 @@ import tempfile
 import sys
 import unittest
 
-from edit_zone import build_environment, editor_arguments, example_arguments
+from edit_zone import build_environment, editor_arguments, example_arguments, scenery_arguments
 
 
 class EditorLaunchTests(unittest.TestCase):
+    def test_local_scenery_is_optional_and_explicit_catalogs_win(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            arguments = ['--zone', 'my.zone.json']
+            self.assertEqual(scenery_arguments(arguments, root), arguments)
+            catalog = root / 'build/starter-forest-scenery-v2/catalog.json'
+            catalog.parent.mkdir(parents=True)
+            catalog.write_bytes(b'caller-owned catalog bytes')
+            self.assertEqual(scenery_arguments(arguments, root), [*arguments, '--scenery-library', str(catalog)])
+            self.assertEqual(scenery_arguments(arguments, root, enabled=False), arguments)
+            explicit = [*arguments, '--scenery-library', 'custom.json']
+            self.assertEqual(scenery_arguments(explicit, root), explicit)
+            self.assertEqual(catalog.read_bytes(), b'caller-owned catalog bytes')
+            self.assertEqual(arguments, ['--zone', 'my.zone.json'])
+
     def test_new_draft_sets_only_the_later_save_path(self):
         with tempfile.TemporaryDirectory() as root:
             draft = Path(root) / 'new.json'

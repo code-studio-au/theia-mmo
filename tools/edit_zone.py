@@ -31,6 +31,16 @@ def example_arguments(arguments, draft, root=ROOT):
     return [*arguments, '--zone', str(source), '--commands', str(commands), '--save-path', str(draft)]
 
 
+def scenery_arguments(arguments, root=ROOT, enabled=True):
+    """Use the local qualified starter library unless the caller chooses otherwise."""
+    if not enabled or any(arg.split('=', 1)[0] == '--scenery-library' for arg in arguments):
+        return list(arguments)
+    catalog = root / 'build/starter-forest-scenery-v2/catalog.json'
+    if catalog.is_file():
+        return [*arguments, '--scenery-library', str(catalog)]
+    return list(arguments)
+
+
 def build_environment(source, root=ROOT):
     result = dict(source)
     sdk = root / 'build/native-sdk/usr/lib/x86_64-linux-gnu'
@@ -44,6 +54,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog='Other arguments pass directly to the editor; explicit authoring flags bypass automatic draft selection.')
     parser.add_argument('--draft', type=Path, help='draft to reopen or save later (default: build/zone-draft.json, or build/wayfarer-hollow.zone.json with --example)')
     parser.add_argument('--example', action='store_true', help='start or reopen an editable Wayfarer Hollow example draft')
+    parser.add_argument('--no-scenery-library', action='store_true', help='do not automatically load the locally staged starter scenery catalog')
     parser.add_argument('--no-build', action='store_true', help='use the existing debug editor binary')
     parser.add_argument('--build-only', action='store_true', help='build the editor and exit')
     options, forwarded = parser.parse_known_args()
@@ -64,6 +75,7 @@ def main():
         print(f'Editor built: {binary}')
         return 0
     arguments = example_arguments(forwarded, draft) if options.example else editor_arguments(forwarded, draft)
+    arguments = scenery_arguments(arguments, enabled=not options.no_scenery_library)
     if '--check-playtest' not in forwarded and not any(arg.split('=', 1)[0] in AUTHORING_FLAGS for arg in forwarded):
         draft.parent.mkdir(parents=True, exist_ok=True)
     # Preserve caller-relative explicit paths. On Linux, exec preserves the owned PID

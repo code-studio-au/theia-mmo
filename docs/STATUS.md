@@ -1,3 +1,10 @@
+P5-17 starter library launcher integration, 12 November 2026: normal
+`tools/edit_zone.py` launches automatically use the locally staged v2 scenery
+catalog when present. Explicit catalog arguments win; `--no-scenery-library`
+disables discovery. Missing catalogs leave ordinary editor launches available.
+Eight launcher tests and an actual headless dressing-document launch pass;
+no display/input access or automatic document write occurred.
+
 P5-17 / P1-10 scenery world publication, 12 November 2026: CLI and File →
 Export world now resolve the loaded immutable scenery library into the existing
 GLB/schema-4 package. Repeated placements share visual and collision meshes;

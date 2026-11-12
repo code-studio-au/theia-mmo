@@ -106,7 +106,9 @@ standard model-placement path; no material substitution is claimed here.
 ### Editor dressing study (12 November 2026)
 
 The integrated editor now uses these actual GLBs through standard Bevy world
-assets. Open the saved-reference example with the staged catalog:
+assets. The normal `tools/edit_zone.py` launcher detects the local v2 catalog
+automatically; an explicit `--scenery-library` wins, and
+`--no-scenery-library` disables that discovery. Open the saved-reference example with the staged catalog:
 
 ```sh
 python3 tools/edit_zone.py --zone content/zones/forest-scenery.zone.json \
