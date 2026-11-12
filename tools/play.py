@@ -126,8 +126,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     if character_stats and not combat_catalog:
         raise ValueError('Character stats require combat')
     if account_login:
-        if persistence or saved_terrain is None or not prediction or transport != 'renet' or clients != 1 or dev_tour or dev_speed != 1:
-            raise ValueError('Account login requires one client, normal predicted saved terrain and Renet; excludes development persistence/tour')
+        if persistence or (saved_terrain is None and authored_world is None) or not prediction or transport != 'renet' or clients != 1 or dev_tour or dev_speed != 1:
+            raise ValueError('Account login requires one client, normal predicted saved or authored terrain and Renet; excludes development persistence/tour')
         if any(not os.environ.get(key) for key in ['THEIA_DATABASE_URL','THEIA_OIDC_ISSUER','THEIA_OIDC_CLIENT_ID']):
             raise ValueError('Account login requires THEIA_DATABASE_URL, THEIA_OIDC_ISSUER and THEIA_OIDC_CLIENT_ID; see docs/AUTHENTICATED_ADMISSION.md')
     if persistence and (saved_terrain is None or not prediction or transport != 'renet' or dev_tour or dev_speed != 1):

@@ -168,13 +168,13 @@ pub async fn run_with_profiles(
     };
     let terrain = world
         .procedural()
-        .ok_or("Account entry requires saved terrain")?;
-    if !matches!(terrain.source, Source::Saved(_))
+        .ok_or("Account entry requires a bound saved or authored world")?;
+    if !matches!(terrain.source, Source::Saved(_) | Source::Authored(_))
         || terrain.speed != 1.
         || world.dev_tour
         || !world.prediction_enabled()
     {
-        return Err("Account entry requires normal predicted saved terrain".into());
+        return Err("Account entry requires normal predicted saved or authored terrain".into());
     }
     let identity = terrain.source.identity();
     let spawn = world

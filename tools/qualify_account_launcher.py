@@ -47,7 +47,7 @@ def browser(url):
     with opener.open(callback,timeout=7) as response:assert response.code==200
 
 
-def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,inventory=False,resources=False,feedback=False,status_effects=False,creatures=False,equipment=False,rewards=False,progression=False,quests=False,dialogue=False,vendors=False,gameplay_manifest=None,gameplay_validator=None,lifecycle=False,completion_xp=False,player_life=False,steady_seconds=0,window_size="1280x720",creature_asset=None,fullscreen=False,players=None):
+def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,inventory=False,resources=False,feedback=False,status_effects=False,creatures=False,equipment=False,rewards=False,progression=False,quests=False,dialogue=False,vendors=False,gameplay_manifest=None,gameplay_validator=None,lifecycle=False,completion_xp=False,player_life=False,steady_seconds=0,window_size="1280x720",creature_asset=None,fullscreen=False,players=None,authored_world=None):
     if type(steady_seconds) is not int or not 0 <= steady_seconds <= 30:
         raise ValueError('Steady measurement hold must be 0..30 seconds')
     if steady_seconds:
@@ -84,6 +84,7 @@ def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,in
     (binaries/'theia-client').symlink_to(client)
     results=[]
     earned_before=False
+    authored_saved=None
     with Identity(output/'provider',identity_sdk) as identity, Cluster(output/'cluster',postgres_sdk) as cluster:
         env=dict(cluster.env,THEIA_DATABASE_URL=cluster.test_environment()['THEIA_TEST_DATABASE_URL'],
                  THEIA_OIDC_ISSUER=identity.issuer,THEIA_OIDC_CLIENT_ID=identity.client_id,
@@ -103,7 +104,7 @@ def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,in
                     native_env=dict(THEIA_GRAYBOX_QUALIFY=str((output/(mode+'-client')).resolve()),THEIA_GRAYBOX_QUALIFY_SECONDS='120')
                     if rewards:native_env['THEIA_REWARDS_QUALIFY']='1'
                     native_env['THEIA_EQUIPMENT_QUALIFY' if equipment else 'THEIA_INVENTORY_QUALIFY']='A'
-                launcher=subprocess.Popen([sys.executable,'tools/play.py',*(['--players',str(players)] if players else []),*(['--fullscreen'] if fullscreen else []),*(['--creature-asset',str(creature_asset)] if creature_asset else []),*(['--gameplay-manifest',str(gameplay_manifest),'--gameplay-validator',str(gameplay_validator)] if gameplay_manifest else []),'--account-login',*(['--quest-lifecycle'] if lifecycle else []),*(['--inventory'] if inventory else []),*(['--equipment'] if equipment else []),*(['--rewards'] if rewards else []),*(['--progression'] if progression else []),*(['--quests'] if quests else []),*(['--dialogue'] if dialogue else []),*(['--vendors'] if vendors else []),*(['--resources'] if resources else []),*(['--status-effects'] if status_effects else []),*(['--creatures'] if creatures else []),*(['--spell-feedback'] if feedback else []),'--binaries',str(binaries.resolve())],
+                launcher=subprocess.Popen([sys.executable,'tools/play.py',*(['--authored-world',str(authored_world),'--classic'] if authored_world else []),*(['--players',str(players)] if players else []),*(['--fullscreen'] if fullscreen else []),*(['--creature-asset',str(creature_asset)] if creature_asset else []),*(['--gameplay-manifest',str(gameplay_manifest),'--gameplay-validator',str(gameplay_validator)] if gameplay_manifest else []),'--account-login',*(['--quest-lifecycle'] if lifecycle else []),*(['--inventory'] if inventory else []),*(['--equipment'] if equipment else []),*(['--rewards'] if rewards else []),*(['--progression'] if progression else []),*(['--quests'] if quests else []),*(['--dialogue'] if dialogue else []),*(['--vendors'] if vendors else []),*(['--resources'] if resources else []),*(['--status-effects'] if status_effects else []),*(['--creatures'] if creatures else []),*(['--spell-feedback'] if feedback else []),'--binaries',str(binaries.resolve())],
                                           env=dict(env,**native_env,THEIA_TEST_BROWSER_DEFER='1' if mode=='pending_login_interrupt' else '0'),stdin=subprocess.PIPE,stdout=log,stderr=subprocess.STDOUT,text=True)
                 launcher.stdin.write('Arden\n' if mode=='interrupt' else '1\n');launcher.stdin.flush()
                 try:
@@ -215,6 +216,19 @@ def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,in
                         check=cluster.query('SELECT count(*) FROM theia.reward_claims WHERE consumed_revision=5;')
                         assert check.returncode==0 and check.stdout.strip()=='1'
                         assert summary['worker']['reward_committed']==int(not earned_before)
+                    authored_checkpoint = None
+                    if authored_world and clients:
+                        admission = next(json.loads(line.removeprefix('account_admit ')) for line in text.splitlines() if line.startswith('account_admit '))
+                        if authored_saved is not None:
+                            assert all(abs(a-b) < 0.02 for a,b in zip(admission['position'], authored_saved['position'])), 'Authored rejoin did not restore the committed XYZ position'
+                        saved = cluster.query("SELECT json_build_object('position',json_build_array(x,y,z),'sequence',checkpoint_sequence,'world',encode(world_id,'hex')) FROM theia.characters;")
+                        assert saved.returncode == 0 and len(saved.stdout.splitlines()) == 1
+                        authored_checkpoint = json.loads(saved.stdout)
+                        assert authored_checkpoint['sequence'] > 0
+                        if authored_saved is not None:
+                            assert authored_checkpoint['world'] == authored_saved['world']
+                        (output/(mode+'-authored-checkpoint.json')).write_text(json.dumps(dict(admitted=admission['position'],saved=authored_checkpoint,rejoined=authored_saved is not None),indent=2))
+                        authored_saved = authored_checkpoint
                     query=cluster.query("SELECT count(*) FROM pg_stat_activity WHERE application_name='theia-development-persistence';")
                     assert query.returncode==0 and query.stdout.strip()=='0'
                     (output/(mode+'-server.log')).write_text(text)
@@ -223,7 +237,7 @@ def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,in
                     gpu_diagnostics=check_gpu_diagnostics(logtext,allow_surface_resize=fullscreen) if clients else 0
                     assert identity.password not in logtext and cluster.password not in logtext
                     if clients:earned_before=True
-                    results.append({'mode':mode,'known_surface_resize_diagnostics':gpu_diagnostics,'actual_capture_size':[int(resolution[1]),int(resolution[2])] if inventory and clients else None,'owned_children':len(owned),'native_clients':len(clients),'tickets_removed':True,'final_commit_before_database_close':bool(clients),'pending_login_cancelled':mode=='pending_login_interrupt','database_owner_closed':True,'client_database_environment_removed':True,'native_client_service_environment_checked':bool(clients),'gameplay_snapshot_profiles':snapshot_hashes,'gameplay_snapshots_removed':all(not p.exists() for p in snapshots)})
+                    results.append({'mode':mode,'authored_checkpoint':authored_checkpoint,'known_surface_resize_diagnostics':gpu_diagnostics,'actual_capture_size':[int(resolution[1]),int(resolution[2])] if inventory and clients else None,'owned_children':len(owned),'native_clients':len(clients),'tickets_removed':True,'final_commit_before_database_close':bool(clients),'pending_login_cancelled':mode=='pending_login_interrupt','database_owner_closed':True,'client_database_environment_removed':True,'native_client_service_environment_checked':bool(clients),'gameplay_snapshot_profiles':snapshot_hashes,'gameplay_snapshots_removed':all(not p.exists() for p in snapshots)})
                 finally:
                     if launcher.poll() is None:
                         launcher.send_signal(signal.SIGINT)
@@ -258,6 +272,7 @@ if __name__=='__main__':
     parser.add_argument('--steady-seconds',type=int,default=0,help='Hold one normal client for 0..30 extra seconds, uncapped with external validation off; interrupt mode only')
     parser.add_argument('--fullscreen',action='store_true')
     parser.add_argument('--creature-asset',type=Path)
+    parser.add_argument('--authored-world',type=Path,help='Qualify account walking against an authored package; no gameplay bundle')
     parser.add_argument('--players',type=Path,help='Explicit development player GLB directory, forwarded only to the client')
     parser.add_argument('--window-size',default='1280x720')
     parser.add_argument('--player-life',action='store_true',help='Check all thirteen schema-3 profiles and normal executable startup/cleanup')
@@ -272,4 +287,4 @@ if __name__=='__main__':
     parser.add_argument('--spell-feedback',action='store_true')
     parser.add_argument('--mode',action='append',choices=['interrupt','child_failure','pending_login_interrupt'])
     args=parser.parse_args()
-    print(json.dumps(run(args.output,args.identity_sdk.resolve(),args.postgres_sdk.resolve(),args.client.resolve(),args.server.resolve() if args.server else None,args.mode,inventory=args.inventory,resources=args.resources,feedback=args.spell_feedback,status_effects=args.status_effects,creatures=args.creatures,equipment=args.equipment,rewards=args.rewards,progression=args.progression,quests=args.quests,dialogue=args.dialogue,vendors=args.vendors,gameplay_manifest=args.gameplay_manifest.resolve() if args.gameplay_manifest else None,gameplay_validator=args.gameplay_validator.resolve() if args.gameplay_validator else None,lifecycle=args.lifecycle,completion_xp=args.completion_xp,player_life=args.player_life,steady_seconds=args.steady_seconds,window_size=args.window_size,creature_asset=args.creature_asset.resolve() if args.creature_asset else None,fullscreen=args.fullscreen,players=args.players.resolve() if args.players else None),indent=2))
+    print(json.dumps(run(args.output,args.identity_sdk.resolve(),args.postgres_sdk.resolve(),args.client.resolve(),args.server.resolve() if args.server else None,args.mode,inventory=args.inventory,resources=args.resources,feedback=args.spell_feedback,status_effects=args.status_effects,creatures=args.creatures,equipment=args.equipment,rewards=args.rewards,progression=args.progression,quests=args.quests,dialogue=args.dialogue,vendors=args.vendors,gameplay_manifest=args.gameplay_manifest.resolve() if args.gameplay_manifest else None,gameplay_validator=args.gameplay_validator.resolve() if args.gameplay_validator else None,lifecycle=args.lifecycle,completion_xp=args.completion_xp,player_life=args.player_life,steady_seconds=args.steady_seconds,window_size=args.window_size,creature_asset=args.creature_asset.resolve() if args.creature_asset else None,fullscreen=args.fullscreen,players=args.players.resolve() if args.players else None,authored_world=args.authored_world.resolve() if args.authored_world else None),indent=2))

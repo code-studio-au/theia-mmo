@@ -1,3 +1,12 @@
+P5-17 account playtest prerequisite, 12 November 2026:
+Exported authored worlds can now use the normal account-backed walking launcher:
+`python3 tools/play.py --authored-world WORLD --classic --account-login --players PLAYER_ASSETS`.
+This requires the existing configured local account/identity/database services.
+Fresh movement/checkpoint and exact XYZ rejoin are qualified on Linux; see
+AUTHENTICATED_ADMISSION.md. The editor's Network Playtest remains a separate
+movement-testing session with development tickets. Authored full quest bundles
+and an editor account-playtest button are not yet enabled.
+
 P5-17 / P1-06 managed editor Network Playtest, 12 November 2026:
 Add and enable one or two Test Players, then choose **Zone -> Start network
 playtest**. Choose a fresh output folder, the player model/animation directory

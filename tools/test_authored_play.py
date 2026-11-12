@@ -87,6 +87,31 @@ class AuthoredPlay(unittest.TestCase):
                               guide_position=position)
             child.assert_not_called()
 
+    def test_authored_account_walking_uses_normal_admission_and_never_local_tickets(self):
+        import os
+        import tempfile
+        class CapturedLaunch(Exception): pass
+        calls = []
+        def capture(arguments, **kwargs):
+            calls.append(arguments)
+            raise CapturedLaunch()
+        previous = Path.cwd()
+        with tempfile.TemporaryDirectory() as folder:
+            try:
+                os.chdir(folder)
+                with patch.dict(os.environ, dict(THEIA_DATABASE_URL='synthetic-not-connected', THEIA_OIDC_ISSUER='http://127.0.0.1:1', THEIA_OIDC_CLIENT_ID='fixture')), patch.object(Path, 'is_file', return_value=True), patch.object(play.subprocess, 'Popen', capture):
+                    with self.assertRaises(CapturedLaunch):
+                        play.play(None, Path('players'), 1, Path('binaries'), prediction=True,
+                                  classic=True, authored_world=Path('authored'), account_login=True)
+            finally:
+                os.chdir(previous)
+        self.assertEqual(len(calls), 1)
+        self.assertIn('--account-login', calls[0])
+        self.assertIn('--authored-world', calls[0])
+        self.assertNotIn('--saved-terrain', calls[0])
+        self.assertNotIn('--renet-tickets', calls[0])
+        self.assertNotIn('--dev-spawn', calls[0])
+
     def test_authored_creature_flags_reach_the_real_launcher_without_saved_terrain(self):
         observed = {}
         signature = inspect.signature(play.play)

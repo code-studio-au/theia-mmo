@@ -994,7 +994,7 @@ async fn main() -> Result<()> {
             rewards = Some(profile);
         }
         if tickets.is_some() || dev_persistence || chunk_stream || !graybox || !predicted {
-            return Err("Account login requires saved predicted terrain and excludes development ticket/persistence overrides".into());
+            return Err("Account login requires bound predicted terrain and excludes development ticket/persistence overrides".into());
         }
         let realm = theia_persistence::RealmId::parse(
             &std::env::var("THEIA_DEV_REALM_ID")

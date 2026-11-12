@@ -1,3 +1,20 @@
+P5-17 / P2-02 / P3-01 authored-zone entry, 12 November 2026:
+The normal account server/launcher accepts validated authored-world packages in
+addition to saved terrain. Use --authored-world DIR --classic --account-login
+with configured local identity/database services and the usual player assets.
+Authoritative source identity and supported spawn/restore validation remain the
+basis of fresh admission and rejoin; account owner/profile/ticket/lease rules and
+SQL worker ordering are unchanged. Generated terrain and development admissions
+remain excluded. Full --gameplay-manifest for authored worlds is still gated.
+
+The actual owned-service check passes fresh movement, durable global-position
+checkpoint, exact XYZ rejoin, later movement, failed-client cleanup and interrupted
+pending login. Credentials never enter the native client environment. The test
+closes its server/client/provider/database and removes temporary tickets/password
+files. See STATUS.md and build/authored-account-native-v1/verification.json for
+exact scope, position evidence and devices. This does not enable quest/NPC UI in
+the editor or replace the existing development network-test workflow.
+
 # Explicit session lifetime for local playtests — 6 November 2026
 
 P2-02 / P3-01 / P3-03. The default account session still lasts at most five

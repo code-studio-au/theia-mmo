@@ -1,3 +1,27 @@
+P5-17 / P2-02 / P3-01 account-backed authored-world entry, 12 November 2026:
+Normal --account-login now admits validated immutable authored packages as well as
+saved terrain. Retain source identity, supported spawn/restore checks, normal
+speed/prediction, secure Renet and existing asynchronous persistence. Generated
+terrain, development ticket/persistence overrides and tours remain outside this
+account path. The movement-test launcher stays separate. Full authored gameplay
+bundles remain explicitly gated pending navigation/profile/runtime qualification.
+All 25 server library tests, 20 authored/account Python tests, fmt, strict
+workspace/all-target Clippy and server build pass. Actual private Keycloak 26.8.1 /
+PostgreSQL 16.15 / native Vulkan run passes fresh login/movement/checkpoint,
+rejoin at exact committed XYZ, subsequent movement, normal interruption, failed
+client cleanup and pending-login cancellation. The persisted runtime position
+moves from [8192,0.908,8192] to [8202.733340263367,0.9079999923706055,8192], then
+restores exactly and commits [8214.633352279663,0.9079846143722534,8192] under the
+same authored identity. These are runtime global positions, not editor pawn feet.
+Native client service/SQL credentials are absent, tickets are removed, final
+checkpoints finish before database closure, and all owned services/windows stop.
+Zero GPU diagnostics on Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6; no Windows
+or authored quest-completion claim. Evidence: build/authored-account-*.log and
+build/authored-account-native-v1/{verification.json,*-authored-checkpoint.json}.
+Reproduce with tools/qualify_account_launcher.py --authored-world and explicit
+current binaries/player assets. Next: bind the valley's creature route and quest
+profiles to its navigation before enabling the complete authored gameplay bundle.
+
 P5-17 / P2-14 authored-valley minimap terrain, 12 November 2026:
 The minimap now samples already admitted authored-world ground after scene readiness,
 with checked global XZ bounds and topographic highest-surface semantics. No world,
