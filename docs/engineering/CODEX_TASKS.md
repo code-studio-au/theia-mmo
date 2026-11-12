@@ -1,3 +1,12 @@
+P5-17 / P1-10 curated starter scenery, 12 November 2026: seven locally
+verified Synty forest assets now support integrated placement, Explorer selection,
+inline transform/name edits, grounding, duplicate/delete/undo, offline playtest and
+world export. Explicit solid/decorative bindings keep collision separate from
+visuals. Actual-source and capsule checks pass headlessly; native appearance and
+connected Synty-zone gameplay remain pending. Reuse this path for starter-zone
+dressing; projected cliff materials remain separate. See ../SYNTY_ASSET_REVIEW.md
+and ../STATUS.md for exact evidence and limitations. P3-17/18 stay unspecified.
+
 P5-17 permanent numeric attributes, 10 November 2026: selected objects/plants/
 markers/guides use always-visible textboxes with one aligned frame/background.
 No click-to-reveal or Apply panel; Enter/blur applies one validated exact edit,

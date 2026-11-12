@@ -33,6 +33,8 @@ mod quest_area_authoring;
 mod quest_area_export;
 mod quest_area_preview;
 mod scenery_collision;
+mod scenery_export;
+mod scenery_glb;
 mod scenery_library;
 mod scenery_scene;
 mod scrolling;
@@ -595,12 +597,13 @@ fn run() -> Result<(), String> {
         return Ok(());
     }
     if let Some(path) = &options.export {
-        let report = export::publish_with_gameplay(
+        let report = export::publish_with_assets(
             editor.zone(),
             path,
             options.content_id.as_deref().expect("Checked export ID"),
             options.revision.expect("Checked export revision"),
             options.gameplay_template.as_deref(),
+            &scenery_library,
         )?;
         println!(
             "{}",

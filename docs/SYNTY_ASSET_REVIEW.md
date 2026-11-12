@@ -123,7 +123,7 @@ and textures are loaded from the verified immutable snapshot, with no copies of
 proprietary model files in Git. GPU appearance remains unreviewed under the
 no-display instruction. Offline playtest now uses explicit v2 collision bindings: source triangles for
 archway, ruins, table, chairs and log; decorative lantern and pebbles do not block
-movement. World export remains guarded until publication is connected.
+movement. World export packages these same visuals and explicit collision bindings.
 
 The windowless `--check-scenery` route loaded all seven models and their images,
 instantiated seven mesh entities and verified zero surviving meshes after root
@@ -139,3 +139,30 @@ THEIA_SCENERY_CATALOG="$PWD/build/starter-forest-scenery-v2/catalog.json" \
 
 This opt-in test requires the user's local proprietary assets; portable CI does
 not report it as an executed pass. The standard scenery tests use synthetic data.
+
+### World publication
+
+Both File → Export world and the headless exporter use the loaded immutable
+scenery catalog. For a new output directory:
+
+```sh
+python3 tools/edit_zone.py --zone content/zones/forest-scenery.zone.json \
+  --scenery-library build/starter-forest-scenery-v2/catalog.json \
+  --export build/forest-scenery-world --content-id theia.starter.forest-scenery \
+  --revision 1
+```
+
+Repeated chairs share one exported mesh; image bytes/material parameters remain
+unchanged. Collision surfaces use the existing row-major schema-4 affine contract.
+The GLB assembler is a narrow Rust adaptation of `tools/merge_static_glb.py` for
+these canonical standard-material models; it rejects external images, animation,
+noncanonical roots and extended materials. This does not replace the renderer.
+
+`tools/qualify_zone_scenery.py` independently compared the actual eight-placement
+export with the staged source arrays, image payloads, materials, transforms and
+collision surfaces. Evidence is under `build/starter-forest-scenery-v2/`; the
+export is `build/forest-scenery-world-v1/`. Actual arch passage and pillar contact
+also pass against the exported runtime collision at local/far origins, with a
+1 cm route agreement limit; millimetre ground-contact differences are retained
+in the scope, not described as bit-identical simulation. Native appearance and
+connected authority admission for this Synty scene remain separate checks.

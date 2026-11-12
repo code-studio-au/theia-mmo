@@ -599,7 +599,34 @@ mod scenery_tests {
                 ..default()
             };
             let mut play = Playtest::with_library(&zone, &library).unwrap();
+            let output = std::env::temp_dir().join(format!(
+                "theia-synty-export-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            export::publish_with_assets(&zone, &output, "theia.test.synty", 1, None, &library)
+                .unwrap();
+            let terrain =
+                theia_network::terrain::Terrain::load(&output.join("terrain.json")).unwrap();
+            terrain.verify_visual(&output.join("terrain.glb")).unwrap();
+            let mut exported = Playtest {
+                scene: terrain.physics,
+                feet: play.feet,
+                motion: Motion::default(),
+                spawn: play.spawn,
+            };
+            walk(&mut exported, [0, -1000], 120);
             walk(&mut play, [0, -1000], 120);
+            let difference =
+                Vec3::from_array(exported.feet.metres()) - Vec3::from_array(play.feet.metres());
+            assert!(
+                difference.length() < 0.01,
+                "Published/editor route differs by more than 1 cm: {difference:?}"
+            );
+            std::fs::remove_dir_all(&output).unwrap();
             let through = play.feet.metres();
             println!("scenery arch passage origin={origin:?} end={through:?}");
             assert!(
@@ -608,7 +635,16 @@ mod scenery_tests {
             );
             zone.spawn[0] = origin[0] + 1.5;
             let mut play = Playtest::with_library(&zone, &library).unwrap();
+            exported.feet = play.feet;
+            exported.motion = Motion::default();
+            walk(&mut exported, [0, -1000], 120);
             walk(&mut play, [0, -1000], 120);
+            let difference =
+                Vec3::from_array(exported.feet.metres()) - Vec3::from_array(play.feet.metres());
+            assert!(
+                difference.length() < 0.01,
+                "Published/editor pillar contact differs by more than 1 cm: {difference:?}"
+            );
             let pillar = play.feet.metres();
             println!("scenery pillar origin={origin:?} end={pillar:?}");
             assert!(pillar[2] > 0., "Solid pillar must stop passage: {pillar:?}");

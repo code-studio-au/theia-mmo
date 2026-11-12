@@ -1,3 +1,20 @@
+P5-17 / P1-10 scenery world publication, 12 November 2026: CLI and File →
+Export world now resolve the loaded immutable scenery library into the existing
+GLB/schema-4 package. Repeated placements share visual and collision meshes;
+embedded image bytes and standard material/sampler references are retained.
+Missing assets, unspecified collision, geometry budgets and existing outputs
+refuse publication. The eight-placement study exported to ignored
+`build/forest-scenery-world-v1/` (seven visuals, five shared collision meshes,
+six solid/two decorative placements). Independent source comparison passes for
+all vertex attributes, indices, image bytes, material parameters, transforms and
+package hashes: `build/starter-forest-scenery-v2/published-source-comparison.json`.
+The actual-asset capsule route and pillar contact pass against exported collision
+at local/far origins, within 1 cm of offline editor results (ground-contact
+rounding differs by millimetres): `published-route.log` alongside that report.
+26 export/dialog regressions, two GLB assembly tests, fmt and strict workspace
+Clippy pass. Native rendering and connected Synty-zone gameplay remain untested;
+the existing two-client graybox export regression passing is not that evidence.
+
 P5-17 / P1-10 explicit Synty scenery collision, 12 November 2026:
 starter catalog v2 stages five source triangle-mesh bindings and two decorative
 bindings with bounded immutable hash-checked data. Offline playtest resolves them

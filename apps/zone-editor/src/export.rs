@@ -366,7 +366,10 @@ fn cylinder_segments(radius: f64) -> u32 {
         .ceil()
         .max(32.) as u32
 }
-fn geometry(zone: &Zone, gameplay_areas: bool) -> Result<(Vec<u8>, Value, Value), String> {
+pub(super) fn geometry(
+    zone: &Zone,
+    gameplay_areas: bool,
+) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
     if !zone.scenery.is_empty() {
         return Err("Scenery asset publication is not connected yet".into());
@@ -505,7 +508,7 @@ fn publish_in(
     revision: u32,
     library: &Path,
 ) -> Result<Value, String> {
-    publish_combined(zone, path, content_id, revision, library, None)
+    publish_combined(zone, path, content_id, revision, library, None, None)
 }
 
 pub(super) fn publish_with_gameplay(
@@ -522,6 +525,29 @@ pub(super) fn publish_with_gameplay(
         revision,
         &bevy_sprinkles_editor::io::data_dir(),
         template,
+        None,
+    )
+}
+
+pub(super) fn publish_with_assets(
+    zone: &Zone,
+    path: &Path,
+    content_id: &str,
+    revision: u32,
+    template: Option<&Path>,
+    scenery: &scenery_library::Library,
+) -> Result<Value, String> {
+    if zone.scenery.is_empty() {
+        return publish_with_gameplay(zone, path, content_id, revision, template);
+    }
+    publish_combined(
+        zone,
+        path,
+        content_id,
+        revision,
+        &bevy_sprinkles_editor::io::data_dir(),
+        template,
+        Some(scenery),
     )
 }
 
@@ -532,6 +558,7 @@ fn publish_combined(
     revision: u32,
     library: &Path,
     template: Option<&Path>,
+    scenery: Option<&scenery_library::Library>,
 ) -> Result<Value, String> {
     if path.exists() {
         return Err("Export requires a new output directory".into());
@@ -545,7 +572,11 @@ fn publish_combined(
     } else {
         Some(crate::particle_export::draft(zone, library)?)
     };
-    let (visual, profile, mut report) = geometry(zone, gameplay.is_some())?;
+    let (visual, profile, mut report) = if let Some(scenery) = scenery {
+        scenery_export::geometry(zone, gameplay.is_some(), scenery)?
+    } else {
+        geometry(zone, gameplay.is_some())?
+    };
     let profile = serde_json::to_vec(&profile).map_err(|e| e.to_string())?;
     // Run the actual headless runtime decoder/spawn validator before writing.
     let terrain = Terrain::decode(&profile).map_err(|e| e.to_string())?;
@@ -678,6 +709,85 @@ mod tests {
     };
     use theia_network::{client::State, renet_runtime as runtime, simulation::World, wire::Intent};
     use tokio::sync::watch;
+    #[test]
+    fn scenery_export_shares_visuals_retains_document_and_refuses_unresolved_assets() {
+        let folder = Folder::new();
+        let path = folder.0.join("published");
+        let mut source = Glb::new();
+        source
+            .add(
+                "Cube",
+                Mesh::from(Cuboid::new(1., 1., 1.)),
+                Transform::default(),
+                1,
+            )
+            .unwrap();
+        let bytes = source.finish([false; 2], false, false).unwrap();
+        let hash: String = sha256(&bytes).iter().map(|b| format!("{b:02x}")).collect();
+        let id = "theia.test.scenery.cube";
+        let entry = scenery_library::Entry {
+            id: id.into(),
+            name: "Cube".into(),
+            category: "Tests".into(),
+            file: format!("{hash}.glb"),
+            bytes: bytes.len(),
+            sha256: hash,
+            bounds: [[-0.5; 3], [0.5; 3]],
+            triangles: 12,
+            source: json!({}),
+            collision: Some(scenery_collision::Binding::Decorative),
+        };
+        let mut library = scenery_library::Library::default();
+        library.assets.insert(
+            id.into(),
+            scenery_library::Asset {
+                entry,
+                bytes: std::sync::Arc::new(bytes),
+                collision: None,
+            },
+        );
+        let mut zone = Zone {
+            schema: 10,
+            ..default()
+        };
+        zone.scenery = (1..=2)
+            .map(|i| theia_zone::scenery::SceneryPlacement {
+                id: i,
+                name: format!("Cube {i}"),
+                asset: id.into(),
+                position: [i as f64 * 4., 0.5, 0.],
+                yaw_degrees: 30.,
+                scale: 1.,
+            })
+            .collect();
+        let error = publish_with_assets(
+            &zone,
+            &path,
+            "theia.test.scenery",
+            1,
+            None,
+            &scenery_library::Library::default(),
+        )
+        .unwrap_err();
+        assert!(error.contains("Missing scenery asset"));
+        assert!(!path.exists());
+        let report =
+            publish_with_assets(&zone, &path, "theia.test.scenery", 1, None, &library).unwrap();
+        assert_eq!(report["scenery"]["unique_visuals"], 1);
+        assert_eq!(report["scenery"]["decorative_instances"], 2);
+        assert_eq!(report["scenery"]["solid_instances"], 0);
+        assert_eq!(Zone::load(&path.join("authoring.zone.json")).unwrap(), zone);
+        let output = fs::read(path.join("terrain.glb")).unwrap();
+        let document = scenery_glb::Glb::read(&output).unwrap().document;
+        assert_eq!(document["nodes"].as_array().unwrap().len(), 3);
+        assert_eq!(document["meshes"].as_array().unwrap().len(), 2);
+        assert_eq!(document["nodes"][1]["mesh"], document["nodes"][2]["mesh"]);
+        let before = fs::read(path.join("world.manifest.json")).unwrap();
+        assert!(
+            publish_with_assets(&zone, &path, "theia.test.scenery", 2, None, &library).is_err()
+        );
+        assert_eq!(before, fs::read(path.join("world.manifest.json")).unwrap());
+    }
     static NEXT: AtomicU64 = AtomicU64::new(0);
     struct Folder(PathBuf);
     impl Folder {

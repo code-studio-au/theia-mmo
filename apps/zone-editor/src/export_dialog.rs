@@ -308,6 +308,7 @@ pub(super) fn finish(
     editor: Res<EditorState>,
     assets: Res<Assets<ParticlesAsset>>,
     operation: ProjectOperation,
+    scenery: Option<Res<scenery_library::Library>>,
 ) {
     let Some(mut draft) = session.export_dialog.take() else {
         for mut root in &mut roots {
@@ -420,9 +421,19 @@ pub(super) fn finish(
                     let replace = draft.mode == Mode::ReplaceParticleChunks;
                     draft.message = format!("Exporting {}…", path.display());
                     draft.target = Some(path.clone());
+                    let scenery = scenery.as_deref().cloned().unwrap_or_default();
                     draft.task = Some(IoTaskPool::get().spawn(async move {
                         if let Some((id, revision, template)) = world {
-                            if template.is_some() {
+                            if !zone.scenery.is_empty() {
+                                export::publish_with_assets(
+                                    &zone,
+                                    &path,
+                                    &id,
+                                    revision,
+                                    template.as_deref(),
+                                    &scenery,
+                                )
+                            } else if template.is_some() {
                                 export::publish_with_gameplay(
                                     &zone,
                                     &path,
