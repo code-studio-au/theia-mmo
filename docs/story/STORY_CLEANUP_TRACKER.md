@@ -198,3 +198,9 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] Searched the repository for Q035, Q184, `HUMAN_Q035_DONE` and the superseded title `A Ledger Reaches the Sea`. Historical quest registers, decision recovery, legacy comparisons and Chronicle retain historical title strings as provenance; those are not automatically active quest definitions.
 - [ ] Repository search is keyword-based and may miss semantic contradictions without the exact searched terms. Continue context-aware review of active production-facing files.
 - [ ] The Chronicle remains intentionally untouched pending explicit creator authorization.
+
+### Level-80 finale authorization audit — 12 November 2026
+
+- [x] Found that Q174's narrative stage explicitly required reaching level 80, but the authoring manifest still had `minimum_level: null` and `level_gate_approved: false`, and the derived reference had a historical `minLevel: 75`. Without a separate authorization check, an implementation could unlock the finale prematurely.
+- [x] Recorded a **creator-locked, non-executable level-80 authorization gate** on Q174 in both structured inventories: readiness work can precede level 80, but Q174 cannot complete and unlock Q175 until the character reaches level 80. Preserved historical planning pace rather than falsely changing every level annotation.
+- [ ] Rust quest engine must implement authoritative character-level evidence and gate Q174 completion/Q175 availability; documentation alone is not a tested runtime rule.
