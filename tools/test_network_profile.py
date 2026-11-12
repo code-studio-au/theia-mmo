@@ -22,7 +22,7 @@ class Profiles(unittest.TestCase):
         for args in [dict(delay_ms=-1), dict(delay_ms=5001), dict(delay_ms=True),
                      dict(jitter_ms=5001), dict(seed=-1), dict(seed=2**32),
                      dict(loss_percent=float('nan')), dict(loss_percent=float('inf')),
-                     dict(loss_percent=-1), dict(loss_percent=101), dict(loss_percent=True),
+                     dict(loss_percent=10**1000), dict(loss_percent=-1), dict(loss_percent=101), dict(loss_percent=True),
                      dict(outages=[]), dict(outages=((0, 0),)),
                      dict(outages=((10, 100), (50, 10))),
                      dict(outages=((3_600_000, 1),)), dict(outages=tuple((i, 1) for i in range(17)))]:

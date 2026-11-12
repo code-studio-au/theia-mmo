@@ -24,7 +24,7 @@ class Profile:
             if type(value) is not int or not 0 <= value <= maximum:
                 raise ValueError(f'{name} must be an integer in 0..{maximum}')
         if (type(self.loss_percent) not in (int, float)
-                or not math.isfinite(self.loss_percent) or not 0 <= self.loss_percent <= 100):
+                or not 0 <= self.loss_percent <= 100 or not math.isfinite(self.loss_percent)):
             raise ValueError('loss_percent must be finite and in 0..100')
         if type(self.outages) is not tuple or len(self.outages) > 16:
             raise ValueError('outages must be a tuple of at most 16 windows')

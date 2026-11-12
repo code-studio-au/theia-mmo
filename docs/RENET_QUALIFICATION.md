@@ -1,3 +1,45 @@
+## 12 November 2026 — managed multi-client launcher (P5-17 / P1-06)
+
+`tools/network_playtest.py` launches one authoritative server and one actual native
+client per enabled scenario player (one/two total), each with its own encrypted
+local ticket and UDP impairment relay. It validates the matching client content
+identity, delegates actual spawn collision validation to the server, and keeps
+manual Classic input. A schema-1 scenario extends the server profile's player
+entries with optional `enabled` (default true) and `network` settings. Disabled
+entries do not launch a client; missing network settings add no artificial faults.
+Each network object accepts the Profile fields documented below; outage windows
+are JSON arrays `[start_ms, duration_ms]`. Script controllers are not supported yet.
+
+Example using this session's checked local exports and Synty art:
+
+```sh
+python3 tools/network_playtest.py \
+  --scenario build/starter-valley-network-scenario-v1.json \
+  --world build/starter-valley-contact-world-v3 \
+  --players build/classic-directional-client-qualified-v1-20261103/art/player \
+  --binaries target/debug --output build/network-playtest-new
+```
+
+The output directory must be fresh. Ctrl-C, SIGTERM to the CLI launcher, writing
+`<output>/stop`, an optional `--duration <seconds>`, or closing a client ends the
+whole owned session. Client/server exits and partial startup failures clean up
+remaining processes/relays; temporary tickets are removed after child shutdown.
+Logs are separate per client; `session.json` records settings, relay counters,
+stop reason and cleanup errors. `added_base_rtt_ms` is configured delay, not a
+measurement of Renet RTT. The first launcher opens separate ordinary windows;
+automatic tiling/embedded camera views and the editor Start/Stop UI remain pending.
+
+Twenty-four focused Python checks pass (configuration, lifecycle, impairment and
+existing launcher helpers). Actual RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan
+runs two manual native clients for 25 seconds: the first has no added impairment,
+the second 80 ms each-way delay + 0..20 ms jitter. Both receive distinct authored
+spawns and publish their nine-chunk scene readiness. Two test admissions, zero
+rejected inputs, zero recoveries, no relay overflow and zero GPU diagnostics.
+Automatic shutdown removes all tickets and reports no cleanup errors. Evidence:
+`build/network-playtest-tests-final.log` and `build/network-playtest-native-v1/`.
+This native run verifies stationary manual clients, not scripted movement/combat,
+embedded editor views, persistence, Windows execution or large-scale capacity.
+
 ## 12 November 2026 — checked per-client test spawns (P5-17 / P1-06)
 
 The headless server accepts `--test-players <profile.json>` with an authored world,

@@ -1,3 +1,21 @@
+P5-17 / P1-06 managed native network playtest, 12 November 2026:
+New tools/network_playtest.py derives client count from enabled scenario players,
+starts one authoritative server plus independent local-ticket clients/relays,
+checks authored identity, retains manual Classic controls and handles whole-session
+Stop/window-close/timeout/interruption/partial-failure cleanup. Profiles preserve
+client IDs (including only slot 2 enabled), separate one-way delay from base added
+RTT, and leave real latency measurement distinct. Server still validates spawns.
+All 24 focused Python tests pass. Native Linux RX 7900 XTX / RADV NAVI31 / Mesa
+26.2.6 Vulkan runs two manual clients for 25 seconds: first no impairment, second
+80 ms each-way + 0..20 ms jitter. Both enter at distinct configured positions and
+publish nine-chunk readiness. Zero rejected inputs, recoveries, relay overflow or
+GPU diagnostics; automatic shutdown removes tickets and reports no cleanup errors.
+No native scripted movement, combat, Windows, persistence or editor Start/Stop UI
+claim. Evidence: build/network-playtest-tests-final.log and
+build/network-playtest-native-v1/{session.json,server.log,client-1.log,client-2.log}.
+Owned test windows/server are closed. Next: editor Test Player authoring/control
+binding and managed launch; F5 remains offline. See RENET_QUALIFICATION.md.
+
 P5-17 / P1-06 per-client authored test spawns, 12 November 2026:
 Headless server --test-players accepts a bounded source-bound profile of one/two
 local client IDs and full XYZ feet. Validate prepared capsule collision/support
