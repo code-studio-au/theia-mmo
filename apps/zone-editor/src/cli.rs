@@ -227,7 +227,7 @@ impl Options {
 }
 
 pub(super) fn summary(editor: &Editor) -> serde_json::Value {
-    serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"markers":editor.zone().markers.len(),"quest_areas":editor.zone().quest_areas.len(),"plants":editor.zone().plants.len(),"history":editor.history(),"valid":true})
+    serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"markers":editor.zone().markers.len(),"quest_areas":editor.zone().quest_areas.len(),"scenery":editor.zone().scenery.len(),"plants":editor.zone().plants.len(),"history":editor.history(),"valid":true})
 }
 
 #[cfg(test)]

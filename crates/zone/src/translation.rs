@@ -21,6 +21,8 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, offset: [f64; 3]) -> Result<()> {
         plant.position = shift(plant.position);
     } else if let Some(particle) = zone.particles.iter_mut().find(|p| p.id == id) {
         particle.position = shift(particle.position);
+    } else if let Some(placement) = zone.scenery.iter_mut().find(|p| p.id == id) {
+        placement.position = shift(placement.position);
     } else if let Some(area) = zone.quest_areas.iter_mut().find(|a| a.id == id) {
         area.min = shift(area.min);
         area.max = shift(area.max);

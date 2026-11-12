@@ -10,6 +10,7 @@ pub mod paths;
 pub mod projection;
 pub mod quest_areas;
 pub mod resampling;
+pub mod scenery;
 pub mod terrain;
 mod translation;
 pub mod vegetation;
@@ -72,6 +73,8 @@ pub struct Zone {
     pub particles: Vec<particles::ParticlePlacement>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub quest_areas: Vec<quest_areas::QuestArea>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scenery: Vec<scenery::SceneryPlacement>,
 }
 
 fn require(condition: bool, message: &str) -> Result<()> {
@@ -94,6 +97,7 @@ impl Default for Zone {
             plants: vec![],
             particles: vec![],
             quest_areas: vec![],
+            scenery: vec![],
         }
     }
 }
@@ -135,7 +139,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=9), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=10), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -179,6 +183,14 @@ impl Zone {
         require(
             self.quest_areas.len() <= theia_core::quests::areas::MAX_AREAS,
             "Quest area budget exceeded",
+        )?;
+        require(
+            self.schema >= 10 || self.scenery.is_empty(),
+            "Scenery requires zone schema 10",
+        )?;
+        require(
+            self.scenery.len() <= scenery::MAX_SCENERY_PLACEMENTS,
+            "Scenery placement budget exceeded",
         )?;
         require(label(&self.name), "Invalid zone name")?;
         self.frame()?;
@@ -234,6 +246,10 @@ impl Zone {
             require(ids.insert(particle.id), "Duplicate authoring ID")?;
             particle.validate(self)?;
         }
+        for placement in &self.scenery {
+            require(ids.insert(placement.id), "Duplicate authoring ID")?;
+            placement.validate(self)?;
+        }
         let mut area_ids = BTreeSet::new();
         let mut links = 0;
         for area in &self.quest_areas {
@@ -267,6 +283,7 @@ impl Zone {
             .chain(self.plants.iter().map(|p| p.id))
             .chain(self.particles.iter().map(|p| p.id))
             .chain(self.quest_areas.iter().map(|a| a.id))
+            .chain(self.scenery.iter().map(|p| p.id))
             .max()
             .unwrap_or(0)
             .checked_add(1)
@@ -406,6 +423,12 @@ pub enum Edit {
         area: quest_areas::QuestArea,
     },
     DeleteQuestArea {
+        id: u64,
+    },
+    PutScenery {
+        scenery: scenery::SceneryPlacement,
+    },
+    DeleteScenery {
         id: u64,
     },
     PutParticle {
@@ -662,6 +685,28 @@ impl Editor {
                                 .position(|a| a.id == id)
                                 .ok_or("Unknown quest area ID")?;
                             candidate.quest_areas.remove(index);
+                        }
+                        Edit::PutScenery { scenery } => {
+                            candidate.schema = candidate.schema.max(10);
+                            if let Some(existing) =
+                                candidate.scenery.iter_mut().find(|p| p.id == scenery.id)
+                            {
+                                *existing = scenery;
+                            } else {
+                                require(
+                                    candidate.scenery.len() < scenery::MAX_SCENERY_PLACEMENTS,
+                                    "Scenery placement budget exceeded",
+                                )?;
+                                candidate.scenery.push(scenery);
+                            }
+                        }
+                        Edit::DeleteScenery { id } => {
+                            let index = candidate
+                                .scenery
+                                .iter()
+                                .position(|p| p.id == id)
+                                .ok_or("Unknown scenery ID")?;
+                            candidate.scenery.remove(index);
                         }
                         Edit::PutParticle { particle } => {
                             candidate.schema = candidate.schema.max(8);

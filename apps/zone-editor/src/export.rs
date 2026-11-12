@@ -368,6 +368,9 @@ fn cylinder_segments(radius: f64) -> u32 {
 }
 fn geometry(zone: &Zone, gameplay_areas: bool) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
+    if !zone.scenery.is_empty() {
+        return Err("Scenery asset publication is not connected yet".into());
+    }
     if !zone.quest_areas.is_empty() && !gameplay_areas {
         return Err("Quest area drafts require --gameplay-template for world export".into());
     }

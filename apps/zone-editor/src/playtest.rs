@@ -16,6 +16,9 @@ pub(super) struct Playtest {
 }
 pub(super) fn collision(zone: &Zone) -> Result<StaticScene, String> {
     zone.validate()?;
+    if !zone.scenery.is_empty() {
+        return Err("Scenery collision admission is not connected yet".into());
+    }
     let mut colliders: Vec<_> = terrain::ground_boxes(zone)
         .into_iter()
         .map(|(center, size)| PlacedCollider {

@@ -1,3 +1,11 @@
+P5-17 / P1-10 model-placement document foundation, 12 November 2026:
+zone schema 10 stores bounded scenery references by logical asset ID with exact
+global position, yaw and uniform scale. Shared commands provide put/delete,
+rename, translation, duplication and undo/redo. All 63 zone tests pass; strict
+workspace Clippy passes. Model resolution/rendering is next. Export and offline
+playtest explicitly refuse scenery until their asset/collision paths are wired;
+there is no silent omission or model-collision claim.
+
 P5-17 / P1-10 / P2-08 starter scenery preparation, 12 November 2026:
 the user authorized using local Downloads/Synty assets for the starter-zone work.
 The actual folder is `Downloads/Synty Models`. Seven existing verified Enchanted

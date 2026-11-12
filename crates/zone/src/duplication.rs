@@ -23,7 +23,8 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, new_id: u64, offset: [f64; 3]) -> 
         .chain(zone.markers.iter().map(|m| m.id))
         .chain(zone.plants.iter().map(|p| p.id))
         .chain(zone.particles.iter().map(|p| p.id))
-        .chain(zone.quest_areas.iter().map(|a| a.id));
+        .chain(zone.quest_areas.iter().map(|a| a.id))
+        .chain(zone.scenery.iter().map(|p| p.id));
     require(!occupied.any(|id| id == new_id), "Copy ID already exists")?;
     require(
         offset
@@ -79,6 +80,16 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, new_id: u64, offset: [f64; 3]) -> 
         copy.name = copy_name(&copy.name);
         copy.position = shift(copy.position);
         zone.particles.push(copy);
+    } else if let Some(source) = zone.scenery.iter().find(|p| p.id == id) {
+        require(
+            zone.scenery.len() < crate::scenery::MAX_SCENERY_PLACEMENTS,
+            "Scenery placement budget exceeded",
+        )?;
+        let mut copy = source.clone();
+        copy.id = new_id;
+        copy.name = copy_name(&copy.name);
+        copy.position = shift(copy.position);
+        zone.scenery.push(copy);
     } else {
         return Err("Unknown authoring ID to copy".into());
     }
