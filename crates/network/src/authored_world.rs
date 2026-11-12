@@ -178,6 +178,89 @@ mod tests {
         (Folder(root), anchor)
     }
     #[test]
+    fn explicit_guide_height_selects_its_floor_and_rejects_unsupported_positions_atomically() {
+        use crate::dialogue::{Placement, Profile};
+        let (folder, _) = spawn_fixture([8192., 0., 8192.], true, false);
+        let store = Arc::new(Store::open(&folder.0).unwrap());
+        let profile = Arc::new(
+            Profile::from_json(include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../content/gameplay/development-dialogue.json"
+            )))
+            .unwrap(),
+        );
+        let mut identities = Vec::new();
+        for height in [0.1, 4.6] {
+            let mut world = crate::simulation::World::with_terrain_source(
+                [8192.; 2],
+                1.,
+                procedural::Source::Authored(store.clone()),
+            )
+            .unwrap();
+            world.enable_prediction().unwrap();
+            let base = world.identity();
+            for position in [[8192., 20., 8192.], [8192., 4., 8192.], [0.; 3]] {
+                assert!(
+                    world
+                        .spawn_placed_guide(
+                            profile.clone(),
+                            Placement::Feet(GlobalPosition::new(position).unwrap())
+                        )
+                        .is_err()
+                );
+                assert!(world.dialogue_profile().is_none());
+                assert_eq!(world.identity(), base);
+            }
+            let placement = Placement::Feet(GlobalPosition::new([8192., height, 8192.]).unwrap());
+            let focus = placement.focus().unwrap();
+            let count = world
+                .procedural()
+                .unwrap()
+                .patch(focus)
+                .unwrap()
+                .scene
+                .colliders
+                .len();
+            let guide = world
+                .spawn_placed_guide(profile.clone(), placement)
+                .unwrap();
+            let expected = if height < 1. { 0. } else { 4.5 } + f64::from(crate::world::PAWN_Y);
+            assert!((guide.position.metres()[1] - expected).abs() < 0.01);
+            world.enable_classic().unwrap();
+            assert_eq!(
+                world.identity(),
+                crate::classic::profile_identity(placement.identity(base, profile.hash()))
+            );
+            identities.push(world.identity());
+            assert_eq!(
+                world
+                    .procedural()
+                    .unwrap()
+                    .patch(focus)
+                    .unwrap()
+                    .scene
+                    .colliders
+                    .len(),
+                count
+            );
+            let body = |slot| {
+                let mut p = store.spawn(slot).unwrap().metres();
+                p[1] += f64::from(crate::world::PAWN_Y);
+                GlobalPosition::new(p).unwrap()
+            };
+            let ground = world.join_restored(body(0)).unwrap();
+            let rooftop = world.join_restored(body(1)).unwrap();
+            assert_eq!(world.nearby_guide(ground).is_some(), height < 1.);
+            assert_eq!(world.nearby_guide(rooftop).is_some(), height > 1.);
+            assert!(
+                world
+                    .spawn_placed_guide(profile.clone(), placement)
+                    .is_err()
+            );
+        }
+        assert_ne!(identities[0], identities[1]);
+    }
+    #[test]
     fn authored_spawn_keeps_ground_and_roof_layers_for_all_player_slots() {
         let (folder, _) = spawn_fixture([8192., 0., 8192.], true, false);
         let store = Arc::new(Store::open(&folder.0).unwrap());

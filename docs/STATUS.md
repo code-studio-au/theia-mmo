@@ -1,3 +1,27 @@
+P3-12 / P3-15 explicit XYZ contact placement, 12 November 2026:
+Guide startup accepts x,y,z feet through launcher/client/server and preserves the
+requested support layer. XYZ hashes bind all three coordinates; legacy XZ APIs,
+fixtures and hashes are unchanged. Atomic rejection covers unsupported/intersecting
+positions and attempts after admission. Synthetic ground/roof worlds verify actual
+3D interaction range and no NPC collision. All 480 authority tests, seven launcher
+checks, formatting, strict workspace/all-target Clippy and three app builds pass.
+Two actual encrypted peers in the dressed valley see the same guide, independently
+open dialogue, then close it on walkaway while the wolf patrol moves. Zero rejected
+dialogue/movement/readiness and zero movement recoveries. Rebuilt client configuration
+matches that exact world identity; actual CLI startup/shutdown and unsupported-height
+refusal pass. Evidence: build/layered-guide-{authority-tests,renet-v3,clippy-final,
+build}.log and layered-guide-cli-proof.json. No new rendering/Windows qualification.
+Initial synthetic test assumed guide allocation did not consume an entity ID;
+it now admits explicit ground/roof poses. Initial live harness added an excessive
+snap offset and oversized request queue; final proof uses actual supported feet
+and the established four-entry bound. Initial client error conversion was corrected.
+Editor marker-to-contact/quest bindings, multiple NPCs/patrols, placed quest pickups,
+authored account gameplay and a properly sourced/authored spell clip remain open.
+User requested the editor for playtesting: launched target/debug/theia-zone-editor
+with build/starter-valley-village-v2.zone.json, PID 199365, log
+build/starter-valley-editor-playtest.log. This authorizes opening the display for
+their playtest; avoid input interference while they use it. Continue source work.
+
 P3-04 / P3-15 full XYZ respawn support, 12 November 2026:
 Admission now retains the landing layer beneath the player's full feet position
 when preparing immutable respawn home. The former XZ-only highest-ground lookup

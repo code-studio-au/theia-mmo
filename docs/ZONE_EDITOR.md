@@ -1,3 +1,13 @@
+# Height-aware village contact — 12 November 2026
+
+The connected village can include one informational guide using explicit global
+feet coordinates. For example, add `--dialogue --guide-position 8194,0.03,8192`
+to the connected valley command below. Two-coordinate `x,z` fixture positions
+remain supported; use three coordinates to choose a floor beneath a roof.
+Unsupported positions refuse before the server opens its endpoint. This is a
+connected-client contact, not an editor F5 NPC or a completed quest binding.
+Editor NPC markers and multiple quest contacts still need authoring/export work.
+
 # Synty player in editor playtest — 12 November 2026
 
 The launcher automatically uses the local qualified Synty base character when

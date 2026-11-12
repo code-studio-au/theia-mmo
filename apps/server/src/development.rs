@@ -1,9 +1,8 @@
 //! Explicit fixture startup, outside the simulation and before opening endpoints.
 use std::{sync::Arc, time::Duration};
-use theia_core::coordinates::GlobalPosition;
 use theia_network::{
     Result,
-    dialogue::{Guide, Profile},
+    dialogue::{Guide, Placement, Profile},
     simulation::World,
 };
 pub async fn prepare_guide(
@@ -11,7 +10,14 @@ pub async fn prepare_guide(
     profile: Arc<Profile>,
     xz: [f64; 2],
 ) -> Result<Guide> {
-    let focus = GlobalPosition::new([xz[0], 0., xz[1]]).ok_or("Invalid guide position")?;
+    prepare_placed_guide(world, profile, Placement::Horizontal(xz)).await
+}
+pub async fn prepare_placed_guide(
+    world: &mut World,
+    profile: Arc<Profile>,
+    placement: Placement,
+) -> Result<Guide> {
+    let focus = placement.focus()?;
     if world.completed_tick() != 0
         || world.procedural().is_none()
         || theia_network::procedural::owner(focus).is_none()
@@ -33,12 +39,13 @@ pub async fn prepare_guide(
         }
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
-    world.spawn_development_guide(profile, xz)
+    world.spawn_placed_guide(profile, placement)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use theia_core::coordinates::GlobalPosition;
     #[tokio::test]
     async fn distant_guide_preparation_uses_the_existing_loader_before_simulation_starts() {
         let profile = Arc::new(

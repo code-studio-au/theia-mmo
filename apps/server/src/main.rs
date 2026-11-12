@@ -60,7 +60,7 @@ async fn main() -> Result<()> {
     let mut quest_turn_in_xp = None;
     let mut dialogue_catalog = None;
     let mut vendor_catalog = None;
-    let mut guide_position: Option<[f64; 2]> = None;
+    let mut guide_position: Option<theia_network::dialogue::Placement> = None;
     let mut dev_persistence = false;
     let mut account_login = false;
     let mut dev_tour = false;
@@ -148,8 +148,7 @@ async fn main() -> Result<()> {
             }
             "--guide-position" => {
                 if guide_position.is_some() {return Err("Choose one guide position".into());}
-                let values:Vec<f64>=args.next().ok_or("Missing guide position")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;
-                guide_position=Some(values.try_into().map_err(|_|"Expected guide x,z")?);
+                guide_position=Some(theia_network::dialogue::Placement::parse(&args.next().ok_or("Missing guide position")?)?);
             }
             "--quest-lifecycle" => explicit_quest=true,
             "--quest-journal" => journal_mode=true,
@@ -625,14 +624,16 @@ async fn main() -> Result<()> {
     }
     // Validate world options before opening an endpoint.
     match (dialogue_catalog, guide_position) {
-        (Some(path), Some(xz)) if graybox && (account_login || tickets.is_some()) => {
+        (Some(path), Some(placement)) if graybox && (account_login || tickets.is_some()) => {
             use std::io::Read;
             let mut bytes = Vec::new();
             std::fs::File::open(path)?
                 .take(theia_core::dialogue::MAX_PROFILE_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
             let profile = std::sync::Arc::new(theia_network::dialogue::Profile::from_json(&bytes)?);
-            let guide = theia_server::development::prepare_guide(&mut world, profile, xz).await?;
+            let guide =
+                theia_server::development::prepare_placed_guide(&mut world, profile, placement)
+                    .await?;
             println!(
                 "guide_ready epoch={} entity={} position={:?}",
                 guide.key.epoch.value(),

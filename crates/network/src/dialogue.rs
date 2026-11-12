@@ -39,6 +39,51 @@ pub fn profile_identity(base: [u8; 32], profile: [u8; 32], placement: [f64; 2]) 
     }
     crate::terrain::sha256(&bytes)
 }
+/// Trusted startup placement. Horizontal coordinates retain the legacy terrain
+/// fixture contract; authored feet select an explicit vertical support layer.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Placement {
+    Horizontal([f64; 2]),
+    Feet(GlobalPosition),
+}
+impl Placement {
+    pub fn parse(value: &str) -> crate::Result<Self> {
+        let values: Vec<f64> = value.split(',').map(str::parse).collect::<Result<_, _>>()?;
+        let placement = match values.as_slice() {
+            [x, z] => Self::Horizontal([*x, *z]),
+            [x, y, z] => Self::Feet(GlobalPosition::new([*x, *y, *z]).ok_or("Invalid guide feet")?),
+            _ => return Err("Expected guide x,z or x,y,z feet in metres".into()),
+        };
+        placement.focus()?;
+        Ok(placement)
+    }
+    pub fn focus(self) -> crate::Result<GlobalPosition> {
+        let focus = match self {
+            Self::Horizontal([x, z]) => {
+                GlobalPosition::new([x, 0., z]).ok_or("Invalid guide position")?
+            }
+            Self::Feet(position) => position,
+        };
+        if crate::procedural::owner(focus).is_none() {
+            return Err("Guide outside supported world".into());
+        }
+        Ok(focus)
+    }
+    pub fn identity(self, base: [u8; 32], profile: [u8; 32]) -> [u8; 32] {
+        match self {
+            Self::Horizontal(xz) => profile_identity(base, profile, xz),
+            Self::Feet(position) => {
+                let mut bytes = b"theia-informational-guide-xyz-world-v1\0".to_vec();
+                bytes.extend(base);
+                bytes.extend(profile);
+                for value in position.metres() {
+                    bytes.extend(value.to_le_bytes());
+                }
+                crate::terrain::sha256(&bytes)
+            }
+        }
+    }
+}
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Guide {
     pub key: EntityKey,
@@ -87,4 +132,41 @@ pub enum Rejection {
     InvalidAction,
     OutOfRange,
     Exhausted,
+}
+
+#[cfg(test)]
+mod placement_tests {
+    use super::*;
+    #[test]
+    fn explicit_height_is_checked_and_bound_without_changing_legacy_identity() {
+        let horizontal = Placement::parse("8192,8192").unwrap();
+        assert_eq!(
+            horizontal.identity([1; 32], [2; 32]),
+            profile_identity([1; 32], [2; 32], [8192.; 2])
+        );
+        let floor = Placement::parse("8192,0.1,8192").unwrap();
+        let roof = Placement::parse("8192,4.6,8192").unwrap();
+        assert_eq!(roof.focus().unwrap().metres(), [8192., 4.6, 8192.]);
+        assert_ne!(
+            floor.identity([1; 32], [2; 32]),
+            roof.identity([1; 32], [2; 32])
+        );
+        assert_ne!(
+            floor.identity([1; 32], [2; 32]),
+            horizontal.identity([1; 32], [2; 32])
+        );
+        for text in [
+            "",
+            "1",
+            "1,2,3,4",
+            "NaN,1",
+            "1,NaN,2",
+            "1,inf,2",
+            "-1,0,1",
+            "16000,1",
+            "1,0,16000",
+        ] {
+            assert!(Placement::parse(text).is_err(), "{text}");
+        }
+    }
 }

@@ -341,18 +341,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if i >= args.len() {
             return Err("Missing guide position".into());
         }
-        let values: Vec<f64> = args
-            .remove(i)
-            .split(',')
-            .map(str::parse)
-            .collect::<Result<_, _>>()?;
-        let xz: [f64; 2] = values.try_into().map_err(|_| "Expected guide x,z")?;
-        let focus = theia_core::coordinates::GlobalPosition::new([xz[0], 0., xz[1]])
-            .ok_or("Invalid guide position")?;
-        if theia_network::procedural::owner(focus).is_none() {
-            return Err("Guide outside graybox".into());
-        }
-        Some((profile, xz))
+        let placement = theia_network::dialogue::Placement::parse(&args.remove(i))
+            .map_err(|error| error.to_string())?;
+        Some((profile, placement))
     } else {
         if args.iter().any(|a| a == "--guide-position") {
             return Err("Guide position requires dialogue".into());
@@ -1072,9 +1063,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let base = journal_profile.as_ref().map_or(base, |p| {
             theia_network::quest_journal::profile_identity(base, p.hash())
         });
-        let base = dialogue_profile.as_ref().map_or(base, |(profile, xz)| {
-            theia_network::dialogue::profile_identity(base, profile.hash(), *xz)
-        });
+        let base = dialogue_profile
+            .as_ref()
+            .map_or(base, |(profile, placement)| {
+                placement.identity(base, profile.hash())
+            });
         inventory_profile
             .as_ref()
             .and_then(|p| p.vendor())

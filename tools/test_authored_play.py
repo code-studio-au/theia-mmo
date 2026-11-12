@@ -60,19 +60,30 @@ class AuthoredPlay(unittest.TestCase):
                 os.chdir(folder)
                 with patch.object(Path,'is_file',return_value=True), patch.object(play.subprocess,'Popen',capture):
                     for extra in ({}, dict(creature_profile=Path('wolf'), navigation=Path('nav'),
-                                           combat_catalog=Path('abilities'))):
+                                           combat_catalog=Path('abilities')),
+                                  dict(dialogue_catalog=Path('dialogue'), guide_position='8194,0.1,8192')):
                         with self.assertRaises(CapturedLaunch):
                             play.play(None,Path('players'),1,Path('binaries'),prediction=True,
                                       authored_world=Path('authored'), **extra)
             finally:
                 os.chdir(previous)
-        self.assertEqual(len(calls),2)
+        self.assertEqual(len(calls),3)
         for call in calls:
             self.assertIn('--authored-world',call)
             self.assertNotIn('--dev-spawn',call)
             self.assertNotIn('--saved-terrain',call)
         self.assertIn('--creature-profile',calls[1])
         self.assertIn('--navigation',calls[1])
+        self.assertEqual(calls[2][calls[2].index('--guide-position') + 1], '8194,0.1,8192')
+
+    def test_invalid_guide_height_or_coordinate_refuses_before_starting_children(self):
+        with patch.object(play.subprocess, 'Popen') as child:
+            for position in ['8192,NaN,8192', '8192,inf,8192', '1,2,3,4', '-1,0,8192', '8192,0,16000']:
+                with self.subTest(position=position), self.assertRaisesRegex(ValueError, 'Guide position'):
+                    play.play(None, Path('players'), 1, Path('binaries'), prediction=True,
+                              authored_world=Path('valley'), dialogue_catalog=Path('dialogue'),
+                              guide_position=position)
+            child.assert_not_called()
 
     def test_authored_creature_flags_reach_the_real_launcher_without_saved_terrain(self):
         observed = {}

@@ -753,7 +753,7 @@ impl World {
                 crate::quest_journal::profile_identity(identity, p.hash())
             });
             let identity = self.dialogue.as_ref().map_or(identity, |d| {
-                crate::dialogue::profile_identity(identity, d.profile.hash(), d.placement)
+                d.placement.identity(identity, d.profile.hash())
             });
             let identity = self.vendor.as_ref().map_or(identity, |v| {
                 crate::vendor_wire::profile_identity(identity, v.hash())

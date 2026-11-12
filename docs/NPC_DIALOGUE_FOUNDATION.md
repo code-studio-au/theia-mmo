@@ -1,3 +1,21 @@
+12 November 2026 — P3-12 / P3-15 authored contact height:
+Server, client and launcher accept `--guide-position x,y,z` for trusted contact
+feet. Placement resolves only near that support layer; unsupported, penetrating
+and live-world replacements refuse. The full requested XYZ participates in a
+separate world-identity domain. Existing `x,z` fixtures retain their exact old
+identity and highest-terrain behavior. Collision, nonblocking NPCs, the single
+guide budget and three-metre 3D interaction range remain unchanged.
+
+All 480 network authority tests, seven launcher checks and an actual encrypted
+two-client dressed-valley test pass. Each client independently opens the full-XYZ
+guide conversation; walking away closes it while the west-grove wolf patrol
+continues. The rebuilt client configuration matches the encrypted world identity;
+the CLI server starts and shuts down cleanly and refuses unsupported height before
+publishing an endpoint. Formatting and strict workspace/all-target Clippy pass.
+Evidence: `build/layered-guide-{authority-tests,renet-v3,clippy-final,build}.log`
+and `build/layered-guide-cli-proof.json`. No new native dialogue UI or Windows
+qualification; editor NPC markers are still annotations pending binding/export.
+
 Vendor continuation, 2026-10-30: the opt-in guide barter now passes actual
 OIDC/native purchasing at 1280×720, 1920×1200 and 3440×1440. It uses the shared
 item response rather than treating a dialogue-node reply as purchase success.

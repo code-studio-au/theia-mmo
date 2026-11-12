@@ -36,6 +36,7 @@ struct Peer {
     _choice: Option<watch::Sender<Option<theia_network::targeting::Choice>>>,
     _casts: Option<mpsc::Sender<net::CastChoice>>,
     _events: Option<mpsc::Receiver<theia_network::combat_wire::Batch>>,
+    dialogue: Option<mpsc::Sender<net::dialogue::Intent>>,
     driver: Driver,
     terrain: Runtime,
     initial: [f64; 3],
@@ -105,21 +106,27 @@ async fn drive(peers: &mut [Peer], duration: Duration) {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD local exported starter world with a clear +Z approach"]
 async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_stale_world() {
-    run_authored(false).await;
+    run_authored(false, false).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD valley and THEIA_AUTHORED_NAV west-grove package"]
 async fn authored_valley_patrol_and_resource_combat_replicate_to_two_classic_peers() {
-    run_authored(true).await;
+    run_authored(true, false).await;
 }
 
-async fn run_authored(patrol: bool) {
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires THEIA_AUTHORED_WORLD valley and THEIA_AUTHORED_NAV west-grove package"]
+async fn authored_valley_full_xyz_guide_opens_and_closes_on_walkaway_for_two_encrypted_peers() {
+    run_authored(true, true).await;
+}
+
+async fn run_authored(patrol: bool, with_guide: bool) {
     let root =
         PathBuf::from(std::env::var_os("THEIA_AUTHORED_WORLD").expect("Authored starter export"));
     let store = Arc::new(Store::open(&root).unwrap());
     let source = store.identity();
-    let [x, _, z] = store.spawn(0).unwrap().metres();
+    let [x, y, z] = store.spawn(0).unwrap().metres();
     let spawn = [x, z];
     let mut world = World::with_terrain_source(spawn, 1., Source::Authored(store)).unwrap();
     world.enable_prediction().unwrap();
@@ -149,10 +156,28 @@ async fn run_authored(patrol: bool) {
     } else {
         None
     };
+    let dialogue = with_guide.then(|| {
+        Arc::new(
+            theia_network::dialogue::Profile::from_json(include_bytes!(
+                "../../../content/gameplay/development-dialogue.json"
+            ))
+            .unwrap(),
+        )
+    });
+    let guide = dialogue.as_ref().map(|profile| {
+        world
+            .spawn_placed_guide(
+                profile.clone(),
+                theia_network::dialogue::Placement::Feet(
+                    theia_core::coordinates::GlobalPosition::new([x + 2., y, z]).unwrap(),
+                ),
+            )
+            .unwrap()
+    });
     let classic_source = world.identity();
     world.enable_classic().unwrap();
     let identity = world.identity();
-    if !patrol {
+    if !patrol && !with_guide {
         assert_eq!(identity, theia_network::classic::profile_identity(source));
     }
     let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
@@ -183,6 +208,13 @@ async fn run_authored(patrol: bool) {
         let (choice, choices) = watch::channel(None);
         let (casts, requests) = mpsc::channel(8);
         let (events, event_rx) = mpsc::channel(16);
+        let (dialogue_actions, dialogue_requests) = mpsc::channel(4);
+        if let Some(profile) = &dialogue {
+            mode.dialogue = Some(net::dialogue::Client {
+                profile: profile.clone(),
+                actions: dialogue_requests,
+            });
+        }
         if patrol {
             mode.choices = Some(choices);
             mode.combat = Some(net::CombatActions {
@@ -228,6 +260,7 @@ async fn run_authored(patrol: bool) {
             _choice: patrol.then_some(choice),
             _casts: patrol.then_some(casts),
             _events: patrol.then_some(event_rx),
+            dialogue: with_guide.then_some(dialogue_actions),
             driver: Driver::with_classic(classic_source, false),
             terrain,
             initial,
@@ -235,6 +268,40 @@ async fn run_authored(patrol: bool) {
         });
     }
     drive(&mut peers, Duration::from_millis(900)).await;
+    if let Some(guide) = guide {
+        for peer in &peers {
+            let revision = {
+                let state = peer.state.borrow();
+                assert_eq!(state.guide.as_ref().unwrap().guide, Some(guide));
+                state.dialogue.as_ref().unwrap().revision
+            };
+            peer.dialogue
+                .as_ref()
+                .unwrap()
+                .send(net::dialogue::Intent {
+                    expected_revision: revision,
+                    action: theia_network::dialogue::Action::Open(guide.key),
+                })
+                .await
+                .unwrap();
+        }
+        drive(&mut peers, Duration::from_millis(400)).await;
+        for peer in &peers {
+            let state = peer.state.borrow();
+            assert_eq!(
+                state
+                    .dialogue
+                    .as_ref()
+                    .unwrap()
+                    .open
+                    .as_ref()
+                    .unwrap()
+                    .guide,
+                guide.key
+            );
+            assert!(state.dialogue_reply.as_ref().unwrap().rejection.is_none());
+        }
+    }
     for peer in &peers {
         let state = peer.state.borrow();
         let correction = state.correction.unwrap().state;
@@ -257,6 +324,12 @@ async fn run_authored(patrol: bool) {
         assert!((correction.pose.feet.metres()[0] - peer.initial[0]).abs() < 0.02);
         assert!(peer.driver.stats.predicted_steps > 0 && peer.driver.stats.corrections > 0);
         assert_eq!(state.snapshot.as_ref().unwrap().players.len(), 2);
+        if with_guide {
+            assert!(
+                state.dialogue.as_ref().unwrap().open.is_none(),
+                "Walkaway must close dialogue"
+            );
+        }
         if let Some(home) = patrol_home {
             let targeting = state
                 .targeting
@@ -302,9 +375,14 @@ async fn run_authored(patrol: bool) {
         peer.task.await.unwrap().unwrap();
     }
     let stats = server.await.unwrap().unwrap();
+    if with_guide {
+        assert_eq!(stats.dialogue_requests_accepted, 2);
+        assert_eq!(stats.dialogue_requests_rejected, 0);
+    }
     println!(
         "{}",
-        serde_json::json!({"passed":true,"clients":2,"patrol":patrol,"world":identity,"server":stats,
+        serde_json::json!({"passed":true,"clients":2,"patrol":patrol,"guide":with_guide,
+        "guide_requested_feet":with_guide.then_some([x + 2., y, z]),"world":identity,"server":stats,
         "scope":"Actual authored Synty collision, encrypted loopback admission and Classic driver; explicit headless readiness, no native-client/quest/persistence claim"})
     );
 }

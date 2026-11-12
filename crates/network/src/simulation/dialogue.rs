@@ -1,7 +1,9 @@
 //! Stationary, noncombat informational guide. Pure fixed-step state only;
 //! no database, file or transport I/O, and no physics body for the NPC.
 use super::World;
-use crate::dialogue::{Action, Guide, Open, Profile, Rejection, Request, View, in_range};
+use crate::dialogue::{
+    Action, Guide, Open, Placement, Profile, Rejection, Request, View, in_range,
+};
 use std::{collections::BTreeMap, sync::Arc};
 use theia_core::{
     coordinates::GlobalPosition,
@@ -10,7 +12,7 @@ use theia_core::{
 
 pub(super) struct Authority {
     pub(super) profile: Arc<Profile>,
-    pub(super) placement: [f64; 2],
+    pub(super) placement: Placement,
     guide: Guide,
     available: bool,
     actors: BTreeMap<u64, Session>,
@@ -170,19 +172,27 @@ impl World {
         profile: Arc<Profile>,
         xz: [f64; 2],
     ) -> crate::Result<Guide> {
+        self.spawn_placed_guide(profile, Placement::Horizontal(xz))
+    }
+    /// Install one trusted, supported contact before admitting players. This
+    /// retains the existing single-guide budget and creates no actor collision.
+    pub fn spawn_placed_guide(
+        &mut self,
+        profile: Arc<Profile>,
+        placement: Placement,
+    ) -> crate::Result<Guide> {
         if self.tick != 0 || !self.players.is_empty() || self.dialogue.is_some() {
             return Err("Guide requires inactive world and unused guide budget".into());
         }
         let runtime = self.procedural.as_ref().ok_or("Guide requires graybox")?;
-        let focus = GlobalPosition::new([xz[0], 0., xz[1]]).ok_or("Invalid guide position")?;
-        if crate::procedural::owner(focus).is_none() {
-            return Err("Guide outside graybox".into());
-        }
+        let focus = placement.focus()?;
         let patch = runtime.patch(focus).ok_or("Guide collision not prepared")?;
-        let mut position = patch
-            .try_spawn(xz[0], xz[1])
-            .ok_or("Guide unsupported")?
-            .metres();
+        let mut position = match placement {
+            Placement::Horizontal([x, z]) => patch.try_spawn(x, z),
+            Placement::Feet(feet) => patch.try_spawn_near(feet),
+        }
+        .ok_or("Guide unsupported at requested position")?
+        .metres();
         position[1] += f64::from(crate::world::PAWN_Y);
         let position = GlobalPosition::new(position).ok_or("Invalid supported guide position")?;
         let next = self
@@ -199,7 +209,7 @@ impl World {
         self.next_id = next;
         self.dialogue = Some(Authority {
             profile,
-            placement: xz,
+            placement,
             guide,
             available: true,
             actors: BTreeMap::new(),
