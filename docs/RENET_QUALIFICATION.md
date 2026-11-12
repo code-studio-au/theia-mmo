@@ -1,3 +1,22 @@
+## 12 November 2026 — owning-editor lifetime (P5-17 / P1-06)
+
+`tools/network_playtest.py --stop-on-stdin-eof` accepts a private piped stdin from
+the editor. Closing its write end requests whole-session cleanup even if the
+editor process exits unexpectedly. Without this flag, ordinary CLI stdin retains
+its previous behavior. Cancellation prevents new child launches at startup and
+stops already owned children/relays; an already active configuration preflight
+can finish within its existing timeout before cancellation returns. Session
+reports now distinguish configured clients from those actually `started`.
+
+Twenty focused launcher/profile tests pass, including cancellation before/during
+preflight and after the first native-client spawn (mocked lifecycle assertions).
+Separately, two real Vulkan clients finish their scripts on the authored Synty
+valley, then owner stdin EOF stops the server and both clients in 0.42 seconds,
+removes tickets and reports no cleanup errors or GPU diagnostics. Evidence:
+`build/network-owner-native-v1/owner-check.json` and that directory's logs/session
+report; Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6, no Windows claim. This is the
+ownership prerequisite; the in-editor Start/Stop controls are still next.
+
 ## 12 November 2026 — attachable movement controllers (P5-17 / P1-06)
 
 Scenario players can now specify `"controller": "path/to/script.json"`, resolved

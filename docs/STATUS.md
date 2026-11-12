@@ -1,3 +1,18 @@
+P5-17 / P1-06 editor-owned network session lifetime, 12 November 2026:
+The managed launcher accepts --stop-on-stdin-eof: a private editor-owned stdin
+pipe closing requests whole-session cleanup, including when the editor exits
+unexpectedly. Cancel before/after preflight, during server/client startup and
+while running; finish bounded preflight before returning if it is already active.
+Partial sessions report which configured clients actually started. Ordinary CLI
+stdin is unaffected unless the flag is supplied.
+All 20 focused launcher/profile tests, formatting and strict workspace/all-target
+Clippy pass. Actual two-client scripted Vulkan run with one delayed connection
+ends from owner-pipe EOF in 0.42 seconds, removes tickets, and reports no cleanup
+errors or GPU diagnostics. Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 only;
+Windows and editor-button integration remain pending. Evidence:
+build/network-owner-{tests,clippy}.log and build/network-owner-native-v1/.
+Next: use the export dialog and this ownership protocol for editor Start/Stop.
+
 P5-17 / P1-06 native Test Player authoring, 12 November 2026:
 Add -> Test player at spawn creates a bounded slot with a nonblocking capsule
 badge. Explorer has a Test players filter and normal selection/frame/rename;

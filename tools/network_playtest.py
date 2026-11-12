@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 import re
 import signal
+import sys
+import threading
 import subprocess
 import tempfile
 import time
@@ -107,7 +109,9 @@ def stop(process, server=False):
             process.wait(timeout=5)
 
 
-def run(scenario_path, world, players, binaries, output, *, duration=None, window_size='1280x720'):
+def run(scenario_path, world, players, binaries, output, *, duration=None, window_size='1280x720', stop_requested=lambda: False):
+    if stop_requested():
+        return
     scenario = Scenario.load(scenario_path)
     if duration is not None and (not math.isfinite(duration) or not 0 < duration <= 3600):
         raise ValueError('Duration must be positive and at most one hour')
@@ -141,10 +145,13 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
                                         env=environment, capture_output=True, text=True, timeout=30)
         if checked_script.returncode:
             raise ValueError(f'Invalid test controller: {checked_script.stderr.strip()}')
+    if stop_requested():
+        return
     output.mkdir(parents=True, exist_ok=False)
     (output / 'server-players.json').write_text(json.dumps(scenario.server_profile(), indent=2) + '\n')
     (output / 'client-configuration.json').write_text(json.dumps(configuration, indent=2) + '\n')
     processes, relays = [], []
+    launched_ids = set()
     reason = 'startup failure'
     # Editor Stop writes this file; Ctrl-C and CLI SIGTERM also clean up children.
     stop_file = output / 'stop'
@@ -170,7 +177,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
             files.callback(cleanup, stop, server, server=True)
             deadline = time.monotonic() + 30
             while True:
-                if stop_file.exists():
+                if stop_file.exists() or stop_requested():
                     reason = 'stop requested during startup'
                     return
                 if server.poll() is not None:
@@ -183,12 +190,16 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
                     raise TimeoutError('Test server startup timed out')
                 time.sleep(.02)
             for player, relay in zip(scenario.players, relays):
+                if stop_file.exists() or stop_requested():
+                    reason = "stop requested during client startup"
+                    return
                 relay.start(backend)
                 processes.append(subprocess.Popen([str(client_binary), *scene, '--window-size', window_size,
                     '--player-assets', str(players), *(['--test-controller', str(player.controller)] if player.controller else []), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
                     str(Path(tickets) / f'client-{player.client_id}.token')], env=environment,
                     stdout=files.enter_context((output / f'client-{player.client_id}.log').open('w')), stderr=subprocess.STDOUT))
                 files.callback(cleanup, stop, processes[-1])
+                launched_ids.add(player.client_id)
             started = time.monotonic()
             print(f'Launching network playtest: {len(scenario.players)} clients; write {stop_file} or press Ctrl-C to stop.', flush=True)
             while True:
@@ -198,7 +209,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
                         raise RuntimeError(f'A playtest process failed; see {output}')
                     reason = 'a playtest window closed'
                     break
-                if stop_file.exists():
+                if stop_file.exists() or stop_requested():
                     reason = 'stop requested'
                     break
                 if duration is not None and time.monotonic() - started >= duration:
@@ -213,13 +224,22 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
         reason = 'failed'
         raise
     finally:
-        summary = dict(reason=reason, cleanup_errors=cleanup_errors, clients=[dict(client_id=p.client_id, network=asdict(p.network),
+        summary = dict(reason=reason, cleanup_errors=cleanup_errors, clients=[dict(client_id=p.client_id, started=p.client_id in launched_ids, network=asdict(p.network),
                        added_base_rtt_ms=p.network.added_rtt_ms, controller=str(p.controller) if p.controller else None, relay=r.stats)
                        for p, r in zip(scenario.players, relays)],
                        scope='Local encrypted development tickets; optional bounded movement controllers; no account persistence or scripted combat')
         (output / 'session.json').write_text(json.dumps(summary, indent=2) + '\n')
         if cleanup_errors:
             raise RuntimeError('Playtest cleanup failed: ' + '; '.join(cleanup_errors))
+
+
+def watch_owner(stream, stopped):
+    """A private piped stdin closes even if the owning editor crashes."""
+    try:
+        while stream.read(4096):
+            pass
+    finally:
+        stopped.set()
 
 
 def main():
@@ -231,12 +251,16 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--duration', type=float)
     parser.add_argument('--window-size', default='1280x720')
+    parser.add_argument('--stop-on-stdin-eof', action='store_true', help='Stop owned children when the launching editor closes its stdin pipe')
     args = parser.parse_args()
     def terminate(_signal, _frame):
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, terminate)
+    stopped = threading.Event()
+    if args.stop_on_stdin_eof:
+        threading.Thread(target=watch_owner, args=(sys.stdin.buffer, stopped), daemon=True).start()
     run(args.scenario, args.world, args.players, args.binaries, args.output,
-        duration=args.duration, window_size=args.window_size)
+        duration=args.duration, window_size=args.window_size, stop_requested=stopped.is_set)
 
 
 if __name__ == '__main__':

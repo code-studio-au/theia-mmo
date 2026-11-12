@@ -1,5 +1,7 @@
 """Scenario validation and owned process lifecycle; mocked launches are not netcode evidence."""
 import json
+import io
+import threading
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -83,7 +85,8 @@ class LifecycleTests(unittest.TestCase):
         self.output = self.root / 'session'
         self.processes, self.relays = [], []
 
-    def execute(self, *, fail_client=None, stop_startup=False, identity=None):
+    def execute(self, *, fail_client=None, stop_startup=False, identity=None, owner_stops_after=None):
+        stopped = threading.Event()
         owner = self
         class Child:
             def __init__(self, arguments, **kwargs):
@@ -92,6 +95,8 @@ class LifecycleTests(unittest.TestCase):
                 if not is_server and len(owner.processes) == fail_client:
                     raise RuntimeError('Synthetic child launch failure')
                 owner.processes.append(self)
+                if len(owner.processes) == owner_stops_after:
+                    stopped.set()
                 if is_server:
                     kwargs['stdout'].write('listening=127.0.0.1:1234 local_tickets=fixture\n')
                     kwargs['stdout'].flush()
@@ -111,7 +116,36 @@ class LifecycleTests(unittest.TestCase):
             def close(self): self.closed = True
         checked = SimpleNamespace(returncode=0, stdout=json.dumps(dict(classic_source=identity or list(range(32)))), stderr='')
         with patch.object(play.subprocess, 'Popen', Child), patch.object(play.subprocess, 'run', return_value=checked), patch.object(play, 'Relay', Connection):
-            play.run(self.path, self.world, self.art, self.binaries, self.output)
+            play.run(self.path, self.world, self.art, self.binaries, self.output, stop_requested=stopped.is_set)
+
+    def test_owner_exit_during_client_startup_stops_started_children_and_cancels_rest(self):
+        self.execute(owner_stops_after=2)
+        self.assertEqual(len(self.processes), 2)
+        self.assertTrue(all(p.returncode == 0 for p in self.processes))
+        self.assertTrue(all(r.closed for r in self.relays))
+        summary = json.loads((self.output / 'session.json').read_text())
+        self.assertEqual([p['started'] for p in summary['clients']], [True, False])
+        self.assertIn('stop requested', summary['reason'])
+        self.assertFalse(list(self.output.glob('tickets-*')))
+
+    def test_owner_exit_before_preflight_creates_no_output_or_processes(self):
+        stopped = threading.Event()
+        play.watch_owner(io.BytesIO(b''), stopped)
+        with patch.object(play.subprocess, 'run') as check, patch.object(play.subprocess, 'Popen') as child:
+            play.run(self.path, self.world, self.art, self.binaries, self.output, stop_requested=stopped.is_set)
+            check.assert_not_called()
+            child.assert_not_called()
+        self.assertFalse(self.output.exists())
+
+    def test_owner_exit_during_preflight_never_launches_children(self):
+        stopped = threading.Event()
+        def checked(*_args, **_kwargs):
+            stopped.set()
+            return SimpleNamespace(returncode=0, stdout=json.dumps(dict(classic_source=list(range(32)))), stderr='')
+        with patch.object(play.subprocess, 'run', side_effect=checked), patch.object(play.subprocess, 'Popen') as child:
+            play.run(self.path, self.world, self.art, self.binaries, self.output, stop_requested=stopped.is_set)
+            child.assert_not_called()
+        self.assertFalse(self.output.exists())
 
     def test_matching_clients_get_independent_profiles_and_all_children_stop(self):
         self.execute()
