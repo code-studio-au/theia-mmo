@@ -2929,7 +2929,8 @@
       "mapId": null,
       "npcId": null,
       "encounterId": null,
-      "eligibilityNote": "Canonical level-80 cap applies to final finale authorization, not an inferred Q174 acceptance gate. minLevel remains historical planning pace; runtime realization unresolved."
+      "eligibilityNote": "Canonical level-80 cap applies to final finale authorization, not an inferred Q174 acceptance gate. minLevel remains historical planning pace; runtime realization unresolved.",
+      "finale_authorization_gate": "CREATOR LOCKED: Q174 authorization cannot complete and unlock Q175 before character level 80; minLevel=75 is a historical planning annotation, not an override. Requires server-authoritative implementation."
     },
     {
       "id": 175,
