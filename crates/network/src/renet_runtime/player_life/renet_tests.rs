@@ -98,6 +98,8 @@ fn fixture_mode(
     )
 }
 struct Peer {
+    avatars: Option<mpsc::Receiver<crate::avatar_life_wire::Observation>>,
+    public_seen: Vec<crate::avatar_life_wire::Observation>,
     state: watch::Receiver<State>,
     casts: mpsc::Sender<net::CastChoice>,
     commands: mpsc::Sender<crate::prediction_wire::Commands>,
@@ -230,6 +232,24 @@ impl Peer {
         catalog: Arc<Catalog>,
         chunks: Vec<ChunkId>,
     ) -> Self {
+        Self::start_mode(address, ticket, world, profile, catalog, chunks, None)
+    }
+    fn start_mode(
+        address: SocketAddr,
+        ticket: Vec<u8>,
+        world: [u8; 32],
+        profile: Arc<Profile>,
+        catalog: Arc<Catalog>,
+        chunks: Vec<ChunkId>,
+        public: Option<([u8; 32], Arc<crate::avatar_life_wire::Profile>)>,
+    ) -> Self {
+        let classic_source = public.as_ref().map(|p| p.0);
+        let enabled = public.is_some();
+        let (avatar_events, avatar_queue) = mpsc::channel(net::avatar_life::PRESENTATION_CAPACITY);
+        let public_mode = public.map(|(_, profile)| net::avatar_life::Client {
+            profile,
+            events: avatar_events,
+        });
         let (input, inputs) = watch::channel(Intent::default());
         let (ready, readiness) = watch::channel(Some(chunks));
         let (choice, choices) = watch::channel(None);
@@ -248,7 +268,10 @@ impl Peer {
                 shutdown,
                 world,
                 net::GameplayClient {
-                    classic_source: None,
+                    avatar_life: public_mode,
+                    public_attacks: None,
+                    journal: None,
+                    classic_source,
                     dodge: None,
                     player_life: Some(Client {
                         membership: None,
@@ -279,6 +302,8 @@ impl Peer {
             result
         });
         Self {
+            avatars: enabled.then_some(avatar_queue),
+            public_seen: Vec::new(),
             state,
             casts,
             commands,
@@ -293,6 +318,12 @@ impl Peer {
         }
     }
     fn drain(&mut self) {
+        if let Some(avatars) = &mut self.avatars {
+            while let Ok(view) = avatars.try_recv() {
+                assert!(self.public_seen.len() < 256);
+                self.public_seen.push(view);
+            }
+        }
         while let Ok(value) = self.life.try_recv() {
             self.seen.push(value);
             assert!(self.seen.len() <= 256);
@@ -323,6 +354,24 @@ impl Peer {
                 self.seen.len()
             )
         })
+    }
+    async fn until_avatar(
+        &mut self,
+        predicate: impl Fn(&State, &[crate::avatar_life_wire::Observation]) -> bool,
+    ) -> State {
+        tokio::time::timeout(Duration::from_secs(10), async {
+            loop {
+                self.drain();
+                let state = self.state.borrow().clone();
+                assert!(state.error.is_none(), "{:?}", state.error);
+                if predicate(&state, &self.public_seen) {
+                    return state;
+                }
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .expect("Public avatar runtime timed out")
     }
     async fn cast(&self, npc: EntityKey) {
         self.casts
@@ -636,6 +685,7 @@ async fn forge_server_state(
     )
     .unwrap();
     let mut client = renet::RenetClient::new(crate::renet_transport::connection_config());
+    let mut connection_confirmed = false;
     tokio::time::timeout(Duration::from_secs(5), async {
         let mut welcome = None;
         let mut sent = false;
@@ -658,6 +708,8 @@ async fn forge_server_state(
                 client.send_message(EVENT_CHANNEL, bytes.clone());
                 sent = true;
             }
+            crate::renet_transport::confirm_connection(&mut client, &mut connection_confirmed)
+                .unwrap();
             if transport.send_packets(&mut client).is_err() {
                 assert!(sent, "Rogue disconnected before its state was sent");
                 return welcome.unwrap();
@@ -862,3 +914,5 @@ async fn mismatched_life_profile_fails_before_publication_while_the_other_peer_k
     assert!(stats.player_life.unwrap().damage >= 40);
     assert!(stats.life_states_sent > 0);
 }
+
+mod public_avatar;

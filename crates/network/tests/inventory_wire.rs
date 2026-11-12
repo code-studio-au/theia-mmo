@@ -239,3 +239,50 @@ fn legacy_wire_never_drops_equipped_state_or_accepts_cross_profile_frames() {
     assert!(theia_network::renet_runtime::inventory::Profile::from_json(&data).is_ok());
     assert!(theia_network::renet_runtime::inventory::Profile::from_json(DATA).is_ok());
 }
+
+#[test]
+fn destruction_is_explicit_item_profile_only_with_canonical_reserved_fields_and_bounds() {
+    use wire::ItemRequest;
+    let command = Command {
+        expected_revision: 4,
+        operation: Operation::Destroy {
+            from: 15,
+            amount: 3,
+        },
+    };
+    let value = ItemRequest {
+        actor: actor(),
+        sequence: 7,
+        command: command.into(),
+    };
+    let bytes = value.encode().unwrap();
+    assert_eq!(ItemRequest::decode(&bytes).unwrap(), value);
+    assert_eq!(bytes.len(), wire::REQUEST_BYTES);
+    assert_eq!(bytes[36], 4);
+    assert_eq!(bytes[38], 0);
+    assert!(
+        Request {
+            actor: actor(),
+            sequence: 7,
+            command
+        }
+        .encode()
+        .is_err()
+    );
+    let mut legacy = bytes.clone();
+    legacy[..4].copy_from_slice(wire::REQUEST_TAG);
+    assert!(Request::decode(&legacy).is_err());
+    for at in [37, 38] {
+        let mut bad = bytes.clone();
+        bad[at] = 255;
+        assert!(ItemRequest::decode(&bad).is_err());
+    }
+    for amount in [0, 10_001, u32::MAX] {
+        let mut bad = bytes.clone();
+        bad[39..43].copy_from_slice(&amount.to_le_bytes());
+        assert!(ItemRequest::decode(&bad).is_err());
+    }
+    for n in 0..bytes.len() {
+        assert!(ItemRequest::decode(&bytes[..n]).is_err());
+    }
+}

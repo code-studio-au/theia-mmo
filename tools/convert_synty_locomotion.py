@@ -22,6 +22,14 @@ SWORD_CLIPS = {'SwordIdle': 'A_Idle_Base_Sword.fbx',
 DODGE_CLIPS = {kind + label: f'A_{kind}_{direction}_Sword.fbx'
                for kind in ['Dodge', 'DodgeRoll']
                for label, direction in [('Forward', 'F'), ('Back', 'B'), ('Left', 'L'), ('Right', 'R')]}
+DIRECTIONAL_CLIPS = {
+    gait + label: f'A_{gait}_{source}_Masc.fbx'
+    for gait in ['Walk', 'Run']
+    for label, source in [('Back', 'BckStrafeB'), ('Left', 'FwdStrafeL'),
+                          ('Right', 'FwdStrafeR'), ('ForwardLeft', 'FwdStrafeFL'),
+                          ('ForwardRight', 'FwdStrafeFR'), ('BackLeft', 'BckStrafeBL'),
+                          ('BackRight', 'BckStrafeBR')]
+}
 
 
 def unique(root, name):
@@ -32,7 +40,7 @@ def unique(root, name):
 
 
 def convert(source, output, four_weight_preview=False, combat_source=None, dodge_source=None,
-            include_dodge_rolls=False):
+            include_dodge_rolls=False, directional_source=None):
     source, output = source.resolve(strict=True), output.resolve()
     if output.exists() or output.is_relative_to(source):
         raise FileExistsError('Conversion output must be new and outside source')
@@ -41,6 +49,17 @@ def convert(source, output, four_weight_preview=False, combat_source=None, dodge
         if hashlib.sha256((source / name).read_bytes()).hexdigest() != binding['sha256']:
             raise ValueError('Extracted source changed')
     clip_sources = {name: (source, filename) for name, filename in CLIPS.items()}
+    directional_inputs = None
+    if directional_source is not None:
+        directional_source = directional_source.resolve(strict=True)
+        if output.is_relative_to(directional_source):
+            raise ValueError('Output must be outside directional sources')
+        directional_inputs = json.loads((directional_source / 'extraction.json').read_bytes())['selected']
+        for name, binding in directional_inputs.items():
+            path = (directional_source / name).resolve(strict=True)
+            if not path.is_relative_to(directional_source) or hashlib.sha256(path.read_bytes()).hexdigest() != binding['sha256']:
+                raise ValueError('Directional source payload changed or escaped source directory')
+        clip_sources.update({name: (directional_source, filename) for name, filename in DIRECTIONAL_CLIPS.items()})
     combat_inputs = None
     if combat_source is not None:
         combat_source = combat_source.resolve(strict=True)
@@ -263,6 +282,7 @@ def convert(source, output, four_weight_preview=False, combat_source=None, dodge
                   'four_weight_skin_within_5mm_gate': all(r['maximum_four_influence_skin_error_metres'] <= .005 for r in report.values()),
                   'clips': report, 'material': 'Explicit standard base-colour palette, metallic 0, roughness 0.5',
                   'inputs': inputs, 'combat_inputs': combat_inputs, 'dodge_inputs': dodge_inputs,
+                  'directional_inputs': directional_inputs,
                   'dodge_rolls_included': include_dodge_rolls,
                   'scope': 'isolated sample character conversion; not game character adoption'}
         (output / 'conversion.json').write_text(json.dumps(result, indent=2) + '\n')
@@ -278,9 +298,10 @@ if __name__ == '__main__':
     parser.add_argument('source', type=Path)
     parser.add_argument('output', type=Path)
     parser.add_argument('--combat-source', type=Path, help='Explicit extracted Sword Combat source; add four fixed clips to the retained body skin')
+    parser.add_argument('--directional-source', type=Path, help='Fourteen explicit non-root-motion walk/run direction clips; retain original forward gaits')
     parser.add_argument('--dodge-source', type=Path, help='Four directional non-root-motion dodge clips; requires --combat-source')
     parser.add_argument('--include-dodge-rolls', action='store_true', help='Also export the four longer roll clips for separate inspection')
     parser.add_argument('--four-weight-preview', action='store_true', help='Allow a measured preview above the 5mm gate; preserve the full source skin GLB separately')
     args = parser.parse_args()
     print(json.dumps(convert(args.source, args.output, args.four_weight_preview, args.combat_source,
-                             args.dodge_source, args.include_dodge_rolls), indent=2))
+                             args.dodge_source, args.include_dodge_rolls, args.directional_source), indent=2))

@@ -168,8 +168,14 @@ impl State {
                     .journal
                     .progress(id)
                     .ok_or("Journal history disappeared")?;
+                let definition = profile.catalog().quest(id).unwrap();
+                let reversible_ready = definition.has_possession_objectives()
+                    && before.status() == Status::Ready
+                    && after.status() == Status::Active
+                    && before.stage() == after.stage();
                 if after.revision() < before.revision()
-                    || status_code(after.status()) < status_code(before.status())
+                    || (status_code(after.status()) < status_code(before.status())
+                        && !reversible_ready)
                     || (after.revision() == before.revision() && after != before)
                     || (before.status() == Status::Completed && after != before)
                 {
@@ -182,9 +188,14 @@ impl State {
                     .stages()
                     .flat_map(|s| s.objectives())
                 {
-                    if after.count(objective.id()) < before.count(objective.id())
-                        || (before.status() == Status::Ready
-                            && after.count(objective.id()) != before.count(objective.id()))
+                    let possession = matches!(
+                        objective.event(),
+                        theia_core::quests::catalog::EventKey::PossessItem(_)
+                    );
+                    if !possession
+                        && (after.count(objective.id()) < before.count(objective.id())
+                            || (before.status() == Status::Ready
+                                && after.count(objective.id()) != before.count(objective.id())))
                     {
                         return Err("Journal objective progress regressed".into());
                     }
@@ -216,5 +227,244 @@ impl<'a> Reader<'a> {
     }
     fn word(&mut self) -> Result<u64> {
         Ok(u64::from_le_bytes(self.take(8)?.try_into().unwrap()))
+    }
+}
+
+pub const REQUEST_TAG: &[u8; 4] = b"QK01";
+pub const REPLY_TAG: &[u8; 4] = b"QP01";
+pub const REQUEST_BYTES: usize = 110;
+pub const REPLY_BYTES: usize = 94;
+/// A request proposes an action; decoding establishes no NPC entitlement.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Request {
+    pub actor: EntityKey,
+    pub profile_hash: [u8; 32],
+    pub sequence: u64,
+    pub npc: EntityKey,
+    pub dialogue_revision: u64,
+    pub command: theia_core::quests::journal::Command,
+}
+fn push_key(bytes: &mut Vec<u8>, key: EntityKey) {
+    bytes.extend(key.epoch.value().to_le_bytes());
+    bytes.extend(key.entity.value().to_le_bytes());
+}
+fn read_key(reader: &mut Reader<'_>) -> Result<EntityKey> {
+    Ok(EntityKey {
+        epoch: WorldEpoch::new(reader.word()?).ok_or("Invalid quest action epoch")?,
+        entity: EntityId::new(reader.word()?).ok_or("Invalid quest action entity")?,
+    })
+}
+fn index(profile: &Profile, quest: &theia_core::content::ContentId) -> Result<u8> {
+    Ok(u8::try_from(
+        profile
+            .catalog()
+            .quests()
+            .position(|q| q.id() == quest)
+            .ok_or("Unknown quest action definition")?,
+    )?)
+}
+impl Request {
+    pub fn encode(&self, profile: &Profile) -> Result<Vec<u8>> {
+        use theia_core::quests::journal::Action;
+        let definition = profile
+            .catalog()
+            .quest(&self.command.quest)
+            .ok_or("Unknown quest action definition")?;
+        let npc = match self.command.action {
+            Action::Accept => definition.giver(),
+            Action::TurnIn => definition.turn_in(),
+        };
+        if self.profile_hash != profile.hash()
+            || self.sequence == 0
+            || self.npc.epoch != self.actor.epoch
+            || &self.command.npc != npc
+            || self.command.expected_revision > i64::MAX as u64
+        {
+            return Err("Invalid quest action binding".into());
+        }
+        let mut bytes = REQUEST_TAG.to_vec();
+        push_key(&mut bytes, self.actor);
+        bytes.extend(self.profile_hash);
+        bytes.extend(self.sequence.to_le_bytes());
+        push_key(&mut bytes, self.npc);
+        bytes.extend(self.dialogue_revision.to_le_bytes());
+        bytes.extend(self.command.request_id.get().to_le_bytes());
+        bytes.push(index(profile, &self.command.quest)?);
+        bytes.extend(self.command.expected_revision.to_le_bytes());
+        bytes.push(self.command.action.code() as u8);
+        Ok(bytes)
+    }
+    pub fn decode(bytes: &[u8], profile: &Profile) -> Result<Self> {
+        use theia_core::quests::journal::{Action, Command};
+        if bytes.len() != REQUEST_BYTES || !bytes.starts_with(REQUEST_TAG) {
+            return Err("Invalid quest action frame".into());
+        }
+        let mut reader = Reader { bytes, at: 4 };
+        let actor = read_key(&mut reader)?;
+        let profile_hash = reader.take(32)?.try_into().unwrap();
+        let sequence = reader.word()?;
+        let npc = read_key(&mut reader)?;
+        let dialogue_revision = reader.word()?;
+        let request_id =
+            std::num::NonZeroU128::new(u128::from_le_bytes(reader.take(16)?.try_into().unwrap()))
+                .ok_or("Invalid quest request identity")?;
+        let definition = profile
+            .catalog()
+            .quests()
+            .nth(usize::from(reader.byte()?))
+            .ok_or("Unknown quest action index")?;
+        let expected_revision = reader.word()?;
+        let action = match reader.byte()? {
+            1 => Action::Accept,
+            2 => Action::TurnIn,
+            _ => return Err("Unsupported quest action".into()),
+        };
+        let command = Command {
+            request_id,
+            quest: definition.id().clone(),
+            npc: match action {
+                Action::Accept => definition.giver(),
+                Action::TurnIn => definition.turn_in(),
+            }
+            .clone(),
+            expected_revision,
+            action,
+        };
+        let request = Self {
+            actor,
+            profile_hash,
+            sequence,
+            npc,
+            dialogue_revision,
+            command,
+        };
+        request.encode(profile)?;
+        Ok(request)
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Rejection {
+    Busy,
+    NotEntitled,
+    StaleSequence,
+    NotAvailable,
+    StaleRevision,
+    NotReady,
+    Capacity,
+    Conflict,
+    Exhausted,
+}
+impl Rejection {
+    fn code(self) -> u8 {
+        match self {
+            Self::Busy => 1,
+            Self::NotEntitled => 2,
+            Self::StaleSequence => 3,
+            Self::NotAvailable => 4,
+            Self::StaleRevision => 5,
+            Self::NotReady => 6,
+            Self::Capacity => 7,
+            Self::Conflict => 8,
+            Self::Exhausted => 9,
+        }
+    }
+    fn decode(code: u8) -> Result<Option<Self>> {
+        Ok(match code {
+            0 => None,
+            1 => Some(Self::Busy),
+            2 => Some(Self::NotEntitled),
+            3 => Some(Self::StaleSequence),
+            4 => Some(Self::NotAvailable),
+            5 => Some(Self::StaleRevision),
+            6 => Some(Self::NotReady),
+            7 => Some(Self::Capacity),
+            8 => Some(Self::Conflict),
+            9 => Some(Self::Exhausted),
+            _ => return Err("Unsupported quest refusal".into()),
+        })
+    }
+}
+/// Success is emitted only from a committed owner result, never queue acceptance.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Reply {
+    pub actor: EntityKey,
+    pub profile_hash: [u8; 32],
+    pub sequence: u64,
+    pub request_id: std::num::NonZeroU128,
+    pub revision: u64,
+    pub quest: theia_core::content::ContentId,
+    pub quest_revision: u64,
+    pub rejection: Option<Rejection>,
+}
+impl Reply {
+    pub fn validate_request(&self, profile: &Profile, request: &Request) -> Result<()> {
+        self.encode(profile)?;
+        request.encode(profile)?;
+        if self.actor != request.actor
+            || self.profile_hash != request.profile_hash
+            || self.sequence != request.sequence
+            || self.request_id != request.command.request_id
+            || self.quest != request.command.quest
+            || (self.rejection.is_none()
+                && self.quest_revision <= request.command.expected_revision)
+        {
+            return Err("Quest reply differs from pending intent".into());
+        }
+        Ok(())
+    }
+
+    pub fn encode(&self, profile: &Profile) -> Result<Vec<u8>> {
+        if self.profile_hash != profile.hash()
+            || self.sequence == 0
+            || self.revision > i64::MAX as u64
+            || self.quest_revision > self.revision
+            || (self.rejection.is_none() && self.quest_revision == 0)
+        {
+            return Err("Invalid quest reply binding/revision".into());
+        }
+        let mut bytes = REPLY_TAG.to_vec();
+        push_key(&mut bytes, self.actor);
+        bytes.extend(self.profile_hash);
+        bytes.extend(self.sequence.to_le_bytes());
+        bytes.extend(self.request_id.get().to_le_bytes());
+        bytes.extend(self.revision.to_le_bytes());
+        bytes.push(index(profile, &self.quest)?);
+        bytes.extend(self.quest_revision.to_le_bytes());
+        bytes.push(self.rejection.map_or(0, Rejection::code));
+        Ok(bytes)
+    }
+    pub fn decode(bytes: &[u8], profile: &Profile) -> Result<Self> {
+        if bytes.len() != REPLY_BYTES || !bytes.starts_with(REPLY_TAG) {
+            return Err("Invalid quest reply frame".into());
+        }
+        let mut reader = Reader { bytes, at: 4 };
+        let actor = read_key(&mut reader)?;
+        let profile_hash = reader.take(32)?.try_into().unwrap();
+        let sequence = reader.word()?;
+        let request_id =
+            std::num::NonZeroU128::new(u128::from_le_bytes(reader.take(16)?.try_into().unwrap()))
+                .ok_or("Invalid quest reply identity")?;
+        let revision = reader.word()?;
+        let quest = profile
+            .catalog()
+            .quests()
+            .nth(usize::from(reader.byte()?))
+            .ok_or("Unknown quest reply index")?
+            .id()
+            .clone();
+        let quest_revision = reader.word()?;
+        let rejection = Rejection::decode(reader.byte()?)?;
+        let reply = Self {
+            actor,
+            profile_hash,
+            sequence,
+            request_id,
+            revision,
+            quest,
+            quest_revision,
+            rejection,
+        };
+        reply.encode(profile)?;
+        Ok(reply)
     }
 }

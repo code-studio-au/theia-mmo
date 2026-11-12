@@ -7,7 +7,12 @@ use tokio::{sync::watch, time::MissedTickBehavior};
 
 #[derive(Clone, Debug, Default)]
 pub struct State {
+    pub public_avatar_life: Option<crate::avatar_life_wire::ClientState>,
+    pub public_creature_attack: Option<crate::creature_attack_wire::ClientState>,
     pub player_life: Option<crate::player_life_wire::ClientState>,
+    pub quest_journal: Option<crate::quest_journal_wire::State>,
+    pub quest_journal_reply: Option<crate::quest_journal_wire::Reply>,
+    pub quest_journal_pending: bool,
     pub quest_lifecycle: Option<crate::quest_lifecycle_wire::State>,
     pub quest_lifecycle_reply: Option<crate::quest_lifecycle_wire::Reply>,
     pub quest_lifecycle_pending: bool,
@@ -103,6 +108,17 @@ impl State {
 /// Observed Renet diagnostics; byte rates exclude UDP/netcode overhead.
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct TransportStats {
+    pub avatar_life_states_received: u64,
+    pub avatar_life_stale_states: u64,
+    pub avatar_life_duplicate_states: u64,
+    pub avatar_life_max_frame_bytes: usize,
+    pub public_attack_states_received: u64,
+    pub public_attack_stale_states: u64,
+    pub public_attack_duplicate_states: u64,
+    pub public_attack_max_frame_bytes: usize,
+    pub journal_states_received: u64,
+    pub journal_replies_received: u64,
+    pub journal_requests_sent: u64,
     pub life_states_received: u64,
     pub life_stale_states: u64,
     pub life_duplicate_states: u64,

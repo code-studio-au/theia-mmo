@@ -1,3 +1,8 @@
+Latest: [Classic directional locomotion](CLASSIC_DIRECTIONAL_LOCOMOTION.md)
+qualifies the optional 22-clip player, local/remote closed grip and directional
+lower-body strikes. Earlier dated asset/animation checkpoints below remain
+preserved; the existing four-weight preview limitation is unchanged.
+
 Update: [standing sword stance and moving closed grip](EQUIPPED_PLAYER_STANCE.md)
 are now qualified on the same source art. The socket/death checkpoint below remains preserved.
 

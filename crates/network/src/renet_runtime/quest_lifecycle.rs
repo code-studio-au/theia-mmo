@@ -542,6 +542,7 @@ mod tests {
             ..Observation::default()
         });
         let port = Port {
+            journal: None,
             lifecycle: Some(p),
             quest: None,
             profile: xp,

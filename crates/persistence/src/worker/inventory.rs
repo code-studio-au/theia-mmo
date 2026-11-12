@@ -6,6 +6,7 @@ use theia_core::inventory::{
 };
 use tokio::sync::oneshot;
 pub(super) enum Request {
+    QuestItems(super::quest_items::Request),
     QuestLifecycle(super::quest_lifecycle::Request),
     QuestJournal(super::quest_journal::Request),
     Vendor(super::vendors::Request),
@@ -153,6 +154,7 @@ impl Request {
     pub(super) async fn run(self, store: &mut Store, status: &mut WorkerStatus) -> Result<()> {
         match self {
             Self::QuestLifecycle(request) => request.run(store, status).await,
+            Self::QuestItems(request) => request.run(store, status).await,
             Self::QuestJournal(request) => request.run(store, status).await,
             Self::Vendor(request) => request.run(store, status).await,
             Self::Progression(request) => request.run(store, status).await,

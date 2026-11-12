@@ -65,6 +65,7 @@ fn synthetic_owner(
     let (input, mut inputs) = mpsc::channel(net::progression::CAPACITY);
     let (publish, state) = watch::channel(net::progression::Observation::default());
     let port = Port {
+        journal: None,
         profile: xp.clone(),
         quest: None,
         lifecycle: Some(quest.clone()),
@@ -177,6 +178,9 @@ impl ClientPeer {
                 shutdown,
                 identity,
                 net::GameplayClient {
+                    avatar_life: None,
+                    public_attacks: None,
+                    journal: None,
                     classic_source: None,
                     dodge: None,
                     player_life: None,

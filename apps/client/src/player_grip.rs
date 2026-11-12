@@ -22,6 +22,7 @@ pub(super) struct Graph {
     pub handle: Handle<AnimationGraph>,
     pub bases: [AnimationNodeIndex; 4],
     pub dodge_bases: [Option<AnimationNodeIndex>; 4],
+    pub directional_bases: [Option<AnimationNodeIndex>; super::locomotion::COUNT],
     pub hold: AnimationNodeIndex,
     pub attack: Option<super::attack::Graph>,
 }
@@ -29,8 +30,11 @@ impl Graph {
     pub fn base(&self, clip: usize) -> AnimationNodeIndex {
         if clip < 4 {
             self.bases[clip]
-        } else {
+        } else if clip < super::locomotion::FIRST {
             self.dodge_bases[clip - 6].expect("Selected masked dodge is available")
+        } else {
+            self.directional_bases[clip - super::locomotion::FIRST]
+                .expect("Selected masked direction is available")
         }
     }
 }
@@ -42,6 +46,8 @@ pub(crate) struct Metrics {
     pub local_frames: [u64; 4],
     pub remote_frames: [u64; 4],
     pub dodge_local_frames: [u64; 4],
+    pub directional_local_frames: [u64; super::locomotion::COUNT],
+    pub directional_remote_frames: [u64; super::locomotion::COUNT],
     pub samples: Vec<Sample>,
 }
 #[derive(serde::Serialize)]
@@ -60,16 +66,23 @@ struct Pose {
 fn mask_graph(
     graph: &mut AnimationGraph,
     sources: [Handle<AnimationClip>; 4],
+    directional: [Option<Handle<AnimationClip>>; super::locomotion::COUNT],
     hold: Handle<AnimationClip>,
     digits: &HashSet<AnimationTargetId>,
     targets: &HashSet<AnimationTargetId>,
-) -> ([AnimationNodeIndex; 4], AnimationNodeIndex) {
+) -> (
+    [AnimationNodeIndex; 4],
+    [Option<AnimationNodeIndex>; super::locomotion::COUNT],
+    AnimationNodeIndex,
+) {
     for id in targets {
         graph.add_target_to_mask_group(*id, u32::from(!digits.contains(id)));
     }
     let bases = sources.map(|clip| graph.add_clip_with_mask(clip, 1, 1., graph.root));
+    let directional_bases = directional
+        .map(|source| source.map(|clip| graph.add_clip_with_mask(clip, 1, 1., graph.root)));
     let hold = graph.add_clip_with_mask(hold, 2, 1., graph.root);
-    (bases, hold)
+    (bases, directional_bases, hold)
 }
 pub(super) fn prepare(world: &mut World, root: Entity) -> Result<(), String> {
     if world.resource::<Catalog>().grip.is_some() {
@@ -121,9 +134,17 @@ pub(super) fn prepare(world: &mut World, root: Entity) -> Result<(), String> {
     let attack = catalog.attack_slot.map(clip).transpose()?;
     let dodge = |i: usize| catalog.dodge_slots[i].map(clip).transpose();
     let dodge_sources = [dodge(0)?, dodge(1)?, dodge(2)?, dodge(3)?];
+    let mut directional_sources = std::array::from_fn(|_| None);
+    for (i, slot) in catalog.locomotion_slots.iter().enumerate() {
+        directional_sources[i] = slot.map(clip).transpose()?;
+    }
     let clips = world.resource::<Assets<AnimationClip>>();
     let mut targets = HashSet::new();
-    for handle in sources.iter().chain(std::iter::once(&hold)) {
+    for handle in sources
+        .iter()
+        .chain(directional_sources.iter().flatten())
+        .chain(std::iter::once(&hold))
+    {
         let source = clips.get(handle).ok_or("Missing grip source clip")?;
         if !digits
             .iter()
@@ -136,10 +157,25 @@ pub(super) fn prepare(world: &mut World, root: Entity) -> Result<(), String> {
     let attack_available = attack.is_some();
     let strike = attack
         .map(|attack| {
-            super::attack::prepare(world, root, &mut graph, sources.clone(), attack, &targets)
+            super::attack::prepare(
+                world,
+                root,
+                &mut graph,
+                sources.clone(),
+                directional_sources.clone(),
+                attack,
+                &targets,
+            )
         })
         .transpose()?;
-    let (bases, hold) = mask_graph(&mut graph, sources, hold, &digits, &targets);
+    let (bases, directional_bases, hold) = mask_graph(
+        &mut graph,
+        sources,
+        directional_sources,
+        hold,
+        &digits,
+        &targets,
+    );
     let dodge_bases = dodge_sources
         .map(|source| source.map(|clip| graph.add_clip_with_mask(clip, 1, 1., graph.root)));
     let handle = world.resource_mut::<Assets<AnimationGraph>>().add(graph);
@@ -147,6 +183,7 @@ pub(super) fn prepare(world: &mut World, root: Entity) -> Result<(), String> {
         handle,
         bases,
         dodge_bases,
+        directional_bases,
         hold,
         attack: strike,
     });
@@ -168,7 +205,14 @@ pub(crate) fn observe(world: &mut World) {
         let local = world.get::<crate::movement::LocalPawn>(owner).is_some();
         {
             let mut metrics = world.resource_mut::<Metrics>();
-            if clip >= 6 {
+            if clip >= super::locomotion::FIRST {
+                let counts = if local {
+                    &mut metrics.directional_local_frames
+                } else {
+                    &mut metrics.directional_remote_frames
+                };
+                counts[clip - super::locomotion::FIRST] += 1;
+            } else if clip >= 6 {
                 metrics.dodge_local_frames[clip - 6] += 1;
             } else if local {
                 metrics.local_frames[clip] += 1;
@@ -181,8 +225,8 @@ pub(crate) fn observe(world: &mut World) {
         if !qualification || visual.layer_frames < 3 {
             continue;
         }
-        let name = if clip < 4 {
-            ["Idle", "Walk", "Run", "Jump"][clip]
+        let name = if let Some(name) = super::locomotion::base_name(clip) {
+            name
         } else {
             crate::dodge::animation::NAMES[clip - 6]
         };
@@ -242,9 +286,10 @@ mod tests {
         let digits = HashSet::from([finger]);
         let targets = HashSet::from([finger, wrist, socket, hips]);
         let mut graph = AnimationGraph::default();
-        let (bases, hold) = mask_graph(
+        let (bases, directional, hold) = mask_graph(
             &mut graph,
             std::array::from_fn(|_| Handle::default()),
+            std::array::from_fn(|_| Some(Handle::default())),
             Handle::default(),
             &digits,
             &targets,
@@ -253,7 +298,7 @@ mod tests {
         for id in [wrist, socket, hips] {
             assert_eq!(graph.mask_groups[&id], 2);
         }
-        for index in bases {
+        for index in bases.into_iter().chain(directional.into_iter().flatten()) {
             assert_eq!(graph.graph[index].mask, 1);
         }
         assert_eq!(graph.graph[hold].mask, 2);

@@ -27,12 +27,20 @@ fn inactive(rate: TickRate, profile: Option<&[u8]>) -> (World, EntityKey) {
     )
 }
 fn inactive_stats(rate: TickRate, profile: Option<&[u8]>, stats: &[u8]) -> (World, EntityKey) {
+    inactive_stats_perception(rate, profile, stats, 1.)
+}
+fn inactive_stats_perception(
+    rate: TickRate,
+    profile: Option<&[u8]>,
+    stats: &[u8],
+    perception: f64,
+) -> (World, EntityKey) {
     let mut creature: Value = serde_json::from_slice(include_bytes!(
         "../../../../../../../content/gameplay/development-creature-patrol.json"
     ))
     .unwrap();
     creature["speed_metres_per_second"] = json!(0.1);
-    creature["aggro"] = json!({"perception_metres":1.0,"leash_metres":35.0,"chase_speed":5.0,"return_speed":5.0,"los_grace_ms":2000,"engagement_ms":30000,"reacquire_ms":2000});
+    creature["aggro"] = json!({"perception_metres":perception,"leash_metres":35.0,"chase_speed":5.0,"return_speed":5.0,"los_grace_ms":2000,"engagement_ms":30000,"reacquire_ms":2000});
     let creature = serde_json::to_vec(&creature).unwrap();
     let (mut w, npc) = creatures::tests::fixture_profile_at(rate, [8000., 8000.], &creature);
     w.enable_prediction().unwrap();
@@ -516,3 +524,9 @@ mod membership;
 mod recipient;
 
 mod reset;
+
+mod threat;
+
+mod public_attack;
+
+mod public_avatar;

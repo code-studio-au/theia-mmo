@@ -24,6 +24,7 @@ enum Widget {
     Toggle,
     Slot(u8),
     Split,
+    Destroy,
     Cancel,
     Equip,
     Unequip,
@@ -34,6 +35,12 @@ enum Widget {
 pub(crate) struct SlotButton(pub u8);
 #[derive(Component)]
 pub(crate) struct SplitButton;
+#[derive(Component)]
+pub(crate) struct DestroyButton;
+#[derive(Component)]
+pub(crate) struct CancelButton;
+#[derive(Component)]
+struct DestroyLabel;
 #[derive(Component)]
 pub(crate) struct EquipButton;
 #[derive(Component)]
@@ -61,6 +68,7 @@ struct Pending {
     toggle: bool,
     slot: Option<u8>,
     split: bool,
+    destroy: bool,
     cancel: bool,
     equip: bool,
     unequip: bool,
@@ -70,6 +78,7 @@ struct Pending {
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Ui {
     pub open: bool,
+    pub destroy_confirmation: Option<(u8, u64)>,
     pub selected: Option<u8>,
     pub split: bool,
     pub unequip: bool,
@@ -107,6 +116,7 @@ fn activate(
             Widget::Toggle => pending.toggle = true,
             Widget::Slot(slot) => pending.slot = Some(*slot),
             Widget::Split => pending.split = true,
+            Widget::Destroy => pending.destroy = true,
             Widget::Cancel => pending.cancel = true,
             Widget::Equip => pending.equip = true,
             Widget::Unequip => pending.unequip = true,
@@ -175,7 +185,7 @@ fn setup(mut commands: Commands, config: Res<Config>) {
         .insert(Node {
             position_type: PositionType::Absolute,
             right: px(12),
-            top: px(124),
+            bottom: px(12),
             width: px(340),
             min_height: px(30),
             justify_content: JustifyContent::Center,
@@ -190,13 +200,9 @@ fn setup(mut commands: Commands, config: Res<Config>) {
             Node {
                 position_type: PositionType::Absolute,
                 right: px(12),
-                top: px(162),
+                bottom: px(52),
                 width: px(340),
-                max_height: if config.0.vendor().is_some() {
-                    percent(75)
-                } else {
-                    Val::Auto
-                },
+                max_height: percent(75),
                 overflow: Overflow::scroll_y(),
                 padding: UiRect::all(px(12)),
                 display: Display::None,
@@ -272,9 +278,25 @@ fn setup(mut commands: Commands, config: Res<Config>) {
                         button(Widget::Split, "Split one item", 150., 30.),
                     ))
                     .with_child((SplitLabel, text("Split one", 14.)));
-                    row.spawn(button(Widget::Cancel, "Cancel item selection", 150., 30.))
-                        .with_child(text("Cancel", 14.));
+                    row.spawn((
+                        CancelButton,
+                        button(Widget::Cancel, "Cancel item selection", 150., 30.),
+                    ))
+                    .with_child(text("Cancel", 14.));
                 });
+            if config.0.catalog().equipment_enabled() {
+                panel
+                    .spawn((
+                        DestroyButton,
+                        button(
+                            Widget::Destroy,
+                            "Destroy selected stack with confirmation",
+                            306.,
+                            30.,
+                        ),
+                    ))
+                    .with_child((DestroyLabel, text("Destroy selected stack", 14.)));
+            }
             panel.spawn((
                 StatusLabel,
                 text("Loading backpack...", 14.),
@@ -362,7 +384,11 @@ fn present(
         ui.open = !ui.open;
     }
     let state = network.state();
+    if !ui.open {
+        ui.destroy_confirmation = None;
+    }
     if !network.connected() {
+        ui.destroy_confirmation = None;
         ui.status = "Disconnected / loading".into();
         return;
     }
@@ -377,6 +403,7 @@ fn present(
         return;
     };
     if ui.bag.as_ref() != Some(&view.bag) {
+        ui.destroy_confirmation = None;
         ui.bag = Some(view.bag.clone());
     }
     ui.revision = Some(view.bag.revision());
@@ -435,6 +462,7 @@ fn present(
         ui.status = "Saving backpack...".into();
         ui.ignored_pending_clicks += u64::from(
             input.slot.is_some()
+                || input.destroy
                 || input.equip
                 || input.unequip
                 || input.claim
@@ -443,6 +471,55 @@ fn present(
         return;
     }
     if !ui.open {
+        return;
+    }
+    if input.slot.is_some()
+        || input.cancel
+        || input.split
+        || input.equip
+        || input.unequip
+        || input.claim
+        || input.buy.is_some()
+    {
+        ui.destroy_confirmation = None;
+    }
+    if input.destroy {
+        if !config.0.catalog().equipment_enabled() {
+            return;
+        }
+        let Some(from) = ui.selected else {
+            ui.status = "Select a backpack stack to destroy.".into();
+            return;
+        };
+        let Some(stack) = view.bag.slots()[usize::from(from)].as_ref() else {
+            ui.destroy_confirmation = None;
+            return;
+        };
+        let binding = (from, view.bag.revision());
+        if ui.destroy_confirmation == Some(binding) {
+            ui.destroy_confirmation = None;
+            if network.request_destruction(binding.1, from, stack.count()) {
+                ui.pending = true;
+                ui.submitted += 1;
+                ui.status = "Saving item destruction...".into();
+            } else {
+                ui.status = "Backpack busy; select the stack again.".into();
+            }
+        } else {
+            ui.split = false;
+            ui.unequip = false;
+            ui.destroy_confirmation = Some(binding);
+            let name = config
+                .0
+                .catalog()
+                .definition(stack.item())
+                .expect("Checked item")
+                .name();
+            ui.status = format!(
+                "Destroy {name} x{}? Click Confirm destroy, or Cancel to keep it.",
+                stack.count()
+            );
+        }
         return;
     }
     if let Some(command) = input.buy {
@@ -569,6 +646,7 @@ type Label<'a> = (
     Option<&'a SlotLabel>,
     Option<&'a StatusLabel>,
     Option<&'a SplitLabel>,
+    Option<&'a DestroyLabel>,
     Option<&'a EquipmentLabel>,
     Option<&'a RewardLabel>,
     Option<&'a OfferLabel>,
@@ -624,7 +702,7 @@ fn paint(
             pane.display = display;
         }
     }
-    for (mut label, slot, status, split, equipment, reward, offer) in &mut labels {
+    for (mut label, slot, status, split, destroy, equipment, reward, offer) in &mut labels {
         let value = if let Some(slot) = slot {
             if let Some(bag) = &ui.bag {
                 bag.slots()[usize::from(slot.0)].as_ref().map_or_else(
@@ -703,6 +781,13 @@ fn paint(
             )
         } else if status.is_some() {
             ui.status.clone()
+        } else if destroy.is_some() {
+            if ui.destroy_confirmation.is_some() {
+                "Confirm destroy"
+            } else {
+                "Destroy selected stack"
+            }
+            .into()
         } else if split.is_some() {
             if ui.split {
                 "[x] Split one"
@@ -722,6 +807,8 @@ fn paint(
             || matches!(widget, Widget::Unequip) && ui.unequip;
         let color = if ui.pending {
             Color::srgb(0.08, 0.09, 0.11)
+        } else if matches!(widget, Widget::Destroy) && ui.destroy_confirmation.is_some() {
+            Color::srgb(0.45, 0.08, 0.06)
         } else if selected {
             Color::srgb(0.12, 0.32, 0.4)
         } else if pressed || hovered.is_some_and(|h| h.0) {

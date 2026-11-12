@@ -14,10 +14,10 @@ use theia_core::coordinates::{ChunkId, GlobalPosition};
 use theia_network::procedural::{self, Geometry, Patch};
 
 #[derive(Component)]
-struct Tile {
-    id: ChunkId,
-    cells: usize,
-    mesh: Handle<Mesh>,
+pub(crate) struct Tile {
+    pub id: ChunkId,
+    pub cells: usize,
+    pub mesh: Handle<Mesh>,
 }
 #[derive(Component)]
 struct Body {
@@ -65,6 +65,9 @@ pub struct Graybox {
     started: Instant,
 }
 impl Graybox {
+    pub(crate) fn saved_stats(&self) -> Option<theia_network::saved_terrain::Stats> {
+        self.saved.as_ref().map(|s| s.stats())
+    }
     pub fn new(source: procedural::Source) -> Self {
         let saved = match &source {
             procedural::Source::Saved(store) => Some(store.clone()),
@@ -455,9 +458,10 @@ fn report(
     tiles: Query<(&Tile, &ViewVisibility)>,
     (meshes, mut hud): (Res<Assets<Mesh>>, Query<&mut Text, With<Hud>>),
     query: avian3d::prelude::SpatialQuery,
-    (frame, network): (
+    (frame, network, minimap): (
         Res<crate::floating_origin::Frame>,
         Res<crate::network::Network>,
+        Option<Res<crate::minimap::Metrics>>,
     ),
     pawn: Query<(&Transform, &crate::movement::Motion), With<crate::movement::LocalPawn>>,
 ) {
@@ -578,12 +582,13 @@ fn report(
     }
     eprintln!(
         "{}",
-        serde_json::json!({"graybox":{"render_motion":gray.render_motion,"saved_terrain": gray.saved.as_ref().map(|s| s.stats()),"seconds":gray.started.elapsed().as_secs_f64(),"position":p,"resident":resident,"visible":visible,"loaded":gray.loaded,"unloaded":gray.unloaded,"patches":gray.patches,"visited":gray.visited.len(),"max_resident":gray.max_resident,"mesh_bytes":mesh_bytes,"mean_ms":mean,"p95_ms":p95,"frame_count":gray.frames.len(),"mesh_assets":meshes.len(),"gpu_mesh_assets":gray.gpu_mesh_assets,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"rebases":frame.revision}})
+        serde_json::json!({"graybox":{"render_motion":gray.render_motion,"saved_terrain": gray.saved.as_ref().map(|s| s.stats()),"seconds":gray.started.elapsed().as_secs_f64(),"position":p,"rendered_position":gray.last_render.map(|p|p.metres()),"rendered_forward":pawn.single().ok().map(|(t,_)|(t.rotation*Vec3::NEG_Z).xz().to_array()),"resident":resident,"visible":visible,"loaded":gray.loaded,"unloaded":gray.unloaded,"patches":gray.patches,"visited":gray.visited.len(),"max_resident":gray.max_resident,"mesh_bytes":mesh_bytes,"mean_ms":mean,"p95_ms":p95,"frame_count":gray.frames.len(),"mesh_assets":meshes.len(),"gpu_mesh_assets":gray.gpu_mesh_assets,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"rebases":frame.revision,"minimap":minimap.as_deref()}})
     );
     gray.frames.clear();
     gray.last_report = Instant::now();
 }
 pub fn install(app: &mut App, source: procedural::Source) {
+    crate::minimap::install(app);
     app.insert_resource(Graybox::new(source))
         .add_systems(Startup, setup)
         .add_systems(PreUpdate, autoplay.after(crate::input))
@@ -649,6 +654,11 @@ fn qualification(world: &mut World) {
         .map(|t| t.mesh.id())
         .collect();
     let extra_meshes:Vec<_>=world.resource::<Assets<Mesh>>().iter().filter(|(id,_)|!terrain_handles.contains(id)).map(|(id,m)|serde_json::json!({"id":format!("{id:?}"),"vertices":m.count_vertices(),"indices":m.indices().map_or(0,|i|i.len())})).collect();
+    let rendered_forward = world
+        .query_filtered::<&Transform, With<crate::movement::LocalPawn>>()
+        .iter(world)
+        .next()
+        .map(|t| (t.rotation * Vec3::NEG_Z).xz().to_array());
     let gray = world.resource::<Graybox>();
     let prediction = world
         .resource::<crate::network::Network>()
@@ -658,7 +668,7 @@ fn qualification(world: &mut World) {
     let connection = world.resource::<crate::network::Network>();
     let connected = connection.connected();
     let network_error = connection.state().error;
-    let data = serde_json::json!({"connected":connected,"network_error":network_error,"render_motion":gray.render_motion,"saved_terrain":gray.saved.as_ref().map(|s| s.stats()),"held_jump_reset_samples":gray.held_jump_reset_samples,"held_jump_reset_failures":gray.held_jump_reset_failures,"prediction":prediction,"resident":resident,"max_resident":gray.max_resident,"mesh_assets":mesh_assets,"extra_meshes":extra_meshes,"gpu_mesh_assets":gray.gpu_mesh_assets,"loaded":gray.loaded,"unloaded":gray.unloaded,"visited":gray.visited.len(),"patches":gray.patches,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"position":gray.last_position});
+    let data = serde_json::json!({"minimap":world.get_resource::<crate::minimap::Metrics>(),"render_frame":{"revision":world.resource::<crate::floating_origin::Frame>().revision,"origin":world.resource::<crate::floating_origin::Frame>().render.origin().metres()},"connected":connected,"network_error":network_error,"render_motion":gray.render_motion,"saved_terrain":gray.saved.as_ref().map(|s| s.stats()),"held_jump_reset_samples":gray.held_jump_reset_samples,"held_jump_reset_failures":gray.held_jump_reset_failures,"prediction":prediction,"resident":resident,"max_resident":gray.max_resident,"mesh_assets":mesh_assets,"extra_meshes":extra_meshes,"gpu_mesh_assets":gray.gpu_mesh_assets,"loaded":gray.loaded,"unloaded":gray.unloaded,"visited":gray.visited.len(),"patches":gray.patches,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"position":gray.last_position,"rendered_position":gray.last_render.map(|p|p.metres()),"rendered_forward":rendered_forward});
     std::fs::write(
         output.join("world.json"),
         serde_json::to_vec_pretty(&data).unwrap(),

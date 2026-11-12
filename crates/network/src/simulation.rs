@@ -35,6 +35,7 @@ pub struct World {
     combat: Option<combat::Authority>,
     patrol: Option<creatures::Patrol>,
     patrol_identity: Option<[u8; 32]>,
+    quest_journal: Option<std::sync::Arc<crate::quest_journal::Profile>>,
     quest: Option<std::sync::Arc<crate::quest_wire::Profile>>,
     quest_lifecycle: Option<std::sync::Arc<crate::quest_lifecycle_wire::Profile>>,
     progression: Option<std::sync::Arc<crate::progression_wire::Profile>>,
@@ -96,6 +97,7 @@ impl Default for World {
             combat: None,
             patrol: None,
             patrol_identity: None,
+            quest_journal: None,
             quest: None,
             quest_lifecycle: None,
             progression: None,
@@ -437,6 +439,17 @@ impl World {
             intent.facing = None;
             let result = match movement {
                 crate::dodging::Movement::None => continue,
+                crate::dodging::Movement::Ordinary if self.classic => {
+                    intent.facing = actor.facing;
+                    crate::kinematic::advance_classic(
+                        &patch.scene,
+                        &mut actor.body,
+                        start,
+                        intent,
+                        self.rate,
+                        Some(&coverage),
+                    )
+                }
                 crate::dodging::Movement::Ordinary => crate::kinematic::advance_development(
                     &patch.scene,
                     &mut actor.body,
@@ -710,6 +723,9 @@ impl World {
             });
             let identity = self.quest_lifecycle.as_ref().map_or(identity, |p| {
                 crate::quest_lifecycle_wire::profile_identity(identity, p.hash())
+            });
+            let identity = self.quest_journal.as_ref().map_or(identity, |p| {
+                crate::quest_journal::profile_identity(identity, p.hash())
             });
             let identity = self.dialogue.as_ref().map_or(identity, |d| {
                 crate::dialogue::profile_identity(identity, d.profile.hash(), d.placement)
@@ -1024,6 +1040,7 @@ impl World {
                 .collect()
         });
         let snapshot = self.step_movement();
+        self.advance_creature_threat();
         self.advance_patrol();
         self.advance_creature_credit();
         self.advance_creature_reset();

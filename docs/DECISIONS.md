@@ -1,3 +1,199 @@
+## 2026-11-04 — retained item-aware quest owner publication
+
+Initialize inventory before item-aware progression and route supported bag writes
+through compound SQL. Publish only committed views through retained character
+generations; preserve higher bag/journal/XP versions and command replies across
+late responses. Keep live admission closed until remaining loot/UI/native slices
+pass. Treat reading a quest note as a separately authored historical condition,
+not an implicit consequence of possession. [Evidence and scope](QUEST_ITEM_OBJECTIVES.md).
+
+## 2026-11-03 — atomic inventory-bound quest storage
+
+Bind exact item content into new item-quest profiles. Lock XP (when needed), then
+backpack, then journal; commit consumption, completion, XP and receipt together.
+Reconcile current holdings on acceptance/load/replay and in compound bag writes.
+Retain accepted compound jobs through response loss and shutdown. Keep live
+admission closed until all owners and mutation paths use coherent committed views.
+[Qualified storage evidence and remaining work](QUEST_ITEM_OBJECTIVES.md).
+
+## 2026-11-03 — versioned final-stage item possession proposals
+
+Add quest schema 3 with explicit current-possession and consume flags, initially
+restricted to an all-required final hand-in stage. Preserve earlier historical
+facts and completed delivery evidence. Use monotonic mutation revisions for
+reversible item quantities while retaining old exact historical-only validation.
+Recheck supplied current bags at pure turn-in, prepare consumption and completion
+together, and recalculate other quests sharing the materials. Permit codec
+readiness reversal only for that defined item scope. Keep live admission closed
+until the inventory-aware durable path is installed.
+[Qualified core/codec evidence and remaining work](QUEST_ITEM_OBJECTIVES.md).
+
+## 2026-11-03 — qualified reach-area launch and batch snapshot heads
+
+Adopt opt-in manifest 16 and a separate three-quest engineering catalogue,
+preserving existing definitions/content and requiring exact area/profile binding.
+For multi-goal batches, the committed journal head is a monotonic snapshot
+version at least as high as every contained logical revision, not a receipt
+count. Share that checked rule between storage and the encrypted fixture.
+Actual PostgreSQL overlap/rollback/replay/restart and normal native quest/rejoin
+proof pass. Do not migrate existing characters or claim general region support.
+[Qualified behavior, native proof and limits](QUEST_REACH_AREAS.md).
+Next honor the user's possession-based item delivery request, allowing stack
+splits and recalculating readiness after committed item removal.
+
+## 2026-11-03 — bounded typed area observations through retained ownership
+
+Reserve existing character-owner Port capacity before authoritative area
+observation. Retry unavailable capacity without claiming credit; suppress
+unchanged accepted batches while waiting for commit. Reuse the ordered trusted
+producer sequence and retained async owner, leaving client wire actions at
+accept/turn-in. Publish only committed journals and preserve command replies.
+[Queue/encrypted fixture proof and remaining combined native work](QUEST_REACH_AREAS.md).
+
+## 2026-11-03 — atomic stage-bound area observation receipts
+
+Reuse the existing journal head lock, changed-row writes, receipt table and
+bounded critical worker for trusted area batches. Bind exact area bytes and the
+original eligible quest/version/stage/area payload in separate hash domains.
+Commit all affected quests with their receipt; retain accepted work across
+response loss and shutdown. Reject unbound/empty batches and generic raw area
+events. Grant no occupancy XP; retain ordinary turn-in transactions.
+[Actual SQL/restart proof and remaining live integration](QUEST_REACH_AREAS.md).
+
+## 2026-11-03 — explicit area-aware quest profile and server sampling
+
+Bind exact static area bytes into an opt-in quest/XP profile hash. Keep area-free
+hashes unchanged; share reference/namespace checks with persistence and require
+World bounds and installed-content checks before admission. Sample only current
+alive authoritative capsule feet with prepared collision and client footprint
+coverage, never client coordinates. Normal manifests remain unsupported until
+their area role and durable owner are connected. [Qualified scope](QUEST_REACH_AREAS.md).
+
+## 2026-11-03 — stage-scoped area objective proposals
+
+Adopt sampled alive authoritative feet occupancy for the forthcoming reach-area
+adapter. Add schema-2 selectors and bounded logical observations that seal quest,
+definition version and original active stage. Apply each batch once per original
+stage; never retroactively credit later acceptance or cascade through stages.
+Any/at-least stages retain exactly their completion quorum. The observation is a
+pure proposal, not proof of position; World binding and durable publication remain
+required. Preserve existing schema-1 content and fail closed at live admission
+until that adapter is installed. [Evidence and remaining work](QUEST_REACH_AREAS.md).
+
+## 2026-11-03 — read-only executable quest update review
+
+P3-11 / P3-15: add a bounded advisory comparison of two closed executable
+catalogues before content installation/migration work. Preserve exact byte hashes
+and stable IDs/versions; classify current schema-1 gameplay versus presentation/
+layout changes and flag definition/version issues without copying prose. A
+review-only normalized fingerprint never replaces runtime catalogue binding.
+Keep saved compatibility, World-reference validation and migration separate;
+source files and live behavior stay unchanged. [Workflow](QUEST_PACK_AUTHORING.md).
+
+## 2026-11-03 — normal public visual-life adoption
+
+Adopt explicit schema 15 with the same 22 exact gameplay inputs, deriving AV01
+after public NPC timing in World identity. Reuse standard Bevy Death/fresh-life
+reset and old sword-cue invalidation for remote actors; retain owner-private
+control/vitals barriers. Reset remote pose interpolation only on initial/fresh
+public life after an appropriately recent authoritative snapshot. Same-life
+movement keeps blending. Actual native finished-corpse/in-view and respawn proof,
+dead owner input/cast checks, normal quest/database-restart regression and all
+1,123 workspace tests pass. [Scope](PUBLIC_AVATAR_LIFE.md). No new death formula,
+corpse-run rules, durable health, normal default/older version replacement or
+same-backend-endpoint reconnect qualification. All changes remain local.
+
+## 2026-11-03 — public lifecycle shares bounded priority transport
+
+Share the existing priority public presentation channel for AV01 and NA01,
+with exact per-contract receive validation and separate bounded event queues.
+Gate both on validated readiness after Welcome; publish full/changed life rosters
+without owner-private vitals. Reject uploads and fail/retire on capacity loss.
+Actual encrypted death/respawn/leave/rejoin and simultaneous NPC/AV transfer pass
+at 20/30/60 Hz. Rejoin qualification uses a new endpoint and injects old encrypted
+traffic. One earlier same-relay-endpoint replacement timed out; immediate reuse
+of that endpoint remains separate unqualified transport investigation scope.
+Keep the five-second deadline and existing normal versions unchanged until the
+new normal/Bevy slice qualifies. [Evidence](PUBLIC_AVATAR_LIFE.md).
+
+## 2026-11-03 — separate public visual player lifecycle
+
+P3-04 / P3-14 / P3-16: close the observer death-pose gap with a separate optional
+projection of exact actor/life identity and alive/dead status. Deliberately expose
+the existing life generation as visual identity so fresh-life animation resets
+survive render coalescing; this grants no command or respawn authority. Keep
+health, results, incoming windups and movement-stream barriers private/unchanged.
+Use bounded sorted full rosters under the current eight-player development cap.
+Bind a separate profile/World domain and qualify the World/codec prerequisite
+before transport, new normal bundle selection and standard Bevy adoption.
+[Boundary and acceptance](PUBLIC_AVATAR_LIFE.md). This is Theia presentation
+metadata, not a new Classic formula or a population-capacity claim.
+
+## 2026-11-03 — explicit normal public NPC timing adoption
+
+Adopt schema 14 as a separate exact-byte normal bundle, retaining all 22 schema-13
+inputs and adding the derived public timing profile after threat in World
+identity. Enable the same explicit flag in both normal executables. Use standard
+Bevy wolf clips, suppress expired/cancelled windups and face the actual victim;
+never alter the player's target or manual facing. Owner-private vitals and
+incoming damage remain separate. Actual native victim/observer and normal
+quest/database-restart regressions pass, as do 1,106 workspace tests.
+[Qualified scope and checkpoint](PUBLIC_CREATURE_ATTACKS.md). No default/older
+bundle replacement, new combat formula or broader NPC capacity claim.
+
+## 2026-11-03 — public attack stream uses optional priority transport
+
+Use a separate bounded reliable ordered channel ahead of ordinary event/pose
+traffic for the single development NPC's public attack timing. Retain legacy
+two-channel configuration in inactive modes. Gate publication on accepted chunk
+readiness, reject client uploads and retire/disconnect on capacity failure.
+Keep private life/damage facts on the owner path; no new authority command.
+The actual impaired victim/observer and refusal checks qualify the component;
+normal launcher/Bevy/native adoption is a separate next slice.
+[Contract and evidence](PUBLIC_CREATURE_ATTACKS.md).
+
+## 2026-11-03 — public NPC timing without private victim state
+
+P3-07 / P3-14 / P4-08: expose an explicit opt-in NPC windup contract containing
+public entity identities and existing authoritative ticks, without health,
+damage outcomes or private player-life generations. Bind the exact existing
+life/retaliation profile and a public version domain into World identity. Keep
+player targets/facing/controls and gameplay timing unchanged. Qualify observation
+and codec before a dedicated prioritized reliable stream and standard Bevy
+bystander animation. Default modes remain unchanged until normal adoption passes.
+[Implemented boundary and pending acceptance](PUBLIC_CREATURE_ATTACKS.md).
+
+## 2026-11-03 — bounded closed-catalogue compilation
+
+Add an explicit offline handoff from globally validated authoring packs to a
+closed runtime catalogue. Preserve all source quest IDs/versions/behavior and
+include every transitive prerequisite; refuse current runtime count/objective/
+byte overflow rather than dropping dependencies. Keep output metadata and exact
+provenance explicit, then run normal World-reference validation. This does not
+install content, load runtime packs, expand saved history or migrate character
+progress. [Qualified workflow and limits](QUEST_PACK_AUTHORING.md).
+
+## 2026-11-03 — offline quest pack preflight before runtime adoption
+
+Implement the adopted global-registry direction first as a bounded read-only
+core registry and file/index validator. Keep live `Catalog::from_json` closed;
+do not expose partially linked catalogues to journals. Use explicit development
+budgets, stable global definition IDs, checked cross-pack prerequisites and exact
+source hashes. Keep narrative planning, World-reference admission, runtime pack
+selection/history and saved-version migration separate. [Authoring contract and
+proof](QUEST_PACK_AUTHORING.md). This does not raise the live 32-record limit.
+
+## 2026-11-03 — explicit damage-threat development mode
+
+P3-07 / P4-08: adopt the qualified damage-only World adapter through a new
+schema-13 journal/threat bundle and explicit `--creature-threat`. Retain 1:1
+actual-health-loss threat and current-reach 110%/130% transfer from the pinned
+empirical Classic research; exact equality/tie order, transfer visibility,
+recovery and tag-departure behavior remain explicit Theia policies. Keep metres,
+server-owned victim selection and independent credit/reward ownership. Preserve
+older modes until separately replaced. Healing, stances, taunts, social/group
+threat and population scaling remain future work. [Evidence and limitations](CREATURE_THREAT.md).
+
 ## 2026-11-02 — quest catalogue scale direction
 
 Keep narrative planning manifests separate from executable content. Under the
@@ -1458,3 +1654,110 @@ Keep old profile bytes/checkpoints and reject incomplete life/retaliation setup.
 [Final playable qualification](CREATURE_PURSUIT_NATIVE.md). New player melee,
 projectiles, outcomes, quest markers, minimap and HUD work remains in the follow-on
 register; P3-17/P3-18 remain unspecified.
+
+## 2026-11-03 — Confirm encrypted Renet readiness before World admission
+
+Adopt transport revision 1 with exact NC01 reliable preface, eight bounded
+five-second waiters and no game traffic/World actor/account consumption before
+confirmation. Dropping renetcode 2.0.0's initial KeepAlive reproduced the earlier
+Welcome timeout independently of endpoint reuse; continuous game payloads
+suppressed its library retry. Keep pinned libraries, crypto and five-second
+client deadline unchanged; version the Renet protocol ID separately from movement
+wire/Quinn 12. Existing ticket/account/terrain checks follow confirmation.
+Both Renet ends need rebuilding and fresh tickets.
+
+Full 1,128-test workspace, strict Clippy/formatting, two focused loss-policy
+checks, 48 baseline/seeded repeated cases and normal OIDC/PostgreSQL/native
+quest/restart rejoin pass. Preserve the separate 46/48 periodic-loss diagnostic:
+it can erase essentially all snapshots after Welcome. Do not call that universal
+reconnect recovery or silently replace its evidence with seeded loss.
+[Contract and exact limits](RENET_CONNECTION_CONFIRMATION.md). Local only;
+`build/connection-confirmation-client-qualified-v1-20261103`.
+
+## 2026-11-03 — Build a bounded local map from resident render grids
+
+Adopt the initial Classic graybox minimap through standard Bevy UI: north-up
+256-metre square, 64x64 terrain image at up to four refreshes/second and a 16x16
+manual-heading arrow. Reuse resident mesh data and committed owner/guide filters;
+do not read saved terrain, force chunks, add a map camera or create gameplay
+requests. Keep health/mana beside it and hide it while the right-hand backpack
+occupies the space.
+
+All 1,133 workspace checks (50 skips), strict Clippy/fmt and four normal native
+quest/restart starts pass across the three supported sizes with zero GPU
+diagnostics. Measured raster maximum 329 us; visible idle refresh leaves
+81 tiles / one patch / 90 saved reads unchanged. Scope is the Classic greybox;
+legacy heading, native seam traversal and broader map layers remain follow-ups.
+[Exact evidence and limits](MINIMAP.md). Preserve
+`build/minimap-client-qualified-v1-20261103`; changes remain local.
+
+## 2026-11-03 — Compare map coordinates with displayed presentation
+
+Retained walking without explicit facing uses the existing displayed character
+rotation for its arrow; do not change its gameplay or the adopted Classic policy.
+Qualification must compare the map with rendered player coordinates, separately
+from delayed authority, and distinguish sampled frame origins from total origin
+changes. Preserve original failed checker evidence.
+
+Normal owned-account W traversal crosses three chunk owners and a render rebase
+without changing quest rewards. A separate accelerated development-ticket route
+covers the 16-km X extent with 125 origin changes and bounded retirement; it is
+not normal-speed/OIDC or MMO capacity evidence. Full 1,134-test workspace,
+strict Clippy/fmt and five native starts pass.
+[Exact evidence and scope](MINIMAP.md). Preserve
+`build/minimap-traversal-client-qualified-v1-20261103`; changes stay local.
+
+## 3 November 2026 — version-bound Classic ground movement calibration
+
+Implement the documented Classic travel follow-up under a new ground-movement-v3
+world identity, including exact embedded speed-data bytes. Adopt explicit Theia
+mapping of one source gameplay movement unit/s to one m/s: walk 2.5, run 7,
+backward run 4.5, with normalized diagonals and backward selection from accepted
+manual character facing. The pinned Blizzard UI supports the base-7 reference
+and walk/run toggle; pinned CMaNGOS Classic supplies supporting directional
+speed evidence with its uncertainty retained. This is not proof of complete
+Blizzard movement parity. See [source/version/mapping detail](CLASSIC_GROUND_MOVEMENT.md).
+
+Controls schema 2 uses a configurable walk/run toggle, default NumpadDivide,
+and running by default. Shift is no longer a Classic travel boost. Legacy
+non-Classic development movement and immutable earlier binaries retain 5/8 m/s.
+Old controls schema is explicitly refused; client/server must rebuild together
+and obtain fresh tickets. No movement layout, transport revision, physics pin,
+world scale, NPC speed or dodge-policy change. Implementation qualification
+remains pending; preserve the prior qualified playable.
+
+Ground movement qualification completed: all 1,139 workspace tests / 50 skips,
+formatting and strict Clippy; 27 native speed checks at three resolutions plus
+normal unmodified wolf/quests, database restart/rejoin and streamed W traversal.
+Five final native starts have zero Linux GPU diagnostics. Exact checkpoint:
+`build/classic-ground-client-qualified-v1-20261103`. The earlier interrupted
+run and measurement corrections remain documented, not promoted to passes.
+
+## 3 November 2026 — directional locomotion art prerequisite
+
+Use the supplied non-root-motion Base Locomotion clips as optional standard GLB
+animation, retaining the exact existing skin, sockets and eight clips. Fourteen
+additional walk/run directions pass source/retained-content checks and native
+inspection; do not infer live directional gameplay from converted art.
+[Exact proof and pending selection](CLASSIC_DIRECTIONAL_LOCOMOTION.md).
+The 5 mm production-fidelity gate remains failed; the measured four-weight
+preview limitation is unchanged. Preserve the ground-v3 playable until runtime
+selection, priority, grip and local/remote checks pass. No dodge work is resumed.
+
+## 3 November 2026 — optional Classic directional selection qualified
+
+Use checked global interpolation segments relative to displayed manual heading;
+never turn the actor toward motion. Complete optional fourteen-direction art
+selects eight-way walk/run, including backward running at the shared 4.5 m/s
+rate. Retain old-art/profile fallback and the deferred dodge slot namespace.
+Preserve compatible normalized moving-clip phase; crossfades/stride calibration
+remain separate. Existing standard Bevy finger/upper-body masks cover all bases;
+life/critical pose and attack barriers retain priority.
+
+[Runtime evidence and exact fixture distinctions](CLASSIC_DIRECTIONAL_LOCOMOTION.md):
+1,145 workspace tests / 50 skips, strict Clippy, two-account source-pose checks,
+new-art ultrawide controls, normal unmodified new/old-art quest and restart/rejoin
+flows, and actual new-art streamed traversal. Seven final native starts have
+zero Linux GPU diagnostics. Preserve
+`build/classic-directional-client-qualified-v1-20261103`; do not infer full
+animation, skin-production fidelity, Windows or population capacity.

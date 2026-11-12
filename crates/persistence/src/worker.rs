@@ -4,6 +4,7 @@
 mod accounts;
 mod inventory;
 mod progression;
+mod quest_items;
 mod quest_journal;
 mod quest_lifecycle;
 mod quests;
