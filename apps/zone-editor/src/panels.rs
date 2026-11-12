@@ -8,15 +8,18 @@ const DIVIDER: f32 = 1.;
 enum Edge {
     Width,
     Split,
+    Assets,
 }
 #[derive(Clone, Copy)]
 struct Resize {
     edge: Edge,
     start: Vec2,
-    original: [f32; 2],
+    original: [f32; 3],
 }
 pub(super) struct Layout {
     pub width: f32,
+    pub assets_open: bool,
+    pub assets_height: f32,
     pub explorer_fraction: f32,
     pub explorer_collapsed: bool,
     pub properties_collapsed: bool,
@@ -28,6 +31,8 @@ impl Default for Layout {
     fn default() -> Self {
         Self {
             width: workspace::INSPECTOR_WIDTH,
+            assets_open: false,
+            assets_height: 280.,
             explorer_fraction: 0.4,
             explorer_collapsed: false,
             properties_collapsed: false,
@@ -38,6 +43,15 @@ impl Default for Layout {
     }
 }
 impl Layout {
+    pub fn canvas_bottom(&self, height: f32, editing: bool) -> f32 {
+        status_bar::HEIGHT
+            + if self.assets_open && editing {
+                self.assets_height
+                    .min(((height - workspace::HEADER - status_bar::HEIGHT) * 0.55).max(0.))
+            } else {
+                0.
+            }
+    }
     pub fn canvas_left(&self) -> f32 {
         sidebar::WIDTH + self.width
     }
@@ -78,6 +92,7 @@ pub(super) enum Region {
     Inspector,
     Footer,
     Canvas,
+    Assets,
 }
 #[derive(Component)]
 pub(super) struct Toggle(pub(super) Region);
@@ -176,7 +191,7 @@ pub(super) fn body(
         .with_children(content);
 }
 pub(super) fn setup(mut commands: Commands) {
-    for edge in [Edge::Width, Edge::Split] {
+    for edge in [Edge::Width, Edge::Split, Edge::Assets] {
         commands
             .spawn((
                 Grip(edge),
@@ -198,7 +213,7 @@ pub(super) fn setup(mut commands: Commands) {
                     } else {
                         percent(100)
                     },
-                    height: if edge == Edge::Split {
+                    height: if edge != Edge::Width {
                         px(1)
                     } else {
                         percent(100)
@@ -242,13 +257,14 @@ pub(super) fn resize(
     if let Some(drag) = layout.drag {
         layout.input_owned = true;
         if !allowed || cursor.is_none() || keys.just_pressed(KeyCode::Escape) {
-            [layout.width, layout.explorer_fraction] = drag.original;
+            [layout.width, layout.explorer_fraction, layout.assets_height] = drag.original;
             layout.drag = None;
             return;
         }
         let delta = cursor.unwrap() - drag.start;
         match drag.edge {
             Edge::Width => layout.width = (drag.original[0] + delta.x).clamp(300., 720.),
+            Edge::Assets => layout.assets_height = (drag.original[2] - delta.y).clamp(160., 600.),
             Edge::Split => {
                 layout.explorer_fraction = (drag.original[1]
                     + delta.y
@@ -280,6 +296,12 @@ pub(super) fn resize(
             && (cursor.y - layout.properties_top(window.height())).abs() <= GRIP / 2.
         {
             Some(Edge::Split)
+        } else if layout.assets_open
+            && cursor.x > layout.canvas_left()
+            && (cursor.y - (window.height() - layout.canvas_bottom(window.height(), true))).abs()
+                <= GRIP / 2.
+        {
+            Some(Edge::Assets)
         } else {
             None
         };
@@ -287,7 +309,7 @@ pub(super) fn resize(
             layout.drag = Some(Resize {
                 edge,
                 start: cursor,
-                original: [layout.width, layout.explorer_fraction],
+                original: [layout.width, layout.explorer_fraction, layout.assets_height],
             });
             layout.input_owned = true;
         }
@@ -342,7 +364,22 @@ pub(super) fn apply(
                 };
             }
             Region::Footer => node.left = px(0),
-            Region::Canvas => node.left = px(session.ui.canvas_left()),
+            Region::Canvas => {
+                node.left = px(session.ui.canvas_left());
+                node.bottom = px(session
+                    .ui
+                    .canvas_bottom(window.height(), session.play.is_none()));
+            }
+            Region::Assets => {
+                node.left = px(session.ui.canvas_left());
+                node.height =
+                    px(session.ui.canvas_bottom(window.height(), true) - status_bar::HEIGHT);
+                node.display = if session.ui.assets_open && session.play.is_none() {
+                    Display::Flex
+                } else {
+                    Display::None
+                };
+            }
         }
     }
     for (body, mut node, mut visibility) in &mut bodies {
@@ -367,8 +404,11 @@ pub(super) fn apply(
     let mut hovered_edge = None;
     for (grip, hovered, mut node, mut background) in &mut grips {
         let visible = session.play.is_none()
-            && (grip.0 == Edge::Width
-                || (!session.ui.explorer_collapsed && !session.ui.properties_collapsed));
+            && match grip.0 {
+                Edge::Width => true,
+                Edge::Split => !session.ui.explorer_collapsed && !session.ui.properties_collapsed,
+                Edge::Assets => session.ui.assets_open,
+            };
         node.display = if visible {
             Display::Flex
         } else {
@@ -384,6 +424,16 @@ pub(super) fn apply(
                 node.bottom = px(status_bar::HEIGHT);
                 node.width = px(GRIP);
                 node.height = Val::Auto;
+            }
+            Edge::Assets => {
+                node.left = px(session.ui.canvas_left());
+                node.right = px(0);
+                node.top = px(window.height()
+                    - session.ui.canvas_bottom(window.height(), true)
+                    - GRIP / 2.);
+                node.bottom = Val::Auto;
+                node.width = Val::Auto;
+                node.height = px(GRIP);
             }
             Edge::Split => {
                 node.left = px(sidebar::WIDTH);
@@ -406,7 +456,7 @@ pub(super) fn apply(
         .flatten();
     let next = bevy::window::CursorIcon::System(match active {
         Some(Edge::Width) => bevy::window::SystemCursorIcon::ColResize,
-        Some(Edge::Split) => bevy::window::SystemCursorIcon::RowResize,
+        Some(Edge::Split | Edge::Assets) => bevy::window::SystemCursorIcon::RowResize,
         None => bevy::window::SystemCursorIcon::Default,
     });
     let owned_cursor = matches!(

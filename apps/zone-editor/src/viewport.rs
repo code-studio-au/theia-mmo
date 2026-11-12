@@ -640,6 +640,14 @@ pub(super) fn report(
         Res<property_tabs::State>,
         TabControls,
         crate::export_dialog::Report,
+        Query<
+            (
+                &ComputedNode,
+                &bevy::ui::UiGlobalTransform,
+                &bevy::text::EditableText,
+            ),
+            With<asset_browser::Search>,
+        >,
     ),
     session: Res<Session>,
     view: Res<View>,
@@ -654,7 +662,7 @@ pub(super) fn report(
     content: Res<outliner::Content>,
     content_controls: ContentControls,
 ) {
-    let (keys, focus, particles, tabs, tab_controls, export_dialog) = input;
+    let (keys, focus, particles, tabs, tab_controls, export_dialog, asset_search) = input;
     let Some(mut report) = report else {
         return;
     };
@@ -840,6 +848,10 @@ pub(super) fn report(
         "owns_pointer": session.ui.overlay_owned,
         "tool": format!("{:?}", session.gizmo_tool)
     });
+    value["asset_search"] = serde_json::json!(asset_search.single().ok().map(|(node, pose, text)| {
+        let factor = node.inverse_scale_factor() * scale.0;
+        serde_json::json!({"value":text.value().to_string(),"centre":(pose.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()})
+    }));
     value["property_tabs"] = serde_json::json!({
         "active": format!("{:?}", tabs.active),
         "controls": tab_controls.iter().map(|(tab, node, pose)| {
@@ -852,8 +864,9 @@ pub(super) fn report(
         "browser":[sidebar::WIDTH,workspace::HEADER,session.ui.width,session.ui.explorer_height(window.height())],
         "inspector":[sidebar::WIDTH,session.ui.properties_top(window.height()),session.ui.width,if session.ui.properties_collapsed {panels::TITLE_HEIGHT} else {window.height()-status_bar::HEIGHT-session.ui.properties_top(window.height())}],
         "panel_collapsed":{"explorer":session.ui.explorer_collapsed,"properties":session.ui.properties_collapsed},
-        "canvas":[session.ui.canvas_left(),workspace::HEADER,window.width()-session.ui.canvas_left(),window.height()-workspace::HEADER-status_bar::HEIGHT],
+        "canvas":[session.ui.canvas_left(),workspace::HEADER,window.width()-session.ui.canvas_left(),window.height()-workspace::HEADER-session.ui.canvas_bottom(window.height(), session.play.is_none())],
         "status_bar":[0.,window.height()-status_bar::HEIGHT,window.width(),status_bar::HEIGHT],
+        "asset_browser":{"open":session.ui.assets_open && session.play.is_none(),"height":session.ui.canvas_bottom(window.height(),session.play.is_none())-status_bar::HEIGHT,"selected":session.assets.selected,"category":session.assets.category},
         "resizing":session.ui.input_owned
     });
     value["menus"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,_,_,trigger,popup)| {

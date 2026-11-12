@@ -1,3 +1,31 @@
+P5-17 scenery browser, 12 November 2026:
+Assets / View → Asset browser replaces the flat Scenery menu with a collapsible,
+height-resizable lower dock, category dropdown, case-insensitive multi-word search,
+selectable model cards and explicit Place at spawn. Existing exact placement,
+validation/history/Save remain; selection/filtering does not change authoring data.
+Filtered selection and stale deferred requests refuse placement. Browser input
+ownership survives leaving the panel, search consumes Escape/Enter before editor
+shortcuts, and F5 restores its normal full viewport. The left stack is independent.
+The category popup uses native placement and bounded scrolling. Image previews,
+drag-to-place and a broader mixed asset library remain follow-ups.
+All 205 ordinary editor tests pass (seven opt-in skips), formatting and denied-
+warning workspace/all-target Clippy pass, and client/server/editor builds pass.
+Actual RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan offscreen layout shows 11
+model cards and filters to two huts, with unchanged source and an on-screen popup.
+Owned native Linux input passes category selection, typing, placement/undo,
+independent resize and collapse, preserving the copied source with zero GPU
+validation diagnostics. No native Windows qualification. Evidence:
+build/asset-browser-{tests-final,clippy-final,app-build-final,gpu-final}.log and
+build/asset-browser-native-v3/qualification.json / state.png. Earlier native
+attempts exposed a diagnostic helper Path/text error and a drag that moved before
+its press had been sampled; the helper now waits for confirmed resize ownership.
+The user currently allows mouse/display. The owned test editor has been closed.
+Next observed issue: initial terrain view still adds a hardcoded 64 m offset,
+so the 512 m valley opens aimed at its old corner. Correct framing before adding
+model previews. Test-player/network-playtest and per-client impairment proposals
+are recorded in DECISIONS.md; not implemented yet. Broader authored quest gameplay
+and multiple NPCs remain active goals. Continue across local commits.
+
 P5-17 / P3-12 / P3-15 editor NPC contact binding, 12 November 2026:
 NPC markers now have a permanent inline Catalog ID with validation/history/Save.
 Gameplay-template export binds one matching dialogue contact at authored XYZ feet,

@@ -1,3 +1,30 @@
+# Scenery asset browser — 12 November 2026
+
+Open **Assets** in the top bar (or **View → Asset browser**). This lower dock
+lists available scenery separately from the left-hand explorer's placed objects.
+Use the category dropdown and case-insensitive, multi-word search over names,
+categories and IDs. Select a card, then **Place at spawn**; the placed model uses
+existing XYZ/yaw/scale controls and undo/redo. Browsing alone does not edit the zone.
+Filtering clears an invisible selection, and stale placement requests refuse.
+The card identifies solid scenery versus decoration; model image previews and
+drag-to-place remain follow-ups. The flat Scenery menu is replaced by this browser.
+
+Drag the browser's top divider to resize it, or Close to restore viewport space.
+The left explorer/properties divider remains independent. F5 temporarily hides
+the browser, and returning to editing restores it. Search owns editor shortcut
+keys; Enter/Escape releases search focus without sending that press to the world.
+Mouse gestures remain owned through release, including outside the panel. Category
+popups use bounded scrolling and native placement above/below their anchor.
+
+Native input reproduction (uses only its owned test editor window and a source copy):
+
+```sh
+python3 tools/qualify_asset_browser.py \
+  --zone build/starter-valley-contact-v3.zone.json \
+  --library build/starter-valley-scenery-v2/catalog.json \
+  --output build/asset-browser-native-new
+```
+
 # Editor-authored village contact — 12 November 2026
 
 Select an NPC marker and edit **Gameplay reference → Catalog ID**. A blank ID

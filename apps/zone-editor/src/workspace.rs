@@ -33,14 +33,17 @@ pub(super) struct Requests {
     pub bind_particle: bool,
     pub preview_library_particle: bool,
     pub exit: bool,
-    pub add_scenery: Option<usize>,
+    pub add_scenery: Option<(u64, u64, usize)>,
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
     PlayerModel,
     PlayerAnimation(playtest_avatar::Preview),
     New,
-    AddScenery(usize),
+    AssetBrowser,
+    AssetCategory(usize),
+    AssetSelect(usize),
+    AssetPlace,
     Exit,
     Mode(EditorMode),
     Command(Action),
@@ -147,7 +150,6 @@ pub(super) fn setup(
     icons: Option<Res<sidebar::Icons>>,
     server: Option<Res<AssetServer>>,
     images: Option<Res<Assets<Image>>>,
-    library: Option<Res<scenery_library::Library>>,
 ) {
     sidebar::setup(&mut commands, icons.as_deref());
     commands.init_resource::<Requests>();
@@ -239,27 +241,12 @@ pub(super) fn setup(
                         ),
                     ],
                 );
-                if let Some(library) = &library
-                    && !library.assets.is_empty()
-                {
-                    let items: Vec<_> = library
-                        .assets
-                        .values()
-                        .enumerate()
-                        .map(|(i, asset)| {
-                            (
-                                Control::AddScenery(i),
-                                asset.entry.name.as_str(),
-                                "at spawn",
-                            )
-                        })
-                        .collect();
-                    menus::spawn(row, "Scenery", &items);
-                }
+                row.spawn(button(Control::AssetBrowser, "Assets"));
                 menus::spawn(
                     row,
                     "View",
                     &[
+                        (Control::AssetBrowser, "Asset browser", ""),
                         (Control::Frame, "Frame selection", "F"),
                         (
                             Control::View(camera_views::Preset::Perspective),
@@ -603,6 +590,7 @@ impl Control {
             .or(session.scenery_selected)
             .is_some();
         match self {
+            Self::AssetPlace => session.ui.assets_open && session.assets.selected.is_some(),
             Self::Command(Action::CreateStarterBasin | Action::CreateStarterValley) => {
                 theia_zone::starter_basin::available(session.editor.zone())
             }
@@ -828,7 +816,15 @@ pub(super) fn execute(
             );
         }
         Control::New => new_document(session, view, content),
-        Control::AddScenery(index) => requests.add_scenery = Some(index),
+        Control::AssetBrowser => session.ui.assets_open = !session.ui.assets_open,
+        Control::AssetCategory(index) => session.assets.category = index,
+        Control::AssetSelect(index) => session.assets.selected = Some(index),
+        Control::AssetPlace => {
+            requests.add_scenery = session
+                .assets
+                .selected
+                .map(|index| (session.document_id, session.editor.revision(), index));
+        }
         Control::Exit => requests.exit = true,
         Control::Mode(next) => {
             if mode(session) != next {
@@ -1058,6 +1054,9 @@ pub(super) fn sync(
             Control::GizmoTool(tool) => session.gizmo_tool == tool,
             Control::View(preset) => view.preset == preset,
             Control::Help => requests.help,
+            Control::AssetBrowser => session.ui.assets_open,
+            Control::AssetCategory(index) => session.assets.category == index,
+            Control::AssetSelect(index) => session.assets.selected == Some(index),
             Control::WholePath => session.path_selected.is_some() && session.path_point.is_none(),
             Control::Command(Action::Play) => session.play.is_some(),
             _ => false,

@@ -78,9 +78,27 @@ pub(super) fn spawn(
                 Node {
                     display: Display::None,
                     position_type: PositionType::Absolute,
-                    top: px(34),
-                    left: px(0),
+                    top: if title == "Category" {
+                        Val::Auto
+                    } else {
+                        px(34)
+                    },
+                    left: if title == "Category" {
+                        Val::Auto
+                    } else {
+                        px(0)
+                    },
                     width: px(260),
+                    max_height: if title == "Category" {
+                        px(240)
+                    } else {
+                        Val::Auto
+                    },
+                    overflow: if title == "Category" {
+                        Overflow::scroll_y()
+                    } else {
+                        Overflow::DEFAULT
+                    },
                     padding: UiRect::all(px(4)),
                     flex_direction: FlexDirection::Column,
                     border: UiRect::all(px(1)),
@@ -95,6 +113,30 @@ pub(super) fn spawn(
             })
             .id();
     });
+    if title == "Category" {
+        parent
+            .commands()
+            .entity(popup)
+            .insert((
+                scrolling::Pane::Browser,
+                ScrollPosition::default(),
+                bevy::ui::OverrideClip,
+                bevy::ui_widgets::popover::Popover {
+                    window_margin: 8.,
+                    positions: [
+                        bevy::ui_widgets::popover::PopoverSide::Bottom,
+                        bevy::ui_widgets::popover::PopoverSide::Top,
+                    ]
+                    .map(|side| bevy::ui_widgets::popover::PopoverPlacement {
+                        side,
+                        align: bevy::ui_widgets::popover::PopoverAlign::Start,
+                        gap: 4.,
+                    })
+                    .into(),
+                },
+            ))
+            .observe(scrolling::wheel);
+    }
     parent.commands().entity(anchor).observe(
         move |event: On<MenuEvent>,
               session: Res<Session>,

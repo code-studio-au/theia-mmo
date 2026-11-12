@@ -1,3 +1,27 @@
+## 12 November 2026 — proposed editor network-test players
+
+The user proposes exposing test player pawns with attachable/detachable AI
+controllers and split camera views to exercise netcode. Recommended follow-on:
+two independent authenticated clients, each using the normal input/ability path;
+bounded repeatable scenario data first, separate from server-controlled NPC AI.
+The user also proposes a per-character network latency property. Apply optional
+delay/jitter/loss/outage to that connection's real traffic, in both directions;
+show one-way versus added RTT and keep measured latency separate. Default to no
+added impairment, with repeatable scenario seeds/presets. Never implement lag by
+delaying only the visible pawn or slowing the authoritative simulation tick.
+Detach returns manual control. Server authority, prediction and readiness remain
+unchanged. Start with movement and side-by-side views, then combat scenarios and
+controlled transport impairment. Reuse actual multi-client Renet qualification
+instead of treating direct editor/offline pawn movement as network evidence.
+Network Playtest should launch one authoritative server and one independent client
+per enabled authored Test Player pawn, initially capped at two. Pawns hold spawn,
+controller and per-connection impairment settings. Keep ordinary F5 offline.
+Start/Stop manages the test processes and separate identities; separate windows
+can precede an embedded split-view dashboard. This is a proposed P5-17 testing
+workflow, not implemented behavior or a
+decision to add an unrestricted scripting engine. Scope/task mapping should be
+checked against the engineering queue before implementation.
+
 ## 12 November 2026 — Bevy editor design inspiration
 
 The user approves the supplied Bevy Editor Figma/SVG as inspiration where useful,

@@ -48,6 +48,7 @@ fn split_and_width_resize_cancel_and_release_preserve_source_and_own_world_input
         let start = match edge {
             Edge::Width => Vec2::new(layout.canvas_left(), 300.),
             Edge::Split => Vec2::new(sidebar::WIDTH + 100., layout.properties_top(900.)),
+            Edge::Assets => unreachable!(),
         };
         point(&mut app, window, start.x, start.y);
         press(&mut app);
@@ -107,6 +108,7 @@ fn popup_gestures_cannot_start_either_panel_divider() {
         let start = match edge {
             Edge::Width => Vec2::new(layout.canvas_left(), 300.),
             Edge::Split => Vec2::new(sidebar::WIDTH + 100., layout.properties_top(900.)),
+            Edge::Assets => unreachable!(),
         };
         point(&mut app, window, start.x, start.y);
         app.world_mut().resource_mut::<Session>().ui.overlay_owned = true;
@@ -330,4 +332,30 @@ fn embedded_viewport_projection_and_picking_round_trip_after_resizing_and_dpi_ch
             assert!(canvas_cursor(&window, &session).is_none());
         }
     }
+}
+
+#[test]
+fn asset_split_resizes_cancels_and_reflows_viewport_without_changing_left_stack() {
+    let (mut app, window) = fixture();
+    app.world_mut().resource_mut::<Session>().ui.assets_open = true;
+    let before = app.world().resource::<Session>().editor.zone().clone();
+    let ui = &app.world().resource::<Session>().ui;
+    let height = ui.assets_height;
+    let left = ui.width;
+    let split = ui.explorer_fraction;
+    let top = 900. - ui.canvas_bottom(900., true);
+    point(&mut app, window, 1000., top);
+    press(&mut app);
+    point(&mut app, window, 1000., top - 80.);
+    app.update();
+    let ui = &app.world().resource::<Session>().ui;
+    assert_eq!(ui.assets_height, height + 80.);
+    assert_eq!((ui.width, ui.explorer_fraction), (left, split));
+    assert_eq!(ui.canvas_bottom(900., false), status_bar::HEIGHT);
+    app.world_mut()
+        .resource_mut::<ButtonInput<KeyCode>>()
+        .press(KeyCode::Escape);
+    app.update();
+    assert_eq!(app.world().resource::<Session>().ui.assets_height, height);
+    assert_eq!(app.world().resource::<Session>().editor.zone(), &before);
 }

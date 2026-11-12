@@ -1,5 +1,6 @@
 //! P5-17/P3-15: standard Bevy greybox authoring; no trusted gameplay authority.
 mod agent;
+mod asset_browser;
 mod authoring_grid;
 mod browser_icons;
 mod brush_preview;
@@ -82,7 +83,11 @@ fn canvas_cursor(window: &Window, session: &Session) -> Option<Vec2> {
                 && p.x > session.ui.canvas_left() + 6.
                 && p.x < window.width()
                 && p.y > workspace::HEADER
-                && p.y < window.height() - status_bar::HEIGHT
+                && p.y
+                    < window.height()
+                        - session
+                            .ui
+                            .canvas_bottom(window.height(), session.play.is_none())
         })
         .map(|p| session.ui.window_to_viewport(p, window.scale_factor()))
 }
@@ -99,6 +104,7 @@ enum EditorMode {
 #[derive(Resource)]
 struct Session {
     ui: panels::Layout,
+    assets: asset_browser::State,
     editor: Editor,
     saved_zone: Option<Zone>,
     selected: Option<u64>,
@@ -180,6 +186,7 @@ impl Session {
         Session {
             document_id: DOCUMENT_IDS.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             ui: panels::Layout::default(),
+            assets: asset_browser::State::default(),
             editor,
             saved_zone,
             selected: None,
@@ -717,6 +724,7 @@ fn run() -> Result<(), String> {
     .add_plugins(property_tabs::plugin)
     .add_plugins(viewport_tools::plugin)
     .add_plugins(browser_icons::plugin)
+    .add_plugins(asset_browser::plugin)
     .add_plugins(scrolling::plugin)
     .add_plugins(properties::summary_plugin)
     .add_plugins(menus::plugin)
@@ -1577,7 +1585,8 @@ fn camera_controls(
         camera_views::pan(
             &mut view,
             current - previous,
-            (window.height() - workspace::HEADER - status_bar::HEIGHT) * window.scale_factor(),
+            (window.height() - workspace::HEADER - session.ui.canvas_bottom(window.height(), true))
+                * window.scale_factor(),
         );
         *panning = Some(current);
     }

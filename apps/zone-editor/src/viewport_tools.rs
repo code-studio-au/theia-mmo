@@ -39,8 +39,9 @@ pub(super) fn bounds(window: &Window, session: &Session) -> Option<Rect> {
         workspace::HEADER + OFFSET,
     );
     let max = min + Vec2::new(WIDTH, HEIGHT);
-    (max.x < window.width() && max.y < window.height() - status_bar::HEIGHT)
-        .then_some(Rect::from_corners(min, max))
+    (max.x < window.width()
+        && max.y < window.height() - session.ui.canvas_bottom(window.height(), true))
+    .then_some(Rect::from_corners(min, max))
 }
 
 pub(super) fn blocks(window: &Window, session: &Session) -> bool {

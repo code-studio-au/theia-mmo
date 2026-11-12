@@ -60,10 +60,20 @@ pub(super) fn add_requested(
     {
         session.status = error;
     }
-    let Some(index) = requests.add_scenery.take() else {
+    // Let inline blur/commit and the browser pointer release settle first.
+    if session.inline_editing || session.ui.input_owned {
+        return;
+    }
+    let Some((document, revision, index)) = requests.add_scenery.take() else {
         return;
     };
-    if workspace::busy(&session) {
+    if workspace::busy(&session)
+        || session.document_id != document
+        || session.editor.revision() != revision
+        || !session.ui.assets_open
+        || session.assets.selected != Some(index)
+    {
+        session.status = "Zone changed; place the model again".into();
         return;
     }
     let Some(asset) = library.assets.values().nth(index) else {

@@ -128,7 +128,7 @@ fn spawn_pane(
 }
 
 // Sprinkles' 24 logical pixels per wheel line; trackpads retain pixel deltas.
-fn wheel(
+pub(super) fn wheel(
     mut event: On<PointerScroll>,
     session: Res<Session>,
     windows: Query<&Window>,
@@ -140,9 +140,10 @@ fn wheel(
     };
     event.propagate(false);
     if !scope.allowed(&session)
-        || menus
-            .iter()
-            .any(|state| !matches!(state, bevy::ui_widgets::MenuFocusState::Closed))
+        || (menus.get(event.entity).is_err()
+            && menus
+                .iter()
+                .any(|state| !matches!(state, bevy::ui_widgets::MenuFocusState::Closed)))
         || !windows.single().is_ok_and(|w| w.focused)
         || !event.y.is_finite()
     {
