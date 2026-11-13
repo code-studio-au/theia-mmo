@@ -313,6 +313,10 @@ fn os_trace(world: &mut World) {
             .get_resource::<crate::creature_visual::Pending>()
             .map(|pending| serde_json::to_value(&pending.metrics).unwrap())
             .unwrap_or_default();
+        data["world_particles"] = world
+            .get_resource::<crate::particle_world::Metrics>()
+            .map(|metrics| serde_json::to_value(metrics).unwrap())
+            .unwrap_or_default();
         data["test_controller"] = world
             .get_resource::<crate::test_controller::Run>()
             .map(|run| run.description())

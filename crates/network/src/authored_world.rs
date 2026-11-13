@@ -50,6 +50,7 @@ pub struct Store {
     identity: [u8; 32],
     visual: Arc<Vec<u8>>,
     contact: Option<Contact>,
+    particles: Option<(crate::particle_content::Catalog, std::path::PathBuf)>,
 }
 fn path(root: &Path, name: &str) -> Result<std::path::PathBuf> {
     let file = root.join(name).canonicalize()?;
@@ -76,7 +77,6 @@ impl Store {
             .as_ref()
             .ok_or("Authored prediction requires a versioned world package")?;
         if package.identity() != anchor.world_identity
-            || package.has_particle_catalog()
             || package.requires_material_profiles()
             || !package.shared_images().is_empty()
         {
@@ -98,6 +98,20 @@ impl Store {
         if sha256(&visual) != terrain.visual_sha256 {
             return Err("Authored visual changed after collision admission".into());
         }
+        let particles = if package.has_particle_catalog() {
+            let bytes = content::read_bounded(
+                &path(&root, "particles/catalog.json")?,
+                crate::particle_content::MAX_CATALOG_BYTES,
+            )?;
+            let catalog = package.verify_particle_catalog(&bytes)?;
+            package.verify_visual_for_particle_catalog(&path(&root, "terrain.glb")?, &bytes)?;
+            // Validate exact dependency bytes at startup, without renderer or simulation I/O.
+            catalog.read_effects(&path(&root, "particles/effects")?)?;
+            catalog.read_textures(&path(&root, "particles/textures")?)?;
+            Some((catalog, root.join("particles")))
+        } else {
+            None
+        };
         let mut identity_bytes = b"theia-authored-predicted-world-v1\0".to_vec();
         identity_bytes.extend(&bytes);
         identity_bytes.extend(package.identity());
@@ -111,6 +125,7 @@ impl Store {
             identity: sha256(&identity_bytes),
             visual: Arc::new(visual),
             contact: anchor.contact,
+            particles,
         })
     }
     pub fn identity(&self) -> [u8; 32] {
@@ -118,6 +133,11 @@ impl Store {
     }
     pub fn origin(&self) -> GlobalPosition {
         self.origin
+    }
+    pub fn particles(&self) -> Option<(&crate::particle_content::Catalog, &Path)> {
+        self.particles
+            .as_ref()
+            .map(|(catalog, root)| (catalog, root.as_path()))
     }
     pub fn contact_placement(
         &self,

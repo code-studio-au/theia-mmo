@@ -4706,7 +4706,8 @@ multiple wolves, pickups and account/combat wiring are not yet part of this scen
 Export one enabled passive spawn group together with its static world and freshly
 baked navigation. The creature profile must match the group's creature ID and have
 no aggression; the current runtime limit is 16 actors. This explicit mode refuses
-quest contacts/areas, particles, test-player presets and unresolved model IDs.
+quest contacts/areas, test-player presets outside network mode, and unresolved model IDs.
+Saved particle placements use the normal checked world package.
 Ordinary world export retains its spawn-group refusal.
 
 ```sh
@@ -4733,7 +4734,7 @@ presentation only. Export does not start a server or change the source zone.
 The same checked package export is available under **File → Export passive
 population…** (also in the document menu). Supply a new folder, content ID,
 revision, matching passive creature profile and navigation baker executable.
-Minimum spacing is editable in metres. Tab/Shift-Tab traverses all six fields;
+Minimum spacing is editable in metres. Tab/Shift-Tab traverses the fields;
 invalid spacing is rejected before starting work. Export runs in the background
 and preserves the editor document. This action publishes the package; use the
 launcher command above to play it.
@@ -4761,8 +4762,8 @@ also cleans up its server, clients, relays and temporary tickets.
 
 The snapshot preserves the full zone, scenario, optional controller scripts,
 checked population/navigation/static world and `combat.json` (the development
-ability catalog). Standard placeholder targets remain unless the external
-launcher receives an explicit `--creature-asset` override; this does not resolve
+ability catalog). The optional creature appearance field freezes the selected GLB
+for both clients; leaving it blank retains placeholder targets. This does not resolve
 spawn-group model IDs. Passive-only export restrictions otherwise still apply.
 
 For a matching headless snapshot, combine `--population --network-test` with the
@@ -4866,3 +4867,14 @@ Idle, Walk, Run, Attack, Hit and Death clips. Images must be in the binary paylo
 external/data URIs are refused. Bevy validates and loads the actual render data.
 The qualified wolf fixture is `build/creature-wolf-stage-v1/wolf.glb`. This optional
 appearance does not resolve authored group model IDs or change server gameplay.
+
+
+Authored population worlds can include saved particle placements from the editor's
+local effect library. Export freezes the catalogue, effects and textures under
+`world/particles`; missing or changed dependencies refuse admission. Client
+preflight applies the existing particle resource and decoded-image limits. Effects
+wait for the authored scene and GPU readiness, retain their global placement across
+render-origin changes, and use the existing F9/world-effects visibility control.
+Particle collision remains presentation-only; world collision, navigation and
+server population/combat are unchanged. These are bounded authored worlds, not a
+new streaming or MMO-capacity implementation.

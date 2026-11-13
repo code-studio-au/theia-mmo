@@ -114,6 +114,16 @@ def run(args):
             assert all(health()[key]==value for key,value in initial.items() if key!=selected)
             wait(lambda: state()['creature_visuals']['attached']>=6 and state()['creature_visuals']['players']>=6,10)
             capture('respawned.png')
+            if args.expect_particles:
+                before = health()
+                key('F9')
+                wait(lambda: not state()['world_particles']['effects_enabled'])
+                capture('effects-hidden.png')
+                assert health()==before
+                key('F9')
+                wait(lambda: state()['world_particles']['effects_enabled'])
+                capture('effects-restored.png')
+                assert health()==before
             returned = None
             if args.route and json.loads(args.route.read_text()).get('return_trip'):
                 key('F7')
@@ -121,9 +131,15 @@ def run(args):
                 capture('returned.png')
             final = state()
             assert final['creature_visuals']['dropped_cues']==0
+            if args.expect_particles:
+                particles = final['world_particles']
+                assert particles['placements']==args.expect_particles and particles['live_roots']==args.expect_particles,particles
+                assert particles['released_systems']==args.expect_particles and particles['visible_emitter_frames']>0,particles
+                assert particles['unready_emitter_frames']==0 and particles['visibility_key_toggles']==2,particles
             proof = dict(passed=True, original=selected, replacement=fresh, unchanged_other_actors=4,
                 damage=damage, dead=dead['combat_targets'], final=final['combat_targets'],
                 creature_visuals=final['creature_visuals'], outward=outward, returned=returned,
+                world_particles=final.get('world_particles'),
                 scope='One native five-creature passive pool, normal Tab/1 inputs, independent death and fresh-ID respawn; optional checked travel, no quests or pursuit')
     finally:
         if desktop: desktop.close()
@@ -148,6 +164,7 @@ if __name__ == '__main__':
     for name in ('world','population','creature','output'):
         parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--route',type=Path)
+    parser.add_argument('--expect-particles',type=int,default=0)
     parser.add_argument('--players',type=Path,default=default_player_assets())
     parser.add_argument('--binaries',type=Path,default=Path('target/debug'))
     run(parser.parse_args())

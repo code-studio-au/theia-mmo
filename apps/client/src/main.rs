@@ -962,6 +962,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let particle_world = terrain
         .as_mut()
         .and_then(|terrain| terrain.particles.take());
+    let authored_particles = if let theia_network::procedural::Source::Authored(store) = &source {
+        particle_world::prepare_authored(store)?.map(|prepared| (prepared, store.origin()))
+    } else {
+        None
+    };
     if chunks.is_some() && terrain.is_some() {
         return Err("Choose either chunk or monolithic terrain world".into());
     }
@@ -1394,6 +1399,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if let Some(prepared) = particle_world {
         particle_world::install(&mut app, prepared, world_effects_visible);
+    }
+    if let Some((prepared, origin)) = authored_particles {
+        particle_world::install_authored(&mut app, prepared, origin, world_effects_visible);
     }
     if let Some(prepared) = chunk_particles {
         particle_world::install_chunks(&mut app, prepared, world_effects_visible);

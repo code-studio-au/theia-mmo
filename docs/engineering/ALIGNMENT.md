@@ -1,3 +1,36 @@
+P5-17 / P2-13 saved particles in authored population playtests, 13 November 2026:
+Population exports now retain saved particle placements through the existing
+world exporter. The predicted authored-world store admits manifest-bound particle
+catalogues and verifies visual/effect/texture dependencies before simulation.
+Client preflight retains existing resource/decoded-image budgets. Standard particle
+presentation waits for authored scene/GPU readiness and anchors placements through
+checked f64 global coordinates across local render-frame changes. F9 affects only
+world effects. No navigation, gameplay collision, authority or fixed-step I/O added.
+Eight authored-world tests, eight particle tests and the actual export/dependency
+regression pass; fmt and strict workspace/all-target Clippy pass. Headless combined
+package/preflight passes with one effect/five actors; missing effect, changed
+published effect and source-isolation checks pass. The initial broad network test
+command was interrupted while linking unrelated binaries and replaced by focused
+library tests. An early export check correctly exposed the old authored-store
+particle refusal, now replaced by explicit validated dependency admission.
+Native editor assignment/undo, export, two-client Start and Stop pass with copied
+appearance and particle dependencies; checked route takes 11.86 s, final authority
+error 0.181 m. Native combat repeats approach, five casts, independent death and
+fresh-ID respawn, then checked return. Four other actors remain unchanged. One
+live effect records 1501 visible emitter frames, zero unready frames; normal F9
+hide/restore passes twice with unchanged health. No dropped creature cues, rejected
+inputs or movement recoveries. Screenshot review found the effects toggle over
+the diagnostic HUD; it now uses the lower right in graybox/authored sessions and
+the corrected native screenshots were inspected. Linux RX 7900 XTX / RADV NAVI31,
+Vulkan device 29772, validation clean; editor 3440x1440/client 1600x1000. Original
+review editor/source assets untouched; owned processes/tickets close. This is a
+bounded authored package, not streaming, cosmetic-load/capacity, quest-credit or
+Windows qualification.
+Evidence: build/authored-particles-{final-checks,layout-checks}.log;
+build/population-particles-package-v1/qualification.json;
+build/editor-population-particles-native-v1/{qualification.json,finished.png};
+build/population-particles-combat-native-v2/{qualification.json,effects-hidden.png,effects-restored.png}.
+
 P5-17 / P4-03 native population combat after checked travel, 13 November 2026:
 Owned native client follows 27 checked points, releases controls, selects through
 normal Tab and casts five normal Arcane Bolts (100→80→60→40→20→0). Four other

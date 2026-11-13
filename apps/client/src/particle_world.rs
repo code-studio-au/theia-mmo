@@ -23,6 +23,10 @@ pub const MAX_IMAGE_BYTES: usize = 32 * 1024 * 1024;
 #[derive(Resource)]
 struct Pending(Option<PreparedCatalog>);
 #[derive(Resource)]
+struct AuthoredOrigin(theia_core::coordinates::GlobalPosition);
+#[derive(Component)]
+struct AuthoredParticle(theia_core::coordinates::GlobalPosition);
+#[derive(Resource)]
 struct KeepAlive {
     _effects: Vec<BoundEffect>,
     _textures: Vec<Handle<Image>>,
@@ -70,6 +74,61 @@ pub fn install(app: &mut App, prepared: PreparedCatalog, visible: bool) {
     install_shared(app, visible);
     app.insert_resource(Pending(Some(prepared)))
         .add_systems(Startup, spawn);
+}
+
+pub fn prepare_authored(
+    store: &theia_network::authored_world::Store,
+) -> Result<Option<PreparedCatalog>, String> {
+    let Some((catalog, root)) = store.particles() else {
+        return Ok(None);
+    };
+    let frame = theia_core::coordinates::LocalFrame::new(store.origin());
+    theia_vfx::prepare_catalog_with_image_limit(
+        catalog,
+        &root.join("effects"),
+        &root.join("textures"),
+        Path::new("particles"),
+        frame,
+        frame,
+        LIMITS,
+        MAX_IMAGE_BYTES,
+    )
+    .map(Some)
+}
+
+pub fn install_authored(
+    app: &mut App,
+    prepared: PreparedCatalog,
+    origin: theia_core::coordinates::GlobalPosition,
+    visible: bool,
+) {
+    install(app, prepared, visible);
+    app.insert_resource(AuthoredOrigin(origin)).add_systems(
+        Update,
+        place_authored
+            .after(crate::floating_origin::select)
+            .after(apply_visibility)
+            .before(bevy_sprinkles::ParticleSimulationStep),
+    );
+}
+
+fn place_authored(
+    frame: Res<crate::floating_origin::Frame>,
+    choice: Res<VisibilityChoice>,
+    mut roots: Query<(&AuthoredParticle, &mut Transform, &mut Visibility)>,
+) {
+    for (anchor, mut transform, mut visibility) in &mut roots {
+        if let Some(local) = frame.render.to_local(anchor.0) {
+            transform.translation = Vec3::from_array(local.metres());
+            *visibility = if choice.0 {
+                Visibility::Inherited
+            } else {
+                Visibility::Hidden
+            };
+        } else {
+            *visibility = Visibility::Hidden;
+        }
+    }
 }
 
 fn install_shared(app: &mut App, visible: bool) {
@@ -246,6 +305,7 @@ pub(crate) fn publish_chunks(world: &mut World, prepared: PreparedResidency) -> 
     metrics.chunk_retired_roots += retired_count;
     Ok(())
 }
+#[allow(clippy::too_many_arguments)] // Bevy system resources and queries.
 fn spawn(
     mut commands: Commands,
     mut pending: ResMut<Pending>,
@@ -254,6 +314,7 @@ fn spawn(
     mut metrics: ResMut<Metrics>,
     choice: Res<VisibilityChoice>,
     mut exit: MessageWriter<AppExit>,
+    authored: Option<Res<AuthoredOrigin>>,
 ) {
     let Some(prepared) = pending.0.take() else {
         return;
@@ -282,7 +343,7 @@ fn spawn(
             exit.write(AppExit::error());
             return;
         };
-        commands.spawn((
+        let mut entity = commands.spawn((
             WorldParticle,
             WaitingForScene,
             Particles3d((*effect).clone()),
@@ -296,6 +357,18 @@ fn spawn(
                 Visibility::Hidden
             },
         ));
+        if let Some(origin) = &authored {
+            let local = placement.transform.translation.to_array();
+            let global = theia_core::coordinates::LocalFrame::new(origin.0)
+                .to_global(
+                    theia_core::coordinates::LocalPosition::new(local)
+                        .expect("Prepared local placement"),
+                )
+                .expect("Prepared global placement");
+            entity
+                .remove::<crate::floating_origin::Anchored>()
+                .insert(AuthoredParticle(global));
+        }
     }
     metrics.placements = bound.counts.placements;
     info!(
@@ -308,10 +381,12 @@ fn spawn(
     });
 }
 
+#[allow(clippy::too_many_arguments)] // Bevy system resources and queries.
 fn gate_playback(
     mut commands: Commands,
     scene: Option<Res<crate::terrain_scene::Ready>>,
     chunks: Option<Res<crate::chunk_world::Ready>>,
+    authored: Option<Res<crate::authored_scene::Scene>>,
     pipelines: Res<crate::capture_ready::CaptureReady>,
     network: Option<Res<crate::network::Network>>,
     mut metrics: ResMut<Metrics>,
@@ -320,12 +395,13 @@ fn gate_playback(
         With<WaitingForScene>,
     >,
 ) {
-    let ready = (scene.is_some() || chunks.is_some())
-        && pipelines.ready()
-        && network.as_ref().is_some_and(|network| {
-            let state = network.state();
-            state.error.is_none() && state.snapshot.is_some()
-        });
+    let ready =
+        (scene.is_some() || chunks.is_some() || authored.is_some_and(|scene| scene.ready()))
+            && pipelines.ready()
+            && network.as_ref().is_some_and(|network| {
+                let state = network.state();
+                state.error.is_none() && state.snapshot.is_some()
+            });
     for (entity, mut runtime) in &mut systems {
         if ready {
             runtime.resume();
@@ -337,7 +413,7 @@ fn gate_playback(
     }
 }
 
-fn setup_toggle(mut commands: Commands) {
+fn setup_toggle(mut commands: Commands, graybox: Option<Res<crate::graybox::Graybox>>) {
     commands
         .spawn((
             Toggle,
@@ -346,7 +422,8 @@ fn setup_toggle(mut commands: Commands) {
             Node {
                 display: Display::None,
                 position_type: PositionType::Absolute,
-                left: px(12),
+                left: if graybox.is_some() { Val::Auto } else { px(12) },
+                right: if graybox.is_some() { px(12) } else { Val::Auto },
                 bottom: px(12),
                 padding: UiRect::all(px(8)),
                 ..default()
@@ -393,6 +470,7 @@ fn keyboard_toggle(
         metrics.visibility_key_toggles += 1;
     }
 }
+#[allow(clippy::too_many_arguments)] // Bevy system resources and queries.
 fn apply_visibility(
     choice: Res<VisibilityChoice>,
     mut metrics: ResMut<Metrics>,
@@ -401,10 +479,13 @@ fn apply_visibility(
     mut buttons: Query<&mut Node, With<Toggle>>,
     terrain_ready: Option<Res<crate::terrain_scene::Ready>>,
     chunks_ready: Option<Res<crate::chunk_world::Ready>>,
+    authored: Option<Res<crate::authored_scene::Scene>>,
 ) {
     metrics.effects_enabled = choice.0;
     let visible = metrics.placements > 0;
-    let ready = terrain_ready.is_some() || chunks_ready.is_some();
+    let ready = terrain_ready.is_some()
+        || chunks_ready.is_some()
+        || authored.is_some_and(|scene| scene.ready());
     if ready && visible && !metrics.control_visible {
         metrics.control_shown_after_ready += 1;
     }
@@ -534,6 +615,7 @@ fn observe(
     roots: Query<(), With<WorldParticle>>,
     scene_ready: Option<Res<crate::terrain_scene::Ready>>,
     chunks_ready: Option<Res<crate::chunk_world::Ready>>,
+    authored: Option<Res<crate::authored_scene::Scene>>,
     emitters: Query<(
         &bevy_sprinkles::runtime::EmitterEntity,
         &bevy_sprinkles::runtime::EmitterRuntime,
@@ -541,12 +623,14 @@ fn observe(
     )>,
 ) {
     metrics.live_roots = roots.iter().count();
+    let ready = scene_ready.is_some()
+        || chunks_ready.is_some()
+        || authored.is_some_and(|scene| scene.ready());
     for (emitter, runtime, visible) in &emitters {
         if roots.contains(emitter.parent_system) && runtime.system_time > 0. {
             metrics.running_emitter_frames += 1;
             metrics.visible_emitter_frames += u64::from(visible.get());
-            metrics.unready_emitter_frames +=
-                u64::from(scene_ready.is_none() && chunks_ready.is_none());
+            metrics.unready_emitter_frames += u64::from(!ready);
         }
     }
 }
@@ -717,6 +801,52 @@ mod tests {
         assert_eq!(*rows[0].1, transform);
         assert_eq!(rows[0].2.0, [2., 3., 4.]);
     }
+    #[test]
+    fn authored_particles_preserve_global_position_rotation_and_scale_across_rebases() {
+        use theia_core::coordinates::{GlobalPosition, LocalFrame};
+        let mut app = App::new();
+        app.init_resource::<crate::floating_origin::Frame>()
+            .insert_resource(VisibilityChoice(true))
+            .add_systems(Update, place_authored);
+        let global = GlobalPosition::new([8192.125, 0.75, 8190.5]).unwrap();
+        let rotation = Quat::from_rotation_y(0.5);
+        let entity = app
+            .world_mut()
+            .spawn((
+                AuthoredParticle(global),
+                Transform::default()
+                    .with_rotation(rotation)
+                    .with_scale(Vec3::splat(4.)),
+                Visibility::Inherited,
+            ))
+            .id();
+        for origin in [[8192., 0., 8192.], [8064., 0., 8192.], [0.; 3]] {
+            app.world_mut()
+                .resource_mut::<crate::floating_origin::Frame>()
+                .render = LocalFrame::new(GlobalPosition::new(origin).unwrap());
+            app.update();
+            let world = app.world();
+            let transform = world.get::<Transform>(entity).unwrap();
+            assert_eq!(transform.rotation, rotation);
+            assert_eq!(transform.scale, Vec3::splat(4.));
+            let frame = &world.resource::<crate::floating_origin::Frame>().render;
+            if let Some(local) = frame.to_local(global) {
+                assert_eq!(transform.translation.to_array(), local.metres());
+            } else {
+                assert_eq!(
+                    *world.get::<Visibility>(entity).unwrap(),
+                    Visibility::Hidden
+                );
+            }
+        }
+        app.world_mut().resource_mut::<VisibilityChoice>().0 = false;
+        app.update();
+        assert_eq!(
+            *app.world().get::<Visibility>(entity).unwrap(),
+            Visibility::Hidden
+        );
+    }
+
     #[test]
     fn anchored_particle_transform_tracks_render_frame_rebase() {
         let mut app = App::new();

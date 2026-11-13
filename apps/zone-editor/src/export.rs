@@ -688,9 +688,8 @@ fn publish_combined(
         .map_err(|e| e.to_string())?;
         let loaded = Terrain::load(&stage.join("terrain.json")).map_err(|e| e.to_string())?;
         if particle.is_some() {
-            // The client deliberately rejects schema 4 until it can render
-            // particles. Verify the same bound visual through the decoded
-            // terrain profile while retaining that admission guard.
+            // Particle catalog/visual binding was checked above. The legacy
+            // terrain verifier still refuses packages with dependencies.
             terrain
                 .verify_visual(&stage.join("terrain.glb"))
                 .map_err(|e| e.to_string())?;
@@ -941,6 +940,13 @@ mod tests {
     fn particle_export_publishes_manifest_bound_files_and_rejects_missing_effects() {
         let folder = Folder::new();
         let mut zone = fixture();
+        zone.origin = [8192., 0., 8192.];
+        for axis in [0, 2] {
+            zone.spawn[axis] += 8192.;
+            for object in &mut zone.objects {
+                object.pose.position[axis] += 8192.;
+            }
+        }
         zone.schema = 8;
         zone.particles
             .push(theia_zone::particles::ParticlePlacement {
@@ -993,6 +999,8 @@ mod tests {
         assert_eq!(catalog.placements().len(), 1);
         assert_eq!(catalog.effects().len(), 1);
         assert_eq!(catalog.textures().len(), 2);
+        let store = theia_network::authored_world::Store::open(&path).unwrap();
+        assert_eq!(store.particles().unwrap().0.placements().len(), 1);
         fs::write(&source, b"changed source").unwrap();
         catalog
             .read_effects(&path.join("particles/effects"))
@@ -1017,6 +1025,7 @@ mod tests {
                 .read_effects(&path.join("particles/effects"))
                 .is_err()
         );
+        assert!(theia_network::authored_world::Store::open(&path).is_err());
     }
 
     #[test]

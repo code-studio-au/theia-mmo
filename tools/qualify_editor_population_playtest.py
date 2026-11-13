@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import time
 from launch_environment import client_environment
@@ -18,6 +19,7 @@ parser.add_argument('--players', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
 parser.add_argument('--assign-patrol', action='store_true', help='Assign the first authored patrol to player one through the editor, including undo')
 parser.add_argument('--creature-asset', type=Path, help='Optional embedded creature appearance to seed and freeze through the dialog')
+parser.add_argument('--particle-library', type=Path, help='Copy this effect library into the owned editor test data directory')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -25,6 +27,8 @@ original = args.zone.read_bytes()
 source = out / 'source.zone.json'
 source.write_bytes(original)
 report = out / 'state.json'
+if args.particle_library:
+    shutil.copytree(args.particle_library.resolve(), out / 'particle-data')
 env = client_environment(dict(os.environ, DISPLAY=':0', XDG_RUNTIME_DIR='/run/user/1000',
     RUST_LOG='info', WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',
     THEIA_PARTICLE_EDITOR_DATA_DIR=str(out / 'particle-data')))
@@ -159,6 +163,12 @@ with (out / 'editor.log').open('w') as log:
             assert check_gpu_diagnostics(log_file.read_text()) == 0
         result = json.loads((destination / 'population-export.json').read_text())['population_export']
         assert result['passed'] and result['count'] == 5, result
+        if args.particle_library:
+            placements = len(state()['document']['particles'])
+            assert result['world']['particles']['placements'] == placements
+            assert (destination/'world/particles/catalog.json').is_file()
+            for index in (1,2):
+                assert f'World particle package admitted: {placements} placements' in (run/f'client-{index}.log').read_text()
         if args.creature_asset:
             assert (destination/'creature.glb').read_bytes() == args.creature_asset.read_bytes()
             assert result['appearance']['file'] == 'creature.glb'

@@ -63,10 +63,9 @@ fn validate_mode(
                 .into(),
         );
     }
-    if !zone.particles.is_empty() || (!network && !zone.test_players.is_empty()) {
+    if !network && !zone.test_players.is_empty() {
         return Err(
-            "Passive population export does not yet support particles or test-player presets"
-                .into(),
+            "Passive population export requires network mode for test-player presets".into(),
         );
     }
     let id = groups[0].id;
