@@ -79,6 +79,32 @@ impl Runtime {
             error: None,
         })
     }
+    fn sync_passive(&mut self, tick: u64, keys: &[EntityKey]) -> Result<()> {
+        if keys.is_empty()
+            || keys.len() > crate::targeting::MAX_TARGETS
+            || keys.iter().enumerate().any(|(i, key)| {
+                keys[..i].iter().any(|old| old.entity == key.entity) || key.epoch != keys[0].epoch
+            })
+        {
+            return Err("Passive credit creature identities are invalid".into());
+        }
+        self.encounters
+            .retain(|_, entry| keys.contains(&entry.ledger.encounter().creature));
+        for &key in keys {
+            let entry = self
+                .encounters
+                .entry(key.entity.value())
+                .or_insert_with(|| Encounter::new(self.profile.clone(), key));
+            if entry.last_kill.is_none() && entry.departure {
+                entry
+                    .ledger
+                    .reset(tick, entry.ledger.encounter())
+                    .map_err(|e| format!("Passive credit departure reset refused: {e:?}"))?;
+                entry.departure = false;
+            }
+        }
+        Ok(())
+    }
     fn encounter(&self, key: EntityKey) -> Option<&Encounter> {
         self.encounters
             .get(&key.entity.value())
@@ -134,14 +160,21 @@ impl World {
                 "Creature credit requires explicit membership and no prior credit policy".into(),
             );
         }
-        let (npc, _, _) = combat
-            .membership_encounter()
-            .ok_or("Creature credit requires pursuit")?;
-        self.combat.as_mut().unwrap().credit = Some(Runtime::new(
-            profile,
-            crate::terrain::sha256(bytes),
-            &[npc],
-        )?);
+        let keys = if let Some((npc, _, _)) = combat.membership_encounter() {
+            vec![npc]
+        } else if combat.passive_physical_ready(self) {
+            combat
+                .creatures
+                .iter()
+                .map(|creature| creature.key)
+                .collect()
+        } else {
+            return Err(
+                "Creature credit requires checked pursuit or passive population authority".into(),
+            );
+        };
+        self.combat.as_mut().unwrap().credit =
+            Some(Runtime::new(profile, crate::terrain::sha256(bytes), &keys)?);
         Ok(())
     }
     pub fn creature_credit_encounter(&self) -> Option<EncounterKey> {
@@ -351,11 +384,15 @@ impl Authority {
             if runtime.error.is_some() {
                 return Ok(());
             }
+            if self.passive_physical_ready(world) {
+                let keys: Vec<_> = self.creatures.iter().map(|creature| creature.key).collect();
+                return runtime.sync_passive(world.tick, &keys);
+            }
             let (npc, mode, _) = self
                 .membership_encounter()
                 .ok_or("Creature credit lost pursuit")?;
-            // The installed pursuit adapter remains single-creature. A later
-            // population adapter must provide its own complete lifecycle sync.
+            // Preserve the paired pursuit adapter's resolution serial across
+            // its respawn. Passive populations use fresh per-lifetime entries.
             let old = runtime
                 .single_key()
                 .ok_or("Pursuit credit requires one encounter")?;
@@ -452,6 +489,46 @@ mod index_tests {
         assert_eq!(entry.last_kill.as_ref().unwrap().owner, Some(key(2)));
         assert!(runtime.capture(key(21)).is_none());
         assert!(runtime.capture(key(20)).is_some());
+    }
+    #[test]
+    fn passive_sync_isolates_departures_replacements_and_refused_identity_sets() {
+        let mut runtime = Runtime::new(profile(), [0; 32], &[key(20), key(21)]).unwrap();
+        let old = runtime.capture(key(20)).unwrap();
+        let other = runtime.capture(key(21)).unwrap();
+        tag(&mut runtime, key(20), key(1));
+        tag(&mut runtime, key(21), key(2));
+        runtime.leave(1);
+        runtime.sync_passive(2, &[key(20), key(21)]).unwrap();
+        assert_ne!(runtime.capture(key(20)), Some(old));
+        assert!(runtime.encounter(key(20)).unwrap().ledger.owner().is_none());
+        assert_eq!(runtime.capture(key(21)), Some(other));
+        assert_eq!(
+            runtime.encounter(key(21)).unwrap().ledger.owner(),
+            Some(key(2))
+        );
+        runtime.sync_passive(3, &[key(22), key(21)]).unwrap();
+        assert!(runtime.encounter(key(20)).is_none());
+        assert!(runtime.encounter(key(22)).unwrap().ledger.owner().is_none());
+        assert_eq!(runtime.capture(key(21)), Some(other));
+        let mut foreign = key(23);
+        foreign.epoch = WorldEpoch::new(2).unwrap();
+        assert!(runtime.sync_passive(4, &[key(21), foreign]).is_err());
+        assert!(runtime.encounter(key(22)).is_some());
+        assert!(runtime.sync_passive(4, &[key(21), key(21)]).is_err());
+        let entry = runtime.encounters.get_mut(&21).unwrap();
+        entry.last_kill = Some(entry.ledger.finish(4, other).unwrap());
+        runtime.leave(2);
+        runtime.sync_passive(5, &[key(22), key(21)]).unwrap();
+        assert_eq!(
+            runtime
+                .encounter(key(21))
+                .unwrap()
+                .last_kill
+                .as_ref()
+                .unwrap()
+                .owner,
+            Some(key(2))
+        );
     }
     #[test]
     fn encounter_registry_refuses_empty_duplicate_and_over_capacity_inputs() {

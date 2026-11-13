@@ -25,22 +25,27 @@ const DAMAGE_STATS: &[u8] =
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_physical_swings_resolve_each_life_independently_at_all_rates() {
-    qualify(false, None);
+    qualify(false, None, false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_ordinary_swings_resolve_each_life_independently_at_all_rates() {
-    qualify(true, None);
+    qualify(true, None, false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_special_damage_resolves_each_life_independently_at_all_rates() {
-    qualify(true, Some("theia.dev.sword-slash"));
+    qualify(true, Some("theia.dev.sword-slash"), false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_arcane_damage_resolves_each_life_independently_at_all_rates() {
-    qualify(true, Some("theia.dev.arcane-bolt"));
+    qualify(true, Some("theia.dev.arcane-bolt"), false);
+}
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_competing_finishers_preserve_each_first_tag_at_all_rates() {
+    qualify(true, Some("theia.dev.sword-slash"), true);
 }
 fn equip(world: &mut World, id: u64, revision: u64, item: &str) {
     world.observe_combat_equipment(
@@ -64,7 +69,7 @@ fn engage(world: &mut World, id: u64, target: EntityKey, sequence: u64) {
     );
     assert_eq!(reply.outcome, autoattack::Outcome::Engaged);
 }
-fn qualify(ordinary: bool, ability: Option<&str>) {
+fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
     let store = Arc::new(
         authored_world::Store::open(std::path::Path::new(
             &std::env::var_os("THEIA_AUTHORED_WORLD").unwrap(),
@@ -171,9 +176,17 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
             let starting = include_bytes!(
                 "../../../../../../content/gameplay/development-ability-starting.json"
             );
-            let policy = include_bytes!(
+            let mut policy: serde_json::Value = serde_json::from_slice(include_bytes!(
                 "../../../../../../content/gameplay/development-ability-damage.json"
-            );
+            ))
+            .unwrap();
+            if competing {
+                // A deterministic positive opening special establishes the tag.
+                policy["abilities"][0]["miss_bp"] = 0.into();
+                policy["abilities"][0]["dodge_bp"] = 0.into();
+                policy["abilities"][0]["critical_bp"] = 0.into();
+            }
+            let policy = serde_json::to_vec(&policy).unwrap();
             let abilities = include_bytes!(
                 "../../../../../../content/gameplay/development-classic-abilities.json"
             );
@@ -182,18 +195,18 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
             changed.push(b' ');
             assert!(
                 world
-                    .enable_ability_damage(starting, policy, &changed)
+                    .enable_ability_damage(starting, &policy, &changed)
                     .is_err()
             );
             assert_eq!(world.identity(), before);
             world
-                .enable_ability_damage(starting, policy, abilities)
+                .enable_ability_damage(starting, &policy, abilities)
                 .unwrap();
             assert_ne!(world.identity(), before);
             let installed = world.identity();
             assert!(
                 world
-                    .enable_ability_damage(starting, policy, abilities)
+                    .enable_ability_damage(starting, &policy, abilities)
                     .is_err()
             );
             assert_eq!(world.identity(), installed);
@@ -216,6 +229,24 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
             let installed = world.identity();
             assert!(world.enable_combat_membership(membership).is_err());
             assert_eq!(world.identity(), installed);
+        }
+        if ability.is_some() {
+            let credit: &[u8] = if competing {
+                include_bytes!(
+                    "../../../../../../content/gameplay/development-creature-credit-solo.json"
+                )
+            } else {
+                include_bytes!(
+                    "../../../../../../content/gameplay/development-creature-credit.json"
+                )
+            };
+            let before = world.identity();
+            world.enable_creature_credit(credit).unwrap();
+            assert_ne!(world.identity(), before);
+            let installed = world.identity();
+            assert!(world.enable_creature_credit(credit).is_err());
+            assert_eq!(world.identity(), installed);
+            assert!(world.creature_credit_encounter().is_none());
         }
         let ability_profile = world.ability_damage_profile().cloned();
         let ordinary_profile = world.white_melee_profile().cloned();
@@ -297,6 +328,41 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
                 world.leave(probe);
             }
         }
+        let finishers = if competing {
+            players
+                .iter()
+                .enumerate()
+                .map(|(index, &primary)| {
+                    if index >= crate::wire::MAX_PLAYERS - players.len() {
+                        return primary;
+                    }
+                    let position = world.global_position(primary).unwrap();
+                    let id = world.join_restored(position).unwrap();
+                    let chunks = world
+                        .procedural()
+                        .unwrap()
+                        .patch(position)
+                        .unwrap()
+                        .ids
+                        .iter()
+                        .map(|c| [c.x, c.z])
+                        .collect();
+                    assert!(world.client_ready(
+                        id,
+                        &ChunkReady {
+                            version: VERSION,
+                            epoch: world.epoch(),
+                            sequence: 1,
+                            chunks
+                        }
+                    ));
+                    equip(&mut world, id, 1, "theia.dev.training-sword");
+                    id
+                })
+                .collect::<Vec<_>>()
+        } else {
+            players.clone()
+        };
         let player_lives: Vec<_> = players
             .iter()
             .map(|&id| world.player_life_snapshot(id).unwrap().key)
@@ -348,7 +414,7 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
             }
             let mut ability_hits = 0;
             let mut remaining = vec![100; 5];
-            let mut attempted = [false; 5];
+            let mut last_hostility = BTreeMap::new();
             if ability.is_some() {
                 for &id in &players {
                     assert!(!world.combat_membership(id).unwrap().in_combat());
@@ -358,6 +424,8 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
             for _ in 0..u64::from(rate.hz()) * 60 {
                 world.step();
                 for event in world.combat_events().to_vec() {
+                    let recipient = world.kill_recipient(&event).unwrap();
+                    let is_ability = matches!(&event, Event::AbilityDamage(_));
                     let (actor, actor_generation, target, after, lost) = match event {
                         Event::PhysicalDamage(fact) => {
                             assert!(!ordinary);
@@ -422,7 +490,7 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
                                 "theia.dev.training-sword",
                             );
                             if fact.remaining > 0 {
-                                engage(&mut world, players[index], fact.target, generation);
+                                engage(&mut world, finishers[index], fact.target, generation);
                             }
                             (
                                 fact.actor,
@@ -438,21 +506,72 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
                         .iter()
                         .position(|&key| key == target)
                         .expect("Only current exact victims");
-                    assert_eq!(actor, world.entity_key(players[index]).unwrap());
-                    assert_eq!(actor_generation, Some(player_lives[index].generation));
+                    let expected_actor = if is_ability {
+                        players[index]
+                    } else {
+                        finishers[index]
+                    };
+                    assert_eq!(actor, world.entity_key(expected_actor).unwrap());
+                    assert_eq!(
+                        actor_generation,
+                        Some(
+                            world
+                                .player_life_snapshot(expected_actor)
+                                .unwrap()
+                                .key
+                                .generation
+                        )
+                    );
                     assert_eq!(after, remaining[index] - lost);
                     remaining[index] = after;
-                    attempted[index] = true;
+                    last_hostility.insert(expected_actor, world.tick);
+                    if ability.is_some() && lost > 0 {
+                        assert_eq!(
+                            world.creature_tag_owner_for(target),
+                            world.entity_key(players[index])
+                        );
+                    }
                     if after == 0 {
                         deaths += 1;
+                        if ability.is_some() {
+                            let credit = world.creature_kill_credit_for(target).unwrap();
+                            assert_eq!(credit.owner, world.entity_key(players[index]));
+                            assert_eq!(
+                                credit
+                                    .contributions
+                                    .iter()
+                                    .map(|c| c.health_lost)
+                                    .sum::<u64>(),
+                                100
+                            );
+                            assert_eq!(
+                                credit.contributions.len(),
+                                if finishers[index] != players[index] {
+                                    2
+                                } else {
+                                    1
+                                }
+                            );
+                            assert_eq!(
+                                recipient,
+                                Some((world.entity_key(players[index]).unwrap(), target))
+                            );
+                        }
                     }
                 }
                 if ability.is_some() {
-                    for (index, &id) in players.iter().enumerate() {
+                    for (index, &id) in players
+                        .iter()
+                        .enumerate()
+                        .chain(finishers.iter().enumerate())
+                    {
                         let summary = world.combat_membership(id).unwrap();
                         assert_eq!(
                             summary.in_combat(),
-                            attempted[index] && remaining[index] > 0
+                            last_hostility
+                                .get(&id)
+                                .is_some_and(|tick| world.tick < tick + u64::from(rate.hz()) * 5)
+                                && remaining[index] > 0
                         );
                         assert_eq!(summary.opponents, usize::from(summary.in_combat()));
                         assert!(!summary.active_encounter && !summary.incoming_hostility);
@@ -487,9 +606,15 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
             for &old in &targets {
                 assert!(world.creature_definition(old).is_none());
                 assert!(world.creature_facing(old).is_none());
+                assert!(world.creature_kill_credit_for(old).is_none());
+                assert!(world.creature_credit_encounter_for(old).is_none());
                 assert!(!world.select_target(players[0], Some(old)));
             }
             for &key in &fresh {
+                assert!(world.creature_tag_owner_for(key).is_none());
+                if ability.is_some() {
+                    assert!(world.creature_credit_encounter_for(key).is_some());
+                }
                 assert_eq!(
                     world.creature_facing(key),
                     Some(theia_core::facing::Facing::default())
@@ -504,6 +629,7 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
             assert!(world.physical_damage_error().is_none());
             assert!(world.white_melee_error().is_none());
             assert!(world.ability_damage_error().is_none());
+            assert!(world.creature_credit_error().is_none());
             if ordinary {
                 assert_eq!(world.white_melee_metrics().unwrap().incoming.attempts, 0);
             }

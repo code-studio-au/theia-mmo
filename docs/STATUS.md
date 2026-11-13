@@ -1,3 +1,23 @@
+P3-09 / P3-10 / P5-17 passive population first-tag ownership, 13 November 2026:
+Explicit credit installation now admits checked passive typed/membership populations.
+Bounded lifecycle sync retains independent live ledgers, resets only departed owners'
+unfinished claims and removes retired NPC identities; fresh lives get empty entries.
+Paired pursuit/reset behavior remains unchanged. Completed facts retain their owner;
+the existing solo-recipient adapter still checks current owner admission separately.
+The authored fixture tests five taggers plus three distinct finishers within the
+existing eight-player cap, leaving two uncontested controls. Three competitors cannot
+steal tags or solo recipients; each fatal ledger totals exactly 100 health lost with
+two contributors for contested NPCs. Both generations pass at 20/30/60 Hz, with exact
+actor lives, independent membership grace and no inherited tags. A registry test
+covers departure isolation, replacement, invalid identity-set refusal and retained
+finished ownership. Initial ten-player fixture correctly hit the admission cap;
+the revised fixture preserves the cap. All five authored population tests, all 501
+ordinary network-library tests, fmt and strict workspace/all-target Clippy pass.
+Evidence: build/population-credit-checks-v2.log and build/population-credit-final.log.
+This qualifies opt-in World ownership/recipient facts, not durable competing-player
+population rewards, normal launcher flags, NPC pursuit or native/editor adoption.
+No display access. Earlier single-player SQL last-hit qualification remains separate.
+
 P3-09 / P5-17 live passive-population combat membership, 13 November 2026:
 Explicit membership admission now supports checked passive populations with both
 ordinary and typed ability damage installed. A complete bounded encounter snapshot
