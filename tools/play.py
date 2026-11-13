@@ -447,6 +447,8 @@ def main(argv=None):
     parser.add_argument('--quest-journal', action='store_true', help='Expanded multi-quest journal; implies quests/dialogue/account login')
     parser.add_argument('--quest-lifecycle', action='store_true', help='Explicit guide acceptance/turn-in; defaults to journal-only, implies quests/dialogue/account login')
     parser.add_argument('--quests', action='store_true', help='Opt-in development kill objective; implies progression/creatures, requires account login')
+    parser.add_argument('--progression-catalog', type=Path, help='Explicit progression catalogue; requires --progression')
+    parser.add_argument('--reward-catalog', type=Path, help='Explicit training reward catalogue; requires --rewards')
     parser.add_argument('--progression', action='store_true', help='Opt-in durable kill XP; implies creatures, requires account login')
     parser.add_argument('--creature-loot',action='store_true',help='Explicit per-life corpse pickup; requires a compatible reward profile')
     parser.add_argument('--rewards', action='store_true', help='Opt-in first training-kill reward; implies equipment and creatures, requires account login')
@@ -515,7 +517,7 @@ def main(argv=None):
                     parser.error('Authored gameplay bundles use their bound contact; omit --guide-position or use authored')
             if any([args.world, args.chunk_world, args.graybox_world, args.prediction is False, args.transport != 'renet', args.persistence, args.dev_tour, args.dev_speed != 1, args.clients != 1]):
                 parser.error('--gameplay-manifest requires one normal predicted saved/authored-terrain Renet client')
-            if any([args.items, args.abilities, args.character_stats, args.statuses, args.creature_profile, args.dialogue_catalog, args.vendor_catalog, args.quest_turn_in_xp, args.creature_retaliation, args.player_respawn, args.dodge_profile, args.melee_weapons, args.physical_definitions, args.physical_stats, args.white_melee, args.ability_starting, args.ability_damage, args.combat_membership, args.creature_credit, args.creature_reset, args.creature_threat, args.quest_areas, args.document_catalog, args.quest_item_rewards]):
+            if any([args.progression_catalog, args.reward_catalog, args.items, args.abilities, args.character_stats, args.statuses, args.creature_profile, args.dialogue_catalog, args.vendor_catalog, args.quest_turn_in_xp, args.creature_retaliation, args.player_respawn, args.dodge_profile, args.melee_weapons, args.physical_definitions, args.physical_stats, args.white_melee, args.ability_starting, args.ability_damage, args.combat_membership, args.creature_credit, args.creature_reset, args.creature_threat, args.quest_areas, args.document_catalog, args.quest_item_rewards]):
                 parser.error('--gameplay-manifest cannot be mixed with individual gameplay profile overrides')
             from gameplay_bundle import snapshot
             validator = args.gameplay_validator or args.binaries / ('validate_gameplay.exe' if os.name == 'nt' else 'validate_gameplay')
@@ -575,8 +577,12 @@ def main(argv=None):
         quest_catalog = Path('content/quests/development-journal.json' if args.quest_journal else 'content/gameplay/development-quest.json').resolve() if args.quests else None
         args.equipment = args.equipment or args.rewards or args.vendors
         args.creatures = args.creatures or ((args.rewards or args.progression or args.creature_retaliation is not None) and args.population_config is None)
-        progression_catalog = Path('content/gameplay/development-progression.json').resolve() if args.progression else None
-        reward_catalog = Path('content/gameplay/development-rewards.json').resolve() if args.rewards else None
+        if args.progression_catalog and not args.progression:
+            parser.error('--progression-catalog requires --progression')
+        if args.reward_catalog and not args.rewards:
+            parser.error('--reward-catalog requires --rewards')
+        progression_catalog = (args.progression_catalog or Path('content/gameplay/development-progression.json')).resolve() if args.progression else None
+        reward_catalog = (args.reward_catalog or Path('content/gameplay/development-rewards.json')).resolve() if args.rewards else None
         args.inventory = args.inventory or args.equipment
         if args.inventory and not args.account_login:
             parser.error('--inventory requires --account-login')

@@ -1,5 +1,6 @@
 """Owned OIDC/SQL and native typed-population admission, without OS input automation."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -17,6 +18,8 @@ from qualify_world_input_os import wait, capture_ready
 
 
 def run(args):
+    args.create_picker = args.create_picker or args.account_package
+    args.claim_reward = args.claim_reward or args.account_package
     args.picker = args.picker or args.create_picker
     args.owned_stop = args.owned_stop or args.picker
     args.claim_reward = args.claim_reward or args.repeat_kill
@@ -94,18 +97,23 @@ def run(args):
                     env['THEIA_POPULATION_KILL_QUALIFY'] = '1'
                 if args.claim_reward and not resumed:
                     env['THEIA_POPULATION_REWARD_QUALIFY'] = '1'
-            runtime = folder/'runtime'
+            runtime = folder/'owned/runtime' if args.account_package else folder/'runtime'
             assert not runtime.exists()
             with (folder/'launcher.log').open('w') as log:
-                launcher = subprocess.Popen([sys.executable, 'tools/play.py', *common,
+                command = [sys.executable, 'tools/play.py', *common,
                     *(['--character-picker'] if use_picker else ['--character-id', character_id] if resumed else []),
                     *(['--stop-on-stdin-eof'] if owned_stop else []),
                     '--session-directory', str(runtime),
                     '--account-login', '--equipment', '--status-effects', *launch_profiles,
                     *(['--progression', '--rewards'] if args.kill else []),
                     '--binaries', str(binaries), '--players', str(args.players.resolve()),
-                    '--creature-asset', str(package/'creature.glb'), '--window-size', '1280x720'],
-                    env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT, text=True)
+                    '--creature-asset', str(package/'creature.glb'), '--window-size', '1280x720']
+                if args.account_package:
+                    command = [sys.executable, 'tools/account_population_playtest.py',
+                               '--package', str(package), '--players', str(args.players.resolve()),
+                               '--binaries', str(binaries), '--output', str(folder/'owned')]
+                launcher = subprocess.Popen(command, env=env, stdin=subprocess.PIPE,
+                                            stdout=log, stderr=subprocess.STDOUT, text=True)
                 try:
                     if not resumed and not use_picker:
                         launcher.stdin.write('PoolArden\n')
@@ -193,6 +201,11 @@ def run(args):
                         shutil.copy2(source, folder/'server.log')
                 assert launcher.returncode == 0
             assert not list(runtime.glob('renet-*'))
+            if args.account_package:
+                frozen = json.loads((folder/'owned/launch.json').read_text())
+                assert len(frozen['profiles']) == 16
+                for profile in frozen['profiles']:
+                    assert hashlib.sha256((folder/'owned'/profile['file']).read_bytes()).hexdigest() == profile['sha256']
             server = (folder/'server.log').read_text()
             saved = next(json.loads(line.removeprefix('account_persistence_summary '))
                          for line in server.splitlines() if line.startswith('account_persistence_summary '))
@@ -238,7 +251,7 @@ def run(args):
                 assert identity.password not in text and cluster.password not in text
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
-    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=not args.picker, character_picker_rejoin=args.picker, character_picker_creation=args.create_picker, owner_pipe_stop=args.owned_stop, isolated_sessions=True,
+    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=not args.picker, character_picker_rejoin=args.picker, character_picker_creation=args.create_picker, owner_pipe_stop=args.owned_stop, isolated_sessions=True, frozen_account_package=args.account_package,
         mouse_or_keyboard_automation=False, scope=('Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
@@ -246,6 +259,7 @@ def run(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--account-package', action='store_true', help='Launch through the frozen account population package wrapper')
     parser.add_argument('--create-picker', action='store_true', help='Create the initial character through the owned picker handoff, then select it after restart')
     parser.add_argument('--picker', action='store_true', help='Rejoin through the private owned character-selection handoff')
     parser.add_argument('--owned-stop', action='store_true', help='Stop the resumed account launcher by closing its owner pipe')

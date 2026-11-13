@@ -93,6 +93,23 @@ class PopulationLauncher(unittest.TestCase):
                     play.play(None, Path('missing'), 1, Path('missing'), character_picker=True, **options)
                 launch.assert_not_called()
 
+    def test_explicit_grant_catalogues_are_forwarded_and_require_their_modes(self):
+        with patch.object(play, 'play') as launch:
+            play.main(['--authored-world', 'world', '--population-config', 'population.json',
+                       '--account-login', '--progression', '--rewards', '--creature-credit', 'credit.json',
+                       '--progression-catalog', 'frozen-xp.json', '--reward-catalog', 'frozen-rewards.json'])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['progression_catalog'], Path('frozen-xp.json').resolve())
+        self.assertEqual(args['reward_catalog'], Path('frozen-rewards.json').resolve())
+        for flag in ['--progression-catalog', '--reward-catalog']:
+            with self.subTest(flag=flag), patch.object(play, 'play') as launch, redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    play.main([flag, 'unused.json'])
+                launch.assert_not_called()
+                with self.assertRaises(SystemExit):
+                    play.main(['--gameplay-manifest', 'missing.json', flag, 'unused.json'])
+                launch.assert_not_called()
+
     def test_cli_population_player_life_selects_resources_without_a_patrol(self):
         with patch.object(play, 'play') as launch:
             play.main(['--authored-world', 'world', '--population-config', 'population.json',

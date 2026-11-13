@@ -1,3 +1,23 @@
+P3-03 / P5-17 frozen account population launcher, 13 November 2026:
+A dedicated owned wrapper now launches an editor-exported population with a frozen
+per-run development gameplay setup: sixteen exact files for typed combat, equipment,
+shared life, solo first-tag credit, XP and training rewards. It records file hashes,
+uses the normal launcher/preflight and authenticated character picker, and reserves
+an isolated runtime directory under the owned output. The normal launcher accepts
+explicit progression/reward catalogues so those files are also frozen; conflicting
+bundle overrides and catalogues without their modes refuse. Test Player controllers
+are not used by this one-account launch. NPC pursuit/retaliation remains absent.
+Three freeze/isolation tests, fourteen population launcher tests (one asset check
+skipped), all 13 authored-launch and 49 bundle checks, Python compilation and diff
+checks pass. Native execution through the actual wrapper passes first-character
+creation, six-cast kill, committed 25 XP/training collection, database restart,
+character picker rejoin, identical revision-2 bag and owner-pipe shutdown. All sixteen
+frozen hashes match on both runs. Zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6; owned services/tickets/passwords are cleaned up. No OS input.
+Evidence: build/editor-account-package-native-v1/qualification.json and each run's
+owned/launch.json/profiles/runtime. This is the tested launcher behind the planned
+editor account Start action; picker widgets and menu wiring remain next. Local only.
+
 P3-03 / P5-17 first-character creation through the owned handoff, 13 November 2026:
 The private picker now advertises creation availability and accepts an explicit
 create_name choice as an alternative to an existing character ID. Empty accounts
