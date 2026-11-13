@@ -416,6 +416,14 @@ fn os_trace(world: &mut World) {
                 .map(|p| &p.metrics)
         );
         data["public_creature_attack"] = serde_json::json!(state.public_creature_attack.as_ref().and_then(|p|p.current()).map(|o|serde_json::json!({"creature":o.creature.entity.value(),"tick":o.tick,"windup":o.windup.map(|w|serde_json::json!({"target":w.target.entity.value(),"starts":w.starts,"completes":w.completes}))})));
+        data["public_population_attack"] = serde_json::json!(state.public_population_attack.as_ref().and_then(|p|p.current()).map(|frame| serde_json::json!({
+            "tick":frame.tick,"actors":frame.actors.iter().map(|actor| serde_json::json!({
+                "creature":actor.creature.entity.value(),"epoch":actor.creature.epoch.value(),
+                "windup":actor.windup.map(|windup| serde_json::json!({"target":windup.target.entity.value(),"starts":windup.starts,"completes":windup.completes})),
+            })).collect::<Vec<_>>()
+        })));
+        data["creature_animations"] =
+            serde_json::json!(crate::creature_visual::diagnostics(world, &state));
         std::fs::create_dir_all(&run.output).unwrap();
         std::fs::write(
             run.output.join("input-os.json"),

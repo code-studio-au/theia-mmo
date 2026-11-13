@@ -1,3 +1,18 @@
+P3-06 / P3-09 public population presentation resumed, 14 November 2026:
+The user authorizes continued development, local commits and mouse/display use,
+superseding the stop checkpoint below. Three explicit batch presentation tests
+cover independent remote victims and target transfer, public cancellation and
+retirement suppressing old private timing, missing/foreign victims and snapshot
+expiry at 20/30/60 Hz. Retained singleton/private and corpse tests pass. Bounded
+native diagnostics now expose exact NPC identity, clip/serial, animation playback,
+position/facing and resolved public victim. Normal launch remains gated pending
+actual GPU qualification. These are client presentation contracts, not new native
+or multi-client gameplay evidence. Continue with native multi-NPC animation, then
+normal/editor public timing adoption. All 265 default client tests pass (four
+ignored); strict workspace/all-target Clippy, fmt and diff checks pass. Evidence:
+build/population-public-client-tests.log and population-public-presentation-lint.log.
+No push authorized.
+
 USER-REQUESTED STOP CHECKPOINT — 13 November 2026.
 Completed gameplay/editor slices are committed: configured population pursuit,
 independent retaliation/return/reset/threat, ordinary corpse loot and durable restart.

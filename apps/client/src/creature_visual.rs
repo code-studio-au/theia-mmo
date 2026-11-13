@@ -1,5 +1,7 @@
 //! Opt-in wolf art. Authority remains in the existing creature/combat protocols.
 mod loot;
+#[cfg(test)]
+mod population_tests;
 use bevy::{
     asset::{
         AssetApp, LoadState,
@@ -245,6 +247,38 @@ struct Visual {
 struct Attached;
 #[derive(Component)]
 struct SelectionRing;
+
+/// Read-only, bounded samples for the opt-in native qualification report.
+pub(crate) fn diagnostics(
+    world: &mut World,
+    state: &theia_network::client::State,
+) -> Vec<serde_json::Value> {
+    world
+        .query::<&Visual>()
+        .iter(world)
+        .take(LIMIT)
+        .filter_map(|visual| {
+            let key = world.get::<crate::targeting::TargetVisual>(visual.owner)?.key;
+            let forward = world.get::<Transform>(visual.owner)?.forward();
+            let cue = attack_cue(state, key);
+            let animation = visual.active.and_then(|(clip, _)| {
+                let node = *world.get_resource::<Catalog>()?.nodes.get(clip)?;
+                let player = world.get::<AnimationPlayer>(*visual.players.first()?)?;
+                let active = player.animation(node)?;
+                Some(serde_json::json!({"seek":active.seek_time(),"elapsed":active.elapsed(),"finished":active.is_finished()}))
+            });
+            Some(serde_json::json!({
+                "entity":key.entity.value(), "epoch":key.epoch.value(),
+                "clip":visual.active.map(|(clip, _)| clip),
+                "serial":visual.active.map(|(_, serial)| serial),
+                "position":visual.previous.metres(), "forward":forward.to_array(),
+                "animation":animation,
+                "attack_target":cue.and_then(|cue| cue.target).map(|p| p.metres()),
+                "remote_victim":cue.is_some_and(|cue| cue.remote),
+            }))
+        })
+        .collect()
+}
 
 pub(crate) fn parse(
     args: &mut Vec<String>,
@@ -717,7 +751,7 @@ mod tests {
             assert!(attack_cue(&state, key(1)).is_none());
         }
     }
-    fn key(id: u64) -> EntityKey {
+    pub(super) fn key(id: u64) -> EntityKey {
         EntityKey {
             epoch: WorldEpoch::new(1).unwrap(),
             entity: EntityId::new(id).unwrap(),
