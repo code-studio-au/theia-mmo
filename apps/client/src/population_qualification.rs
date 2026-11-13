@@ -17,6 +17,8 @@ struct Run {
     started: Option<Instant>,
     done: bool,
     kill: bool,
+    collect_reward: bool,
+    reward_requested: bool,
     life: Option<LifeKey>,
     target: Option<EntityKey>,
     equipped: bool,
@@ -56,6 +58,8 @@ pub(crate) fn install(app: &mut App, context: bool) -> Result<(), Box<dyn std::e
         started: None,
         done: false,
         kill: std::env::var("THEIA_POPULATION_KILL_QUALIFY").as_deref() == Ok("1"),
+        collect_reward: std::env::var("THEIA_POPULATION_REWARD_QUALIFY").as_deref() == Ok("1"),
+        reward_requested: false,
         life: None,
         target: None,
         equipped: false,
@@ -160,8 +164,31 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
     }
     if health.current < 100 && (!run.kill || health.current == 0) {
         if run.entered && run.spent_mana && life.combat.is_some_and(|v| !v.in_combat()) {
+            if run.collect_reward {
+                let Some(rewards) = state.rewards.as_ref() else {
+                    return;
+                };
+                if !run.reward_requested {
+                    if let Some(reward) = rewards.available.iter().find(|r| r.corpse.is_none()) {
+                        run.reward_requested = network.request_reward(reward.claim);
+                    }
+                    return;
+                }
+                let tokens: u32 = inventory
+                    .bag
+                    .slots()
+                    .iter()
+                    .flatten()
+                    .filter(|s| s.item().as_str() == "theia.dev.training-token")
+                    .map(|s| s.count())
+                    .sum();
+                if !rewards.available.is_empty() || inventory.bag.revision() != 2 || tokens != 100 {
+                    return;
+                }
+            }
+            let collected = run.collect_reward;
             let casts = run.casts;
-            run.finish(serde_json::json!({"passed":true,"casts":casts,"target":target.entity.value(),
+            run.finish(serde_json::json!({"passed":true,"reward_collected":collected,"casts":casts,"target":target.entity.value(),
                 "epoch":target.epoch.value(),"remaining":health.current,"inventory_revision":inventory.bag.revision(),
                 "entered_and_exited_combat":true,"mana_spent":true,"bystanders_unchanged":true,
                 "player_health":life.health,"player_generation":life.key.generation.get()}));

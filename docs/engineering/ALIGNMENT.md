@@ -1,3 +1,22 @@
+P3-10 / P3-11 / P5-17 native population training reward collection, 13 November 2026:
+The opt-in native qualifier now collects the committed once-per-character training
+offer through the normal client reward request. Actual account-backed population
+kill and collection pass: six casts defeat one NPC without harming four bystanders,
+25 XP commits, the offer disappears and training tokens increase from 99 to 100.
+Inventory revision 2 and the SQL consumed-claim revision agree. The worker reports
+one equipment commit and one reward consumption. PostgreSQL process restart and
+fresh login preserve the identical bag, XP and consumed claim with no offered reward.
+This verifies ordinary training rewards on the checked editor population package;
+it does not enable per-life corpse pickup, competing native players or default
+editor account-backed playtests. No OS mouse/keyboard or movement/facing automation.
+Formatting, strict workspace/all-target Clippy, client build, Python compilation
+and eight launcher tests pass (one actual-assets check skipped). Native fresh/rejoin
+runs pass with zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, 1280x720. Owned services/tickets and password files are cleaned up.
+Evidence: build/population-reward-collect-native-v1/qualification.json, fresh and
+resumed consumed-proof.txt/database-proof.txt, and
+build/population-reward-collect-build.log. Changes remain local.
+
 P3-09 / P3-10 / P3-11 / P5-17 normal population durable grants, 13 November 2026:
 Normal client/server and play launcher now accept progression and training rewards
 for a checked passive population when explicit solo first-tag credit is configured.
