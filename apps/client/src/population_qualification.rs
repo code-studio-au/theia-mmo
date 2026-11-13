@@ -7,8 +7,11 @@ use std::{
     time::{Duration, Instant},
 };
 use theia_core::{
-    content::ContentId, facing::Arc as FacingArc, identity::EntityKey,
-    inventory::EquipmentOperation, player_life::LifeKey,
+    content::ContentId,
+    facing::Arc as FacingArc,
+    identity::{EntityId, EntityKey},
+    inventory::EquipmentOperation,
+    player_life::LifeKey,
 };
 
 #[derive(Resource)]
@@ -25,6 +28,7 @@ struct Run {
     pickups: u32,
     life: Option<LifeKey>,
     target: Option<EntityKey>,
+    requested_target: Option<EntityId>,
     equipped: bool,
     casts: u32,
     next: Instant,
@@ -72,6 +76,15 @@ pub(crate) fn install(
     if !output.is_dir() {
         return Err("Population qualification output must exist".into());
     }
+    let requested_target = std::env::var_os("THEIA_POPULATION_TARGET_QUALIFY")
+        .map(|value| {
+            value
+                .to_str()
+                .and_then(|value| value.parse().ok())
+                .and_then(EntityId::new)
+                .ok_or("Invalid population qualification target")
+        })
+        .transpose()?;
     app.insert_resource(Run {
         output,
         started: None,
@@ -88,6 +101,7 @@ pub(crate) fn install(
         pickups: 0,
         life: None,
         target: None,
+        requested_target,
         equipped: false,
         casts: 0,
         next: Instant::now(),
@@ -104,7 +118,9 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
     }
     let now = Instant::now();
     let started = *run.started.get_or_insert(now);
-    if now.duration_since(started) > Duration::from_secs(if run.kill { 90 } else { 30 }) {
+    if now.duration_since(started)
+        > Duration::from_secs(if run.kill || run.collect_loot { 90 } else { 30 })
+    {
         run.fail("Bounded population combat deadline exceeded");
         return;
     }
@@ -159,17 +175,23 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
                     ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt();
                 // Pursuit stops just inside the ordinary 3 m melee reach.
                 // Keep pickup selection inside the same 3D interaction bound.
-                distance < if run.collect_loot { 2.95 } else { 25. }
+                run.requested_target
+                    .is_none_or(|id| target.key.entity == id)
+                    && distance < if run.collect_loot { 2.95 } else { 25. }
                     && arc.contains(facing, position, target.position)
-                    && combat
-                        .targets
-                        .iter()
-                        .any(|h| h.entity == target.key.entity && h.current == 100)
+                    && combat.targets.iter().any(|h| {
+                        h.entity == target.key.entity
+                            && if run.requested_target.is_some() {
+                                h.current > 0
+                            } else {
+                                h.current == 100
+                            }
+                    })
             })
             .min_by_key(|target| target.key.entity.value())
             .map(|target| target.key);
         let Some(target) = run.target else {
-            run.fail("No healthy population NPC already within frontal spell range");
+            run.fail("No eligible population NPC already within frontal spell range");
             return;
         };
         network.request_target(Some(target.entity));

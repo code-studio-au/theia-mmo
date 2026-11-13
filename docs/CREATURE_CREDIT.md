@@ -1,3 +1,35 @@
+P3-06 / P3-09 / P3-10 / P5-17 authenticated native population competition,
+14 November 2026: two distinct OIDC accounts now qualify the ordinary pursuing
+editor population together through one normal authoritative server. The owner
+lands one Arcane cast, stops attacking, then the other player lands four casts
+and finishes the NPC. Shared damage threat transfers once; both clients observe
+the public windup toward the finisher, its private incoming windup and remote-victim
+wolf animation. Actual health lost totals 100; four neighbouring NPCs remain
+undamaged. Normal equipment, mana, facing/range checks and cast timing apply.
+
+Only the original tagger receives 25 XP, the training reward and both corpse
+pickups: inventory revision 4, one pelt and 101 tokens. The finisher retains zero
+XP/rewards and equipment revision 1. Actual SQL has one XP receipt, three consumed
+owner claims and two corpse claims for one victim life. PostgreSQL process restart,
+fresh server, separate account login and both character rejoins preserve exact
+inventories/XP without additional grants. Fresh health is 62/85; health is transient.
+
+Evidence: build/population-competing-accounts-native-v3/qualification.json, matching
+binary hashes, fresh/transfer-sample.json, both native screenshots and fresh/resumed
+SQL records. Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU
+diagnostics. The test-only client driver can request an exact currently live target
+and wait for another player's kill before collecting; it still sends ordinary
+selection, equipment, cast and pickup requests. No OS input or prepared damage.
+The initial harness cutoff was too strict at the 2.9 m NPC stopping boundary;
+match existing 2.95 m selection and await committed diagnostic publication after
+pickup. All 265 client tests pass (four fixture-dependent ignored), strict workspace/
+all-target Clippy, fmt, Python compile and diff checks pass. Evidence:
+build/population-competing-driver-tests.log and population-competing-driver-checks.log.
+This is native Linux/30 Hz normal grants and loot, not a new gameplay policy,
+Windows or MMO capacity claim. Multi-rate impaired transport and SQL contracts
+remain separate. Next: close the remaining normal population quest-only loot
+integration gate, preserving exact journal/owner eligibility. Local only.
+
 P3-06 / P3-09 / P3-10 / P3-11 pursuing population durable competition,
 14 November 2026: extend the retained owned World/PostgreSQL qualifier with an
 explicit --threat population mode and 20/30/60 Hz selection. It uses the normal

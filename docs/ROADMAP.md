@@ -1,3 +1,8 @@
+Native population competition update, 14 November 2026: two authenticated native
+clients now pass normal threat transfer, first-tag XP, private corpse pickup and
+exact PostgreSQL restart/rejoin. Next: normal population quest-only loot integration
+with existing journal/eligibility rules. See STATUS for exact evidence and limits.
+
 Population durable competition update, 14 November 2026: actual authored World
 victim transfer, matched public/private windups and unchanged first-tag SQL receipts
 pass at 20/30/60 Hz with PostgreSQL restart. Retained passive/singleton receipts pass.
