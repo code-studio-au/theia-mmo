@@ -1,3 +1,18 @@
+P3-09 / P5-17 live passive-population combat membership, 13 November 2026:
+Explicit membership admission now supports checked passive populations with both
+ordinary and typed ability damage installed. A complete bounded encounter snapshot
+synchronizes each NPC independently; passive NPCs supply hostility grace but do not
+invent pursuit/active-encounter reasons. Death and fresh-ID replacement retire only
+that exact opponent. Existing single-pursuit admission and active reasons remain.
+Five-player authored special/projectile fixtures verify membership is empty before
+resolved attempts, present during each surviving fight and cleared at death and
+respawn. Under-capacity and duplicate policies fail without identity changes; no
+incoming or active-pursuit reason appears. All four authored population fixtures
+pass at 20/30/60 Hz; all 500 ordinary network-library tests, fmt and strict workspace/
+all-target Clippy pass. Evidence: build/population-membership-{checks,final}.log.
+This installs no population ownership/credit, NPC pursuit/retaliation or normal
+launcher/client/editor flags. Headless only; existing membership wire is unchanged.
+
 P3-09 / P5-17 passive population typed ability damage, 13 November 2026:
 Explicit typed ability installation and resolution now accept the checked passive
 physical/ordinary population context. Both melee specials and arcane projectile

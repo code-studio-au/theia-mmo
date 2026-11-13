@@ -198,6 +198,25 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
             );
             assert_eq!(world.identity(), installed);
         }
+        if ability.is_some() {
+            let membership = include_bytes!(
+                "../../../../../../content/gameplay/development-combat-membership.json"
+            );
+            let before = world.identity();
+            let mut limited: serde_json::Value = serde_json::from_slice(membership).unwrap();
+            limited["maximum_opponents"] = 1.into();
+            assert!(
+                world
+                    .enable_combat_membership(&serde_json::to_vec(&limited).unwrap())
+                    .is_err()
+            );
+            assert_eq!(world.identity(), before);
+            world.enable_combat_membership(membership).unwrap();
+            assert_ne!(world.identity(), before);
+            let installed = world.identity();
+            assert!(world.enable_combat_membership(membership).is_err());
+            assert_eq!(world.identity(), installed);
+        }
         let ability_profile = world.ability_damage_profile().cloned();
         let ordinary_profile = world.white_melee_profile().cloned();
         for &key in &keys {
@@ -329,6 +348,12 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
             }
             let mut ability_hits = 0;
             let mut remaining = vec![100; 5];
+            let mut attempted = [false; 5];
+            if ability.is_some() {
+                for &id in &players {
+                    assert!(!world.combat_membership(id).unwrap().in_combat());
+                }
+            }
             let mut deaths = 0;
             for _ in 0..u64::from(rate.hz()) * 60 {
                 world.step();
@@ -417,9 +442,22 @@ fn qualify(ordinary: bool, ability: Option<&str>) {
                     assert_eq!(actor_generation, Some(player_lives[index].generation));
                     assert_eq!(after, remaining[index] - lost);
                     remaining[index] = after;
+                    attempted[index] = true;
                     if after == 0 {
                         deaths += 1;
                     }
+                }
+                if ability.is_some() {
+                    for (index, &id) in players.iter().enumerate() {
+                        let summary = world.combat_membership(id).unwrap();
+                        assert_eq!(
+                            summary.in_combat(),
+                            attempted[index] && remaining[index] > 0
+                        );
+                        assert_eq!(summary.opponents, usize::from(summary.in_combat()));
+                        assert!(!summary.active_encounter && !summary.incoming_hostility);
+                    }
+                    assert!(world.combat_membership_error().is_none());
                 }
                 if deaths == 5 {
                     break;

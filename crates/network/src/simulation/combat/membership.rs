@@ -1,4 +1,4 @@
-//! Bounded creature membership state. Public admission still requires pursuit.
+//! Bounded creature membership for checked pursuit or passive populations.
 use super::{Authority, World};
 use crate::Result;
 use std::{collections::BTreeMap, sync::Arc};
@@ -32,6 +32,12 @@ pub(super) struct Runtime {
     npcs: Vec<EntityKey>,
     states: BTreeMap<u64, State>,
     error: Option<String>,
+}
+struct Encounter {
+    npc: EntityKey,
+    mode: Mode,
+    target: Option<LifeKey>,
+    alive: bool,
 }
 pub(super) struct Planned {
     owner: LifeKey,
@@ -114,24 +120,21 @@ impl World {
         }
         let profile = Arc::new(crate::combat_membership_wire::Profile::from_json(bytes)?);
         let combat = self.combat.as_ref().ok_or("Membership requires combat")?;
-        let (npc, _, _) = combat
-            .membership_encounter()
-            .ok_or("Membership requires creature pursuit")?;
+        let encounters = combat.membership_encounters(self)?;
         if combat.membership.is_some()
-            || !combat.ordinary_target_ready()
+            || (!combat.ordinary_target_ready() && !combat.passive_physical_ready(self))
             || combat.ability_damage.is_none()
             || combat.white_melee.is_none()
-            || combat.creatures.len() != 1
-            || combat.creatures[0].key != npc
             || combat
                 .catalog
                 .abilities()
                 .iter()
                 .any(|a| !matches!(a.effect(), theia_core::abilities::Effect::Damage { .. }))
         {
-            return Err("Membership supports one opt-in typed-damage creature encounter".into());
+            return Err("Membership requires checked typed-damage creature encounters".into());
         }
-        self.combat.as_mut().unwrap().membership = Some(Runtime::new(profile, &[npc])?);
+        let keys: Vec<_> = encounters.iter().map(|e| e.npc).collect();
+        self.combat.as_mut().unwrap().membership = Some(Runtime::new(profile, &keys)?);
         Ok(())
     }
     pub fn combat_membership_profile(
@@ -177,6 +180,32 @@ impl World {
     }
 }
 impl Authority {
+    fn membership_encounters(&self, world: &World) -> Result<Vec<Encounter>> {
+        if let Some((npc, mode, target)) = self.membership_encounter() {
+            if self.creatures.len() != 1 || self.creatures[0].key != npc {
+                return Err("Membership pursuit creature identity is unavailable".into());
+            }
+            return Ok(vec![Encounter {
+                npc,
+                mode,
+                target,
+                alive: self.creatures[0].current > 0,
+            }]);
+        }
+        if !self.passive_physical_ready(world) {
+            return Err("Membership lost checked creature authority".into());
+        }
+        Ok(self
+            .creatures
+            .iter()
+            .map(|creature| Encounter {
+                npc: creature.key,
+                mode: Mode::Patrol,
+                target: None,
+                alive: creature.current > 0,
+            })
+            .collect())
+    }
     /// Preview before health, RNG or retaliation commits. The exact current
     /// life is supplied only after existing attack eligibility checks.
     pub(super) fn prepare_membership(
@@ -228,11 +257,9 @@ impl Authority {
             if runtime.error.is_some() {
                 return Ok(());
             }
-            let (npc, mode, target) = self
-                .membership_encounter()
-                .ok_or("Membership lost its pursuit authority")?;
-            let alive = self.creatures.iter().any(|c| c.key == npc && c.current > 0);
-            let resolved = !alive || matches!(mode, Mode::Return | Mode::Blocked | Mode::Dead);
+            let encounters = self.membership_encounters(world)?;
+            let keys: Vec<_> = encounters.iter().map(|e| e.npc).collect();
+            Runtime::validate_npcs(&runtime.profile, &keys)?;
             runtime.states.retain(|id, state| {
                 world.players.contains_key(id)
                     && self
@@ -252,14 +279,22 @@ impl Authority {
                 let state = runtime.states.get(&id).cloned().unwrap_or_else(|| {
                     State::new(runtime.profile.policy().clone(), world.rate, owner)
                 });
-                let active = alive
-                    && matches!(mode, Mode::Chase | Mode::Attack)
-                    && (target == Some(owner)
-                        || self.threat.as_ref().is_some_and(|t| t.contains(owner)));
-                let next = runtime.observe(&state, world.tick, &[(npc, resolved, active)])?;
+                let current: Vec<_> = encounters
+                    .iter()
+                    .map(|e| {
+                        let resolved =
+                            !e.alive || matches!(e.mode, Mode::Return | Mode::Blocked | Mode::Dead);
+                        let active = e.alive
+                            && matches!(e.mode, Mode::Chase | Mode::Attack)
+                            && (e.target == Some(owner)
+                                || self.threat.as_ref().is_some_and(|t| t.contains(owner)));
+                        (e.npc, resolved, active)
+                    })
+                    .collect();
+                let next = runtime.observe(&state, world.tick, &current)?;
                 runtime.states.insert(id, next);
             }
-            runtime.npcs = vec![npc];
+            runtime.npcs = keys;
             Ok(())
         })();
         if let Err(error) = result {
