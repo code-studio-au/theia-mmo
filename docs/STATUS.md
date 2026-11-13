@@ -1,3 +1,26 @@
+P3-09 / P3-10 / P3-11 population first-tag SQL receipts, 13 November 2026:
+The owned PostgreSQL competing-hitter qualifier now also loads the checked five-NPC
+population package produced by the editor. Two public World actors contest one NPC;
+the first effective tagger retains the XP/reward recipient while another actor lands
+the fatal typed Arcane hit. Both players stay at 100 health and the other four NPCs
+remain unharmed. This deliberately retains the existing unequipped/no-mana Arcane
+fixture and synthetic account/quest acceptance; it is not normal equipment balance.
+The original owner receives 25 XP, one legacy SQL quest count and one unconsumed
+training claim. The finisher receives none. A held SQL row lock prevents successful
+acknowledgement while the fixed simulation advances; duplicate receipts/claims do
+not multiply, and a replay under the finisher is refused. Connection and PostgreSQL
+process restart preserve both recipients' exact state with fsync, synchronous commit
+and full-page writes enabled. Owned password files are removed on cleanup.
+This covers one defeated life of the five-actor population, not ten competing lives,
+SQL-backed encrypted clients, normal population quest interaction or loot consumption.
+The population branch routes trusted World recipient facts to the isolated legacy
+SQL lifecycle fixture without installing the singleton lifecycle interaction mode.
+The preserved saved-terrain/patrol qualifier also passes after this refactor.
+Formatting, strict workspace/all-target Clippy, Python compilation and example build
+pass. Evidence: build/population-credit-durable-v1/verification.json,
+build/singleton-credit-durable-regression-v1/verification.json and
+build/population-credit-durable-build.log.
+
 P5-17 managed population player-life integration, 13 November 2026:
 Population Start playtest now freezes character stats, the shared life policy and
 player respawn data beside the exported creature/combat files. Export validates the

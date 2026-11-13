@@ -1,3 +1,11 @@
+Population durability follow-up, 13 November 2026: the owned qualifier accepts
+`--population PACKAGE` and checks one contested NPC among five checked passive actors.
+First tag owns the durable XP, legacy quest count and training claim; the finisher's
+replay is refused. Both old singleton and population modes survive PostgreSQL process
+restart. This uses explicit unequipped/no-cost Arcane and synthetic account/quest
+fixtures, not normal population quest interaction or SQL-backed encrypted clients.
+Evidence: `build/population-credit-durable-v1/verification.json`.
+
 # Ordinary creature ownership and credit — 2 November 2026
 
 P3-09 / P3-10 / P3-11 / P4-08. Prerequisites: typed authoritative outgoing

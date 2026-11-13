@@ -7,15 +7,20 @@ import subprocess
 from private_postgres import Cluster
 
 
-def run(output, sdk, binary, terrain, navigation):
+def run(output, sdk, binary, terrain, navigation, population=None):
     output = output.resolve()
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     with Cluster(output/'cluster', sdk.resolve()) as cluster:
         durability = cluster.query('SHOW fsync; SHOW synchronous_commit; SHOW full_page_writes;')
         assert durability.returncode == 0 and durability.stdout.split() == ['on', 'on', 'on']
         env = cluster.test_environment()
-        env.update(THEIA_TEST_SAVED_TERRAIN=str(terrain.resolve()),
-                   THEIA_TEST_NAVIGATION=str(navigation.resolve()))
+        for key in ('DISPLAY', 'WAYLAND_DISPLAY', 'THEIA_POPULATION_PACKAGE'):
+            env.pop(key, None)
+        if population is not None:
+            env['THEIA_POPULATION_PACKAGE'] = str(population.resolve())
+        else:
+            env.update(THEIA_TEST_SAVED_TERRAIN=str(terrain.resolve()),
+                       THEIA_TEST_NAVIGATION=str(navigation.resolve()))
         with (output/'world-postgres.log').open('w') as log:
             subprocess.run([str(binary.resolve())], env=env, stdout=log,
                            stderr=subprocess.STDOUT, timeout=90, check=True)
@@ -23,6 +28,9 @@ def run(output, sdk, binary, terrain, navigation):
                    if line.startswith('{')]
         result = next(record for record in records if record.get('actual_world_competing_hitter'))
         assert result['passed']
+        assert result['population_first_tag'] == (population is not None)
+        assert result['population_actors'] == (5 if population is not None else 1)
+        assert result['defeated_lives'] == 1
         # Both the qualifier process and PostgreSQL process have ended before
         # these persisted recipient/receipt rows are read again.
         cluster.restart()
@@ -53,7 +61,8 @@ if __name__ == '__main__':
     parser.add_argument('output', type=Path)
     parser.add_argument('--sdk', type=Path, default=Path('build/postgres-sdk'))
     parser.add_argument('--binary', type=Path, default=Path('target/debug/examples/creature_credit_durable_qualification'))
+    parser.add_argument('--population', type=Path, help='Checked five-actor population package instead of the saved-terrain patrol fixture')
     parser.add_argument('--terrain', type=Path, default=Path('build/graybox-terrain-v1'))
     parser.add_argument('--navigation', type=Path, default=Path('build/navigation-terrain-v1'))
     args = parser.parse_args()
-    print(json.dumps(run(args.output, args.sdk, args.binary, args.terrain, args.navigation), indent=2))
+    print(json.dumps(run(args.output, args.sdk, args.binary, args.terrain, args.navigation, args.population), indent=2))
