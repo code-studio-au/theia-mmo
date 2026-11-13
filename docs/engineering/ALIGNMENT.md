@@ -1,3 +1,17 @@
+P3-09 / P3-11 population quest-loot transport, 13 November 2026:
+The encrypted authored-population fixture now covers quest-conditioned private loot
+and public player-life replication. At 20/30/60 Hz, the original tag owner's exact
+fatal-life event routes to the journal queue; a competing finisher gets neither
+quest credit nor a pickup entitlement. Existing full-bag/retry, successful private
+pickup and spent-claim refusal checks pass. Both clients observe both living players
+while one of five passive NPCs dies; the four bystanders retain full health.
+Three actual encrypted population checks pass with deterministic UDP impairment.
+This uses synthetic inventory/progression owners and tests routing, not durable
+quest eligibility, SQL transactions, player death/respawn presentation or normal
+launcher adoption. The three preserved single-patrol credit regressions, formatting
+and strict workspace/all-target Clippy pass. Evidence:
+build/population-quest-loot-check.log and build/population-quest-loot-final.log.
+
 P3-09 / P3-10 / P5-17 population reward routing, 13 November 2026:
 Rewards now bind the checked population creature definition and resolve the exact
 fatal life and authoritative corpse position, removing the singleton patrol-only

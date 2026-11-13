@@ -66,13 +66,23 @@ async fn encrypted_authored_population_competing_hitter_routes_only_tag_owner_at
 async fn encrypted_authored_population_private_loot_preserves_tag_owner_at_all_rates() {
     exercise_credit(true, false, true).await;
 }
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+async fn encrypted_authored_population_quest_loot_routes_original_tag_life_at_all_rates() {
+    exercise_credit(true, true, true).await;
+}
 async fn exercise_credit(per_life: bool, conditional: bool, population: bool) {
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let mut f = fixture_population_mode(rate, true, population);
         let npc = f.npc;
         f.world.enable_creature_credit(SOLO).unwrap();
+        if population {
+            f.world.enable_public_avatar_life().unwrap();
+            f.session.public_avatar = f.world.public_avatar_life_profile().cloned();
+        }
         let xp = Arc::new(crate::progression_wire::Profile::from_json(XP).unwrap());
-        let placement = [8008., 8002.];
+        let position = f.policy.1.metres();
+        let placement = [position[0], position[2]];
         if conditional {
             let talk = Arc::new(
                 crate::dialogue::Profile::from_json(include_bytes!(
@@ -259,6 +269,11 @@ async fn exercise_credit(per_life: bool, conditional: bool, population: bool) {
                 .and_then(|life| life.combat)
                 .is_some()
                 && (!conditional || s.quest_journal.is_some())
+                && (!population
+                    || s.public_avatar_life
+                        .as_ref()
+                        .and_then(|v| v.current())
+                        .is_some_and(|v| v.actors.len() == 2))
                 && s.progression.is_some()
                 && s.inventory.is_some()
                 && s.rewards.is_some()
@@ -523,6 +538,18 @@ async fn exercise_credit(per_life: bool, conditional: bool, population: bool) {
         assert_ne!(seen_a.facts[1].actor, owner);
         assert_eq!(seen_a.facts[1].remaining, 0);
         let stats = server.await.unwrap().unwrap();
+        if population {
+            for seen in [&seen_a, &seen_b] {
+                assert!(seen.avatars.iter().any(|v| v.actors.len() == 2));
+                assert!(
+                    seen.avatars
+                        .iter()
+                        .all(|v| v.actors.iter().all(|a| !a.dead))
+                );
+            }
+            assert!(stats.avatar_life_states_sent >= 2);
+            assert_eq!(stats.avatar_life_backpressure_disconnects, 0);
+        }
         assert_eq!(
             stats.experience_opportunities_forwarded,
             u64::from(!conditional)
