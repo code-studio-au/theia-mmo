@@ -487,7 +487,7 @@ fn check(
                 weapons: &weapons,
                 items: &items,
                 abilities: &abilities,
-                creature: &creature,
+                creature: creature.definition(),
                 player_maximum_health: vitals.maximum_health(),
                 creature_maximum_health: combat::DEVELOPMENT_HEALTH,
             },

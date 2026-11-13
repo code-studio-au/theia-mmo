@@ -689,10 +689,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .as_ref()
                         .ok_or("Physical damage requires abilities")?
                         .1,
-                    creature: &patrol_binding
+                    creature: patrol_binding
                         .as_ref()
                         .ok_or("Physical damage requires creature")?
-                        .0,
+                        .0
+                        .definition(),
                     player_maximum_health: character_stats
                         .as_ref()
                         .ok_or("Physical damage requires vitals")?

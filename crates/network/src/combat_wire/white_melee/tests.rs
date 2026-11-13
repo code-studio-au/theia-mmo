@@ -48,7 +48,7 @@ impl Fixture {
                 weapons: &weapons,
                 items: &items,
                 abilities: &abilities,
-                creature: &creature,
+                creature: creature.definition(),
                 player_maximum_health: 100,
                 creature_maximum_health: 1000,
             },

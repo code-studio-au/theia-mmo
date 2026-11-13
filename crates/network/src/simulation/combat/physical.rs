@@ -18,7 +18,7 @@ pub struct Bindings<'a> {
     pub weapons: &'a melee::Catalog,
     pub items: &'a inventory::Catalog,
     pub abilities: &'a abilities::Catalog,
-    pub creature: &'a creatures::Profile,
+    pub creature: &'a creatures::Definition,
     pub player_maximum_health: u32,
     pub creature_maximum_health: u32,
 }
@@ -327,7 +327,7 @@ impl World {
                 weapons: melee.catalog(),
                 items: &items,
                 abilities: &combat.catalog,
-                creature: patrol.profile(),
+                creature: patrol.profile().definition(),
                 player_maximum_health: combat
                     .resources
                     .as_ref()

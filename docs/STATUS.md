@@ -1,3 +1,14 @@
+P3-09 / P5-17 damage definition binding prerequisite, 13 November 2026:
+Physical damage profile validation now accepts the validated creature Definition
+rather than requiring its patrol Profile. Existing client, gameplay bundle and
+World callers pass that definition; patrol authority admission guards remain.
+A detached-type regression verifies unchanged damage/context identity and foreign
+creature refusal. No population typed damage, life, first-tag or reward policy is
+enabled by this prerequisite. All 493 network-library tests pass, including real
+private UDP checks; the initial sandbox-only run refused socket creation and was
+rerun with local socket permission. Fmt and strict workspace/all-target Clippy pass.
+All work is headless. Evidence: build/damage-definition-binding-final.log.
+
 P4-03 headless authoritative quest-route qualification, 13 November 2026:
 The opt-in follower now has a real authored-World regression: shared Classic
 controls emit ordinary queued commands through authority and Avian collision,
