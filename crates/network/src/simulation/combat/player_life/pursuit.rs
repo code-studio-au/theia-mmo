@@ -35,6 +35,7 @@ struct Path {
     target: Option<theia_core::player_life::LifeKey>,
 }
 pub(in crate::simulation::combat) struct ThreatTransfer {
+    npc: EntityKey,
     state: policy::State,
     policy: theia_core::retaliation::State,
     revision: u64,
@@ -325,21 +326,57 @@ impl super::Combat {
     pub(in crate::simulation::combat) fn threat_policy_target(
         &self,
     ) -> Option<theia_core::player_life::LifeKey> {
-        self.pve.as_ref()?.policy.target()
+        self.threat_policy_target_for(self.pve.as_ref()?.npc)
+    }
+    pub(in crate::simulation::combat) fn threat_policy_target_for(
+        &self,
+        npc: EntityKey,
+    ) -> Option<theia_core::player_life::LifeKey> {
+        self.pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == npc)?
+            .policy
+            .target()
     }
     pub(in crate::simulation::combat) fn threat_current_victim(
         &self,
     ) -> Option<theia_core::player_life::LifeKey> {
-        self.membership_encounter()
-            .and_then(|(_, _, target)| target)
-            .or_else(|| self.threat_policy_target())
+        self.threat_current_victim_for(self.pve.as_ref()?.npc)
+    }
+    pub(in crate::simulation::combat) fn threat_current_victim_for(
+        &self,
+        npc: EntityKey,
+    ) -> Option<theia_core::player_life::LifeKey> {
+        let actor = self
+            .pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == npc)?;
+        actor
+            .pursuit
+            .as_ref()
+            .and_then(|r| r.directive().target)
+            .or_else(|| actor.policy.target())
     }
     pub(in crate::simulation::combat) fn threat_candidate(
         &self,
         world: &crate::simulation::World,
         life: theia_core::player_life::LifeKey,
     ) -> Option<policy::Target> {
-        let pve = self.pve.as_ref()?;
+        self.threat_candidate_for(world, self.pve.as_ref()?.npc, life)
+    }
+    pub(in crate::simulation::combat) fn threat_candidate_for(
+        &self,
+        world: &crate::simulation::World,
+        npc: EntityKey,
+        life: theia_core::player_life::LifeKey,
+    ) -> Option<policy::Target> {
+        let pve = self
+            .pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == npc)?;
         let runtime = pve.pursuit.as_ref()?;
         let directive = runtime.directive();
         let target = self.pursuit_target(
@@ -363,7 +400,24 @@ impl super::Combat {
         world: &crate::simulation::World,
         target: policy::Target,
     ) -> Result<ThreatTransfer> {
-        let pve = self.pve.as_ref().ok_or("Threat lost player life")?;
+        self.prepare_threat_transfer_for(
+            world,
+            self.pve.as_ref().ok_or("Threat lost player life")?.npc,
+            target,
+        )
+    }
+    pub(in crate::simulation::combat) fn prepare_threat_transfer_for(
+        &self,
+        world: &crate::simulation::World,
+        npc: EntityKey,
+        target: policy::Target,
+    ) -> Result<ThreatTransfer> {
+        let pve = self
+            .pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == npc)
+            .ok_or("Threat lost exact creature life")?;
         if pve.error.is_some() {
             return Err("Threat pursuit authority unavailable".into());
         }
@@ -402,6 +456,7 @@ impl super::Combat {
             false
         };
         Ok(ThreatTransfer {
+            npc,
             state,
             policy,
             revision,
@@ -412,7 +467,12 @@ impl super::Combat {
         &mut self,
         transfer: ThreatTransfer,
     ) {
-        let pve = self.pve.as_mut().expect("Prepared threat life authority");
+        let pve = self
+            .pve
+            .iter_mut()
+            .chain(&mut self.retaliators)
+            .find(|p| p.npc == transfer.npc)
+            .expect("Prepared exact threat life authority");
         let runtime = pve.pursuit.as_mut().expect("Prepared threat pursuit");
         if transfer.revision != runtime.revision {
             runtime.path = None;

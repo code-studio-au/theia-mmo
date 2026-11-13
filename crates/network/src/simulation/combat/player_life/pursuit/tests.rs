@@ -637,3 +637,59 @@ fn independent_pursuit_controllers_share_one_worker_without_crossing_targets() {
         assert_eq!(scheduler.registered(), 2);
     }
 }
+
+#[test]
+fn threat_transfer_follows_exact_creature_authority_when_it_moves_into_pool() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, npc, a, b) = transfer_fixture(rate);
+        world.step_movement();
+        let mut combat = world.combat.take().unwrap();
+        let original = combat.pve.take().unwrap();
+        let runtime = original.pursuit.as_ref().unwrap();
+        let other_key = EntityKey {
+            entity: theia_core::identity::EntityId::new(100).unwrap(),
+            ..npc
+        };
+        // Authority routing fixture only: this extra idle state is not a
+        // second admitted world creature or multiplayer/capacity evidence.
+        let idle = super::super::Authority {
+            npc: other_key,
+            profile: original.profile.clone(),
+            policy: theia_core::retaliation::State::new(
+                original.profile.retaliation().clone(),
+                rate,
+            ),
+            error: None,
+            metrics: super::super::Metrics::default(),
+            pursuit: Some(
+                Runtime::new(runtime.settings, other_key, rate, runtime.navigation).unwrap(),
+            ),
+        };
+        combat.retaliators = vec![idle, original];
+        let old = combat.actors[&a].life.as_ref().unwrap().state.key();
+        let next = combat.actors[&b].life.as_ref().unwrap().state.key();
+        assert_eq!(combat.threat_policy_target_for(npc), Some(old));
+        let candidate = combat.threat_candidate_for(&world, npc, next).unwrap();
+        let plan = combat
+            .prepare_threat_transfer_for(&world, npc, candidate)
+            .unwrap();
+        assert_eq!(combat.threat_current_victim_for(npc), Some(old));
+        combat.commit_threat_transfer(plan);
+        assert_eq!(combat.threat_policy_target_for(npc), Some(next));
+        assert_eq!(combat.threat_current_victim_for(npc), Some(next));
+        assert!(combat.retaliators[1].policy.windup_until().is_none());
+        assert_eq!(combat.threat_current_victim_for(other_key), None);
+        assert_eq!(combat.retaliators[0].pursuit.as_ref().unwrap().revision, 1);
+        assert!(
+            combat
+                .prepare_threat_transfer_for(&world, other_key, candidate)
+                .is_err()
+        );
+        assert!(
+            combat
+                .threat_candidate_for(&world, other_key, next)
+                .is_none()
+        );
+        assert!(combat.pve.is_none());
+    }
+}

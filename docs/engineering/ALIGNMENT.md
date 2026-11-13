@@ -1,3 +1,22 @@
+P3-06 / P3-09 exact-creature threat-transfer routing, 13 November 2026:
+Threat candidate checks, victim lookup and prepared pursuit/retaliation transfer
+now accept an exact NPC identity. Prepared transfers retain that identity, and
+commit locates the matching authority across the retained singleton and bounded
+population states. The existing singleton threat adapter delegates to these shared
+operations. Candidate range/LOS, anchor/leash, manual player facing, windup
+cancellation and path revision invalidation rules are unchanged.
+A 20/30/60 Hz routing contract moves the existing world creature authority into
+the pool: preparation leaves its victim unchanged, commit changes only its victim
+and cancels its old windup, and an unrelated idle authority remains untouched.
+The extra idle state is not an admitted second world creature. No population threat
+table/selection or competing-player gameplay claim yet.
+Thirteen pursuit tests, eleven retained pure threat tests and all eighteen filtered
+threat checks including encrypted competing-player/public timing scenarios pass.
+Strict workspace/all-target Clippy, fmt and diff checks pass. Evidence:
+build/population-threat-routing-tests.log and population-threat-routing-final-checks.log.
+Next: independent bounded threat tables and lifecycle synchronization per NPC,
+then normal-launch/editor integration and competing-attacker qualification. Local only.
+
 P3-06 / P3-09 shared per-creature return reset, 13 November 2026:
 The existing explicit return-reset adapter now retains one bounded reset latch per
 creature life. It validates all transitions before restoring health or removing
