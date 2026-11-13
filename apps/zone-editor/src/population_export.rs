@@ -44,6 +44,9 @@ fn validate_mode(
             "Enable at least one test player before exporting a population playtest".into(),
         );
     }
+    if network {
+        crate::network_test_export::validate_controllers(zone, true)?;
+    }
     let groups: Vec<_> = zone.spawn_groups.iter().filter(|g| g.enabled).collect();
     if groups.len() != 1 {
         return Err("Population export requires exactly one enabled spawn group".into());
@@ -157,17 +160,6 @@ fn publish_mode(
         fs::write(stage.join("creature.json"), &creature).map_err(|e| e.to_string())?;
         let store =
             Arc::new(authored_world::Store::open(&stage.join("world")).map_err(|e| e.to_string())?);
-        let clients = if network {
-            let clients = crate::network_test_export::write_scenario(zone, &store, &stage)?;
-            fs::write(
-                stage.join("combat.json"),
-                include_bytes!("../../../content/gameplay/development-abilities.json"),
-            )
-            .map_err(|e| e.to_string())?;
-            clients
-        } else {
-            0
-        };
         let access = store.spawn(0).ok_or("Exported world has no player spawn")?;
         let centre = procedural::owner(access).ok_or("Player spawn outside navigation domain")?;
         let baked = Command::new(&baker)
@@ -196,6 +188,17 @@ fn publish_mode(
             &procedural::Source::Authored(store.clone()),
         )
         .map_err(|e| format!("Population placement: {e}"))?;
+        let clients = if network {
+            let clients = crate::network_test_export::write_scenario(zone, &store, &stage)?;
+            fs::write(
+                stage.join("combat.json"),
+                include_bytes!("../../../content/gameplay/development-abilities.json"),
+            )
+            .map_err(|e| e.to_string())?;
+            clients
+        } else {
+            0
+        };
         let report = serde_json::json!({"population_export":{"passed":true,"group":group,
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
@@ -210,7 +213,7 @@ fn publish_mode(
         fs::create_dir(output).map_err(|e| e.to_string())?;
         destination_created = true;
         if network {
-            for name in ["scenario.json", "combat.json", "controllers"] {
+            for name in ["scenario.json", "combat.json", "controllers", "routes"] {
                 if stage.join(name).exists() {
                     fs::rename(stage.join(name), output.join(name)).map_err(|e| e.to_string())?;
                 }
@@ -388,6 +391,19 @@ mod tests {
                 network: Default::default(),
             })
             .collect();
+        zone.schema = zone.schema.max(13);
+        zone.paths.push(theia_zone::paths::GuidePath {
+            id: 30,
+            name: "Client approach".into(),
+            kind: theia_zone::paths::PathKind::Patrol,
+            width_metres: 2.,
+            points: vec![
+                [8193., 0.008, 8192.],
+                [8193., 0.008, 8186.],
+                [8200., 0.008, 8186.],
+            ],
+        });
+        zone.test_players[0].controller = Some("theia.zone.patrol.30".into());
         let original = zone.clone();
         let output = root.0.join("package");
         let settings = || Settings {
@@ -434,6 +450,14 @@ mod tests {
             scenario["players"][1]["controller"],
             "controllers/walk-turn.json"
         );
+        assert!(scenario["players"][0]["controller"].is_null());
+        assert_eq!(scenario["players"][0]["route"], "routes/player-1.json");
+        let route: serde_json::Value =
+            serde_json::from_slice(&fs::read(output.join("routes/player-1.json")).unwrap())
+                .unwrap();
+        assert_eq!(route["navigation"], "../navigation");
+        assert_eq!(route["return_trip"], true);
+        assert!(route["waypoints"].as_array().unwrap().len() > 3);
         assert_eq!(
             fs::read(output.join("controllers/walk-turn.json")).unwrap(),
             include_bytes!("../../../content/testing/walk-turn-controller.json")
@@ -449,6 +473,25 @@ mod tests {
         .unwrap();
         assert_eq!(loaded.count(), 5);
         assert_eq!(zone, original);
+        let route_bytes = fs::read(output.join("routes/player-1.json")).unwrap();
+        let mut wrong_floor = zone.clone();
+        wrong_floor.paths[0].points[1][1] += 20.;
+        let refused = root.0.join("wrong-floor");
+        let error = publish_network(
+            &wrong_floor,
+            &refused,
+            "theia.test.population",
+            2,
+            settings(),
+            &Default::default(),
+        )
+        .unwrap_err();
+        assert!(error.contains("patrol path"), "{error}");
+        assert!(!refused.exists());
+        assert_eq!(
+            fs::read(output.join("routes/player-1.json")).unwrap(),
+            route_bytes
+        );
     }
     #[test]
     #[ignore = "requires THEIA_NAV_BAKER actual offline binary"]

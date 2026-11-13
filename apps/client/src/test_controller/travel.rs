@@ -63,42 +63,7 @@ impl Travel {
                     .join(&doc.navigation),
                 world.identity(),
             )?;
-            nav.verify()?;
-            let tiles = nav
-                .manifest()
-                .tiles
-                .iter()
-                .map(|t| nav.tile(t.id))
-                .collect::<theia_network::Result<Vec<_>>>()?;
-            let query = navigation::query::Query::new(&tiles)?;
-            let mut ground = navigation::authored_checks::Grounding::new(world);
-            let waypoints = doc
-                .waypoints
-                .iter()
-                .map(|&p| GlobalPosition::new(p).ok_or("Invalid test waypoint".into()))
-                .collect::<theia_network::Result<Vec<_>>>()?;
-            let mut points = Vec::new();
-            let mut samples = 0;
-            for pair in waypoints.windows(2) {
-                let path = query.route(pair[0], pair[1])?;
-                for segment in path.windows(2) {
-                    project_segment(
-                        &query,
-                        &mut ground,
-                        segment[0],
-                        segment[1],
-                        &mut points,
-                        &mut samples,
-                    )?;
-                }
-            }
-            navigation::authored_checks::clearance(
-                &query,
-                &mut ground,
-                &points.iter().map(|p| p.metres()).collect::<Vec<_>>(),
-                &mut 0,
-            )?;
-            Ok(points)
+            navigation::authored_checks::grounded_route(world, &nav, &doc.waypoints)
         };
         let points = prepare().map_err(|e| format!("Test route preparation: {e}"))?;
         let mut travel = Self::new(points)?;
@@ -256,54 +221,6 @@ impl Travel {
             turn_seconds,
         ))
     }
-}
-/// Follow the same floor continuously, rather than interpolating a long segment's
-/// endpoint heights across rolling terrain. All original strict layer tolerances
-/// and collision checks remain in force. Keep metre-spaced ground points for the
-/// follower, then run ordinary clearance again over their connecting segments.
-fn project_segment(
-    query: &navigation::query::Query,
-    ground: &mut navigation::authored_checks::Grounding<'_>,
-    start: GlobalPosition,
-    end: GlobalPosition,
-    points: &mut Vec<GlobalPosition>,
-    samples: &mut usize,
-) -> theia_network::Result<()> {
-    let mut previous = ground.at(start)?;
-    let expected_end = ground.at(end)?;
-    if points.last() != Some(&previous) {
-        points.push(previous);
-    }
-    let a = start.metres();
-    let b = end.metres();
-    let steps = ((b[0] - a[0]).hypot(b[2] - a[2]) / 0.1).ceil().max(1.) as usize;
-    *samples = samples
-        .checked_add(steps)
-        .filter(|n| *n <= 8192)
-        .ok_or("Test route grounding sample budget exceeded")?;
-    for step in 1..=steps {
-        let fraction = step as f64 / steps as f64;
-        let x = a[0] + (b[0] - a[0]) * fraction;
-        let z = a[2] + (b[2] - a[2]) * fraction;
-        let candidate = GlobalPosition::new([x, previous.metres()[1], z])
-            .ok_or("Invalid projected route point")?;
-        let sampled = query.sample(candidate)?;
-        previous = ground
-            .at(GlobalPosition::new([x, sampled.metres()[1], z]).ok_or("Invalid route height")?)?;
-        if step == steps && distance(previous, expected_end) > 0.3 {
-            return Err("Test route projection changed floor".into());
-        }
-        let last = points.last().unwrap().metres();
-        if step == steps || (x - last[0]).hypot(z - last[2]) >= 1. {
-            if points.last() != Some(&previous) {
-                points.push(previous);
-            }
-            if points.len() > navigation::MAX_ROUTE_POINTS {
-                return Err("Test route exceeds waypoint budget".into());
-            }
-        }
-    }
-    Ok(())
 }
 
 fn distance(a: GlobalPosition, b: GlobalPosition) -> f64 {

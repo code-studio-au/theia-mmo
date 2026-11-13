@@ -1,3 +1,9 @@
+Test-travel editor integration, 13 November 2026: assign authored patrol paths
+through Test Player property actions, then Start population playtest to export,
+preflight and run the checked per-player route. Native assignment/undo, two-client
+Start, authoritative arrival and Stop pass. Remaining full quest/kill migration
+needs interaction/range binding and moving-target/death handling.
+
 Test-travel update, 13 November 2026: normal play launcher support, automatic
 input release, optional paused activation and explicit checked return legs now pass
 native server/client checks. Remaining quest migration needs interaction/range and

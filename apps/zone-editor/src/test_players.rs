@@ -14,6 +14,11 @@ pub(super) fn menu(parent: &mut ChildSpawnerCommands) {
             Action::TestPlayerController(true),
             "Controller: Walk and turn",
         ),
+        (Action::TestPlayerRoute(1), "Controller: Next patrol path"),
+        (
+            Action::TestPlayerRoute(-1),
+            "Controller: Previous patrol path",
+        ),
     ] {
         menus::spawn_items(parent, &[(workspace::Control::Command(action), label, "")]);
     }
@@ -33,6 +38,27 @@ pub(super) fn configure(action: Action, session: &mut Session) {
         Action::TestPlayerEnabled => player.enabled = !player.enabled,
         Action::TestPlayerController(script) => {
             player.controller = script.then(|| "test.walk-turn".into())
+        }
+        Action::TestPlayerRoute(direction) => {
+            let paths: Vec<_> = session
+                .editor
+                .zone()
+                .paths
+                .iter()
+                .filter_map(|path| path.patrol_route_id())
+                .collect();
+            if paths.is_empty() {
+                session.status = "Create a patrol path before assigning test travel".into();
+                return;
+            }
+            let index = paths
+                .iter()
+                .position(|id| Some(id) == player.controller.as_ref());
+            let next = index.map_or(if direction < 0 { paths.len() - 1 } else { 0 }, |index| {
+                (index as isize + isize::from(direction.signum())).rem_euclid(paths.len() as isize)
+                    as usize
+            });
+            player.controller = Some(paths[next].clone());
         }
         _ => return,
     }
@@ -173,6 +199,48 @@ mod tests {
             PathBuf::new(),
             Some(zone),
         )
+    }
+    #[test]
+    fn patrol_assignment_cycles_only_patrols_and_is_undoable_without_moving_player() {
+        use theia_zone::paths::{GuidePath, PathKind};
+        let mut session = session([0.; 3]);
+        add(&mut session);
+        let before = session.editor.zone().clone();
+        configure(Action::TestPlayerRoute(1), &mut session);
+        assert_eq!(session.editor.zone(), &before);
+        for (id, kind) in [
+            (100, PathKind::Road),
+            (101, PathKind::Patrol),
+            (102, PathKind::Patrol),
+        ] {
+            session.edit(vec![Edit::PutPath {
+                path: GuidePath {
+                    id,
+                    name: format!("Path {id}"),
+                    kind,
+                    width_metres: 2.,
+                    points: vec![[0., 0., 0.], [0., 0., -5.]],
+                },
+            }]);
+        }
+        let position = session.editor.zone().test_players[0].position;
+        for (direction, expected) in [(1, 101), (1, 102), (1, 101), (-1, 102)] {
+            configure(Action::TestPlayerRoute(direction), &mut session);
+            assert_eq!(
+                session.editor.zone().test_players[0].controller,
+                Some(format!("theia.zone.patrol.{expected}"))
+            );
+            assert_eq!(session.editor.zone().test_players[0].position, position);
+        }
+        session.execute(Command::Undo {
+            expected_revision: session.editor.revision(),
+        });
+        assert_eq!(
+            session.editor.zone().test_players[0].controller.as_deref(),
+            Some("theia.zone.patrol.101")
+        );
+        configure(Action::TestPlayerController(false), &mut session);
+        assert!(session.editor.zone().test_players[0].controller.is_none());
     }
     #[test]
     fn add_duplicate_translate_configuration_and_delete_retain_selection_and_saved_document() {

@@ -629,9 +629,11 @@ impl Control {
             .or(session.spawn_group_selected)
             .is_some();
         match self {
-            Self::Command(Action::TestPlayerEnabled | Action::TestPlayerController(_)) => {
-                session.test_player_selected.is_some()
-            }
+            Self::Command(
+                Action::TestPlayerEnabled
+                | Action::TestPlayerController(_)
+                | Action::TestPlayerRoute(_),
+            ) => session.test_player_selected.is_some(),
             Self::Command(Action::AddTestPlayer) => session.editor.zone().test_players.len() < 2,
             Self::NetworkPlaytest | Self::PopulationPlaytest => {
                 !session.network_active
@@ -1110,7 +1112,11 @@ pub(super) fn sync(
         ) && !session.path_mode
             || matches!(
                 control,
-                Control::Command(Action::TestPlayerEnabled | Action::TestPlayerController(_))
+                Control::Command(
+                    Action::TestPlayerEnabled
+                        | Action::TestPlayerController(_)
+                        | Action::TestPlayerRoute(_)
+                )
             ) && (session.test_player_selected.is_none() || session.play.is_some())
         {
             Display::None

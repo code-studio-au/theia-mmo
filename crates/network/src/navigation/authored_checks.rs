@@ -89,3 +89,115 @@ pub fn clearance(
     }
     Ok(())
 }
+
+/// Prepare bounded, continuously grounded static travel against the exact source.
+/// Loader/editor-worker work only: loads navigation tiles and collision patches.
+/// The returned waypoints describe a checked route, never authoritative motion.
+pub fn grounded_route(
+    world: &Store,
+    navigation: &super::Store,
+    waypoints: &[[f64; 3]],
+) -> Result<Vec<GlobalPosition>> {
+    if navigation.manifest().source != world.identity() {
+        return Err("Travel navigation belongs to another authored world".into());
+    }
+    if !(2..=super::MAX_ROUTE_POINTS).contains(&waypoints.len()) {
+        return Err("Travel requires 2..256 waypoints".into());
+    }
+    navigation.verify()?;
+    let tiles = navigation
+        .manifest()
+        .tiles
+        .iter()
+        .map(|t| navigation.tile(t.id))
+        .collect::<Result<Vec<_>>>()?;
+    let query = Query::new(&tiles)?;
+    let mut ground = Grounding::new(world);
+    let waypoints = waypoints
+        .iter()
+        .map(|&p| GlobalPosition::new(p).ok_or("Invalid travel waypoint".into()))
+        .collect::<Result<Vec<_>>>()?;
+    let mut points = Vec::new();
+    let mut samples = 0;
+    for pair in waypoints.windows(2) {
+        let path = query.route(pair[0], pair[1])?;
+        for segment in path.windows(2) {
+            project_segment(
+                &query,
+                &mut ground,
+                segment[0],
+                segment[1],
+                &mut points,
+                &mut samples,
+            )?;
+        }
+    }
+    if !(2..=super::MAX_ROUTE_POINTS).contains(&points.len()) {
+        return Err("Travel needs a nonempty checked route".into());
+    }
+    clearance(
+        &query,
+        &mut ground,
+        &points.iter().map(|p| p.metres()).collect::<Vec<_>>(),
+        &mut 0,
+    )?;
+    Ok(points)
+}
+
+/// Follow the same floor continuously, rather than interpolating a long segment's
+/// endpoint heights across rolling terrain. All original strict layer tolerances
+/// and collision checks remain in force. Keep metre-spaced ground points for the
+/// follower, then run ordinary clearance again over their connecting segments.
+fn project_segment(
+    query: &Query,
+    ground: &mut Grounding<'_>,
+    start: GlobalPosition,
+    end: GlobalPosition,
+    points: &mut Vec<GlobalPosition>,
+    samples: &mut usize,
+) -> Result<()> {
+    let mut previous = ground.at(start)?;
+    let expected_end = ground.at(end)?;
+    if points.last() != Some(&previous) {
+        points.push(previous);
+    }
+    let a = start.metres();
+    let b = end.metres();
+    let steps = ((b[0] - a[0]).hypot(b[2] - a[2]) / 0.1).ceil().max(1.) as usize;
+    *samples = samples
+        .checked_add(steps)
+        .filter(|n| *n <= 8192)
+        .ok_or("Test route grounding sample budget exceeded")?;
+    for step in 1..=steps {
+        let fraction = step as f64 / steps as f64;
+        let x = a[0] + (b[0] - a[0]) * fraction;
+        let z = a[2] + (b[2] - a[2]) * fraction;
+        let candidate = GlobalPosition::new([x, previous.metres()[1], z])
+            .ok_or("Invalid projected route point")?;
+        let sampled = query.sample(candidate)?;
+        previous = ground
+            .at(GlobalPosition::new([x, sampled.metres()[1], z]).ok_or("Invalid route height")?)?;
+        if step == steps && route_distance(previous, expected_end) > 0.3 {
+            return Err("Test route projection changed floor".into());
+        }
+        let last = points.last().unwrap().metres();
+        if step == steps || (x - last[0]).hypot(z - last[2]) >= 1. {
+            if points.last() != Some(&previous) {
+                points.push(previous);
+            }
+            if points.len() > super::MAX_ROUTE_POINTS {
+                return Err("Test route exceeds waypoint budget".into());
+            }
+        }
+    }
+    Ok(())
+}
+
+fn route_distance(a: GlobalPosition, b: GlobalPosition) -> f64 {
+    a.metres()
+        .into_iter()
+        .zip(b.metres())
+        .map(|(a, b)| (a - b).powi(2))
+        .sum::<f64>()
+        .sqrt()
+}

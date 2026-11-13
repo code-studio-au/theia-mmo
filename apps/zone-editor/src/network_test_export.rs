@@ -11,8 +11,35 @@ fn controller(id: Option<&str>) -> Result<Option<&'static str>, String> {
     match id {
         None => Ok(None),
         Some("test.walk-turn") => Ok(Some(WALK_TURN_PATH)),
+        Some(id) if id.starts_with("theia.zone.patrol.") => Err(
+            "Patrol test travel requires Start population playtest and its baked navigation".into(),
+        ),
         Some(id) => Err(format!("Unknown test controller: {id}")),
     }
+}
+pub(super) fn validate_controllers(zone: &Zone, routes: bool) -> Result<(), String> {
+    for player in zone.test_players.iter().filter(|p| p.enabled) {
+        if let Some(id) = player
+            .controller
+            .as_deref()
+            .filter(|id| id.starts_with("theia.zone.patrol."))
+            && routes
+        {
+            if !zone
+                .paths
+                .iter()
+                .any(|path| path.patrol_route_id().as_deref() == Some(id))
+            {
+                return Err(format!(
+                    "Test player {} refers to missing patrol path {id}",
+                    player.client_id
+                ));
+            }
+        } else {
+            controller(player.controller.as_deref())?;
+        }
+    }
+    Ok(())
 }
 
 pub(super) fn publish(
@@ -28,9 +55,7 @@ pub(super) fn publish(
     if players.is_empty() {
         return Err("Enable at least one test player before exporting a network test".into());
     }
-    for player in &players {
-        controller(player.controller.as_deref())?;
-    }
+    validate_controllers(zone, false)?;
     // Reserve only a new directory; on error remove only the directory we own.
     // Never modify the source zone, controller files or an earlier test export.
     fs::create_dir(output)
@@ -66,13 +91,23 @@ pub(super) fn publish(
 
 /// Publish checked test-player starts and immutable controller scripts into an owned stage.
 pub(super) fn write_scenario(zone: &Zone, world: &Store, output: &Path) -> Result<usize, String> {
+    validate_controllers(zone, true)?;
     let players: Vec<_> = zone.test_players.iter().filter(|p| p.enabled).collect();
     if players.is_empty() {
         return Err("Enable at least one test player before exporting a network test".into());
     }
     let scripts = players
         .iter()
-        .map(|p| controller(p.controller.as_deref()))
+        .map(|p| {
+            if p.controller
+                .as_deref()
+                .is_some_and(|id| id.starts_with("theia.zone.patrol."))
+            {
+                Ok(None)
+            } else {
+                controller(p.controller.as_deref())
+            }
+        })
         .collect::<Result<Vec<_>, _>>()?;
     for player in &players {
         let feet = GlobalPosition::new(player.position).ok_or("Invalid test player feet")?;
@@ -93,11 +128,12 @@ pub(super) fn write_scenario(zone: &Zone, world: &Store, output: &Path) -> Resul
         .iter()
         .zip(scripts)
         .map(|(p, script)| {
-            serde_json::json!({
-                "client_id":p.client_id,"feet":p.position,"controller":script,"network":p.network,
-            })
+            let route = write_route(zone, p, world, output)?;
+            Ok(serde_json::json!({
+                "client_id":p.client_id,"feet":p.position,"controller":script,"route":route,"network":p.network,
+            }))
         })
-        .collect();
+        .collect::<Result<_, String>>()?;
     let scenario =
         serde_json::json!({"schema":1,"world_identity":world.identity(),"players":entries});
     let bytes = serde_json::to_vec_pretty(&scenario).map_err(|e| e.to_string())?;
@@ -108,10 +144,94 @@ pub(super) fn write_scenario(zone: &Zone, world: &Store, output: &Path) -> Resul
     Ok(players.len())
 }
 
+fn write_route(
+    zone: &Zone,
+    player: &theia_zone::test_players::TestPlayer,
+    world: &Store,
+    output: &Path,
+) -> Result<Option<String>, String> {
+    let Some(id) = player
+        .controller
+        .as_deref()
+        .filter(|id| id.starts_with("theia.zone.patrol."))
+    else {
+        return Ok(None);
+    };
+    let path = zone
+        .paths
+        .iter()
+        .find(|path| path.patrol_route_id().as_deref() == Some(id))
+        .ok_or_else(|| {
+            format!(
+                "Test player {} refers to missing patrol path {id}",
+                player.client_id
+            )
+        })?;
+    let navigation =
+        theia_network::navigation::Store::open(&output.join("navigation"), world.identity())
+            .map_err(|e| {
+                format!("Test patrol travel requires population playtest navigation: {e}")
+            })?;
+    let requested = GlobalPosition::new(player.position).ok_or("Invalid test player feet")?;
+    let owner = procedural::owner(requested).ok_or("Test player outside navigation domain")?;
+    let patch = world.patch(owner).map_err(|e| e.to_string())?;
+    let start = patch
+        .try_landing_spawn(requested)
+        .ok_or("Test player has no safe landing")?;
+    let mut waypoints = vec![start.metres()];
+    for &point in &path.points {
+        if waypoints.last() != Some(&point) {
+            waypoints.push(point);
+        }
+    }
+    let checked =
+        theia_network::navigation::authored_checks::grounded_route(world, &navigation, &waypoints)
+            .map_err(|e| format!("Test player {} patrol path: {e}", player.client_id))?;
+    let route = serde_json::json!({"schema":1,"name":format!("Player {} patrol {}",player.client_id,path.id),
+        "navigation":"../navigation","waypoints":checked.iter().map(|p|p.metres()).collect::<Vec<_>>(),
+        "return_trip":true});
+    let bytes = serde_json::to_vec_pretty(&route).map_err(|e| e.to_string())?;
+    if bytes.len() > 32 * 1024 {
+        return Err("Test patrol route exceeds client byte budget".into());
+    }
+    fs::create_dir_all(output.join("routes")).map_err(|e| e.to_string())?;
+    let file = format!("routes/player-{}.json", player.client_id);
+    fs::write(output.join(&file), bytes).map_err(|e| e.to_string())?;
+    Ok(Some(file))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use theia_zone::test_players::{NetworkConditions, TestPlayer};
+    #[test]
+    fn missing_or_unbaked_patrol_assignments_refuse_and_disabled_players_do_not_launch() {
+        let mut zone = fixture();
+        zone.test_players[0].controller = Some("theia.zone.patrol.30".into());
+        assert!(
+            validate_controllers(&zone, true)
+                .unwrap_err()
+                .contains("missing patrol")
+        );
+        assert!(
+            validate_controllers(&zone, false)
+                .unwrap_err()
+                .contains("population playtest")
+        );
+        zone.test_players[0].enabled = false;
+        validate_controllers(&zone, true).unwrap();
+        zone.test_players[0].enabled = true;
+        zone.paths.push(theia_zone::paths::GuidePath {
+            id: 30,
+            name: "Approach".into(),
+            kind: theia_zone::paths::PathKind::Patrol,
+            width_metres: 2.,
+            points: vec![[8192., 0., 8192.], [8192., 0., 8188.]],
+        });
+        validate_controllers(&zone, true).unwrap();
+        zone.paths[0].kind = theia_zone::paths::PathKind::Road;
+        assert!(validate_controllers(&zone, true).is_err());
+    }
     struct Folder(PathBuf);
     impl Folder {
         fn new() -> Self {

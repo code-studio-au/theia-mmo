@@ -1,3 +1,32 @@
+P5-17 / P4-03 editor-authored test-player travel, 13 November 2026:
+Test Player property actions now cycle next/previous authored patrol paths, using
+stable path IDs in the existing controller reference. Assignment preserves feet,
+uses ordinary undo/redo and displays the path name. Manual/walk-turn remain choices.
+Population playtest export bakes navigation first, prepares a grounded route from
+the player's checked landing through the assigned path, then freezes a per-player
+route in the snapshot. Runtime uses normal client input with explicit return legs.
+Client and editor share grounded-route preparation, strict source/floor/clearance
+checks and existing 8192-sample/256-point budgets. No navigation or file loading
+moves into the fixed step. Ordinary network export refuses patrol controllers with
+an explicit requirement for population-playtest navigation; missing/deleted patrol
+references refuse, disabled players do not create route work. No schema bump.
+235 ordinary editor tests pass (the local UDP case rerun with socket access), plus
+actual navigation snapshot/unsafe-floor refusal checks. Failed route export leaves
+no published destination and preserves the previous package. Eleven controller
+tests and the actual rolling-valley/wrong-floor regression pass; 17 launcher tests,
+fmt and denied-warning workspace/all-target Clippy pass. A fixture schema mistake
+was fixed before the actual snapshot acceptance; earlier logs preserve that failure.
+Native editor assignment, undo/reassignment, invalid-spacing refusal, Start with
+two real clients, route arrival and Stop all pass. First client follows 29 points
+in 11.87 s, final authority error 0.182 m, releases input. Second uses its existing
+walk-turn controller with 40 ms/way delay and 5 ms jitter. Five passive actors,
+zero rejected inputs/recoveries, clean owned-process/ticket shutdown, source files
+unchanged. RX 7900 XTX/RADV Vulkan validation clean; 3440x1440 editor screenshot
+inspected. This moves test players, not NPC patrol AI or full quest/kill automation.
+Evidence: build/editor-test-route-{checks,refusal-checks,launcher-tests}.log;
+build/shared-grounded-route-checks.log;
+build/editor-patrol-test-native-v1/{qualification.json,dialog.png,finished.png,package}.
+
 P4-03 explicit checked test return leg, 13 November 2026:
 Route documents may set return_trip=true. After arrival releases input, F7 starts
 the same statically checked points in reverse; after returning, F7 may start outward

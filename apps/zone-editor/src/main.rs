@@ -578,6 +578,7 @@ enum Action {
     AddTestPlayer,
     TestPlayerEnabled,
     TestPlayerController(bool),
+    TestPlayerRoute(i8),
     CreateStarterBasin,
     CreateStarterValley,
     TerrainToggle,
@@ -1132,9 +1133,9 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             }
         }
         Action::AddTestPlayer => test_players::add(session),
-        Action::TestPlayerEnabled | Action::TestPlayerController(_) => {
-            test_players::configure(action, session)
-        }
+        Action::TestPlayerEnabled
+        | Action::TestPlayerController(_)
+        | Action::TestPlayerRoute(_) => test_players::configure(action, session),
         Action::AddQuestArea => quest_area_authoring::add(session),
         Action::AddSpawnGroup => spawn_groups::add(session),
         Action::ToggleSpawnGroup => spawn_groups::toggle(session),

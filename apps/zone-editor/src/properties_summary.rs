@@ -90,7 +90,13 @@ pub(super) fn description(session: &Session) -> Option<String> {
             match player.controller.as_deref() {
                 None => "Manual controller",
                 Some("test.walk-turn") => "Walk and turn",
-                Some(id) => id,
+                Some(id) => session
+                    .editor
+                    .zone()
+                    .paths
+                    .iter()
+                    .find(|path| path.patrol_route_id().as_deref() == Some(id))
+                    .map_or(id, |path| path.name.as_str()),
             }
         )),
         Target::Scenery(model) => subject.push_str(&format!("\n{}", model.asset)),

@@ -4838,3 +4838,18 @@ points in reverse. Return arrival offers F7 to travel outward again. Each start
 requires proximity to that leg's first point. Cancelling or failing a leg restarts
 that same leg; it does not skip to the other destination. This does not follow
 moving targets or reconnect a player displaced away from the path during combat.
+
+In the editor, select a Test Player and use **Property actions → Controller: Next
+patrol path** (or Previous). The properties summary shows the assigned path name;
+assignment is undoable and does not move the start position. Create a patrol guide
+first. Use **Zone → Start population playtest** to bake navigation and prepare the
+route from that player's landing through the path. Each enabled player can keep
+manual/step input or use its own patrol assignment.
+
+The snapshot contains `routes/player-N.json`, bound to its copied navigation and
+world. Route input starts automatically; arrival releases control and F7 offers a
+checked return. Editing the source afterward affects only a later snapshot. Missing
+paths, unsafe floors and route budgets fail export without replacing an existing
+package. Normal network export has no navigation bake and refuses these assignments;
+use the population playtest flow. The existing one-passive-group/16-actor and
+nine-navigation-tile limits remain. This assignment controls test clients.

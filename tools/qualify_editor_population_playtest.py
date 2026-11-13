@@ -15,6 +15,7 @@ parser.add_argument('--zone', type=Path, required=True)
 parser.add_argument('--creature', type=Path, required=True)
 parser.add_argument('--players', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
+parser.add_argument('--assign-patrol', action='store_true', help='Assign the first authored patrol to player one through the editor, including undo')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -63,6 +64,25 @@ with (out / 'editor.log').open('w') as log:
             fresh()
             assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index'] == index) == str(value)
 
+        assigned = None
+        if args.assign_patrol:
+            def menu(name):
+                click(next(m['centre'] for m in state()['menus'] if m['name']==name and m['role']=='button' and min(m['size'])>0))
+            player = state()['document']['test_players'][0]
+            path = next(path for path in state()['document']['paths'] if path['kind']=='patrol')
+            assigned = f"theia.zone.patrol.{path['id']}"
+            menu('Content filter')
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target']=='Filter(TestPlayers)' and min(c['size'])>0), None))['centre'])
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target']==f"TestPlayer({player['id']})" and min(c['size'])>0), None))['centre'])
+            def assign():
+                menu('Property actions')
+                click(wait(lambda: next((c for c in state()['workspace_controls'] if c['target']=='Command(TestPlayerRoute(1))' and c['menu_item'] and min(c['size'])>0), None))['centre'])
+                wait(lambda: state()['document']['test_players'][0].get('controller')==assigned)
+            assign()
+            x.key_state('Control_L', True); x.key('z'); x.key_state('Control_L', False)
+            wait(lambda: state()['document']['test_players'][0].get('controller')==player.get('controller'))
+            assign()
+
         click(next(m['centre'] for m in state()['menus']
             if m['name'] == 'Zone' and m['role'] == 'button' and min(m['size']) > 0))
         control = wait(lambda: next((c for c in state()['workspace_controls']
@@ -88,6 +108,20 @@ with (out / 'editor.log').open('w') as log:
             return (run/'server.log').exists() and sum(line.startswith('test_player_admit ') for line in (run/'server.log').read_text().splitlines()) == 2
         wait(connected, 45)
         wait(lambda: '"finished":true' in (run/'client-2.log').read_text(), 45)
+        travel = None
+        if assigned:
+            goal = json.loads((destination/'routes/player-1.json').read_text())['waypoints'][-1]
+            def arrived():
+                values = []
+                for line in (run/'client-1.log').read_text().splitlines():
+                    if line.startswith('{"test_controller":'):
+                        try: values.append(json.loads(line)['test_controller'])
+                        except json.JSONDecodeError: pass
+                if not values: return None
+                value = values[-1]
+                assert value['travel']['failure'] is None, value
+                return value if value['finished'] and not value['active'] and value['feet'] and sum((value['feet'][i]-goal[i])**2 for i in [0,2])**.5 < .3 else None
+            travel = wait(arrived, 60)
         x.focus(w); fresh()
         click(next(m['centre'] for m in state()['menus'] if m['name']=='Zone' and m['role']=='button' and min(m['size'])>0))
         stop = wait(lambda: next((c for c in state()['workspace_controls'] if c['target']=='StopNetworkPlaytest' and c['menu_item'] and min(c['size'])>0), None))
@@ -111,7 +145,8 @@ with (out / 'editor.log').open('w') as log:
         report.with_suffix('.png').rename(out / 'finished.png')
         (out / 'qualification.json').write_text(json.dumps(dict(passed=True,
             invalid_spacing_refused=True, count=result['count'], source_unchanged=True,
-            package=str(destination), started_clients=2, stopped=True, controller_finished=True, run=str(run)), indent=2))
+            package=str(destination), started_clients=2, stopped=True, controller_finished=True,
+            assigned_patrol=assigned, travel=travel, run=str(run)), indent=2))
     finally:
         if x: x.close()
         if p.poll() is None:
