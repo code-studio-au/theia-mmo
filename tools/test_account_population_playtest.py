@@ -38,6 +38,8 @@ class AccountPopulation(unittest.TestCase):
             self.assertIn('--account-login', command)
             self.assertNotIn('--creature-profile', command)
             self.assertNotIn('--test-controller', command)
+            self.assertNotIn('--test-route', command)
+            self.assertIsNone(report['test_route'])
             self.assertNotIn('--public-creature-attacks', command)
             self.assertFalse(report['public_creature_attacks'])
             self.assertEqual(command[command.index('--session-directory')+1], str(args.output/'runtime'))
@@ -48,6 +50,40 @@ class AccountPopulation(unittest.TestCase):
                 self.assertEqual(command[command.index(record['option'])+1], str(path))
                 (root/'content/gameplay'/path.name).write_bytes(b'changed source')
                 self.assertNotEqual(path.read_bytes(), b'changed source')
+
+    def test_test_route_freezes_relative_navigation_and_remains_opt_in(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            args.test_route = root/'route.json'
+            args.test_route.write_text(json.dumps(dict(schema=1, name='Checked travel',
+                navigation='package/navigation', start_paused=True, waypoints=[[0,0,0],[2,0,0]])))
+            source = args.test_route.read_bytes()
+            command = launcher.prepare(args, root)
+            frozen = args.output/'test-route.json'
+            self.assertEqual(command[command.index('--test-route')+1], str(frozen))
+            document = json.loads(frozen.read_bytes())
+            self.assertEqual(document['navigation'], str(args.package/'navigation'))
+            self.assertTrue(document['start_paused'])
+            report = json.loads((args.output/'launch.json').read_text())['test_route']
+            self.assertEqual(report['source_sha256'], hashlib.sha256(source).hexdigest())
+            self.assertEqual(report['sha256'], hashlib.sha256(frozen.read_bytes()).hexdigest())
+            args.test_route.write_bytes(b'changed')
+            self.assertEqual(json.loads(frozen.read_bytes()), document)
+
+    def test_invalid_test_routes_refuse_before_creating_a_session(self):
+        for change in [dict(start_paused=False), dict(navigation='other-navigation'), dict(schema=2), dict(name='x' * (32 * 1024 + 1))]:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                args = self.fixture(root)
+                args.test_route = root/'route.json'
+                document = dict(schema=1, name='Checked travel', navigation='package/navigation',
+                    start_paused=True, waypoints=[[0,0,0],[2,0,0]])
+                document.update(change)
+                args.test_route.write_text(json.dumps(document))
+                with self.assertRaises(ValueError):
+                    launcher.prepare(args, root)
+                self.assertFalse(args.output.exists())
 
     def test_selected_catalogues_are_frozen_and_enable_shared_corpse_pickup(self):
         with tempfile.TemporaryDirectory() as folder:

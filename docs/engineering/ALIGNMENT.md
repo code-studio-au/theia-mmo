@@ -1,3 +1,40 @@
+P5-17 / P3-09 / P3-11 dressed valley population hunt and checked travel,
+14 November 2026: the account population wrapper accepts an explicit --test-route.
+Bound it to 32 KiB, require schema 1/start_paused and the selected package navigation,
+freeze it with an absolute navigation reference, and record original/frozen hashes.
+Normal Rust client preflight still validates every route pose against world/nav;
+this is opt-in ordinary-input test travel, not movement authority or default player
+autopilot. Ordinary launches have no route. Invalid routing inputs refuse before
+creating a session. The new 24-point starter-valley-population-approach.json stops
+outside automatic aggro range; the full saved population access road is unchanged.
+
+Native account qualification accepts the introduction/follow-up through ordinary
+quest UI, equips the wand through its backpack UI, follows the checked 100-waypoint
+route, and uses Tab, A/D facing and key 1 casts to pull three independent wolves.
+Victims 2, 5 and 4 die separately; health remains 81, 57 and 41 after each fight.
+Return through the checked route succeeds with no player death or respawn. Normal
+100-health/100-mana profiles, costs, regeneration, cooldowns, outcomes, retaliation,
+perception and leash remain unchanged. The guide's training choice and turn-in
+complete the follow-up: 125 XP, journal revision 11, two Completed quests. A real
+PostgreSQL restart/select restores both quests and those exact totals. Transient
+health resets on a new session as before; no persistent-vitals claim.
+
+Evidence: build/starter-valley-population-hunt-native-v1/qualification.json,
+route-check.log, test-route.json, phase owned/launch.json, population-fight-{1,2,3}.json,
+trail-1-outward.json, trail-2-return.json, three-kills/completed-journal screenshots
+and database-proof.txt. Both sessions verify all 22 exported profile roles and five
+creature bindings; no singleton patrol or synthetic Test Player actor is admitted.
+Linux 1280x720 RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics.
+Debug rendering only; screenshot frame counters are not a performance qualification.
+
+17 wrapper tests, Python compile, fmt, strict workspace/all-target Clippy and diff
+checks pass: build/population-travel-{wrapper-tests,clippy}.log. No Rust changes;
+retained binary suites/hashes from starter-valley-population-intro-native-v3 remain
+applicable. Full area/pelt quest completion in the dressed population valley,
+balance, multiple contacts, Windows and capacity remain separate. Next: the authored
+overlook quest and conditional pelt loop using checked travel and ordinary pickup.
+Local commits only.
+
 P5-17 / P1-06 owned launcher SIGINT shutdown correction, 14 November 2026:
 watch_owner now reads the private lifetime pipe through os.read instead of blocking
 inside Python BufferedReader.read. This keeps interpreter shutdown free of the

@@ -1,3 +1,15 @@
+Explicit account test travel (14 November 2026): the account population wrapper can
+accept `--test-route FILE` for a development qualification. Routes must start paused
+and reference that package's navigation. The wrapper bounds and freezes the request,
+resolves its navigation reference and records source/frozen hashes; normal client
+preflight then checks it against the authored world. Use the existing F7/Shift-F7
+test controls to start return/outward travel through ordinary Classic input. Normal
+account launches remain manual. This does not add a production autopilot.
+
+The dressed valley approach fixture now passes three ordinary wand kills, checked
+return, guide turn-in and database restart: 125 XP/revision 11 with no player death.
+Native area/pelt completion remains separate. See STATUS for full evidence/limits.
+
 Owned session shutdown (14 November 2026): closing the editor lifetime pipe still
 stops its account/Test Player children. SIGINT also shuts down cleanly while that
 pipe remains open; the watcher no longer holds Python's buffered-stdin lock during

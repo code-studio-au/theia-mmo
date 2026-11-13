@@ -67,6 +67,28 @@ def profile_role(flag):
             '--document-catalog': 'documents'}.get(flag, flag.removeprefix('--').replace('-', '_'))
 
 
+def test_route_snapshot(path, package):
+    """Freeze an explicitly selected test route; Rust still checks every pose."""
+    if path is None:
+        return None
+    path = path.resolve()
+    with path.open('rb') as file:
+        source = file.read(32 * 1024 + 1)
+    if len(source) > 32 * 1024:
+        raise ValueError('Test route exceeds 32 KiB')
+    document = json.loads(source)
+    if not isinstance(document, dict) or document.get('schema') != 1 or document.get('start_paused') is not True:
+        raise ValueError('Account test route must use schema 1 and start paused')
+    navigation = document.get('navigation')
+    if not isinstance(navigation, str) or not navigation or (path.parent/navigation).resolve() != (package/'navigation').resolve():
+        raise ValueError('Test route must use the selected population navigation')
+    document['navigation'] = str((package/'navigation').resolve())
+    data = (json.dumps(document, indent=2, allow_nan=False)+'\n').encode()
+    if len(data) > 32 * 1024:
+        raise ValueError('Frozen test route exceeds 32 KiB')
+    return data, dict(source_sha256=hashlib.sha256(source).hexdigest(), sha256=hashlib.sha256(data).hexdigest())
+
+
 def prepare(args, repository):
     manifest = getattr(args, 'gameplay_manifest', None)
     validator = getattr(args, 'gameplay_validator', None)
@@ -151,6 +173,7 @@ def prepare_profiles(args, repository, bundle=None):
         profiles.append((flag, name, data))
     if quest_loot and (not quest_items or not corpse_loot):
         raise ValueError('Quest-required loot needs an explicit inventory-bound quest journal and per-life rewards')
+    route = test_route_snapshot(getattr(args, 'test_route', None), package)
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     frozen = output/'profiles'
     frozen.mkdir(mode=0o700)
@@ -171,6 +194,9 @@ def prepare_profiles(args, repository, bundle=None):
     if encounter:
         command.append('--public-creature-attacks')
     command.extend(['--character-id', args.character_id] if args.character_id else ['--character-picker'])
+    if route:
+        (output/'test-route.json').write_bytes(route[0])
+        command.extend(['--test-route', str(output/'test-route.json')])
     if (package/'creature.glb').is_file():
         command.extend(['--creature-asset', str(package/'creature.glb')])
     records = []
@@ -180,6 +206,7 @@ def prepare_profiles(args, repository, bundle=None):
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
     (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=encounter, creature_threat=encounter, public_creature_attacks=encounter,
         quest_journal=bool(quests), quest_items=quest_items, quest_loot=quest_loot, quest_areas=bool(areas), guide_position=guide, gameplay_snapshot=report,
+        test_route=route[1] if route else None,
         scope='One authenticated character on the exported population with frozen gameplay profiles and durable grants; shared NPC retaliation and configured pursuit, return reset, damage threat and public attack timing; no Test Player controllers'), indent=2)+'\n')
     return command
 
@@ -191,6 +218,7 @@ def main():
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--window-size', default='1280x720')
+    parser.add_argument('--test-route', type=Path, help='Explicit paused test travel; frozen locally and checked by normal client preflight')
     parser.add_argument('--items', type=Path, help='Explicit item catalogue, paired with --reward-catalog')
     parser.add_argument('--reward-catalog', type=Path, help='Explicit rewards; per-life entries enable ordinary corpse pickup')
     parser.add_argument('--quest-catalog', type=Path, help='Explicit inventory-bound expanded journal; paired with dialogue and guide position')

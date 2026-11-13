@@ -45,7 +45,7 @@ def hold_alive(desktop, key, seconds, guard):
     desktop.hold_key(key, seconds, observe=guard.check)
 
 
-def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None, checked_travel=False):
+def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None, checked_travel=False, population=False):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
     expected_head = base_head + (3 if reach_areas else 0)
@@ -254,13 +254,32 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
              math.hypot(feet()[0]-authored_trail[0][0], feet()[2]-authored_trail[0][2]) < 3, 30)
         assert state()['combat']['player_deaths'] <= 3, 'Bounded quest test death budget exceeded'
 
+    def population_enemy():
+        observed = state()
+        alive = {t['entity'] for t in observed['combat_targets'] if t['current'] > 0}
+        candidates = [t for t in observed['target_entities'] if t['entity'] in alive
+                      and math.dist(feet(), t['position']) < 29.5]
+        assert candidates, 'No live population target within ordinary spell range'
+        target = min(candidates, key=lambda t: math.dist(feet(), t['position']))
+        face(target['position'])
+        for _ in range(8):
+            if state()['selected_hostile'] == target['entity']:
+                return
+            before = state()['selected_hostile']
+            desktop.key('Tab')
+            wait(lambda: state()['selected_hostile'] != before, 3)
+        raise AssertionError('Normal Tab cycle did not select the population target')
+
     def reach_enemy(travel=False):
         for _ in range(4):
             try:
                 if travel:
                     walk_trail()
-                approach(lambda: state()['enemy_global'])
-                engage()
+                if population:
+                    population_enemy()
+                else:
+                    approach(lambda: state()['enemy_global'])
+                    engage()
                 return state()['combat']['player_generation']
             except TravelLifeChanged:
                 if not authored_trail:
@@ -324,17 +343,21 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         ask('training')
     close_panels()
 
-    if not state()['sword_equipped']:
+    equipped = lambda: state()['main_hand_item'] == 'theia.dev.training-wand' if population else state()['sword_equipped']
+    if not equipped():
         desktop.key('i')
         wait(lambda: state()['inventory_open'])
-        desktop.click(window, wait(lambda: state()['sword_slot_screen']), scale, 1)
+        desktop.click(window, wait(lambda: state()['wand_slot_screen' if population else 'sword_slot_screen']), scale, 1)
         desktop.click(window, wait(lambda: state()['equip_screen']), scale, 1)
-        wait(lambda: state()['sword_equipped'])
+        wait(equipped)
         close_panels()
     initial_deaths = state()['combat']['deaths']
     for count in range(1, 4):
-        wait(lambda: state().get('enemy_health') is not None and state()['enemy_health'] > 0, 15)
+        wait(lambda: any(t['current'] > 0 for t in state()['combat_targets']) if population else
+             state().get('enemy_health') is not None and state()['enemy_health'] > 0, 35)
         fight_generation = reach_enemy(travel=bool(authored_trail) and count == 1)
+        victim = state()['selected_hostile']
+        start_feet = feet()
         deadline = time.monotonic()+60
         while quest(SECOND)['counts'][WOLVES] < count:
             assert time.monotonic() < deadline, 'Normal wolf fight timed out'
@@ -344,9 +367,18 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
                 deadline = time.monotonic()+60
             elif not authored_trail:
                 assert state()['combat']['player_deaths'] == 0, 'Quest fixture player died'
-            desktop.key('2')
+            if population:
+                target = next((t for t in state()['target_entities'] if t['entity'] == state()['selected_hostile']), None)
+                if target:
+                    face(target['position'])
+            desktop.key('1' if population else '2')
             time.sleep(.25)
         wait(lambda: journal()['xp'] == 25+25*count)
+        if population:
+            (folder/f'population-fight-{count}.json').write_text(json.dumps(dict(
+                victim=victim, start_feet=start_feet, end_feet=feet(),
+                combat=state()['combat'], targets=state()['combat_targets'],
+                quest=quest(SECOND), xp=journal()['xp']), indent=2)+'\n')
     assert state()['combat']['deaths'] == initial_deaths+3
     capture('three-kills.png')
     returned_via_respawn = False

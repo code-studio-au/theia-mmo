@@ -1,3 +1,9 @@
+Dressed valley population hunt, 14 November 2026: checked outward/return travel,
+three independent kills with normal controls and zero player deaths, guide follow-up
+and durable 125 XP/revision 11 rejoin pass. Explicit account test routes are paused,
+frozen and preflight-checked. Next: authored overlook and conditional pelt quests in
+this populated valley. See STATUS for debug/device and remaining scope.
+
 Owned launcher shutdown, 14 November 2026: SIGINT with an open editor lifetime
 pipe now exits cleanly; real-pipe regressions and two native valley account sessions
 with database restart pass. Next: checked population travel/combat/quest completion
