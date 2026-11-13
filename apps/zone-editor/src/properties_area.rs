@@ -18,6 +18,7 @@ struct PopulationKey {
     revision: u64,
     group: Option<u64>,
     context: Option<u64>,
+    creature: Option<u64>,
 }
 
 pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
@@ -160,6 +161,7 @@ fn sync(
         revision: session.editor.revision(),
         group: session.spawn_group_selected,
         context: session.quest_context.as_ref().map(|c| c.generation()),
+        creature: session.creature_context.as_ref().map(|c| c.generation),
     };
     if population_key.as_ref() != Some(&key) && !population_status.is_empty() {
         let status = crate::spawn_groups::inspection(&session);

@@ -1,3 +1,20 @@
+P5-17 direct creature loading in the editor, headless checkpoint, 13 November 2026:
+File → Load creature definition uses the existing bounded JSON browser and accepts
+standalone or validated legacy creature files without a quest template. Loading
+preserves document/history/saved state; bad files preserve the previous context.
+Use loaded creature applies the existing undoable spawn-group ID edit. The inspector
+refreshes on context changes and shows the source file; an explicitly loaded type
+takes precedence over a gameplay template's creature. Population export/Start seeds
+its creature field from that path. Session context is not stored as a zone dependency.
+All 238 editor tests pass (ten asset-dependent checks remain opt-in), including the
+actual private UDP export regression, read-only browser failure handling, assignment/
+undo, inspector cache refresh and export field default. Fmt and strict workspace/
+all-target Clippy pass. Initial checks exposed a test fixture already using the
+same creature ID and sandbox socket refusal; both were resolved before acceptance.
+The final run removed DISPLAY/WAYLAND_DISPLAY. No mouse/display or native rendering
+check was performed; new menu layout and native interaction remain unverified.
+Evidence: build/editor-creature-context-final.log.
+
 P5-17 standalone population creature definitions, 13 November 2026:
 Population loader and editor export accept bounded schema-3 creature type files
 without a patrol route. Explicit can_deflect and existing behavior bounds remain;

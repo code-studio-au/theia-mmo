@@ -181,6 +181,7 @@ struct Session {
     file_dialog: Option<file_picker::Draft>,
     export_dialog: Option<export_dialog::Draft>,
     quest_context: Option<quest_inspector::Context>,
+    creature_context: Option<spawn_groups::Context>,
 }
 struct Drag {
     id: u64,
@@ -267,6 +268,7 @@ impl Session {
             file_dialog: None,
             export_dialog: None,
             quest_context: None,
+            creature_context: None,
         }
     }
     fn placement_dimensions(&self, primitive: Primitive) -> [f64; 3] {

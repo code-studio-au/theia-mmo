@@ -1156,4 +1156,23 @@ fn spawn_creature_assignment_commits_pending_fields_and_refreshes_loaded_context
             .iter(app.world())
             .any(|text| text.0.contains("Load gameplay to inspect"))
     );
+    app.world_mut().resource_mut::<Session>().creature_context = Some(
+        crate::spawn_groups::Context::load(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../content/gameplay/development-creature-passive.json"),
+        )
+        .unwrap(),
+    );
+    app.update();
+    assert_eq!(
+        app.world().resource::<Session>().editor.revision(),
+        revision
+    );
+    assert!(
+        app.world_mut()
+            .query::<&Text>()
+            .iter(app.world())
+            .any(|text| text.0.contains("Passive definition resolved")
+                && text.0.contains("Creature file:"))
+    );
 }

@@ -4717,6 +4717,17 @@ target/debug/theia-zone-editor --zone my-zone.json \
   --content-id theia.zone.my-population --revision 1
 ```
 
+Use **File → Load creature definition…** to load a standalone or legacy creature
+file without a quest template. The selected spawn group's inspector shows the
+loaded type and source path; **Use loaded creature** applies one undoable ID edit.
+Loading alone leaves the zone and saved file unchanged. Invalid choices preserve
+the previous type. An explicitly loaded creature takes precedence over the creature
+inside a gameplay template, and seeds the creature field in population export/Start.
+The file is session context; saving the zone stores its creature ID, not a new
+external dependency path. Reload the file in a later editor session as needed.
+This menu flow has headless controller tests; native visual/input verification is
+pending while the user reserves the display.
+
 Standalone creature definitions use schema 3 with `id`,
 `speed_metres_per_second`, `wait_ms`, explicit boolean `can_deflect`, and optional
 validated `aggro`. They have no `route` field. Population export and loading also

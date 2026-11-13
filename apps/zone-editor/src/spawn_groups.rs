@@ -2,12 +2,46 @@
 use super::*;
 use theia_zone::spawn_groups::SpawnGroup;
 
+pub(super) struct Context {
+    pub path: PathBuf,
+    pub generation: u64,
+    definition: theia_network::simulation::creatures::Definition,
+}
+impl Context {
+    pub fn load(path: &std::path::Path) -> Result<Self, String> {
+        use std::io::Read;
+        use theia_network::simulation::creatures;
+        let path = path.canonicalize().map_err(|e| e.to_string())?;
+        let mut bytes = Vec::new();
+        std::fs::File::open(&path)
+            .map_err(|e| e.to_string())?
+            .take(creatures::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|e| e.to_string())?;
+        let definition = creatures::Definition::from_json(&bytes).map_err(|e| e.to_string())?;
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+        Ok(Self {
+            path,
+            definition,
+            generation: NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+        })
+    }
+}
+fn loaded_definition(
+    session: &Session,
+) -> Option<&theia_network::simulation::creatures::Definition> {
+    session
+        .creature_context
+        .as_ref()
+        .map(|c| &c.definition)
+        .or_else(|| session.quest_context.as_ref().map(|c| c.creature()))
+}
+
 pub(super) fn can_bind_creature(session: &Session) -> bool {
     session.play.is_none()
-        && session.quest_context.as_ref().is_some_and(|context| {
+        && loaded_definition(session).is_some_and(|definition| {
             session.editor.zone().spawn_groups.iter().any(|g| {
-                Some(g.id) == session.spawn_group_selected
-                    && g.creature != context.creature().id().as_str()
+                Some(g.id) == session.spawn_group_selected && g.creature != definition.id().as_str()
             })
         })
 }
@@ -15,14 +49,7 @@ pub(super) fn bind_creature(session: &mut Session) {
     if !can_bind_creature(session) {
         return;
     }
-    let creature = session
-        .quest_context
-        .as_ref()
-        .unwrap()
-        .creature()
-        .id()
-        .as_str()
-        .to_owned();
+    let creature = loaded_definition(session).unwrap().id().as_str().to_owned();
     let mut group = session
         .editor
         .zone()
@@ -35,11 +62,15 @@ pub(super) fn bind_creature(session: &mut Session) {
     session.edit(vec![Edit::PutSpawnGroup { group }]);
 }
 pub(super) fn inspection(session: &Session) -> String {
-    inspect_binding(
+    let mut report = inspect_binding(
         session.editor.zone(),
         session.spawn_group_selected,
-        session.quest_context.as_ref().map(|c| c.creature()),
-    )
+        loaded_definition(session),
+    );
+    if let Some(context) = &session.creature_context {
+        report.push_str(&format!("\nCreature file: {}", context.path.display()));
+    }
+    report
 }
 fn inspect_binding(
     zone: &Zone,
@@ -50,7 +81,8 @@ fn inspect_binding(
         return String::new();
     };
     let Some(definition) = definition else {
-        return "Load gameplay to inspect or assign its creature definition".into();
+        return "Load gameplay to inspect its creature, or load a creature definition directly"
+            .into();
     };
     let mut report = format!("Loaded creature: {}", definition.id().as_str());
     match theia_network::simulation::population::authoring::binding(zone, id, definition.clone()) {
@@ -341,6 +373,45 @@ impl Report<'_, '_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn standalone_assignment_uses_explicit_context_and_undo_preserves_the_loaded_type() {
+        let mut session = session([0.; 3], 0.);
+        add(&mut session);
+        let mut group = session.editor.zone().spawn_groups[0].clone();
+        group.creature = "theia.creature.unresolved".into();
+        session.edit(vec![Edit::PutSpawnGroup { group }]);
+        let original = session.editor.zone().clone();
+        session.creature_context = Some(
+            Context::load(
+                &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../content/gameplay/development-creature-passive.json"),
+            )
+            .unwrap(),
+        );
+        assert!(session.quest_context.is_none());
+        // An explicitly chosen standalone type takes precedence over a later
+        // quest template; the inspector shows its source file.
+        session.quest_context = Some(
+            quest_inspector::Context::load(
+                &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../content/development-gameplay-classic-quest-areas.json"),
+            )
+            .unwrap(),
+        );
+        assert!(can_bind_creature(&session));
+        bind_creature(&mut session);
+        assert!(!can_bind_creature(&session));
+        assert!(inspection(&session).contains("Passive definition resolved"));
+        assert!(inspection(&session).contains("Creature file:"));
+        let mut expected = original.clone();
+        expected.spawn_groups[0].creature = "theia.dev.training-creature".into();
+        assert_eq!(session.editor.zone(), &expected);
+        session.execute(Command::Undo {
+            expected_revision: session.editor.revision(),
+        });
+        assert_eq!(session.editor.zone(), &original);
+        assert!(can_bind_creature(&session));
+    }
     #[test]
     fn loaded_creature_assignment_is_explicit_undoable_and_preserves_other_group_fields() {
         let mut session = session([0.; 3], 0.);

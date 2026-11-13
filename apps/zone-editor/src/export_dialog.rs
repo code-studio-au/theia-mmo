@@ -270,7 +270,10 @@ pub(super) fn open(
             },
             format!("theia.zone.{slug}"),
             "1".into(),
-            String::new(),
+            session
+                .creature_context
+                .as_ref()
+                .map_or_else(String::new, |c| c.path.display().to_string()),
             population_export::default_baker()
                 .map_or_else(|_| String::new(), |p| p.display().to_string()),
             "3".into(),
@@ -936,10 +939,23 @@ mod tests {
             ..default()
         });
         app.update();
+        let context = crate::spawn_groups::Context::load(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../content/gameplay/development-creature-passive.json"),
+        )
+        .unwrap();
+        let creature_path = context.path.display().to_string();
+        app.world_mut().resource_mut::<Session>().creature_context = Some(context);
         app.world_mut()
             .resource_mut::<workspace::Requests>()
             .export_population = true;
         app.update();
+        assert!(
+            app.world_mut()
+                .query::<(&Field, &EditableText)>()
+                .iter(app.world())
+                .any(|(field, text)| field.0 == 3 && text.value() == creature_path.as_str())
+        );
         for expected in [1, 2, 3, 4, 5, 7, 0] {
             app.world_mut()
                 .resource_mut::<ButtonInput<KeyCode>>()

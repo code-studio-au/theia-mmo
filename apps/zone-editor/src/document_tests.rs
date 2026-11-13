@@ -656,3 +656,53 @@ fn gameplay_browser_loads_read_only_and_invalid_choices_preserve_context_and_zon
     );
     cancel(&mut app);
 }
+
+#[test]
+fn creature_browser_loads_without_gameplay_and_invalid_files_preserve_the_selected_type() {
+    let root = Sandbox::new();
+    let mut app = fixture(&root, [8192., 0., 8192.]);
+    let source = app.world().resource::<Session>().editor.zone().clone();
+    let revision = app.world().resource::<Session>().editor.revision();
+    let creature = root.0.join("creature.json");
+    let bytes = include_bytes!("../../../content/gameplay/development-creature-passive.json");
+    std::fs::write(&creature, bytes).unwrap();
+    app.world_mut()
+        .resource_mut::<workspace::Requests>()
+        .creature_open = true;
+    app.update();
+    assert_eq!(
+        app.world()
+            .resource::<Session>()
+            .file_dialog
+            .as_ref()
+            .unwrap()
+            .mode,
+        Mode::Creature
+    );
+    filename(&mut app, creature.to_str().unwrap());
+    apply(&mut app);
+    let session = app.world().resource::<Session>();
+    assert!(session.file_dialog.is_none());
+    assert!(session.quest_context.is_none());
+    assert_eq!(session.creature_context.as_ref().unwrap().path, creature);
+    let generation = session.creature_context.as_ref().unwrap().generation;
+    app.world_mut()
+        .resource_mut::<workspace::Requests>()
+        .creature_open = true;
+    app.update();
+    filename(
+        &mut app,
+        root.0.join("original.zone.json").to_str().unwrap(),
+    );
+    apply(&mut app);
+    let session = app.world().resource::<Session>();
+    assert!(session.file_dialog.is_some());
+    assert_eq!(
+        session.creature_context.as_ref().unwrap().generation,
+        generation
+    );
+    assert_eq!(session.editor.zone(), &source);
+    assert_eq!(session.editor.revision(), revision);
+    assert_eq!(std::fs::read(&creature).unwrap(), bytes);
+    cancel(&mut app);
+}

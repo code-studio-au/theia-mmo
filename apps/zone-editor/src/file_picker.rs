@@ -11,7 +11,17 @@ const SCAN_LIMIT: usize = 4096;
 pub(super) enum Mode {
     Open,
     Gameplay,
+    Creature,
     SaveAs,
+}
+impl Mode {
+    fn prompt(self) -> &'static str {
+        match self {
+            Self::Gameplay => "Choose a gameplay manifest",
+            Self::Creature => "Choose a creature definition",
+            _ => "Choose a zone file",
+        }
+    }
 }
 #[derive(Clone)]
 pub(super) struct Entry {
@@ -305,7 +315,10 @@ pub(super) fn keyboard(
         || implicit_save_as
         || (ctrl && shift && keys.just_pressed(KeyCode::KeyS));
     let gameplay = std::mem::take(&mut requests.gameplay_open);
-    let mode = if gameplay {
+    let creature = std::mem::take(&mut requests.creature_open);
+    let mode = if creature {
+        Some(Mode::Creature)
+    } else if gameplay {
         Some(Mode::Gameplay)
     } else if open {
         Some(Mode::Open)
@@ -329,7 +342,12 @@ pub(super) fn keyboard(
             "Finish or cancel the preview, or leave playtest, before choosing a file".into();
         return;
     }
-    let base = if mode == Mode::Gameplay {
+    let base = if mode == Mode::Creature {
+        session
+            .creature_context
+            .as_ref()
+            .map_or_else(|| session.picker_path(), |c| c.path.clone())
+    } else if mode == Mode::Gameplay {
         session
             .quest_context
             .as_ref()
@@ -344,7 +362,9 @@ pub(super) fn keyboard(
     let mut draft = Draft {
         mode,
         folder: folder.into(),
-        text: if mode == Mode::SaveAs || (mode == Mode::Gameplay && session.quest_context.is_some())
+        text: if mode == Mode::SaveAs
+            || (mode == Mode::Gameplay && session.quest_context.is_some())
+            || (mode == Mode::Creature && session.creature_context.is_some())
         {
             base.file_name()
                 .map_or_else(String::new, |s| s.to_string_lossy().into_owned())
@@ -379,6 +399,7 @@ pub(super) fn keyboard(
         Mode::Open => "Choose a zone file; undo can restore the previous document",
         Mode::SaveAs => "Choose a new zone filename",
         Mode::Gameplay => "Choose a gameplay manifest; quest data is loaded read-only",
+        Mode::Creature => "Choose a creature definition; assign it to a spawn group after loading",
     }
     .into();
     session.file_dialog = Some(draft);
@@ -392,17 +413,17 @@ fn submit(draft: &mut Draft, session: &mut Session, view: &mut View) -> Result<b
         if draft.mode != Mode::SaveAs {
             draft.refresh(path)?;
             draft.text.clear();
-            session.status = if draft.mode == Mode::Gameplay {
-                "Choose a gameplay manifest"
-            } else {
-                "Choose a zone file"
-            }
-            .into();
+            session.status = draft.mode.prompt().into();
             return Ok(false);
         }
         return Err("Save As needs a filename, not a directory".into());
     }
     match draft.mode {
+        Mode::Creature => {
+            let context = crate::spawn_groups::Context::load(&path)?;
+            session.status = format!("Loaded creature definition {}", context.path.display());
+            session.creature_context = Some(context);
+        }
         Mode::Gameplay => {
             let context = crate::quest_inspector::Context::load(&path)?;
             session.status = format!("Loaded gameplay {}", context.path.display());
@@ -471,12 +492,7 @@ pub(super) fn finish(
     if typed != draft.text {
         draft.text = typed;
         draft.overwrite = false;
-        session.status = if draft.mode == Mode::Gameplay {
-            "Choose a gameplay manifest"
-        } else {
-            "Choose a zone file"
-        }
-        .into();
+        session.status = draft.mode.prompt().into();
     }
     let range = field.editor().raw_selection().text_range();
     draft.selection = [range.start, range.end];
@@ -511,12 +527,7 @@ pub(super) fn finish(
             match draft.browse(folder) {
                 Ok(()) => {
                     reset = true;
-                    session.status = if draft.mode == Mode::Gameplay {
-                        "Choose a gameplay manifest"
-                    } else {
-                        "Choose a zone file"
-                    }
-                    .into();
+                    session.status = draft.mode.prompt().into();
                 }
                 Err(error) => session.status = error,
             }
@@ -529,12 +540,7 @@ pub(super) fn finish(
                         draft.text = entry.name.clone();
                         draft.overwrite = false;
                         reset = true;
-                        session.status = if draft.mode == Mode::Gameplay {
-                            "Choose a gameplay manifest"
-                        } else {
-                            "Choose a zone file"
-                        }
-                        .into();
+                        session.status = draft.mode.prompt().into();
                     }
                 }
                 _ => {}
@@ -609,6 +615,8 @@ pub(super) fn finish(
                     .map_or_else(String::new, |e| e.name.clone()),
                 Control::Apply => if draft.overwrite {
                     "Overwrite file"
+                } else if draft.mode == Mode::Creature {
+                    "Load creature definition"
                 } else if draft.mode == Mode::Gameplay {
                     "Load gameplay"
                 } else if draft.mode == Mode::Open {
@@ -625,7 +633,9 @@ pub(super) fn finish(
             };
         }
         if let Ok(mut caption) = captions.single_mut() {
-            **caption = if draft.mode == Mode::Gameplay {
+            **caption = if draft.mode == Mode::Creature {
+                "Load creature definition"
+            } else if draft.mode == Mode::Gameplay {
                 "Load gameplay"
             } else if draft.mode == Mode::Open {
                 "Open zone"
