@@ -14,8 +14,8 @@ Pending inline edits commit before a boundary action. Changes remain in memory
 until explicit Save. The shared JSONL command is `edit_spawn_boundary`, with
 `id` and an `edit` carrying `operation: move|insert|remove`; move uses `index`
 and `position: [x,z]`, insert uses `after` and `position`, remove uses `index`.
-These boundary controls are headlessly tested; native layout/input/GPU checks
-remain pending under the user's no-display/no-mouse instruction (13 November).
+Boundary controls pass headless tests and, after renewed display authorization,
+native Linux input/layout checks at 3440×1440 on RX 7900 XTX Vulkan (13 November).
 Use File → Load gameplay… to inspect that template's creature definition in spawn
 Attributes. Use loaded creature assigns its ID through normal undo history and
 commits pending inline edits first. Inspection reports disabled groups, mismatched
@@ -23,7 +23,8 @@ references, unsupported aggressive behavior, unresolved model references and the
 current 16-actor runtime limit. A resolved passive definition still needs checked
 placement against a world/navigation pair. Reloading gameplay refreshes inspection;
 assignment does not save the zone or activate the template's patrol behavior.
-These controls have headless panel/history tests; native layout remains unqualified.
+These controls pass headless panel/history tests and the same isolated native
+Linux session; other native layouts and Windows remain unqualified.
 Drafts remain explicitly refused by world export until population integration exists. An offline placement checker can now test a separate request against an
 existing exported world/navigation pair:
 

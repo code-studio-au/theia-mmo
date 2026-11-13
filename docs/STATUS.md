@@ -1,3 +1,21 @@
+P3-07 / P5-17 native spawn controls qualification, 13 November 2026:
+After renewed user authorization for mouse/display use, an isolated owned editor
+session passes boundary vertex movement, midpoint insertion/removal, whole-boundary
+return and exact three-step undo, plus loaded-creature assignment/undo. Existing
+count/delay/u64 seed/enabled controls, copy/delete/undo, Add, volume preview, offline
+play preview hiding and explicit save also pass. Original source bytes stay exact;
+only the test save path is written. The existing review editor is not modified.
+Linux X11 3440x1440, AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan, device 29772,
+KHRONOS validation enabled: zero GPU validation diagnostics. Captured layout shows
+all controls and loaded aggressive-definition feedback; inspected the screenshot.
+The two pre-existing missing default asset watcher warnings remain unrelated.
+Evidence: build/population-editor-native-extended-v1/{qualification.json,state.json,
+editor.log,boundary-and-creature-binding.png,spawn-attributes.png,spawn-volume.png};
+owned process exits and input releases. Native evidence is this Linux device/layout,
+not Windows, other layouts or live population in editor Play/export. Prior 229
+headless editor checks and strict workspace Clippy remain passing. Extended native
+qualifier is tools/qualify_editor_spawn_groups.py --extended.
+
 P3-07 real connected population combat and independent respawns, 13 November 2026:
 Extend the actual server executable qualification with a checked five-actor group
 near the saved player spawn and an explicitly saved 3-second respawn policy. Two

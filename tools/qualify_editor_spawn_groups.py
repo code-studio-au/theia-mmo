@@ -12,13 +12,14 @@ from gpu_validation import check_gpu_diagnostics
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
 parser.add_argument('--output', type=Path, required=True)
+parser.add_argument('--extended', action='store_true', help='Also qualify vertex reshaping and loaded creature assignment')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
 source, saved, report = [out/name for name in ('source.zone.json', 'saved.zone.json', 'state.json')]
 original = json.dumps(dict(schema=14, name='NPC spawn draft check', origin=[8192,0,8192],
     spawn=[8192,.1,8198], objects=[], terrain=dict(chunk=[63,63], span_chunks=2, heights=[0.]*(65*65)),
-    spawn_groups=[dict(id=10, name='Western wolves', enabled=True, creature='theia.dev.training-creature',
+    spawn_groups=[dict(id=10, name='Western wolves', enabled=True, creature='theia.creature.unresolved' if args.extended else 'theia.dev.training-creature',
     volume=dict(polygon=[[8184,8184],[8200,8184],[8200,8192],[8192,8192],[8192,8200],[8184,8200]], min_y=-2,max_y=8),
     target_alive=5,respawn_seconds=30,seed=42)])).encode()
 source.write_bytes(original)
@@ -28,7 +29,7 @@ env = client_environment(dict(os.environ, DISPLAY=':0', XDG_RUNTIME_DIR='/run/us
 x = None
 with (out/'editor.log').open('w') as log:
     process = subprocess.Popen([str(args.binary.resolve()), '--zone', str(source), '--save-path', str(saved),
-        '--report', str(report)], env=env, stdout=log, stderr=log)
+        '--report', str(report), *(['--gameplay-template', str(Path('content/development-gameplay-classic-quest-areas.json').resolve())] if args.extended else [])], env=env, stdout=log, stderr=log)
     try:
         window = wait(lambda: owned_window(process.pid), 45)
         x = Desktop(); x.focus(window)
@@ -71,6 +72,31 @@ with (out/'editor.log').open('w') as log:
         select(10); x.key('f'); fresh()
         click(next(c['centre'] for c in state()['property_tabs']['controls'] if c['tab']=='Attributes'))
         wait(lambda: state()['spawn_group_preview']['visible_edges']==18)
+        if args.extended:
+            def control(name):
+                item = wait(lambda: next((c for c in state()['workspace_controls']
+                    if c['target'] == name and not c['menu_item'] and min(c['size']) > 0), None))
+                click(item['centre'])
+            control('Command(BindSpawnCreature)')
+            wait(lambda: state()['document']['spawn_groups'][0]['creature'] == 'theia.dev.training-creature')
+            chord('z')
+            wait(lambda: state()['document']['spawn_groups'][0]['creature'] == 'theia.creature.unresolved')
+            control('Command(BindSpawnCreature)')
+            wait(lambda: state()['document']['spawn_groups'][0]['creature'] == 'theia.dev.training-creature')
+            before = state()['document']['spawn_groups'][0]['volume']
+            control('SpawnBoundaryPoint(1)')
+            edit('inline_attributes', 0, 8183.5)
+            wait(lambda: state()['document']['spawn_groups'][0]['volume']['polygon'][0][0] == 8183.5)
+            control('SpawnBoundaryInsert')
+            wait(lambda: len(state()['document']['spawn_groups'][0]['volume']['polygon']) == 7)
+            assert state()['document']['spawn_groups'][0]['volume']['polygon'][1] == [8191.75, 8184.]
+            control('SpawnBoundaryRemove')
+            wait(lambda: len(state()['document']['spawn_groups'][0]['volume']['polygon']) == 6)
+            control('SpawnBoundaryWhole')
+            capture('boundary-and-creature-binding.png')
+            for _ in range(3): chord('z')
+            wait(lambda: state()['document']['spawn_groups'][0]['volume'] == before)
+            select(10)
         edit('inline_attributes',4,7)
         wait(lambda: state()['document']['spawn_groups'][0]['target_alive']==7)
         edit('inline_attributes',5,45)
@@ -105,4 +131,5 @@ assert check_gpu_diagnostics((out/'editor.log').read_text())==0
 (out/'qualification.json').write_text(json.dumps(dict(passed=True,gpu=gpu,
     concave_preview=True,create_filter=True,inline_count_delay_seed=True,enabled=True,
     copy_delete_undo=True,hidden_in_play=True,explicit_save=True,source_preserved=True,
-    scope='Population authoring drafts only; no live spawning or boundary vertex editing'),indent=2)+'\n')
+    boundary_reshape=args.extended, loaded_creature_assignment=args.extended,
+    scope='Linux native population authoring controls only; no live spawning or Windows claim'),indent=2)+'\n')
