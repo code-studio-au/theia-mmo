@@ -1,3 +1,21 @@
+P3-06 / P3-09 bounded shared navigation scheduling, 13 November 2026:
+Added a 16-creature dispatcher around the existing dedicated navigation worker.
+Each exact creature identity retains bounded latest-request/reply storage;
+round-robin dispatch prevents a changing goal from bypassing queued neighbours.
+Retirement, superseded revisions and simulation deadlines discard stale results,
+including retirement followed by re-registration of the same key. Route failures
+remain available to the existing blocked/return policy; no direct-line fallback.
+The owner pump only dispatches/polls; fixed steps need not search or wait.
+Six real-worker integration checks pass (four new scheduler contracts), all 501
+network library tests pass (10 ignored), and strict workspace/all-target Clippy,
+fmt and diff checks pass. The sandbox-only library run could not open local UDP
+sockets; the subsequent authorized local-socket run passed. Evidence:
+build/navigation-scheduler-checks.log and navigation-scheduler-final-checks.log.
+Prerequisite: existing prepared Landmass worker and per-NPC retaliation. This is
+transport groundwork, not enabled population pursuit or a capacity claim. Next:
+move the existing pursuit runtime onto the shared dispatcher, then connect checked
+per-creature movement and qualify multiple live engagements. Local only.
+
 P3-06 / P3-09 shared per-NPC retaliation for spawned populations, 13 November 2026:
 Normal population launches with player-life/retaliation profiles now install one
 bounded independent engagement per spawned creature. All engagements reuse the

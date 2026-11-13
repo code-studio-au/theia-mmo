@@ -171,3 +171,161 @@ fn invalid_and_unavailable_destinations_never_publish_a_direct_line_fallback() {
         .unwrap();
     assert!(receive(&mut worker).route.is_ok());
 }
+
+use theia_network::navigation::scheduler::{MAX_REQUESTERS, Scheduler};
+
+fn receive_scheduled(scheduler: &mut Scheduler, creature: EntityKey, now: u64) -> Reply {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        scheduler.pump(now).unwrap();
+        if let Some(reply) = scheduler.take_reply(creature, now) {
+            return reply;
+        }
+        assert!(Instant::now() < deadline, "scheduler failed to publish");
+        thread::sleep(Duration::from_millis(1));
+    }
+}
+fn for_creature(request: Request, id: u64) -> Request {
+    Request {
+        tag: Tag {
+            creature: key(id),
+            ..request.tag
+        },
+        ..request
+    }
+}
+#[test]
+fn scheduler_bounds_admission_and_delivers_each_creature_without_consuming_other_replies() {
+    let (worker, request) = fixture();
+    let mut scheduler = Scheduler::new(worker);
+    for id in 1..=MAX_REQUESTERS as u64 {
+        scheduler.submit(for_creature(request, id)).unwrap();
+    }
+    assert_eq!(scheduler.registered(), MAX_REQUESTERS);
+    assert_eq!(scheduler.queued(), MAX_REQUESTERS);
+    assert_eq!(
+        scheduler.submit(for_creature(request, 100)),
+        Err(SubmitError::Busy)
+    );
+    // Waiting for the last actor lets all earlier replies accumulate in their
+    // bounded independent mailboxes. Taking its reply must not consume theirs.
+    let reply = receive_scheduled(&mut scheduler, key(MAX_REQUESTERS as u64), 10);
+    assert!(
+        reply
+            .current(scheduler.navigation(), reply.request.tag, 10)
+            .is_some()
+    );
+    assert_eq!(scheduler.queued(), 0);
+    for id in 1..MAX_REQUESTERS as u64 {
+        assert_eq!(
+            scheduler.take_reply(key(id), 10).unwrap().request,
+            for_creature(request, id)
+        );
+        assert!(scheduler.take_reply(key(id), 10).is_none());
+    }
+    scheduler.retire(key(1));
+    scheduler.submit(for_creature(request, 100)).unwrap();
+    assert!(
+        receive_scheduled(&mut scheduler, key(100), 10)
+            .route
+            .is_ok()
+    );
+}
+#[test]
+fn scheduler_replaces_active_goals_without_starving_another_actor() {
+    let (worker, request) = fixture();
+    let mut scheduler = Scheduler::new(worker);
+    scheduler.submit(request).unwrap();
+    scheduler.submit(for_creature(request, 3)).unwrap();
+    scheduler.pump(10).unwrap(); // Actor 1 is in flight, actor 3 must be next.
+    let replacement = Request {
+        tag: Tag {
+            revision: 2,
+            ..request.tag
+        },
+        end: point(50., 50.),
+        ..request
+    };
+    scheduler.submit(replacement).unwrap();
+    assert_eq!(scheduler.submit(request), Err(SubmitError::Invalid));
+    assert_eq!(scheduler.pending(key(1)), Some(replacement));
+    let other = receive_scheduled(&mut scheduler, key(3), 10);
+    assert!(other.route.is_ok());
+    // That pump dispatches the replacement, but cannot have polled it yet.
+    assert!(scheduler.take_reply(key(1), 10).is_none());
+    let reply = receive_scheduled(&mut scheduler, key(1), 10);
+    assert_eq!(reply.request, replacement);
+    assert!(
+        reply
+            .current(scheduler.navigation(), replacement.tag, 10)
+            .is_some()
+    );
+}
+#[test]
+fn scheduler_retirement_discards_inflight_life_even_when_key_is_registered_again() {
+    let (worker, request) = fixture();
+    let mut scheduler = Scheduler::new(worker);
+    scheduler.submit(request).unwrap();
+    scheduler.pump(10).unwrap();
+    scheduler.retire(key(1));
+    let fresh = Request {
+        end: point(40., 40.),
+        ..request
+    };
+    scheduler.submit(fresh).unwrap();
+    assert_eq!(receive_scheduled(&mut scheduler, key(1), 10).request, fresh);
+    scheduler.retire(key(1));
+    assert!(scheduler.pending(key(1)).is_none());
+    scheduler.submit(for_creature(request, 4)).unwrap();
+    assert_eq!(
+        receive_scheduled(&mut scheduler, key(4), 10)
+            .request
+            .tag
+            .creature,
+        key(4)
+    );
+}
+#[test]
+fn scheduler_expires_queued_active_and_ready_work_and_preserves_route_errors() {
+    let (worker, request) = fixture();
+    let mut scheduler = Scheduler::new(worker);
+    scheduler.submit(request).unwrap();
+    scheduler.submit(for_creature(request, 3)).unwrap();
+    scheduler.pump(10).unwrap();
+    scheduler.pump(41).unwrap();
+    assert_eq!(scheduler.queued(), 0);
+    assert!(scheduler.take_reply(key(1), 41).is_none());
+    assert!(scheduler.take_reply(key(3), 41).is_none());
+    assert_eq!(scheduler.submit(request), Err(SubmitError::Invalid));
+    assert_eq!(scheduler.pump(40), Err(SubmitError::Invalid));
+    let missing = Request {
+        tag: Tag {
+            revision: 2,
+            ..request.tag
+        },
+        end: point(200., 90.),
+        submitted: 41,
+        expires: 60,
+        ..request
+    };
+    scheduler.submit(missing).unwrap();
+    let reply = receive_scheduled(&mut scheduler, key(1), 41);
+    assert_eq!(reply.request, missing);
+    assert!(reply.route.is_err()); // The pursuit policy needs this failure.
+    let next = Request {
+        tag: Tag {
+            revision: 3,
+            ..request.tag
+        },
+        submitted: 41,
+        expires: 60,
+        ..request
+    };
+    scheduler.submit(next).unwrap();
+    scheduler.pump(41).unwrap(); // Dispatch actor 1 before queuing actor 4.
+    scheduler.submit(for_creature(next, 4)).unwrap();
+    receive_scheduled(&mut scheduler, key(4), 41);
+    assert!(scheduler.pending(key(1)).is_some()); // Ready, unconsumed reply.
+    assert!(scheduler.take_reply(key(1), 61).is_none());
+    assert!(scheduler.pending(key(1)).is_none());
+}
