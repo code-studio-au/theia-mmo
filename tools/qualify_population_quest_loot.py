@@ -61,7 +61,7 @@ def run(args):
                     cluster.restart()
                 folder = out/['unaccepted', 'accepted', 'resumed'][phase]
                 folder.mkdir()
-                runtime = folder/'runtime'
+                runtime = folder/'owned/runtime' if args.account_package else folder/'runtime'
                 env = {key: value for key, value in base_env.items() if not key.startswith('THEIA_')}
                 env.update(DISPLAY=':0', XDG_RUNTIME_DIR='/run/user/1000', WGPU_BACKEND='vulkan',
                     VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', WGPU_VALIDATION='1', RUST_LOG='info',
@@ -87,6 +87,15 @@ def run(args):
                     *(['--character-id', character] if character else ['--character-picker']),
                     *profiles, '--players', str(args.players.resolve()), '--binaries', str(binaries),
                     '--creature-asset', str(package/'creature.glb'), '--window-size', '1280x720']
+                if args.account_package:
+                    command = [sys.executable, 'tools/account_population_playtest.py',
+                        '--package', str(package), '--players', str(args.players.resolve()),
+                        '--binaries', str(binaries), '--output', str(folder/'owned'),
+                        '--items', str(Path('content/gameplay/development-loot-items.json').resolve()),
+                        '--reward-catalog', str(Path('content/gameplay/development-quest-required-loot-fixture.json').resolve()),
+                        '--quest-catalog', str(out/'journal.json'), '--guide-position', guide,
+                        '--dialogue-catalog', str(Path('content/quests/development-journal-dialogue.json').resolve()),
+                        *(['--character-id', character] if character else [])]
                 with (folder/'launcher.log').open('w') as log:
                     launcher = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT)
                     try:
@@ -174,6 +183,12 @@ def run(args):
                         launcher.stdin.close()
                     assert launcher.returncode == 0
                 selected = cluster.query('SELECT character_id FROM theia.characters;')
+                if args.account_package:
+                    frozen = json.loads((folder/'owned/launch.json').read_text())
+                    assert frozen['quest_journal'] and frozen['quest_items'] and frozen['quest_loot']
+                    assert len(frozen['profiles']) == 20 and frozen['guide_position'] == guide
+                    for profile in frozen['profiles']:
+                        assert hashlib.sha256((folder/'owned'/profile['file']).read_bytes()).hexdigest() == profile['sha256']
                 assert selected.returncode == 0 and len(selected.stdout.splitlines()) == 1
                 if character:
                     assert selected.stdout.strip() == character
@@ -209,7 +224,7 @@ def run(args):
     finally:
         desktop.close()
     assert not any((out/'cluster'/name).exists() for name in ['password', 'pgpass'])
-    result = dict(passed=True, runs=results, postgres_process_restarts=2, pid_bound_quest_clicks=True,
+    result = dict(passed=True, runs=results, postgres_process_restarts=2, pid_bound_quest_clicks=True, frozen_account_package=args.account_package,
         fixture='Explicit one-pelt journal; normal pursuing editor population and ordinary gameplay requests',
         binaries={name: hashlib.sha256((binaries/name).read_bytes()).hexdigest() for name in ['theia-client', 'theia-server']})
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
@@ -222,4 +237,5 @@ if __name__ == '__main__':
     parser.add_argument('--population', type=Path, required=True)
     parser.add_argument('--players', type=Path, default=default_player_assets())
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
+    parser.add_argument('--account-package', action='store_true', help='Qualify the frozen account wrapper instead of direct normal play')
     run(parser.parse_args())

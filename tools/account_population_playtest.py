@@ -64,15 +64,27 @@ def prepare(args, repository):
     rewards = getattr(args, 'reward_catalog', None)
     if bool(items) != bool(rewards):
         raise ValueError('Select item and reward catalogues together')
+    quests = getattr(args, 'quest_catalog', None)
+    dialogue = getattr(args, 'dialogue_catalog', None)
+    guide = getattr(args, 'guide_position', None)
+    if any([quests, dialogue, guide]) and not all([quests, dialogue, guide]):
+        raise ValueError('Select quest and dialogue catalogues and a guide position together')
     pursuit = configured_pursuit(package)
     overrides = {'--items': items, '--reward-catalog': rewards}
+    selected_names = {'--items': 'selected-items.json', '--reward-catalog': 'selected-rewards.json',
+                      '--quest-catalog': 'selected-quests.json', '--dialogue-catalog': 'selected-dialogue.json'}
+    quest_profiles = []
+    if quests:
+        overrides.update({'--quest-catalog': quests, '--dialogue-catalog': dialogue})
+        quest_profiles = [(flag, selected_names[flag]) for flag in ['--quest-catalog', '--dialogue-catalog']]
     profiles = []
     corpse_loot = False
-    for flag, name in [*PROFILES, *([RESET_PROFILE, THREAT_PROFILE] if pursuit else [])]:
+    quest_loot = False
+    for flag, name in [*PROFILES, *([RESET_PROFILE, THREAT_PROFILE] if pursuit else []), *quest_profiles]:
         selected = overrides.get(flag)
         source = selected.resolve() if selected else repository/'content/gameplay'/name
         if selected:
-            name = 'selected-items.json' if flag == '--items' else 'selected-rewards.json'
+            name = selected_names[flag]
         with source.open('rb') as file:
             data = file.read(1024 * 1024 + 1)
         if len(data) > 1024 * 1024:
@@ -83,7 +95,11 @@ def prepare(args, repository):
                 raise ValueError('Invalid reward catalogue')
             corpse_loot = any(isinstance(row, dict) and row.get('scope') == 'per_creature_life'
                               for row in document['rewards'])
+            quest_loot = any(isinstance(row, dict) and row.get('quest_required') is True
+                             for row in document['rewards'])
         profiles.append((flag, name, data))
+    if quest_loot and (not quests or not corpse_loot):
+        raise ValueError('Quest-required loot needs an explicit inventory-bound quest journal and per-life rewards')
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     frozen = output/'profiles'
     frozen.mkdir(mode=0o700)
@@ -93,6 +109,10 @@ def prepare(args, repository):
                '--public-avatar-life', '--stop-on-stdin-eof', '--session-directory', str(output/'runtime')]
     if corpse_loot:
         command.append('--creature-loot')
+    if quests:
+        command.extend(['--quest-journal', '--quest-items', '--guide-position', guide])
+    if quest_loot:
+        command.append('--quest-loot')
     if pursuit:
         command.append('--public-creature-attacks')
     command.extend(['--character-id', args.character_id] if args.character_id else ['--character-picker'])
@@ -104,6 +124,7 @@ def prepare(args, repository):
         command.extend([flag, str(frozen/name)])
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
     (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=pursuit, creature_threat=pursuit, public_creature_attacks=pursuit,
+        quest_journal=bool(quests), quest_items=bool(quests), quest_loot=quest_loot, guide_position=guide,
         scope='One authenticated character on the exported population; development typed combat and durable grants; shared NPC retaliation and configured pursuit, return reset, damage threat and public attack timing; no Test Player controllers'), indent=2)+'\n')
     return command
 
@@ -117,6 +138,9 @@ def main():
     parser.add_argument('--window-size', default='1280x720')
     parser.add_argument('--items', type=Path, help='Explicit item catalogue, paired with --reward-catalog')
     parser.add_argument('--reward-catalog', type=Path, help='Explicit rewards; per-life entries enable ordinary corpse pickup')
+    parser.add_argument('--quest-catalog', type=Path, help='Explicit inventory-bound expanded journal; paired with dialogue and guide position')
+    parser.add_argument('--dialogue-catalog', type=Path, help='Explicit quest contact dialogue; requires --quest-catalog')
+    parser.add_argument('--guide-position', help='Explicit quest contact x,z or x,y,z feet, or authored; requires --quest-catalog')
     parser.add_argument('--character-id', help='Optional existing owned character; otherwise publish the private picker')
     args = parser.parse_args()
     repository = Path(__file__).resolve().parent.parent

@@ -80,6 +80,69 @@ class AccountPopulation(unittest.TestCase):
             path = Path(command[command.index('--creature-reset')+1])
             self.assertEqual(path.read_bytes(), (root/'content/gameplay'/launcher.RESET_PROFILE[1]).read_bytes())
 
+    def test_explicit_journal_freezes_contact_and_selects_conditional_loot_only_when_authored(self):
+        for conditional in [False, True]:
+            with self.subTest(conditional=conditional), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                args = self.fixture(root)
+                args.quest_catalog, args.dialogue_catalog = root/'quests.json', root/'dialogue.json'
+                args.guide_position = '8193,0.008,8191'
+                args.quest_catalog.write_text('{"schema":3,"quests":[]}')
+                args.dialogue_catalog.write_text('{"schema":1}')
+                args.items, args.reward_catalog = root/'items.json', root/'rewards.json'
+                args.items.write_text('{"schema":2}')
+                args.reward_catalog.write_text(json.dumps({'rewards': [dict(scope='per_creature_life', quest_required=conditional)]}))
+                command = launcher.prepare(args, root)
+                report = json.loads((args.output/'launch.json').read_text())
+                self.assertEqual(len(report['profiles']), 18)
+                self.assertTrue(report['quest_journal'] and report['quest_items'])
+                self.assertEqual(report['quest_loot'], conditional)
+                self.assertEqual('--quest-loot' in command, conditional)
+                self.assertIn('--quest-journal', command)
+                self.assertIn('--quest-items', command)
+                self.assertEqual(command[command.index('--guide-position')+1], args.guide_position)
+                for flag, source in [('--quest-catalog', args.quest_catalog), ('--dialogue-catalog', args.dialogue_catalog)]:
+                    snapshot = Path(command[command.index(flag)+1])
+                    original = source.read_bytes()
+                    source.write_bytes(b'changed source')
+                    self.assertEqual(snapshot.read_bytes(), original)
+
+    def test_partial_quest_contact_refuses_before_creating_output(self):
+        for missing in ['quest_catalog', 'dialogue_catalog', 'guide_position']:
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                args = self.fixture(root)
+                args.quest_catalog = root/'missing-quests.json'
+                args.dialogue_catalog = root/'missing-dialogue.json'
+                args.guide_position = '0,0'
+                setattr(args, missing, None)
+                with self.assertRaisesRegex(ValueError, 'together'):
+                    launcher.prepare(args, root)
+                self.assertFalse(args.output.exists())
+
+    def test_conditional_rewards_without_journal_refuse_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            args.items, args.reward_catalog = root/'items.json', root/'rewards.json'
+            args.items.write_text('{"schema":2}')
+            args.reward_catalog.write_text('{"rewards":[{"scope":"per_creature_life","quest_required":true}]}')
+            with self.assertRaisesRegex(ValueError, 'inventory-bound quest journal'):
+                launcher.prepare(args, root)
+            self.assertFalse(args.output.exists())
+
+    def test_oversized_quest_contact_is_bounded_before_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            args.quest_catalog, args.dialogue_catalog = root/'quests.json', root/'dialogue.json'
+            args.guide_position = '0,0'
+            args.quest_catalog.write_bytes(b'x'*(1024*1024+1))
+            args.dialogue_catalog.write_text('{}')
+            with self.assertRaisesRegex(ValueError, 'byte budget'):
+                launcher.prepare(args, root)
+            self.assertFalse(args.output.exists())
+
     def test_behavior_inputs_reject_escape_and_oversized_data_before_output(self):
         for value in ['../outside.json', '/tmp/outside.json', 'a\\outside.json', 'x'*257]:
             with self.subTest(path=value), tempfile.TemporaryDirectory() as folder:

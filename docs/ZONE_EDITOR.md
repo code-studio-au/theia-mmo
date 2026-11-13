@@ -1,3 +1,23 @@
+Explicit account population journals (14 November 2026): after a checked population
+export, the account wrapper can launch an explicitly selected inventory-bound
+expanded journal and one dialogue contact:
+
+```sh
+python3 tools/account_population_playtest.py --package PACKAGE --players PLAYER_ASSETS \
+  --output NEW_SESSION --items ITEMS_JSON --reward-catalog REWARDS_JSON \
+  --quest-catalog QUESTS_JSON --dialogue-catalog DIALOGUE_JSON --guide-position X,Y,Z
+```
+
+Quest/dialogue/guide arguments must be supplied together. All selected profile
+bytes are frozen with hashes before normal preflight; per-life conditional rewards
+select shared quest eligibility. Use `--character-id UUID` for an existing owned
+character, otherwise the normal private picker is published. Account services must
+already be configured. The owning pipe controls shutdown. This explicit wrapper
+path is qualified with a one-pelt fixture and two database restarts; see STATUS.
+It does not add quest files to editor population exports or publish their authored
+contact/area markers. Those remain separate integration work. Existing editor
+Start account population playtest keeps its current item/reward setup.
+
 NPC spawn-group groundwork (12 November 2026): schema-14 zone drafts can store
 validated custom polygon/height bounds, creature/model IDs, alive count, respawn
 delay and seed through the shared command API. Add → NPC spawn zone at spawn

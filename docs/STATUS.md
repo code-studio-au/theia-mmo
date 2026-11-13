@@ -1,3 +1,30 @@
+P3-09 / P3-11 / P3-15 explicit frozen population quest launch,
+14 November 2026: the account population wrapper accepts an explicit inventory-bound
+expanded quest catalogue, matching dialogue catalogue and guide position together.
+It freezes both exact files beside the combat/item/reward profiles and records
+hashes, selected journal/item/conditional modes and contact placement. Conditional
+per-life rewards select the existing quest-loot mode; missing journal/contact
+inputs and oversized files refuse before creating output. Normal application
+preflight remains responsible for complete catalogue/cross-profile validation.
+Default editor population launches retain their existing setup; this does not
+publish authored contacts/quest areas or load a template implicitly.
+
+The native wrapper qualifier verifies all 20 frozen hashes, first kill before
+acceptance (ordinary token only), visible acceptance, eligible pelt pickup,
+turn-in consumption and two PostgreSQL process restarts/same-character rejoins.
+Both kills took five normal casts; XP 75, Completed, inventory revision 6,
+102 tokens and no pelts survive. Denied and eligible original generation records
+stay exact; four claims remain consumed. Health is transient, not restored.
+Evidence: build/population-quest-package-native-v1/qualification.json, screenshots,
+phase SQL rights and owned/launch.json. Linux 1280x720 RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6, zero GPU diagnostics; explicit one-pelt/guaranteed-loot fixture,
+normal combat/pickup requests and PID-bound quest-button clicks. No new Rust or
+gameplay policy. 27 Python launcher tests pass (one skipped), compile, fmt, strict
+workspace/all-target Clippy and diff checks pass; see build/population-quest-package-
+{tests,clippy}.log. Earlier client/network suites remain valid for the unchanged
+binaries. Next: native accepted kill-objective credit from population deaths,
+then deliberate authored contact/quest integration. Local commits only.
+
 P3-05 / P3-09 / P3-11 / P3-15 normal population quest-required loot,
 14 November 2026: normal population launch now accepts the existing conditional
 loot mode. The launcher accepts an explicit --quest-catalog with quests/journal,

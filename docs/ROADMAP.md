@@ -1,3 +1,9 @@
+Population account journal packaging, 14 November 2026: explicit quest/dialogue
+files and guide position now freeze alongside all account combat profiles. Native
+20-profile admission, denial/eligible pickup, visible turn-in and two durable
+rejoins pass. Next: population kill-objective journal credit, then authored contact/
+quest integration; no implicit editor quest attachment. See STATUS for evidence.
+
 Population quest-required loot update, 14 November 2026: normal explicit
 population launches now share inventory-bound conditional loot. Native owned
 account tests pass pre-acceptance denial, later eligible pickup, visible quest
