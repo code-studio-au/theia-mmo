@@ -35,6 +35,7 @@ pub(super) struct Runtime {
     hash: [u8; 32],
 }
 pub(super) struct Planned {
+    npc: EntityKey,
     table: Table,
     metrics: Metrics,
 }
@@ -113,13 +114,14 @@ impl World {
 impl Authority {
     pub(super) fn prepare_threat(
         &self,
+        npc: EntityKey,
         source: LifeKey,
         health_lost: u32,
     ) -> Result<Option<Planned>> {
         let Some(runtime) = &self.threat else {
             return Ok(None);
         };
-        if !runtime.ready() || self.checked_reset_encounter()?.0 != runtime.npc {
+        if !runtime.ready() || npc != runtime.npc || self.checked_reset_encounter()?.0 != npc {
             return Err("Threat authority unavailable".into());
         }
         let mut table = runtime.table.clone();
@@ -139,11 +141,16 @@ impl Authority {
         let mut metrics = runtime.metrics;
         metrics.damage_facts = metrics.damage_facts.saturating_add(1);
         metrics.health_lost = metrics.health_lost.saturating_add(u64::from(health_lost));
-        Ok(Some(Planned { table, metrics }))
+        Ok(Some(Planned {
+            npc,
+            table,
+            metrics,
+        }))
     }
     pub(super) fn commit_threat(&mut self, plan: Option<Planned>) {
         if let Some(plan) = plan {
             let runtime = self.threat.as_mut().expect("Prepared threat authority");
+            assert_eq!(runtime.npc, plan.npc, "Prepared exact threat encounter");
             runtime.table = plan.table;
             runtime.metrics = plan.metrics;
         }

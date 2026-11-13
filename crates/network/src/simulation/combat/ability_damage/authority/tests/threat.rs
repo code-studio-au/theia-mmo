@@ -542,3 +542,49 @@ fn passive_body_pull_registers_zero_and_attacks_without_awarding_a_tag_all_rates
         assert!(world.combat_membership(a).unwrap().in_combat());
     }
 }
+
+#[test]
+fn prepared_damage_threat_binds_exact_victim_without_mutating_other_attempts() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, npc) = fixture_threat(rate, 8);
+        let actor = join(&mut world);
+        let source = life(&world, actor);
+        let other = EntityKey {
+            entity: theia_core::identity::EntityId::new(999).unwrap(),
+            ..npc
+        };
+        let mut authority = world.combat.take().unwrap();
+        assert!(authority.prepare_threat(other, source, 20).is_err());
+        assert!(
+            authority
+                .threat
+                .as_ref()
+                .unwrap()
+                .table
+                .entries()
+                .is_empty()
+        );
+        assert_eq!(authority.threat.as_ref().unwrap().metrics.damage_facts, 0);
+        let plan = authority.prepare_threat(npc, source, 20).unwrap();
+        assert!(
+            authority
+                .threat
+                .as_ref()
+                .unwrap()
+                .table
+                .entries()
+                .is_empty()
+        );
+        authority.commit_threat(plan);
+        let runtime = authority.threat.as_ref().unwrap();
+        assert_eq!(runtime.table.entries().len(), 1);
+        assert_eq!(runtime.table.entries()[0].life, source);
+        assert_eq!(runtime.table.entries()[0].damage_threat, 20);
+        assert_eq!(runtime.metrics.damage_facts, 1);
+        assert!(authority.prepare_threat(other, source, 100).is_err());
+        assert_eq!(
+            authority.threat.as_ref().unwrap().table.entries()[0].damage_threat,
+            20
+        );
+    }
+}

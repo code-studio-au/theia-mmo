@@ -337,7 +337,7 @@ impl Authority {
         } else {
             None
         };
-        let threat = self.prepare_threat(source, health_lost)?;
+        let threat = self.prepare_threat(target, source, health_lost)?;
         Ok(Some(Planned {
             threat,
             ledger,

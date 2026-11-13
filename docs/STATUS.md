@@ -1,3 +1,14 @@
+P3-06 / P3-09 victim-bound prepared threat facts, 13 November 2026:
+Damage-to-threat preparation now receives the exact victim NPC from the existing
+credit fact, validates that encounter, and retains the NPC identity through commit.
+A rejected victim cannot change the live table or its counters; preparation remains
+side-effect free. All nineteen filtered threat tests, including encrypted competing
+attacker/timing scenarios and a new 20/30/60 Hz wrong-victim/valid-commit contract,
+pass. Strict workspace/all-target Clippy, fmt and diff pass. Evidence:
+build/population-threat-fact-binding-checks.log. This is the damage-fact prerequisite
+for independent population tables; normal population threat selection remains gated.
+Local only.
+
 P3-06 / P3-09 exact-creature threat-transfer routing, 13 November 2026:
 Threat candidate checks, victim lookup and prepared pursuit/retaliation transfer
 now accept an exact NPC identity. Prepared transfers retain that identity, and
