@@ -1,3 +1,19 @@
+P4-03 / P5-17 per-player checked routes in managed playtests, 13 November 2026:
+Schema-1 test scenarios may assign a client-only route file, exclusive with a step
+controller. Route files resolve relative to the scenario; the existing byte/path
+bounds apply. The actual client preflights every assigned route before any owned
+process or session output is created. Server spawn profiles remain unchanged.
+Seventeen launcher tests pass, including invalid-route preflight and child cleanup.
+Actual Linux Vulkan session admits one manual and one route-following client;
+the latter has 40 ms each-way delay/5 ms jitter, reaches the checked three-segment
+goal within 0.176 m in 11.94 s and requests 3.063 radians of turn. Manual client
+receives no controller. Both admit normally, with no rejected inputs or movement
+recoveries; managed stop removes tickets/children without cleanup errors. GPU
+validation logs are clean on RX 7900 XTX/RADV. Evidence:
+build/test-route-managed-tests.log; build/test-route-managed-native-v1/{qualification.json,
+launcher.log,session/}. This is external scenario support; editor route authoring
+and full NPC/quest/target interaction automation remain follow-ups.
+
 P4-03 / P2-04 checked test-route travel foundation, 13 November 2026:
 The native client accepts explicit --test-route FILE, exclusive with the existing
 step controller. Startup loads exact-source authored navigation, computes paths,

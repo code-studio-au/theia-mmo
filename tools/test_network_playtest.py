@@ -48,6 +48,19 @@ class ScenarioTests(unittest.TestCase):
         self.assertEqual(scenario.players[1].controller, controller.resolve())
         self.assertNotIn('controller', scenario.server_profile()['players'][1])
 
+    def test_relative_route_is_client_only_and_exclusive_with_step_controller(self):
+        path = self.path.parent/'route.json'
+        path.write_text('{}')
+        data = document(); data['players'][0]['route']='route.json'
+        scenario=self.load(data)
+        self.assertEqual(scenario.players[1].route,path.resolve())
+        self.assertNotIn('route',scenario.server_profile()['players'][1])
+        data['players'][0]['controller']='route.json'
+        with self.assertRaisesRegex(ValueError, 'not both'): self.load(data)
+        del data['players'][0]['controller']
+        data['players'][0]['route']='absent.json'
+        with self.assertRaisesRegex(ValueError, 'missing'): self.load(data)
+
     def test_invalid_configuration_is_rejected_before_any_child(self):
         bad = []
         for field, value in [('schema', True), ('schema', 2), ('world_identity', [0]*31), ('players', []), ('extra', 1)]:
@@ -85,7 +98,11 @@ class LifecycleTests(unittest.TestCase):
         self.output = self.root / 'session'
         self.processes, self.relays = [], []
 
-    def execute(self, *, fail_client=None, stop_startup=False, identity=None, owner_stops_after=None, population=False, invalid_population=False):
+    def execute(self, *, fail_client=None, stop_startup=False, identity=None, owner_stops_after=None, population=False, invalid_population=False, route=False, route_valid=True):
+        if route:
+            (self.root/'route.json').write_text('{}')
+            data=document(); data['players'][0]['route']='route.json'
+            self.path.write_text(json.dumps(data))
         stopped = threading.Event()
         owner = self
         class Child:
@@ -122,8 +139,30 @@ class LifecycleTests(unittest.TestCase):
                 (self.root/name).write_text('fixture')
             extra = dict(population_config=self.root/'population.json', combat_catalog=self.root/'abilities.json',
                          creature_asset=self.root/'wolf.glb')
-        with patch.object(play.subprocess, 'Popen', Child), patch.object(play.subprocess, 'run', return_value=checked), patch.object(play, 'Relay', Connection):
+        def preflight(command, **_kwargs):
+            if '--test-route' in command and not route_valid:
+                return SimpleNamespace(returncode=1, stdout='', stderr='Wrong route world')
+            return checked
+        with patch.object(play.subprocess, 'Popen', Child), patch.object(play.subprocess, 'run', side_effect=preflight), patch.object(play, 'Relay', Connection):
             play.run(self.path, self.world, self.art, self.binaries, self.output, stop_requested=stopped.is_set, **extra)
+
+    def test_failed_route_preflight_starts_no_children_or_session(self):
+        with self.assertRaisesRegex(ValueError,'Wrong route world'):
+            self.execute(route=True,route_valid=False)
+        self.assertFalse(self.processes)
+        self.assertFalse(self.output.exists())
+
+    def test_only_assigned_client_receives_route_and_cleanup_retains_assignment(self):
+        self.execute(route=True)
+        self.assertNotIn('--test-route', self.processes[0].arguments)
+        self.assertNotIn('--test-route', self.processes[1].arguments)
+        args=self.processes[2].arguments
+        self.assertEqual(args[args.index('--test-route')+1], str(self.root/'route.json'))
+        self.assertNotIn('--test-controller',args)
+        summary=json.loads((self.output/'session.json').read_text())
+        self.assertIsNone(summary['clients'][0]['route'])
+        self.assertEqual(summary['clients'][1]['route'],str(self.root/'route.json'))
+        self.assertTrue(all(p.returncode==0 for p in self.processes))
 
     def test_population_configuration_reaches_both_clients_and_server_but_art_only_clients(self):
         self.execute(population=True)

@@ -4802,3 +4802,11 @@ readiness or invalid player context stops the controller and reports a reason.
 against its real server/native client and checks authoritative arrival. The
 editor's per-player controller menu still offers its existing step controller;
 route selection and full quest-flow migration are separate follow-ups.
+
+
+Managed test scenarios can now set a player's `"route": "relative-route.json"`
+instead of `controller`. The launcher preflights the checked route before starting
+any child, passes it only to that player and retains the assignment in its session
+report. Other players can remain manual. A player cannot specify both route and
+step-controller files. Route starting feet must match that player's admitted start.
+The native editor's controller choices are unchanged in this slice.

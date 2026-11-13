@@ -28,6 +28,7 @@ class Player:
     feet: tuple[float, float, float]
     network: Profile
     controller: Path | None = None
+    route: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -54,7 +55,7 @@ class Scenario:
             raise ValueError('A test scenario supports one or two players')
         players, ids = [], set()
         for entry in entries:
-            if (not isinstance(entry, dict) or set(entry) - {'client_id', 'feet', 'enabled', 'network', 'controller'}
+            if (not isinstance(entry, dict) or set(entry) - {'client_id', 'feet', 'enabled', 'network', 'controller', 'route'}
                     or not {'client_id', 'feet'} <= set(entry)):
                 raise ValueError('Unsupported test player fields')
             client_id, feet = entry['client_id'], entry['feet']
@@ -78,15 +79,21 @@ class Scenario:
                     raise ValueError('Outages must be arrays of [start_ms, duration_ms]')
                 profile['outages'] = tuple(tuple(window) for window in windows)
             network = Profile(**profile)
-            controller = entry.get('controller')
-            if controller is not None:
-                if not isinstance(controller, str) or not controller or len(controller) > 1024:
-                    raise ValueError('Controller must be a script path or null for manual input')
-                controller = (Path(path).resolve().parent / controller).resolve()
-                if enabled and (not controller.is_file() or controller.stat().st_size > 32 * 1024):
-                    raise ValueError('Controller script is missing or exceeds 32 KiB')
+            def script_path(field):
+                value = entry.get(field)
+                if value is None:
+                    return None
+                if not isinstance(value, str) or not value or len(value) > 1024:
+                    raise ValueError(f'{field} must be a script path or null for manual input')
+                script = (Path(path).resolve().parent / value).resolve()
+                if enabled and (not script.is_file() or script.stat().st_size > 32 * 1024):
+                    raise ValueError(f'{field} script is missing or exceeds 32 KiB')
+                return script
+            controller, route = script_path('controller'), script_path('route')
+            if controller is not None and route is not None:
+                raise ValueError('Choose a step controller or a checked route, not both')
             if enabled:
-                players.append(Player(client_id, tuple(feet), network, controller))
+                players.append(Player(client_id, tuple(feet), network, controller, route))
         if not players:
             raise ValueError('Enable at least one test player')
         return cls(tuple(identity), tuple(sorted(players, key=lambda player: player.client_id)))
@@ -170,8 +177,10 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
         if (not isinstance(population, dict) or type(population.get('count')) is not int
                 or not 1 <= population['count'] <= 16):
             raise ValueError('Client did not validate a bounded population')
-    for controller in {p.controller for p in scenario.players if p.controller is not None}:
-        checked_script = subprocess.run([str(client_binary), *scene, '--test-controller', str(controller), '--configuration-report'],
+    scripts = {('--test-controller', p.controller) for p in scenario.players if p.controller is not None}
+    scripts.update(('--test-route', p.route) for p in scenario.players if p.route is not None)
+    for flag, script in scripts:
+        checked_script = subprocess.run([str(client_binary), *scene, flag, str(script), '--configuration-report'],
                                         env=environment, capture_output=True, text=True, timeout=30)
         if checked_script.returncode:
             raise ValueError(f'Invalid test controller: {checked_script.stderr.strip()}')
@@ -226,7 +235,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
                 relay.start(backend)
                 processes.append(subprocess.Popen([str(client_binary), *scene, '--window-size', window_size,
                     '--test-window', f'{view_index}/{len(scenario.players)}',
-                    '--player-assets', str(players), *(['--creature-asset', str(creature_asset)] if creature_asset else []), *(['--test-controller', str(player.controller)] if player.controller else []), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
+                    '--player-assets', str(players), *(['--creature-asset', str(creature_asset)] if creature_asset else []), *(['--test-controller', str(player.controller)] if player.controller else []), *(['--test-route', str(player.route)] if player.route else []), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
                     str(Path(tickets) / f'client-{player.client_id}.token')], env=environment,
                     stdout=files.enter_context((output / f'client-{player.client_id}.log').open('w')), stderr=subprocess.STDOUT))
                 files.callback(cleanup, stop, processes[-1])
@@ -256,7 +265,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
         raise
     finally:
         summary = dict(reason=reason, cleanup_errors=cleanup_errors, population=configuration.get('population'), clients=[dict(client_id=p.client_id, started=p.client_id in launched_ids, network=asdict(p.network),
-                       added_base_rtt_ms=p.network.added_rtt_ms, controller=str(p.controller) if p.controller else None, relay=r.stats)
+                       added_base_rtt_ms=p.network.added_rtt_ms, controller=str(p.controller) if p.controller else None, route=str(p.route) if p.route else None, relay=r.stats)
                        for p, r in zip(scenario.players, relays)],
                        scope='Local encrypted development tickets; optional bounded movement controllers; no account persistence or scripted combat')
         (output / 'session.json').write_text(json.dumps(summary, indent=2) + '\n')
