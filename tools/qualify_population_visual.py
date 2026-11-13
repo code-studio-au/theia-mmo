@@ -65,6 +65,7 @@ def run(args):
             assert reports, 'No route controller observations'
             travel = reports[-1]
             assert travel['finished'] and travel['travel']['finished'] and travel['travel']['failure'] is None, travel
+            assert not travel['active'], 'Arrival must release ordinary player input'
             goal = json.loads(args.route.read_text())['waypoints'][-1]
             assert sum((travel['feet'][i]-goal[i])**2 for i in [0,2])**.5 <= .3, travel
             assert abs(travel['feet'][1]-goal[1]) <= .3, travel

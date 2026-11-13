@@ -1,3 +1,18 @@
+P4-03 checked-route input handoff, 13 November 2026:
+Arriving or failing a checked route now releases ordinary player input automatically.
+The terminal route result remains visible; F7 explicitly restarts with the same
+checked-start requirement. Legacy repeating step controllers are unchanged.
+Read-only observations continue after release so server corrections can settle:
+the first native check exposed a stale pre-arrival authority observation (0.348 m)
+and the reporting fix preserves both terminal state and later authority evidence.
+Nine controller tests pass (one optional fixture ignored), workspace all-target
+Clippy with denied warnings and fmt pass. Native Linux Vulkan repeat arrives in
+11.88 s, final authority error 0.183 m, active=false, five admitted creature rigs,
+clean GPU validation. Status screenshot inspected on RX 7900 XTX/RADV at1600x1000.
+Evidence: build/test-route-handoff-checks.log and
+build/test-route-handoff-native-v2/{qualification.json,scene.png,client.log,server.log}.
+This enables subsequent ordinary interaction; no full quest-flow migration claim.
+
 P4-03 rolling-ground test-route preparation, 13 November 2026:
 Long path segments now project onto their continuous navigation/collision floor
 at 0.1 m intervals before retaining roughly metre-spaced follower points. Strict

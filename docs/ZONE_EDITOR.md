@@ -4797,6 +4797,9 @@ turning; it stops within 0.25 m of each point. It does not select or attack targ
 Movement keys, Escape, either mouse button or F7 return manual control. Restarting
 with F7 requires the original route start again. Stalled progress, lost world
 readiness or invalid player context stops the controller and reports a reason.
+Arrival and route failure automatically release ordinary player input, retaining
+the terminal result in the status and log. F7 explicitly restarts from the original
+route start; completion does not require an extra F7 press before interacting.
 
 `tools/qualify_population_visual.py --route FILE` optionally exercises this path
 against its real server/native client and checks authoritative arrival. The

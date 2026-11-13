@@ -92,6 +92,19 @@ impl Run {
             .as_ref()
             .map_or(self.step >= self.script.steps.len(), |t| t.finished())
     }
+    fn release_completed_travel(&mut self) -> bool {
+        if self.active
+            && self
+                .travel
+                .as_ref()
+                .is_some_and(|t| t.finished() || t.failure.is_some())
+        {
+            self.active = false;
+            true
+        } else {
+            false
+        }
+    }
     fn toggle(&mut self) {
         self.active = !self.active;
         if self.active {
@@ -257,6 +270,13 @@ fn drive(
     keys: Res<ButtonInput<KeyCode>>,
 ) {
     if !run.active {
+        report(
+            &mut run,
+            &time,
+            &network.state(),
+            controller.facing().radians(),
+            false,
+        );
         return;
     }
     if run.travel.is_some()
@@ -341,20 +361,45 @@ fn drive(
             orbit.set_angles(angles.x + sample.keyboard_turn, angles.y);
         }
     }
-    if time.elapsed_secs_f64() - run.last_report >= 1. {
+    // Emit the terminal result before returning control to ordinary input on
+    // the next frame. A completed route must not swallow subsequent quest input.
+    let released = run.release_completed_travel();
+    report(
+        &mut run,
+        &time,
+        &state,
+        controller.facing().radians(),
+        released,
+    );
+}
+// Continue observing authoritative corrections after input ownership is released;
+// the terminal predicted arrival can precede its server acknowledgement.
+fn report(
+    run: &mut Run,
+    time: &Time,
+    state: &theia_network::client::State,
+    facing: f64,
+    force: bool,
+) {
+    if force || time.elapsed_secs_f64() - run.last_report >= 1. {
         run.last_report = time.elapsed_secs_f64();
         eprintln!(
             "{}",
-            serde_json::json!({"test_controller":{"name":run.script.name,"active":run.active,"step":run.step,"waiting":run.waiting,"finished":run.finished(),"travel":run.travel.as_ref().map(|t| t.description()),"feet":state.correction.map(|c|c.state.pose.feet.metres()),"facing":controller.facing().radians()}})
+            serde_json::json!({"test_controller":{"name":run.script.name,"active":run.active,"step":run.step,"waiting":run.waiting,"finished":run.finished(),"travel":run.travel.as_ref().map(|t| t.description()),"feet":state.correction.map(|c|c.state.pose.feet.metres()),"facing":facing}})
         );
     }
 }
 fn status(run: Res<Run>, mut labels: Query<&mut Text, With<Status>>) {
     for mut text in &mut labels {
-        text.0 = if !run.active {
+        text.0 = if let Some(reason) = run.travel.as_ref().and_then(|t| t.failure) {
+            format!("{} | Stopped: {reason} [F7: restart]", run.script.name)
+        } else if run.travel.is_some() && run.finished() {
+            format!(
+                "{} | Arrived, manual control [F7: restart]",
+                run.script.name
+            )
+        } else if !run.active {
             format!("{} | Manual [F7: restart script]", run.script.name)
-        } else if let Some(reason) = run.travel.as_ref().and_then(|t| t.failure) {
-            format!("{} | Stopped: {reason} [F7: manual]", run.script.name)
         } else if run.waiting {
             format!("{} | Waiting for world [F7: manual]", run.script.name)
         } else if run.finished() {

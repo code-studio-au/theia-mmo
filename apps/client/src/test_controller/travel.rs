@@ -309,6 +309,37 @@ fn segment_distance(p: GlobalPosition, a: GlobalPosition, b: GlobalPosition) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn terminal_routes_release_input_once_and_restart_explicitly() {
+        use crate::test_controller::{Run, Script};
+        for failed in [false, true] {
+            let mut run = Run::new(Script {
+                schema: 1,
+                name: "Handoff".into(),
+                repeat: false,
+                steps: vec![],
+            });
+            run.travel = Some(route());
+            assert!(!run.release_completed_travel());
+            let travel = run.travel.as_mut().unwrap();
+            if failed {
+                travel.cancel("Travel stalled");
+            } else {
+                travel.index = travel.points.len();
+            }
+            assert!(run.release_completed_travel());
+            assert!(!run.active);
+            assert!(!run.release_completed_travel());
+            assert_eq!(run.travel.as_ref().unwrap().finished(), !failed);
+            run.toggle();
+            assert!(run.active);
+            let travel = run.travel.as_ref().unwrap();
+            assert!(!travel.finished());
+            assert!(travel.failure.is_none());
+            assert_eq!(travel.index, 0);
+            assert!(!run.release_completed_travel());
+        }
+    }
     fn point(x: f64, z: f64) -> GlobalPosition {
         GlobalPosition::new([8192. + x, 0.008, 8192. + z]).unwrap()
     }
