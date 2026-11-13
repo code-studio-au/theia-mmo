@@ -4727,3 +4727,12 @@ The package contains `world/`, `navigation/`, the full `zone.json`, `creature.js
 `--authored-world PACKAGE/world --population-config PACKAGE/population.json`;
 the launcher enables Classic combat. Optional `--creature-asset PATH` is client
 presentation only. Export does not start a server or change the source zone.
+
+
+The same checked package export is available under **File → Export passive
+population…** (also in the document menu). Supply a new folder, content ID,
+revision, matching passive creature profile and navigation baker executable.
+Minimum spacing is editable in metres. Tab/Shift-Tab traverses all six fields;
+invalid spacing is rejected before starting work. Export runs in the background
+and preserves the editor document. This action publishes the package; use the
+launcher command above to play it.

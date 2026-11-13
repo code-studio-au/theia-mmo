@@ -1,3 +1,21 @@
+P3-07 / P5-17 native passive population export controls, 13 November 2026:
+File and document menus now offer Export passive population, with explicit
+profile, navigation executable and spacing alongside output identity/revision.
+The existing asynchronous export worker runs the checked package publisher;
+keyboard traversal includes all six fields and invalid spacing/missing profile
+refuse before starting work. No source save or server launch is implicit.
+Acceptance: 232 editor tests pass (eight optional skipped), all five export-dialog
+tests and strict workspace/all-target Clippy/fmt pass. Owned native Linux editor
+at 3440x1440 successfully refuses invalid spacing then exports a five-actor package;
+source bytes and saved-zone semantics are preserved. Screenshots inspected.
+RX 7900 XTX (RADV NAVI31), device 29772, Vulkan with KHRONOS validation: zero
+GPU diagnostics. The user's pre-existing review editor is untouched.
+Evidence: build/population-dialog-{tests,regressions,final-checks}.log;
+build/population-dialog-native-v1/{qualification.json,state.json,dialog.png,
+finished.png,editor.log,package/}. Reusable native qualifier:
+tools/qualify_editor_population_export.py. Existing passive-only scope and
+bounded navigation coverage remain; no Windows native qualification.
+
 P3-07 / P5-17 checked passive population package export, 13 November 2026:
 The editor headless export now accepts --population with an explicit creature
 profile. It exports the static world, retains the complete spawn-zone document,
