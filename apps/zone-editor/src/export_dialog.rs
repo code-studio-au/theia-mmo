@@ -60,15 +60,15 @@ impl Mode {
         match self {
             Self::World => &[0, 1, 2, 3],
             Self::NetworkTest => &[0, 3, 4],
-            Self::Population => &[0, 1, 2, 3, 4, 5, 7, 10],
-            Self::PopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7],
-            Self::AccountPopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            Self::Population => &[0, 1, 2, 3, 4, 5, 7, 10, 11],
+            Self::PopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7, 11],
+            Self::AccountPopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
             _ => &[0, 1],
         }
     }
     fn visible_fields(self, template: bool) -> &'static [usize] {
         if self == Self::AccountPopulationTest && template {
-            &[0, 1, 2, 3, 4, 5, 6, 7, 10]
+            &[0, 1, 2, 3, 4, 5, 6, 7, 10, 11]
         } else {
             self.fields()
         }
@@ -153,6 +153,7 @@ pub(super) fn setup(mut commands: Commands) {
                             "Item catalogue",
                             "Reward / corpse-loot catalogue",
                             "Gameplay template (optional)",
+                            "Access road guide ID (optional)",
                         ]
                         .into_iter()
                         .enumerate()
@@ -328,6 +329,7 @@ pub(super) fn open(
                     .or_else(|| manager.as_ref().and_then(|m| m.template.as_ref()))
                     .map_or_else(String::new, |p| p.display().to_string())
             },
+            String::new(),
         ]
     } else if mode.world() {
         [
@@ -359,10 +361,12 @@ pub(super) fn open(
             String::new(),
             String::new(),
             String::new(),
+            String::new(),
         ]
     } else {
         [
             format!("build/{slug}-particles"),
+            String::new(),
             String::new(),
             String::new(),
             String::new(),
@@ -481,6 +485,7 @@ struct PopulationInput {
     spacing: f64,
     appearance: Option<PathBuf>,
     gameplay: Option<PathBuf>,
+    access_path: Option<u64>,
 }
 fn population_values(
     fields: &Query<(Entity, &Field, &mut EditableText)>,
@@ -495,7 +500,7 @@ fn population_values(
     };
     let creature = value(3);
     if creature.is_empty() || creature.contains(['\0', '\n', '\r']) {
-        return Err("Choose a passive creature profile".into());
+        return Err("Choose a creature profile".into());
     }
     let baker = value(4);
     if baker.is_empty() || baker.contains(['\0', '\n', '\r']) {
@@ -519,11 +524,24 @@ fn population_values(
     if gameplay.contains(['\0', '\n', '\r']) {
         return Err("Choose a valid gameplay template path".into());
     }
+    let access_path = value(11);
+    let access_path = if access_path.is_empty() {
+        None
+    } else {
+        Some(
+            access_path
+                .parse::<u64>()
+                .ok()
+                .filter(|id| *id > 0)
+                .ok_or("Access road guide ID must be a positive integer")?,
+        )
+    };
     Ok(PopulationInput {
         baker: PathBuf::from(baker),
         spacing,
         appearance,
         gameplay: (!gameplay.is_empty()).then(|| PathBuf::from(gameplay)),
+        access_path,
     })
 }
 
@@ -793,11 +811,12 @@ pub(super) fn finish(
                                     population_export::Settings {
                                         creature: template
                                             .as_deref()
-                                            .ok_or("Choose a passive creature profile")?,
+                                            .ok_or("Choose a creature profile")?,
                                         baker: &population.baker,
                                         spacing: population.spacing,
                                         appearance: population.appearance.as_deref(),
                                         gameplay: population.gameplay.as_deref(),
+                                        access_path: population.access_path,
                                     },
                                     &scenery,
                                 )
@@ -852,7 +871,7 @@ pub(super) fn finish(
             **text = match draft.mode {
                 Mode::NetworkTest => "Start network playtest",
                 Mode::World => "Export world",
-                Mode::Population => "Export passive population",
+                Mode::Population => "Export population",
                 Mode::PopulationTest => "Start population playtest",
                 Mode::AccountPopulationTest => "Start account population playtest",
                 Mode::ParticleChunks => "Export particles to chunks",
@@ -863,7 +882,7 @@ pub(super) fn finish(
             **text = match draft.mode {
                 Mode::NetworkTest => "Start network playtest",
                 Mode::World => "Export world",
-                Mode::Population => "Export passive population",
+                Mode::Population => "Export population",
                 Mode::PopulationTest => "Start population playtest",
                 Mode::AccountPopulationTest => "Start account population playtest",
                 Mode::ParticleChunks => "Export particles",
@@ -874,7 +893,7 @@ pub(super) fn finish(
             **text = match draft.mode {
                 Mode::NetworkTest => "Starts one server and a client per enabled Test Player from this zone snapshot. Stop from the Zone menu. Zone files change only with Save.",
                 Mode::AccountPopulationTest => "Sign in and choose a persistent character. Select a gameplay template to include authored quests and the guide, or leave it empty to use the item and reward catalogues. Requires configured account services.",
-                Mode::PopulationTest => "Starts a checked passive population with one client per enabled Test Player. Stop through the Zone menu. Choose the matching creature profile and player assets.",
+                Mode::PopulationTest => "Starts a checked population with one client per enabled Test Player. Stop through the Zone menu. Choose the matching creature profile and player assets.",
                 Mode::Population => "Exports one enabled spawn group, its static world and checked navigation. Select a gameplay template to include authored quests and the guide. Does not start a server.",
                 Mode::World => "Exports the current zone. Use a matching gameplay template for quest areas and NPC references. Save particle edits first.",
                 Mode::ParticleChunks => "Copies a particle-free chunk world with these placements. Save particle edits first.",
@@ -882,7 +901,7 @@ pub(super) fn finish(
             }.into();
         } else if caption.is_some_and(|caption| caption.0 == 3) {
             **text = if draft.mode.population() {
-                "Passive creature profile"
+                "Creature profile"
             } else {
                 "Gameplay template (optional)"
             }
@@ -1129,7 +1148,7 @@ mod tests {
                 .iter(app.world())
                 .any(|(field, text)| field.0 == 3 && text.value() == creature_path.as_str())
         );
-        for expected in [1, 2, 3, 4, 5, 7, 10, 0] {
+        for expected in [1, 2, 3, 4, 5, 7, 10, 11, 0] {
             app.world_mut()
                 .resource_mut::<ButtonInput<KeyCode>>()
                 .press(KeyCode::Tab);
@@ -1141,7 +1160,7 @@ mod tests {
                 .reset_all();
         }
         for (profile, spacing, message) in [
-            ("", "3", "Choose a passive creature profile"),
+            ("", "3", "Choose a creature profile"),
             ("creature.json", "NaN", "Minimum spacing"),
             ("creature.json", "33", "Minimum spacing"),
         ] {
@@ -1226,7 +1245,7 @@ mod tests {
         for (row, node) in rows.iter(app.world()) {
             assert_eq!(node.display == Display::Flex, ![8, 9].contains(&row.0));
         }
-        for expected in [1, 2, 3, 4, 5, 6, 7, 10, 0] {
+        for expected in [1, 2, 3, 4, 5, 6, 7, 10, 11, 0] {
             app.world_mut()
                 .resource_mut::<ButtonInput<KeyCode>>()
                 .press(KeyCode::Tab);
@@ -1270,7 +1289,7 @@ mod tests {
         app.update();
         assert!(
             rows.iter(app.world())
-                .all(|(row, n)| (n.display == Display::Flex) == (row.0 <= 7))
+                .all(|(row, n)| (n.display == Display::Flex) == (row.0 <= 7 || row.0 == 11))
         );
         assert!(
             fields
@@ -1340,7 +1359,7 @@ mod tests {
             assert_eq!(
                 node.display == Display::Flex,
                 if population {
-                    row.0 <= 7
+                    row.0 <= 7 || row.0 == 11
                 } else {
                     [0, 3, 4].contains(&row.0)
                 }
@@ -1348,7 +1367,7 @@ mod tests {
         }
         // Keyboard navigation must skip the hidden manifest metadata fields.
         for expected in if population {
-            vec![1, 2, 3, 4, 5, 6, 7, 0]
+            vec![1, 2, 3, 4, 5, 6, 7, 11, 0]
         } else {
             vec![3, 4, 0]
         } {

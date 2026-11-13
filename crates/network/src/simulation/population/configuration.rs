@@ -53,6 +53,8 @@ struct Document {
     navigation: String,
     minimum_spacing_metres: f64,
     access_from: [f64; 3],
+    #[serde(default)]
+    access_path: Option<u64>,
 }
 
 /// Fully prepared before simulation or network admission; never deserialized.
@@ -73,7 +75,10 @@ impl Loaded {
             .ok_or("Population configuration has no directory")?;
         let document: Document =
             serde_json::from_slice(&crate::content::read_bounded(&path, MAX_BYTES)?)?;
-        if document.schema != 1 {
+        if !matches!(
+            (document.schema, document.access_path),
+            (1, None) | (2, Some(_))
+        ) {
             return Err("Unsupported population configuration schema".into());
         }
         let zone = theia_zone::Zone::load(&contained(root, &document.zone)?)?;
@@ -86,15 +91,36 @@ impl Loaded {
         authoring::binding(&zone, document.group, definition.clone())?;
         let nav =
             navigation::Store::open(&contained(root, &document.navigation)?, store.identity())?;
-        let (prepared, binding) = authoring::prepare(
+        let (access, access_identity) = if let Some(path_id) = document.access_path {
+            let waypoints =
+                authoring::access_waypoints(&zone, document.group, path_id, document.access_from)?;
+            let route = navigation::authored_checks::grounded_route(store, &nav, &waypoints)?;
+            let end = route
+                .last()
+                .ok_or("Empty population access route")?
+                .metres();
+            let mut identity = b"theia-population-access-v1\0".to_vec();
+            identity.extend(path_id.to_le_bytes());
+            identity.extend(serde_json::to_vec(&waypoints)?);
+            for point in &route {
+                for value in point.metres() {
+                    identity.extend(value.to_le_bytes());
+                }
+            }
+            (end, Some(crate::terrain::sha256(&identity)))
+        } else {
+            (document.access_from, None)
+        };
+        let (mut prepared, binding) = authoring::prepare(
             &zone,
             document.group,
             definition,
             store,
             &nav,
             document.minimum_spacing_metres,
-            document.access_from,
+            access,
         )?;
+        prepared.bind_access_identity(access_identity);
         Ok(Self {
             prepared,
             binding,

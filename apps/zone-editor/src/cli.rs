@@ -33,6 +33,7 @@ pub struct Options {
     pub population_creature: Option<PathBuf>,
     pub navigation_baker: Option<PathBuf>,
     pub population_spacing: Option<f64>,
+    pub population_access_path: Option<u64>,
     pub export_quest_areas: Option<PathBuf>,
     pub quest_catalog: Option<PathBuf>,
     pub gameplay_template: Option<PathBuf>,
@@ -178,6 +179,14 @@ impl Options {
                             .into(),
                     )
                 }
+                "--population-access-path" => {
+                    result.population_access_path = Some(
+                        args.next()
+                            .ok_or("--population-access-path needs a road guide ID")?
+                            .parse()
+                            .map_err(|_| "Invalid population access path ID")?,
+                    );
+                }
                 "--population-spacing" => {
                     result.population_spacing = Some(
                         args.next()
@@ -192,7 +201,7 @@ impl Options {
                 }
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--creature-asset EMBEDDED_GLB] [--gameplay-template MANIFEST] [--creature-definition FILE] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|test-player|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test] [--population --population-creature FILE [--navigation-baker BIN] [--population-spacing METRES]]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--creature-asset EMBEDDED_GLB] [--gameplay-template MANIFEST] [--creature-definition FILE] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|test-player|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test] [--population --population-creature FILE [--navigation-baker BIN] [--population-spacing METRES] [--population-access-path ID]]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
@@ -223,7 +232,8 @@ impl Options {
         if !result.population
             && (result.population_creature.is_some()
                 || result.navigation_baker.is_some()
-                || result.population_spacing.is_some())
+                || result.population_spacing.is_some()
+                || result.population_access_path.is_some())
         {
             return Err("Population profile/baker/spacing options require --population".into());
         }

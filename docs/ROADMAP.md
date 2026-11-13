@@ -1,3 +1,10 @@
+Dressed valley population, 14 November 2026: explicit checked access-road export
+now places five independent wolves in the western grove while preserving village
+spawn/scenery/guide. Native editor export and authenticated guide introduction with
+all 22 profile copies and durable restart pass. Next: fix the observed SIGINT
+launcher shutdown crash, then qualify population travel/combat/quests in the valley.
+See STATUS for exact tests, native evidence and remaining balance/platform scope.
+
 Editor population gameplay selection, 14 November 2026: export and account Start
 now expose an optional loaded/clearable gameplay template and launch its published
 snapshot. Native quest completion, all 22 profile copies, Stop and durable rejoin

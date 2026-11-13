@@ -1,10 +1,11 @@
-"""Qualify passive population export through an owned native editor window."""
+"""Qualify checked population export through an owned native editor window."""
 import argparse
 import json
 import os
 from pathlib import Path
 import signal
 import subprocess
+import struct
 import time
 from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
@@ -15,6 +16,10 @@ parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone
 parser.add_argument('--zone', type=Path, required=True)
 parser.add_argument('--creature', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
+parser.add_argument('--scenery-library', type=Path)
+parser.add_argument('--gameplay-template', type=Path)
+parser.add_argument('--creature-asset', type=Path)
+parser.add_argument('--access-path', type=int, help='Explicit saved road guide for checked population access')
 parser.add_argument('--load-creature-context', action='store_true', help='Load the standalone definition through File, assign/undo it, and verify export defaults')
 args = parser.parse_args()
 out = args.output.resolve()
@@ -35,7 +40,10 @@ env = client_environment(dict(os.environ, DISPLAY=':0', XDG_RUNTIME_DIR='/run/us
     THEIA_PARTICLE_EDITOR_DATA_DIR=str(out / 'particle-data')))
 x = None
 with (out / 'editor.log').open('w') as log:
-    p = subprocess.Popen([str(args.binary.resolve()), '--zone', str(source), '--report', str(report)],
+    p = subprocess.Popen([str(args.binary.resolve()), '--zone', str(source), '--report', str(report),
+        *(['--scenery-library', str(args.scenery_library.resolve())] if args.scenery_library else []),
+        *(['--gameplay-template', str(args.gameplay_template.resolve())] if args.gameplay_template else []),
+        *(['--creature-asset', str(args.creature_asset.resolve())] if args.creature_asset else [])],
         env=env, stdout=log, stderr=log)
     try:
         w = wait(lambda: owned_window(p.pid), 45)
@@ -145,19 +153,38 @@ with (out / 'editor.log').open('w') as log:
         wait(lambda: 'Minimum spacing' in state()['export_dialog']['message'])
         assert not destination.exists()
         fill(5, '3')
+        if args.access_path is not None:
+            fill(11, '0')
+            submit()
+            wait(lambda: 'Access road guide ID' in state()['export_dialog']['message'])
+            assert not destination.exists()
+            fill(11, args.access_path)
+        if args.gameplay_template:
+            assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index'] == 10) == str(args.gameplay_template.resolve())
         x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
         report.with_suffix('.png').rename(out / 'dialog.png')
         submit()
-        wait(lambda: state()['export_dialog']['finished'], 60)
+        wait(lambda: state()['export_dialog']['finished'], 180)
         result = json.loads((destination / 'population-export.json').read_text())['population_export']
         assert result['passed'] and result['count'] == 5, result
+        assert result['access_path'] == args.access_path
+        assert bool(result['gameplay_manifest']) == bool(args.gameplay_template)
         assert source.read_bytes() == seeded and args.zone.read_bytes() == original
         assert args.creature.read_bytes() == creature_original
-        assert json.loads((destination / 'zone.json').read_text()) == state()['document']
+        exported = json.loads((destination / 'zone.json').read_text())
+        observed = state()['document']
+        # Saved f32 heights use shortest round-trip decimals; JSON telemetry
+        # promotes them to f64. Compare exact f32 values, leaving global f64 intact.
+        for document in (exported, observed):
+            if document.get('terrain'):
+                document['terrain']['heights'] = [struct.pack('<f', h) for h in document['terrain']['heights']]
+        assert exported == observed
         x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
         report.with_suffix('.png').rename(out / 'finished.png')
         (out / 'qualification.json').write_text(json.dumps(dict(passed=True,
-            invalid_spacing_refused=True, count=result['count'], source_unchanged=True,
+            invalid_spacing_refused=True, invalid_access_id_refused=args.access_path is not None,
+            access_path=args.access_path, gameplay_snapshot=bool(args.gameplay_template),
+            count=result['count'], source_unchanged=True,
             direct_creature_load=args.load_creature_context, assignment_undo=args.load_creature_context,
             package=str(destination)), indent=2))
     finally:

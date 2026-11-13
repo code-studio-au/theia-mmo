@@ -1,3 +1,42 @@
+Checked population access roads (14 November 2026): population export/Start dialogs
+include **Access road guide ID (optional)**; the CLI equivalent is
+`--population-access-path ID`. Leave it blank for the existing direct-access check.
+An explicit saved Road guide must start within 0.5 metres of the player access
+pose and end inside the selected spawn volume. The checked route starts at the
+actual access pose. Stream and Patrol paths are refused for this role.
+
+The exporter uses the existing bounded grounded-route checks against its exact
+world/navigation, then checks each spawn candidate from the road endpoint. Both
+client and server repeat these checks at load. Schema-2 `population.json` records
+`access_path`; its requested and checked route participates in peer identity.
+Schema 1 retains its direct-access behavior. Route selection creates no autopilot,
+NPC patrol, roaming constraint or collision bypass, and does not move player spawn.
+
+`content/zones/starter-valley-population.commands.jsonl` adds group 1200 (five
+independent wolves, seed 42, 30-second respawn), road 1201 (the existing village-to-
+grove checked trail) and kill/pelt map links to a copy of the existing dressed
+contact valley. The original guide, scenery and player spawn are retained:
+
+```sh
+target/debug/theia-zone-editor --headless \
+  --zone build/starter-valley-contact-v3.zone.json \
+  --commands content/zones/starter-valley-population.commands.jsonl \
+  --output build/my-valley-population.zone.json
+target/debug/theia-zone-editor --headless \
+  --zone build/my-valley-population.zone.json \
+  --scenery-library build/starter-valley-scenery-v2/catalog.json \
+  --population --population-creature content/gameplay/development-creature-pursuit.json \
+  --population-access-path 1201 \
+  --gameplay-template content/development-gameplay-classic-quest-loot.json \
+  --export build/my-valley-population-package \
+  --content-id theia.zone.starter-valley-population --revision 1
+```
+
+Supply `--creature-asset EMBEDDED_GLB` for the checked creature appearance, and use
+the complete-snapshot account launcher below with the exported manifest. These are
+existing development combat/quest/loot profiles; this recipe does not establish
+starter-zone combat balance. Native evidence and remaining scope are in STATUS.
+
 Editor population gameplay selection (14 November 2026): **Export population…**
 and **Start account population playtest…** include **Gameplay template (optional)**.
 An explicitly loaded gameplay manifest seeds this field. Select a matching schema-16+

@@ -23,6 +23,7 @@ pub struct Prepared {
     request: spawn_candidates::Request,
     points: Vec<GlobalPosition>,
     patches: Vec<std::sync::Arc<crate::procedural::Patch>>,
+    access_identity: Option<[u8; 32]>,
 }
 impl Check {
     pub fn report(&self) -> &serde_json::Value {
@@ -36,11 +37,21 @@ impl Check {
     }
 }
 impl Prepared {
+    /// Carry the loader's checked access road through authority admission.
+    pub(crate) fn bind_access_identity(&mut self, identity: Option<[u8; 32]>) {
+        self.access_identity = identity;
+    }
     pub(crate) fn patches(&self) -> &[std::sync::Arc<crate::procedural::Patch>] {
         &self.patches
     }
     /// Placement-specific identity layered over the ordinary target profile.
     pub fn profile_identity(&self, base: [u8; 32]) -> [u8; 32] {
+        let base = self.access_identity.map_or(base, |access| {
+            let mut bytes = b"theia-population-access-binding-v1\0".to_vec();
+            bytes.extend(base);
+            bytes.extend(access);
+            crate::terrain::sha256(&bytes)
+        });
         let mut bytes = b"theia-prepared-population-v1\0".to_vec();
         bytes.extend(base);
         bytes.extend(self.source);
@@ -190,6 +201,7 @@ pub fn check_authored(
         prepared: Prepared {
             source: store.identity(),
             navigation: navigation.identity(),
+            access_identity: None,
             request: request.clone(),
             patches: grounding.into_patches(),
             points: accepted

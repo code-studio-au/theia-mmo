@@ -713,6 +713,7 @@ fn run() -> Result<(), String> {
                     spacing: options.population_spacing.unwrap_or(3.),
                     appearance: options.creature_asset.as_deref(),
                     gameplay: options.gameplay_template.as_deref(),
+                    access_path: options.population_access_path,
                 },
                 &scenery_library,
             )?

@@ -209,7 +209,7 @@ pub(super) fn setup(
                         (Control::GameplayOpen, "Load gameplay…", ""),
                         (Control::CreatureOpen, "Load creature definition…", ""),
                         (Control::ExportWorld, "Export world…", ""),
-                        (Control::ExportPopulation, "Export passive population…", ""),
+                        (Control::ExportPopulation, "Export population…", ""),
                         (
                             Control::ExportParticleChunks,
                             "Export particles to chunks…",

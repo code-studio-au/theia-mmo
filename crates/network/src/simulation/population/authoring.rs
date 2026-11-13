@@ -37,6 +37,45 @@ pub fn request(zone: &Zone, id: u64, spacing: f64, access: [f64; 3]) -> Result<R
     Ok(request)
 }
 
+/// Explicit road guide from the actual player access pose into this population.
+/// These are requests only; the loader must ground and clearance-check the route.
+pub fn access_waypoints(
+    zone: &Zone,
+    group_id: u64,
+    path_id: u64,
+    access: [f64; 3],
+) -> Result<Vec<[f64; 3]>> {
+    let group = group(zone, group_id)?;
+    let path = zone
+        .paths
+        .iter()
+        .find(|p| p.id == path_id)
+        .ok_or("Unknown population access path ID")?;
+    if path.kind != theia_zone::paths::PathKind::Road {
+        return Err("Population access path must be a road guide".into());
+    }
+    let access = theia_core::coordinates::GlobalPosition::new(access)
+        .ok_or("Invalid population access pose")?;
+    let start = path.points[0];
+    let distance = start
+        .into_iter()
+        .zip(access.metres())
+        .map(|(a, b)| (a - b).powi(2))
+        .sum::<f64>()
+        .sqrt();
+    if distance > 0.5 {
+        return Err("Population access path must start within 0.5 metres of player access".into());
+    }
+    let end = theia_core::coordinates::GlobalPosition::new(*path.points.last().unwrap())
+        .ok_or("Invalid population access endpoint")?;
+    if !group.volume.contains(end) {
+        return Err("Population access path must end inside the spawn volume".into());
+    }
+    let mut points = path.points.clone();
+    points[0] = access.metres();
+    Ok(points)
+}
+
 /// Resolve the saved group's creature and lifecycle before expensive placement.
 /// Explicit model bindings must wait for the presentation catalog adapter.
 pub fn binding(zone: &Zone, id: u64, definition: Definition) -> Result<Binding> {
@@ -104,6 +143,35 @@ mod tests {
         });
         zone
     }
+    #[test]
+    fn access_road_requires_connected_start_and_endpoint_in_its_group() {
+        let mut zone = zone();
+        zone.paths.push(theia_zone::paths::GuidePath {
+            id: 2,
+            name: "Access road".into(),
+            kind: theia_zone::paths::PathKind::Road,
+            width_metres: 1.,
+            points: vec![[0., 0., 0.], [4., 0., 4.]],
+        });
+        let original = zone.clone();
+        let points = access_waypoints(&zone, 1, 2, [0., 0.1, 0.]).unwrap();
+        assert_eq!(points, vec![[0., 0.1, 0.], [4., 0., 4.]]);
+        assert_eq!(zone, original);
+        assert!(access_waypoints(&zone, 1, 99, zone.spawn).is_err());
+        assert!(access_waypoints(&zone, 1, 2, [1., 0., 0.]).is_err());
+        assert!(access_waypoints(&zone, 1, 2, [f64::NAN, 0., 0.]).is_err());
+        zone.paths[0].points[1] = [20., 0., 20.];
+        assert!(access_waypoints(&zone, 1, 2, zone.spawn).is_err());
+        zone = original;
+        for kind in [
+            theia_zone::paths::PathKind::Stream,
+            theia_zone::paths::PathKind::Patrol,
+        ] {
+            zone.paths[0].kind = kind;
+            assert!(access_waypoints(&zone, 1, 2, zone.spawn).is_err());
+        }
+    }
+
     #[test]
     fn saved_lifecycle_and_creature_are_resolved_exactly() {
         let mut zone = zone();

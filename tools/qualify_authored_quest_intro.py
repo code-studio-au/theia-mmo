@@ -10,6 +10,7 @@ import signal
 import subprocess
 import sys
 import urllib.parse
+from account_population_playtest import profile_role
 from private_identity import Identity
 from private_postgres import Cluster
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
@@ -19,12 +20,23 @@ from gpu_validation import check_gpu_diagnostics
 parser = argparse.ArgumentParser(description=__doc__)
 for name in ('world', 'navigation', 'gameplay-manifest', 'players', 'output'):
     parser.add_argument('--' + name, type=Path, required=True)
-parser.add_argument('--route', required=True)
+parser.add_argument('--route', help='Singleton patrol route identity')
+parser.add_argument('--population-package', type=Path, help='Checked complete population package; currently introduction/rejoin only')
 parser.add_argument('--reach-area', action='store_true', help='Also complete the authored western-overlook quest')
 parser.add_argument('--checked-travel', action='store_true', help='Use the checked client follower for quest travel; ordinary keys still drive combat and UI')
 parser.add_argument('--quest-trail', type=Path, help='Also complete the three-kill follow-up using this checked route request')
 parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
 args = parser.parse_args()
+if args.population_package:
+    package = args.population_package.resolve()
+    if args.route or args.quest_trail or args.reach_area or args.checked_travel:
+        parser.error('Population introduction excludes singleton route/combat travel options')
+    if args.world.resolve() != package/'world' or args.navigation.resolve() != package/'navigation':
+        parser.error('Population introduction must use its package world/navigation')
+    if args.gameplay_manifest.resolve() != package/'world/gameplay/gameplay.manifest.json':
+        parser.error('Population introduction must use its exported gameplay snapshot')
+elif not args.route:
+    parser.error('Singleton introduction requires --route')
 if args.checked_travel and not args.quest_trail:
     parser.error('--checked-travel requires --quest-trail')
 if args.reach_area and not args.quest_trail:
@@ -38,8 +50,9 @@ document = json.loads(manifest.read_text())
 creature = (bundle / document['creature']).resolve()
 assert creature.is_relative_to(bundle)
 profile = json.loads(creature.read_text())
-profile['route'] = args.route
-creature.write_text(json.dumps(profile, indent=2) + '\n')
+if args.route:
+    profile['route'] = args.route
+    creature.write_text(json.dumps(profile, indent=2) + '\n')
 document['id'] = 'theia.starter.valley.gameplay'
 document['revision'] = 1
 manifest.write_text(json.dumps(document, indent=2) + '\n')
@@ -69,7 +82,7 @@ x.prepare_wheel()
 launcher = None
 results = []
 try:
-    with Identity(out / 'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True) as identity, Cluster(out / 'cluster', Path('build/postgres-sdk')) as cluster:
+    with Identity(out / 'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True) as identity, Cluster(out / 'cluster', Path('build/postgres-sdk'), isolate_process=True) as cluster:
         for resumed in (False, True):
             folder = out / ('resumed' if resumed else 'fresh')
             folder.mkdir()
@@ -91,23 +104,60 @@ try:
                 THEIA_TEST_BROWSER_USER=identity.users[0][0], THEIA_TEST_BROWSER_PASSWORD=identity.users[0][1],
                 BROWSER=f'{sys.executable} {Path("tools/qualify_account_launcher.py").resolve()} --owned-browser %s',
                 THEIA_WORLD_INPUT_OS_QUALIFY=str(folder))
-            existing_tickets = set(Path('build/development-session').glob('renet-*'))
+            runtime = folder/'owned/runtime' if args.population_package else Path('build/development-session')
+            existing_tickets = set(runtime.glob('renet-*'))
             with (folder / 'launcher.log').open('w') as log:
                 command = [sys.executable, 'tools/play.py', '--account-login', '--classic',
                     '--binaries', str(args.binaries.resolve()), '--players', str(args.players.resolve()),
                     '--authored-world', str(args.world.resolve()), '--navigation', str(args.navigation.resolve()),
                     '--gameplay-manifest', str(manifest), '--gameplay-validator', str(args.binaries.resolve() / 'examples/validate_gameplay'),
                     '--window-size', '1280x720', *(['--test-route',str(test_route)] if test_route else [])]
-                launcher = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT, text=True)
+                if args.population_package:
+                    command = [sys.executable, 'tools/account_population_playtest.py',
+                        '--package', str(package), '--players', str(args.players.resolve()),
+                        '--binaries', str(args.binaries.resolve()), '--output', str(folder/'owned'),
+                        '--gameplay-manifest', str(args.gameplay_manifest.resolve())]
+                launcher = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT, text=True, start_new_session=True)
                 try:
-                    launcher.stdin.write('1\n' if resumed else 'ValleyArden\n')
-                    launcher.stdin.flush()
+                    if args.population_package:
+                        def picker():
+                            assert launcher.poll() is None, 'Owned population picker exited'
+                            return json.loads((runtime/'characters.json').read_text())
+                        choices = wait(picker, 90)
+                        if resumed:
+                            assert len(choices['characters']) == 1
+                            selection = dict(schema=1, character_id=choices['characters'][0]['id'])
+                        else:
+                            assert choices['can_create'] and not choices['characters']
+                            selection = dict(schema=1, create_name='ValleyArden')
+                        pending = runtime/'selection.pending'
+                        pending.write_text(json.dumps(selection))
+                        pending.replace(runtime/'selection.json')
+                    else:
+                        launcher.stdin.write('1\n' if resumed else 'ValleyArden\n')
+                        launcher.stdin.flush()
                     def state():
                         assert launcher.poll() is None, 'Owned launcher exited; inspect copied logs'
                         # The optional live report can be observed while being replaced.
                         return wait(lambda: json.loads((folder / 'input-os.json').read_text()), 2)
                     wait(lambda: (folder / 'input-os.json').is_file() or launcher.poll() is not None, 70)
                     initial = wait(lambda: state() if state()['connected'] and state()['quest_journal'] and state()['guide_screen'] else None, 60)
+                    if args.population_package:
+                        observed = wait(lambda: value if len((value := state())['combat_targets']) == 5
+                            and (value.get('creature_visuals') or {}).get('attached') == 5
+                            and len(value.get('creature_animations') or []) == 5 else None, 90)
+                        assert all(t['current'] == t['maximum'] for t in observed['combat_targets'])
+                        assert len({t['entity'] for t in observed['target_entities']}) == 5
+                        (folder/'population-admission.json').write_text(json.dumps(dict(
+                            targets=observed['combat_targets'], poses=observed['target_entities'],
+                            animations=observed['creature_animations'], visuals=observed['creature_visuals'],
+                            adapter=observed['adapter'], feet=observed['dodge']['authority_feet']), indent=2)+'\n')
+                        declared = json.loads(args.gameplay_manifest.read_text())
+                        records = json.loads((folder/'owned/launch.json').read_text())['profiles']
+                        assert len(records) == 22
+                        for record in records:
+                            source = args.gameplay_manifest.parent/declared[profile_role(record['option'])]
+                            assert (folder/'owned'/record['file']).read_bytes() == source.read_bytes()
                     parent = re.search(r'^PPid:\s+(\d+)', Path(f'/proc/{initial["pid"]}/status').read_text(), re.M)
                     assert int(parent[1]) == launcher.pid
                     window = wait(lambda: owned_window(initial['pid']))
@@ -125,7 +175,10 @@ try:
                         assert report['connected'], 'Owned client disconnected during quest qualification'
                         return report
                     proof = flow(x, window, play_state, folder, resumed=resumed, intro_only=not bool(trail), authored_trail=trail, reach_areas=args.reach_area, authored_area=area, checked_travel=args.checked_travel)
-                    launcher.send_signal(signal.SIGINT)
+                    if args.population_package:
+                        launcher.stdin.close()
+                    else:
+                        launcher.send_signal(signal.SIGINT)
                     assert launcher.wait(timeout=30) == 0
                     results.append(proof)
                 except BaseException:
@@ -139,19 +192,26 @@ try:
                     raise
                 finally:
                     if launcher.poll() is None:
-                        launcher.send_signal(signal.SIGINT)
+                        if args.population_package:
+                            launcher.stdin.close()
+                        else:
+                            launcher.send_signal(signal.SIGINT)
                         try:
                             launcher.wait(timeout=30)
                         except subprocess.TimeoutExpired:
                             launcher.kill()
                             launcher.wait(timeout=10)
                     launcher.stdin.close()
-                    shutil.copy2('build/development-session/server.log', folder / 'server.log')
+                    shutil.copy2(runtime/'server.log', folder / 'server.log')
                     launcher = None
-            assert not (set(Path('build/development-session').glob('renet-*')) - existing_tickets)
+            assert not (set(runtime.glob('renet-*')) - existing_tickets)
             text = (folder / 'server.log').read_text()
             transport = next(json.loads(line.removeprefix('transport_summary ')) for line in text.splitlines() if line.startswith('transport_summary '))
-            assert transport['patrol']['moving_ticks'] > 0 and transport['patrol']['blocked'] == 0
+            if args.population_package:
+                assert transport['patrol'] is None
+                assert transport['test_player_admissions'] == 0
+            else:
+                assert transport['patrol']['moving_ticks'] > 0 and transport['patrol']['blocked'] == 0
             saved = next(json.loads(line.removeprefix('account_persistence_summary ')) for line in text.splitlines() if line.startswith('account_persistence_summary '))
             assert not saved['failed'] and saved['worker']['committed_records'] > 0
             db = cluster.query(query)
@@ -168,4 +228,4 @@ finally:
     x.close()
 (out / 'qualification.json').write_text(json.dumps(dict(passed=True, runs=results,
     private_services_closed=True, database_restart=True,
-    scope=('Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))
+    scope=('Dressed authored population: five native actors, complete 22-profile snapshot, guide introduction, checkpoint and PostgreSQL restart/rejoin; no population combat or travel claim' if args.population_package else 'Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))

@@ -1,3 +1,48 @@
+P5-17 / P1-06 / P3-09 / P3-11 dressed valley population access and introduction,
+14 November 2026: population export/Start can select an explicit saved Road guide
+through --population-access-path ID or the optional dialog field. Schema-2 config
+requires that path; schema 1 keeps direct access. Require a start within 0.5 m of
+player access and an endpoint inside the spawn volume. Reuse bounded grounded-route
+navigation/capsule checks for the entire prefix, then the existing candidate checks
+from its endpoint. Both peers repeat checks before admission. Carry the requested/
+checked road identity in Prepared through authoritative population installation;
+otherwise the welcome correctly refuses mismatched identities. No movement,
+collision tolerance, simulation I/O or NPC patrol/roaming rule changes.
+
+The new starter-valley-population.commands.jsonl recipe adds five independent
+pursuing wolves (group 1200, seed 42, respawn 30 s), saved access road 1201 from the
+existing 33-point village-to-grove trail, and kill/pelt map links. Preserve the
+village guide, 65 scenery placements, terrain and player spawn. Direct automatic
+access cuts across scenery and refuses all candidates; retained failure evidence:
+build/starter-valley-population-access-v1.log. Explicit checked road export passes
+through the actual native editor: invalid spacing/ID refusal, five placements,
+complete schema-19 snapshot and unchanged source. Population labels now describe
+both passive and pursuing definitions. Exact f32 terrain comparison corrects the
+qualifier's expanded-f64 telemetry comparison without relaxing global coordinates.
+Evidence: build/starter-valley-population-editor-native-v2/qualification.json,
+dialog.png, finished.png, binaries.json and package/population-export.json.
+
+Native owned account admission, all five creature poses/animation bindings, guide
+introduction and real PostgreSQL restart/select pass in this dressed package.
+Both sessions freeze all 22 exact exported profile roles; final Completed,
+25 XP and journal revision 5 persist. No singleton patrol or Test Player is admitted.
+Evidence: build/starter-valley-population-intro-native-v3/qualification.json,
+exact-role-audit.json, binaries.json, phase population-admission.json, quest
+screenshots and database-proof.txt. Owned EOF Stop closes services/tickets. The
+qualifier isolates service/launcher process groups. An earlier SIGINT stop exposed
+a buffered-stdin daemon shutdown crash; fixing that launcher path is the next slice.
+
+510 network tests pass (17 ignored), all 245 editor tests pass (12 ignored), seven
+updated dialog tests pass, and the real-baker loader test passes direct/path identity,
+same placements with different road identity, runtime transfer, wrong-floor refusal
+and schema rejection. Fmt, strict workspace/all-target Clippy and Python compile
+pass; build/population-access-{network-suite,editor-suite,dialog-tests,baker-test,
+clippy}.log. Linux editor 3440x1440/client 1280x720, RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6; zero GPU diagnostics. Existing development combat/loot/quest
+profiles are unchanged. Native population combat, travel/area/pelt completion in
+this dressed valley, balance, multiple contacts, Windows and capacity remain open.
+Local commits only.
+
 P5-17 / P3-09 / P3-11 editor population gameplay-template selection,
 14 November 2026: population export and Start account population playtest now
 show an optional gameplay-template field. An explicitly loaded template seeds it;

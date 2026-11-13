@@ -35,6 +35,7 @@ pub(super) struct Settings<'a> {
     pub spacing: f64,
     pub appearance: Option<&'a Path>,
     pub gameplay: Option<&'a Path>,
+    pub access_path: Option<u64>,
 }
 
 pub(super) fn default_baker() -> Result<PathBuf, String> {
@@ -88,9 +89,7 @@ fn validate_mode(
         );
     }
     if !network && !account && !zone.test_players.is_empty() {
-        return Err(
-            "Passive population export requires network mode for test-player presets".into(),
-        );
+        return Err("Population export requires network mode for test-player presets".into());
     }
     let id = groups[0].id;
     population::authoring::binding(zone, id, profile.clone()).map_err(|e| e.to_string())?;
@@ -165,6 +164,10 @@ fn publish_mode(
     } else {
         validate(zone, &profile, settings.spacing)?
     };
+    if let Some(path_id) = settings.access_path {
+        population::authoring::access_waypoints(zone, group, path_id, zone.spawn)
+            .map_err(|e| e.to_string())?;
+    }
     let appearance = settings
         .appearance
         .map(crate::creature_asset::read)
@@ -246,9 +249,12 @@ fn publish_mode(
                 String::from_utf8_lossy(&baked.stderr)
             ));
         }
-        let config = serde_json::json!({"schema":1,"zone":"zone.json","group":group,
+        let mut config = serde_json::json!({"schema":if settings.access_path.is_some() {2} else {1},"zone":"zone.json","group":group,
             "creature":"creature.json","navigation":"navigation",
             "minimum_spacing_metres":settings.spacing,"access_from":access.metres()});
+        if let Some(path_id) = settings.access_path {
+            config["access_path"] = path_id.into();
+        }
         fs::write(
             stage.join("population.json"),
             serde_json::to_vec_pretty(&config).map_err(|e| e.to_string())?,
@@ -287,7 +293,7 @@ fn publish_mode(
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
-            "gameplay_manifest":gameplay_manifest,
+            "gameplay_manifest":gameplay_manifest,"access_path":settings.access_path,
             "scope":"One checked population with configured creature behavior and matching static world/navigation; optional explicit quest/contact snapshot, no server launched; population definition controls NPC behavior, template patrol is not instantiated"}});
         fs::write(
             stage.join("population-export.json"),
@@ -464,6 +470,7 @@ mod tests {
                     spacing: 3.,
                     appearance: None,
                     gameplay: Some(&quest_template()),
+                    access_path: None,
                 },
                 &Default::default(),
             )
@@ -504,6 +511,7 @@ mod tests {
                 spacing: 3.,
                 appearance: None,
                 gameplay: Some(&template),
+                access_path: None,
             },
             &Default::default(),
         )
@@ -579,6 +587,7 @@ mod tests {
                 spacing: 3.,
                 appearance: None,
                 gameplay: None,
+                access_path: None,
             },
             &Default::default(),
         )
@@ -641,6 +650,7 @@ mod tests {
             spacing: 3.,
             appearance: None,
             gameplay: None,
+            access_path: None,
         };
         let bad_appearance = root.0.join("invalid.glb");
         fs::write(&bad_appearance, b"Not a GLB").unwrap();
@@ -734,6 +744,7 @@ mod tests {
             spacing: 3.,
             appearance: appearance.as_deref(),
             gameplay: None,
+            access_path: None,
         };
         assert!(
             publish(
@@ -866,6 +877,7 @@ mod tests {
                 spacing: 3.,
                 appearance: None,
                 gameplay: None,
+                access_path: None,
             },
             &Default::default(),
         )
@@ -927,6 +939,7 @@ mod tests {
                 spacing: 3.,
                 appearance: None,
                 gameplay: None,
+                access_path: None,
             },
             &Default::default(),
         )
@@ -948,6 +961,55 @@ mod tests {
                 .unwrap();
         assert_eq!(loaded.count(), 5);
         assert_eq!(loaded.respawn_ms(), 3000);
+        // A selected saved road is checked again at runtime, not trusted because
+        // an editor exported it. The access request also participates in identity.
+        let mut with_road = zone.clone();
+        with_road.paths.push(theia_zone::paths::GuidePath {
+            id: 2,
+            name: "Population access".into(),
+            kind: theia_zone::paths::PathKind::Road,
+            width_metres: 1.,
+            points: vec![[8192., 0., 8192.], [8194., 0., 8192.], [8196., 0., 8192.]],
+        });
+        with_road.save(&output.join("zone.json")).unwrap();
+        let config_path = output.join("population.json");
+        let mut config: serde_json::Value =
+            serde_json::from_slice(&fs::read(&config_path).unwrap()).unwrap();
+        config["schema"] = 2.into();
+        config["access_path"] = 2.into();
+        fs::write(&config_path, serde_json::to_vec(&config).unwrap()).unwrap();
+        let checked = population::configuration::Loaded::open(&config_path, &source).unwrap();
+        assert_eq!(checked.count(), 5);
+        assert_ne!(
+            checked.profile_identity([0; 32]),
+            loaded.profile_identity([0; 32])
+        );
+        let checked_identity = checked.profile_identity([0; 32]);
+        with_road.paths[0].points[1][2] += 1.;
+        with_road.save(&output.join("zone.json")).unwrap();
+        let alternate = population::configuration::Loaded::open(&config_path, &source).unwrap();
+        assert_ne!(alternate.profile_identity([0; 32]), checked_identity);
+        let (prepared, binding) = checked.into_parts();
+        assert_eq!(
+            checked_identity,
+            binding.profile_identity(prepared.profile_identity([0; 32]))
+        );
+        // Same endpoint and population placements; only the requested access
+        // route differs, so peers cannot silently disagree about the road.
+        assert_eq!(alternate.into_parts().0.points(), prepared.points());
+        with_road.paths[0].points[1][2] -= 1.;
+        with_road.paths[0].points[1][1] = 5.;
+        with_road.save(&output.join("zone.json")).unwrap();
+        assert!(population::configuration::Loaded::open(&config_path, &source).is_err());
+        with_road.paths[0].points[1][1] = 0.;
+        with_road.save(&output.join("zone.json")).unwrap();
+        config["schema"] = 1.into();
+        fs::write(&config_path, serde_json::to_vec(&config).unwrap()).unwrap();
+        assert!(population::configuration::Loaded::open(&config_path, &source).is_err());
+        config["schema"] = 2.into();
+        config.as_object_mut().unwrap().remove("access_path");
+        fs::write(&config_path, serde_json::to_vec(&config).unwrap()).unwrap();
+        assert!(population::configuration::Loaded::open(&config_path, &source).is_err());
         // Valid authoring inputs can still fail actual placement. Do not publish
         // a package when five actors cannot fit with the selected 32 m spacing.
         let rejected = root.0.join("insufficient-placement");
@@ -962,6 +1024,7 @@ mod tests {
                 spacing: 32.,
                 appearance: None,
                 gameplay: None,
+                access_path: None,
             },
             &Default::default(),
         )
