@@ -1,4 +1,5 @@
 //! P5-17/P3-15: standard Bevy greybox authoring; no trusted gameplay authority.
+mod account_picker;
 mod agent;
 mod asset_browser;
 mod asset_preview;
@@ -143,6 +144,7 @@ struct Session {
     play: Option<playtest::Playtest>,
     player_model: bool,
     network_active: bool,
+    account_picker_open: bool,
     player_animation: playtest_avatar::Preview,
     player_clips: Vec<String>,
     heading: f32,
@@ -230,6 +232,7 @@ impl Session {
             drag: None,
             play: None,
             network_active: false,
+            account_picker_open: false,
             player_model: true,
             player_animation: playtest_avatar::Preview::Auto,
             player_clips: vec![],
@@ -353,6 +356,7 @@ impl Session {
             || self.file_dialog.is_some()
             || self.export_dialog.is_some()
             || self.exit_confirmation
+            || self.account_picker_open
     }
     fn set_mode(&mut self, mode: EditorMode) {
         self.inspect_spawn = false;
@@ -852,6 +856,7 @@ fn run() -> Result<(), String> {
     .add_plugins(particle_workspace::plugin)
     .add_plugins(particle_inline::plugin)
     .add_plugins(exit_dialog::plugin)
+    .add_plugins(account_picker::plugin)
     .init_resource::<particle_preview::State>()
     .init_resource::<particle_preview::LibraryRoot>()
     .add_observer(workspace::activate)

@@ -14,6 +14,7 @@ pub(super) struct Manager {
     pub creature_asset: Option<PathBuf>,
     pub template: Option<PathBuf>,
     pub output: Option<PathBuf>,
+    pub account: bool,
     log: Option<PathBuf>,
     stopping: bool,
 }
@@ -25,6 +26,7 @@ impl Manager {
             creature_asset,
             template: None,
             output: None,
+            account: false,
             log: None,
             stopping: false,
         }
@@ -33,16 +35,24 @@ impl Manager {
         self.child.is_some()
     }
     pub fn start(&mut self, snapshot: &Path, players: &Path) -> Result<(), String> {
-        self.start_mode(snapshot, players, false)
+        self.start_mode(snapshot, players, false, false)
     }
     pub fn start_population(&mut self, snapshot: &Path, players: &Path) -> Result<(), String> {
-        self.start_mode(snapshot, players, true)
+        self.start_mode(snapshot, players, true, false)
+    }
+    pub fn start_account_population(
+        &mut self,
+        snapshot: &Path,
+        players: &Path,
+    ) -> Result<(), String> {
+        self.start_mode(snapshot, players, true, true)
     }
     fn start_mode(
         &mut self,
         snapshot: &Path,
         players: &Path,
         population: bool,
+        account: bool,
     ) -> Result<(), String> {
         if self.running() {
             return Err("Stop the current network playtest first".into());
@@ -69,14 +79,21 @@ impl Manager {
                 );
             }
         }
-        let script = PathBuf::from("tools/network_playtest.py");
+        let script_name = if account {
+            "account_population_playtest.py"
+        } else {
+            "network_playtest.py"
+        };
+        let script = PathBuf::from("tools").join(script_name);
         let script = if script.is_file() {
             script
         } else {
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/network_playtest.py")
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../tools")
+                .join(script_name)
         };
         let script = fs::canonicalize(script)
-            .map_err(|_| "Cannot locate tools/network_playtest.py in this development checkout")?;
+            .map_err(|_| "Cannot locate the playtest launcher in this development checkout")?;
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| e.to_string())?
@@ -100,7 +117,7 @@ impl Manager {
         });
         let mut command = Process::new(python);
         command.arg(script);
-        if population {
+        if population && !account {
             command
                 .arg("--population-config")
                 .arg(snapshot.join("population.json"))
@@ -113,24 +130,30 @@ impl Manager {
                     .arg(snapshot.join("creature.glb"));
             }
         }
+        if account {
+            command.arg("--package").arg(&snapshot);
+        } else {
+            command
+                .arg("--scenario")
+                .arg(snapshot.join("scenario.json"))
+                .arg("--world")
+                .arg(snapshot.join("world"))
+                .arg("--stop-on-stdin-eof");
+        }
         let child = command
-            .arg("--scenario")
-            .arg(snapshot.join("scenario.json"))
-            .arg("--world")
-            .arg(snapshot.join("world"))
             .arg("--players")
             .arg(&players)
             .arg("--binaries")
             .arg(binaries)
             .arg("--output")
             .arg(&output)
-            .arg("--stop-on-stdin-eof")
             .stdin(Stdio::piped())
             .stdout(file)
             .stderr(error)
             .spawn()
             .map_err(|e| format!("Cannot start Python network launcher: {e}"))?;
         self.child = Some(child);
+        self.account = account;
         self.output = Some(output);
         self.log = Some(log);
         self.player_assets = Some(players);

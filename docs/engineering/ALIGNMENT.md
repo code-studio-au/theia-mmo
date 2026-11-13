@@ -1,3 +1,31 @@
+P3-03 / P5-17 editor account population Start/create/select/Stop, 13 November 2026:
+The Zone menu now starts an authenticated population playtest directly from the
+current zone snapshot. Export does not require enabled Test Players, preserves the
+authored player spawn (with normal ground resolution), and omits scripted test
+controllers. The standard Bevy character dialog displays the account's bounded list,
+validates creation names, and publishes an explicit private create/select choice.
+Cancel and the existing Stop action close the owned launcher; editor exit retains
+the owner-pipe cleanup. Opening the name field clears its buffer while preserving
+Bevy's initialized text layout, so selection/replacement and editing keys work.
+The launcher uses the frozen reviewed development combat/equipment/XP/reward preset;
+it requires configured OIDC and PostgreSQL services, not a Test Player identity.
+All 241 editor tests pass (11 asset-dependent checks ignored in the general run),
+as do separate actual account/network population export checks, cargo fmt --check,
+workspace/all-target denied-warning Clippy, editor build and Python compilation.
+Native actual menu/export/create/select/Stop passes with owned OIDC/PostgreSQL:
+invalid name rejected, corrected name created, six-cast NPC kill, 25 committed XP,
+collected training reward, database restart, existing-character selection, identical
+revision-2 inventory, no duplicate creation, and clean Stop/ticket cleanup in both
+runs. Both source documents remain unchanged. Screenshots inspected; zero GPU
+diagnostics on AMD RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6 (Linux).
+Evidence: build/editor-account-ui-native-v4/qualification.json, fresh/resumed UI and
+game captures, database-proof.txt, and build/editor-account-ui-final-regression.log.
+Prerequisites: frozen account launcher plus checked passive population export and
+private account handoff. This completes their editor UI integration, not general
+quest/item/creature catalogue authoring. Multi-NPC aggro/pursuit/retaliation, normal
+per-life corpse/quest loot launch, production player auto-pathing, Windows native
+verification and MMO-scale capacity remain separate work. Changes local only.
+
 P3-03 / P5-17 frozen account population launcher, 13 November 2026:
 A dedicated owned wrapper now launches an editor-exported population with a frozen
 per-run development gameplay setup: sixteen exact files for typed combat, equipment,

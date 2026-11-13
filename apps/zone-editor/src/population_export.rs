@@ -45,7 +45,7 @@ pub(super) fn default_baker() -> Result<PathBuf, String> {
 }
 
 fn validate(zone: &Zone, profile: &creatures::Definition, spacing: f64) -> Result<u64, String> {
-    validate_mode(zone, profile, spacing, false)
+    validate_mode(zone, profile, spacing, false, false)
 }
 
 fn validate_mode(
@@ -53,6 +53,7 @@ fn validate_mode(
     profile: &creatures::Definition,
     spacing: f64,
     network: bool,
+    account: bool,
 ) -> Result<u64, String> {
     zone.validate()?;
     if network && !zone.test_players.iter().any(|p| p.enabled) {
@@ -78,7 +79,7 @@ fn validate_mode(
                 .into(),
         );
     }
-    if !network && !zone.test_players.is_empty() {
+    if !network && !account && !zone.test_players.is_empty() {
         return Err(
             "Passive population export requires network mode for test-player presets".into(),
         );
@@ -97,7 +98,7 @@ pub(super) fn publish(
     settings: Settings<'_>,
     scenery: &crate::scenery_library::Library,
 ) -> Result<serde_json::Value, String> {
-    publish_mode(zone, output, id, revision, settings, scenery, false)
+    publish_mode(zone, output, id, revision, settings, scenery, false, false)
 }
 
 pub(super) fn publish_network(
@@ -108,9 +109,21 @@ pub(super) fn publish_network(
     settings: Settings<'_>,
     scenery: &crate::scenery_library::Library,
 ) -> Result<serde_json::Value, String> {
-    publish_mode(zone, output, id, revision, settings, scenery, true)
+    publish_mode(zone, output, id, revision, settings, scenery, true, false)
 }
 
+pub(super) fn publish_account(
+    zone: &Zone,
+    output: &Path,
+    id: &str,
+    revision: u32,
+    settings: Settings<'_>,
+    scenery: &crate::scenery_library::Library,
+) -> Result<serde_json::Value, String> {
+    publish_mode(zone, output, id, revision, settings, scenery, false, true)
+}
+
+#[allow(clippy::too_many_arguments)]
 fn publish_mode(
     zone: &Zone,
     output: &Path,
@@ -119,6 +132,7 @@ fn publish_mode(
     settings: Settings<'_>,
     scenery: &crate::scenery_library::Library,
     network: bool,
+    account: bool,
 ) -> Result<serde_json::Value, String> {
     if output.exists() {
         return Err("Population export requires a new output directory".into());
@@ -130,8 +144,9 @@ fn publish_mode(
         .read_to_end(&mut creature)
         .map_err(|e| e.to_string())?;
     let profile = creatures::Definition::from_json(&creature).map_err(|e| e.to_string())?;
-    let group = if network {
-        validate_mode(zone, &profile, settings.spacing, true)?
+    let live = network || account;
+    let group = if live {
+        validate_mode(zone, &profile, settings.spacing, network, account)?
     } else {
         validate(zone, &profile, settings.spacing)?
     };
@@ -163,7 +178,7 @@ fn publish_mode(
         // Preserve the complete validated authoring document beside that world.
         let mut geometry = zone.clone();
         geometry.spawn_groups.clear();
-        if network {
+        if live {
             geometry.test_players.clear();
         }
         let world_report = crate::export::publish_with_assets(
@@ -210,7 +225,11 @@ fn publish_mode(
         )
         .map_err(|e| format!("Population placement: {e}"))?;
         let clients = if network {
-            let clients = crate::network_test_export::write_scenario(zone, &store, &stage)?;
+            crate::network_test_export::write_scenario(zone, &store, &stage)?
+        } else {
+            usize::from(account)
+        };
+        if live {
             fs::write(
                 stage.join("combat.json"),
                 include_bytes!("../../../content/gameplay/development-resource-abilities.json"),
@@ -226,13 +245,10 @@ fn publish_mode(
             for (name, bytes) in LIFE_FILES {
                 fs::write(stage.join(name), bytes).map_err(|e| e.to_string())?;
             }
-            clients
-        } else {
-            0
-        };
+        }
         let report = serde_json::json!({"population_export":{"passed":true,"group":group,
             "appearance":appearance.as_ref().map(|bytes|serde_json::json!({"file":"creature.glb","sha256":theia_network::terrain::sha256(bytes)})),
-            "player_life":network,
+            "player_life":live,"account_playtest":account,
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
@@ -245,7 +261,7 @@ fn publish_mode(
         // Reserve exclusively, and expose the runtime configuration last.
         fs::create_dir(output).map_err(|e| e.to_string())?;
         destination_created = true;
-        if network {
+        if live {
             for name in [
                 "scenario.json",
                 "combat.json",
@@ -340,6 +356,59 @@ mod tests {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.0);
         }
+    }
+    #[test]
+    fn account_export_does_not_require_enabled_test_players() {
+        let zone = fixture();
+        let profile = creatures::Definition::from_json(CREATURE).unwrap();
+        assert!(validate_mode(&zone, &profile, 3., true, false).is_err());
+        assert_eq!(validate_mode(&zone, &profile, 3., false, true).unwrap(), 1);
+    }
+    #[test]
+    #[ignore = "requires THEIA_NAV_BAKER actual offline binary"]
+    fn account_population_snapshot_keeps_author_spawn_and_omits_test_controllers() {
+        let root = Folder::new();
+        let creature = root.0.join("profile.json");
+        fs::write(&creature, CREATURE).unwrap();
+        let baker = PathBuf::from(std::env::var_os("THEIA_NAV_BAKER").unwrap());
+        let mut zone = fixture();
+        zone.test_players
+            .push(theia_zone::test_players::TestPlayer {
+                id: 10,
+                name: "Disabled preset".into(),
+                client_id: 1,
+                enabled: false,
+                position: [8195., 0.1, 8195.],
+                controller: Some("test.walk-turn".into()),
+                network: Default::default(),
+            });
+        let original = zone.clone();
+        let output = root.0.join("account");
+        let report = publish_account(
+            &zone,
+            &output,
+            "theia.test.account-population",
+            1,
+            Settings {
+                creature: &creature,
+                baker: &baker,
+                spacing: 3.,
+                appearance: None,
+            },
+            &Default::default(),
+        )
+        .unwrap();
+        assert_eq!(report["population_export"]["account_playtest"], true);
+        assert_eq!(report["population_export"]["clients"], 1);
+        assert_eq!(report["population_export"]["player_life"], true);
+        assert!(!output.join("scenario.json").exists());
+        assert!(!output.join("controllers").exists());
+        assert_eq!(Zone::load(&output.join("zone.json")).unwrap(), original);
+        let world = authored_world::Store::open(&output.join("world")).unwrap();
+        let spawn = world.spawn(0).unwrap().metres();
+        assert_eq!([spawn[0], spawn[2]], [zone.spawn[0], zone.spawn[2]]);
+        assert!((spawn[1] - 0.008).abs() < 1e-6);
+        assert_eq!(zone, original);
     }
     #[test]
     fn passive_export_refuses_ambiguous_or_unsupported_group_policies() {

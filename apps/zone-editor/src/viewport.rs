@@ -662,6 +662,7 @@ pub(super) fn report(
             ),
             With<asset_browser::Search>,
         >,
+        crate::account_picker::Report,
     ),
     session: Res<Session>,
     view: Res<View>,
@@ -687,6 +688,7 @@ pub(super) fn report(
         quests,
         spawn_groups,
         asset_search,
+        account_picker,
     ) = input;
     let Some(mut report) = report else {
         return;
@@ -926,6 +928,7 @@ pub(super) fn report(
             "entry":entry.map(|e|serde_json::json!({"name":e.name,"path":e.path.to_string_lossy(),"directory":e.directory}))}))
     }).collect::<Vec<_>>());
     value["export_dialog"] = export_dialog.snapshot(&session, scale.0, &focus);
+    value["account_picker"] = account_picker.snapshot(scale.0, &focus);
     value["particle_workspace"] = particles.snapshot();
     value["file_dialog"] = serde_json::json!(session.file_dialog.as_ref().map(|d|serde_json::json!({"mode":format!("{:?}",d.mode),"folder":d.folder.to_string_lossy(),"text":d.text,"selection":d.selection,"page":d.page,"pages":d.pages(),"overwrite":d.overwrite})));
     value["name_controls"] = serde_json::json!(controls.iter().filter_map(|(_,control,_,_,node,t,hovered,..)| {

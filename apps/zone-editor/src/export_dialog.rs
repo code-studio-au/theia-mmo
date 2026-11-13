@@ -27,6 +27,7 @@ enum Mode {
     NetworkTest,
     Population,
     PopulationTest,
+    AccountPopulationTest,
     ParticleChunks,
     ReplaceParticleChunks,
 }
@@ -34,21 +35,31 @@ impl Mode {
     fn world(self) -> bool {
         matches!(
             self,
-            Self::World | Self::NetworkTest | Self::Population | Self::PopulationTest
+            Self::World
+                | Self::NetworkTest
+                | Self::Population
+                | Self::PopulationTest
+                | Self::AccountPopulationTest
         )
     }
     fn population(self) -> bool {
-        matches!(self, Self::Population | Self::PopulationTest)
+        matches!(
+            self,
+            Self::Population | Self::PopulationTest | Self::AccountPopulationTest
+        )
     }
     fn network(self) -> bool {
-        matches!(self, Self::NetworkTest | Self::PopulationTest)
+        matches!(
+            self,
+            Self::NetworkTest | Self::PopulationTest | Self::AccountPopulationTest
+        )
     }
     fn fields(self) -> &'static [usize] {
         match self {
             Self::World => &[0, 1, 2, 3],
             Self::NetworkTest => &[0, 3, 4],
             Self::Population => &[0, 1, 2, 3, 4, 5, 7],
-            Self::PopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7],
+            Self::PopulationTest | Self::AccountPopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7],
             _ => &[0, 1],
         }
     }
@@ -217,12 +228,13 @@ pub(super) fn open(
     manager: Option<Res<network_playtest::Manager>>,
 ) {
     let network = std::mem::take(&mut requests.network_playtest);
+    let account_test = std::mem::take(&mut requests.account_population_playtest);
     let population_test = std::mem::take(&mut requests.population_playtest);
     let world = std::mem::take(&mut requests.export_world);
     let population = std::mem::take(&mut requests.export_population);
     let chunks = std::mem::take(&mut requests.export_particle_chunks);
     let replace = std::mem::take(&mut requests.replace_particle_chunks);
-    if !(world || chunks || replace || network || population || population_test)
+    if !(world || chunks || replace || network || population || population_test || account_test)
         || session.has_modal()
         || !windows.single().is_ok_and(|window| window.focused)
     {
@@ -243,7 +255,13 @@ pub(super) fn open(
         session.status = "Enable a test player and stop any existing network session first".into();
         return;
     }
-    let mode = if population_test {
+    if account_test && session.network_active {
+        session.status = "Stop the current playtest first".into();
+        return;
+    }
+    let mode = if account_test {
+        Mode::AccountPopulationTest
+    } else if population_test {
         Mode::PopulationTest
     } else if network {
         Mode::NetworkTest
@@ -258,7 +276,7 @@ pub(super) fn open(
     };
     let values = if mode.population() {
         [
-            if mode == Mode::PopulationTest {
+            if mode.network() {
                 format!(
                     "build/{slug}-population-{}",
                     std::time::SystemTime::now()
@@ -475,7 +493,9 @@ pub(super) fn finish(
                         .as_deref_mut()
                         .ok_or_else(|| "Network launcher is unavailable".to_string())
                         .and_then(|m| {
-                            let start = if draft.mode == Mode::PopulationTest {
+                            let start = if draft.mode == Mode::AccountPopulationTest {
+                                network_playtest::Manager::start_account_population
+                            } else if draft.mode == Mode::PopulationTest {
                                 network_playtest::Manager::start_population
                             } else {
                                 network_playtest::Manager::start
@@ -608,13 +628,7 @@ pub(super) fn finish(
                     }
                     let value = fields
                         .iter()
-                        .find(|(_, f, _)| {
-                            f.0 == if draft.mode == Mode::PopulationTest {
-                                6
-                            } else {
-                                4
-                            }
-                        })
+                        .find(|(_, f, _)| f.0 == if draft.mode.population() { 6 } else { 4 })
                         .map(|(_, _, t)| t.value().to_string())
                         .unwrap_or_default();
                     if value.trim().is_empty() || value.contains(['\0', '\n', '\r']) {
@@ -639,13 +653,16 @@ pub(super) fn finish(
                     let zone = session.editor.zone().clone();
                     let replace = draft.mode == Mode::ReplaceParticleChunks;
                     let network = draft.mode.network();
+                    let account = draft.mode == Mode::AccountPopulationTest;
                     draft.message = format!("Exporting {}…", path.display());
                     draft.target = Some(path.clone());
                     let scenery = scenery.as_deref().cloned().unwrap_or_default();
                     draft.task = Some(IoTaskPool::get().spawn(async move {
                         if let Some((id, revision, template)) = world {
                             if let Some((baker, spacing, appearance)) = population {
-                                let publish = if network {
+                                let publish = if account {
+                                    population_export::publish_account
+                                } else if network {
                                     population_export::publish_network
                                 } else {
                                     population_export::publish
@@ -718,6 +735,7 @@ pub(super) fn finish(
                 Mode::World => "Export world",
                 Mode::Population => "Export passive population",
                 Mode::PopulationTest => "Start population playtest",
+                Mode::AccountPopulationTest => "Start account population playtest",
                 Mode::ParticleChunks => "Export particles to chunks",
                 Mode::ReplaceParticleChunks => "Replace all world particles",
             }
@@ -728,6 +746,7 @@ pub(super) fn finish(
                 Mode::World => "Export world",
                 Mode::Population => "Export passive population",
                 Mode::PopulationTest => "Start population playtest",
+                Mode::AccountPopulationTest => "Start account population playtest",
                 Mode::ParticleChunks => "Export particles",
                 Mode::ReplaceParticleChunks => "Replace all particles",
             }
@@ -735,6 +754,7 @@ pub(super) fn finish(
         } else if description {
             **text = match draft.mode {
                 Mode::NetworkTest => "Starts one server and a client per enabled Test Player from this zone snapshot. Stop from the Zone menu. Zone files change only with Save.",
+                Mode::AccountPopulationTest => "Sign in, then choose or create one persistent character. Uses development equipment, combat, XP and training rewards. Requires configured account services. Test Player presets are used only by network playtests.",
                 Mode::PopulationTest => "Starts a checked passive population with one client per enabled Test Player. Stop through the Zone menu. Choose the matching creature profile and player assets.",
                 Mode::Population => "Exports one enabled passive spawn group, its static world and checked navigation. Choose a matching creature profile. Does not start a server.",
                 Mode::World => "Exports the current zone. Use a matching gameplay template for quest areas and NPC references. Save particle edits first.",

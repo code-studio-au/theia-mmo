@@ -31,6 +31,7 @@ pub(super) struct Requests {
     pub export_population: bool,
     pub network_playtest: bool,
     pub population_playtest: bool,
+    pub account_population_playtest: bool,
     pub stop_network_playtest: bool,
     pub export_particle_chunks: bool,
     pub replace_particle_chunks: bool,
@@ -67,6 +68,7 @@ pub(super) enum Control {
     ExportPopulation,
     NetworkPlaytest,
     PopulationPlaytest,
+    AccountPopulationPlaytest,
     StopNetworkPlaytest,
     ExportParticleChunks,
     ReplaceParticleChunks,
@@ -299,6 +301,11 @@ pub(super) fn setup(
                         (
                             Control::PopulationPlaytest,
                             "Start population playtest…",
+                            "",
+                        ),
+                        (
+                            Control::AccountPopulationPlaytest,
+                            "Start account population playtest…",
                             "",
                         ),
                         (Control::StopNetworkPlaytest, "Stop network playtest", ""),
@@ -642,6 +649,7 @@ impl Control {
                 !session.network_active
                     && session.editor.zone().test_players.iter().any(|p| p.enabled)
             }
+            Self::AccountPopulationPlaytest => !session.network_active,
             Self::Command(Action::Play) => !session.network_active,
             Self::Command(Action::BindSpawnCreature) => spawn_groups::can_bind_creature(session),
             Self::AssetPlace => session.ui.assets_open && session.assets.selected.is_some(),
@@ -950,6 +958,7 @@ pub(super) fn execute(
         Control::FileSaveAs => requests.file_save_as = true,
         Control::NetworkPlaytest => requests.network_playtest = true,
         Control::PopulationPlaytest => requests.population_playtest = true,
+        Control::AccountPopulationPlaytest => requests.account_population_playtest = true,
         Control::StopNetworkPlaytest => requests.stop_network_playtest = true,
         Control::ExportWorld => requests.export_world = true,
         Control::ExportPopulation => requests.export_population = true,
