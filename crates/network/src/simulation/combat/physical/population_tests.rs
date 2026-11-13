@@ -25,27 +25,27 @@ const DAMAGE_STATS: &[u8] =
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_physical_swings_resolve_each_life_independently_at_all_rates() {
-    qualify(false, None, false);
+    qualify(false, None, false, false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_ordinary_swings_resolve_each_life_independently_at_all_rates() {
-    qualify(true, None, false);
+    qualify(true, None, false, false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_special_damage_resolves_each_life_independently_at_all_rates() {
-    qualify(true, Some("theia.dev.sword-slash"), false);
+    qualify(true, Some("theia.dev.sword-slash"), false, false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_arcane_damage_resolves_each_life_independently_at_all_rates() {
-    qualify(true, Some("theia.dev.arcane-bolt"), false);
+    qualify(true, Some("theia.dev.arcane-bolt"), false, false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_competing_finishers_preserve_each_first_tag_at_all_rates() {
-    qualify(true, Some("theia.dev.sword-slash"), true);
+    qualify(true, Some("theia.dev.sword-slash"), true, false);
 }
 fn equip(world: &mut World, id: u64, revision: u64, item: &str) {
     world.observe_combat_equipment(
@@ -69,7 +69,7 @@ fn engage(world: &mut World, id: u64, target: EntityKey, sequence: u64) {
     );
     assert_eq!(reply.outcome, autoattack::Outcome::Engaged);
 }
-fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
+fn qualify(ordinary: bool, ability: Option<&str>, competing: bool, retaliating: bool) {
     let store = Arc::new(
         authored_world::Store::open(std::path::Path::new(
             &std::env::var_os("THEIA_AUTHORED_WORLD").unwrap(),
@@ -87,6 +87,14 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
     .unwrap();
     assert_eq!(request.count, 5);
     let definition = creatures::Definition::from_json(CREATURE).unwrap();
+    let stats = if retaliating {
+        let mut value: serde_json::Value = serde_json::from_slice(STATS).unwrap();
+        // Keep long lifecycle checks independent of prototype encounter balance.
+        value["maximum_health"] = 1000.into();
+        serde_json::to_vec(&value).unwrap()
+    } else {
+        STATS.to_vec()
+    };
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let prepared = spawn_preparation::check_authored(&store, &nav, &request)
             .unwrap()
@@ -116,7 +124,7 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
                 ),
                 100,
                 1000,
-                STATS,
+                &stats,
                 include_bytes!("../../../../../../content/gameplay/development-statuses.json"),
             )
             .unwrap();
@@ -131,7 +139,7 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
         assert!(world.enable_public_avatar_life().is_err());
         assert_eq!(world.identity(), before);
         let life = crate::player_life_wire::Profile::from_json(
-            STATS,
+            &stats,
             CREATURE,
             include_bytes!(
                 "../../../../../../content/gameplay/development-creature-retaliation.json"
@@ -139,9 +147,13 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
             include_bytes!("../../../../../../content/gameplay/development-player-respawn.json"),
         )
         .unwrap();
-        world
-            .enable_passive_population_player_life(Arc::new(life))
-            .unwrap();
+        if retaliating {
+            world.enable_population_player_life(Arc::new(life)).unwrap();
+        } else {
+            world
+                .enable_passive_population_player_life(Arc::new(life))
+                .unwrap();
+        }
         let before_public = world.identity();
         world.enable_public_avatar_life().unwrap();
         assert_ne!(world.identity(), before_public);
@@ -331,6 +343,10 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
                 )),
             );
             players.push(id);
+        }
+        if retaliating {
+            check_retaliators(&mut world, &players, &keys, rate);
+            continue;
         }
         if ordinary {
             let center = world
@@ -773,4 +789,179 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
         assert_eq!(left.actors.len(), fresh.actors.len() - 1);
         assert!(left.actors.iter().all(|actor| actor.key.actor != old.actor));
     }
+}
+
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_physical_retaliation_keeps_each_engagement_independent() {
+    qualify(false, None, false, true);
+}
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_ordinary_retaliation_keeps_each_engagement_independent() {
+    qualify(true, None, false, true);
+}
+fn check_retaliators(world: &mut World, players: &[u64], keys: &[EntityKey], rate: TickRate) {
+    let maximum = world
+        .player_life_snapshot(players[0])
+        .unwrap()
+        .maximum_health;
+    for (&id, &npc) in players[..2].iter().zip(keys) {
+        engage(world, id, npc, 1);
+    }
+    let mut stopped = [false; 2];
+    let mut struck = std::collections::BTreeSet::new();
+    for _ in 0..u64::from(rate.hz()) * 10 {
+        world.step();
+        for i in 0..2 {
+            let snapshot = world.combat_snapshot(players[i]).unwrap();
+            let health = snapshot
+                .targets
+                .iter()
+                .find(|t| t.key == keys[i])
+                .unwrap()
+                .current;
+            if health < 100 && !stopped[i] {
+                let reply = world.request_autoattack(
+                    players[i],
+                    autoattack::Request {
+                        epoch: world.epoch(),
+                        stream_epoch: world
+                            .correction(players[i])
+                            .unwrap()
+                            .state
+                            .input
+                            .stream_epoch,
+                        sequence: 2,
+                        target: None,
+                    },
+                );
+                assert_eq!(reply.outcome, autoattack::Outcome::Stopped);
+                stopped[i] = true;
+            }
+        }
+        for event in world.combat_events() {
+            let pair = match event {
+                Event::PhysicalDamage(f) if f.actor_generation.is_none() => {
+                    Some((f.actor, f.target))
+                }
+                Event::WhiteMelee(f) if f.actor_generation.is_none() => Some((f.actor, f.target)),
+                _ => None,
+            };
+            if let Some((npc, actor)) = pair {
+                let index = keys.iter().position(|k| *k == npc).unwrap();
+                assert!(index < 2, "Unprovoked bystander retaliated");
+                assert_eq!(actor, world.entity_key(players[index]).unwrap());
+                struck.insert(npc.entity.value());
+            }
+        }
+        for &id in players {
+            let life = world.player_life_snapshot(id).unwrap();
+            assert_eq!(
+                world.combat_snapshot(id).unwrap().vitals.unwrap().health(),
+                life.health
+            );
+        }
+        if stopped.iter().all(|v| *v)
+            && struck.len() == 2
+            && players[..2]
+                .iter()
+                .all(|id| world.player_life_snapshot(*id).unwrap().health < maximum)
+        {
+            break;
+        }
+    }
+    assert!(stopped.iter().all(|v| *v));
+    assert_eq!(struck.len(), 2);
+    for &id in &players[..2] {
+        let life = world.player_life_snapshot(id).unwrap();
+        assert!(life.health > 0 && life.health < maximum);
+    }
+    for &id in &players[2..] {
+        assert_eq!(world.player_life_snapshot(id).unwrap().health, maximum);
+    }
+    let departed = world.entity_key(players[0]).unwrap();
+    world.leave(players[0]);
+    for _ in 0..u64::from(rate.hz()) * 2 {
+        world.step();
+        for event in world.combat_events() {
+            match event {
+                Event::PhysicalDamage(f) => assert_ne!(f.target, departed),
+                Event::WhiteMelee(f) => assert_ne!(f.target, departed),
+                _ => {}
+            }
+        }
+    }
+    // Actual weapon damage kills one NPC; its old engagement must not survive respawn.
+    engage(world, players[1], keys[1], 3);
+    let mut defeated = false;
+    for _ in 0..u64::from(rate.hz()) * 60 {
+        world.step();
+        if world
+            .combat_snapshot(players[1])
+            .unwrap()
+            .targets
+            .iter()
+            .any(|t| t.key == keys[1] && t.current == 0)
+        {
+            defeated = true;
+            break;
+        }
+    }
+    assert!(
+        defeated,
+        "Retaliating NPC never died through ordinary weapon damage"
+    );
+    let remaining = world.player_life_snapshot(players[1]).unwrap().health;
+    assert!(remaining > 0);
+    let position = world
+        .combat_snapshot(players[1])
+        .unwrap()
+        .targets
+        .iter()
+        .find(|t| t.key == keys[1])
+        .unwrap()
+        .position;
+    for _ in 0..u64::from(rate.hz()) * 2 {
+        world.step();
+    }
+    assert_eq!(
+        world.player_life_snapshot(players[1]).unwrap().health,
+        remaining
+    );
+    let fresh = world
+        .combat_snapshot(players[1])
+        .unwrap()
+        .targets
+        .iter()
+        .find(|t| t.position == position && t.current == 100)
+        .unwrap()
+        .key;
+    assert_ne!(fresh, keys[1]);
+    assert!(world.creature_definition(keys[1]).is_none());
+    engage(world, players[1], fresh, 4);
+    let mut fresh_strike = false;
+    for _ in 0..u64::from(rate.hz()) * 10 {
+        world.step();
+        for event in world.combat_events() {
+            let npc = match event {
+                Event::PhysicalDamage(f) if f.actor_generation.is_none() => Some(f.actor),
+                Event::WhiteMelee(f) if f.actor_generation.is_none() => Some(f.actor),
+                _ => None,
+            };
+            if let Some(npc) = npc {
+                assert_eq!(npc, fresh);
+                fresh_strike = true;
+            }
+        }
+        if fresh_strike {
+            break;
+        }
+    }
+    assert!(
+        fresh_strike,
+        "Fresh creature did not establish its own retaliation"
+    );
+    assert!(world.player_life_error().is_none());
+    assert!(world.player_life_metrics().unwrap().strikes >= 2);
 }

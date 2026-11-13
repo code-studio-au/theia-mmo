@@ -426,6 +426,7 @@ pub(super) struct Authority {
     random: Option<outcomes::Random>,
     outcome_metrics: OutcomeMetrics,
     pve: Option<player_life::Authority>,
+    retaliators: Vec<player_life::Authority>,
     lives: Option<player_life::Lives>,
     resources_hash: Option<[u8; 32]>,
     statuses: Option<statuses::Registry>,
@@ -590,6 +591,7 @@ impl Authority {
             random,
             outcome_metrics: OutcomeMetrics::default(),
             pve: None,
+            retaliators: Vec::new(),
             lives: None,
             resources_hash,
             statuses: statuses.map(statuses::Registry::new),
@@ -630,6 +632,11 @@ impl Authority {
         let base = self.lives.as_ref().map_or(base, |p| {
             crate::player_life_wire::profile_identity(base, &p.profile)
         });
+        let base = if self.retaliators.is_empty() {
+            base
+        } else {
+            crate::player_life_wire::population_retaliation_identity(base)
+        };
         let base = self.autoattack.as_ref().map_or(base, |p| p.identity(base));
         let base = self
             .physical
@@ -663,6 +670,9 @@ impl Authority {
         if self.threat.is_none()
             && let Some(pve) = &mut self.pve
         {
+            pve.retired_player(id, rate);
+        }
+        for pve in &mut self.retaliators {
             pve.retired_player(id, rate);
         }
         self.actors.remove(&id);
@@ -990,6 +1000,9 @@ impl Authority {
                     creature.position = home;
                 }
                 if let Some(pve) = &mut self.pve {
+                    pve.respawned_creature(previous, creature.key, world.rate);
+                }
+                for pve in &mut self.retaliators {
                     pve.respawned_creature(previous, creature.key, world.rate);
                 }
                 creature.current = creature.maximum;
@@ -1322,7 +1335,7 @@ impl World {
         Some(Snapshot {
             vitals: authority.resources.as_ref().map(|p| {
                 Vitals::new(
-                    if authority.pve.is_some() {
+                    if authority.lives.is_some() {
                         state
                             .and_then(|a| a.life.as_ref())
                             .map_or(0, |p| p.state.health())

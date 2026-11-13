@@ -405,7 +405,7 @@ impl Authority {
         if player.state.key() != target
             || !player.state.alive()
             || world.entity_key(target.actor.entity.value()) != Some(target.actor)
-            || world.patrol.as_ref().is_none_or(|p| p.key != npc)
+            || world.creature_definition(npc).is_none()
             || !self.creatures.iter().any(|c| c.key == npc && c.current > 0)
         {
             return Ok(None);

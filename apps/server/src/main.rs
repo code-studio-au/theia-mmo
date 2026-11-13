@@ -479,7 +479,7 @@ async fn main() -> Result<()> {
             &respawn,
         )?);
         if population_bytes.is_some() {
-            world.enable_passive_population_player_life(profile)?;
+            world.enable_population_player_life(profile)?;
         } else {
             world.enable_player_life(profile)?;
         }

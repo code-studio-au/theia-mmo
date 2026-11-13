@@ -181,7 +181,11 @@ def run(args):
                         observed = wait(combat_observed, 15)
                         if args.creature_loot:
                             assert combat_proof['corpse_pickups'] == 2
-                        assert combat_proof['player_health'] == 100 and combat_proof['remaining'] < 100
+                        assert 0 < combat_proof['player_health'] <= 100 and combat_proof['remaining'] < 100
+                        if args.creature_loot:
+                            assert combat_proof['incoming_retaliation'] and combat_proof['player_health'] < 100
+                        else:
+                            assert combat_proof['player_health'] == 100
                         assert combat_proof['inventory_revision'] == (expected_revision if args.claim_reward else 1)
 
                     if args.kill:
@@ -198,7 +202,7 @@ def run(args):
                         original_bag = observed['inventory_bag']
                     (folder/'capture.request').write_text('capture\n')
                     wait(lambda: capture_ready(folder/'input-os.png'), 15)
-                    results.append(dict(resumed=resumed, health=100, creatures=5,
+                    results.append(dict(resumed=resumed, health=observed['combat']['player_health'], creatures=5,
                         inventory_revision=observed['inventory_bag']['revision'],
                         membership_events=observed['combat']['membership_events'], combat=combat_proof,
                         experience=observed.get('committed_progression'), rewards=observed.get('available_rewards')))
@@ -276,7 +280,7 @@ def run(args):
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
     result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=not args.picker, character_picker_rejoin=args.picker, character_picker_creation=args.create_picker, owner_pipe_stop=args.owned_stop, isolated_sessions=True, frozen_account_package=args.account_package,
-        mouse_or_keyboard_automation=False, scope=('Normal population corpse pickup through ordinary private requests, committed inventory and database restart; no OS input or NPC retaliation claim' if args.creature_loot else 'Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
+        mouse_or_keyboard_automation=False, scope=('Normal population corpse pickup through ordinary private requests, committed inventory and database restart; no OS input; stationary provoked retaliation verified' if args.creature_loot else 'Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 

@@ -64,6 +64,12 @@ impl Profile {
         &self.retaliation
     }
 }
+/// Bind independent population retaliation separately from the retained passive-life fixture.
+pub fn population_retaliation_identity(base: [u8; 32]) -> [u8; 32] {
+    let mut bytes = b"theia-population-retaliation-world-v1\0".to_vec();
+    bytes.extend(base);
+    crate::terrain::sha256(&bytes)
+}
 pub fn profile_identity(base: [u8; 32], profile: &Profile) -> [u8; 32] {
     let mut bytes = b"theia-player-life-and-retaliation-world-v1\0".to_vec();
     bytes.extend(base);

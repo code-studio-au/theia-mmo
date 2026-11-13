@@ -67,6 +67,10 @@ pub(super) struct Authority {
     metrics: Metrics,
     pursuit: Option<pursuit::Runtime>,
 }
+pub(super) struct PreparedRetaliation {
+    npc: EntityKey,
+    policy: retaliation::State,
+}
 impl Authority {
     pub(super) fn retired_player(&mut self, id: u64, rate: theia_core::time::TickRate) {
         if self
@@ -200,7 +204,7 @@ impl Combat {
         attacker: EntityKey,
         victim: EntityKey,
         remaining: u32,
-    ) -> Result<Option<retaliation::State>> {
+    ) -> Result<Option<PreparedRetaliation>> {
         if remaining == 0 || world.entity_key(attacker.entity.value()) != Some(attacker) {
             return Ok(None);
         }
@@ -213,10 +217,15 @@ impl Combat {
         else {
             return Ok(None);
         };
-        let Some(pve) = &self.pve else {
+        let Some(pve) = self
+            .pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == victim)
+        else {
             return Ok(None);
         };
-        if pve.npc != victim
+        if pve.error.is_some()
             || pve.pursuit.as_ref().is_some_and(|p| {
                 matches!(
                     p.directive().mode,
@@ -232,14 +241,19 @@ impl Combat {
         policy
             .record_hit(world.tick, key)
             .map_err(|_| "Retaliation clock refused an attack")?;
-        Ok(Some(policy))
+        Ok(Some(PreparedRetaliation {
+            npc: victim,
+            policy,
+        }))
     }
-    pub(super) fn commit_retaliation_attempt(&mut self, policy: Option<retaliation::State>) {
-        if let Some(policy) = policy {
+    pub(super) fn commit_retaliation_attempt(&mut self, prepared: Option<PreparedRetaliation>) {
+        if let Some(prepared) = prepared {
             self.pve
-                .as_mut()
+                .iter_mut()
+                .chain(&mut self.retaliators)
+                .find(|p| p.npc == prepared.npc)
                 .expect("Prepared retaliation authority")
-                .policy = policy;
+                .policy = prepared.policy;
         }
     }
     pub(super) fn note_retaliation_hit(
@@ -256,7 +270,12 @@ impl Combat {
         match self.prepare_retaliation_attempt(world, attacker, victim, remaining) {
             Ok(policy) => self.commit_retaliation_attempt(policy),
             Err(error) => {
-                if let Some(pve) = &mut self.pve {
+                if let Some(pve) = self
+                    .pve
+                    .iter_mut()
+                    .chain(&mut self.retaliators)
+                    .find(|p| p.npc == victim)
+                {
                     pve.error = Some(error.to_string());
                 }
             }
@@ -358,9 +377,17 @@ impl Combat {
         Ok(Some(damage))
     }
     pub(super) fn advance_retaliation(&mut self, world: &mut World) {
-        let Some(mut pve) = self.pve.take() else {
-            return;
-        };
+        if let Some(mut pve) = self.pve.take() {
+            self.advance_retaliator(world, &mut pve);
+            self.pve = Some(pve);
+        }
+        let mut population = std::mem::take(&mut self.retaliators);
+        for pve in &mut population {
+            self.advance_retaliator(world, pve);
+        }
+        self.retaliators = population;
+    }
+    fn advance_retaliator(&mut self, world: &mut World, pve: &mut Authority) {
         let alive = self
             .creatures
             .iter()
@@ -433,7 +460,6 @@ impl Combat {
             Ok(retaliation::Event::None) => {}
             Err(error) => pve.error = Some(format!("Retaliation clock failed: {error:?}")),
         }
-        self.pve = Some(pve);
     }
     pub(in crate::simulation) fn advance_player_lives(&mut self, world: &mut World, now: u64) {
         if self.lives.is_none() {
@@ -535,6 +561,25 @@ impl World {
         });
         Ok(())
     }
+    /// Neutral stationary creatures reuse the same retaliation policy independently.
+    /// No perception, pursuit, threat transfer or public attack stream is implied.
+    pub fn enable_population_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {
+        self.enable_passive_population_player_life(profile.clone())?;
+        let combat = self.combat.as_mut().unwrap();
+        combat.retaliators = combat
+            .creatures
+            .iter()
+            .map(|creature| Authority {
+                npc: creature.key,
+                policy: retaliation::State::new(profile.retaliation().clone(), self.rate),
+                profile: profile.clone(),
+                error: None,
+                metrics: Metrics::default(),
+                pursuit: None,
+            })
+            .collect();
+        Ok(())
+    }
     pub fn enable_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {
         let combat = self
             .combat
@@ -594,12 +639,13 @@ impl World {
     }
     pub fn player_life_error(&self) -> Option<&str> {
         let combat = self.combat.as_ref()?;
-        combat
-            .lives
-            .as_ref()?
-            .error
-            .as_deref()
-            .or_else(|| combat.pve.as_ref().and_then(|p| p.error.as_deref()))
+        combat.lives.as_ref()?.error.as_deref().or_else(|| {
+            combat
+                .pve
+                .iter()
+                .chain(&combat.retaliators)
+                .find_map(|p| p.error.as_deref())
+        })
     }
     pub fn player_life_metrics(&self) -> Option<Metrics> {
         let combat = self.combat.as_ref()?;
@@ -608,6 +654,13 @@ impl World {
             .pve
             .as_ref()
             .map_or_else(Metrics::default, |p| p.metrics);
+        for p in &combat.retaliators {
+            metrics.windups = metrics.windups.saturating_add(p.metrics.windups);
+            metrics.cancelled = metrics.cancelled.saturating_add(p.metrics.cancelled);
+            metrics.strikes = metrics.strikes.saturating_add(p.metrics.strikes);
+            metrics.damage = metrics.damage.saturating_add(p.metrics.damage);
+            metrics.deaths = metrics.deaths.saturating_add(p.metrics.deaths);
+        }
         metrics.respawns = lives.respawns;
         metrics.held_respawns = lives.held_respawns;
         Some(metrics)
@@ -642,15 +695,17 @@ impl World {
             respawn_at: player.state.respawn_at(),
             windup: combat
                 .pve
-                .as_ref()
+                .iter()
+                .chain(&combat.retaliators)
                 .filter(|pve| pve.policy.target() == Some(key))
-                .and_then(|pve| {
+                .filter_map(|pve| {
                     pve.policy.windup_until().map(|completes| Windup {
                         creature: pve.npc,
                         target: key,
                         completes,
                     })
-                }),
+                })
+                .min_by_key(|windup| (windup.completes, windup.creature.entity.value())),
         })
     }
     pub(in crate::simulation) fn initialize_player_life(&mut self, id: u64) -> bool {

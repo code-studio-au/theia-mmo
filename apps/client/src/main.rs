@@ -1056,6 +1056,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let base = player_life_profile.as_ref().map_or(base, |profile| {
             theia_network::player_life_wire::profile_identity(base, profile)
         });
+        let base = if population.is_some() && player_life_profile.is_some() {
+            theia_network::player_life_wire::population_retaliation_identity(base)
+        } else {
+            base
+        };
         let base = if let Some((weapons, _)) = &melee_profile {
             theia_network::simulation::combat::autoattack::profile_identity(
                 base,

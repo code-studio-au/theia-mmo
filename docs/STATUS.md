@@ -1,3 +1,38 @@
+P3-06 / P3-09 shared per-NPC retaliation for spawned populations, 13 November 2026:
+Normal population launches with player-life/retaliation profiles now install one
+bounded independent engagement per spawned creature. All engagements reuse the
+existing retaliation windup/recovery, authoritative reach/LOS, player-life checks,
+physical/ordinary outcomes and damage application. Provoking one enemy does not
+provoke its neighbours. Departure cancels that player's engagement; NPC death and
+fresh-ID respawn reset only the corresponding engagement. No database work or
+navigation search was added to the simulation step.
+Client and server share an explicit population-retaliation identity domain, separate
+from the retained passive-life test fixture. Shared combat vitals now read the
+actual player life even without the old singleton NPC authority. Private windup
+presentation chooses the earliest pending strike deterministically; multi-NPC public
+attack streams/animations remain separate. Stationary retaliation does not add
+perception, chase, NPC facing changes, threat transfer, evade or return movement.
+Two actual authored-world checks pass for physical and ordinary retaliation at
+20/30/60 Hz: two independent provoked enemies among five, idle bystanders, target
+disconnect, ordinary weapon kill, fresh-ID respawn and a new engagement. Lifecycle
+tests use explicit 1000-health players to decouple identity checks from balance.
+All 501 network tests pass (10 ignored), alongside strict workspace/all-target
+Clippy, fmt, matching client/server builds and 20 Python launcher tests (one asset
+check skipped). The initial link failed from disk exhaustion; clearing only stale
+incremental caches restored space and the rebuild passed.
+Native execution through the frozen editor account launcher and selected loot
+catalogues passes: the attacked enemy deals 28 damage, the player kills it in five
+casts, four neighbours remain untouched, two corpse pickups commit, and 25 XP plus
+revision-4 inventory survive PostgreSQL restart/character rejoin. Player health is
+transient (72 before exit, 100 on rejoin), not persisted. Zero GPU diagnostics on
+Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; no OS input automation.
+Evidence: build/population-retaliation-native-v1/qualification.json, lifecycle and
+final-check logs, and population-retaliation-rebuild.log. Windows, MMO-scale capacity,
+live SQL-backed competing attackers, and population pursuit remain unqualified.
+Next: reuse shared pursuit/return and checked movement with per-creature state and
+bounded navigation scheduling; do not introduce a different population combat model.
+Local only.
+
 P3-11 / P5-17 explicit editor item and loot catalogue selection, 13 November 2026:
 Account population Start now exposes item and reward/corpse-loot catalogue paths.
 Bounded editor reads use the runtime parsers to reject missing/mismatched items,

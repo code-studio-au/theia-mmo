@@ -30,6 +30,7 @@ struct Run {
     next: Instant,
     entered: bool,
     spent_mana: bool,
+    damaged: bool,
 }
 impl Run {
     fn finish(&mut self, result: serde_json::Value) {
@@ -92,6 +93,7 @@ pub(crate) fn install(
         next: Instant::now(),
         entered: false,
         spent_mana: false,
+        damaged: false,
     })
     .add_systems(Update, drive);
     Ok(())
@@ -135,6 +137,7 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
         return;
     }
     run.life = Some(life.key);
+    run.damaged |= life.health < life.maximum_health;
     run.entered |= life.combat.is_some_and(|v| v.in_combat());
     run.spent_mana |= combat.vitals.is_some_and(|v| v.mana() < v.maximum_mana());
     if combat.targets.len() != 5 {
@@ -266,7 +269,8 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
             let collected = run.collect_reward;
             let casts = run.casts;
             let pickups = run.pickups;
-            run.finish(serde_json::json!({"passed":true,"corpse_pickups":pickups,"reward_collected":collected,"casts":casts,"target":target.entity.value(),
+            let damaged = run.damaged;
+            run.finish(serde_json::json!({"passed":true,"incoming_retaliation":damaged,"corpse_pickups":pickups,"reward_collected":collected,"casts":casts,"target":target.entity.value(),
                 "epoch":target.epoch.value(),"remaining":health.current,"inventory_revision":inventory.map(|i| i.bag.revision()),
                 "entered_and_exited_combat":membership,"mana_spent":true,"bystanders_unchanged":true,
                 "player_health":life.health,"player_generation":life.key.generation.get()}));

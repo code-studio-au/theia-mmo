@@ -75,7 +75,7 @@ def prepare(args, repository):
         command.extend([flag, str(frozen/name)])
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
     (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot,
-        scope='One authenticated character on the exported population; development typed combat and durable grants; no Test Player controllers or NPC retaliation'), indent=2)+'\n')
+        scope='One authenticated character on the exported population; development typed combat and durable grants; stationary provoked retaliation; no Test Player controllers or NPC pursuit'), indent=2)+'\n')
     return command
 
 
