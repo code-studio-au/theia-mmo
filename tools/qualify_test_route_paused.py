@@ -17,12 +17,13 @@ def run(args):
     document = json.loads(source.read_text())
     document['navigation'] = str((source.parent / document['navigation']).resolve())
     document['start_paused'] = True
+    document['return_trip'] = args.return_trip
     route = out / 'paused-route.json'
     route.write_text(json.dumps(document, indent=2) + '\n')
     native = out / 'native'
     command = [sys.executable, str(Path(__file__).with_name('qualify_population_visual.py')),
                '--world', str(args.world.resolve()), '--population', str(args.population.resolve()),
-               '--route', str(route), '--output', str(native), '--seconds', '40',
+               '--route', str(route), '--output', str(native), '--seconds', '65' if args.return_trip else '40',
                '--binaries', str(args.binaries.resolve())]
     desktop = None
     with (out / 'qualification.log').open('w') as log:
@@ -55,12 +56,20 @@ def run(args):
             result = wait(lambda: next((r for r in reversed(reports())
                                        if r['finished'] and not r['active']), None), 30)
             assert result['travel']['failure'] is None, result
+            outward = result
+            if args.return_trip:
+                desktop.focus(window)
+                desktop.key('F7')
+                result = wait(lambda: next((r for r in reversed(reports())
+                                           if r['travel']['leg'] == 'return' and r['finished'] and not r['active']), None), 30)
+                assert result['travel']['failure'] is None, result
             assert process.wait(timeout=60) == 0, 'Native route qualification failed'
             proof = json.loads((native / 'qualification.json').read_text())
             assert proof['passed']
             (out / 'qualification.json').write_text(json.dumps(dict(
                 passed=True, paused_observations=observed, activated_with='Owned focused F7 key',
-                final=proof['travel'], scope='Paused preparation, ordinary key activation, arrival and manual release'), indent=2) + '\n')
+                outward=outward, final=proof['travel'], return_trip=args.return_trip,
+                scope='Paused preparation, ordinary key activation, arrival and manual release'), indent=2) + '\n')
         finally:
             if desktop:
                 desktop.close()
@@ -78,5 +87,6 @@ if __name__ == '__main__':
     for name in ('world', 'population', 'route', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
+    parser.add_argument('--return-trip', action='store_true', help='Also request the checked reverse leg with F7')
     os.environ.setdefault('DISPLAY', ':0')
     run(parser.parse_args())

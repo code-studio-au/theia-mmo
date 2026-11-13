@@ -1,3 +1,22 @@
+P4-03 explicit checked test return leg, 13 November 2026:
+Route documents may set return_trip=true. After arrival releases input, F7 starts
+the same statically checked points in reverse; after returning, F7 may start outward
+again. No automatic transition or interaction/attack is added. Manual cancellation
+or failure restarts the current leg, never silently switches its destination, and
+the current leg's checked-start proximity guard remains mandatory. Per-leg status
+and telemetry identify outward/return and retain elapsed/turn/failure observations.
+Eleven controller tests pass (one optional fixture ignored); fmt and strict
+workspace/all-target Clippy pass after replacing an unnecessary checked unwrap.
+Owned native Linux run starts paused, walks outward in 11.83 s, releases input,
+then starts the reverse route through a second normal focused F7 key. Return takes
+12.76 s, final authority is 0.182 m from the original start, controls released.
+Five population actors remain admitted; RX 7900 XTX/RADV Vulkan validation is clean,
+1600x1000 final status screenshot inspected. No camera/movement OS steering.
+Evidence: build/test-route-return-checks.log and
+build/test-route-return-native-v1/{qualification.json,native/qualification.json}.
+This is a bounded static return path, not moving-target replanning or a completed
+quest/kill migration. Combat displacement beyond the checked start still refuses.
+
 P4-03 opt-in paused test-route start, 13 November 2026:
 A checked route may set start_paused=true. Navigation/collision preparation still
 runs before startup, but ordinary input remains available until the focused F7

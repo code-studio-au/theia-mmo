@@ -15,6 +15,8 @@ struct Document {
     waypoints: Vec<[f64; 3]>,
     #[serde(default)]
     start_paused: bool,
+    #[serde(default)]
+    return_trip: bool,
 }
 const ARRIVAL: f64 = 0.25;
 const STALL_SECONDS: f64 = 8.;
@@ -29,6 +31,8 @@ pub(super) struct Travel {
     unready: f64,
     best_distance: f64,
     best_angle: f64,
+    return_trip: bool,
+    returning: bool,
 }
 impl Travel {
     pub fn load(
@@ -97,7 +101,9 @@ impl Travel {
             Ok(points)
         };
         let points = prepare().map_err(|e| format!("Test route preparation: {e}"))?;
-        Ok((doc.name, Self::new(points)?, doc.start_paused))
+        let mut travel = Self::new(points)?;
+        travel.return_trip = doc.return_trip;
+        Ok((doc.name, travel, doc.start_paused))
     }
     fn new(points: Vec<GlobalPosition>) -> Result<Self, String> {
         if !(2..=navigation::MAX_ROUTE_POINTS).contains(&points.len()) {
@@ -114,7 +120,23 @@ impl Travel {
             unready: 0.,
             best_distance: f64::INFINITY,
             best_angle: f64::INFINITY,
+            return_trip: false,
+            returning: false,
         })
+    }
+    pub fn restart(&mut self) {
+        if self.return_trip && self.finished() {
+            self.points.reverse();
+            self.returning = !self.returning;
+        }
+        self.reset();
+    }
+    pub fn next_action(&self) -> &'static str {
+        if self.return_trip && self.finished() {
+            if self.returning { "outward" } else { "return" }
+        } else {
+            "restart"
+        }
     }
     pub fn reset(&mut self) {
         self.index = 0;
@@ -137,7 +159,7 @@ impl Travel {
         self.index == self.points.len() && self.failure.is_none()
     }
     pub fn description(&self) -> serde_json::Value {
-        serde_json::json!({"waypoints":self.points.len(),"waypoint":self.index,"finished":self.finished(),"failure":self.failure,"elapsed_seconds":self.elapsed,"requested_turn_radians":self.turn_radians})
+        serde_json::json!({"waypoints":self.points.len(),"waypoint":self.index,"finished":self.finished(),"failure":self.failure,"elapsed_seconds":self.elapsed,"requested_turn_radians":self.turn_radians,"return_trip":self.return_trip,"leg":if self.returning {"return"} else {"outward"}})
     }
     pub fn wait(&mut self, seconds: f64) {
         if !self.started || self.finished() || self.failure.is_some() {
@@ -328,6 +350,48 @@ mod tests {
         );
         value["start_paused"] = serde_json::json!("true");
         assert!(serde_json::from_value::<Document>(value).is_err());
+    }
+    #[test]
+    fn return_leg_is_explicit_only_after_arrival_and_preserves_start_checks() {
+        let mut travel = route();
+        let original = travel.points.clone();
+        travel.index = travel.points.len();
+        travel.restart();
+        assert_eq!(travel.points, original); // Legacy routes always restart outward.
+        travel.return_trip = true;
+        travel.cancel("Manual takeover");
+        travel.restart();
+        assert_eq!(travel.points, original); // Failure cannot skip to another leg.
+        travel.index = travel.points.len();
+        assert_eq!(travel.next_action(), "return");
+        travel.restart();
+        assert!(travel.returning);
+        assert_eq!(
+            travel.points,
+            original.iter().rev().copied().collect::<Vec<_>>()
+        );
+        assert_eq!(travel.index, 0);
+        assert!(
+            travel
+                .sample(0.1, original[0], Facing::default(), 3.)
+                .is_none()
+        );
+        assert_eq!(
+            travel.failure,
+            Some("Player is not at the checked route start")
+        );
+        travel.restart();
+        assert!(travel.returning);
+        assert!(
+            travel
+                .sample(0.1, *original.last().unwrap(), Facing::default(), 3.)
+                .is_some()
+        );
+        travel.index = travel.points.len();
+        assert_eq!(travel.next_action(), "outward");
+        travel.restart();
+        assert!(!travel.returning);
+        assert_eq!(travel.points, original);
     }
     #[test]
     fn terminal_routes_release_input_once_and_restart_explicitly() {

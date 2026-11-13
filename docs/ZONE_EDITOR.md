@@ -4831,3 +4831,10 @@ A route document may also set `"start_paused": true` (default false). The client
 prepares and validates it at startup, then leaves normal controls available until
 you press F7 in that client. This is useful for accepting a quest before starting
 the approach. F7 does not bypass the original start-position check.
+
+For a journey with an explicit return, set `"return_trip": true` (default false).
+Arrival releases input; the status then offers F7 to return along the same checked
+points in reverse. Return arrival offers F7 to travel outward again. Each start
+requires proximity to that leg's first point. Cancelling or failing a leg restarts
+that same leg; it does not skip to the other destination. This does not follow
+moving targets or reconnect a player displaced away from the path during combat.

@@ -112,7 +112,7 @@ impl Run {
             self.elapsed = 0.;
             self.context = None;
             if let Some(travel) = &mut self.travel {
-                travel.reset();
+                travel.restart();
             }
         }
     }
@@ -394,10 +394,11 @@ fn status(run: Res<Run>, mut labels: Query<&mut Text, With<Status>>) {
     for mut text in &mut labels {
         text.0 = if let Some(reason) = run.travel.as_ref().and_then(|t| t.failure) {
             format!("{} | Stopped: {reason} [F7: restart]", run.script.name)
-        } else if run.travel.is_some() && run.finished() {
+        } else if let Some(travel) = run.travel.as_ref().filter(|travel| travel.finished()) {
             format!(
-                "{} | Arrived, manual control [F7: restart]",
-                run.script.name
+                "{} | Arrived, manual control [F7: {}]",
+                run.script.name,
+                travel.next_action()
             )
         } else if !run.active {
             format!("{} | Manual [F7: restart script]", run.script.name)

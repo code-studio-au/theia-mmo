@@ -1,3 +1,8 @@
+Test-travel update, 13 November 2026: normal play launcher support, automatic
+input release, optional paused activation and explicit checked return legs now pass
+native server/client checks. Remaining quest migration needs interaction/range and
+moving-target/death handling; static travel alone is not the full quest/kill flow.
+
 Test-travel progress: managed per-player route assignment and native rolling-valley
 travel are now qualified (13 November 2026). The approximately 49-second grove
 approach uses ordinary input without OS mouse corrections. Remaining requested
