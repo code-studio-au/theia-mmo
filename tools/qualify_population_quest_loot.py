@@ -14,7 +14,7 @@ import sys
 import time
 import urllib.parse
 
-from account_population_playtest import PROFILES, RESET_PROFILE, THREAT_PROFILE
+from account_population_playtest import PROFILES, RESET_PROFILE, THREAT_PROFILE, profile_role
 from edit_zone import build_environment
 from gpu_validation import check_gpu_diagnostics
 from player_assets import default_player_assets
@@ -26,6 +26,8 @@ QUEST = 'theia.dev.quest-wolf-pelts'
 
 
 def run(args):
+    if args.complete_snapshot and (not args.account_package or not args.published_gameplay):
+        raise ValueError('Complete snapshot qualification requires account package and published gameplay')
     out = args.output.resolve()
     out.mkdir(mode=0o700, parents=True, exist_ok=False)
     package, binaries = args.population.resolve(), args.binaries.resolve()
@@ -57,17 +59,13 @@ def run(args):
         assert json.loads(published['quest'].read_bytes()) == journal, 'Published fixture quest differs'
         journal_bytes = published['quest'].read_bytes()
     (out/'journal.json').write_bytes(journal_bytes)
-    def role_for_option(flag):
-        return {'--abilities': 'abilities', '--character-stats': 'stats', '--statuses': 'statuses',
-                '--items': 'items', '--reward-catalog': 'rewards', '--progression-catalog': 'progression',
-                '--quest-catalog': 'quest', '--dialogue-catalog': 'dialogue'}.get(flag, flag.removeprefix('--').replace('-', '_'))
     profiles = []
     for flag, filename in [*PROFILES, RESET_PROFILE, THREAT_PROFILE]:
         if flag == '--items':
             filename = 'development-loot-items.json'
         elif flag == '--reward-catalog':
             filename = 'development-quest-required-loot-fixture.json'
-        role = role_for_option(flag)
+        role = profile_role(flag)
         profiles.extend([flag, str(published.get(role, (Path('content/gameplay')/filename).resolve()))])
     access = json.loads((package/'population.json').read_text())['access_from']
     guide = 'authored' if published else f'{access[0]+1},{access[1]},{access[2]-1}'
@@ -124,6 +122,12 @@ def run(args):
                         '--quest-catalog', str(out/'journal.json'), '--guide-position', guide,
                         '--dialogue-catalog', str(dialogue), *area_options,
                         *(['--character-id', character] if character else [])]
+                    if args.complete_snapshot:
+                        command = [sys.executable, 'tools/account_population_playtest.py',
+                            '--package', str(package), '--players', str(args.players.resolve()),
+                            '--binaries', str(binaries), '--output', str(folder/'owned'),
+                            '--gameplay-manifest', str(args.published_gameplay.resolve()),
+                            *(['--character-id', character] if character else [])]
                 with (folder/'launcher.log').open('w') as log:
                     launcher = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT)
                     try:
@@ -166,6 +170,9 @@ def run(args):
                                  and state()['quest_journal']['ui']['applied'] == before+1)
                             desktop.key('Escape')
                             wait(lambda: not state()['dialogue_open'])
+                            if state()['inventory_open']:
+                                desktop.key('i')
+                                wait(lambda: not state()['inventory_open'])
 
                         if phase == 1:
                             assert progress() is None
@@ -237,10 +244,11 @@ def run(args):
                 if args.account_package:
                     frozen = json.loads((folder/'owned/launch.json').read_text())
                     assert frozen['quest_journal'] and frozen['quest_items'] and frozen['quest_loot']
-                    assert len(frozen['profiles']) == 20 + bool(area_options) and frozen['guide_position'] == guide
+                    assert len(frozen['profiles']) == 20 + bool(area_options) + args.complete_snapshot and frozen['guide_position'] == guide
+                    assert bool(frozen['gameplay_snapshot']) == args.complete_snapshot
                     for profile in frozen['profiles']:
                         assert hashlib.sha256((folder/'owned'/profile['file']).read_bytes()).hexdigest() == profile['sha256']
-                        source = published.get(role_for_option(profile['option']))
+                        source = published.get(profile_role(profile['option']))
                         if source:
                             assert (folder/'owned'/profile['file']).read_bytes() == source.read_bytes()
                 assert selected.returncode == 0 and len(selected.stdout.splitlines()) == 1
@@ -287,7 +295,7 @@ def run(args):
     finally:
         desktop.close()
     assert not any((out/'cluster'/name).exists() for name in ['password', 'pgpass'])
-    result = dict(passed=True, runs=results, postgres_process_restarts=2, pid_bound_quest_clicks=True, frozen_account_package=args.account_package, accepted_kill_objective=args.kill_objective,
+    result = dict(passed=True, runs=results, postgres_process_restarts=2, pid_bound_quest_clicks=True, frozen_account_package=args.account_package, complete_gameplay_snapshot=args.complete_snapshot, accepted_kill_objective=args.kill_objective,
         fixture='Explicit one-pelt journal; normal pursuing editor population and ordinary gameplay requests', authored_guide=bool(published),
         binaries={name: hashlib.sha256((binaries/name).read_bytes()).hexdigest() for name in ['theia-client', 'theia-server']})
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
@@ -303,4 +311,5 @@ if __name__ == '__main__':
     parser.add_argument('--account-package', action='store_true', help='Qualify the frozen account wrapper instead of direct normal play')
     parser.add_argument('--kill-objective', action='store_true', help='Also require an accepted kill, observing its credit before corpse pickup')
     parser.add_argument('--published-gameplay', type=Path, help='Use exact published fixture roles and the world-bound authored guide')
+    parser.add_argument('--complete-snapshot', action='store_true', help='Select the complete validated gameplay manifest in the account wrapper')
     run(parser.parse_args())

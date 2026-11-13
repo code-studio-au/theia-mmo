@@ -1,3 +1,21 @@
+Complete population account snapshot (14 November 2026): use the exported
+manifest directly instead of supplying individual gameplay files:
+
+```sh
+python3 tools/account_population_playtest.py --package PACKAGE --players PLAYER_ASSETS \
+  --output NEW_SESSION --gameplay-manifest PACKAGE/world/gameplay/gameplay.manifest.json
+```
+
+The wrapper uses `BINARIES/examples/validate_gameplay` (or explicit
+`--gameplay-validator`) to validate and snapshot schema-16+ input, then freezes every
+applicable role in the private session. It binds the authored guide automatically,
+requires the same creature ID and excludes the template's singleton patrol. Quest
+modes follow the schema; vendor/documents/fixed rewards are forwarded when present.
+Individual item/reward/quest/dialogue/guide/area overrides cannot accompany a manifest.
+Default account launches and the explicit-file workflow below remain available.
+Native schema-19 quest/map/loot/restart is qualified; native optional documents/fixed
+rewards and the editor dialog connection remain separate. See STATUS for evidence.
+
 Population quest/contact export (14 November 2026): the headless population
 workflow now accepts an explicit `--gameplay-template MANIFEST` alongside
 `--population --population-creature FILE --export NEW_DIR`. It reuses the existing

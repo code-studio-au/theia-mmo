@@ -3,8 +3,10 @@ import argparse
 import hashlib
 import json
 import os
+import tempfile
 from pathlib import Path
 import play
+from gameplay_bundle import snapshot
 
 # Explicit, reviewed development setup. Normal client/server preflight remains
 # responsible for validating every binding against the exported population.
@@ -32,7 +34,7 @@ RESET_PROFILE = ('--creature-reset', 'development-creature-return-reset.json')
 THREAT_PROFILE = ('--creature-threat', 'development-creature-threat.json')
 
 
-def configured_pursuit(package):
+def configured_definition(package):
     def document(path):
         with path.open('rb') as file:
             data = file.read(4097)
@@ -51,28 +53,63 @@ def configured_pursuit(package):
     path = (package/relative).resolve()
     if not path.is_relative_to(package):
         raise ValueError('Population creature path escapes the package')
-    return document(path).get('aggro') is not None
+    return document(path)
+
+
+def configured_pursuit(package):
+    return configured_definition(package).get('aggro') is not None
+
+
+def profile_role(flag):
+    return {'--abilities': 'abilities', '--character-stats': 'stats', '--statuses': 'statuses',
+            '--items': 'items', '--reward-catalog': 'rewards', '--progression-catalog': 'progression',
+            '--quest-catalog': 'quest', '--dialogue-catalog': 'dialogue', '--vendor-catalog': 'vendor',
+            '--document-catalog': 'documents'}.get(flag, flag.removeprefix('--').replace('-', '_'))
 
 
 def prepare(args, repository):
+    manifest = getattr(args, 'gameplay_manifest', None)
+    validator = getattr(args, 'gameplay_validator', None)
+    if validator and not manifest:
+        raise ValueError('Gameplay validator requires a gameplay manifest')
+    if manifest:
+        if any(getattr(args, key, None) for key in ['items', 'reward_catalog', 'quest_catalog',
+                'dialogue_catalog', 'guide_position', 'quest_areas']):
+            raise ValueError('Gameplay manifest cannot be mixed with individual profile overrides')
+        validator = validator or args.binaries/'examples'/('validate_gameplay.exe' if os.name == 'nt' else 'validate_gameplay')
+        with tempfile.TemporaryDirectory(prefix='theia-population-gameplay-') as temporary:
+            with snapshot(manifest, validator, Path(temporary)) as bundle:
+                if bundle[1]['manifest_schema'] < 16:
+                    raise ValueError('Population gameplay snapshots require schema 16 or newer')
+                return prepare_profiles(args, repository, bundle)
+    return prepare_profiles(args, repository)
+
+
+def prepare_profiles(args, repository, bundle=None):
+    paths, report = bundle if bundle else ({}, None)
     package, output = args.package.resolve(), args.output.resolve()
     players, binaries = args.players.resolve(), args.binaries.resolve()
     for path in [package/'population.json', package/'world/authored.world.json', players/'character.glb']:
         if not path.is_file():
             raise ValueError(f'Missing account playtest dependency: {path}')
-    items = getattr(args, 'items', None)
-    rewards = getattr(args, 'reward_catalog', None)
+    items = paths.get('items', getattr(args, 'items', None))
+    rewards = paths.get('rewards', getattr(args, 'reward_catalog', None))
     if bool(items) != bool(rewards):
         raise ValueError('Select item and reward catalogues together')
-    quests = getattr(args, 'quest_catalog', None)
-    dialogue = getattr(args, 'dialogue_catalog', None)
-    guide = getattr(args, 'guide_position', None)
-    areas = getattr(args, 'quest_areas', None)
+    quests = paths.get('quest', getattr(args, 'quest_catalog', None))
+    dialogue = paths.get('dialogue', getattr(args, 'dialogue_catalog', None))
+    guide = 'authored' if bundle else getattr(args, 'guide_position', None)
+    areas = paths.get('quest_areas', getattr(args, 'quest_areas', None))
     if any([quests, dialogue, guide]) and not all([quests, dialogue, guide]):
         raise ValueError('Select quest and dialogue catalogues and a guide position together')
     if areas and not quests:
         raise ValueError('Quest areas require an explicit quest journal')
-    pursuit = configured_pursuit(package)
+    definition = configured_definition(package)
+    pursuit = definition.get('aggro') is not None
+    if bundle and json.loads(paths['creature'].read_bytes())['id'] != definition.get('id'):
+        raise ValueError('Population creature ID differs from the gameplay snapshot')
+    encounter = pursuit or bool(bundle)
+    quest_items = bool(quests) and (not report or report['manifest_schema'] >= 18)
     overrides = {'--items': items, '--reward-catalog': rewards}
     selected_names = {'--items': 'selected-items.json', '--reward-catalog': 'selected-rewards.json',
                       '--quest-catalog': 'selected-quests.json', '--dialogue-catalog': 'selected-dialogue.json',
@@ -84,10 +121,17 @@ def prepare(args, repository):
         if areas:
             overrides['--quest-areas'] = areas
             quest_profiles.append(('--quest-areas', selected_names['--quest-areas']))
+    if bundle:
+        for flag in ['--vendor-catalog', '--document-catalog', '--quest-item-rewards']:
+            if profile_role(flag) in paths:
+                quest_profiles.append((flag, 'selected-'+profile_role(flag).replace('_', '-')+'.json'))
+        for flag, _ in [*PROFILES, RESET_PROFILE, THREAT_PROFILE, *quest_profiles]:
+            overrides[flag] = paths[profile_role(flag)]
+            selected_names.setdefault(flag, 'selected-'+profile_role(flag).replace('_', '-')+'.json')
     profiles = []
     corpse_loot = False
     quest_loot = False
-    for flag, name in [*PROFILES, *([RESET_PROFILE, THREAT_PROFILE] if pursuit else []), *quest_profiles]:
+    for flag, name in [*PROFILES, *([RESET_PROFILE, THREAT_PROFILE] if encounter else []), *quest_profiles]:
         selected = overrides.get(flag)
         source = selected.resolve() if selected else repository/'content/gameplay'/name
         if selected:
@@ -105,7 +149,7 @@ def prepare(args, repository):
             quest_loot = any(isinstance(row, dict) and row.get('quest_required') is True
                              for row in document['rewards'])
         profiles.append((flag, name, data))
-    if quest_loot and (not quests or not corpse_loot):
+    if quest_loot and (not quest_items or not corpse_loot):
         raise ValueError('Quest-required loot needs an explicit inventory-bound quest journal and per-life rewards')
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     frozen = output/'profiles'
@@ -117,10 +161,14 @@ def prepare(args, repository):
     if corpse_loot:
         command.append('--creature-loot')
     if quests:
-        command.extend(['--quest-journal', '--quest-items', '--guide-position', guide])
+        command.extend(['--quest-journal', '--guide-position', guide])
+    if quest_items:
+        command.append('--quest-items')
+    if 'vendor' in paths:
+        command.append('--vendors')
     if quest_loot:
         command.append('--quest-loot')
-    if pursuit:
+    if encounter:
         command.append('--public-creature-attacks')
     command.extend(['--character-id', args.character_id] if args.character_id else ['--character-picker'])
     if (package/'creature.glb').is_file():
@@ -130,9 +178,9 @@ def prepare(args, repository):
         (frozen/name).write_bytes(data)
         command.extend([flag, str(frozen/name)])
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
-    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=pursuit, creature_threat=pursuit, public_creature_attacks=pursuit,
-        quest_journal=bool(quests), quest_items=bool(quests), quest_loot=quest_loot, quest_areas=bool(areas), guide_position=guide,
-        scope='One authenticated character on the exported population; development typed combat and durable grants; shared NPC retaliation and configured pursuit, return reset, damage threat and public attack timing; no Test Player controllers'), indent=2)+'\n')
+    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=encounter, creature_threat=encounter, public_creature_attacks=encounter,
+        quest_journal=bool(quests), quest_items=quest_items, quest_loot=quest_loot, quest_areas=bool(areas), guide_position=guide, gameplay_snapshot=report,
+        scope='One authenticated character on the exported population with frozen gameplay profiles and durable grants; shared NPC retaliation and configured pursuit, return reset, damage threat and public attack timing; no Test Player controllers'), indent=2)+'\n')
     return command
 
 
@@ -149,6 +197,8 @@ def main():
     parser.add_argument('--dialogue-catalog', type=Path, help='Explicit quest contact dialogue; requires --quest-catalog')
     parser.add_argument('--guide-position', help='Explicit quest contact x,z or x,y,z feet, or authored; requires --quest-catalog')
     parser.add_argument('--quest-areas', type=Path, help='Explicit authored quest/map areas; requires --quest-catalog')
+    parser.add_argument('--gameplay-manifest', type=Path, help='Complete validated schema-16+ gameplay snapshot; uses the authored guide and excludes individual overrides')
+    parser.add_argument('--gameplay-validator', type=Path, help='Optional Rust validator executable for --gameplay-manifest')
     parser.add_argument('--character-id', help='Optional existing owned character; otherwise publish the private picker')
     args = parser.parse_args()
     repository = Path(__file__).resolve().parent.parent

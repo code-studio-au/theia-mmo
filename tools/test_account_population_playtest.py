@@ -1,10 +1,12 @@
 """Frozen account population launch setup; never starts services or windows."""
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 import account_population_playtest as launcher
 
 
@@ -143,6 +145,81 @@ class AccountPopulation(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Quest areas require'):
                 launcher.prepare(args, root)
             self.assertFalse(args.output.exists())
+
+    def test_complete_snapshot_freezes_every_runtime_role_and_selects_schema_modes(self):
+        repository = Path(__file__).resolve().parent.parent
+        for schema, filename in [(16, 'development-gameplay-classic-quest-areas.json'),
+                                 (19, 'development-gameplay-classic-quest-loot-fixture.json'),
+                                 (21, 'development-gameplay-classic-item-rewards-fixture.json')]:
+            with self.subTest(schema=schema), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                args = self.fixture(root)
+                args.gameplay_manifest = root/'manifest.json'
+                (args.package/'creature.json').write_text('{"schema":3,"id":"theia.dev.training-creature"}')
+                manifest = json.loads((repository/'content'/filename).read_text())
+                paths = {}
+                for role, name in manifest.items():
+                    if role in ['schema', 'id', 'revision']:
+                        continue
+                    paths[role] = root/f'source-{role}.json'
+                    paths[role].write_bytes((repository/'content'/name).read_bytes())
+                @contextmanager
+                def frozen(*_):
+                    yield paths, dict(manifest_schema=schema)
+                with patch.object(launcher, 'snapshot', frozen):
+                    command = launcher.prepare(args, root)
+                report = json.loads((args.output/'launch.json').read_text())
+                self.assertEqual(len(report['profiles']), len(paths)-1)
+                self.assertEqual(report['guide_position'], 'authored')
+                self.assertEqual(report['quest_items'], schema >= 18)
+                self.assertEqual(report['quest_loot'], schema >= 19)
+                self.assertEqual('--quest-items' in command, schema >= 18)
+                self.assertEqual('--quest-loot' in command, schema >= 19)
+                self.assertIn('--vendors', command)
+                self.assertEqual('--document-catalog' in command, schema >= 20)
+                self.assertEqual('--quest-item-rewards' in command, schema >= 21)
+                self.assertNotIn('--gameplay-manifest', command)
+                self.assertNotIn('--creature-profile', command)
+                for record in report['profiles']:
+                    source = paths[launcher.profile_role(record['option'])]
+                    copied = args.output/record['file']
+                    self.assertEqual(copied.read_bytes(), source.read_bytes())
+                    source.write_bytes(b'changed source')
+                    self.assertNotEqual(copied.read_bytes(), source.read_bytes())
+
+    def test_manifest_refuses_overrides_and_validator_without_manifest_before_snapshot(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            for key in ['items', 'reward_catalog', 'quest_catalog', 'dialogue_catalog', 'guide_position', 'quest_areas']:
+                args.gameplay_manifest = root/'missing.json'
+                setattr(args, key, 'selected')
+                with self.subTest(key=key), patch.object(launcher, 'snapshot') as validate:
+                    with self.assertRaisesRegex(ValueError, 'cannot be mixed'):
+                        launcher.prepare(args, root)
+                    validate.assert_not_called()
+                setattr(args, key, None)
+            args.gameplay_manifest = None
+            args.gameplay_validator = root/'validator'
+            with self.assertRaisesRegex(ValueError, 'requires a gameplay manifest'):
+                launcher.prepare(args, root)
+            self.assertFalse(args.output.exists())
+
+    def test_manifest_refuses_legacy_schema_and_creature_mismatch_without_output(self):
+        for schema in [15, 19]:
+            with self.subTest(schema=schema), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                args = self.fixture(root)
+                args.gameplay_manifest = root/'manifest.json'
+                creature = root/'other.json'
+                creature.write_text('{"id":"theia.dev.other-creature"}')
+                @contextmanager
+                def frozen(*_):
+                    yield {'creature': creature, 'quest': root/'quest.json', 'dialogue': root/'dialogue.json'}, dict(manifest_schema=schema)
+                with patch.object(launcher, 'snapshot', frozen), self.assertRaisesRegex(ValueError,
+                        'schema 16' if schema == 15 else 'creature ID differs'):
+                    launcher.prepare(args, root)
+                self.assertFalse(args.output.exists())
 
     def test_oversized_quest_contact_is_bounded_before_output(self):
         with tempfile.TemporaryDirectory() as folder:

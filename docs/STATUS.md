@@ -1,3 +1,37 @@
+P5-17 / P3-09 / P3-11 complete population account gameplay snapshot,
+14 November 2026: account_population_playtest.py accepts an explicit
+--gameplay-manifest (schema 16 or newer) instead of individual profile overrides.
+Reuse the Rust validator and exact-byte snapshot helper before creating the owned
+session. Freeze every applicable runtime role, including vendor and available
+documents/fixed quest rewards; record the validated source report. Require the
+snapshot creature ID to match the population definition, use the world-bound
+authored guide, and derive journal/items/conditional modes from validated schema
+and rewards. The template patrol remains excluded. Mixed overrides, legacy schemas,
+mismatched creature IDs and a validator without a manifest refuse. Default and
+individual-catalogue account paths remain available.
+
+Native schema-19 qualification uses all 22 runtime roles from the exported package.
+Three fresh/rejoined sessions match every frozen role to its published bytes;
+Rust snapshot validation occurs on each launch. The authored-guide quest/map,
+pre-acceptance denial, kill-before-pickup separation, pelt consumption and two
+PostgreSQL process restarts pass: Completed with both counts 1, 75 XP, bag revision
+6, 102 tokens and no pelts. Vendor configuration is admitted, but no barter claim.
+Evidence: build/population-complete-snapshot-native-v1/qualification.json,
+exact-role-audit.json, phase owned/launch.json, screenshots and SQL records.
+Linux 1280x720 RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics.
+Explicit flat five-NPC/guaranteed-loot fixture; ordinary gameplay requests and
+PID-bound quest buttons. The qualifier closes the ordinary vendor backpack after
+dialogue before inspecting the map; no production UI behavior changes.
+
+31 Python launcher tests pass (one skipped), including schema-16/19/21 mode and
+optional-role forwarding, exact copies and rejection-before-output. Fmt, strict
+workspace/all-target Clippy, Python compile and diff checks pass; logs:
+build/population-complete-snapshot-{tests,clippy}.log. No Rust/gameplay changes;
+retained binary suites remain valid. Native documents/fixed rewards, editor dialog
+selection, multiple contacts, Windows and capacity are separate. Next: connect
+explicit gameplay-template selection to the editor account population dialog.
+Local commits only.
+
 P5-17 / P3-09 / P3-11 / P3-15 population authored quest/contact snapshot,
 14 November 2026: explicit headless population export accepts --gameplay-template
 and reuses the existing schema-16+ quest/contact/area publisher. Exact source

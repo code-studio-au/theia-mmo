@@ -1,3 +1,9 @@
+Population complete snapshot launch, 14 November 2026: the account wrapper now
+validates/freezes every applicable role from an explicit exported gameplay manifest.
+Native 22-role admission, authored quest/map/loot and durable rejoins pass. Next:
+explicit template selection in the editor account population dialog. See STATUS
+for optional-profile and platform evidence limits.
+
 Population authored quest export, 14 November 2026: headless --population plus
 an explicit gameplay template now publishes checked quest/contact/area snapshots
 with matching static world/navigation. Native world-bound guide acceptance,
