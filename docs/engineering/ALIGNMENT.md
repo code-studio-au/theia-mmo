@@ -1,3 +1,25 @@
+P4-03 / P3-11 checked native quest travel, 13 November 2026:
+The owned native authored introduction and three-kill follow-up now pass using the
+checked client follower for both long-distance legs and ordinary keyboard alignment
+near contacts. Outward travel takes 53.664 s and return 52.835 s across 136 points,
+with no route failures, no player deaths and no OS mouse camera steering for travel.
+All three kills count, four quest actions apply without rejection, and turn-in ends
+at revision 11 / 125 XP / two completed quests. Owned PostgreSQL process restart and
+fresh OIDC rejoin preserve the exact result without duplicate actions/rewards.
+An earlier run exposed death during endpoint alignment: the qualifier now watches
+exact player-life generation during walking/turning, releases owned keys immediately,
+and bounds restart/return-via-respawn handling. An initial repair used the UI key
+helper's 100 ms hold floor and overshot small turns; the final repair adds observations
+to the existing precise gameplay hold. Five focused tests cover death, fast respawn,
+no key press from a dead start, short-turn timing and release after observation error.
+Native success had zero deaths; recovery branches are unit-tested, not newly native-
+qualified. Python compilation passes; Rust binaries rebuilt from the previously
+fmt/Clippy/network-tested tree. RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6,
+1280x720, zero GPU diagnostics. Private services close. Evidence:
+build/authored-quests-checked-travel-native-v4/{qualification.json,fresh/,resumed/}.
+This qualifies test travel, not player auto-pathing, automatic combat facing,
+area-quest travel or population first-tag normal-launch adoption.
+
 P3-09 / P5-17 public avatar life for passive populations, 13 November 2026:
 Public player-life admission now binds the shared Lives owner instead of requiring
 a single NPC retaliation controller. It retains healthy-authority, exact identity,

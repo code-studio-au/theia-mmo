@@ -23,6 +23,28 @@ SECOND = 'theia.dev.quest-follow-up'
 WOLVES = SECOND + '.objective.wolves'
 
 
+class TravelLifeChanged(RuntimeError):
+    """Ordinary travel must stop when its starting player life ends."""
+
+
+class LifeGuard:
+    def __init__(self, state):
+        self.state = state
+        self.generation = state()['combat']['player_generation']
+        self.check()
+
+    def check(self):
+        report = self.state()
+        combat = report['combat']
+        if combat['player_health'] <= 0 or combat['player_generation'] != self.generation:
+            raise TravelLifeChanged('Player life changed during ordinary travel')
+        return report
+
+
+def hold_alive(desktop, key, seconds, guard):
+    desktop.hold_key(key, seconds, observe=guard.check)
+
+
 def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None, checked_travel=False):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
@@ -116,22 +138,25 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         wait(lambda: state()['cursor']['focused'])
 
     def face(point):
+        guard = LifeGuard(state)
         if checked_travel:
             activate()
             # This qualifier uses the default Classic bindings/rate. Turn the
             # character through ordinary A/D; never steer travel with the camera.
             for _ in range(12):
+                guard.check()
                 player = feet()
                 yaw = math.atan2(-(point[0]-player[0]), -(point[2]-player[2]))
                 error = math.atan2(math.sin(yaw-state()['classic_facing']*math.tau/65536), math.cos(yaw-state()['classic_facing']*math.tau/65536))
                 if abs(error) < .09:
                     return
-                desktop.hold_key('a' if error > 0 else 'd', min(.5, max(.015, abs(error)/math.pi)))
+                hold_alive(desktop, 'a' if error > 0 else 'd', min(.5, max(.015, abs(error)/math.pi)), guard)
                 time.sleep(.15)
             raise AssertionError('Bounded ordinary keyboard facing did not settle')
         player = feet()
         yaw = math.atan2(-(point[0]-player[0]), -(point[2]-player[2]))
         for _ in range(6):
+            guard.check()
             error = math.atan2(math.sin(yaw-state()['classic_facing']*math.tau/65536), math.cos(yaw-state()['classic_facing']*math.tau/65536))
             if abs(error) < .05:
                 return
@@ -147,17 +172,16 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         raise AssertionError('Manual facing did not reach the requested direction')
 
     def approach(point, tolerance=2.1):
+        guard = LifeGuard(state)
         for _ in range(45):
+            guard.check()
             target = point()
             face(target)
+            guard.check()
             distance = math.hypot(target[0]-feet()[0], target[2]-feet()[2])
             if distance < tolerance:
                 return
-            desktop.key_state('w', True)
-            try:
-                time.sleep(min(.35, max(.02, (distance-max(.1, tolerance-.2))/5)))
-            finally:
-                desktop.key_state('w', False)
+            hold_alive(desktop, 'w', min(.35, max(.02, (distance-max(.1, tolerance-.2))/5)), guard)
             time.sleep(.15)
         raise AssertionError('Normal movement did not reach the contact')
 
@@ -165,6 +189,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
 
     def walk_trail(reverse=False):
         nonlocal travel_count
+        guard = LifeGuard(state)
         travel_count += 1
         points = list(reversed(authored_trail)) if reverse else authored_trail
         observations = []
@@ -174,6 +199,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
             assert math.dist(feet(), points[0]) < 40, 'Combat moved too far from the checked route'
             if math.dist(feet(), points[0]) >= .4:
                 approach(lambda: points[0], tolerance=.4)
+            guard.check()
             activate()
             if reverse:
                 desktop.key('F7')
@@ -186,11 +212,9 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
             leg = 'return' if reverse else 'outward'
             wait(lambda: state()['test_controller']['active'] or state()['test_controller']['travel']['failure'],10)
             def arrived():
-                observed = state()
+                observed = guard.check()
                 controller = observed['test_controller']
                 travel = controller['travel']
-                if observed['combat']['player_health'] == 0:
-                    raise AssertionError('Player died during checked quest travel')
                 assert travel['failure'] is None, travel
                 return observed if travel['leg']==leg and travel['finished'] and not controller['active'] else None
             observed = wait(arrived, 120)
@@ -229,6 +253,21 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         wait(lambda: state()['combat']['player_health'] > 0 and
              math.hypot(feet()[0]-authored_trail[0][0], feet()[2]-authored_trail[0][2]) < 3, 30)
         assert state()['combat']['player_deaths'] <= 3, 'Bounded quest test death budget exceeded'
+
+    def reach_enemy(travel=False):
+        for _ in range(4):
+            try:
+                if travel:
+                    walk_trail()
+                approach(lambda: state()['enemy_global'])
+                engage()
+                return state()['combat']['player_generation']
+            except TravelLifeChanged:
+                if not authored_trail:
+                    raise
+                await_respawn()
+                travel = True
+        raise AssertionError('Bounded quest approach recovery exhausted')
 
     wait(lambda: journal() and journal()['tracker'] and journal()['tracker']['glyphs'] > 0)
     if resumed and intro_only:
@@ -292,21 +331,16 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         desktop.click(window, wait(lambda: state()['equip_screen']), scale, 1)
         wait(lambda: state()['sword_equipped'])
         close_panels()
-    if authored_trail:
-        walk_trail()
     initial_deaths = state()['combat']['deaths']
     for count in range(1, 4):
         wait(lambda: state().get('enemy_health') is not None and state()['enemy_health'] > 0, 15)
-        approach(lambda: state()['enemy_global'])
-        engage()
+        fight_generation = reach_enemy(travel=bool(authored_trail) and count == 1)
         deadline = time.monotonic()+60
         while quest(SECOND)['counts'][WOLVES] < count:
             assert time.monotonic() < deadline, 'Normal wolf fight timed out'
-            if authored_trail and state()['combat']['player_health'] == 0:
+            if authored_trail and (state()['combat']['player_health'] == 0 or state()['combat']['player_generation'] != fight_generation):
                 await_respawn()
-                walk_trail()
-                approach(lambda: state()['enemy_global'])
-                engage()
+                fight_generation = reach_enemy(travel=True)
                 deadline = time.monotonic()+60
             elif not authored_trail:
                 assert state()['combat']['player_deaths'] == 0, 'Quest fixture player died'
@@ -323,7 +357,12 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
             returned_via_respawn = True
             capture('respawn-after-combat.png')
         else:
-            walk_trail(reverse=True)
+            try:
+                walk_trail(reverse=True)
+            except TravelLifeChanged:
+                await_respawn()
+                returned_via_respawn = True
+                capture('respawn-during-return.png')
     else:
         approach(lambda: [8004., 0., 8000.])
     speak()

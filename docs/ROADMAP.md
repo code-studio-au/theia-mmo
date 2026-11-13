@@ -1,3 +1,10 @@
+Checked-travel quest acceptance, 13 November 2026: the full authored introduction,
+three-kill follow-up, checked outward/return legs, turn-in and durable restart/rejoin
+pass natively without step-spin camera steering. Endpoint input is now life-bound;
+five tests cover death/fast-respawn cancellation and precise key timing. Native
+success had zero deaths. Area-quest traversal, broader navigation and production
+player auto-pathing remain separate. Evidence: authored-quests-checked-travel-native-v4.
+
 Test-travel combat follow-up, 13 November 2026: native checked approach, ordinary
 selection/casts, independent passive death/fresh-ID respawn and checked return
 pass. Full quest orchestration and interaction/range binding remain outstanding.
