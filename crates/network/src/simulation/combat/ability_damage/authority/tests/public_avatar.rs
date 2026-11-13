@@ -97,7 +97,7 @@ fn unavailable_life_authority_refuses_public_roster_instead_of_stale_visual_trut
     let (mut world, _) = fixture_threat(TickRate::Hz30, 32);
     world.enable_public_avatar_life().unwrap();
     join(&mut world);
-    world.combat.as_mut().unwrap().pve = None;
+    world.combat.as_mut().unwrap().lives = None;
     assert!(world.public_avatar_life_snapshot().is_err());
 }
 

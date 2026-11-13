@@ -69,6 +69,56 @@ fn fixture(rate: TickRate, enable: bool) -> (World, EntityKey) {
 }
 
 #[test]
+fn shared_player_lives_admit_die_and_respawn_without_an_npc_retaliation_controller() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, _) = fixture(rate, true);
+        let identity = world.identity();
+        // Internal separation fixture only: public installation still requires
+        // the paired patrol/retaliation configuration and exposes no bypass.
+        world.combat.as_mut().unwrap().pve = None;
+        assert_eq!(world.identity(), identity);
+        let actor = join(&mut world, [8006., 8000.]);
+        let before = world.player_life_snapshot(actor).unwrap();
+        assert!(before.windup.is_none());
+        let home = world.global_position(actor).unwrap();
+        let mut combat = world.combat.take().unwrap();
+        assert!(
+            combat
+                .damage_player(&mut world, before.key, 100)
+                .unwrap()
+                .unwrap()
+                .died
+        );
+        world.combat = Some(combat);
+        assert!(!world.player_alive(actor));
+        let dead = world.player_life_snapshot(actor).unwrap();
+        assert_eq!(dead.health, 0);
+        assert!(dead.windup.is_none());
+        for _ in 0..rate.hz() {
+            world.step();
+        }
+        let alive = world.player_life_snapshot(actor).unwrap();
+        assert!(world.player_alive(actor));
+        assert_eq!(alive.health, alive.maximum_health);
+        assert_eq!(alive.key.actor, before.key.actor);
+        assert_eq!(alive.key.generation.get(), before.key.generation.get() + 1);
+        assert_eq!(alive.movement_stream, before.movement_stream + 2);
+        // Local f32 capsule support and body/feet conversion retain sub-mm error.
+        for (actual, expected) in world
+            .global_position(actor)
+            .unwrap()
+            .metres()
+            .into_iter()
+            .zip(home.metres())
+        {
+            assert!((actual - expected).abs() < 0.0001);
+        }
+        assert_eq!(world.player_life_metrics().unwrap().respawns, 1);
+        assert!(world.player_life_error().is_none());
+    }
+}
+
+#[test]
 fn respawn_keeps_ground_or_roof_support_including_airborne_restored_players() {
     use bevy::prelude::Vec3;
     for (height, expected_height) in [(0., 0.), (1.5, 0.), (6.5, 6.5), (8., 6.5)] {

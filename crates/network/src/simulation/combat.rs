@@ -426,6 +426,7 @@ pub(super) struct Authority {
     random: Option<outcomes::Random>,
     outcome_metrics: OutcomeMetrics,
     pve: Option<player_life::Authority>,
+    lives: Option<player_life::Lives>,
     resources_hash: Option<[u8; 32]>,
     statuses: Option<statuses::Registry>,
     resources: Option<Profile>,
@@ -589,6 +590,7 @@ impl Authority {
             random,
             outcome_metrics: OutcomeMetrics::default(),
             pve: None,
+            lives: None,
             resources_hash,
             statuses: statuses.map(statuses::Registry::new),
             resources,
@@ -625,7 +627,7 @@ impl Authority {
     }
     pub(super) fn identity(&self, base: [u8; 32]) -> [u8; 32] {
         let base = world_digest(base, self.digest);
-        let base = self.pve.as_ref().map_or(base, |p| {
+        let base = self.lives.as_ref().map_or(base, |p| {
             crate::player_life_wire::profile_identity(base, &p.profile)
         });
         let base = self.autoattack.as_ref().map_or(base, |p| p.identity(base));

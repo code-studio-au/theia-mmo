@@ -1,3 +1,20 @@
+P3-09 / P5-17 shared player-life ownership prerequisite, 13 November 2026:
+Player profile/admission, health liveness, respawn counters/errors and private
+life observations now have a separate Lives owner in combat authority. NPC
+retaliation retains its own engagement/pursuit state; the existing paired install
+API still requires the matching single patrol and publishes both together.
+Existing profile identity and reported aggregate counters remain compatible.
+Respawn errors retain the paired adapter's fail-closed encounter behavior.
+An internal checked-World fixture removes the NPC controller before player join:
+health admission, trusted death and respawn still work at 20/30/60 Hz, with the
+same player session, fresh life/input generations and supported home within 0.1 mm.
+The public-avatar unavailable-authority regression now removes the actual Lives
+owner. All 498 network-library tests, fmt and strict workspace/all-target Clippy
+pass, including existing paired retaliation, typed combat and encrypted life flows.
+This exposes no population life install, new damage authority, public protocol,
+normal reward flag or client behavior. No native/display check was performed.
+Evidence: build/shared-player-lives-final.log.
+
 P3-09 / P5-17 indexed creature-credit state prerequisite, 13 November 2026:
 Credit authority stores bounded per-creature encounter entries, including ledger,
 resolution serial, departure/reset flags and immutable fatal credit. Cast capture,
