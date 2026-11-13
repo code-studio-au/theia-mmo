@@ -1,3 +1,23 @@
+P5-17 / P4-03 native population combat after checked travel, 13 November 2026:
+Owned native client follows 27 checked points, releases controls, selects through
+normal Tab and casts five normal Arcane Bolts (100→80→60→40→20→0). Four other
+creatures retain full health. The defeated actor respawns after the fixture's
+three-second deadline with a fresh entity ID at the same home; retired selection
+clears. Six rig attachments, 108 hit frames, 102 dead frames, no dropped cues.
+F7 returns along the checked route. Outward 11.56 s, return 12.08 s; no OS mouse
+camera/movement steering, rejected inputs or movement recoveries. Read-only opt-in
+OS qualification telemetry now includes actor health/identity, visual metrics and
+route state; tools/qualify_population_combat.py owns and cleans up its processes.
+The harness activates only its still-PID-owned client before normal key actions;
+two earlier attempts stopped safely when desktop focus changed during long waits.
+Screenshots inspected at 1600x1000; Linux RX 7900 XTX / RADV NAVI31, Vulkan device
+29772, validation clean. Fmt, strict workspace/all-target Clippy and client build
+pass. This uses the development schema-1 ability and one passive pool, without
+quest credit, pursuit or production combat-facing qualification. The exported
+snapshot is copied before overriding respawn duration; source package unchanged.
+Evidence: build/population-native-combat-build.log and
+build/population-native-combat-v3/{qualification.json,selected.png,dead.png,respawned.png,returned.png}.
+
 P5-17 / P4-03 frozen creature appearance in population playtests, 13 November 2026:
 Population export/Start dialogs now offer an optional creature GLB. Editor
 --creature-asset seeds that field and also works with headless population export.

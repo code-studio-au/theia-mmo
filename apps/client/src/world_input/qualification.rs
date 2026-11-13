@@ -277,6 +277,46 @@ fn os_trace(world: &mut World) {
             })
             .into();
         data["loot"] = crate::loot::qualification(world);
+        data["combat_targets"] = state
+            .combat
+            .as_ref()
+            .map(|combat| {
+                combat
+                    .targets
+                    .iter()
+                    .map(|target| {
+                        serde_json::json!({
+                            "entity":target.entity.value(),"current":target.current,
+                            "maximum":target.maximum,"respawn_at":target.respawn_at,
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .into();
+        data["target_entities"] = state
+            .targeting
+            .as_ref()
+            .map(|targeting| {
+                targeting
+                    .targets
+                    .iter()
+                    .map(|target| {
+                        serde_json::json!({
+                            "entity":target.key.entity.value(),"epoch":target.key.epoch.value(),
+                            "position":target.position.metres(),
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .into();
+        data["creature_visuals"] = world
+            .get_resource::<crate::creature_visual::Pending>()
+            .map(|pending| serde_json::to_value(&pending.metrics).unwrap())
+            .unwrap_or_default();
+        data["test_controller"] = world
+            .get_resource::<crate::test_controller::Run>()
+            .map(|run| run.description())
+            .unwrap_or_default();
         data["dialogue_pending"] = serde_json::json!(state.dialogue_pending);
         data["dialogue_ui"] = world
             .get_resource::<crate::dialogue::Ui>()

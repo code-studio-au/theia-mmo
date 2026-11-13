@@ -1,3 +1,7 @@
+Test-travel combat follow-up, 13 November 2026: native checked approach, ordinary
+selection/casts, independent passive death/fresh-ID respawn and checked return
+pass. Full quest orchestration and interaction/range binding remain outstanding.
+
 Test-travel editor integration, 13 November 2026: assign authored patrol paths
 through Test Player property actions, then Start population playtest to export,
 preflight and run the checked per-player route. Native assignment/undo, two-client
