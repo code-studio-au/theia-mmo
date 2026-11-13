@@ -22,7 +22,14 @@ struct AttackCue {
 /// Public timing takes precedence, including authoritative cancellation. An old
 /// owner-private frame cannot restore an attack after the public stream clears it.
 fn attack_cue(state: &theia_network::client::State, creature: EntityKey) -> Option<AttackCue> {
-    if let Some(public) = &state.public_creature_attack {
+    let timing = if let Some(public) = &state.public_population_attack {
+        let observation = public.current()?;
+        let tick = observation
+            .tick
+            .max(state.snapshot.as_ref().map_or(0, |s| s.tick))
+            .max(state.correction.map_or(0, |c| c.state.input.tick));
+        Some((public.active_at(creature, tick)?, tick, public.rate()))
+    } else if let Some(public) = &state.public_creature_attack {
         let observation = public.current()?;
         if observation.creature != creature {
             return None;
@@ -31,7 +38,11 @@ fn attack_cue(state: &theia_network::client::State, creature: EntityKey) -> Opti
             .tick
             .max(state.snapshot.as_ref().map_or(0, |s| s.tick))
             .max(state.correction.map_or(0, |c| c.state.input.tick));
-        let pending = public.active_at(tick)?;
+        Some((public.active_at(tick)?, tick, public.rate()))
+    } else {
+        None
+    };
+    if let Some((pending, tick, rate)) = timing {
         let own = state.id == Some(pending.target.entity.value())
             && state
                 .welcome
@@ -53,7 +64,7 @@ fn attack_cue(state: &theia_network::client::State, creature: EntityKey) -> Opti
         };
         return Some(AttackCue {
             serial: pending.completes,
-            remaining: (pending.completes - tick) as f32 / public.rate().hz() as f32,
+            remaining: (pending.completes - tick) as f32 / rate.hz() as f32,
             target,
             remote: !own,
         });
@@ -588,8 +599,11 @@ fn update(world: &mut World) {
         pending.metrics.moving_frames += u64::from(clip == 1 || clip == 2);
         pending.metrics.dead_frames += u64::from(clip == 5);
         pending.metrics.attack_frames += u64::from(clip == 3);
-        pending.metrics.public_attack_frames +=
-            u64::from(clip == 3 && state.public_creature_attack.is_some());
+        pending.metrics.public_attack_frames += u64::from(
+            clip == 3
+                && (state.public_creature_attack.is_some()
+                    || state.public_population_attack.is_some()),
+        );
         pending.metrics.remote_victim_frames +=
             u64::from(clip == 3 && windup.is_some_and(|w| w.remote));
         pending.metrics.hit_frames += u64::from(clip == 4);

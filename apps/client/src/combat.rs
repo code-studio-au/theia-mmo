@@ -334,6 +334,16 @@ fn present(
         metrics.public_attack_windups += u64::from(event.windup.is_some());
         metrics.public_attack_idle += u64::from(event.windup.is_none());
     }
+    for _ in 0..theia_network::renet_runtime::creature_attacks::population::PRESENTATION_CAPACITY {
+        let Some(frame) = network.next_public_population_event() else {
+            break;
+        };
+        metrics.public_attack_events += frame.actors.len() as u64;
+        metrics.public_attack_windups +=
+            frame.actors.iter().filter(|v| v.windup.is_some()).count() as u64;
+        metrics.public_attack_idle +=
+            frame.actors.iter().filter(|v| v.windup.is_none()).count() as u64;
+    }
     for _ in 0..theia_network::renet_runtime::player_life::PRESENTATION_CAPACITY {
         let Some(event) = network.next_life_event() else {
             break;

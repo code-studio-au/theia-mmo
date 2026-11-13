@@ -616,8 +616,13 @@ async fn main() -> Result<()> {
         );
     }
     if public_creature_attacks {
-        world.enable_public_creature_attacks()?;
-        println!("development_public_creature_attacks enabled=true contract=NA01");
+        if population_bytes.is_some() {
+            world.enable_public_population_attacks()?;
+            println!("development_public_creature_attacks enabled=true contract=NP01");
+        } else {
+            world.enable_public_creature_attacks()?;
+            println!("development_public_creature_attacks enabled=true contract=NA01");
+        }
     }
     if public_avatar_life {
         world.enable_public_avatar_life()?;

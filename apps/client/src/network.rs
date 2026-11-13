@@ -19,6 +19,8 @@ pub struct Network {
         Option<tokio::sync::mpsc::Receiver<theia_network::avatar_life_wire::Observation>>,
     public_attack_events:
         Option<tokio::sync::mpsc::Receiver<theia_network::creature_attack_wire::Observation>>,
+    public_population_events:
+        Option<tokio::sync::mpsc::Receiver<theia_network::creature_attack_wire::population::Frame>>,
     physical_profile: Option<std::sync::Arc<theia_network::simulation::combat::physical::Profile>>,
     white_profile: Option<std::sync::Arc<theia_network::simulation::combat::white_melee::Profile>>,
     pub(crate) dodge_input: Option<theia_network::dodge_input::Input>,
@@ -111,6 +113,11 @@ impl Network {
         &mut self,
     ) -> Option<theia_network::creature_attack_wire::Observation> {
         self.public_attack_events.as_mut()?.try_recv().ok()
+    }
+    pub(crate) fn next_public_population_event(
+        &mut self,
+    ) -> Option<theia_network::creature_attack_wire::population::Frame> {
+        self.public_population_events.as_mut()?.try_recv().ok()
     }
     pub(crate) fn next_life_event(
         &mut self,
@@ -442,6 +449,9 @@ impl Network {
         targeted: bool,
         player_life_profile: Option<std::sync::Arc<theia_network::player_life_wire::Profile>>,
         public_attack_profile: Option<std::sync::Arc<theia_network::creature_attack_wire::Profile>>,
+        public_population_profile: Option<
+            std::sync::Arc<theia_network::creature_attack_wire::population::PopulationProfile>,
+        >,
         public_avatar_profile: Option<std::sync::Arc<theia_network::avatar_life_wire::Profile>>,
         combat_catalog: Option<std::sync::Arc<theia_core::abilities::Catalog>>,
         inventory_profile: Option<theia_network::renet_runtime::inventory::Profile>,
@@ -628,7 +638,14 @@ impl Network {
         let (avatar_life_events, avatar_life_queue) = tokio::sync::mpsc::channel(
             theia_network::renet_runtime::avatar_life::PRESENTATION_CAPACITY,
         );
+        if public_attack_profile.is_some() && public_population_profile.is_some() {
+            return Err("Choose one public creature timing mode".into());
+        }
         let public_attacks_enabled = public_attack_profile.is_some();
+        let public_population_enabled = public_population_profile.is_some();
+        let (public_population_events, public_population_queue) = tokio::sync::mpsc::channel(
+            theia_network::renet_runtime::creature_attacks::population::PRESENTATION_CAPACITY,
+        );
         let (public_attack_events, public_attack_queue) = tokio::sync::mpsc::channel(
             theia_network::renet_runtime::creature_attacks::PRESENTATION_CAPACITY,
         );
@@ -684,14 +701,14 @@ impl Network {
                                         events: avatar_life_events,
                                     }
                                 }),
-                                public_attacks: public_attack_profile.map(|profile| {
+                                public_attacks: public_population_profile.map(|profile| theia_network::renet_runtime::creature_attacks::Mode::Population(theia_network::renet_runtime::creature_attacks::population::Client { profile, events:public_population_events })).or_else(|| public_attack_profile.map(|profile| {
                                     theia_network::renet_runtime::creature_attacks::Mode::Singleton(
                                         theia_network::renet_runtime::creature_attacks::Client {
                                             profile,
                                             events: public_attack_events,
                                         },
                                     )
-                                }),
+                                })),
                                 journal: journal_profile.map(|profile| {
                                     theia_network::renet_runtime::quest_journal::Client {
                                         profile,
@@ -878,6 +895,7 @@ impl Network {
             combat_events: combat_enabled.then_some(combat_events),
             life_events: life_enabled.then_some(life_queue),
             public_attack_events: public_attacks_enabled.then_some(public_attack_queue),
+            public_population_events: public_population_enabled.then_some(public_population_queue),
             avatar_life_events: avatar_enabled.then_some(avatar_life_queue),
             avatar_pose_resets: 0,
         })

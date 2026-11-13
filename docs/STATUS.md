@@ -1,3 +1,29 @@
+USER-REQUESTED STOP CHECKPOINT — 13 November 2026.
+Completed gameplay/editor slices are committed: configured population pursuit,
+independent retaliation/return/reset/threat, ordinary corpse loot and durable restart.
+Public population timing authority, bounded codec and encrypted priority delivery
+are committed through 573e4e9c, with 509 network tests and 17 authored checks passing.
+
+The final presentation work is saved as an explicit unfinished checkpoint. It adds
+a bounded population frame queue to the native bridge, drains it in combat Update,
+and lets existing standard Bevy creature attack cues select their own public actor/
+victim, including cancellation, expiry and retired actors. Client/server branches
+and profile identity preparation exist, but normal population configuration still
+rejects --public-creature-attacks. The editor wrapper does not enable it. This gate
+was retained at the user's stop request; public population animation is not adopted.
+Six retained creature-visual tests pass; workspace/all-target denied-warning Clippy,
+fmt and diff checks pass. Evidence:
+build/population-public-presentation-stop-checks.log. No native GPU qualification
+was run for this unfinished presentation change. No native multi-NPC animation or
+complete public-presentation claim is made.
+
+Restart here: add explicit batch attack-cue tests (independent remote victims,
+retirement/private suppression/expiry), expose matching native diagnostics, then
+qualify population animation on the actual GPU. Only after those checks pass,
+remove the population public-timing launch gate and enable the existing shared flag
+through the editor wrapper. Preserve old singleton/public and private fallback tests.
+All work stays local. No push authorized. Stop requested: do not resume autonomously.
+
 P3-06 / P3-09 reliable priority delivery for public population timing,
 13 November 2026: authenticated gameplay sessions now distinguish singleton and
 population timing modes. Population frames use the existing reliable ordered priority

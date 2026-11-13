@@ -815,11 +815,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let public_attack_profile = player_life::parse_public_attacks(
         &mut args,
         classic
-            && patrol_binding
+            && (patrol_binding
                 .as_ref()
-                .is_some_and(|p| p.0.aggro().is_some()),
+                .is_some_and(|p| p.0.aggro().is_some())
+                || population
+                    .as_ref()
+                    .is_some_and(|p| p.definition().aggro().is_some())),
         player_life_profile.as_ref(),
     )?;
+    let public_population_attack_profile = population
+        .as_ref()
+        .and(public_attack_profile.as_ref())
+        .map(|source| {
+            std::sync::Arc::new(
+                theia_network::creature_attack_wire::population::PopulationProfile::new(
+                    source.clone(),
+                ),
+            )
+        });
     let public_avatar_profile =
         player_life::parse_public_avatar(&mut args, classic, player_life_profile.as_ref())?;
     if let Some((_, catalog)) = &combat_catalog {
@@ -1101,9 +1114,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             base
         };
-        let base = public_attack_profile
-            .as_ref()
-            .map_or(base, |profile| profile.identity(base));
+        let base = if let Some(profile) = &public_population_attack_profile {
+            profile.identity(base)
+        } else {
+            public_attack_profile
+                .as_ref()
+                .map_or(base, |profile| profile.identity(base))
+        };
         let base = public_avatar_profile
             .as_ref()
             .map_or(base, |p| p.identity(base));
@@ -1187,7 +1204,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             content_identity,
             targeted,
             player_life_profile.clone(),
-            public_attack_profile.clone(),
+            public_attack_profile
+                .clone()
+                .filter(|_| public_population_attack_profile.is_none()),
+            public_population_attack_profile.clone(),
             public_avatar_profile.clone(),
             combat_catalog.as_ref().map(|(_, catalog)| catalog.clone()),
             inventory_profile.clone(),
