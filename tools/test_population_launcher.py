@@ -132,6 +132,19 @@ class PopulationLauncher(unittest.TestCase):
         self.assertIsNotNone(args['progression_catalog'])
         self.assertIsNotNone(args['reward_catalog'])
 
+    def test_population_corpse_loot_uses_normal_catalogues_without_a_patrol(self):
+        with patch.object(play, 'play') as launch:
+            play.main(['--authored-world', 'world', '--population-config', 'population.json',
+                       '--account-login', '--equipment', '--items', 'content/gameplay/development-loot-items.json',
+                       '--rewards', '--reward-catalog', 'corpse-rewards.json', '--creature-loot',
+                       '--creature-credit', 'solo.json'])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertTrue(args['creature_loot'])
+        self.assertEqual(args['reward_catalog'], Path('corpse-rewards.json').resolve())
+        self.assertEqual(args['item_catalog'], Path('content/gameplay/development-loot-items.json').resolve())
+        self.assertIsNone(args['creature_profile'])
+        self.assertIsNone(args['navigation'])
+
     def test_population_grants_refuse_before_launch_without_explicit_credit(self):
         with tempfile.TemporaryDirectory() as directory:
             args = self.fixture(Path(directory))

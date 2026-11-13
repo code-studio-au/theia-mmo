@@ -1,3 +1,13 @@
+## 13 November 2026 — spawn groups share ordinary NPC gameplay
+
+The user clarifies that group spawning should only create independent enemies at
+valid placements, with the same attack, loot and gameplay as individually placed
+NPCs. Treat the current population restrictions as migration gaps, not separate
+rules or a distinct game mode. Reuse the existing per-creature combat, credit,
+loot, quest and AI systems; group policy controls placement/count/respawn only.
+Close and verify each integration gap before enabling it in normal/editor launches.
+Do not introduce alternate population damage, loot or player-facing rules.
+
 ## 13 November 2026 — authored respawn timing and protocol bounds
 
 The already adopted spawn-zone authoring range is 1..86400 seconds. Extend the

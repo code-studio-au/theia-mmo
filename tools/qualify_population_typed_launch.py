@@ -18,6 +18,12 @@ from qualify_world_input_os import wait, capture_ready
 
 
 def run(args):
+    if args.creature_loot and (args.repeat_kill or args.account_package):
+        raise ValueError('Corpse acceptance uses the normal launcher and one kill followed by restart')
+    args.claim_reward = args.claim_reward or args.creature_loot
+    expected_revision = 4 if args.creature_loot else 2
+    expected_claims = 3 if args.creature_loot else 1
+    reward_file = 'development-creature-loot-rewards.json' if args.creature_loot else 'development-rewards.json'
     args.create_picker = args.create_picker or args.account_package
     args.claim_reward = args.claim_reward or args.account_package
     args.picker = args.picker or args.create_picker
@@ -32,7 +38,7 @@ def run(args):
         ('--combat-catalog', '--abilities', 'development-classic-abilities.json'),
         ('--character-stats', '--character-stats', 'development-character-stats.json'),
         ('--status-catalog', '--statuses', 'development-statuses.json'),
-        ('--item-catalog', '--items', 'development-equipment-items.json'),
+        ('--item-catalog', '--items', 'development-loot-items.json' if args.creature_loot else 'development-equipment-items.json'),
         ('--creature-retaliation', '--creature-retaliation', 'development-creature-retaliation.json'),
         ('--player-respawn', '--player-respawn', 'development-player-respawn.json'),
         ('--melee-weapons', '--melee-weapons', 'development-melee-weapons.json'),
@@ -46,6 +52,8 @@ def run(args):
     ]
     common = ['--authored-world', str(package/'world'), '--population-config',
               str(package/'population.json'), '--classic', '--public-avatar-life']
+    if args.creature_loot:
+        common.append('--creature-loot')
     raw, launch_profiles = [], []
     for native_flag, launcher_flag, filename in profiles:
         path = str((Path('content/gameplay')/filename).resolve())
@@ -53,7 +61,7 @@ def run(args):
         launch_profiles.extend([launcher_flag, path])
     if args.kill:
         raw.extend(['--progression-catalog', str(Path('content/gameplay/development-progression.json').resolve()),
-                    '--reward-catalog', str(Path('content/gameplay/development-rewards.json').resolve())])
+                    '--reward-catalog', str((Path('content/gameplay')/reward_file).resolve())])
     base_env = build_environment(os.environ)
     headless = dict(base_env)
     for key in ('DISPLAY', 'WAYLAND_DISPLAY'):
@@ -95,6 +103,8 @@ def run(args):
                 env['THEIA_POPULATION_TYPED_QUALIFY'] = str(folder)
                 if args.kill:
                     env['THEIA_POPULATION_KILL_QUALIFY'] = '1'
+                if args.creature_loot:
+                    env['THEIA_POPULATION_LOOT_QUALIFY'] = '1'
                 if args.claim_reward and not resumed:
                     env['THEIA_POPULATION_REWARD_QUALIFY'] = '1'
             runtime = folder/'owned/runtime' if args.account_package else folder/'runtime'
@@ -105,7 +115,7 @@ def run(args):
                     *(['--stop-on-stdin-eof'] if owned_stop else []),
                     '--session-directory', str(runtime),
                     '--account-login', '--equipment', '--status-effects', *launch_profiles,
-                    *(['--progression', '--rewards'] if args.kill else []),
+                    *(['--progression', '--rewards', '--reward-catalog', str((Path('content/gameplay')/reward_file).resolve())] if args.kill else []),
                     '--binaries', str(binaries), '--players', str(args.players.resolve()),
                     '--creature-asset', str(package/'creature.glb'), '--window-size', '1280x720']
                 if args.account_package:
@@ -161,10 +171,15 @@ def run(args):
                             assert value['passed'], value
                             return value
                         combat_proof = wait(completed, 100 if args.kill else 40)
-                        observed = ready()
-                        assert observed and observed['main_hand_item'] == 'theia.dev.training-wand'
+                        def combat_observed():
+                            value = state()
+                            return value if (value.get('connected') and value.get('main_hand_item') == 'theia.dev.training-wand'
+                                and (value.get('inventory_bag') or {}).get('revision') == (expected_revision if args.claim_reward else 1)) else None
+                        observed = wait(combat_observed, 15)
+                        if args.creature_loot:
+                            assert combat_proof['corpse_pickups'] == 2
                         assert combat_proof['player_health'] == 100 and combat_proof['remaining'] < 100
-                        assert combat_proof['inventory_revision'] == (2 if args.claim_reward else 1)
+                        assert combat_proof['inventory_revision'] == (expected_revision if args.claim_reward else 1)
 
                     if args.kill:
                         def committed():
@@ -213,7 +228,7 @@ def run(args):
             if execute_combat:
                 assert saved['worker']['inventory_committed'] == (0 if resumed else 1)
                 if args.claim_reward:
-                    assert saved['worker']['reward_committed'] == (0 if resumed else 1)
+                    assert saved['worker']['reward_committed'] == (0 if resumed else expected_claims)
                 transport = next(json.loads(line.removeprefix('transport_summary '))
                                  for line in server.splitlines() if line.startswith('transport_summary '))
                 assert transport['ability_damage']['arcane']['health_lost'] > 0
@@ -221,7 +236,7 @@ def run(args):
                 if args.kill:
                     assert transport['ability_damage']['arcane']['health_lost'] == 100
                     assert transport['experience_opportunities_forwarded'] == 1
-                    assert transport['reward_opportunities_forwarded'] == 1
+                    assert transport['reward_opportunities_forwarded'] == expected_claims
                     assert saved['worker']['experience_committed'] == 1
                 assert transport['rejected_inputs'] == 0
             assert saved['worker']['incompatible_gameplay_profiles'] == 0
@@ -237,28 +252,35 @@ def run(args):
                 character_id = selected.stdout.strip()
             if args.kill:
                 rows = cluster.query("SELECT p.experience,(SELECT count(*) FROM theia.reward_claims r WHERE r.realm_id=p.realm_id AND r.character_id=p.character_id) FROM theia.progression p; SELECT count(*) FROM theia.experience_receipts;")
-                assert rows.returncode == 0 and rows.stdout.splitlines() == [f'{25 * expected_kills}|1', str(expected_kills)], rows.stdout
+                assert rows.returncode == 0 and rows.stdout.splitlines() == [f'{25 * expected_kills}|{expected_claims}', str(expected_kills)], rows.stdout
                 (folder/'database-proof.txt').write_text(rows.stdout)
                 if args.claim_reward:
-                    consumed = cluster.query('SELECT consumed_revision FROM theia.reward_claims;')
-                    assert consumed.returncode == 0 and consumed.stdout.splitlines() == ['2']
+                    consumed = cluster.query('SELECT consumed_revision FROM theia.reward_claims ORDER BY consumed_revision;')
+                    assert consumed.returncode == 0 and consumed.stdout.splitlines() == (['2','3','4'] if args.creature_loot else ['2'])
                     (folder/'consumed-proof.txt').write_text(consumed.stdout)
+                    if args.creature_loot:
+                        sources = cluster.query('SELECT count(*),count(DISTINCT victim_life) FROM theia.reward_claims WHERE claim_scope=1;')
+                        assert sources.returncode == 0 and sources.stdout.splitlines() == ['2|1']
+                        (folder/'corpse-proof.txt').write_text(sources.stdout)
                     bag = observed['inventory_bag']
-                    assert bag['revision'] == 2
-                    assert sum(s['count'] for s in bag['slots'] if s and s['item'] == 'theia.dev.training-token') == 100
+                    assert bag['revision'] == expected_revision
+                    assert sum(s['count'] for s in bag['slots'] if s and s['item'] == 'theia.dev.training-token') == (101 if args.creature_loot else 100)
+                    if args.creature_loot:
+                        assert sum(s['count'] for s in bag['slots'] if s and s['item'] == 'theia.dev.wolf-pelt') == 1
             for file in folder.glob('*.log'):
                 text = file.read_text()
                 assert identity.password not in text and cluster.password not in text
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
     result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=not args.picker, character_picker_rejoin=args.picker, character_picker_creation=args.create_picker, owner_pipe_stop=args.owned_stop, isolated_sessions=True, frozen_account_package=args.account_package,
-        mouse_or_keyboard_automation=False, scope=('Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
+        mouse_or_keyboard_automation=False, scope=('Normal population corpse pickup through ordinary private requests, committed inventory and database restart; no OS input or NPC retaliation claim' if args.creature_loot else 'Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--creature-loot', action='store_true', help='Qualify the shared per-life corpse pickup flow and durable restart')
     parser.add_argument('--account-package', action='store_true', help='Launch through the frozen account population package wrapper')
     parser.add_argument('--create-picker', action='store_true', help='Create the initial character through the owned picker handoff, then select it after restart')
     parser.add_argument('--picker', action='store_true', help='Rejoin through the private owned character-selection handoff')

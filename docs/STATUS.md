@@ -1,3 +1,41 @@
+P3-09 / P3-11 shared corpse loot in normal population launches, 13 November 2026:
+Remove the population-only rejection of --creature-loot. Normal launcher/client/
+server admission now uses the same checked reward catalogue, first-tag recipient,
+per-victim-life corpse source, pickup range and durable inventory transactions as
+individual creatures. Other singleton AI/reset and quest-loot gates remain explicit.
+No new population loot formula or parallel gameplay implementation was introduced.
+The native opt-in qualification driver can select an already nearby enemy, use
+ordinary equipment/target/cast requests, collect the training offer and submit two
+ordinary private corpse pickups. It checks exact victim life, inventory revision,
+pelt/token counts and untouched bystanders; it never moves/rotates the player or
+writes server health, inventory or positions. The test world authors its spawn near
+one checked enemy, rather than bypassing range validation.
+Three configuration checks and 18 Python launcher/frozen-profile checks pass (one
+asset check skipped). All 501 network library tests pass (8 ignored); the three
+actual authored encrypted population credit/private-loot/quest-loot checks pass
+separately at 20/30/60 Hz. Formatting, workspace/all-target denied-warning Clippy,
+client/server builds and Python compilation pass.
+Native normal account launch passes six casts, one death among five NPCs, 25 XP,
+one training claim plus two corpse claims, one pelt/101 tokens at inventory revision
+4, database restart and exact inventory rejoin without duplicate claims. SQL checks
+confirm both corpse claims belong to one victim life and consumed revisions 2/3/4.
+Evidence: build/population-corpse-native-v2/qualification.json and fresh/resumed
+proofs; build/population-corpse-final-checks.log and population-corpse-network-suite.log.
+Linux AMD RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics;
+no OS input automation. Owned services and tickets clean up. Native Windows, live
+competing-account SQL loot, repeated same-session kills and mouse loot-UI acceptance
+are not newly claimed. Encrypted competing-player tests use bounded synthetic ports.
+The existing frozen editor preset also passes native create/kill/collect/restart/
+select and owner-pipe cleanup unchanged (population-corpse-training-regression-v1).
+The editor's existing frozen training preset remains unchanged: switching its item
+catalogue would invalidate saved-character inventory hashes without a migration.
+Explicit loot catalogue selection in editor playtests and safe profile migration
+remain follow-up integration, alongside shared multi-NPC aggro/pursuit/retaliation.
+Normal launch example uses --population-config, --creature-loot, --rewards,
+--reward-catalog content/gameplay/development-creature-loot-rewards.json,
+--items content/gameplay/development-loot-items.json and the existing explicit
+account/Classic combat/solo-credit prerequisites. Local changes only.
+
 P3-03 / P5-17 editor account population Start/create/select/Stop, 13 November 2026:
 The Zone menu now starts an authenticated population playtest directly from the
 current zone snapshot. Export does not require enabled Test Players, preserves the
