@@ -14,6 +14,7 @@ use theia_core::{identity::WorldEpoch, time::TickRate};
 use tokio::sync::mpsc;
 
 pub const PRESENTATION_CAPACITY: usize = 16;
+pub mod population;
 pub struct Client {
     pub profile: Arc<Profile>,
     pub events: mpsc::Sender<Observation>,

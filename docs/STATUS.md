@@ -1,3 +1,20 @@
+P3-06 / P3-09 bounded client handoff for public population timing,
+13 November 2026: added population timing receive validation and a bounded full-frame
+presentation queue using the retained critical-event capacity. Profile, world epoch,
+world identity and movement/correction rate bind the current presentation state.
+Changed validated frames enter the queue before state/counters commit. Duplicates
+and stale frames do not add presentation events. Full/closed queues return an error
+without committing or silently dropping a critical transition. Future session
+integration must treat that error as disconnect, as the retained singleton path does.
+Two focused receiver contracts pass: ordinary/duplicate/stale/admission checks at
+20/30/60 Hz, and queue saturation, unchanged state, successful handoff after test-only
+drain, closed receiver and invalid capacity. Codec bounds/lifecycle tests remain
+separate. Strict workspace/all-target Clippy, fmt and diff pass. Evidence:
+build/population-public-client-handoff-checks.log. This is a direct receiver/queue
+contract, not session/channel wiring, network delivery, UI animation or native proof.
+Next: attach this receiver to authenticated client sessions and publish whole frames
+on the existing reliable priority channel. Local only.
+
 P3-06 / P3-09 authoritative public population timing, 13 November 2026:
 Added an explicit authority-only population timing installer/profile and sorted full
 snapshots. Both singleton and population snapshots reuse the same observation builder:

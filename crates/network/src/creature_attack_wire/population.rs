@@ -61,6 +61,12 @@ fn valid(profile: &PopulationProfile, rate: TickRate, frame: &Frame) -> bool {
 pub fn is_state(bytes: &[u8]) -> bool {
     bytes.starts_with(TAG)
 }
+pub fn frame_rate(bytes: &[u8]) -> Result<TickRate, &'static str> {
+    if !is_state(bytes) || !(HEADER_BYTES..=MAX_FRAME_BYTES).contains(&bytes.len()) {
+        return Err("Invalid population attack header");
+    }
+    TickRate::from_hz(u32::from(bytes[4])).ok_or("Invalid population attack rate")
+}
 pub fn encode(
     profile: &PopulationProfile,
     rate: TickRate,
@@ -187,6 +193,15 @@ impl PopulationState {
             current: None,
             high_water_entity: 0,
         })
+    }
+    pub fn profile(&self) -> &PopulationProfile {
+        &self.profile
+    }
+    pub fn epoch(&self) -> WorldEpoch {
+        self.epoch
+    }
+    pub fn rate(&self) -> TickRate {
+        self.rate
     }
     pub fn current(&self) -> Option<&Frame> {
         self.current.as_ref()
