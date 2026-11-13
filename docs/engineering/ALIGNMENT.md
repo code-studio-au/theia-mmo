@@ -1,3 +1,21 @@
+P3-07 real connected population combat and independent respawns, 13 November 2026:
+Extend the actual server executable qualification with a checked five-actor group
+near the saved player spawn and an explicitly saved 3-second respawn policy. Two
+real encrypted Classic peers each cast five normal 20-damage abilities against a
+different 100-health actor. Both observe all ten damage events, staggered deaths,
+independent respawn clocks, unchanged health/identities for the other three actors,
+exact home positions, one fresh incarnation per death, cleared selections and
+rejected retired-ID selection. First actor respawns while the second remains dead.
+No teleport, actor health override, traversal or rendered input is used. This proves
+connected basic ability combat for passive stationary populations, not multi-NPC
+pursuit, physical melee, quest credit, model rendering or MMO capacity. Exact all-rate
+lifecycle arithmetic remains covered by the separate authored World test.
+The actual startup regression and strict workspace/all-target Clippy/fmt pass.
+Evidence: build/population-connected-{combat,startup,clippy}.log. Initial test assumed
+an expired cooldown stayed in the snapshot; corrected observation uses the current
+tick when the cooldown entry has expired. Runtime behavior was unchanged. All owned
+processes/tickets clean up. Mouse/display now permitted but unnecessary for this test.
+
 User steering, 13 November 2026: continue active MMO/editor implementation and
 local commits. Mouse/display use is now permitted as needed; earlier headless-only
 entries retain their historical evidence limits. Navigation-driven quest-test
