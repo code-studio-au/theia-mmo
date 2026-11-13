@@ -1,3 +1,8 @@
+Population kill-journal update, 14 November 2026: native authenticated accepted
+kill credit now passes before corpse pickup (kill 1/1, possession 0/1), followed by
+pickup, visible turn-in and durable restart. Next: checked authored contact/quest
+snapshot export with populations. See STATUS for exact fixture/platform evidence.
+
 Population account journal packaging, 14 November 2026: explicit quest/dialogue
 files and guide position now freeze alongside all account combat profiles. Native
 20-profile admission, denial/eligible pickup, visible turn-in and two durable

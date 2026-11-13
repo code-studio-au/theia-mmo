@@ -35,6 +35,11 @@ def run(args):
     quest['description'] = 'Population qualification: bring one wolf pelt to the guide.'
     objective = quest['stages'][0]['objectives'][0]
     objective.update(required=1, label='Bring one wolf pelt')
+    kill_objective = QUEST+'.objective.hunt'
+    if args.kill_objective:
+        quest['stages'][0]['objectives'].append(dict(kind='kill', id=kill_objective,
+            label='Defeat one training creature', creature='theia.dev.training-creature', required=1))
+        quest['description'] = 'Population qualification: defeat one creature and bring its pelt to the guide.'
     journal['quests'] = [quest]
     journal['id'] = 'theia.dev.population-quest-loot-fixture'
     (out/'journal.json').write_text(json.dumps(journal, indent=2)+'\n')
@@ -78,6 +83,8 @@ def run(args):
                                THEIA_POPULATION_LOOT_QUALIFY='1', THEIA_POPULATION_LOOT_COUNT_QUALIFY=str(phase+1))
                     if phase == 0:
                         env['THEIA_POPULATION_REWARD_QUALIFY'] = '1'
+                    elif args.kill_objective:
+                        env['THEIA_POPULATION_WAIT_LOOT_QUALIFY'] = '1'
                 command = [sys.executable, 'tools/play.py', '--authored-world', str(package/'world'),
                     '--population-config', str(package/'population.json'), '--classic', '--account-login',
                     '--equipment', '--status-effects', '--progression', '--rewards', '--public-avatar-life',
@@ -142,6 +149,7 @@ def run(args):
                         if phase == 1:
                             assert progress() is None
                             action('Active')
+                            assert all(value == 0 for value in progress()['counts'].values())
                         elif phase == 2:
                             assert progress()['status'] == 'Completed'
                         else:
@@ -149,6 +157,17 @@ def run(args):
                         combat = None
                         if phase < 2:
                             (folder/'combat.start').write_text('start\n')
+                            if phase == 1 and args.kill_objective:
+                                wait(lambda: progress()['counts'][kill_objective] == 1
+                                     and state()['committed_progression'] == 50, 80)
+                                before_pickup = state()
+                                assert progress()['status'] == 'Active'
+                                assert progress()['counts'][objective['id']] == 0
+                                assert before_pickup['inventory_bag']['revision'] == 3
+                                assert not any(s and s['item'] == 'theia.dev.wolf-pelt' for s in before_pickup['inventory_bag']['slots'])
+                                assert sum(t['current'] == 0 for t in before_pickup['combat_targets']) == 1
+                                (folder/'kill-before-pickup.json').write_text(json.dumps(before_pickup, indent=2)+'\n')
+                                (folder/'loot.start').write_text('collect\n')
                             def completed():
                                 state()
                                 value = json.loads((folder/'typed-combat.json').read_text())
@@ -168,6 +187,9 @@ def run(args):
                         assert count('theia.dev.training-token') == expected_tokens
                         assert count('theia.dev.wolf-pelt') == 0
                         previous_bag = bag
+                        if phase and args.kill_objective:
+                            assert progress()['counts'][kill_objective] == 1
+                            assert progress()['counts'][objective['id']] == 1
                         (folder/'capture.request').write_text('capture\n')
                         wait(lambda: capture_ready(folder/'input-os.png'))
                         results.append(dict(phase=phase, combat=combat, experience=expected_xp, bag=bag,
@@ -207,6 +229,15 @@ def run(args):
                 else:
                     denied_roll = rows[0]
                 (folder/'generation-rights.txt').write_text(audit.stdout)
+                if args.kill_objective:
+                    journal_rows = cluster.query('SELECT quest_id,status,encode(state,\'hex\') FROM theia.quest_journal_entries ORDER BY quest_id;')
+                    assert journal_rows.returncode == 0, journal_rows.stderr
+                    if phase == 0:
+                        assert not journal_rows.stdout.strip()
+                    else:
+                        assert len(journal_rows.stdout.splitlines()) == 1
+                        assert journal_rows.stdout.split('|')[:2] == [QUEST, '2']
+                    (folder/'journal-sql.txt').write_text(journal_rows.stdout)
                 claims = cluster.query('SELECT count(*),count(consumed_revision) FROM theia.reward_claims;')
                 assert claims.returncode == 0 and claims.stdout.strip() == ('2|2' if phase == 0 else '4|4'), claims.stdout
                 server = (runtime/'server.log').read_text()
@@ -224,7 +255,7 @@ def run(args):
     finally:
         desktop.close()
     assert not any((out/'cluster'/name).exists() for name in ['password', 'pgpass'])
-    result = dict(passed=True, runs=results, postgres_process_restarts=2, pid_bound_quest_clicks=True, frozen_account_package=args.account_package,
+    result = dict(passed=True, runs=results, postgres_process_restarts=2, pid_bound_quest_clicks=True, frozen_account_package=args.account_package, accepted_kill_objective=args.kill_objective,
         fixture='Explicit one-pelt journal; normal pursuing editor population and ordinary gameplay requests',
         binaries={name: hashlib.sha256((binaries/name).read_bytes()).hexdigest() for name in ['theia-client', 'theia-server']})
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
@@ -238,4 +269,5 @@ if __name__ == '__main__':
     parser.add_argument('--players', type=Path, default=default_player_assets())
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--account-package', action='store_true', help='Qualify the frozen account wrapper instead of direct normal play')
+    parser.add_argument('--kill-objective', action='store_true', help='Also require an accepted kill, observing its credit before corpse pickup')
     run(parser.parse_args())

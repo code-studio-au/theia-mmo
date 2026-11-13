@@ -1,3 +1,28 @@
+P3-09 / P3-11 population kill and possession journal integration,
+14 November 2026: the frozen account/native qualifier now optionally combines
+one accepted kill objective with the one-pelt possession objective. A bounded
+opt-in driver marker pauses ordinary pickup after death; it never writes gameplay
+state. The pre-acceptance kill leaves no journal entry. After acceptance all
+counts start at zero. The next population death produces kill 1/1 and pelt 0/1,
+Active, 50 XP and unchanged backpack revision 3. Only explicit pickup advances
+possession to 1/1/Ready. Visible turn-in consumes the pelt, awards XP and completes
+the quest. PostgreSQL restart/same-character rejoin retains both counts at 1,
+Completed revision 4, 75 XP and backpack revision 6 with 102 tokens/no pelts.
+Original conditional generation rights and four consumed claims remain unchanged.
+
+Evidence: build/population-kill-journal-native-v1/qualification.json,
+accepted/kill-before-pickup.json, phase journal-sql.txt and screenshots. Normal
+five-NPC pursuit, equipment/mana/facing/range/casts and private pickups apply;
+quest acceptance/turn-in use PID-bound OS buttons. Explicit one-kill/one-pelt,
+guaranteed-loot fixture, native Linux 1280x720 RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, zero GPU diagnostics. This proves ordinary population journal credit
+separately from item possession, not party credit, authored quest publishing,
+Windows or capacity. All 265 client tests (four ignored), fmt, strict workspace/
+all-target Clippy, Python compile and diff checks pass; logs:
+build/population-kill-journal-{client-tests,clippy}.log. Gameplay server and existing
+network contracts are unchanged. Next: publish a checked authored guide and quest
+snapshot beside a population, retaining exact world/contact identity. Local only.
+
 P3-09 / P3-11 / P3-15 explicit frozen population quest launch,
 14 November 2026: the account population wrapper accepts an explicit inventory-bound
 expanded quest catalogue, matching dialogue catalogue and guide position together.

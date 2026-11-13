@@ -24,6 +24,7 @@ struct Run {
     collect_reward: bool,
     reward_requested: bool,
     collect_loot: bool,
+    wait_loot: bool,
     pickup: Option<(theia_core::rewards::ClaimId, u64)>,
     pickups: u32,
     expected_pickups: u32,
@@ -109,6 +110,7 @@ pub(crate) fn install(
         reward_requested: false,
         collect_loot: !resources_only
             && std::env::var("THEIA_POPULATION_LOOT_QUALIFY").as_deref() == Ok("1"),
+        wait_loot: std::env::var("THEIA_POPULATION_WAIT_LOOT_QUALIFY").as_deref() == Ok("1"),
         pickup: None,
         pickups: 0,
         expected_pickups,
@@ -259,6 +261,9 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
                 }
             }
             if run.collect_loot {
+                if run.wait_loot && !run.output.join("loot.start").is_file() {
+                    return;
+                }
                 let inventory = inventory.expect("Typed qualifier requires inventory");
                 let Some(rewards) = state.rewards.as_ref() else {
                     return;
