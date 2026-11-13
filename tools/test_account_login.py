@@ -159,6 +159,12 @@ class CharacterMenu(unittest.TestCase):
         with service(lambda *_:(200,{},json.dumps({'characters':[{'id':self.old,'name':'Legacy','unused':'hidden'}]}).encode())) as base:
             self.assertEqual(AccountClient(base).characters(), [{'id':self.old,'name':'Legacy'}])
 
+    def test_invalid_creation_names_are_refused_before_http(self):
+        with service(lambda *_: self.fail('Invalid names must not reach HTTP')) as base:
+            for name in [None, '', 'Ab', 'Ar--den', 'Arden2', 'Arden\n', 'x'*21]:
+                with self.subTest(name=name), self.assertRaises(AccountError):
+                    AccountClient(base).create_character(name)
+
     def test_create_another_character_on_existing_account(self):
         calls=[];answers=iter(['n','Newhero'])
         def respond(path, body):

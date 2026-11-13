@@ -2,6 +2,7 @@
 import ipaddress
 import json
 import os
+import re
 from pathlib import Path
 import time
 import urllib.error
@@ -148,11 +149,24 @@ class AccountClient:
             characters.append(dict(id=identifier, name=name))
         return characters
 
+    def create_character(self, name):
+        if not isinstance(name, str) or not 3 <= len(name) <= 20 or re.fullmatch(r"[A-Za-z]+(?:['-][A-Za-z]+)*", name) is None:
+            raise AccountError('Use 3–20 ASCII letters with single interior apostrophes or hyphens')
+        character, _ = self.request('/characters', {'name': name})
+        try:
+            identifier = str(uuid.UUID(character['id']))
+            display = character['name']
+            if identifier == str(uuid.UUID(int=0)) or not isinstance(display, str) or not 1 <= len(display) <= 80 or not display.isprintable():
+                raise ValueError()
+        except (KeyError, TypeError, ValueError, AttributeError):
+            raise AccountError('Invalid created character') from None
+        return dict(id=identifier, name=display)
+
     def choose_character(self, read=input, write=print):
         characters = self.characters()
         if not characters:
             name = read('Name your first character (3–20 letters): ').strip()
-            character, _ = self.request('/characters', {'name': name})
+            character = self.create_character(name)
         else:
             for index, character in enumerate(characters, 1):
                 write(f"{index}. {character['name']}")
@@ -164,7 +178,7 @@ class AccountClient:
                 if not can_create:
                     raise AccountError('Character limit reached; choose an existing character')
                 name = read('Name your new character (3–20 letters): ').strip()
-                character, _ = self.request('/characters', {'name': name})
+                character = self.create_character(name)
             else:
                 try:
                     index = int(choice or '1') - 1

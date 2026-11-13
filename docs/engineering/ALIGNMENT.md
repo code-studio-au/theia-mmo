@@ -1,3 +1,24 @@
+P3-03 / P5-17 first-character creation through the owned handoff, 13 November 2026:
+The private picker now advertises creation availability and accepts an explicit
+create_name choice as an alternative to an existing character ID. Empty accounts
+wait for a choice instead of refusing. Eight-character accounts refuse creation;
+no timeout/cancellation creates a character implicitly. Creation shares the normal
+authenticated API and validates the current 3–20 ASCII character name policy and
+returned identity. Accepted creation is durable server state, not a client fixture.
+Six handoff tests and all 16 real localhost account tests pass, including malformed
+names rejected before HTTP, explicit empty-account creation, account limits and
+preserved terminal selection. Thirteen population launcher checks pass (one asset
+check skipped), Python compilation and diff checks pass.
+Native owned OIDC/PostgreSQL creation, equipment, kill, reward collection, database
+restart and existing-character picker rejoin pass with no terminal or OS input.
+Server counters report exactly one creation initially and none on rejoin; committed
+25 XP, consumed reward and inventory revision 2 persist. Both sessions close through
+the owner pipe and remove tickets. Zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6; owned services/password files are cleaned up.
+Evidence: build/population-account-create-picker-native-v1/qualification.json and
+fresh/resumed runtime character/selection files and database proofs. Editor picker
+widgets and the account-backed Start action remain subsequent integration. Local only.
+
 P3-03 / P5-17 private account character-picker handoff, 13 November 2026:
 Normal play can publish a bounded authenticated character list into its exclusively
 reserved session directory, then await a bounded schema-1 selection file instead

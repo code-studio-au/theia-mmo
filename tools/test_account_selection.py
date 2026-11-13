@@ -18,10 +18,30 @@ class Selection(unittest.TestCase):
             account = SimpleNamespace(characters=lambda: [dict(id=ID, name='Arden')])
             self.assertEqual(select_character(account, root, lambda: False), ID)
             self.assertEqual(json.loads((root/'characters.json').read_text()),
-                             dict(schema=1, characters=[dict(id=ID, name='Arden')]))
+                             dict(schema=1, characters=[dict(id=ID, name='Arden')], can_create=True))
             self.assertFalse((root/'characters.pending').exists())
             if os.name != 'nt':
                 self.assertEqual((root/'characters.json').stat().st_mode & 0o777, 0o600)
+
+    def test_explicit_creation_works_for_empty_accounts_and_is_refused_at_the_limit(self):
+        for full in (False, True):
+            with self.subTest(full=full), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                (root/'selection.json').write_text(json.dumps(dict(schema=1, create_name='Arden')))
+                calls = []
+                def create(name):
+                    calls.append(name)
+                    return dict(id=ID, name=name)
+                account = SimpleNamespace(characters=lambda: [dict(id=ID, name='Arden')]*8 if full else [],
+                                          create_character=create)
+                if full:
+                    with self.assertRaisesRegex(ValueError, 'limit reached'):
+                        select_character(account, root, lambda: False)
+                    self.assertEqual(calls, [])
+                else:
+                    self.assertEqual(select_character(account, root, lambda: False), ID)
+                    self.assertEqual(calls, ['Arden'])
+                self.assertEqual(json.loads((root/'characters.json').read_text())['can_create'], not full)
 
     def test_invalid_unlisted_or_oversized_selection_never_returns_an_id(self):
         for raw in ['{', 'x'*1025, 'null',
@@ -56,7 +76,7 @@ class Selection(unittest.TestCase):
         for rows in [[], [dict(id=ID, name='Arden')]]:
             with self.subTest(rows=rows), tempfile.TemporaryDirectory() as folder:
                 account = SimpleNamespace(characters=lambda: rows)
-                with self.assertRaises(ValueError if not rows else TimeoutError):
+                with self.assertRaises(TimeoutError):
                     select_character(account, Path(folder), lambda: False, timeout=0)
 
 

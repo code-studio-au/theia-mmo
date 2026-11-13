@@ -12,10 +12,8 @@ def select_character(account, directory, stopped, timeout=120):
     characters = account.characters()
     pending = directory/'characters.pending'
     with os.fdopen(os.open(pending, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'w') as file:
-        json.dump(dict(schema=1, characters=characters), file)
+        json.dump(dict(schema=1, characters=characters, can_create=len(characters) < 8), file)
     pending.replace(directory/'characters.json')
-    if not characters:
-        raise ValueError('No characters available for this account')
     allowed = {row['id'] for row in characters}
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -29,11 +27,17 @@ def select_character(account, directory, stopped, timeout=120):
             continue
         try:
             choice = json.loads(raw) if len(raw) <= 1024 else None
-            if not isinstance(choice, dict) or set(choice) != {'schema', 'character_id'} or type(choice['schema']) is not int or choice['schema'] != 1 or not isinstance(choice['character_id'], str) or choice['character_id'] not in allowed:
+            if not isinstance(choice, dict) or set(choice) not in ({'schema', 'character_id'}, {'schema', 'create_name'}) or type(choice['schema']) is not int or choice['schema'] != 1:
                 raise ValueError()
         except (ValueError, UnicodeDecodeError):
             raise ValueError('Invalid account character selection') from None
         if stopped():
             raise KeyboardInterrupt
+        if 'create_name' in choice:
+            if len(characters) >= 8:
+                raise ValueError('Character limit reached; select an existing character')
+            return account.create_character(choice['create_name'])['id']
+        if not isinstance(choice['character_id'], str) or choice['character_id'] not in allowed:
+            raise ValueError('Invalid account character selection')
         return choice['character_id']
     raise TimeoutError('Character selection timed out')
