@@ -806,7 +806,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reset_profile = player_life::parse_reset(
         &mut args,
         credit_bytes.is_some(),
-        patrol_binding.as_ref().map(|p| &p.0),
+        patrol_binding
+            .as_ref()
+            .map(|p| p.0.definition())
+            .or_else(|| population.as_ref().map(|p| p.definition())),
     )?;
     let threat_bytes = player_life::parse_threat(&mut args, reset_profile.is_some())?;
     let public_attack_profile = player_life::parse_public_attacks(

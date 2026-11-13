@@ -15,7 +15,9 @@ class AccountPopulation(unittest.TestCase):
             path = root/name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b'fixture')
-        for _, name in launcher.PROFILES:
+        (root/'package/population.json').write_text('{"schema":1,"creature":"creature.json"}')
+        (root/'package/creature.json').write_text('{"schema":3}')
+        for _, name in [*launcher.PROFILES, launcher.RESET_PROFILE]:
             path = root/'content/gameplay'/name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(name.encode())
@@ -58,6 +60,36 @@ class AccountPopulation(unittest.TestCase):
             self.assertEqual((args.output/'profiles/selected-items.json').read_bytes(), args.items.read_bytes())
             self.assertEqual((args.output/'profiles/selected-rewards.json').read_bytes(), args.reward_catalog.read_bytes())
             self.assertTrue(json.loads((args.output/'launch.json').read_text())['creature_loot'])
+
+    def test_pursuing_definition_freezes_and_selects_the_shared_return_reset(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            (args.package/'creature.json').write_text('{"schema":3,"aggro":{"perception_metres":12}}')
+            command = launcher.prepare(args, root)
+            report = json.loads((args.output/'launch.json').read_text())
+            self.assertTrue(report['creature_reset'])
+            self.assertEqual(len(report['profiles']), 17)
+            self.assertEqual(command.count('--creature-reset'), 1)
+            path = Path(command[command.index('--creature-reset')+1])
+            self.assertEqual(path.read_bytes(), (root/'content/gameplay'/launcher.RESET_PROFILE[1]).read_bytes())
+
+    def test_behavior_inputs_reject_escape_and_oversized_data_before_output(self):
+        for value in ['../outside.json', '/tmp/outside.json', 'a\\outside.json', 'x'*257]:
+            with self.subTest(path=value), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                args = self.fixture(root)
+                (args.package/'population.json').write_text(json.dumps({'creature':value}))
+                with self.assertRaises(ValueError):
+                    launcher.prepare(args, root)
+                self.assertFalse(args.output.exists())
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            (args.package/'creature.json').write_bytes(b' '*4097)
+            with self.assertRaisesRegex(ValueError, 'byte budget'):
+                launcher.prepare(args, root)
+            self.assertFalse(args.output.exists())
 
     def test_partial_catalogue_selection_refuses_without_creating_output(self):
         with tempfile.TemporaryDirectory() as folder:

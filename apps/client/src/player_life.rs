@@ -93,7 +93,7 @@ pub(crate) fn parse_credit(
 pub(crate) fn parse_reset(
     args: &mut Vec<String>,
     context: bool,
-    creature: Option<&theia_network::simulation::creatures::Profile>,
+    creature: Option<&theia_network::simulation::creatures::Definition>,
 ) -> Result<Option<theia_network::simulation::combat::reset::Profile>, Error> {
     let Some(file) = path(args, "--creature-reset")? else {
         return Ok(None);

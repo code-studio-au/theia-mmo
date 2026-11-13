@@ -496,7 +496,7 @@ impl Authority {
     }
     fn damage(&mut self, world: &mut World, hit: Hit) {
         if !self.population_target_ready(hit.target)
-            || (self.reset.is_some() && !self.ordinary_target_ready())
+            || (self.reset.is_some() && self.pve.is_some() && !self.ordinary_target_ready())
         {
             return;
         }

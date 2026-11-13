@@ -28,6 +28,31 @@ PROFILES = [
 ]
 
 
+RESET_PROFILE = ('--creature-reset', 'development-creature-return-reset.json')
+
+
+def configured_pursuit(package):
+    def document(path):
+        with path.open('rb') as file:
+            data = file.read(4097)
+        if len(data) > 4096:
+            raise ValueError('Population behavior input exceeds byte budget')
+        value = json.loads(data)
+        if not isinstance(value, dict):
+            raise ValueError('Population behavior input must be an object')
+        return value
+    value = document(package/'population.json').get('creature')
+    if not isinstance(value, str) or not value or len(value) > 256 or '\\' in value:
+        raise ValueError('Invalid population creature path')
+    relative = Path(value)
+    if relative.is_absolute() or any(part in ('.', '..') for part in relative.parts):
+        raise ValueError('Population creature path must stay inside the package')
+    path = (package/relative).resolve()
+    if not path.is_relative_to(package):
+        raise ValueError('Population creature path escapes the package')
+    return document(path).get('aggro') is not None
+
+
 def prepare(args, repository):
     package, output = args.package.resolve(), args.output.resolve()
     players, binaries = args.players.resolve(), args.binaries.resolve()
@@ -38,10 +63,11 @@ def prepare(args, repository):
     rewards = getattr(args, 'reward_catalog', None)
     if bool(items) != bool(rewards):
         raise ValueError('Select item and reward catalogues together')
+    pursuit = configured_pursuit(package)
     overrides = {'--items': items, '--reward-catalog': rewards}
     profiles = []
     corpse_loot = False
-    for flag, name in PROFILES:
+    for flag, name in [*PROFILES, *([RESET_PROFILE] if pursuit else [])]:
         selected = overrides.get(flag)
         source = selected.resolve() if selected else repository/'content/gameplay'/name
         if selected:
@@ -74,7 +100,7 @@ def prepare(args, repository):
         (frozen/name).write_bytes(data)
         command.extend([flag, str(frozen/name)])
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
-    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot,
+    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=pursuit,
         scope='One authenticated character on the exported population; development typed combat and durable grants; shared NPC retaliation and configured pursuit; no Test Player controllers'), indent=2)+'\n')
     return command
 

@@ -1,3 +1,10 @@
+Population return reset update, 13 November 2026: pursuing editor account
+populations now automatically select the existing shared development health/effect
+reset profile. Independent damaged return, unaffected neighbours and fresh lives
+pass at 20/30/60 Hz; native profile admission, combat, corpse loot and durable
+restart pass. Next: shared per-NPC threat transfer and public attack presentation.
+See STATUS for headless/native evidence boundaries.
+
 Population gameplay/editor update, 13 November 2026: configured spawn-group NPCs
 now use shared perception, chase, collision-checked movement, melee facing, return
 and fresh-life respawn. Native exported-account chase/kill/corpse pickup and durable

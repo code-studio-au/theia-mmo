@@ -198,6 +198,13 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool, retaliating: 
             // No accidental admission of singleton pursuit-dependent consumers.
             let identity = world.identity();
             assert!(world.enable_public_creature_attacks().is_err());
+            assert!(
+                world
+                    .enable_creature_reset(include_bytes!(
+                        "../../../../../../content/gameplay/development-creature-return-reset.json"
+                    ))
+                    .is_err()
+            );
             assert_eq!(world.identity(), identity);
         }
         if ability.is_some() {
@@ -969,6 +976,14 @@ fn check_retaliators(world: &mut World, players: &[u64], keys: &[EntityKey], rat
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_shared_pursuit_chases_attacks_and_returns_each_home_at_all_rates() {
+    qualify_shared_population_pursuit(false);
+}
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_return_reset_is_independent_and_preserves_fresh_lives_at_all_rates() {
+    qualify_shared_population_pursuit(true);
+}
+fn qualify_shared_population_pursuit(reset: bool) {
     use theia_core::pursuit::Mode;
     let store = Arc::new(
         authored_world::Store::open(std::path::Path::new(
@@ -1071,6 +1086,13 @@ fn authored_population_shared_pursuit_chases_attacks_and_returns_each_home_at_al
                 "../../../../../../content/gameplay/development-creature-credit-solo.json"
             ))
             .unwrap();
+        if reset {
+            world
+                .enable_creature_reset(include_bytes!(
+                    "../../../../../../content/gameplay/development-creature-return-reset.json"
+                ))
+                .unwrap();
+        }
         let encounters: Vec<_> = keys
             .iter()
             .map(|k| world.creature_credit_encounter_for(*k).unwrap())
@@ -1125,6 +1147,112 @@ fn authored_population_shared_pursuit_chases_attacks_and_returns_each_home_at_al
         assert!(world.combat_membership(actor).unwrap().in_combat());
         assert!(world.combat_membership_error().is_none());
         assert!(world.creature_credit_error().is_none());
+        if reset {
+            let pair: Vec<_> = keys
+                .iter()
+                .copied()
+                .filter(|key| moved.contains(&key.entity.value()))
+                .take(2)
+                .collect();
+            let source = world.entity_key(actor).unwrap();
+            let now = world.tick;
+            let mut combat = world.combat.take().unwrap();
+            // Trusted fixture damage/effects isolate per-target reset semantics;
+            // the later kill still uses ordinary equipped weapon requests.
+            for (index, target) in pair.iter().copied().enumerate() {
+                combat.apply_damage(
+                    &mut world,
+                    source,
+                    target,
+                    20 + index as u32 * 10,
+                    |amount, remaining, position| Event::Damage {
+                        ability: ContentId::new("theia.dev.sword-slash").unwrap(),
+                        actor: source,
+                        target,
+                        sequence: index as u64 + 1,
+                        amount,
+                        remaining,
+                        position,
+                    },
+                );
+                let cast = super::super::Cast {
+                    sequence: index as u64 + 1,
+                    ability: ContentId::new("theia.dev.sword-slash").unwrap(),
+                    target,
+                    started: now,
+                    completes: now,
+                };
+                combat
+                    .statuses
+                    .as_mut()
+                    .unwrap()
+                    .apply(
+                        now,
+                        rate,
+                        source,
+                        &cast,
+                        &ContentId::new("theia.dev.scorch").unwrap(),
+                    )
+                    .unwrap();
+            }
+            world.combat = Some(combat);
+            world
+                .population_motion
+                .iter_mut()
+                .find(|p| p.key == pair[0])
+                .unwrap()
+                .blocked = true;
+            world.step();
+            assert_eq!(
+                world.creature_pursuit_directive_for(pair[0]).unwrap().mode,
+                Mode::Return
+            );
+            let health = |world: &World, key| {
+                world
+                    .combat
+                    .as_ref()
+                    .unwrap()
+                    .creatures
+                    .iter()
+                    .find(|c| c.key == key)
+                    .unwrap()
+                    .current
+            };
+            assert_eq!(health(&world, pair[0]), 100);
+            assert_eq!(health(&world, pair[1]), 70);
+            let statuses = world.combat_status_snapshot(actor).unwrap();
+            assert_eq!(statuses.len(), 1);
+            assert_eq!(statuses[0].target, pair[1]);
+            let metrics = world.creature_reset_metrics().unwrap();
+            assert_eq!(
+                (
+                    metrics.resets,
+                    metrics.health_restored,
+                    metrics.statuses_removed
+                ),
+                (1, 20, 1)
+            );
+            let reply = world.cast(
+                actor,
+                super::super::Request {
+                    epoch: world.epoch(),
+                    sequence: 1,
+                    target: pair[0],
+                    ability: ContentId::new("theia.dev.arcane-bolt").unwrap(),
+                },
+            );
+            assert!(
+                matches!(
+                    reply.reply.outcome,
+                    super::super::Outcome::Rejected(super::super::Reason::NotReady)
+                ),
+                "{:?}",
+                reply.reply
+            );
+            world.step();
+            assert_eq!(world.creature_reset_metrics().unwrap(), metrics);
+            assert_eq!(health(&world, pair[1]), 70);
+        }
         world.leave(actor);
         for _ in 0..rate.hz() * 10 {
             world.poll_terrain();
@@ -1159,6 +1287,23 @@ fn authored_population_shared_pursuit_chases_attacks_and_returns_each_home_at_al
         }
         assert!(world.combat_membership_error().is_none());
         assert!(world.creature_credit_error().is_none());
+        if reset {
+            let metrics = world.creature_reset_metrics().unwrap();
+            assert_eq!(metrics.health_restored, 50);
+            // The first target was reset in-world; departure already removes
+            // the remaining source-owned effect before the other return.
+            assert_eq!(metrics.statuses_removed, 1);
+            assert!(world.creature_reset_error().is_none());
+            assert!(
+                world
+                    .combat
+                    .as_ref()
+                    .unwrap()
+                    .creatures
+                    .iter()
+                    .all(|c| c.current == c.maximum)
+            );
+        }
         // Kill through the ordinary weapon path after the return, then ensure
         // the replacement life owns a fresh controller and its original home.
         let hunter = world

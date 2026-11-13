@@ -119,14 +119,15 @@ impl Combat {
         ))
     }
     pub(super) fn population_target_ready(&self, npc: EntityKey) -> bool {
-        self.population_encounter(npc).is_none_or(|(mode, _)| {
-            matches!(
-                mode,
-                theia_core::pursuit::Mode::Patrol
-                    | theia_core::pursuit::Mode::Chase
-                    | theia_core::pursuit::Mode::Attack
-            )
-        })
+        self.reset.as_ref().is_none_or(|reset| reset.ready())
+            && self.population_encounter(npc).is_none_or(|(mode, _)| {
+                matches!(
+                    mode,
+                    theia_core::pursuit::Mode::Patrol
+                        | theia_core::pursuit::Mode::Chase
+                        | theia_core::pursuit::Mode::Attack
+                )
+            })
     }
     pub(in crate::simulation::combat) fn membership_encounter(
         &self,
@@ -140,22 +141,43 @@ impl Combat {
         };
         Some((pve.npc, mode, directive.target))
     }
+    /// Retained singleton threat/public-attack adapters require exactly one encounter.
     pub(in crate::simulation::combat) fn checked_reset_encounter(
         &self,
     ) -> Result<(EntityKey, theia_core::pursuit::Mode, Option<LifeKey>)> {
-        let pve = self
-            .pve
-            .as_ref()
-            .ok_or("Reset lost player life authority")?;
-        if pve.error.is_some() {
-            return Err("Reset pursuit authority failed".into());
+        let encounters = self.checked_reset_encounters()?;
+        if encounters.len() != 1 {
+            return Err("Adapter requires one pursuit encounter".into());
         }
-        let directive = pve
-            .pursuit
-            .as_ref()
-            .ok_or("Reset lost pursuit")?
-            .directive();
-        Ok((pve.npc, directive.mode, directive.target))
+        Ok(encounters[0])
+    }
+    pub(in crate::simulation::combat) fn checked_reset_encounters(
+        &self,
+    ) -> Result<Vec<(EntityKey, theia_core::pursuit::Mode, Option<LifeKey>)>> {
+        let actors = self.pve.iter().chain(&self.retaliators);
+        let encounters = actors
+            .map(|pve| {
+                if pve.error.is_some() {
+                    return Err("Reset pursuit authority failed".into());
+                }
+                let directive = pve
+                    .pursuit
+                    .as_ref()
+                    .ok_or("Reset lost pursuit")?
+                    .directive();
+                Ok((pve.npc, directive.mode, directive.target))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        if encounters.is_empty()
+            || encounters.len() != self.creatures.len()
+            || encounters.len() > crate::targeting::MAX_TARGETS
+            || encounters
+                .iter()
+                .any(|(npc, _, _)| !self.creatures.iter().any(|c| c.key == *npc))
+        {
+            return Err("Reset requires exact bounded creature encounters".into());
+        }
+        Ok(encounters)
     }
     pub(in crate::simulation) fn player_alive(&self, id: u64) -> bool {
         self.lives.is_none()

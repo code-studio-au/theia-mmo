@@ -1,3 +1,37 @@
+P3-06 / P3-09 shared per-creature return reset, 13 November 2026:
+The existing explicit return-reset adapter now retains one bounded reset latch per
+creature life. It validates all transitions before restoring health or removing
+effects; returning one NPC leaves neighbouring NPCs unchanged. Reset never changes
+entity identity, resurrects a corpse or emits death/grant events. Fresh-ID respawns
+start a fresh latch. Singleton threat/public timing adapters retain their explicit
+single-encounter prerequisite. Population attacks fail closed after reset errors.
+Normal population configuration accepts the reset profile when matching pursuit,
+typed damage, membership and credit are installed; passive definitions refuse it.
+The editor account wrapper freezes and selects the shared development reset profile
+automatically for pursuing definitions (17 profiles, versus 16 for stationary ones).
+Bounded package behavior reads reject escaping paths and oversized inputs. Client
+reset admission now resolves the same creature definition for patrols/populations.
+All 502 network tests pass (12 ignored); all 12 authored population checks pass
+separately. The new 20/30/60 Hz check uses explicit trusted damage/effect fixtures
+to isolate reset: one returning NPC restores 20 health/removes its effect while a
+second remains damaged with its effect; repeated return frames do not reset twice.
+Departure clears the other source-owned effect, remaining returns restore 30 health,
+and ordinary weapon kill/credit/fresh-life respawn still pass. Seven retained
+singleton reset checks, strict workspace/all-target Clippy, fmt and 22 Python
+launcher tests pass (one skipped). Evidence: build/population-reset-final-checks.log,
+population-reset-controller-tests.log and population-reset-world-tests.log.
+Native exported editor account launch, automatic 17-profile freeze, configured
+chase/retaliation, eight-cast kill, two corpse pickups, 25 XP, inventory revision 4,
+PostgreSQL restart and matching character rejoin pass. The first observed health is
+45; after fresh-runtime attacks on rejoin it is 77. Health remains transient. Zero
+GPU diagnostics on Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; no OS input.
+Evidence: build/population-reset-native-v1/qualification.json and owned launch.json.
+Native qualification proves reset-profile admission and retained combat/loot; the
+damaged-return/effect cleanup evidence is the actual authored headless world test.
+No native Windows, population threat transfer/public attack presentation or MMO
+capacity claim. Next: adapt shared threat selection and target/path transfer to
+exact per-NPC engagements. Local only.
+
 P3-06 / P3-09 / P5-17 configured pursuit for editor populations, 13 November 2026:
 Spawn groups can now bind definitions with existing aggro settings. The normal
 server prepares one shared navigation worker plus independent collision bodies

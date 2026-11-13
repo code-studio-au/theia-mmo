@@ -33,7 +33,6 @@ pub fn validate_launch(args: &[String]) -> Result<()> {
         "--navigation",
         "--quest-loot",
         "--creature-threat",
-        "--creature-reset",
         "--public-creature-attacks",
     ] {
         if args.iter().any(|a| a == unsupported) {
@@ -205,6 +204,8 @@ mod tests {
             .map(str::to_owned),
         );
         assert!(validate_launch(&lives).is_ok());
+        lives.extend(["--creature-reset".into(), "reset.json".into()]);
+        assert!(validate_launch(&lives).is_ok());
         lives.push("--creature-loot".into());
         assert!(validate_launch(&lives).is_ok());
         for grant in ["--progression-catalog", "--reward-catalog"] {
@@ -236,7 +237,6 @@ mod tests {
             "--progression-catalog",
             "--quest-loot",
             "--creature-threat",
-            "--creature-reset",
             "--public-creature-attacks",
         ] {
             let mut args = valid.clone();
