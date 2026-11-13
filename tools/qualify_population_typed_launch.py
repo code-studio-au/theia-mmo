@@ -90,11 +90,13 @@ def run(args):
                     env['THEIA_POPULATION_KILL_QUALIFY'] = '1'
                 if args.claim_reward and not resumed:
                     env['THEIA_POPULATION_REWARD_QUALIFY'] = '1'
-            previous_tickets = set(Path('build/development-session').glob('renet-*'))
+            runtime = folder/'runtime'
+            assert not runtime.exists()
             with (folder/'launcher.log').open('w') as log:
                 launcher = subprocess.Popen([sys.executable, 'tools/play.py', *common,
                     *(['--character-id', character_id] if resumed else []),
                     *(['--stop-on-stdin-eof'] if resumed and args.owned_stop else []),
+                    '--session-directory', str(runtime),
                     '--account-login', '--equipment', '--status-effects', *launch_profiles,
                     *(['--progression', '--rewards'] if args.kill else []),
                     '--binaries', str(binaries), '--players', str(args.players.resolve()),
@@ -167,11 +169,11 @@ def run(args):
                             launcher.kill()
                             launcher.wait(timeout=10)
                     launcher.stdin.close()
-                    source = Path('build/development-session/server.log')
+                    source = runtime/'server.log'
                     if source.exists():
                         shutil.copy2(source, folder/'server.log')
                 assert launcher.returncode == 0
-            assert not (set(Path('build/development-session').glob('renet-*')) - previous_tickets)
+            assert not list(runtime.glob('renet-*'))
             server = (folder/'server.log').read_text()
             saved = next(json.loads(line.removeprefix('account_persistence_summary '))
                          for line in server.splitlines() if line.startswith('account_persistence_summary '))
@@ -216,7 +218,7 @@ def run(args):
                 assert identity.password not in text and cluster.password not in text
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
-    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=True, owner_pipe_stop=args.owned_stop,
+    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=True, owner_pipe_stop=args.owned_stop, isolated_sessions=True,
         mouse_or_keyboard_automation=False, scope=('Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result

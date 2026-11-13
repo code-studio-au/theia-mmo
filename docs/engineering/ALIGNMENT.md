@@ -1,3 +1,21 @@
+P3-01 / P3-03 / P5-17 isolated account launch sessions, 13 November 2026:
+Normal play accepts --session-directory and reserves that directory exclusively
+with private permissions for logs and temporary tickets. Existing directories are
+refused before certificates/logs can be removed or overwritten. The default CLI
+location remains compatible. Population account qualification now uses distinct
+fresh/resumed runtime directories instead of the shared development-session log.
+Twelve launcher tests pass (one asset check skipped), including existing-file
+preservation and cleanup for default/isolated sessions; all 13 authored-launch and
+49 gameplay-bundle regressions, Python compilation and diff checks pass. Native
+owned OIDC/SQL kill/collection, database restart, explicit-character rejoin and
+owner-pipe shutdown pass in isolated directories. XP remains 25, inventory revision
+2 and the consumed training reward persist; ticket directories are removed.
+RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics, no OS input.
+Evidence: build/population-isolated-account-native-v1/qualification.json and each
+run's runtime/server.log, database proofs and screenshots. This supplies session
+isolation for future account-backed editor launches, not an editor account picker.
+All changes remain local.
+
 P3-01 / P3-03 / P5-17 owned account launcher shutdown, 13 November 2026:
 Normal play now optionally stops on its owner's stdin EOF. Account mode requires
 explicit character selection so the lifetime pipe cannot consume an interactive

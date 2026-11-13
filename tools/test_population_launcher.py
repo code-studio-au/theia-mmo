@@ -158,10 +158,36 @@ class PopulationLauncher(unittest.TestCase):
                 self.assertIn('--configuration-report', command)
                 self.assertEqual(command[command.index('--population-config')+1], str(root/'population.json'))
 
-    def test_same_population_is_forwarded_after_preflight_and_owned_children_clean_up(self):
+    def test_existing_explicit_session_is_never_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             args = self.fixture(root)
+            session = root/'existing'
+            session.mkdir()
+            for name in ['server.log', 'server-cert.der']:
+                (session/name).write_text('existing owned data')
+            report = dict(renderer_started=False, network_started=False, saved_state_admitted=False)
+            with patch.object(play.subprocess, 'run', return_value=SimpleNamespace(
+                    returncode=0, stderr='', stdout=json.dumps(report))), \
+                    patch.object(play.subprocess, 'Popen') as child:
+                with self.assertRaises(FileExistsError):
+                    play.play(**args, session_directory=session)
+            child.assert_not_called()
+            for name in ['server.log', 'server-cert.der']:
+                self.assertEqual((session/name).read_text(), 'existing owned data')
+
+    def test_same_population_is_forwarded_after_preflight_and_owned_children_clean_up(self):
+        for isolated in (False, True):
+            with self.subTest(isolated=isolated):
+                self._check_forwarded_population_cleanup(isolated)
+
+    def _check_forwarded_population_cleanup(self, isolated):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args = self.fixture(root)
+            session = root/('owned-session' if isolated else 'build/development-session')
+            if isolated:
+                args['session_directory'] = session
             args['creature_asset'] = root/'wolf.glb'
             args['creature_asset'].write_bytes(b'presentation path fixture')
             report = dict(renderer_started=False, network_started=False, saved_state_admitted=False)
@@ -197,7 +223,11 @@ class PopulationLauncher(unittest.TestCase):
             for command in commands[1:]:
                 self.assertEqual(command[command.index('--creature-asset')+1], str(root/'wolf.glb'))
             self.assertEqual(stopped, ['server'])
-            self.assertEqual(list((root/'build/development-session').glob('renet-*')), [])
+            self.assertEqual(list(session.glob('renet-*')), [])
+            if isolated:
+                self.assertFalse((root/'build/development-session').exists())
+                if os.name != 'nt':
+                    self.assertEqual(session.stat().st_mode & 0o777, 0o700)
 
 
 if __name__ == '__main__':
