@@ -58,6 +58,23 @@ class PopulationLauncher(unittest.TestCase):
         self.assertIsNone(args['navigation'])
         self.assertIsNone(args['character_stats'])
 
+    def test_explicit_character_selection_is_forwarded_without_implying_account_login(self):
+        selected = '12345678-1234-1234-1234-123456789abc'
+        with patch.object(play, 'play') as launch:
+            play.main(['--account-login', '--character-id', selected])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['character_id'], selected)
+        self.assertTrue(args['account_login'])
+
+    def test_invalid_or_unauthenticated_character_selection_refuses_before_io(self):
+        with patch.object(play.subprocess, 'Popen') as launch:
+            for selected, login in [('bad', True), ('00000000-0000-0000-0000-000000000000', True),
+                                    ('12345678-1234-1234-1234-123456789abc', False)]:
+                with self.subTest(selected=selected, login=login), self.assertRaises(ValueError):
+                    play.play(None, Path('missing'), 1, Path('missing'), account_login=login,
+                              character_id=selected)
+        launch.assert_not_called()
+
     def test_cli_population_player_life_selects_resources_without_a_patrol(self):
         with patch.object(play, 'play') as launch:
             play.main(['--authored-world', 'world', '--population-config', 'population.json',

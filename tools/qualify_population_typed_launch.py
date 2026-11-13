@@ -65,6 +65,7 @@ def run(args):
     with Identity(out/'provider', Path('build/identity-sdk'), token_seconds=600, interactive=True) as identity, \
             Cluster(out/'cluster', Path('build/postgres-sdk')) as cluster:
         original_bag = None
+        character_id = None
         for resumed in (False, True):
             if resumed:
                 cluster.restart()
@@ -92,14 +93,18 @@ def run(args):
             previous_tickets = set(Path('build/development-session').glob('renet-*'))
             with (folder/'launcher.log').open('w') as log:
                 launcher = subprocess.Popen([sys.executable, 'tools/play.py', *common,
+                    *(['--character-id', character_id] if resumed else []),
                     '--account-login', '--equipment', '--status-effects', *launch_profiles,
                     *(['--progression', '--rewards'] if args.kill else []),
                     '--binaries', str(binaries), '--players', str(args.players.resolve()),
                     '--creature-asset', str(package/'creature.glb'), '--window-size', '1280x720'],
                     env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT, text=True)
                 try:
-                    launcher.stdin.write('1\n' if resumed else 'PoolArden\n')
-                    launcher.stdin.flush()
+                    if not resumed:
+                        launcher.stdin.write('PoolArden\n')
+                        launcher.stdin.flush()
+                    else:
+                        launcher.stdin.close()
                     def state():
                         assert launcher.poll() is None, 'Owned typed population launcher exited'
                         return json.loads((folder/'input-os.json').read_text())
@@ -185,6 +190,12 @@ def run(args):
             account = next(json.loads(line.removeprefix('account_summary '))
                            for line in server.splitlines() if line.startswith('account_summary '))
             assert account['verified_logins'] == 1
+            selected = cluster.query('SELECT character_id FROM theia.characters;')
+            assert selected.returncode == 0 and len(selected.stdout.splitlines()) == 1
+            if resumed:
+                assert selected.stdout.strip() == character_id
+            else:
+                character_id = selected.stdout.strip()
             if args.kill:
                 rows = cluster.query("SELECT p.experience,(SELECT count(*) FROM theia.reward_claims r WHERE r.realm_id=p.realm_id AND r.character_id=p.character_id) FROM theia.progression p; SELECT count(*) FROM theia.experience_receipts;")
                 assert rows.returncode == 0 and rows.stdout.splitlines() == [f'{25 * expected_kills}|1', str(expected_kills)], rows.stdout
@@ -201,7 +212,7 @@ def run(args):
                 assert identity.password not in text and cluster.password not in text
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
-    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True,
+    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=True,
         mouse_or_keyboard_automation=False, scope=('Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result

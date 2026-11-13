@@ -1,3 +1,20 @@
+P3-01 / P5-17 explicit account character entry prerequisite, 13 November 2026:
+The normal play launcher now accepts --character-id for an existing character.
+It validates a nonzero UUID and requires account login before process/file startup,
+then uses the ordinary authenticated server admission operation instead of a terminal
+selection prompt. No character is implicitly created or selected and the existing
+interactive flow remains available. This supplies a launcher prerequisite; the
+editor does not yet have an account character picker or account-backed Start action.
+Native owned OIDC/PostgreSQL validation passes with stdin closed on explicit rejoin.
+The same character keeps its revision-2 equipped bag and consumed training claim;
+a second kill after restart raises XP to 50 with two receipts and no duplicate item.
+Ten population launcher tests pass (one asset check skipped), along with all 13
+authored-launch and 49 gameplay-bundle tests, Python compilation and diff checks.
+Native RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6 runs report zero GPU diagnostics;
+owned services/tickets/password files are cleaned up. No OS input is automated.
+Evidence: build/population-selected-character-native-v1/qualification.json and
+fresh/resumed database and combat reports. Changes remain local.
+
 P5-17 native editor resource-cast acceptance, 13 November 2026:
 The bounded population command qualifier now also accepts the editor's resource-only
 combat context without requiring or inventing persistent equipment or membership.
