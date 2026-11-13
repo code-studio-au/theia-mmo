@@ -1,3 +1,26 @@
+P5-17 managed population player-life integration, 13 November 2026:
+Population Start playtest now freezes character stats, the shared life policy and
+player respawn data beside the exported creature/combat files. Export validates the
+life binding before publication; the managed launcher preflights both life hashes
+before starting children and passes identical files plus public-life replication to
+the server and every client. Legacy packages can still launch without the explicit
+player-life option. Missing/unvalidated life context refuses before session creation.
+The actual offline-baker export test verifies unchanged frozen bytes and authored
+players/routes. All 238 editor tests pass (the socket-restricted encrypted regression
+was rerun successfully with localhost access); 10 asset checks remain ignored in the
+regular suite. Nineteen managed-launcher tests, Python compilation, formatting,
+strict workspace/all-target Clippy and editor build pass.
+Headless editor export followed by two actual native clients passes using the new
+package: five passive wolf rigs, two encrypted admissions, movement controller
+completion, three public-life frames, zero input rejections/recoveries/backpressure
+disconnects and zero GPU diagnostics. The bounded session ends at its duration;
+owned processes/tickets are removed and the source zone is unchanged. No OS input
+was automated. This qualifies the shared export/managed-launch path, not a new
+mouse-driven Start/Stop menu acceptance or NPC retaliation. Native Linux Vulkan:
+RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6, two 1280x720 clients.
+Evidence: build/editor-population-life-native-v1/verification.json,
+build/editor-population-life-build.log and build/editor-population-life-final.log.
+
 P3-09 / P5-17 normal passive-population player-life launch, 13 November 2026:
 The ordinary client/server population path now accepts paired player-respawn and
 retaliation-policy profiles to bind shared player life, using the exact checked

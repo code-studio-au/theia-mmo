@@ -170,15 +170,22 @@ with (out / 'editor.log').open('w') as log:
         summary = json.loads((run/'session.json').read_text())
         assert summary['reason']=='stop requested' and not summary['cleanup_errors'], summary
         assert summary['population']['count']==5 and len(summary['clients'])==2
+        assert summary['player_life'] and len(summary['player_life_profile'])==32
+        assert len(summary['public_avatar_life_profile'])==32
         assert not list(run.glob('tickets-*'))
         transport = next(json.loads(line.removeprefix('transport_summary ')) for line in (run/'server.log').read_text().splitlines() if line.startswith('transport_summary '))
         assert transport['test_player_admissions']==2 and transport['test_player_refusals']==0
         assert transport['combat_states_sent']>=2 and transport['target_states_sent']>=2
+        assert transport['avatar_life_states_sent']>=2 and transport['avatar_life_backpressure_disconnects']==0
         assert transport['rejected_inputs']==0 and transport['movement_recoveries']==0
         for log_file in run.glob('*.log'):
             assert check_gpu_diagnostics(log_file.read_text()) == 0
         result = json.loads((destination / 'population-export.json').read_text())['population_export']
-        assert result['passed'] and result['count'] == 5, result
+        assert result['passed'] and result['count'] == 5 and result['player_life'], result
+        for frozen, original_profile in [('character-stats.json','development-character-stats.json'),
+                                         ('retaliation.json','development-creature-retaliation.json'),
+                                         ('player-respawn.json','development-player-respawn.json')]:
+            assert (destination/frozen).read_bytes() == (Path('content/gameplay')/original_profile).read_bytes()
         if args.particle_library:
             placements = len(state()['document']['particles'])
             assert result['world']['particles']['placements'] == placements

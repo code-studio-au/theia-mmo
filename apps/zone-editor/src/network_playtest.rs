@@ -105,7 +105,8 @@ impl Manager {
                 .arg("--population-config")
                 .arg(snapshot.join("population.json"))
                 .arg("--combat-catalog")
-                .arg(snapshot.join("combat.json"));
+                .arg(snapshot.join("combat.json"))
+                .arg("--player-life");
             if snapshot.join("creature.glb").is_file() {
                 command
                     .arg("--creature-asset")

@@ -14,6 +14,21 @@ use theia_network::{
 };
 use theia_zone::{Zone, markers::MarkerKind};
 
+const LIFE_FILES: [(&str, &[u8]); 3] = [
+    (
+        "character-stats.json",
+        include_bytes!("../../../content/gameplay/development-character-stats.json"),
+    ),
+    (
+        "retaliation.json",
+        include_bytes!("../../../content/gameplay/development-creature-retaliation.json"),
+    ),
+    (
+        "player-respawn.json",
+        include_bytes!("../../../content/gameplay/development-player-respawn.json"),
+    ),
+];
+
 pub(super) struct Settings<'a> {
     pub creature: &'a Path,
     pub baker: &'a Path,
@@ -201,12 +216,23 @@ fn publish_mode(
                 include_bytes!("../../../content/gameplay/development-abilities.json"),
             )
             .map_err(|e| e.to_string())?;
+            theia_network::player_life_wire::Profile::from_json(
+                LIFE_FILES[0].1,
+                loaded.creature_bytes(),
+                LIFE_FILES[1].1,
+                LIFE_FILES[2].1,
+            )
+            .map_err(|e| format!("Population player life: {e}"))?;
+            for (name, bytes) in LIFE_FILES {
+                fs::write(stage.join(name), bytes).map_err(|e| e.to_string())?;
+            }
             clients
         } else {
             0
         };
         let report = serde_json::json!({"population_export":{"passed":true,"group":group,
             "appearance":appearance.as_ref().map(|bytes|serde_json::json!({"file":"creature.glb","sha256":theia_network::terrain::sha256(bytes)})),
+            "player_life":network,
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
@@ -220,7 +246,15 @@ fn publish_mode(
         fs::create_dir(output).map_err(|e| e.to_string())?;
         destination_created = true;
         if network {
-            for name in ["scenario.json", "combat.json", "controllers", "routes"] {
+            for name in [
+                "scenario.json",
+                "combat.json",
+                "controllers",
+                "routes",
+                "character-stats.json",
+                "retaliation.json",
+                "player-respawn.json",
+            ] {
                 if stage.join(name).exists() {
                     fs::rename(stage.join(name), output.join(name)).map_err(|e| e.to_string())?;
                 }
@@ -467,6 +501,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(report["population_export"]["clients"], 2);
+        assert_eq!(report["population_export"]["player_life"], true);
+        for (name, bytes) in LIFE_FILES {
+            assert_eq!(fs::read(output.join(name)).unwrap(), bytes);
+        }
         assert_eq!(report["population_export"]["count"], 5);
         assert_eq!(Zone::load(&output.join("zone.json")).unwrap(), zone);
         let store = Arc::new(authored_world::Store::open(&output.join("world")).unwrap());

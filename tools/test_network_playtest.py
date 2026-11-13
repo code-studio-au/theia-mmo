@@ -98,7 +98,7 @@ class LifecycleTests(unittest.TestCase):
         self.output = self.root / 'session'
         self.processes, self.relays = [], []
 
-    def execute(self, *, fail_client=None, stop_startup=False, identity=None, owner_stops_after=None, population=False, invalid_population=False, route=False, route_valid=True):
+    def execute(self, *, fail_client=None, stop_startup=False, identity=None, owner_stops_after=None, population=False, invalid_population=False, route=False, route_valid=True, player_life=False, invalid_life=False):
         if route:
             (self.root/'route.json').write_text('{}')
             data=document(); data['players'][0]['route']='route.json'
@@ -132,6 +132,8 @@ class LifecycleTests(unittest.TestCase):
             def start(self, backend): self.backend = backend
             def close(self): self.closed = True
         checked = SimpleNamespace(returncode=0, stdout=json.dumps(dict(classic_source=identity or list(range(32)),
+            player_life_profile=None if invalid_life else list(range(32)),
+            public_avatar_life_profile=list(range(32)),
             population=None if invalid_population else dict(count=5, respawn_ms=30000))), stderr='')
         extra = {}
         if population:
@@ -139,6 +141,10 @@ class LifecycleTests(unittest.TestCase):
                 (self.root/name).write_text('fixture')
             extra = dict(population_config=self.root/'population.json', combat_catalog=self.root/'abilities.json',
                          creature_asset=self.root/'wolf.glb')
+        if player_life:
+            for name in ['character-stats.json', 'retaliation.json', 'player-respawn.json']:
+                (self.root/name).write_text('fixture')
+            extra['player_life'] = True
         def preflight(command, **_kwargs):
             if '--test-route' in command and not route_valid:
                 return SimpleNamespace(returncode=1, stdout='', stderr='Wrong route world')
@@ -176,6 +182,26 @@ class LifecycleTests(unittest.TestCase):
         self.assertFalse(list(self.output.glob('tickets-*')))
         summary = json.loads((self.output/'session.json').read_text())
         self.assertEqual(summary['population']['count'], 5)
+
+    def test_frozen_population_life_profiles_reach_server_and_all_clients(self):
+        self.execute(population=True, player_life=True)
+        self.assertEqual(len(self.processes), 3)
+        for child in self.processes:
+            args = child.arguments
+            for flag, name in [('--character-stats', 'character-stats.json'),
+                               ('--creature-retaliation', 'retaliation.json'),
+                               ('--player-respawn', 'player-respawn.json')]:
+                self.assertEqual(args[args.index(flag)+1], str(self.root/name))
+            self.assertIn('--public-avatar-life', args)
+        summary = json.loads((self.output/'session.json').read_text())
+        self.assertTrue(summary['player_life'])
+        self.assertEqual(summary['player_life_profile'], list(range(32)))
+
+    def test_unvalidated_population_lives_never_start_children(self):
+        with self.assertRaisesRegex(ValueError, 'player-life profiles'):
+            self.execute(population=True, player_life=True, invalid_life=True)
+        self.assertFalse(self.processes)
+        self.assertFalse(self.output.exists())
 
     def test_unvalidated_population_never_creates_session_or_children(self):
         with self.assertRaisesRegex(ValueError, 'bounded population'):

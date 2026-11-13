@@ -117,7 +117,7 @@ def stop(process, server=False):
 
 
 def run(scenario_path, world, players, binaries, output, *, duration=None, window_size='1280x720', stop_requested=lambda: False,
-        population_config=None, combat_catalog=None, creature_asset=None):
+        population_config=None, combat_catalog=None, creature_asset=None, player_life=False):
     if stop_requested():
         return
     scenario = Scenario.load(scenario_path)
@@ -134,7 +134,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
             raise ValueError(f'Missing test dependency: {path}')
     if output.exists():
         raise ValueError('Choose a fresh playtest output directory')
-    if population_config is None and (combat_catalog is not None or creature_asset is not None):
+    if population_config is None and (combat_catalog is not None or creature_asset is not None or player_life):
         raise ValueError('Population combat and creature presentation require a population configuration')
     if population_config is not None:
         population_config = Path(population_config).resolve()
@@ -165,6 +165,15 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
     # complete population/combat identity before starting any owned child.
     if population_config is not None:
         scene.extend(['--population-config', str(population_config), '--combat-catalog', str(combat_catalog)])
+        if player_life:
+            for flag, name in [('--character-stats', 'character-stats.json'),
+                               ('--creature-retaliation', 'retaliation.json'),
+                               ('--player-respawn', 'player-respawn.json')]:
+                path = population_config.parent / name
+                if not path.is_file():
+                    raise ValueError(f'Missing population player-life dependency: {path}')
+                scene.extend([flag, str(path)])
+            scene.append('--public-avatar-life')
         checked = subprocess.run([str(client_binary), *scene,
                                   *(['--creature-asset', str(creature_asset)] if creature_asset else []),
                                   '--configuration-report'], env=environment,
@@ -173,6 +182,9 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
             raise ValueError(f'Population validation failed: {checked.stderr.strip()}')
         start = checked.stdout.find('{')
         configuration = json.loads(checked.stdout[start:]) if start >= 0 else {}
+        if player_life and any(not isinstance(configuration.get(name), list) or len(configuration[name]) != 32
+                               for name in ('player_life_profile', 'public_avatar_life_profile')):
+            raise ValueError('Client did not validate population player-life profiles')
         population = configuration.get('population')
         if (not isinstance(population, dict) or type(population.get('count')) is not int
                 or not 1 <= population['count'] <= 16):
@@ -265,6 +277,9 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
         raise
     finally:
         summary = dict(reason=reason, cleanup_errors=cleanup_errors, population=configuration.get('population'),
+                       player_life=player_life,
+                       player_life_profile=configuration.get('player_life_profile'),
+                       public_avatar_life_profile=configuration.get('public_avatar_life_profile'),
                        creature_appearance=configuration.get('creature_appearance', False),
                        creature_asset=str(creature_asset) if creature_asset else None,
                        clients=[dict(client_id=p.client_id, started=p.client_id in launched_ids, network=asdict(p.network),
@@ -296,6 +311,7 @@ def main():
     parser.add_argument('--population-config', type=Path)
     parser.add_argument('--combat-catalog', type=Path)
     parser.add_argument('--creature-asset', type=Path)
+    parser.add_argument('--player-life', action='store_true', help='Use frozen population player-life files beside the population configuration')
     parser.add_argument('--window-size', default='1280x720')
     parser.add_argument('--stop-on-stdin-eof', action='store_true', help='Stop owned children when the launching editor closes its stdin pipe')
     args = parser.parse_args()
@@ -307,7 +323,7 @@ def main():
         threading.Thread(target=watch_owner, args=(sys.stdin.buffer, stopped), daemon=True).start()
     run(args.scenario, args.world, args.players, args.binaries, args.output,
         duration=args.duration, window_size=args.window_size, stop_requested=stopped.is_set,
-        population_config=args.population_config, combat_catalog=args.combat_catalog, creature_asset=args.creature_asset)
+        population_config=args.population_config, combat_catalog=args.combat_catalog, creature_asset=args.creature_asset, player_life=args.player_life)
 
 
 if __name__ == '__main__':
