@@ -19,6 +19,7 @@ pub(super) struct Draft {
     target: Option<PathBuf>,
     player_assets: Option<PathBuf>,
     account_catalogues: Option<(PathBuf, PathBuf)>,
+    account_gameplay: bool,
     message: String,
     action: Option<Control>,
 }
@@ -59,10 +60,17 @@ impl Mode {
         match self {
             Self::World => &[0, 1, 2, 3],
             Self::NetworkTest => &[0, 3, 4],
-            Self::Population => &[0, 1, 2, 3, 4, 5, 7],
+            Self::Population => &[0, 1, 2, 3, 4, 5, 7, 10],
             Self::PopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7],
-            Self::AccountPopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            Self::AccountPopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             _ => &[0, 1],
+        }
+    }
+    fn visible_fields(self, template: bool) -> &'static [usize] {
+        if self == Self::AccountPopulationTest && template {
+            &[0, 1, 2, 3, 4, 5, 6, 7, 10]
+        } else {
+            self.fields()
         }
     }
 }
@@ -144,6 +152,7 @@ pub(super) fn setup(mut commands: Commands) {
                             "Creature appearance GLB (optional)",
                             "Item catalogue",
                             "Reward / corpse-loot catalogue",
+                            "Gameplay template (optional)",
                         ]
                         .into_iter()
                         .enumerate()
@@ -309,6 +318,16 @@ pub(super) fn open(
                 .map_or_else(String::new, |p| p.display().to_string()),
             "content/gameplay/development-equipment-items.json".into(),
             "content/gameplay/development-rewards.json".into(),
+            if mode == Mode::PopulationTest {
+                String::new()
+            } else {
+                session
+                    .quest_context
+                    .as_ref()
+                    .map(|c| &c.path)
+                    .or_else(|| manager.as_ref().and_then(|m| m.template.as_ref()))
+                    .map_or_else(String::new, |p| p.display().to_string())
+            },
         ]
     } else if mode.world() {
         [
@@ -339,10 +358,12 @@ pub(super) fn open(
             String::new(),
             String::new(),
             String::new(),
+            String::new(),
         ]
     } else {
         [
             format!("build/{slug}-particles"),
+            String::new(),
             String::new(),
             String::new(),
             String::new(),
@@ -370,6 +391,7 @@ pub(super) fn open(
         target: None,
         player_assets: None,
         account_catalogues: None,
+        account_gameplay: false,
         message: "Choose a new folder; existing exports are never overwritten.".into(),
         action: None,
     });
@@ -454,9 +476,16 @@ fn values(fields: &Query<(Entity, &Field, &mut EditableText)>) -> Result<WorldIn
     })
 }
 
+struct PopulationInput {
+    baker: PathBuf,
+    spacing: f64,
+    appearance: Option<PathBuf>,
+    gameplay: Option<PathBuf>,
+}
 fn population_values(
     fields: &Query<(Entity, &Field, &mut EditableText)>,
-) -> Result<(PathBuf, f64, Option<PathBuf>), String> {
+    allow_gameplay: bool,
+) -> Result<PopulationInput, String> {
     let value = |index| {
         fields
             .iter()
@@ -482,7 +511,20 @@ fn population_values(
         return Err("Choose a valid creature appearance path".into());
     }
     let appearance = (!appearance.is_empty()).then(|| PathBuf::from(appearance));
-    Ok((PathBuf::from(baker), spacing, appearance))
+    let gameplay = if allow_gameplay {
+        value(10)
+    } else {
+        String::new()
+    };
+    if gameplay.contains(['\0', '\n', '\r']) {
+        return Err("Choose a valid gameplay template path".into());
+    }
+    Ok(PopulationInput {
+        baker: PathBuf::from(baker),
+        spacing,
+        appearance,
+        gameplay: (!gameplay.is_empty()).then(|| PathBuf::from(gameplay)),
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -511,8 +553,13 @@ pub(super) fn finish(
     for mut root in &mut roots {
         root.display = Display::Flex;
     }
+    let has_template = matches!(draft.mode, Mode::Population | Mode::AccountPopulationTest)
+        && fields
+            .iter()
+            .any(|(_, field, text)| field.0 == 10 && !text.value().to_string().trim().is_empty());
+    let visible = draft.mode.visible_fields(has_template);
     for (row, mut node) in &mut rows {
-        node.display = if !draft.mode.fields().contains(&row.0) {
+        node.display = if !visible.contains(&row.0) {
             Display::None
         } else {
             Display::Flex
@@ -530,6 +577,15 @@ pub(super) fn finish(
                         .as_deref_mut()
                         .ok_or_else(|| "Network launcher is unavailable".to_string())
                         .and_then(|m| {
+                            if draft.account_gameplay {
+                                return m.start_account_gameplay(
+                                    draft.target.as_deref().expect("Export target"),
+                                    draft
+                                        .player_assets
+                                        .as_deref()
+                                        .expect("Checked player assets"),
+                                );
+                            }
                             if let Some((items, rewards)) = &draft.account_catalogues {
                                 return m.start_account_catalogues(
                                     draft.target.as_deref().expect("Export target"),
@@ -603,7 +659,6 @@ pub(super) fn finish(
             .iter()
             .find(|(entity, _, _)| Some(*entity) == current)
             .map_or(0, |(_, field, _)| {
-                let visible = draft.mode.fields();
                 let current = visible
                     .iter()
                     .position(|index| *index == field.0)
@@ -662,7 +717,7 @@ pub(super) fn finish(
                 }
             };
             let population_settings = if draft.mode.population() {
-                population_values(&fields).map(Some)
+                population_values(&fields, draft.mode != Mode::PopulationTest).map(Some)
             } else {
                 Ok(None)
             };
@@ -694,8 +749,12 @@ pub(super) fn finish(
                                 .map(|(_, _, t)| t.value().to_string())
                                 .unwrap_or_default()
                         };
-                        draft.account_catalogues =
-                            Some(check_account_catalogues(&path(8), &path(9))?);
+                        draft.account_gameplay = has_template;
+                        draft.account_catalogues = if has_template {
+                            None
+                        } else {
+                            Some(check_account_catalogues(&path(8), &path(9))?)
+                        };
                     }
                     draft.player_assets = Some(path);
                     if draft.mode == Mode::NetworkTest {
@@ -718,7 +777,7 @@ pub(super) fn finish(
                     let scenery = scenery.as_deref().cloned().unwrap_or_default();
                     draft.task = Some(IoTaskPool::get().spawn(async move {
                         if let Some((id, revision, template)) = world {
-                            if let Some((baker, spacing, appearance)) = population {
+                            if let Some(population) = population {
                                 let publish = if account {
                                     population_export::publish_account
                                 } else if network {
@@ -735,10 +794,10 @@ pub(super) fn finish(
                                         creature: template
                                             .as_deref()
                                             .ok_or("Choose a passive creature profile")?,
-                                        baker: &baker,
-                                        spacing,
-                                        appearance: appearance.as_deref(),
-                                        gameplay: None,
+                                        baker: &population.baker,
+                                        spacing: population.spacing,
+                                        appearance: population.appearance.as_deref(),
+                                        gameplay: population.gameplay.as_deref(),
                                     },
                                     &scenery,
                                 )
@@ -814,9 +873,9 @@ pub(super) fn finish(
         } else if description {
             **text = match draft.mode {
                 Mode::NetworkTest => "Starts one server and a client per enabled Test Player from this zone snapshot. Stop from the Zone menu. Zone files change only with Save.",
-                Mode::AccountPopulationTest => "Sign in, then choose or create one persistent character. Uses the selected items and rewards; per-enemy rewards enable corpse pickup. Existing characters require matching item catalogues. Requires configured account services.",
+                Mode::AccountPopulationTest => "Sign in and choose a persistent character. Select a gameplay template to include authored quests and the guide, or leave it empty to use the item and reward catalogues. Requires configured account services.",
                 Mode::PopulationTest => "Starts a checked passive population with one client per enabled Test Player. Stop through the Zone menu. Choose the matching creature profile and player assets.",
-                Mode::Population => "Exports one enabled passive spawn group, its static world and checked navigation. Choose a matching creature profile. Does not start a server.",
+                Mode::Population => "Exports one enabled spawn group, its static world and checked navigation. Select a gameplay template to include authored quests and the guide. Does not start a server.",
                 Mode::World => "Exports the current zone. Use a matching gameplay template for quest areas and NPC references. Save particle edits first.",
                 Mode::ParticleChunks => "Copies a particle-free chunk world with these placements. Save particle edits first.",
                 Mode::ReplaceParticleChunks => "Replaces ALL particle placements in a new copy of the chunk world with this zone's placements. An empty zone removes all world particles. Save particle edits first."
@@ -1070,7 +1129,7 @@ mod tests {
                 .iter(app.world())
                 .any(|(field, text)| field.0 == 3 && text.value() == creature_path.as_str())
         );
-        for expected in [1, 2, 3, 4, 5, 7, 0] {
+        for expected in [1, 2, 3, 4, 5, 7, 10, 0] {
             app.world_mut()
                 .resource_mut::<ButtonInput<KeyCode>>()
                 .press(KeyCode::Tab);
@@ -1108,6 +1167,119 @@ mod tests {
             assert!(draft.task.is_none());
             assert_eq!(session.editor.zone(), &zone);
         }
+    }
+
+    #[test]
+    fn account_template_is_visible_switches_catalogues_and_does_not_leak_into_test_players() {
+        let mut zone = Zone {
+            schema: 12,
+            ..default()
+        };
+        zone.test_players
+            .push(theia_zone::test_players::TestPlayer {
+                id: 1,
+                name: "Test player".into(),
+                client_id: 1,
+                enabled: true,
+                position: zone.spawn,
+                controller: None,
+                network: default(),
+            });
+        let mut app = App::new();
+        app.add_plugins(bevy::app::TaskPoolPlugin::default())
+            .insert_resource(Session::new(
+                Editor::new(zone.clone()).unwrap(),
+                PathBuf::from("zone.json"),
+                None,
+            ))
+            .init_resource::<network_playtest::Manager>()
+            .init_resource::<workspace::Requests>()
+            .init_resource::<DirtyState>()
+            .init_resource::<EditorState>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<InputFocus>()
+            .add_systems(Startup, setup)
+            .add_systems(Update, open)
+            .add_systems(PostUpdate, finish);
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
+        app.update();
+        let template = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../content/development-gameplay-classic-quest-loot-fixture.json");
+        let context = crate::quest_inspector::Context::load(&template).unwrap();
+        let selected = context.path.display().to_string();
+        app.world_mut().resource_mut::<Session>().quest_context = Some(context);
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .account_population_playtest = true;
+        app.update();
+        let mut fields = app.world_mut().query::<(&Field, &EditableText)>();
+        assert!(
+            fields
+                .iter(app.world())
+                .any(|(f, t)| f.0 == 10 && t.value() == selected.as_str())
+        );
+        let mut rows = app.world_mut().query::<(&FieldRow, &Node)>();
+        for (row, node) in rows.iter(app.world()) {
+            assert_eq!(node.display == Display::Flex, ![8, 9].contains(&row.0));
+        }
+        for expected in [1, 2, 3, 4, 5, 6, 7, 10, 0] {
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .press(KeyCode::Tab);
+            app.update();
+            let focused = app.world().resource::<InputFocus>().get().unwrap();
+            assert_eq!(app.world().get::<Field>(focused).unwrap().0, expected);
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .reset_all();
+        }
+        let mut fields = app.world_mut().query::<(&Field, &mut EditableText)>();
+        for (field, mut text) in fields.iter_mut(app.world_mut()) {
+            if field.0 == 10 {
+                text.editor_mut().set_text("");
+            }
+        }
+        app.update();
+        assert!(
+            rows.iter(app.world())
+                .all(|(_, n)| n.display == Display::Flex)
+        );
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .export_dialog
+                .as_ref()
+                .unwrap()
+                .task
+                .is_none()
+        );
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Escape);
+        app.update();
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .reset_all();
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .population_playtest = true;
+        app.update();
+        assert!(
+            rows.iter(app.world())
+                .all(|(row, n)| (n.display == Display::Flex) == (row.0 <= 7))
+        );
+        assert!(
+            fields
+                .iter(app.world())
+                .any(|(f, t)| f.0 == 10 && t.value() == "")
+        );
+        let session = app.world().resource::<Session>();
+        assert_eq!(session.editor.zone(), &zone);
+        assert_eq!(session.editor.revision(), 0);
     }
 
     #[test]

@@ -7,6 +7,11 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+enum AccountProfiles<'a> {
+    Catalogues(&'a Path, &'a Path),
+    Gameplay,
+}
+
 #[derive(Resource, Default)]
 pub(super) struct Manager {
     child: Option<Child>,
@@ -54,7 +59,26 @@ impl Manager {
         items: &Path,
         rewards: &Path,
     ) -> Result<(), String> {
-        self.start_mode(snapshot, players, true, true, Some((items, rewards)))
+        self.start_mode(
+            snapshot,
+            players,
+            true,
+            true,
+            Some(AccountProfiles::Catalogues(items, rewards)),
+        )
+    }
+    pub fn start_account_gameplay(
+        &mut self,
+        snapshot: &Path,
+        players: &Path,
+    ) -> Result<(), String> {
+        self.start_mode(
+            snapshot,
+            players,
+            true,
+            true,
+            Some(AccountProfiles::Gameplay),
+        )
     }
     fn start_mode(
         &mut self,
@@ -62,13 +86,17 @@ impl Manager {
         players: &Path,
         population: bool,
         account: bool,
-        catalogues: Option<(&Path, &Path)>,
+        profiles: Option<AccountProfiles<'_>>,
     ) -> Result<(), String> {
         if self.running() {
             return Err("Stop the current network playtest first".into());
         }
         let snapshot = fs::canonicalize(snapshot).map_err(|e| e.to_string())?;
         let players = fs::canonicalize(players).map_err(|e| e.to_string())?;
+        let gameplay = snapshot.join("world/gameplay/gameplay.manifest.json");
+        if matches!(profiles, Some(AccountProfiles::Gameplay)) && !gameplay.is_file() {
+            return Err("The population export has no published gameplay snapshot".into());
+        }
         if !players.join("character.glb").is_file() {
             return Err("Choose a player asset directory containing character.glb".into());
         }
@@ -142,12 +170,18 @@ impl Manager {
         }
         if account {
             command.arg("--package").arg(&snapshot);
-            if let Some((items, rewards)) = catalogues {
-                command
-                    .arg("--items")
-                    .arg(items)
-                    .arg("--reward-catalog")
-                    .arg(rewards);
+            match profiles {
+                Some(AccountProfiles::Catalogues(items, rewards)) => {
+                    command
+                        .arg("--items")
+                        .arg(items)
+                        .arg("--reward-catalog")
+                        .arg(rewards);
+                }
+                Some(AccountProfiles::Gameplay) => {
+                    command.arg("--gameplay-manifest").arg(gameplay);
+                }
+                None => {}
             }
         } else {
             command

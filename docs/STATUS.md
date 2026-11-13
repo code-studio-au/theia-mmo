@@ -1,3 +1,32 @@
+P5-17 / P3-09 / P3-11 editor population gameplay-template selection,
+14 November 2026: population export and Start account population playtest now
+show an optional gameplay-template field. An explicitly loaded template seeds it;
+clearing it restores the individual item/reward fields. Selection hides those
+mutually exclusive overrides, preserves their draft values and follows the same
+keyboard traversal as visible rows. Start publishes the checked template and
+passes the exported manifest to the owned account launcher. Test Player mode
+cannot inherit or activate the account template. No source save or history edit.
+
+Actual native editor Start/create/quest/Stop and database-restart Start/select
+pass with the schema-19 flat five-NPC fixture. All 22 frozen roles match the
+published snapshot. Invalid name refusal, ordinary quest acceptance, kill and
+conditional pickup, visible turn-in and durable Completed/50 XP/bag revision 5
+pass. Retained item/reward-only editor Start/create/Stop/restart/select passes
+with 25 XP/revision 4. Both runs preserve source bytes and close owned services.
+Evidence: build/editor-population-gameplay-native-v1/qualification.json,
+binaries.json, selected-template/picker/quest screenshots and exact role records;
+build/editor-population-catalogues-regression-v1/qualification.json.
+Linux editor 3440x1440, client 1280x720, RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, zero GPU diagnostics. OS input targets owned editor/quest UI;
+opt-in test combat uses ordinary requests. No gameplay movement/camera automation.
+
+All 245 editor tests pass (12 ignored), including seven dialog tests; strict
+workspace/all-target Clippy, fmt, Python compile and diff checks pass. Logs:
+build/editor-population-gameplay-{dialog-tests,suite,clippy,build}.log.
+This completes explicit editor template selection. Dressed starter-valley
+population integration, multiple contacts, optional documents/fixed rewards,
+Windows and capacity remain separate. Local commits only.
+
 P5-17 / P3-09 / P3-11 complete population account gameplay snapshot,
 14 November 2026: account_population_playtest.py accepts an explicit
 --gameplay-manifest (schema 16 or newer) instead of individual profile overrides.

@@ -1,3 +1,19 @@
+Editor population gameplay selection (14 November 2026): **Export population…**
+and **Start account population playtest…** include **Gameplay template (optional)**.
+An explicitly loaded gameplay manifest seeds this field. Select a matching schema-16+
+template to publish the authored contact/areas and freeze the complete snapshot for
+account Start. The item/reward override rows are hidden while a template is selected;
+clear it to restore those rows and their draft values. Start uses the exported
+manifest, so the running session is independent of later source-template edits.
+Synthetic Test Player mode does not offer or inherit this account-only selection.
+Export/Start does not save or edit the zone document.
+
+Native editor create/quest completion/Stop and PostgreSQL restart/select pass with
+all 22 schema-19 roles (50 XP, bag revision 5). The retained individual-catalogue
+path also passes restart (25 XP, revision 4). Linux editor 3440x1440/client1280x720;
+see STATUS and build/editor-population-gameplay-native-v1 for exact scope. This is
+a flat fixture qualification; dressed starter-valley integration is separate.
+
 Complete population account snapshot (14 November 2026): use the exported
 manifest directly instead of supplying individual gameplay files:
 
@@ -13,8 +29,8 @@ requires the same creature ID and excludes the template's singleton patrol. Ques
 modes follow the schema; vendor/documents/fixed rewards are forwarded when present.
 Individual item/reward/quest/dialogue/guide/area overrides cannot accompany a manifest.
 Default account launches and the explicit-file workflow below remain available.
-Native schema-19 quest/map/loot/restart is qualified; native optional documents/fixed
-rewards and the editor dialog connection remain separate. See STATUS for evidence.
+Native schema-19 quest/map/loot/restart and editor dialog selection are qualified;
+native optional documents/fixed rewards remain separate. See STATUS for evidence.
 
 Population quest/contact export (14 November 2026): the headless population
 workflow now accepts an explicit `--gameplay-template MANIFEST` alongside
@@ -31,8 +47,8 @@ Normal account launch can select the published quest/dialogue/items/rewards file
 The wrapper freezes the selected files; normal preflight validates all runtime
 bindings. Native five-NPC kill/pelt quest, map highlight, consumption and two
 database restarts pass; see STATUS. Full exported-manifest selection and editor
-account-dialog template controls are the next integration slice. Existing dialog
-launches retain their prior explicit item/reward workflow.
+account-dialog template controls are now available as described above. Clearing
+the template retains the explicit item/reward workflow.
 
 Explicit account population journals (14 November 2026): after a checked population
 export, the account wrapper can launch an explicitly selected inventory-bound

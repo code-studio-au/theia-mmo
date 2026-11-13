@@ -1,3 +1,9 @@
+Editor population gameplay selection, 14 November 2026: export and account Start
+now expose an optional loaded/clearable gameplay template and launch its published
+snapshot. Native quest completion, all 22 profile copies, Stop and durable rejoin
+pass; the individual item/reward path also passes. Next: integrate the independent
+population into the dressed starter valley. See STATUS for fixture/platform limits.
+
 Population complete snapshot launch, 14 November 2026: the account wrapper now
 validates/freezes every applicable role from an explicit exported gameplay manifest.
 Native 22-role admission, authored quest/map/loot and durable rejoins pass. Next:

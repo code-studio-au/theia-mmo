@@ -1,5 +1,6 @@
 """Owned native editor account Start/create/select/Stop acceptance with private services."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -13,10 +14,13 @@ from private_identity import Identity
 from private_postgres import Cluster
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 from gpu_validation import check_gpu_diagnostics
+from account_population_playtest import profile_role
 
 
 def run(args):
-    expected_revision = 4 if args.creature_loot else 2
+    args.creature_loot = args.creature_loot or bool(args.gameplay_template)
+    expected_revision = 5 if args.gameplay_template else (4 if args.creature_loot else 2)
+    expected_xp = 50 if args.gameplay_template else 25
     out = args.output.resolve()
     out.mkdir(mode=0o700, parents=True, exist_ok=False)
     incoming = args.zone.read_bytes()
@@ -59,7 +63,8 @@ def run(args):
             with (folder/'editor.log').open('w') as log:
                 editor = subprocess.Popen([str(args.binary.resolve()), '--zone', str(source), '--report', str(report),
                     '--player-assets', str(args.players.resolve()), '--creature-definition', str(args.creature.resolve()),
-                    '--creature-asset', str(args.creature_asset.resolve())], env=env, stdout=log, stderr=log)
+                    '--creature-asset', str(args.creature_asset.resolve()),
+                    *(['--gameplay-template', str(args.gameplay_template.resolve())] if args.gameplay_template else [])], env=env, stdout=log, stderr=log)
                 try:
                     window = wait(lambda: owned_window(editor.pid), 60)
                     desktop = Desktop()
@@ -109,7 +114,16 @@ def run(args):
                     field = wait(lambda: next((f for f in state()['export_dialog']['fields'] if f['index']==0 and min(f['size'])>0),None))
                     type_text(field['centre'], destination)
                     assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index']==0)==str(destination)
-                    if args.creature_loot:
+                    if args.gameplay_template:
+                        def selected_template():
+                            fields = state()['export_dialog']['fields']
+                            return next((f for f in fields if f['index']==10 and min(f['size'])>0
+                                and f['text']==str(args.gameplay_template.resolve())),None) if all(min(f['size'])==0 for f in fields if f['index'] in [8,9]) else None
+                        wait(selected_template)
+                        desktop.key('F12')
+                        wait(lambda: capture_ready(report.with_suffix('.png')),30)
+                        report.with_suffix('.png').rename(folder/'selected-template.png')
+                    elif args.creature_loot:
                         for index, path in [(8, 'content/gameplay/development-loot-items.json'),
                                             (9, 'content/gameplay/development-creature-loot-rewards.json')]:
                             field = next(f for f in state()['export_dialog']['fields'] if f['index']==index)
@@ -148,6 +162,28 @@ def run(args):
                     observed = wait(gameplay, 90)
                     warm = time.monotonic()
                     wait(lambda: gameplay() if time.monotonic()-warm>=10 else None, 20)
+                    quest_id = 'theia.dev.quest-wolf-pelts'
+                    def quest():
+                        return next((q for q in gameplay()['quest_journal']['quests'] if q['id']==quest_id),None)
+                    def quest_action(status):
+                        game_window = wait(lambda: owned_window(gameplay()['pid']))
+                        desktop.focus(game_window)
+                        wait(lambda: gameplay()['cursor']['focused'])
+                        if not gameplay()['dialogue_open']:
+                            desktop.click(game_window, wait(lambda: gameplay()['guide_screen']), gameplay()['window'][2], 3)
+                            wait(lambda: gameplay()['dialogue_open'])
+                        before = gameplay()['quest_journal']['ui']['applied']
+                        point = wait(lambda: next((b['point'] for b in gameplay()['quest_journal']['buttons'] if b['quest']==quest_id),None))
+                        desktop.click(game_window, point, gameplay()['window'][2], 1)
+                        wait(lambda: quest() and quest()['status']==status and gameplay()['quest_journal']['ui']['applied']==before+1)
+                        desktop.key('Escape')
+                        wait(lambda: not gameplay()['dialogue_open'])
+                        if gameplay()['inventory_open']:
+                            desktop.key('i')
+                            wait(lambda: not gameplay()['inventory_open'])
+                    if args.gameplay_template and not resumed:
+                        quest_action('Active')
+                        wait(lambda: gameplay()['minimap']['objective_regions']==1)
                     if not resumed:
                         (game/'combat.start').write_text('start\n')
                         def killed():
@@ -156,10 +192,17 @@ def run(args):
                             return proof
                         proof = wait(killed, 100)
                         assert proof['remaining']==0 and proof['reward_collected'] and proof['bystanders_unchanged']
+                        if args.gameplay_template:
+                            wait(lambda: quest() and quest()['status']=='Ready')
+                            assert all(count==1 for count in quest()['counts'].values())
+                            quest_action('Completed')
                     def committed():
                         value = gameplay()
-                        return value if value and value.get('committed_progression')==25 and value.get('available_rewards')==0 and value['inventory_bag']['revision']==expected_revision else None
+                        return value if value and value.get('committed_progression')==expected_xp and value.get('available_rewards')==0 and value['inventory_bag']['revision']==expected_revision else None
                     observed = wait(committed, 20)
+                    if args.gameplay_template:
+                        assert quest()['status']=='Completed' and all(count==1 for count in quest()['counts'].values())
+                        assert not any(slot and slot['item']=='theia.dev.wolf-pelt' for slot in observed['inventory_bag']['slots'])
                     if resumed:
                         assert observed['inventory_bag']==original_bag
                     else:
@@ -176,6 +219,16 @@ def run(args):
                     assert json.loads((destination/'zone.json').read_text())==state()['document']
                     exported=json.loads((destination/'population-export.json').read_text())['population_export']
                     assert exported['account_playtest'] and exported['clients']==1 and exported['count']==5
+                    if args.gameplay_template:
+                        manifest = destination/exported['gameplay_manifest']
+                        roles = json.loads(manifest.read_text())
+                        frozen = json.loads((owned/'launch.json').read_text())
+                        assert len(frozen['profiles'])==22 and frozen['gameplay_snapshot']['manifest_schema']==19
+                        assert frozen['guide_position']=='authored'
+                        for profile in frozen['profiles']:
+                            data = (owned/profile['file']).read_bytes()
+                            assert hashlib.sha256(data).hexdigest()==profile['sha256']
+                            assert data==(manifest.parent/roles[profile_role(profile['option'])]).read_bytes()
                     assert not (destination/'scenario.json').exists()
                     assert not list((owned/'runtime').glob('renet-*'))
                     server=(owned/'runtime/server.log').read_text()
@@ -184,7 +237,7 @@ def run(args):
                     saved=next(json.loads(line.removeprefix('account_persistence_summary ')) for line in server.splitlines() if line.startswith('account_persistence_summary '))
                     assert not saved['failed'] and saved['worker']['incompatible_gameplay_profiles']==0
                     sql=cluster.query('SELECT experience FROM theia.progression; SELECT consumed_revision FROM theia.reward_claims ORDER BY consumed_revision;')
-                    assert sql.returncode==0 and sql.stdout.splitlines()==(['25','2','3','4'] if args.creature_loot else ['25','2'])
+                    assert sql.returncode==0 and sql.stdout.splitlines()==([str(expected_xp),'2','3','4'] if args.creature_loot else [str(expected_xp),'2'])
                     (folder/'database-proof.txt').write_text(sql.stdout)
                     desktop.key('F12')
                     wait(lambda: capture_ready(report.with_suffix('.png')),30)
@@ -194,7 +247,8 @@ def run(args):
                         assert check_gpu_diagnostics(text)==0
                         assert identity.password not in text and cluster.password not in text
                     results.append(dict(resumed=resumed, editor_start=True, picker='select' if resumed else 'create',
-                                        editor_stop=True, experience=25, inventory_revision=expected_revision, source_unchanged=True,
+                                        editor_stop=True, experience=expected_xp, inventory_revision=expected_revision, source_unchanged=True,
+                                        authored_quest_completed=bool(args.gameplay_template),
                                         invalid_name_refused=not resumed))
                 finally:
                     if desktop:
@@ -209,7 +263,7 @@ def run(args):
     assert args.zone.read_bytes()==incoming
     assert not any((out/'cluster'/name).exists() for name in ['password','pgpass'])
     result=dict(passed=True,runs=results,database_restart=True,owned_services_closed=True,
-                scope='Actual native editor menu, export, character creation/selection, gameplay and Stop; OS input restricted to owned editor UI, no gameplay movement/camera automation')
+                scope='Actual native editor menu, export, character creation/selection, gameplay and Stop; optional authored quest acceptance/turn-in; OS input restricted to owned editor and quest UI, no gameplay movement/camera automation')
     (out/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
@@ -217,6 +271,7 @@ def run(args):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--creature-loot', action='store_true', help='Select ordinary loot catalogues in the editor dialog')
+    parser.add_argument('--gameplay-template', type=Path, help='Select the explicit one-kill/one-pelt schema-19 template and complete its authored quest')
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--zone',type=Path,required=True)
     parser.add_argument('--creature',type=Path,default=Path('content/gameplay/development-creature-passive.json'))
