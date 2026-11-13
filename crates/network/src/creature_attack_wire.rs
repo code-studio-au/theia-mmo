@@ -1,4 +1,5 @@
 //! Public NPC windup timing only. No health, damage, result or player-life key.
+pub mod population;
 use crate::{player_life_wire, terrain::sha256};
 use std::{sync::Arc, time::Duration};
 use theia_core::{

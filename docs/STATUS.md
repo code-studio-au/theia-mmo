@@ -1,3 +1,21 @@
+P3-06 / P3-09 bounded public population-windup codec, 13 November 2026:
+Added a separate, explicitly identified whole-population timing frame/profile.
+Up to 16 sorted exact NPC identities share one authority tick; frames contain only
+public windup targets/start/completion times. Maximum encoded size is 582 bytes,
+with a compile-time check against the existing message bound. Singleton wire/profile
+identities remain distinct. Omitted actors cancel their presentation; a monotonic
+entity watermark rejects later resurrection of retired IDs while retaining older
+still-live IDs. Empty frames retire all actors without an unbounded tombstone list.
+This assumes full admitted-pool snapshots, not interest-area exit/re-entry.
+Three codec/state contracts pass at 20/30/60 Hz: maximum simultaneous round-trip,
+truncation/foreign/duplicate/invalid/trailing data with unchanged state, and stale
+frames, same-tick conflicts, replacement, retirement, empty frames and expiry.
+Strict workspace/all-target Clippy, fmt and diff pass. Evidence:
+build/population-public-attack-codec-final-checks.log. This is codec groundwork;
+no authority publication, network delivery, animation or editor adoption claim.
+Next: shared authority observations, priority transport/backpressure and standard
+Bevy presentation. Local only.
+
 P3-06 / P3-09 / P5-17 shared threat in normal editor population launches,
 13 November 2026: normal population configuration now accepts the existing damage
 threat profile with its pursuit/reset/typed credit prerequisites. The editor account
