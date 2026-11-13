@@ -1068,14 +1068,23 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
                 "../../../../../../content/gameplay/development-white-melee.json"
             ))
             .unwrap();
+        let mut ability_policy: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../../../content/gameplay/development-ability-damage.json"
+        ))
+        .unwrap();
+        if threat {
+            // Guaranteed-hit fixture data keeps the transport-independent
+            // damage-to-threat assertion separate from chance/balance tests.
+            for field in ["miss_bp", "dodge_bp", "parry_bp", "critical_bp"] {
+                ability_policy["abilities"][0][field] = 0.into();
+            }
+        }
         world
             .enable_ability_damage(
                 include_bytes!(
                     "../../../../../../content/gameplay/development-ability-starting.json"
                 ),
-                include_bytes!(
-                    "../../../../../../content/gameplay/development-ability-damage.json"
-                ),
+                &serde_json::to_vec(&ability_policy).unwrap(),
                 include_bytes!(
                     "../../../../../../content/gameplay/development-classic-abilities.json"
                 ),
@@ -1159,6 +1168,7 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
         assert!(world.combat_membership(actor).unwrap().in_combat());
         assert!(world.combat_membership_error().is_none());
         assert!(world.creature_credit_error().is_none());
+        let mut typed_health_lost = 0;
         if threat {
             let second = world
                 .join_restored(world.global_position(actor).unwrap())
@@ -1189,14 +1199,83 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
                 .filter(|key| moved.contains(&key.entity.value()))
                 .take(2)
                 .collect();
-            // Trusted prepared-fact fixture: test table/selection isolation,
-            // not damage admission, ability timing or live competing clients.
-            let mut combat = world.combat.take().unwrap();
-            for (npc, source, damage) in [(pair[0], b, 100), (pair[1], a, 100), (pair[1], b, 1)] {
-                let plan = combat.prepare_threat(npc, source, damage).unwrap();
-                combat.commit_threat(plan);
+            for (id, npc) in [(second, pair[0]), (actor, pair[1])] {
+                equip(&mut world, id, 1, "theia.dev.training-sword");
+                let player = &world.players[&id];
+                let input = player.commands.as_ref().unwrap().state();
+                let facing = theia_core::facing::Facing::towards(
+                    world.global_position(id).unwrap(),
+                    world.targets[&npc.entity.value()].position,
+                )
+                .unwrap();
+                let commands = crate::prediction_wire::Commands {
+                    epoch: world.epoch(),
+                    stream_epoch: input.stream_epoch,
+                    ready_sequence: player.ready_sequence,
+                    commands: vec![crate::commands::Command {
+                        sequence: input.applied_sequence + 1,
+                        tick: world.tick + 1,
+                        intent: crate::wire::Intent {
+                            facing: Some(facing),
+                            ..Default::default()
+                        },
+                    }],
+                };
+                assert_eq!(world.command(id, &commands), 1);
+                world.step();
+                let reply = world.cast(
+                    id,
+                    super::super::Request {
+                        epoch: world.epoch(),
+                        sequence: 1,
+                        target: npc,
+                        ability: ContentId::new("theia.dev.sword-slash").unwrap(),
+                    },
+                );
+                assert!(
+                    matches!(reply.reply.outcome, super::super::Outcome::Started { .. }),
+                    "{:?}",
+                    reply.reply
+                );
+                for _ in 0..rate.hz() {
+                    world.step();
+                    if world
+                        .combat
+                        .as_ref()
+                        .unwrap()
+                        .creatures
+                        .iter()
+                        .find(|c| c.key == npc)
+                        .unwrap()
+                        .current
+                        < 100
+                    {
+                        break;
+                    }
+                }
+                let health = world
+                    .combat
+                    .as_ref()
+                    .unwrap()
+                    .creatures
+                    .iter()
+                    .find(|c| c.key == npc)
+                    .unwrap()
+                    .current;
+                assert!(health < 100);
+                typed_health_lost += 100 - health;
+                let source = world.player_life_snapshot(id).unwrap().key;
+                assert_eq!(
+                    world
+                        .creature_threat_entries_for(npc)
+                        .unwrap()
+                        .iter()
+                        .find(|e| e.life == source)
+                        .unwrap()
+                        .damage_threat,
+                    u64::from(100 - health)
+                );
             }
-            world.combat = Some(combat);
             world.step();
             assert!(
                 world.creature_threat_error().is_none(),
@@ -1217,25 +1296,12 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
                     .target,
                 Some(a)
             );
-            assert_eq!(
-                world
-                    .creature_threat_entries_for(pair[0])
-                    .unwrap()
-                    .iter()
-                    .find(|e| e.life == b)
-                    .unwrap()
-                    .damage_threat,
-                100
-            );
-            assert_eq!(
-                world
+            assert!(
+                !world
                     .creature_threat_entries_for(pair[1])
                     .unwrap()
                     .iter()
-                    .find(|e| e.life == b)
-                    .unwrap()
-                    .damage_threat,
-                1
+                    .any(|e| e.life == b)
             );
             world.leave(second);
             world.step();
@@ -1311,6 +1377,18 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
                     )
                     .unwrap();
             }
+            let before_first = combat
+                .creatures
+                .iter()
+                .find(|c| c.key == pair[0])
+                .unwrap()
+                .current;
+            let other_damaged = combat
+                .creatures
+                .iter()
+                .find(|c| c.key == pair[1])
+                .unwrap()
+                .current;
             world.combat = Some(combat);
             world
                 .population_motion
@@ -1335,7 +1413,7 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
                     .current
             };
             assert_eq!(health(&world, pair[0]), 100);
-            assert_eq!(health(&world, pair[1]), 70);
+            assert_eq!(health(&world, pair[1]), other_damaged);
             let statuses = world.combat_status_snapshot(actor).unwrap();
             assert_eq!(statuses.len(), 1);
             assert_eq!(statuses[0].target, pair[1]);
@@ -1346,13 +1424,13 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
                     metrics.health_restored,
                     metrics.statuses_removed
                 ),
-                (1, 20, 1)
+                (1, u64::from(100 - before_first), 1)
             );
             let reply = world.cast(
                 actor,
                 super::super::Request {
                     epoch: world.epoch(),
-                    sequence: 1,
+                    sequence: if threat { 2 } else { 1 },
                     target: pair[0],
                     ability: ContentId::new("theia.dev.arcane-bolt").unwrap(),
                 },
@@ -1367,7 +1445,7 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
             );
             world.step();
             assert_eq!(world.creature_reset_metrics().unwrap(), metrics);
-            assert_eq!(health(&world, pair[1]), 70);
+            assert_eq!(health(&world, pair[1]), other_damaged);
         }
         world.leave(actor);
         for _ in 0..rate.hz() * 10 {
@@ -1405,7 +1483,7 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
         assert!(world.creature_credit_error().is_none());
         if reset {
             let metrics = world.creature_reset_metrics().unwrap();
-            assert_eq!(metrics.health_restored, 50);
+            assert_eq!(metrics.health_restored, 50 + u64::from(typed_health_lost));
             // The first target was reset in-world; departure already removes
             // the remaining source-owned effect before the other return.
             assert_eq!(metrics.statuses_removed, 1);

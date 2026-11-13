@@ -1,3 +1,19 @@
+P3-06 / P3-09 ordinary typed damage into independent threat, 13 November 2026:
+The population threat selection check now drives accepted character-facing commands,
+equipment observations and ordinary sword-slash cast requests for two player lives
+against different NPCs. Each table's threat equals its own target's actual health
+lost, unrelated participants are absent, victims remain independent, and departure
+transfers the remaining engagement. The fixture uses explicit guaranteed-hit special
+policy data to separate integration from chance/balance; no prepared threat facts
+or direct table updates drive selection. Later reset isolation still uses its
+explicit trusted effect/damage fixture, followed by an ordinary weapon kill.
+All thirteen authored population checks pass at their configured 20/30/60 Hz rates,
+including retained encrypted grant/loot/privacy fixtures. Strict workspace/all-target
+Clippy, fmt and diff pass. Evidence: build/population-threat-typed-world-tests.log.
+This qualifies the World command/cast-to-threat path, not competing live network
+clients. Normal/editor threat adoption stays gated pending that remaining check.
+Local only.
+
 P3-06 / P3-09 independent bounded population threat tables, 13 November 2026:
 The shared threat adapter now stores an independent bounded table per configured
 pursuing creature. Exact-victim facts, victim/path transfer, participant retirement,
