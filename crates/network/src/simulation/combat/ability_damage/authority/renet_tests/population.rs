@@ -34,12 +34,18 @@ pub(super) fn prepare(rate: TickRate, creature: &[u8]) -> (World, EntityKey, [f6
     .unwrap();
     assert!(world.set_tick_rate(rate));
     let definition = creatures::Definition::from_json(creature).unwrap();
-    let keys = world
-        .enable_defined_population(
-            prepared,
-            Binding::new(definition.id(), definition.clone(), 30).unwrap(),
-        )
-        .unwrap();
+    let binding = Binding::new(definition.id(), definition.clone(), 30).unwrap();
+    let keys = if definition.aggro().is_some() {
+        world
+            .enable_navigating_population(
+                prepared,
+                binding,
+                navigation::worker::Worker::load(&nav).unwrap(),
+            )
+            .unwrap()
+    } else {
+        world.enable_defined_population(prepared, binding).unwrap()
+    };
     (world, keys[0], placement)
 }
 

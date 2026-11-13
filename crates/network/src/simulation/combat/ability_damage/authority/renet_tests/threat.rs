@@ -11,19 +11,28 @@ const THREAT: &[u8] =
     include_bytes!("../../../../../../../../content/gameplay/development-creature-threat.json");
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_competing_damage_transfers_private_windup_and_keeps_public_facts_all_rates() {
-    competition(false, false).await;
+    competition(false, false, false).await;
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_public_attack_timing_reaches_victim_and_observer_all_rates() {
-    competition(true, false).await;
+    competition(true, false, false).await;
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_avatar_and_npc_contracts_coexist_on_the_priority_channel_all_rates() {
-    competition(true, true).await;
+    competition(true, true, false).await;
 }
-async fn competition(public_attacks: bool, public_avatar: bool) {
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+async fn encrypted_authored_population_competing_damage_transfers_private_victim_all_rates() {
+    competition(false, false, true).await;
+}
+async fn competition(public_attacks: bool, public_avatar: bool, population: bool) {
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
-        let mut f = fixture_mode(rate, true);
+        let mut f = if population {
+            fixture_population_behavior(rate, true, true, true)
+        } else {
+            fixture_mode(rate, true)
+        };
         // Durable reward consumers are outside this fixture. Keep the NPC alive
         // so that competing public ability/white swings can select a new victim.
         f.world.combat.as_mut().unwrap().creatures[0].current = 1000;
@@ -38,12 +47,7 @@ async fn competition(public_attacks: bool, public_avatar: bool) {
             f.world.enable_public_avatar_life().unwrap();
             f.session.public_avatar = f.world.public_avatar_life_profile().cloned();
         }
-        f.session.source = f
-            .world
-            .combat
-            .as_ref()
-            .unwrap()
-            .identity(f.world.patrol_identity.unwrap());
+        f.session.source = super::population::combat_source(&f.world);
         f.session.identity = f.world.identity();
         assert_eq!(
             f.session.identity,

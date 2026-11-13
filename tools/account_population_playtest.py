@@ -29,6 +29,7 @@ PROFILES = [
 
 
 RESET_PROFILE = ('--creature-reset', 'development-creature-return-reset.json')
+THREAT_PROFILE = ('--creature-threat', 'development-creature-threat.json')
 
 
 def configured_pursuit(package):
@@ -67,7 +68,7 @@ def prepare(args, repository):
     overrides = {'--items': items, '--reward-catalog': rewards}
     profiles = []
     corpse_loot = False
-    for flag, name in [*PROFILES, *([RESET_PROFILE] if pursuit else [])]:
+    for flag, name in [*PROFILES, *([RESET_PROFILE, THREAT_PROFILE] if pursuit else [])]:
         selected = overrides.get(flag)
         source = selected.resolve() if selected else repository/'content/gameplay'/name
         if selected:
@@ -100,8 +101,8 @@ def prepare(args, repository):
         (frozen/name).write_bytes(data)
         command.extend([flag, str(frozen/name)])
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
-    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=pursuit,
-        scope='One authenticated character on the exported population; development typed combat and durable grants; shared NPC retaliation and configured pursuit; no Test Player controllers'), indent=2)+'\n')
+    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=pursuit, creature_threat=pursuit,
+        scope='One authenticated character on the exported population; development typed combat and durable grants; shared NPC retaliation and configured pursuit, return reset and damage threat; no Test Player controllers'), indent=2)+'\n')
     return command
 
 

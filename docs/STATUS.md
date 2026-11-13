@@ -1,3 +1,35 @@
+P3-06 / P3-09 / P5-17 shared threat in normal editor population launches,
+13 November 2026: normal population configuration now accepts the existing damage
+threat profile with its pursuit/reset/typed credit prerequisites. The editor account
+wrapper freezes and selects reset plus threat for pursuing definitions (18 profiles);
+stationary definitions retain their prior 16-profile setup. No alternate spawn-group
+combat, damage, ownership or loot rules were introduced.
+Two actual encrypted peers now qualify a pursuing authored five-NPC population at
+20/30/60 Hz under delay, jitter, packet loss, duplication and reordering. Accepted
+casts and weapon attacks change the NPC's victim; private old-victim windup cancels,
+new-victim windup arrives, and an actual incoming ordinary strike hits the new life.
+Both peers retain equal public damage facts and exact damage-to-threat accounting;
+queues do not overflow. Synthetic committed inventory/admission ports are explicit:
+this encrypted competition fixture is not SQL/OIDC or native rendering evidence.
+All 504 network tests pass (14 ignored); all 14 authored population checks pass
+separately. Strict workspace/all-target Clippy, fmt and 22 Python launcher tests
+pass (one skipped). Evidence: build/population-threat-launch-final-checks.log and
+population-threat-encrypted-world-tests.log. The shared fixture preserves the
+retained singleton/public timing scenarios and original passive grant fixtures.
+Actual exported editor account launch with 18 frozen profiles passes native Linux
+admission, checked chase, retaliation, six-cast kill and both corpse pickups.
+Threat records six damage facts and exactly 100 health lost, then clears on death.
+25 XP and inventory revision 4 (one pelt, 101 tokens) survive PostgreSQL restart and
+character-picker rejoin. Observed health is 50 at first exit and 80 after new-runtime
+attacks on rejoin; health is transient. Zero GPU diagnostics on RX 7900 XTX / RADV
+NAVI31 / Vulkan / Mesa 26.2.6; no OS input automation. Evidence:
+build/population-threat-native-v1/qualification.json and fresh/resumed owned launch
+records/server logs. Native competition between multiple human clients, contested
+durable grants with threat enabled, Windows and MMO capacity remain unqualified.
+Next: bounded public attack timing/animation for multiple NPCs, retaining priority
+and fail-closed backpressure, plus broader competing durable-gameplay coverage.
+Local only.
+
 P3-06 / P3-09 ordinary typed damage into independent threat, 13 November 2026:
 The population threat selection check now drives accepted character-facing commands,
 equipment observations and ordinary sword-slash cast requests for two player lives

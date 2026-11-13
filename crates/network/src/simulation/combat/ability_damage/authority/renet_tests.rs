@@ -95,6 +95,14 @@ fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
     fixture_population_mode(rate, membership, false)
 }
 fn fixture_population_mode(rate: TickRate, membership: bool, population: bool) -> Fixture {
+    fixture_population_behavior(rate, membership, population, false)
+}
+fn fixture_population_behavior(
+    rate: TickRate,
+    membership: bool,
+    population: bool,
+    pursuing: bool,
+) -> Fixture {
     let mut creature: serde_json::Value = serde_json::from_slice(include_bytes!(
         "../../../../../../../content/gameplay/development-creature-patrol.json"
     ))
@@ -102,8 +110,19 @@ fn fixture_population_mode(rate: TickRate, membership: bool, population: bool) -
     creature["speed_metres_per_second"] = serde_json::json!(0.1);
     creature["aggro"] = serde_json::json!({"perception_metres":1.0,"leash_metres":35.0,"chase_speed":5.0,"return_speed":5.0,"los_grace_ms":2000,"engagement_ms":30000,"reacquire_ms":2000});
     let creature = if population {
-        include_bytes!("../../../../../../../content/gameplay/development-creature-passive.json")
+        if pursuing {
+            let mut value: serde_json::Value = serde_json::from_slice(include_bytes!(
+                "../../../../../../../content/gameplay/development-creature-passive.json"
+            ))
+            .unwrap();
+            value["aggro"] = creature["aggro"].clone();
+            serde_json::to_vec(&value).unwrap()
+        } else {
+            include_bytes!(
+                "../../../../../../../content/gameplay/development-creature-passive.json"
+            )
             .to_vec()
+        }
     } else {
         serde_json::to_vec(&creature).unwrap()
     };
@@ -135,7 +154,9 @@ fn fixture_population_mode(rate: TickRate, membership: bool, population: bool) -
         )
         .unwrap(),
     );
-    if population {
+    if pursuing {
+        world.enable_population_player_life(life.clone()).unwrap();
+    } else if population {
         world
             .enable_passive_population_player_life(life.clone())
             .unwrap();

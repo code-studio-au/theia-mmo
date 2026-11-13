@@ -17,7 +17,7 @@ class AccountPopulation(unittest.TestCase):
             path.write_bytes(b'fixture')
         (root/'package/population.json').write_text('{"schema":1,"creature":"creature.json"}')
         (root/'package/creature.json').write_text('{"schema":3}')
-        for _, name in [*launcher.PROFILES, launcher.RESET_PROFILE]:
+        for _, name in [*launcher.PROFILES, launcher.RESET_PROFILE, launcher.THREAT_PROFILE]:
             path = root/'content/gameplay'/name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(name.encode())
@@ -69,7 +69,9 @@ class AccountPopulation(unittest.TestCase):
             command = launcher.prepare(args, root)
             report = json.loads((args.output/'launch.json').read_text())
             self.assertTrue(report['creature_reset'])
-            self.assertEqual(len(report['profiles']), 17)
+            self.assertEqual(len(report['profiles']), 18)
+            self.assertTrue(report['creature_threat'])
+            self.assertEqual(command.count('--creature-threat'), 1)
             self.assertEqual(command.count('--creature-reset'), 1)
             path = Path(command[command.index('--creature-reset')+1])
             self.assertEqual(path.read_bytes(), (root/'content/gameplay'/launcher.RESET_PROFILE[1]).read_bytes())

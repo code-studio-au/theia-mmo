@@ -1,3 +1,10 @@
+Population threat/editor update, 13 November 2026: pursuing editor account
+populations now automatically select shared reset and damage-threat profiles.
+Independent typed-cast tables and actual encrypted competing-player victim transfer
+pass at 20/30/60 Hz. Native 18-profile admission, damage accounting, kill, corpse loot
+and durable restart pass. Next: public multi-NPC windup/attack presentation and
+contested durable grants with threat active. See STATUS for exact scope/limits.
+
 Population return reset update, 13 November 2026: pursuing editor account
 populations now automatically select the existing shared development health/effect
 reset profile. Independent damaged return, unaffected neighbours and fresh lives
