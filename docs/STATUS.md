@@ -1,3 +1,23 @@
+P3-10 / P3-11 / P5-17 population durable receipt qualification, 13 November 2026:
+The new headless population_durable_qualification example loads a real checked
+five-actor export and drives one synthetic player through ten fatal lives across
+fresh-ID respawns. Actual World XP and quest facts agree and all ten KillIds are
+distinct. The existing asynchronous Worker commits 250 XP and ten quest counts;
+replaying every fact in reverse and forward order adds nothing. A held progression
+row lock prevents award acknowledgement while ten further World ticks advance.
+Fresh Store connections verify the ready quest/count and XP. The owned PostgreSQL
+runner then restarts the process and verifies 250 XP, journal revision 11 and ten
+receipts in each kill path; fsync/synchronous_commit/full_page_writes are on.
+Plaintext password files are removed. Initial v1 refused a fixture World origin
+that differed from the saved player spawn; v2 uses the authored spawn and passes.
+This is explicitly a one-player development last-hit fixture with synthetic
+acceptance and a ten-kill quest variant. It neither establishes population first-tag
+eligibility nor enables normal reward launch flags, OIDC, encrypted clients, native
+UI, quest turn-in or loot. Per-creature ownership remains the next reward prerequisite.
+Example build, fmt, strict workspace/all-target Clippy and Python compilation pass.
+Evidence: build/population-durable-build.log; build/population-durable-v2/
+{verification.json,world-postgres.log,restart-rows.txt}. No display access.
+
 P5-17 creature context startup and headless validation, 13 November 2026:
 Editor --creature-definition FILE seeds the same direct-load context. Headless mode
 reports its ID/canonical path without creating a window. Context validation runs

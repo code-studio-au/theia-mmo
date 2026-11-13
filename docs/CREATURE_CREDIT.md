@@ -233,3 +233,22 @@ separately above; the native cases use one player. No native Windows, tag-color
 UI, party/shared eligibility, loot consumption, general per-corpse loot or
 MMO-capacity claim. Combat permission consumers remain ungated. Follow with
 bounded encounter threat/reset before expanding NPC population.
+
+## Passive population receipt prerequisite — 13 November 2026
+
+`population_durable_qualification` and `tools/qualify_population_durability.py`
+exercise a real exported five-actor World with one synthetic player and owned
+PostgreSQL. Ten distinct creature lives across fresh-ID respawns yield matching
+World XP/quest facts and ten receipts on each durable path. A ten-kill quest
+variant without introduction/turn-in is explicitly fixture content. Total XP is
+250 and count is ten; reverse/forward replay grants nothing. A held SQL row lock
+blocks acknowledgement while fixed simulation continues. Fresh Store connections
+and a PostgreSQL process restart retain the result. Evidence is
+`build/population-durable-v2/verification.json`.
+
+The recipient remains the development last-hit fixture; one player cannot
+qualify contested ownership. Population CLI reward flags remain refused. Do not
+replace the adopted first-tag policy with this receipt evidence. Per-creature
+encounters, eligibility, departure/reset and delayed old-life damage still need
+to be connected before normal population rewards are enabled. No OIDC, native
+client, quest acceptance interaction, turn-in or loot claim is established here.
