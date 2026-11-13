@@ -1,3 +1,13 @@
+P3-06 / P3-09 shared checked creature displacement, 13 November 2026:
+Extracted the existing patrol's body-centre/feet conversion and Avian/static-world
+step into a shared creature movement function. It uses the same prepared patch,
+coverage boundary, intent and tick rate; failed conversion/controller steps leave
+the caller's motion state unchanged. Patrol waypoint, facing, arrival, blocked and
+return policies are unchanged. This prepares reuse by independently spawned NPCs;
+it does not yet enable population pursuit. Thirteen patrol/movement and twelve
+pursuit tests pass, plus strict workspace/all-target Clippy, fmt and diff checks.
+Evidence: build/creature-shared-motion-tests.log. Local only.
+
 P3-06 / P3-09 pursuit controller on shared navigation, 13 November 2026:
 Moved navigation ownership from each pursuit controller to the combat owner.
 The owner pump dispatches through one bounded scheduler and delivers exact-NPC

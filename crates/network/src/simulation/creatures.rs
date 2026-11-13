@@ -4,13 +4,13 @@ use super::World;
 use crate::{Result, kinematic, navigation, procedural, wire::Intent};
 use serde::{Deserialize, Serialize};
 use std::{sync::Arc, time::Duration};
+#[cfg(test)]
+use theia_core::coordinates::LocalPosition;
 use theia_core::{
-    content::ContentId,
-    coordinates::{GlobalPosition, LocalPosition},
-    facing::Facing,
-    identity::EntityKey,
+    content::ContentId, coordinates::GlobalPosition, facing::Facing, identity::EntityKey,
 };
 mod definition;
+pub(super) mod motion;
 pub use definition::Definition;
 
 pub const MAX_PROFILE_BYTES: usize = 4096;
@@ -353,36 +353,15 @@ impl Patrol {
                 ];
             }
         }
-        let Some(local) = self.patch.frame.to_local(self.position) else {
-            self.block();
-            return;
-        };
-        let mut feet = local.metres();
-        feet[1] -= crate::world::PAWN_Y;
-        let Some(feet) = LocalPosition::new(feet) else {
-            self.block();
-            return;
-        };
         let before = self.body;
-        let moved = kinematic::advance_development(
-            &self.patch.scene,
+        let Ok(position) = motion::step(
+            &self.patch,
+            &self.coverage,
             &mut self.body,
-            feet,
+            self.position,
             intent,
             world.rate,
-            Some(&self.coverage),
-            1.,
-        );
-        let Ok(feet) = moved else {
-            self.body = before;
-            self.block();
-            return;
-        };
-        let mut centre = feet.metres();
-        centre[1] += crate::world::PAWN_Y;
-        let Some(position) = LocalPosition::new(centre).and_then(|p| self.patch.frame.to_global(p))
-        else {
-            self.body = before;
+        ) else {
             self.block();
             return;
         };
