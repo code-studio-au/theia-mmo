@@ -1,3 +1,18 @@
+P3-09 / P5-17 public avatar life for passive populations, 13 November 2026:
+Public player-life admission now binds the shared Lives owner instead of requiring
+a single NPC retaliation controller. It retains healthy-authority, exact identity,
+pre-admission and duplicate-install checks, including paired life errors.
+All five authored population fixtures verify empty initial rosters, five/eight
+connected players, and an isolated trusted player death after the NPC lifecycle
+checks. Respawn advances only that player's generation, other records stay exact,
+disconnect removes only that player, and the existing bounded wire round-trips the
+public roster at 20/30/60 Hz. This test damage isolates life projection; it is not
+population NPC retaliation. All 501 ordinary network-library tests, five authored
+fixtures, fmt and strict workspace/all-target Clippy pass. Evidence:
+build/population-avatar-{checks,final}.log. No new wire format or normal client/
+launcher adoption; no new rendered avatar claim. Validation was headless. The user
+subsequently reauthorized mouse/display use for needed native checks.
+
 P3-09 / P3-10 / P5-17 passive population first-tag ownership, 13 November 2026:
 Explicit credit installation now admits checked passive typed/membership populations.
 Bounded lifecycle sync retains independent live ledgers, resets only departed owners'

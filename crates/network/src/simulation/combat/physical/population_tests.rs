@@ -128,6 +128,8 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
                 .is_err()
         );
         assert_eq!(world.identity(), before);
+        assert!(world.enable_public_avatar_life().is_err());
+        assert_eq!(world.identity(), before);
         let life = crate::player_life_wire::Profile::from_json(
             STATS,
             CREATURE,
@@ -140,6 +142,20 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
         world
             .enable_passive_population_player_life(Arc::new(life))
             .unwrap();
+        let before_public = world.identity();
+        world.enable_public_avatar_life().unwrap();
+        assert_ne!(world.identity(), before_public);
+        let installed_public = world.identity();
+        assert!(world.enable_public_avatar_life().is_err());
+        assert_eq!(world.identity(), installed_public);
+        assert!(
+            world
+                .public_avatar_life_snapshot()
+                .unwrap()
+                .unwrap()
+                .actors
+                .is_empty()
+        );
         let before = world.identity();
         let mut wrong = ITEMS.to_vec();
         wrong.push(b' ');
@@ -363,6 +379,16 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
         } else {
             players.clone()
         };
+        let initial_public = world.public_avatar_life_snapshot().unwrap().unwrap();
+        assert_eq!(
+            initial_public.actors.len(),
+            if competing {
+                crate::wire::MAX_PLAYERS
+            } else {
+                players.len()
+            }
+        );
+        assert!(initial_public.actors.iter().all(|actor| !actor.dead));
         let player_lives: Vec<_> = players
             .iter()
             .map(|&id| world.player_life_snapshot(id).unwrap().key)
@@ -634,5 +660,64 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
                 assert_eq!(world.white_melee_metrics().unwrap().incoming.attempts, 0);
             }
         }
+        let player = players[0];
+        let old = world.player_life_snapshot(player).unwrap().key;
+        let now = world.tick;
+        world
+            .combat
+            .as_mut()
+            .unwrap()
+            .actors
+            .get_mut(&player)
+            .unwrap()
+            .life
+            .as_mut()
+            .unwrap()
+            .state
+            .damage(now, old, 100)
+            .unwrap();
+        let dead = world.public_avatar_life_snapshot().unwrap().unwrap();
+        assert_eq!(dead.actors.iter().filter(|actor| actor.dead).count(), 1);
+        assert_eq!(
+            dead.actors.iter().find(|actor| actor.dead).unwrap().key,
+            old
+        );
+        let respawn = world
+            .player_life_snapshot(player)
+            .unwrap()
+            .respawn_at
+            .unwrap();
+        while world.tick < respawn {
+            world.step();
+        }
+        let fresh = world.public_avatar_life_snapshot().unwrap().unwrap();
+        assert!(fresh.actors.iter().all(|actor| !actor.dead));
+        for actor in &fresh.actors {
+            let initial = initial_public
+                .actors
+                .iter()
+                .find(|initial| initial.key.actor == actor.key.actor)
+                .unwrap();
+            if actor.key.actor == old.actor {
+                assert_eq!(actor.key.generation.get(), old.generation.get() + 1);
+            } else {
+                assert_eq!(actor, initial);
+            }
+        }
+        let profile = world.public_avatar_life_profile().unwrap();
+        let bytes = crate::avatar_life_wire::encode(profile, rate, &fresh).unwrap();
+        assert_eq!(
+            crate::avatar_life_wire::decode(profile, fresh.epoch, rate, &bytes).unwrap(),
+            fresh
+        );
+        assert_eq!(
+            bytes.len(),
+            crate::avatar_life_wire::HEADER_BYTES
+                + fresh.actors.len() * crate::avatar_life_wire::ACTOR_BYTES
+        );
+        world.leave(player);
+        let left = world.public_avatar_life_snapshot().unwrap().unwrap();
+        assert_eq!(left.actors.len(), fresh.actors.len() - 1);
+        assert!(left.actors.iter().all(|actor| actor.key.actor != old.actor));
     }
 }

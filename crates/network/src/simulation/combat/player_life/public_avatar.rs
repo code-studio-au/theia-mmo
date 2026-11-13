@@ -15,10 +15,13 @@ impl World {
             .as_ref()
             .ok_or("Public avatar life requires life authority")?;
         let life = combat
-            .pve
+            .lives
             .as_ref()
-            .filter(|p| p.error.is_none())
+            .filter(|p| p.ready())
             .ok_or("Public avatar life requires available life authority")?;
+        if self.player_life_error().is_some() {
+            return Err("Public avatar life requires healthy life authority".into());
+        }
         if combat.public_life.is_some() {
             return Err("Public avatar life already enabled".into());
         }
