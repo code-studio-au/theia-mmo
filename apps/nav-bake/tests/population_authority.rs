@@ -175,6 +175,29 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
                 .unwrap(),
             ))
             .unwrap();
+        world
+            .spawn_placed_guide(
+                Arc::new(
+                    theia_network::dialogue::Profile::from_json(include_bytes!(
+                        "../../../content/quests/development-journal-dialogue.json"
+                    ))
+                    .unwrap(),
+                ),
+                theia_network::dialogue::Placement::Feet(feet[0]),
+            )
+            .unwrap();
+        let quest_bytes = include_bytes!("../../../content/quests/development-journal.json");
+        let catalog =
+            Arc::new(theia_core::quests::catalog::Catalog::from_json(quest_bytes).unwrap());
+        let prepared_journal = world.prepare_quest_journal(catalog).unwrap();
+        let foreign = String::from_utf8(quest_bytes.to_vec())
+            .unwrap()
+            .replace("theia.dev.training-creature", "theia.dev.foreign-creature");
+        let foreign =
+            Arc::new(theia_core::quests::catalog::Catalog::from_json(foreign.as_bytes()).unwrap());
+        let before = world.identity();
+        assert!(world.prepare_quest_journal(foreign).is_err());
+        assert_eq!(world.identity(), before);
         let mut actors = Vec::new();
         for key in &keys {
             let mut body = feet[0].metres();
@@ -214,6 +237,7 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
         let hz = u64::from(rate.hz());
         let mut fatal_events = Vec::new();
         let mut facts = Vec::new();
+        let mut quest_facts = Vec::new();
         for sequence in 1..=5 {
             for (&actor, &target) in actors.iter().zip(&keys) {
                 let result = world.cast(
@@ -235,6 +259,11 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
                 world.step();
                 let events = world.combat_events();
                 facts.extend(world.experience_opportunities(events).unwrap());
+                quest_facts.extend(
+                    world
+                        .quest_kill_occurrences(&prepared_journal, events)
+                        .unwrap(),
+                );
                 fatal_events.extend(
                     events
                         .iter()
@@ -244,6 +273,7 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
             }
         }
         assert_eq!(facts.len(), 5);
+        assert_eq!(quest_facts, facts);
         assert_eq!(fatal_events.len(), 5);
         for (fact, (&actor, &victim)) in facts.iter().zip(actors.iter().zip(&keys)) {
             assert_eq!(fact.actor, world.entity_key(actor).unwrap());
@@ -256,6 +286,12 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
         }
         let doubled = [fatal_events.clone(), fatal_events.clone()].concat();
         assert_eq!(world.experience_opportunities(&doubled).unwrap(), facts);
+        assert_eq!(
+            world
+                .quest_kill_occurrences(&prepared_journal, &doubled)
+                .unwrap(),
+            facts
+        );
         let dead = world.combat_snapshot(actors[0]).unwrap();
         assert!(dead.targets.iter().all(|t| t.current == 0));
         let deadline = dead.targets[0].respawn_at.unwrap();
@@ -284,6 +320,12 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
                 .unwrap()
                 .is_empty(),
             "Old death facts must not resolve after fresh-ID respawn"
+        );
+        assert!(
+            world
+                .quest_kill_occurrences(&prepared_journal, &fatal_events)
+                .unwrap()
+                .is_empty()
         );
         let alive = world.combat_snapshot(actors[0]).unwrap();
         assert_eq!(alive.targets.len(), 5);

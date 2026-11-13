@@ -187,7 +187,7 @@ impl World {
             .profile();
         let aliases = |id: &theia_core::content::ContentId| {
             id == dialogue.npc()
-                || self.patrol.as_ref().is_some_and(|p| p.definition() == id)
+                || self.has_creature_definition(id)
                 || dialogue
                     .nodes()
                     .any(|n| n.choices().iter().any(|c| c.id() == id))
@@ -308,22 +308,22 @@ impl World {
         if events.len() > super::combat::MAX_PROJECTILE_STEP_EVENTS {
             return Err("Quest combat source batch exceeds event budget".into());
         }
-        let Some(patrol) = self.patrol.as_ref() else {
-            return Ok(Vec::new());
-        };
         let mut occurrences = Vec::new();
         for source in events {
             let Some((actor, victim)) = self.kill_recipient(source)? else {
                 continue;
             };
-            if victim != patrol.key || self.entity_key(actor.entity.value()) != Some(actor) {
+            let Some(definition) = self.combat_creature_definition(victim) else {
+                continue;
+            };
+            if self.entity_key(actor.entity.value()) != Some(actor) {
                 continue;
             }
             let occurrence = super::progression::Opportunity {
                 actor,
                 event: theia_core::progression::KillEvent {
                     id: theia_core::progression::KillId::from_victim(victim),
-                    creature: patrol.definition().clone(),
+                    creature: definition.id().clone(),
                 },
             };
             if occurrences.contains(&occurrence) {
@@ -337,7 +337,7 @@ impl World {
         Ok(occurrences)
     }
     /// Every referenced contact/action/creature must exist in this initial
-    /// single-guide/single-creature World. No XP kill recipe is required here.
+    /// single-guide World with an installed creature type. No XP kill recipe is required here.
     /// A successful check grants no actor entitlement or persisted compatibility.
     pub fn validate_quest_journal_references(&self, catalog: &Catalog) -> crate::Result<()> {
         self.validate_quest_journal_references_with_areas(catalog, None, None, None)
@@ -388,7 +388,7 @@ impl World {
             }
             let aliases_world = |id: &theia_core::content::ContentId| {
                 id == dialogue.npc()
-                    || self.patrol.as_ref().is_some_and(|p| p.definition() == id)
+                    || self.has_creature_definition(id)
                     || dialogue
                         .nodes()
                         .any(|n| n.choices().iter().any(|c| c.id() == id))
@@ -401,7 +401,7 @@ impl World {
         if let Some(areas) = areas {
             let aliases_world = |id: &theia_core::content::ContentId| {
                 id == dialogue.npc()
-                    || self.patrol.as_ref().is_some_and(|p| p.definition() == id)
+                    || self.has_creature_definition(id)
                     || dialogue
                         .nodes()
                         .any(|n| n.choices().iter().any(|c| c.id() == id))
@@ -433,12 +433,7 @@ impl World {
                                 return Err("Reach-area objectives require an explicitly installed area profile".into());
                             }
                         }
-                        EventKey::Kill(creature)
-                            if self
-                                .patrol
-                                .as_ref()
-                                .is_none_or(|p| p.definition() != creature) =>
-                        {
+                        EventKey::Kill(creature) if !self.has_creature_definition(creature) => {
                             return Err("Quest creature is not installed in this World".into());
                         }
                         EventKey::NpcInteraction { npc, interaction }

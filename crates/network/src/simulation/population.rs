@@ -55,6 +55,16 @@ impl Binding {
 }
 
 impl World {
+    /// Content references are type IDs, independent of live/dead actor instances.
+    pub(super) fn has_creature_definition(&self, id: &theia_core::content::ContentId) -> bool {
+        self.patrol
+            .as_ref()
+            .is_some_and(|patrol| patrol.definition() == id)
+            || self
+                .population_binding
+                .as_ref()
+                .is_some_and(|binding| binding.definition().id() == id)
+    }
     /// Resolve trusted combat facts even after targetability ends on death.
     /// Retired lives after respawn, unbound targets and player IDs do not resolve.
     pub(super) fn combat_creature_definition(

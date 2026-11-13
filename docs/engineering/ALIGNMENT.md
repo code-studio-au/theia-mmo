@@ -1,3 +1,17 @@
+P3-11 / P5-17 population quest-reference and occurrence prerequisite, 13 November 2026:
+Quest catalogue validation now recognizes the installed passive population's creature
+type independently of its live actors. Reward/document/area alias checks use the
+same installed-type lookup. Trusted quest kill occurrences resolve exact combat
+incarnations after target retirement, deduplicate the batch and reject old lives
+after fresh-ID respawn, matching the XP fact path. No quest acceptance, durable
+award, first-tag ownership or population CLI/export policy is enabled here.
+Actual western-grove navigation/World checks at 20/30/60 Hz install a supported
+guide and catalogue alongside five actors, reject a foreign kill objective without
+changing identity, and verify five matching XP/quest facts, duplicate handling and
+stale-life rejection. All 492 network-library tests, fmt and strict workspace/all-
+target Clippy pass. All work and verification are headless under the user's renewed
+mouse/display reservation. Evidence: build/population-quest-facts-checks.log.
+
 P4-03 checked quest-travel wiring, headless checkpoint, 13 November 2026:
 Shift+F7 explicitly restarts an opt-in checked route outward, including after a
 return-leg interruption or player respawn. It clears the old input-incarnation
