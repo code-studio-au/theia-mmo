@@ -1,3 +1,29 @@
+P5-17 / P1-06 owned launcher SIGINT shutdown correction, 14 November 2026:
+watch_owner now reads the private lifetime pipe through os.read instead of blocking
+inside Python BufferedReader.read. This keeps interpreter shutdown free of the
+buffered-stdin lock when SIGINT or another exit occurs while the editor remains
+alive. EOF and closed/unavailable descriptors still request ordinary child cleanup.
+Both account and Test Player launchers share this helper; no gameplay change.
+
+A real subprocess regression reproduces the previous SIGABRT/fatal buffered-reader
+error with stdin held open, then passes after the fix. A second real-pipe test
+checks that owner bytes do not stop the session and EOF does. All 36 owner/network/
+account launcher tests pass. Evidence: build/launcher-owner-sigint-{before,after}.log,
+launcher-owner-{network,account}-tests.log. Fmt, strict workspace/all-target Clippy,
+Python compile and diff checks pass; no Rust changes or binary rebuild.
+
+Native dressed-valley account sessions now stop by SIGINT with the owner pipe still
+open, both before and after a PostgreSQL process restart. Both exit successfully,
+close owned services/tickets, and preserve the completed introduction, 25 XP and
+journal revision 5. All 22 frozen profiles and five creature bindings remain checked.
+Evidence: build/starter-valley-population-sigint-native-v1/qualification.json,
+phase owned/launch.json, population-admission.json, SQL and quest screenshots.
+Same binaries as starter-valley-population-intro-native-v3/binaries.json; Linux
+1280x720 RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics.
+Native EOF Stop remains qualified separately. Native Windows signal handling is
+not claimed. Next: checked valley travel and independent population combat/quests.
+Local commits only.
+
 P5-17 / P1-06 / P3-09 / P3-11 dressed valley population access and introduction,
 14 November 2026: population export/Start can select an explicit saved Road guide
 through --population-access-path ID or the optional dialog field. Schema-2 config

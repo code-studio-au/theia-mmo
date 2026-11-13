@@ -22,11 +22,14 @@ for name in ('world', 'navigation', 'gameplay-manifest', 'players', 'output'):
     parser.add_argument('--' + name, type=Path, required=True)
 parser.add_argument('--route', help='Singleton patrol route identity')
 parser.add_argument('--population-package', type=Path, help='Checked complete population package; currently introduction/rejoin only')
+parser.add_argument('--sigint-stop', action='store_true', help='Qualify account SIGINT shutdown with its owner pipe still open')
 parser.add_argument('--reach-area', action='store_true', help='Also complete the authored western-overlook quest')
 parser.add_argument('--checked-travel', action='store_true', help='Use the checked client follower for quest travel; ordinary keys still drive combat and UI')
 parser.add_argument('--quest-trail', type=Path, help='Also complete the three-kill follow-up using this checked route request')
 parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
 args = parser.parse_args()
+if args.sigint_stop and not args.population_package:
+    parser.error('--sigint-stop requires a population account package')
 if args.population_package:
     package = args.population_package.resolve()
     if args.route or args.quest_trail or args.reach_area or args.checked_travel:
@@ -175,7 +178,7 @@ try:
                         assert report['connected'], 'Owned client disconnected during quest qualification'
                         return report
                     proof = flow(x, window, play_state, folder, resumed=resumed, intro_only=not bool(trail), authored_trail=trail, reach_areas=args.reach_area, authored_area=area, checked_travel=args.checked_travel)
-                    if args.population_package:
+                    if args.population_package and not args.sigint_stop:
                         launcher.stdin.close()
                     else:
                         launcher.send_signal(signal.SIGINT)
@@ -228,4 +231,5 @@ finally:
     x.close()
 (out / 'qualification.json').write_text(json.dumps(dict(passed=True, runs=results,
     private_services_closed=True, database_restart=True,
+    stop='SIGINT with owner pipe open' if args.sigint_stop else 'owner EOF' if args.population_package else 'SIGINT',
     scope=('Dressed authored population: five native actors, complete 22-profile snapshot, guide introduction, checkpoint and PostgreSQL restart/rejoin; no population combat or travel claim' if args.population_package else 'Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))

@@ -1,3 +1,9 @@
+Owned session shutdown (14 November 2026): closing the editor lifetime pipe still
+stops its account/Test Player children. SIGINT also shuts down cleanly while that
+pipe remains open; the watcher no longer holds Python's buffered-stdin lock during
+interpreter shutdown. Native account SIGINT and durable rejoin are qualified on
+Linux; Windows signal execution remains separate. See STATUS for evidence.
+
 Checked population access roads (14 November 2026): population export/Start dialogs
 include **Access road guide ID (optional)**; the CLI equivalent is
 `--population-access-path ID`. Leave it blank for the existing direct-access check.

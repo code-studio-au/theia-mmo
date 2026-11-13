@@ -1,3 +1,8 @@
+Owned launcher shutdown, 14 November 2026: SIGINT with an open editor lifetime
+pipe now exits cleanly; real-pipe regressions and two native valley account sessions
+with database restart pass. Next: checked population travel/combat/quest completion
+in the dressed valley. See STATUS for signal/platform and gameplay scope.
+
 Dressed valley population, 14 November 2026: explicit checked access-road export
 now places five independent wolves in the western grove while preserving village
 spawn/scenery/guide. Native editor export and authenticated guide introduction with
