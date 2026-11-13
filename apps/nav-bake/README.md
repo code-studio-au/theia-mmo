@@ -91,3 +91,8 @@ these checks. Native traversal and broader navigation coverage are separate chec
 Opt-in integration test `actual_authored_route_cli` uses absolute paths in
 THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_ROUTE; it verifies the
 positive route, wrong-floor rejection and unchanged source/request manifests.
+
+Route-free area baking may omit empty or unwalkable tiles within its bounded
+nine-tile region; it reports these IDs as `empty_tiles`. Invalid geometry, budget
+violations and backend failures still refuse. An area with no walkable tiles
+refuses without publication. Patrol baking keeps its nonempty-tile requirement.

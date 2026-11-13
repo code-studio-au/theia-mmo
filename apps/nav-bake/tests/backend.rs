@@ -162,3 +162,33 @@ fn forbidden_slope_is_disconnected_and_low_headroom_cannot_snap_onto_roof() {
     assert!(low.sample(point(id, 10., 0., 10.)).is_err());
     assert!(low.sample(point(id, 10., 1.4, 10.)).is_ok());
 }
+
+#[test]
+fn empty_walkable_result_is_explicit_and_invalid_geometry_still_refuses() {
+    let id = ChunkId { x: 64, z: 64 };
+    let agent = Agent::development();
+    // Vertical-only surfaces cannot support an agent.
+    let wall = || {
+        let mut g = empty();
+        quad(
+            &mut g,
+            [
+                [16., 0., 16.],
+                [16., 4., 16.],
+                [16., 4., 32.],
+                [16., 0., 32.],
+            ],
+        );
+        g
+    };
+    assert!(
+        theia_nav_bake::bake_if_walkable(id, [7; 32], agent, wall())
+            .unwrap()
+            .is_none()
+    );
+    assert!(bake(id, [7; 32], agent, wall()).is_err());
+    assert!(theia_nav_bake::bake_if_walkable(id, [7; 32], agent, empty()).is_err());
+    let mut invalid = floor(128.);
+    invalid.positions[0][0] = f32::NAN;
+    assert!(theia_nav_bake::bake_if_walkable(id, [7; 32], agent, invalid).is_err());
+}

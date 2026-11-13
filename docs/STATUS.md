@@ -1,3 +1,24 @@
+P4-03 / P3-07 population navigation at authored world edges, 13 November 2026:
+Route-free area baking now distinguishes absent clipped surfaces and a successful
+bake with no walkable polygons from invalid input/backend failures. Only the first
+two cases omit a tile; an entirely unwalkable area still refuses. Existing patrol
+baking keeps its nonempty-tile requirement. Maximum coverage remains nine tiles.
+The regression fixture uses an exported world's corner: four ground tiles and the
+real high collision-envelope corner remain; four empty neighbours are omitted.
+Checked placement admits five reachable ground actors, preserves source state,
+and an out-of-world bake leaves no output. The height patch alone is not the map
+boundary: editor exports retain their existing surrounding ground apron.
+Eleven ordinary baker tests pass; actual valley tiles remain byte-identical.
+Actual edge-package export/reload and real server/headless client with two encrypted
+peers pass. Strict workspace/all-target Clippy and fmt pass. Evidence:
+build/population-{small-area-tests,small-area-valley,edge-world-export,edge-cli,
+edge-connected,edge-clippy}.log; build/population-edge-package-v1.
+Also completed native client follow-through for the preceding editor-dialog
+package: five visible rigs/animation players, five idle transitions, no dropped
+cues or GPU diagnostics, screenshot inspected at 1600x1000 on the RX 7900 XTX
+Vulkan device. Evidence: build/population-dialog-playable-v1. No new movement,
+pursuit, quest, Windows execution or population-capacity claim.
+
 P3-07 / P5-17 native passive population export controls, 13 November 2026:
 File and document menus now offer Export passive population, with explicit
 profile, navigation executable and spacing alongside output identity/revision.

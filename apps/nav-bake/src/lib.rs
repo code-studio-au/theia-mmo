@@ -18,6 +18,18 @@ pub(crate) const MAX_INPUT_VERTICES: usize = 32_768;
 pub(crate) const MAX_INPUT_TRIANGLES: usize = 65_536;
 
 pub fn bake(id: ChunkId, source: [u8; 32], agent: Agent, geometry: Geometry) -> Result<Tile> {
+    bake_if_walkable(id, source, agent, geometry)?
+        .ok_or("Navigation tile has no walkable polygons".into())
+}
+
+/// An area bake may omit a valid tile with no walkable polygons after filtering.
+/// Input, budget and pipeline failures remain errors.
+pub fn bake_if_walkable(
+    id: ChunkId,
+    source: [u8; 32],
+    agent: Agent,
+    geometry: Geometry,
+) -> Result<Option<Tile>> {
     if !agent.valid()
         || !theia_network::procedural::contains(id)
         || geometry.positions.is_empty()
@@ -93,6 +105,9 @@ pub fn bake(id: ChunkId, source: [u8; 32], agent: Agent, geometry: Geometry) -> 
     );
     contour_holes::join(&mut contours)?;
     let mesh = contours.into_polygon_mesh(config.max_vertices_per_polygon)?;
+    if mesh.polygons().next().is_none() {
+        return Ok(None);
+    }
     let detail = DetailNavmesh::new(
         &mesh,
         &compact,
@@ -150,7 +165,7 @@ pub fn bake(id: ChunkId, source: [u8; 32], agent: Agent, geometry: Geometry) -> 
         },
     };
     tile.validate()?;
-    Ok(tile)
+    Ok(Some(tile))
 }
 
 // Preserve the offline tool API while sharing the reviewed query implementation.

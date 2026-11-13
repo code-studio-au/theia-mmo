@@ -309,6 +309,78 @@ mod tests {
     }
     #[test]
     #[ignore = "requires THEIA_NAV_BAKER actual offline binary"]
+    fn world_edge_population_omits_empty_neighbours_and_reloads() {
+        let root = Folder::new();
+        let creature = root.0.join("profile.json");
+        fs::write(&creature, CREATURE).unwrap();
+        let baker = PathBuf::from(std::env::var_os("THEIA_NAV_BAKER").unwrap());
+        let mut zone = fixture();
+        zone.terrain = Some(theia_zone::terrain::HeightPatch::flat([67, 67]));
+        zone.spawn = [8640., 0.1, 8640.];
+        zone.spawn_groups[0].volume = theia_core::spawn_volume::PolygonVolume::new(
+            vec![
+                [8632., 8632.],
+                [8648., 8632.],
+                [8648., 8648.],
+                [8632., 8648.],
+            ],
+            -2.,
+            8.,
+        )
+        .unwrap();
+        let original = zone.clone();
+        let output = root.0.join("package");
+        let report = publish(
+            &zone,
+            &output,
+            "theia.test.edge-population",
+            1,
+            Settings {
+                creature: &creature,
+                baker: &baker,
+                spacing: 3.,
+            },
+            &Default::default(),
+        )
+        .unwrap();
+        assert_eq!(report["population_export"]["count"], 5);
+        let store = Arc::new(authored_world::Store::open(&output.join("world")).unwrap());
+        let nav =
+            theia_network::navigation::Store::open(&output.join("navigation"), store.identity())
+                .unwrap();
+        // Four ground tiles plus the actual collision-envelope corner top.
+        // Preserve that separate high layer; placement must remain on reachable ground.
+        assert_eq!(
+            nav.manifest()
+                .tiles
+                .iter()
+                .map(|t| t.id)
+                .collect::<Vec<_>>(),
+            vec![[66, 66], [66, 67], [67, 66], [67, 67], [68, 68]]
+        );
+        let corner = nav.tile([68, 68]).unwrap();
+        assert!(corner.vertices.iter().all(|p| p[1] >= 18.));
+        let empty = root.0.join("empty-area");
+        let failed = std::process::Command::new(&baker)
+            .arg("bake-authored-area")
+            .arg(output.join("world"))
+            .arg(&empty)
+            .args(["70", "70"])
+            .output()
+            .unwrap();
+        assert!(!failed.status.success());
+        assert!(String::from_utf8_lossy(&failed.stderr).contains("outside authored world"));
+        assert!(!empty.exists());
+        let loaded = population::configuration::Loaded::open(
+            &output.join("population.json"),
+            &procedural::Source::Authored(store),
+        )
+        .unwrap();
+        assert_eq!(loaded.count(), 5);
+        assert_eq!(zone, original);
+    }
+    #[test]
+    #[ignore = "requires THEIA_NAV_BAKER actual offline binary"]
     fn actual_population_package_reloads_matching_world_navigation_and_saved_group() {
         let root = Folder::new();
         let creature = root.0.join("profile.json");

@@ -4718,8 +4718,9 @@ target/debug/theia-zone-editor --zone my-zone.json \
 
 Build `theia-nav-bake` alongside the editor, or pass `--navigation-baker PATH`.
 `--population-spacing METRES` defaults to 3 (allowed 0.25–32). The bounded bake
-covers the nine chunks around the player spawn; the world must supply bakeable
-collision there, and the group must fit validated reachable navigation. All
+considers the nine chunks around the player spawn, omitting genuinely empty or
+unwalkable tiles. Invalid geometry still fails, and the group must fit validated
+reachable navigation. Editor worlds retain their existing surrounding ground apron. All
 placement checks finish before publication. Choose a new output directory.
 
 The package contains `world/`, `navigation/`, the full `zone.json`, `creature.json`,

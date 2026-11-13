@@ -108,6 +108,12 @@ impl Builder {
     }
 }
 pub fn geometry(colliders: &[PlacedCollider]) -> Result<Geometry> {
+    geometry_if_present(colliders)?
+        .ok_or("Authored navigation tile has no supported surfaces".into())
+}
+
+/// Empty clipped tiles are allowed in bounded area bakes; malformed shapes still fail.
+pub fn geometry_if_present(colliders: &[PlacedCollider]) -> Result<Option<Geometry>> {
     let mut builder = Builder {
         geometry: Geometry {
             positions: vec![],
@@ -125,9 +131,9 @@ pub fn geometry(colliders: &[PlacedCollider]) -> Result<Geometry> {
         )?;
     }
     if builder.geometry.triangles.is_empty() {
-        return Err("Authored navigation tile has no supported surfaces".into());
+        return Ok(None);
     }
-    Ok(builder.geometry)
+    Ok(Some(builder.geometry))
 }
 
 #[cfg(test)]
@@ -161,6 +167,27 @@ mod tests {
         assert_eq!(g.triangles.len(), 1);
         let points = g.triangles[0].map(|i| g.positions[i as usize]);
         assert_eq!(points, [[8., 2., 12.], [8., 2., 16.], [12., 2., 12.]]);
+    }
+    #[test]
+    fn empty_area_tiles_are_distinct_from_unsupported_shapes() {
+        assert!(geometry_if_present(&[]).unwrap().is_none());
+        assert!(
+            geometry_if_present(&[PlacedCollider {
+                shape: Collider::cuboid(2., 2., 2.),
+                center: [200., 0., 200.].into(),
+                layer: SOLID,
+            }])
+            .unwrap()
+            .is_none()
+        );
+        assert!(
+            geometry_if_present(&[PlacedCollider {
+                shape: Collider::capsule(1., 2.),
+                center: [0.; 3].into(),
+                layer: SOLID,
+            }])
+            .is_err()
+        );
     }
     #[test]
     fn large_static_floor_is_clipped_and_unsupported_solids_refuse_the_bake() {

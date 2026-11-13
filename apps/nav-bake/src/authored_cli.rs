@@ -41,9 +41,21 @@ fn bake_region(
     let agent = Agent::development();
     let mut tiles = Vec::new();
     let mut inputs = Vec::new();
+    let mut empty_tiles = Vec::new();
+    let allow_empty = route.is_none();
     for id in procedural::neighbours(centre, 1) {
         let patch = store.patch(id)?;
-        let geometry = theia_nav_bake::authored::geometry(&patch.scene.colliders)?;
+        let geometry = if allow_empty {
+            match theia_nav_bake::authored::geometry_if_present(&patch.scene.colliders)? {
+                Some(geometry) => geometry,
+                None => {
+                    empty_tiles.push([id.x, id.z]);
+                    continue;
+                }
+            }
+        } else {
+            theia_nav_bake::authored::geometry(&patch.scene.colliders)?
+        };
         inputs.push(serde_json::json!({"tile":[id.x,id.z],"vertices":geometry.positions.len(),"triangles":geometry.triangles.len()}));
         eprintln!(
             "authored_navigation_input x={} z={} vertices={} triangles={}",
@@ -52,8 +64,19 @@ fn bake_region(
             geometry.positions.len(),
             geometry.triangles.len()
         );
-        let tile = theia_nav_bake::bake(id, store.identity(), agent, geometry)
+        let tile = theia_nav_bake::bake_if_walkable(id, store.identity(), agent, geometry)
             .map_err(|error| format!("Authored navigation tile [{},{}]: {error}", id.x, id.z))?;
+        let Some(tile) = tile else {
+            if !allow_empty {
+                return Err(format!(
+                    "Authored navigation tile [{},{}] has no walkable polygons",
+                    id.x, id.z
+                )
+                .into());
+            }
+            empty_tiles.push([id.x, id.z]);
+            continue;
+        };
         eprintln!(
             "authored_navigation_tile x={} z={} polygons={}",
             id.x,
@@ -61,6 +84,9 @@ fn bake_region(
             tile.polygons.len()
         );
         tiles.push(tile);
+    }
+    if tiles.is_empty() {
+        return Err("Authored navigation area has no walkable tiles".into());
     }
     let routes = if let Some((request, endpoints)) = route {
         let query = theia_nav_bake::Query::new(&tiles)?;
@@ -110,7 +136,7 @@ fn bake_region(
     result?;
     println!(
         "{}",
-        serde_json::json!({"authored_navigation_bake":{"passed":true,"source":store.identity(),"tiles":tiles.len(),"inputs":inputs,"route_points":manifest.routes.iter().map(|r| r.points.len()).sum::<usize>(),"elapsed_ms":started.elapsed().as_millis(),"scope":"Offline navigation from admitted authored collision; no creature runtime or exhaustive containment acceptance"}})
+        serde_json::json!({"authored_navigation_bake":{"passed":true,"source":store.identity(),"tiles":tiles.len(),"empty_tiles":empty_tiles,"inputs":inputs,"route_points":manifest.routes.iter().map(|r| r.points.len()).sum::<usize>(),"elapsed_ms":started.elapsed().as_millis(),"scope":"Offline navigation from admitted authored collision; no creature runtime or exhaustive containment acceptance"}})
     );
     Ok(())
 }
