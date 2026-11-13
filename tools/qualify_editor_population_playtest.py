@@ -18,12 +18,14 @@ parser.add_argument('--creature', type=Path, required=True)
 parser.add_argument('--players', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
 parser.add_argument('--assign-patrol', action='store_true', help='Assign the first authored patrol to player one through the editor, including undo')
+parser.add_argument('--creature-context', action='store_true', help='Preload the standalone creature definition and verify the Start dialog default')
 parser.add_argument('--creature-asset', type=Path, help='Optional embedded creature appearance to seed and freeze through the dialog')
 parser.add_argument('--particle-library', type=Path, help='Copy this effect library into the owned editor test data directory')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
 original = args.zone.read_bytes()
+creature_original = args.creature.read_bytes()
 source = out / 'source.zone.json'
 source.write_bytes(original)
 report = out / 'state.json'
@@ -35,7 +37,8 @@ env = client_environment(dict(os.environ, DISPLAY=':0', XDG_RUNTIME_DIR='/run/us
 x = None
 with (out / 'editor.log').open('w') as log:
     p = subprocess.Popen([str(args.binary.resolve()), '--zone', str(source), '--report', str(report), '--player-assets', str(args.players.resolve()),
-        *(['--creature-asset', str(args.creature_asset.resolve())] if args.creature_asset else [])],
+        *(['--creature-asset', str(args.creature_asset.resolve())] if args.creature_asset else []),
+        *(['--creature-definition', str(args.creature.resolve())] if args.creature_context else [])],
         env=env, stdout=log, stderr=log)
     try:
         w = wait(lambda: owned_window(p.pid), 45)
@@ -86,6 +89,16 @@ with (out / 'editor.log').open('w') as log:
             fresh()
             assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index'] == index) == str(value)
 
+        if args.creature_context:
+            click(next(m['centre'] for m in state()['menus'] if m['name'] == 'Content filter' and m['role'] == 'button' and min(m['size']) > 0))
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target'] == 'Filter(SpawnGroups)' and min(c['size']) > 0), None))['centre'])
+            group = state()['document']['spawn_groups'][0]['id']
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target'] == f'SpawnGroup({group})' and min(c['size']) > 0), None))['centre'])
+            wait(lambda: state()['spawn_group_selected'] == group)
+            click(next(c['centre'] for c in state()['property_tabs']['controls'] if c['tab'] == 'Attributes'))
+            x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
+            report.with_suffix('.png').rename(out / 'loaded-creature.png')
+
         assigned = None
         if args.assign_patrol:
             def menu(name):
@@ -115,7 +128,10 @@ with (out / 'editor.log').open('w') as log:
             assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index']==7) == str(args.creature_asset.resolve())
         destination = out / 'package'
         fill(0, destination)
-        fill(3, args.creature.resolve())
+        if args.creature_context:
+            assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index'] == 3) == str(args.creature.resolve())
+        else:
+            fill(3, args.creature.resolve())
         fill(5, '33')
         def submit():
             click(next(b['centre'] for b in state()['export_dialog']['buttons'] if b['action'] == 'Export'))
@@ -174,12 +190,14 @@ with (out / 'editor.log').open('w') as log:
             assert result['appearance']['file'] == 'creature.glb'
             assert summary['creature_appearance'] and summary['creature_asset']==str(destination/'creature.glb')
         assert source.read_bytes() == original and args.zone.read_bytes() == original
+        assert args.creature.read_bytes() == creature_original
+        assert (destination/'creature.json').read_bytes() == creature_original
         assert json.loads((destination / 'zone.json').read_text()) == state()['document']
         x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
         report.with_suffix('.png').rename(out / 'finished.png')
         (out / 'qualification.json').write_text(json.dumps(dict(passed=True,
             invalid_spacing_refused=True, count=result['count'], source_unchanged=True,
-            package=str(destination), started_clients=2, stopped=True, controller_finished=True,
+            package=str(destination), creature_context=args.creature_context, started_clients=2, stopped=True, controller_finished=True,
             assigned_patrol=assigned, travel=travel, appearance=result.get('appearance'), run=str(run)), indent=2))
     finally:
         if x: x.close()

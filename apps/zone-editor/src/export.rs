@@ -372,9 +372,7 @@ pub(super) fn geometry(
 ) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
     if !zone.spawn_groups.is_empty() {
-        return Err(
-            "NPC spawn groups are authoring drafts; population export is not connected yet".into(),
-        );
+        return Err("NPC spawn groups require the population export workflow".into());
     }
     if !zone.scenery.is_empty() {
         return Err("Scenery asset publication is not connected yet".into());

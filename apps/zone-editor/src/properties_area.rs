@@ -128,7 +128,7 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
             group.spawn((
                 theme::label(
                     if spawn {
-                        "Editor Play/export population is not connected yet"
+                        "File: export population. Zone: start playtest."
                     } else if marker {
                         "Blank leaves this marker unbound"
                     } else {

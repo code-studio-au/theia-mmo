@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import signal
 import subprocess
+import time
 from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 from gpu_validation import check_gpu_diagnostics
@@ -14,12 +15,20 @@ parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone
 parser.add_argument('--zone', type=Path, required=True)
 parser.add_argument('--creature', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
+parser.add_argument('--load-creature-context', action='store_true', help='Load the standalone definition through File, assign/undo it, and verify export defaults')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
 original = args.zone.read_bytes()
+creature_original = args.creature.read_bytes()
 source = out / 'source.zone.json'
-source.write_bytes(original)
+seeded = original
+if args.load_creature_context:
+    draft = json.loads(original)
+    assert len(draft['spawn_groups']) == 1
+    draft['spawn_groups'][0]['creature'] = 'theia.creature.unresolved'
+    seeded = (json.dumps(draft, indent=2) + '\n').encode()
+source.write_bytes(seeded)
 report = out / 'state.json'
 env = client_environment(dict(os.environ, DISPLAY=':0', XDG_RUNTIME_DIR='/run/user/1000',
     WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',
@@ -33,8 +42,20 @@ with (out / 'editor.log').open('w') as log:
         x = Desktop(); x.focus(w)
         def state():
             assert p.poll() is None, 'Editor exited unexpectedly'
-            return json.loads(report.read_text())
+            return wait(lambda: json.loads(report.read_text()), 2)
         wait(lambda: report.exists() and state().get('menus'), 45)
+        geometry = None
+        stable = time.monotonic()
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            current = [(m['name'], m['centre'], m['size']) for m in state()['menus'] if m['role'] == 'button']
+            if current != geometry:
+                geometry, stable = current, time.monotonic()
+            elif time.monotonic() - stable >= .75:
+                break
+            time.sleep(.05)
+        else:
+            raise TimeoutError('Editor menu geometry did not settle')
         def fresh():
             old = state()['input_elapsed']
             return wait(lambda: state() if state()['input_elapsed'] > old else None)
@@ -62,6 +83,49 @@ with (out / 'editor.log').open('w') as log:
             fresh()
             assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index'] == index) == str(value)
 
+        if args.load_creature_context:
+            def menu(name):
+                click(next(m['centre'] for m in state()['menus'] if m['name'] == name and m['role'] == 'button' and min(m['size']) > 0))
+            def chord(key):
+                x.key_state('Control_L', True)
+                try:
+                    wait(lambda: state()['control_down'])
+                    x.key(key); fresh()
+                finally:
+                    x.key_state('Control_L', False)
+                wait(lambda: not state()['control_down'])
+            def file_control(name):
+                click(wait(lambda: next((c for c in state()['file_controls'] if c['target'] == name and min(c['size']) > 0), None))['centre'])
+            before_load = state()['document']
+            menu('File')
+            click(wait(lambda: next((c for c in state()['workspace_controls'] if c['target'] == 'CreatureOpen' and c['menu_item'] and min(c['size']) > 0), None))['centre'])
+            wait(lambda: state()['file_dialog'] and state()['file_dialog']['mode'] == 'Creature')
+            file_control('Field'); chord('a')
+            target = str(args.creature.resolve())
+            for character in target:
+                x.key({'/':'slash', '.':'period', '-':'minus', '_':'underscore'}.get(character, character))
+                fresh()
+            wait(lambda: state()['file_dialog']['text'] == target)
+            x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
+            report.with_suffix('.png').rename(out / 'creature-browser.png')
+            file_control('Apply')
+            wait(lambda: state()['file_dialog'] is None and state()['status'].startswith('Loaded creature definition'))
+            assert state()['document'] == before_load
+            group = before_load['spawn_groups'][0]['id']
+            menu('Content filter')
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target'] == 'Filter(SpawnGroups)' and min(c['size']) > 0), None))['centre'])
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target'] == f'SpawnGroup({group})' and min(c['size']) > 0), None))['centre'])
+            wait(lambda: state()['spawn_group_selected'] == group)
+            click(next(c['centre'] for c in state()['property_tabs']['controls'] if c['tab'] == 'Attributes'))
+            def bind():
+                click(wait(lambda: next((c for c in state()['workspace_controls'] if c['target'] == 'Command(BindSpawnCreature)' and not c['menu_item'] and min(c['size']) > 0), None))['centre'])
+            creature_id = json.loads(args.creature.read_text())['id']
+            bind(); wait(lambda: state()['document']['spawn_groups'][0]['creature'] == creature_id)
+            chord('z'); wait(lambda: state()['document'] == before_load)
+            bind(); wait(lambda: state()['document']['spawn_groups'][0]['creature'] == creature_id)
+            x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
+            report.with_suffix('.png').rename(out / 'creature-assigned.png')
+
         click(next(m['centre'] for m in state()['menus']
             if m['name'] == 'File' and m['role'] == 'button' and min(m['size']) > 0))
         control = wait(lambda: next((c for c in state()['workspace_controls']
@@ -70,7 +134,10 @@ with (out / 'editor.log').open('w') as log:
         wait(lambda: state()['export_dialog'])
         destination = out / 'package'
         fill(0, destination)
-        fill(3, args.creature.resolve())
+        if args.load_creature_context:
+            assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index'] == 3) == str(args.creature.resolve())
+        else:
+            fill(3, args.creature.resolve())
         fill(5, '33')
         def submit():
             click(next(b['centre'] for b in state()['export_dialog']['buttons'] if b['action'] == 'Export'))
@@ -84,12 +151,14 @@ with (out / 'editor.log').open('w') as log:
         wait(lambda: state()['export_dialog']['finished'], 60)
         result = json.loads((destination / 'population-export.json').read_text())['population_export']
         assert result['passed'] and result['count'] == 5, result
-        assert source.read_bytes() == original and args.zone.read_bytes() == original
+        assert source.read_bytes() == seeded and args.zone.read_bytes() == original
+        assert args.creature.read_bytes() == creature_original
         assert json.loads((destination / 'zone.json').read_text()) == state()['document']
         x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
         report.with_suffix('.png').rename(out / 'finished.png')
         (out / 'qualification.json').write_text(json.dumps(dict(passed=True,
             invalid_spacing_refused=True, count=result['count'], source_unchanged=True,
+            direct_creature_load=args.load_creature_context, assignment_undo=args.load_creature_context,
             package=str(destination)), indent=2))
     finally:
         if x: x.close()

@@ -1,3 +1,25 @@
+P5-17 standalone creature context native editor qualification, 13 November 2026:
+Owned native Linux checks now cover File -> Load creature definition, selecting an
+unresolved spawn group, Use loaded creature, undo/reapply and population export.
+Loading itself leaves the draft unchanged; assignment is undoable. The loaded file
+prepopulates export without manual path replacement. Invalid spacing refuses before
+publication; the five-creature package matches the current draft while original zone,
+owned source file and creature definition bytes remain unchanged.
+A second native check preloads --creature-definition and starts a managed population
+playtest from Zone. Two encrypted clients are admitted, the test controller finishes,
+state traffic is sent with no rejected inputs/recoveries, and Stop cleans processes
+and tickets. The standalone creature and wolf GLB are frozen byte-for-byte in the
+package. No new rich-combat/first-tag normal-launch claim is made by this legacy
+passive playtest. Inspection found stale guidance claiming population export was
+unconnected; the inspector now points to File export and Zone playtest, and generic
+export directs spawn-group users to the population workflow.
+All 238 editor tests pass (10 asset-dependent checks remain ignored); the focused
+export guard, fmt, strict workspace/all-target Clippy and rebuild pass after final
+wording. Native checks have zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 /
+Vulkan device 29772, editor 3440x1440. Evidence: build/editor-creature-context-native-v1,
+build/editor-creature-context-playtest-native-v1, build/editor-creature-context-final.log
+and build/editor-population-guidance-final.log. Source files remain unchanged.
+
 P4-03 / P3-11 checked native quest travel, 13 November 2026:
 The owned native authored introduction and three-kill follow-up now pass using the
 checked client follower for both long-distance legs and ordinary keyboard alignment
