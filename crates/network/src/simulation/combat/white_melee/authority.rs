@@ -325,7 +325,7 @@ impl Authority {
                 source: life,
                 target,
                 category: theia_core::creature_credit::Category::WhiteMelee,
-                encounter: self.capture_credit(),
+                encounter: self.capture_credit(target),
                 health_lost: plan.result.health_lost,
                 fatal: plan.result.health_lost == health,
             },

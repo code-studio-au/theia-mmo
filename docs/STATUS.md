@@ -1,3 +1,22 @@
+P3-09 / P5-17 indexed creature-credit state prerequisite, 13 November 2026:
+Credit authority stores bounded per-creature encounter entries, including ledger,
+resolution serial, departure/reset flags and immutable fatal credit. Cast capture,
+white-melee capture, damage preflight/commit and recipient lookup address the exact
+victim identity. New targeted observation methods reject player/retired identities;
+legacy unaddressed observations require one entry. Existing profile identity and
+singleton pursuit admission/synchronization remain, including serial continuity
+across respawn. No population credit/life/membership admission or reward flags change.
+Independent-ledger checks verify separate owners, departure/reset generations,
+retained finished credit, stale epochs, duplicate/empty/over-capacity refusal.
+Actual World targeted observations and stale respawn queries regress alongside
+competing hitters, delayed impacts, resets and encrypted recipient routing.
+All 497 network-library tests, fmt and strict workspace/all-target Clippy pass.
+The initial restricted test run refused three UDP socket checks; the complete
+headless rerun permits private localhost sockets and removes display variables.
+Evidence: build/creature-credit-index-final.log. Next integration still needs
+per-population player life, typed combat/membership and lifecycle synchronization;
+the registry alone is not live multi-creature first-tag adoption.
+
 P3-10 / P3-11 / P5-17 population durable receipt qualification, 13 November 2026:
 The new headless population_durable_qualification example loads a real checked
 five-actor export and drives one synthetic player through ten fatal lives across

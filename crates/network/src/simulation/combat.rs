@@ -871,7 +871,7 @@ impl Authority {
             return Err(Reason::InsufficientMana);
         }
         self.commit_ability_swing(id, swing_plan);
-        let credit_encounter = self.capture_credit();
+        let credit_encounter = self.capture_credit(cast.target);
         let actor = self.actor(id);
         actor.cast = Some(cast.clone());
         actor.cast_credit_encounter = credit_encounter;

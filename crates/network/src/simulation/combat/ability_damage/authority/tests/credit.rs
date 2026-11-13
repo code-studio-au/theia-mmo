@@ -89,10 +89,17 @@ fn first_special_tags_before_competitors_fatal_hit_at_each_rate() {
         let first = join(&mut w);
         let second = join(&mut w);
         let owner = w.entity_key(first).unwrap();
+        assert_eq!(
+            w.creature_credit_encounter_for(npc),
+            w.creature_credit_encounter()
+        );
+        assert!(w.creature_credit_encounter_for(owner).is_none());
         cast(&mut w, first, npc, 1, "theia.dev.sword-slash");
         assert_eq!(w.creature_tag_owner(), None);
         w.step();
         assert_eq!(w.creature_tag_owner(), Some(owner));
+        assert_eq!(w.creature_tag_owner_for(npc), Some(owner));
+        assert!(w.creature_tag_owner_for(owner).is_none());
         assert!(w.creature_kill_credit().is_none());
         w.combat.as_mut().unwrap().creatures[0].current = 1;
         cast(&mut w, second, npc, 1, "theia.dev.sword-slash");
@@ -204,6 +211,9 @@ fn resolved_death_credit_is_stable_until_fresh_npc_respawn() {
     }
     w.step();
     assert_ne!(w.combat.as_ref().unwrap().creatures[0].key, npc);
+    assert!(w.creature_kill_credit_for(npc).is_none());
+    assert!(w.creature_tag_owner_for(npc).is_none());
+    assert!(w.creature_credit_encounter_for(npc).is_none());
     assert!(w.creature_kill_credit().is_none());
     assert_eq!(w.creature_tag_owner(), None);
     assert!(w.creature_credit_error().is_none());

@@ -1,7 +1,7 @@
 //! Opt-in ordinary-creature ownership. No XP/quest/loot consumer is changed.
 use super::{Authority, Event, World};
 use crate::Result;
-use std::num::NonZeroU64;
+use std::{collections::BTreeMap, num::NonZeroU64};
 use theia_core::{
     creature_credit::{Category, DamageFact, EncounterKey, KillCredit, Ledger, Profile},
     identity::EntityKey,
@@ -13,6 +13,7 @@ pub fn profile_identity(base: [u8; 32], bytes: &[u8]) -> Result<[u8; 32]> {
     Profile::from_json(bytes)?;
     Ok(identity(base, crate::terrain::sha256(bytes)))
 }
+
 fn identity(base: [u8; 32], hash: [u8; 32]) -> [u8; 32] {
     let mut bytes = DOMAIN.to_vec();
     bytes.extend(base);
@@ -22,13 +23,28 @@ fn identity(base: [u8; 32], hash: [u8; 32]) -> [u8; 32] {
 pub(super) struct Runtime {
     profile: Profile,
     hash: [u8; 32],
+    encounters: BTreeMap<u64, Encounter>,
+    error: Option<String>,
+}
+struct Encounter {
     ledger: Ledger,
     last_kill: Option<KillCredit>,
     fatal: Option<Event>,
     sequence: u64,
     reset_mode: bool,
     departure: bool,
-    error: Option<String>,
+}
+impl Encounter {
+    fn new(profile: Profile, creature: EntityKey) -> Self {
+        Self {
+            ledger: Ledger::new(profile, creature),
+            last_kill: None,
+            fatal: None,
+            sequence: 0,
+            reset_mode: false,
+            departure: false,
+        }
+    }
 }
 pub(super) struct ResolvedHit {
     pub source: LifeKey,
@@ -45,17 +61,61 @@ pub(super) struct Planned {
     sequence: u64,
 }
 impl Runtime {
+    fn new(profile: Profile, hash: [u8; 32], creatures: &[EntityKey]) -> Result<Self> {
+        if creatures.is_empty() || creatures.len() > crate::targeting::MAX_TARGETS {
+            return Err("Creature credit encounter count exceeds bounds".into());
+        }
+        let encounters: BTreeMap<_, _> = creatures
+            .iter()
+            .map(|&key| (key.entity.value(), Encounter::new(profile.clone(), key)))
+            .collect();
+        if encounters.len() != creatures.len() {
+            return Err("Creature credit encounters contain duplicate identities".into());
+        }
+        Ok(Self {
+            profile,
+            hash,
+            encounters,
+            error: None,
+        })
+    }
+    fn encounter(&self, key: EntityKey) -> Option<&Encounter> {
+        self.encounters
+            .get(&key.entity.value())
+            .filter(|entry| entry.ledger.encounter().creature == key)
+    }
+    fn single_key(&self) -> Option<EntityKey> {
+        (self.encounters.len() == 1).then(|| {
+            self.encounters
+                .values()
+                .next()
+                .unwrap()
+                .ledger
+                .encounter()
+                .creature
+        })
+    }
+    fn capture(&self, target: EntityKey) -> Option<EncounterKey> {
+        let entry = self.encounter(target)?;
+        if self.error.is_some() || entry.departure || entry.reset_mode || entry.last_kill.is_some()
+        {
+            return None;
+        }
+        Some(entry.ledger.encounter())
+    }
     pub(super) fn identity(&self, base: [u8; 32]) -> [u8; 32] {
         identity(base, self.hash)
     }
     pub(super) fn leave(&mut self, id: u64) {
-        if self.last_kill.is_none()
-            && self
-                .ledger
-                .owner()
-                .is_some_and(|owner| owner.entity.value() == id)
-        {
-            self.departure = true;
+        for entry in self.encounters.values_mut() {
+            if entry.last_kill.is_none()
+                && entry
+                    .ledger
+                    .owner()
+                    .is_some_and(|owner| owner.entity.value() == id)
+            {
+                entry.departure = true;
+            }
         }
     }
 }
@@ -77,37 +137,47 @@ impl World {
         let (npc, _, _) = combat
             .membership_encounter()
             .ok_or("Creature credit requires pursuit")?;
-        self.combat.as_mut().unwrap().credit = Some(Runtime {
-            ledger: Ledger::new(profile.clone(), npc),
+        self.combat.as_mut().unwrap().credit = Some(Runtime::new(
             profile,
-            hash: crate::terrain::sha256(bytes),
-            last_kill: None,
-            fatal: None,
-            sequence: 0,
-            reset_mode: false,
-            departure: false,
-            error: None,
-        });
+            crate::terrain::sha256(bytes),
+            &[npc],
+        )?);
         Ok(())
     }
     pub fn creature_credit_encounter(&self) -> Option<EncounterKey> {
-        self.combat.as_ref()?.capture_credit()
+        let target = self.combat.as_ref()?.credit.as_ref()?.single_key()?;
+        self.creature_credit_encounter_for(target)
+    }
+    pub fn creature_credit_encounter_for(&self, target: EntityKey) -> Option<EncounterKey> {
+        self.has_combat_incarnation(target).then_some(())?;
+        self.combat.as_ref()?.capture_credit(target)
     }
     pub fn creature_tag_owner(&self) -> Option<EntityKey> {
+        let target = self.combat.as_ref()?.credit.as_ref()?.single_key()?;
+        self.creature_tag_owner_for(target)
+    }
+    pub fn creature_tag_owner_for(&self, target: EntityKey) -> Option<EntityKey> {
+        self.has_combat_incarnation(target).then_some(())?;
         let runtime = self.combat.as_ref()?.credit.as_ref()?;
-        if runtime.error.is_some() || runtime.departure {
+        let entry = runtime.encounter(target)?;
+        if runtime.error.is_some() || entry.departure {
             return None;
         }
-        runtime.ledger.owner()
+        entry.ledger.owner()
     }
-    /// Retained for the exact current NPC lifetime. A later durable adapter must
-    /// consume the encounter identity idempotently; this query is not a grant.
+    /// Retained for the exact current NPC lifetime. This query is not a grant.
+    /// Legacy unaddressed observation is available only for one encounter.
     pub fn creature_kill_credit(&self) -> Option<&KillCredit> {
+        let target = self.combat.as_ref()?.credit.as_ref()?.single_key()?;
+        self.creature_kill_credit_for(target)
+    }
+    pub fn creature_kill_credit_for(&self, target: EntityKey) -> Option<&KillCredit> {
+        self.has_combat_incarnation(target).then_some(())?;
         let runtime = self.combat.as_ref()?.credit.as_ref()?;
         if runtime.error.is_some() {
             return None;
         }
-        runtime.last_kill.as_ref()
+        runtime.encounter(target)?.last_kill.as_ref()
     }
     /// Explicit solo-recipient fixture. The existing accepted-quest policy and
     /// nonrepeatable training reward recipe still decide their own disposition.
@@ -130,10 +200,13 @@ impl World {
         if runtime.error.is_some() {
             return Err("Creature credit authority unavailable".into());
         }
-        if runtime.fatal.as_ref() != Some(event) {
+        let Some(entry) = runtime.encounter(victim) else {
+            return Ok(None);
+        };
+        if entry.fatal.as_ref() != Some(event) {
             return Ok(None);
         }
-        let Some(credit) = runtime
+        let Some(credit) = entry
             .last_kill
             .as_ref()
             .filter(|credit| credit.encounter.creature == victim)
@@ -164,16 +237,8 @@ impl World {
     }
 }
 impl Authority {
-    pub(super) fn capture_credit(&self) -> Option<EncounterKey> {
-        let runtime = self.credit.as_ref()?;
-        if runtime.error.is_some()
-            || runtime.departure
-            || runtime.reset_mode
-            || runtime.last_kill.is_some()
-        {
-            return None;
-        }
-        Some(runtime.ledger.encounter())
+    pub(super) fn capture_credit(&self, target: EntityKey) -> Option<EncounterKey> {
+        self.credit.as_ref()?.capture(target)
     }
     pub(super) fn prepare_credit(
         &self,
@@ -191,10 +256,13 @@ impl Authority {
         let Some(runtime) = &self.credit else {
             return Ok(None);
         };
+        let entry = runtime
+            .encounter(target)
+            .ok_or("Creature credit target unavailable")?;
         if runtime.error.is_some()
-            || runtime.departure
-            || runtime.reset_mode
-            || runtime.last_kill.is_some()
+            || entry.departure
+            || entry.reset_mode
+            || entry.last_kill.is_some()
             || world.entity_key(source.actor.entity.value()) != Some(source.actor)
             || !self
                 .actors
@@ -209,12 +277,12 @@ impl Authority {
             .ok_or("Creature credit encounter unavailable")?;
         // Allocate a resolution serial, not the cast/request serial: a slow
         // projectile can legitimately land after a later instant ability.
-        let sequence = runtime
+        let sequence = entry
             .sequence
             .checked_add(1)
             .and_then(NonZeroU64::new)
             .ok_or("Creature credit resolution serial exhausted")?;
-        let mut ledger = runtime.ledger.clone();
+        let mut ledger = entry.ledger.clone();
         ledger
             .record(
                 world.tick,
@@ -262,10 +330,16 @@ impl Authority {
                 .credit
                 .as_mut()
                 .expect("Prepared creature credit authority");
-            runtime.ledger = plan.ledger;
-            runtime.last_kill = plan.kill;
-            runtime.fatal = fatal;
-            runtime.sequence = plan.sequence;
+            let target = plan.ledger.encounter().creature;
+            let entry = runtime
+                .encounters
+                .get_mut(&target.entity.value())
+                .filter(|entry| entry.ledger.encounter().creature == target)
+                .expect("Prepared exact creature credit encounter");
+            entry.ledger = plan.ledger;
+            entry.last_kill = plan.kill;
+            entry.fatal = fatal;
+            entry.sequence = plan.sequence;
             self.commit_threat(plan.threat);
         }
     }
@@ -280,27 +354,116 @@ impl Authority {
             let (npc, mode, _) = self
                 .membership_encounter()
                 .ok_or("Creature credit lost pursuit")?;
-            let resetting = matches!(mode, Mode::Return | Mode::Blocked);
-            if runtime.ledger.encounter().creature != npc {
-                runtime.ledger = Ledger::new(runtime.profile.clone(), npc);
-                runtime.last_kill = None;
-                runtime.fatal = None;
-                runtime.departure = false;
-            } else if runtime.last_kill.is_none()
-                && (runtime.departure || (resetting && !runtime.reset_mode))
-            {
-                runtime
-                    .ledger
-                    .reset(world.tick, runtime.ledger.encounter())
-                    .map_err(|e| format!("Creature credit reset refused: {e:?}"))?;
-                runtime.departure = false;
+            // The installed pursuit adapter remains single-creature. A later
+            // population adapter must provide its own complete lifecycle sync.
+            let old = runtime
+                .single_key()
+                .ok_or("Pursuit credit requires one encounter")?;
+            if old != npc {
+                let sequence = runtime.encounters[&old.entity.value()].sequence;
+                runtime.encounters.clear();
+                let mut entry = Encounter::new(runtime.profile.clone(), npc);
+                entry.sequence = sequence;
+                runtime.encounters.insert(npc.entity.value(), entry);
             }
-            runtime.reset_mode = resetting;
+            let entry = runtime.encounters.get_mut(&npc.entity.value()).unwrap();
+            let resetting = matches!(mode, Mode::Return | Mode::Blocked);
+            if entry.last_kill.is_none() && (entry.departure || (resetting && !entry.reset_mode)) {
+                entry
+                    .ledger
+                    .reset(world.tick, entry.ledger.encounter())
+                    .map_err(|e| format!("Creature credit reset refused: {e:?}"))?;
+                entry.departure = false;
+            }
+            entry.reset_mode = resetting;
             Ok(())
         })();
         if let Err(error) = result {
             runtime.error = Some(error.to_string());
         }
         self.credit = Some(runtime);
+    }
+}
+
+#[cfg(test)]
+mod index_tests {
+    use super::*;
+    use theia_core::identity::{EntityId, WorldEpoch};
+    fn key(n: u64) -> EntityKey {
+        EntityKey {
+            epoch: WorldEpoch::new(1).unwrap(),
+            entity: EntityId::new(n).unwrap(),
+        }
+    }
+    fn profile() -> Profile {
+        Profile::from_json(include_bytes!(
+            "../../../../../content/gameplay/development-creature-credit-solo.json"
+        ))
+        .unwrap()
+    }
+    fn tag(runtime: &mut Runtime, target: EntityKey, actor: EntityKey) {
+        let entry = runtime.encounters.get_mut(&target.entity.value()).unwrap();
+        entry
+            .ledger
+            .record(
+                1,
+                DamageFact {
+                    encounter: entry.ledger.encounter(),
+                    source: LifeKey {
+                        actor,
+                        generation: NonZeroU64::new(1).unwrap(),
+                    },
+                    category: Category::AbilityDamage,
+                    sequence: NonZeroU64::new(1).unwrap(),
+                    health_lost: 20,
+                },
+            )
+            .unwrap();
+    }
+    #[test]
+    fn independent_encounters_keep_tags_departures_and_reset_generations_separate() {
+        let mut runtime = Runtime::new(profile(), [0; 32], &[key(20), key(21)]).unwrap();
+        assert!(runtime.single_key().is_none());
+        let old = runtime.capture(key(20)).unwrap();
+        let other = runtime.capture(key(21)).unwrap();
+        tag(&mut runtime, key(20), key(1));
+        tag(&mut runtime, key(21), key(2));
+        runtime.leave(1);
+        assert!(runtime.capture(key(20)).is_none());
+        assert_eq!(runtime.capture(key(21)), Some(other));
+        assert_eq!(
+            runtime.encounter(key(21)).unwrap().ledger.owner(),
+            Some(key(2))
+        );
+        let entry = runtime.encounters.get_mut(&20).unwrap();
+        entry.ledger.reset(2, old).unwrap();
+        entry.departure = false;
+        assert_ne!(runtime.capture(key(20)), Some(old));
+        assert_eq!(runtime.capture(key(21)), Some(other));
+        let mut stale_epoch = key(20);
+        stale_epoch.epoch = WorldEpoch::new(2).unwrap();
+        assert!(runtime.capture(stale_epoch).is_none());
+        assert!(runtime.capture(key(22)).is_none());
+        let entry = runtime.encounters.get_mut(&21).unwrap();
+        entry.last_kill = Some(entry.ledger.finish(2, other).unwrap());
+        runtime.leave(2);
+        let entry = runtime.encounter(key(21)).unwrap();
+        assert!(!entry.departure);
+        assert_eq!(entry.last_kill.as_ref().unwrap().owner, Some(key(2)));
+        assert!(runtime.capture(key(21)).is_none());
+        assert!(runtime.capture(key(20)).is_some());
+    }
+    #[test]
+    fn encounter_registry_refuses_empty_duplicate_and_over_capacity_inputs() {
+        assert!(Runtime::new(profile(), [0; 32], &[]).is_err());
+        assert!(Runtime::new(profile(), [0; 32], &[key(1), key(1)]).is_err());
+        let mut other_epoch = key(1);
+        other_epoch.epoch = WorldEpoch::new(2).unwrap();
+        assert!(Runtime::new(profile(), [0; 32], &[key(1), other_epoch]).is_err());
+        let keys: Vec<_> = (1..=crate::targeting::MAX_TARGETS as u64 + 1)
+            .map(key)
+            .collect();
+        assert!(Runtime::new(profile(), [0; 32], &keys).is_err());
+        assert!(Runtime::new(profile(), [0; 32], &keys[..crate::targeting::MAX_TARGETS]).is_ok());
     }
 }
