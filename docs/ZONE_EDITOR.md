@@ -4821,3 +4821,8 @@ floor/capsule checks and refuses unsafe shortcuts; it does not relax collision
 checks to make a path succeed. Routes are bounded to 8192 preparation samples and
 256 retained points. For longer native observations, the population qualifier
 accepts `--seconds 75` (allowed 1–300 seconds).
+
+The ordinary `tools/play.py` launcher also accepts `--test-route FILE` for one
+authored Classic client, including its population launch. It preflights before
+server or account-login startup and sends the flag only to the client. For multiple
+clients use the managed scenario's per-player route assignments instead.

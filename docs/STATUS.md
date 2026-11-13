@@ -1,3 +1,17 @@
+P4-03 normal-launcher checked test travel, 13 November 2026:
+tools/play.py accepts --test-route for one authored Classic client, preflights
+that route with the actual client before server/login startup, and forwards it
+only to the client. Multiple clients must use per-player managed scenario routes.
+No route means unchanged manual play. Thirteen authored launcher tests and
+17 managed launcher regressions pass. Actual normal-launcher Linux native run
+completes the checked route in 11.83 s with 0.183 m final authoritative error,
+releases input, retains five population actors and shuts down owned processes.
+RX 7900 XTX/RADV Vulkan validation reports no diagnostics.
+Evidence: build/test-route-play-{tests,managed-regressions}.log and
+build/test-route-play-native-v1/{qualification.json,launcher.log,server.log,scene.png}.
+This makes route travel available to the launcher used by account-backed quest
+qualification; the complete quest sequence has not yet been migrated.
+
 P4-03 checked-route input handoff, 13 November 2026:
 Arriving or failing a checked route now releases ordinary player input automatically.
 The terminal route result remains visible; F7 explicitly restarts with the same

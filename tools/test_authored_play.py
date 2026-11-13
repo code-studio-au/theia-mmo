@@ -11,6 +11,38 @@ import play
 
 
 class AuthoredPlay(unittest.TestCase):
+    def test_route_cli_reaches_launcher_as_client_only_selection(self):
+        signature = inspect.signature(play.play)
+        observed = {}
+        def launch(*args, **kwargs):
+            observed.update(signature.bind(*args, **kwargs).arguments)
+        with patch.object(play, 'play', launch):
+            play.main(['--authored-world', 'valley', '--classic', '--test-route', 'route.json'])
+        self.assertEqual(observed['test_route'], Path('route.json').resolve())
+
+    def test_route_requires_single_authored_classic_client_before_any_child(self):
+        with patch.object(play.subprocess, 'Popen') as child:
+            for options in [dict(authored_world=None, classic=True, clients=1),
+                            dict(authored_world=Path('world'), classic=False, clients=1),
+                            dict(authored_world=Path('world'), classic=True, clients=2)]:
+                with self.subTest(options=options), self.assertRaisesRegex(ValueError, 'Test route requires'):
+                    play.play(None, Path('players'), binaries=Path('bin'), prediction=True,
+                              test_route=Path('route.json'), **options)
+            child.assert_not_called()
+
+    def test_route_is_preflighted_before_server_or_account_login(self):
+        with patch.object(Path, 'is_file', return_value=True), \
+                patch.object(play.subprocess, 'run', return_value=SimpleNamespace(
+                    returncode=1, stdout='', stderr='Test route preparation: wrong floor')) as preflight, \
+                patch.object(play.subprocess, 'Popen') as child:
+            with self.assertRaisesRegex(ValueError, 'wrong floor'):
+                play.play(None, Path('players'), 1, Path('bin'), prediction=True,
+                          authored_world=Path('world'), classic=True, test_route=Path('route.json'))
+            command = preflight.call_args.args[0]
+            self.assertIn('--configuration-report', command)
+            self.assertEqual(command[command.index('--test-route') + 1], str(Path('route.json').resolve()))
+            child.assert_not_called()
+
     def test_authored_selection_never_falls_back_to_saved_terrain(self):
         observed = {}
         def launch(*args, **kwargs):

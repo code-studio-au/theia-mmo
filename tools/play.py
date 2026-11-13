@@ -30,7 +30,7 @@ def fantasy_ui_options(directory, classic, combat_catalog, ui_scale=None, ui_pre
     return ['--fantasy-ui', str(directory), *(['--ui-scale', str(ui_scale)] if ui_scale is not None else []), *(['--ui-preferences', str(Path(ui_preferences).resolve())] if ui_preferences is not None else [])]
 
 
-def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn=None, dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None, ui_scale=None, ui_preferences=None, authored_world=None, population_config=None):
+def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn=None, dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None, ui_scale=None, ui_preferences=None, authored_world=None, population_config=None, test_route=None):
     if authored_world is not None:
         if world is not None or chunk_world is not None or saved_terrain is not None:
             raise ValueError('Choose authored, saved or legacy world')
@@ -45,6 +45,14 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
         if creature_profile is not None or navigation is not None:
             raise ValueError('Population configuration excludes patrol overrides')
         population_config = Path(population_config).resolve()
+    route_options = []
+    if test_route is not None:
+        if authored_world is None or not classic or clients != 1:
+            raise ValueError('Test route requires one authored Classic client; use network_playtest for per-player routes')
+        test_route = Path(test_route).resolve()
+        if not test_route.is_file():
+            raise ValueError(f'Missing test route: {test_route}')
+        route_options = ['--test-route', str(test_route)]
     if dev_spawn is None:
         dev_spawn = '8000,8000'
     if document_catalog is not None and (not quest_journal or quest_catalog is None or item_catalog is None):
@@ -276,8 +284,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     for path in [*required, players / ('character.glb' if graybox else 'human.glb'), server_binary, client_binary]:
         if not path.is_file():
             raise ValueError(f'Missing {path}; build with cargo build --release --locked --workspace; see docs/DEVELOPMENT_WORLD.md for asset preparation or select --binaries explicitly')
-    if authored_world is not None and (creature_profile is not None or population_config is not None):
-        checked = subprocess.run([str(client_binary), *scene, '--configuration-report'],
+    if authored_world is not None and (creature_profile is not None or population_config is not None or test_route is not None):
+        checked = subprocess.run([str(client_binary), *scene, *route_options, '--configuration-report'],
                                  env=client_environment(os.environ), capture_output=True, text=True, timeout=30)
         if checked.returncode:
             raise ValueError('Authored gameplay configuration failed: ' + checked.stderr.strip())
@@ -325,7 +333,7 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
             for index in range(clients):
                 processes.append(subprocess.Popen([str(client_binary), '--window-size', window_size, *ui_options, *(['--fullscreen'] if fullscreen else []),
                     *(['--controls-file',str(controls_file.resolve())] if controls_file else []), *(['--camera-collision', camera_collision] if camera_collision else []), *(['--spell-feedback', str(feedback)] if feedback else []), *(['--creature-asset', str(creature_asset.resolve())] if creature_asset else []), *scene,
-                    '--player-assets', str(players),
+                    '--player-assets', str(players), *route_options,
                     '--renet-connect' if tickets else '--connect', address,
                     str(Path(tickets.name) / f'client-{index+1}.token') if tickets else str(certificate)],
                     env=client_environment(os.environ)))
@@ -405,6 +413,7 @@ def main(argv=None):
     parser.add_argument('--rewards', action='store_true', help='Opt-in first training-kill reward; implies equipment and creatures, requires account login')
     parser.add_argument('--equipment', action='store_true', help='Opt-in development main-hand equipment; implies inventory and requires --account-login')
     parser.add_argument('--items', type=Path, help='Development item catalog; requires --inventory')
+    parser.add_argument('--test-route', type=Path, help='Checked client-only route for one authored Classic client; releases control on arrival')
     parser.add_argument('--population-config', type=Path, help='Checked passive saved-zone population; requires authored world, implies Classic combat')
     parser.add_argument('--creatures', action='store_true', help='Opt-in server patrol on baked navigation; implies resources/combat')
     parser.add_argument('--creature-profile', type=Path, help='Patrol definition; requires --creatures')
@@ -560,7 +569,7 @@ def main(argv=None):
         from player_assets import default_player_assets
         players = args.players or (default_player_assets() if graybox else Path('build/reference-scene'))
         play(args.world.resolve() if args.world else None, players.resolve(), args.clients, args.binaries.resolve(), args.tick_hz, args.transport,
-             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot, args.document_catalog.resolve() if args.document_catalog else None, args.quest_item_rewards.resolve() if args.quest_item_rewards else None, args.fantasy_ui, args.ui_scale, args.ui_preferences, args.authored_world.resolve() if args.authored_world else None, args.population_config.resolve() if args.population_config else None)
+             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot, args.document_catalog.resolve() if args.document_catalog else None, args.quest_item_rewards.resolve() if args.quest_item_rewards else None, args.fantasy_ui, args.ui_scale, args.ui_preferences, args.authored_world.resolve() if args.authored_world else None, args.population_config.resolve() if args.population_config else None, args.test_route.resolve() if args.test_route else None)
 
 
 if __name__ == '__main__':
