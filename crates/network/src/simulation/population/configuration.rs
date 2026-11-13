@@ -83,18 +83,18 @@ impl Loaded {
             return Err("Unsupported population configuration schema".into());
         }
         let zone = theia_zone::Zone::load(&contained(root, &document.zone)?)?;
-        let profile = creatures::Profile::from_json(&crate::content::read_bounded(
+        let definition = creatures::Definition::from_json(&crate::content::read_bounded(
             &contained(root, &document.creature)?,
             creatures::MAX_PROFILE_BYTES as u64,
         )?)?;
         // Refuse unresolved behavior/model/count before opening navigation.
-        authoring::binding(&zone, document.group, profile.definition().clone())?;
+        authoring::binding(&zone, document.group, definition.clone())?;
         let nav =
             navigation::Store::open(&contained(root, &document.navigation)?, store.identity())?;
         let (prepared, binding) = authoring::prepare(
             &zone,
             document.group,
-            profile.definition().clone(),
+            definition,
             store,
             &nav,
             document.minimum_spacing_metres,

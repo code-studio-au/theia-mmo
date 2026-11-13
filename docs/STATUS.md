@@ -1,3 +1,19 @@
+P5-17 standalone population creature definitions, 13 November 2026:
+Population loader and editor export accept bounded schema-3 creature type files
+without a patrol route. Explicit can_deflect and existing behavior bounds remain;
+unknown/route fields, missing required values and unsupported schemas refuse.
+Legacy schema-1/2 patrol files still validate before extracting the type. Common
+validation is shared, and equivalent legacy/standalone types keep the same canonical
+population identity. Patrol and gameplay-manifest inputs retain their old contract.
+The new development-creature-passive.json fixture has no aggression; this does not
+enable roaming, pursuit, player life, typed pool damage or first-tag rewards.
+Seventeen creature tests and two editor export unit tests pass. Actual baked
+network snapshot reload with two test players/checked route passes headlessly.
+The five-actor western-grove World fixture uses the standalone file at 20/30/60 Hz,
+verifying combat, XP/quest facts, fresh-ID respawn and identity compatibility.
+Fmt and strict workspace/all-target Clippy pass. No display or rendering change.
+Evidence: build/standalone-creature-{checks,integration}.log.
+
 P3-09 / P5-17 damage definition binding prerequisite, 13 November 2026:
 Physical damage profile validation now accepts the validated creature Definition
 rather than requiring its patrol Profile. Existing client, gameplay bundle and

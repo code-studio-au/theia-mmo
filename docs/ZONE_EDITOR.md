@@ -4713,9 +4713,18 @@ Ordinary world export retains its spawn-group refusal.
 ```sh
 target/debug/theia-zone-editor --zone my-zone.json \
   --export build/my-population-v1 --population \
-  --population-creature content/gameplay/development-creature-patrol.json \
+  --population-creature content/gameplay/development-creature-passive.json \
   --content-id theia.zone.my-population --revision 1
 ```
+
+Standalone creature definitions use schema 3 with `id`,
+`speed_metres_per_second`, `wait_ms`, explicit boolean `can_deflect`, and optional
+validated `aggro`. They have no `route` field. Population export and loading also
+accept legacy schema 1/2 patrol profiles, validating them before extracting the
+type. Equivalent behavior retains the same population identity. Schema 3 is not a
+patrol profile or a gameplay-manifest upgrade; existing patrol launchers still
+require their checked route. The current passive pool rejects aggression and does
+not use speed/wait to introduce roaming.
 
 Build `theia-nav-bake` alongside the editor, or pass `--navigation-baker PATH`.
 `--population-spacing METRES` defaults to 3 (allowed 0.25–32). The bounded bake

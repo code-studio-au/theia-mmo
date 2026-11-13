@@ -1,6 +1,19 @@
 //! Validated creature behavior independent of an individual patrol assignment.
-//! Loaded through the existing profile parser; no new source schema or defaults.
+//! Schema 3 stores a standalone type; legacy patrol profiles remain readable.
+use crate::Result;
+use serde::Deserialize;
 use theia_core::{content::ContentId, pursuit::Settings};
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Document {
+    schema: u32,
+    id: String,
+    speed_metres_per_second: f32,
+    wait_ms: u32,
+    aggro: Option<Settings>,
+    can_deflect: bool,
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Definition {
@@ -11,6 +24,54 @@ pub struct Definition {
     pub(super) can_deflect: bool,
 }
 impl Definition {
+    /// Startup-only type loading. Schema 3 deliberately has no route field;
+    /// schema 1/2 inputs retain all existing patrol validation before extraction.
+    pub fn from_json(bytes: &[u8]) -> Result<Self> {
+        if bytes.len() > super::MAX_PROFILE_BYTES {
+            return Err("Creature definition exceeds byte budget".into());
+        }
+        #[derive(Deserialize)]
+        struct Version {
+            schema: u32,
+        }
+        let version: Version = serde_json::from_slice(bytes)?;
+        if matches!(version.schema, 1 | 2) {
+            return Ok(super::Profile::from_json(bytes)?.definition);
+        }
+        let raw: Document = serde_json::from_slice(bytes)?;
+        if raw.schema != 3 {
+            return Err("Unsupported standalone creature definition schema".into());
+        }
+        Self::checked(
+            &raw.id,
+            raw.speed_metres_per_second,
+            raw.wait_ms,
+            raw.aggro,
+            raw.can_deflect,
+        )
+    }
+    pub(super) fn checked(
+        id: &str,
+        speed: f32,
+        wait_ms: u32,
+        aggro: Option<Settings>,
+        can_deflect: bool,
+    ) -> Result<Self> {
+        if !speed.is_finite()
+            || !(0.1..=5.).contains(&speed)
+            || !(100..=60000).contains(&wait_ms)
+            || aggro.is_some_and(|settings| !settings.valid())
+        {
+            return Err("Creature profile exceeds initial patrol bounds".into());
+        }
+        Ok(Self {
+            id: ContentId::new(id).ok_or("Invalid creature ID")?,
+            speed,
+            wait_ms,
+            aggro,
+            can_deflect,
+        })
+    }
     pub fn id(&self) -> &ContentId {
         &self.id
     }
@@ -58,8 +119,76 @@ impl Definition {
 #[cfg(test)]
 mod tests {
     use super::super::Profile;
+    use super::Definition;
     const SOURCE: &[u8] =
         include_bytes!("../../../../../content/gameplay/development-creature-deflect-pursuit.json");
+    #[test]
+    fn standalone_types_match_legacy_behavior_without_inventing_a_patrol() {
+        let legacy = Profile::from_json(SOURCE).unwrap();
+        let mut raw: serde_json::Value = serde_json::from_slice(SOURCE).unwrap();
+        raw["schema"] = 3.into();
+        raw.as_object_mut().unwrap().remove("route");
+        let bytes = serde_json::to_vec(&raw).unwrap();
+        let standalone = Definition::from_json(&bytes).unwrap();
+        assert_eq!(&standalone, legacy.definition());
+        assert_eq!(standalone.identity(), legacy.definition().identity());
+        assert!(Profile::from_json(&bytes).is_err());
+        assert_eq!(Definition::from_json(SOURCE).unwrap(), standalone);
+        let passive = Definition::from_json(include_bytes!(
+            "../../../../../content/gameplay/development-creature-passive.json"
+        ))
+        .unwrap();
+        let legacy_passive = Definition::from_json(include_bytes!(
+            "../../../../../content/gameplay/development-creature-patrol.json"
+        ))
+        .unwrap();
+        assert_eq!(passive, legacy_passive);
+    }
+    #[test]
+    fn standalone_schema_refuses_routes_unknown_fields_and_invalid_behavior() {
+        let source: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../../content/gameplay/development-creature-passive.json"
+        ))
+        .unwrap();
+        for (field, value) in [
+            ("schema", serde_json::json!(4)),
+            ("schema", serde_json::json!(2)),
+            ("route", serde_json::json!("theia.dev.training-patrol")),
+            ("route", serde_json::Value::Null),
+            ("unknown", serde_json::json!(true)),
+            ("id", serde_json::json!("invalid id")),
+            ("speed_metres_per_second", serde_json::json!(0)),
+            ("speed_metres_per_second", serde_json::json!(5.1)),
+            ("wait_ms", serde_json::json!(99)),
+            ("wait_ms", serde_json::json!(60001)),
+            ("can_deflect", serde_json::Value::Null),
+            ("aggro", serde_json::json!({})),
+        ] {
+            let mut raw = source.clone();
+            raw[field] = value;
+            assert!(
+                Definition::from_json(&serde_json::to_vec(&raw).unwrap()).is_err(),
+                "{field}"
+            );
+        }
+        for missing in [
+            "schema",
+            "id",
+            "speed_metres_per_second",
+            "wait_ms",
+            "can_deflect",
+        ] {
+            let mut raw = source.clone();
+            raw.as_object_mut().unwrap().remove(missing);
+            assert!(
+                Definition::from_json(&serde_json::to_vec(&raw).unwrap()).is_err(),
+                "{missing}"
+            );
+        }
+        let mut bytes = serde_json::to_vec(&source).unwrap();
+        bytes.resize(super::super::MAX_PROFILE_BYTES + 1, b' ');
+        assert!(Definition::from_json(&bytes).is_err());
+    }
     #[test]
     fn definitions_ignore_route_and_format_but_patrol_profiles_keep_exact_identity() {
         let original = Profile::from_json(SOURCE).unwrap();

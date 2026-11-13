@@ -49,22 +49,14 @@ impl Profile {
             (2, Some(value)) => value,
             _ => return Err("Creature deflect eligibility requires explicit schema 2".into()),
         };
-        if !matches!(raw.schema, 1..=2)
-            || !raw.speed_metres_per_second.is_finite()
-            || !(0.1..=5.).contains(&raw.speed_metres_per_second)
-            || !(100..=60000).contains(&raw.wait_ms)
-            || raw.aggro.is_some_and(|settings| !settings.valid())
-        {
-            return Err("Creature profile exceeds initial patrol bounds".into());
-        }
         Ok(Self {
-            definition: Definition {
-                id: ContentId::new(&raw.id).ok_or("Invalid creature ID")?,
-                speed: raw.speed_metres_per_second,
-                wait_ms: raw.wait_ms,
-                aggro: raw.aggro,
+            definition: Definition::checked(
+                &raw.id,
+                raw.speed_metres_per_second,
+                raw.wait_ms,
+                raw.aggro,
                 can_deflect,
-            },
+            )?,
             route: ContentId::new(&raw.route).ok_or("Invalid creature route ID")?,
             digest: crate::terrain::sha256(bytes),
         })

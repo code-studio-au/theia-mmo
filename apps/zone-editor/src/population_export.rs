@@ -29,13 +29,13 @@ pub(super) fn default_baker() -> Result<PathBuf, String> {
         .join(format!("theia-nav-bake{}", std::env::consts::EXE_SUFFIX)))
 }
 
-fn validate(zone: &Zone, profile: &creatures::Profile, spacing: f64) -> Result<u64, String> {
+fn validate(zone: &Zone, profile: &creatures::Definition, spacing: f64) -> Result<u64, String> {
     validate_mode(zone, profile, spacing, false)
 }
 
 fn validate_mode(
     zone: &Zone,
-    profile: &creatures::Profile,
+    profile: &creatures::Definition,
     spacing: f64,
     network: bool,
 ) -> Result<u64, String> {
@@ -69,8 +69,7 @@ fn validate_mode(
         );
     }
     let id = groups[0].id;
-    population::authoring::binding(zone, id, profile.definition().clone())
-        .map_err(|e| e.to_string())?;
+    population::authoring::binding(zone, id, profile.clone()).map_err(|e| e.to_string())?;
     population::authoring::request(zone, id, spacing, zone.spawn).map_err(|e| e.to_string())?;
     Ok(id)
 }
@@ -115,7 +114,7 @@ fn publish_mode(
         .take(creatures::MAX_PROFILE_BYTES as u64 + 1)
         .read_to_end(&mut creature)
         .map_err(|e| e.to_string())?;
-    let profile = creatures::Profile::from_json(&creature).map_err(|e| e.to_string())?;
+    let profile = creatures::Definition::from_json(&creature).map_err(|e| e.to_string())?;
     let group = if network {
         validate_mode(zone, &profile, settings.spacing, true)?
     } else {
@@ -254,7 +253,7 @@ fn publish_mode(
 mod tests {
     use super::*;
     const CREATURE: &[u8] =
-        include_bytes!("../../../content/gameplay/development-creature-patrol.json");
+        include_bytes!("../../../content/gameplay/development-creature-passive.json");
     fn fixture() -> Zone {
         let mut terrain = theia_zone::terrain::HeightPatch::flat([62, 62]);
         terrain.span_chunks = 4;
@@ -310,7 +309,7 @@ mod tests {
     }
     #[test]
     fn passive_export_refuses_ambiguous_or_unsupported_group_policies() {
-        let profile = creatures::Profile::from_json(CREATURE).unwrap();
+        let profile = creatures::Definition::from_json(CREATURE).unwrap();
         let zone = fixture();
         assert_eq!(validate(&zone, &profile, 3.).unwrap(), 1);
         for spacing in [0., -1., f64::NAN, f64::INFINITY] {
@@ -333,7 +332,7 @@ mod tests {
         let mut changed = zone.clone();
         changed.spawn_groups[0].model = Some("theia.model.wolf".into());
         assert!(validate(&changed, &profile, 3.).is_err());
-        let aggressive = creatures::Profile::from_json(include_bytes!(
+        let aggressive = creatures::Definition::from_json(include_bytes!(
             "../../../content/gameplay/development-creature-pursuit.json"
         ))
         .unwrap();

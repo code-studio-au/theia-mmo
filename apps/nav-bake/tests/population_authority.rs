@@ -121,6 +121,22 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
         );
     }
     std::fs::write(&config_path, serde_json::to_vec(&config).unwrap()).unwrap();
+    let source = procedural::Source::Authored(store.clone());
+    let legacy_identity =
+        theia_network::simulation::population::configuration::Loaded::open(&config_path, &source)
+            .unwrap()
+            .profile_identity([0; 32]);
+    std::fs::write(
+        scratch.0.join("creature.json"),
+        include_bytes!("../../../content/gameplay/development-creature-passive.json"),
+    )
+    .unwrap();
+    assert_eq!(
+        legacy_identity,
+        theia_network::simulation::population::configuration::Loaded::open(&config_path, &source)
+            .unwrap()
+            .profile_identity([0; 32])
+    );
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let loaded = theia_network::simulation::population::configuration::Loaded::open(
             &config_path,
