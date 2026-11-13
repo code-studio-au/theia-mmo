@@ -70,6 +70,40 @@ class Accounts(unittest.TestCase):
             self.assertIsNone(client._session)
         self.assertEqual(calls[-1],('/auth/cancel',{'challenge':flow['challenge'],'proof':flow['proof']}))
 
+    def test_owner_cancellation_revokes_login_challenge_and_allows_logout(self):
+        calls = []
+        stopped = threading.Event()
+        flow = {'challenge':'a'*32, 'proof':'b'*64, 'authorization_url':'http://127.0.0.1:5051/authorize'}
+        def reply(path, body):
+            calls.append(path)
+            return (200, {}, json.dumps(flow).encode()) if path == '/auth/start' else (204, {}, b'')
+        with service(reply) as base:
+            client = AccountClient(base, cancelled=stopped.is_set)
+            def browser(_):
+                stopped.set()
+                return True
+            with self.assertRaises(KeyboardInterrupt):
+                client.login(open_browser=browser)
+            self.assertEqual(calls, ['/auth/start', '/auth/cancel'])
+            client._session = 'f'*64
+            client.close()
+            self.assertEqual(calls[-1], '/auth/logout')
+            self.assertIsNone(client._session)
+
+    def test_owner_cancellation_during_admission_never_writes_a_ticket(self):
+        stopped = threading.Event()
+        character = '74686569-6100-0000-0000-000000000123'
+        def reply(path, body):
+            stopped.set()
+            return 200, {}, json.dumps({'id':character, 'address':'127.0.0.1:7000',
+                                        'ticket':[1], 'expires_in_seconds':20}).encode()
+        with service(reply) as base, tempfile.TemporaryDirectory() as folder:
+            client = AccountClient(base, cancelled=stopped.is_set)
+            ticket = Path(folder)/'private.token'
+            with self.assertRaises(KeyboardInterrupt):
+                client.enter(character, ticket)
+            self.assertFalse(ticket.exists())
+
     def test_invalid_tickets_never_create_a_bearer_file(self):
         character='74686569-6100-0000-0000-000000000123'
         for address,data in [('203.0.113.1:7000',[1]),('127.0.0.1:7000',[True]),('127.0.0.1:7000',[-1]),('127.0.0.1:7000',[256]),('127.0.0.1:7000',[1]*2049)]:

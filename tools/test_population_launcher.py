@@ -75,6 +75,14 @@ class PopulationLauncher(unittest.TestCase):
                               character_id=selected)
         launch.assert_not_called()
 
+    def test_stopped_owner_returns_before_files_or_processes_and_account_prompt_is_refused(self):
+        with patch.object(play.subprocess, 'Popen') as launch:
+            play.play(None, Path('missing'), 1, Path('missing'), stop_requested=lambda: True)
+            with self.assertRaisesRegex(ValueError, 'explicit character'):
+                play.play(None, Path('missing'), 1, Path('missing'), account_login=True,
+                          stop_requested=lambda: False)
+        launch.assert_not_called()
+
     def test_cli_population_player_life_selects_resources_without_a_patrol(self):
         with patch.object(play, 'play') as launch:
             play.main(['--authored-world', 'world', '--population-config', 'population.json',

@@ -1,3 +1,22 @@
+P3-01 / P3-03 / P5-17 owned account launcher shutdown, 13 November 2026:
+Normal play now optionally stops on its owner's stdin EOF. Account mode requires
+explicit character selection so the lifetime pipe cannot consume an interactive
+character prompt. Cancellation is checked before launch, through startup/admission
+and while running. Account requests stop on cancellation, but challenge cancellation
+and logout remain allowed; a cancelled admission response cannot write a ticket.
+The existing managed launcher shares the small pipe watcher without behavior change.
+Fourteen real localhost HTTP tests pass, including login challenge cleanup and
+cancellation during ticket admission; eleven population launcher tests pass (one
+asset check skipped), plus all 19 managed-launch, 13 authored-launch and 49 bundle
+tests. Python compilation and diff checks pass. Real native account rejoin with the
+owner pipe open succeeds, then pipe closure exits cleanly and removes tickets while
+preserving committed 25 XP, consumed training reward and inventory revision 2.
+The native run covers joined shutdown; during-login cancellation is covered by the
+HTTP tests. No OS input is automated. RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, zero GPU diagnostics; owned services/password files are cleaned up.
+Evidence: build/population-owned-account-stop-native-v1/qualification.json.
+This is launcher lifecycle support, not yet an editor account-picker UI. Local only.
+
 P3-01 / P5-17 explicit account character entry prerequisite, 13 November 2026:
 The normal play launcher now accepts --character-id for an existing character.
 It validates a nonzero UUID and requires account login before process/file startup,

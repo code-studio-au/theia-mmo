@@ -40,10 +40,11 @@ def _endpoint(value, *, browser=False):
 
 
 class AccountClient:
-    def __init__(self, base, alive=lambda: True):
+    def __init__(self, base, alive=lambda: True, cancelled=lambda: False):
         _endpoint(base)
         self._base = base.rstrip('/')
         self._alive = alive
+        self._cancelled = cancelled
         self._session = None
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
@@ -53,6 +54,8 @@ class AccountClient:
     def request(self, path, body=None):
         if path not in {'/auth/start', '/auth/poll', '/auth/cancel', '/auth/logout', '/characters', '/characters/enter'}:
             raise AccountError('Unknown account operation')
+        if path not in {'/auth/cancel', '/auth/logout'} and self._cancelled():
+            raise KeyboardInterrupt
         if not self._alive():
             raise AccountError('The game server stopped')
         data = json.dumps(body).encode() if body is not None else None
@@ -70,6 +73,8 @@ class AccountClient:
             with response:
                 status = response.code
                 raw = response.read(65537)
+            if path not in {'/auth/cancel', '/auth/logout'} and self._cancelled():
+                raise KeyboardInterrupt
             if len(raw) > 65536:
                 raise AccountError('Account response is too large')
             incompatible = 'Character uses incompatible gameplay content; select a compatible character'

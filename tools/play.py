@@ -12,6 +12,9 @@ import subprocess
 import time
 import tempfile
 import uuid
+import sys
+import threading
+from launcher_owner import watch_owner
 from launch_environment import client_environment
 
 
@@ -31,7 +34,12 @@ def fantasy_ui_options(directory, classic, combat_catalog, ui_scale=None, ui_pre
     return ['--fantasy-ui', str(directory), *(['--ui-scale', str(ui_scale)] if ui_scale is not None else []), *(['--ui-preferences', str(Path(ui_preferences).resolve())] if ui_preferences is not None else [])]
 
 
-def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn=None, dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None, ui_scale=None, ui_preferences=None, authored_world=None, population_config=None, test_route=None, character_id=None):
+def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn=None, dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None, ui_scale=None, ui_preferences=None, authored_world=None, population_config=None, test_route=None, character_id=None, stop_requested=None):
+    if stop_requested is not None and account_login and character_id is None:
+        raise ValueError("Owned account launch requires explicit character selection")
+    stop_requested = stop_requested or (lambda: False)
+    if stop_requested():
+        return
     if character_id is not None:
         if not account_login:
             raise ValueError("Explicit character selection requires account login")
@@ -308,6 +316,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
                 raise ValueError()
         except (ValueError, TypeError):
             raise ValueError('Authored gameplay preflight did not return a configuration-only report') from None
+    if stop_requested():
+        return
     session = Path('build/development-session')
     session.mkdir(parents=True, exist_ok=True)
     certificate = session / 'server-cert.der'
@@ -317,6 +327,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     account = None
     try:
         with (session / 'server.log').open('w') as log:
+            if stop_requested():
+                return
             server = subprocess.Popen([str(server_binary), '127.0.0.1:0', str(certificate),
                                        *scene, *server_options, *(['--dev-persistence'] if persistence else []), '--tick-hz', str(tick_hz),
                                        *(['--account-login'] if account_login else (['--renet-tickets', tickets.name] if tickets else []))],
@@ -325,13 +337,15 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
             address = None
             deadline = time.monotonic() + 20
             while time.monotonic() < deadline:
+                if stop_requested():
+                    return
                 if server.poll() is not None:
                     raise RuntimeError(f'Server failed; see {session / "server.log"}')
                 if account_login:
                     ready = next((json.loads(line.removeprefix('account_game_ready ')) for line in (session/'server.log').read_text().splitlines() if line.startswith('account_game_ready ')),None)
                     if ready:
                         from account_login import AccountClient
-                        account = AccountClient(ready['account_address'],alive=lambda:server.poll() is None)
+                        account = AccountClient(ready['account_address'],alive=lambda:server.poll() is None,cancelled=stop_requested)
                         print('Sign in using your system browser.' if character_id else 'Sign in using your system browser, then return here to choose your character.',flush=True)
                         account.login()
                         ticket = Path(tickets.name)/'client-1.token'
@@ -345,6 +359,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
             if address is None:
                 raise RuntimeError('Server readiness timed out')
             for index in range(clients):
+                if stop_requested():
+                    return
                 processes.append(subprocess.Popen([str(client_binary), '--window-size', window_size, *ui_options, *(['--fullscreen'] if fullscreen else []),
                     *(['--controls-file',str(controls_file.resolve())] if controls_file else []), *(['--camera-collision', camera_collision] if camera_collision else []), *(['--spell-feedback', str(feedback)] if feedback else []), *(['--creature-asset', str(creature_asset.resolve())] if creature_asset else []), *scene,
                     '--player-assets', str(players), *route_options,
@@ -359,7 +375,7 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
                 print('Theia Classic: character-relative movement; walk/run toggle from controls settings (default NumpadDivide); LMB orbit, RMB steer, wheel zoom, Escape closes panels or clears target.', flush=True)
             else:
                 print('Theia development map: WASD, Shift to run, Space to jump, RMB orbit, wheel zoom, Escape to quit.', flush=True)
-            while all(p.poll() is None for p in processes):
+            while not stop_requested() and all(p.poll() is None for p in processes):
                 time.sleep(.2)
             if any(p.poll() not in (None, 0) for p in processes):
                 raise RuntimeError('A game process failed; inspect its output and build/development-session/server.log')
@@ -403,6 +419,7 @@ def main(argv=None):
     parser.add_argument('--ui-preferences', type=Path, help='Optional local UI preference JSON; requires --fantasy-ui; explicit --ui-scale overrides on launch')
     parser.add_argument('--players', type=Path, help='Player assets; defaults to POLYGON for graybox')
     parser.add_argument('--prediction', action=argparse.BooleanOptionalAction, default=None, help='Movement prediction (default for graybox; --no-prediction retains server-pose interpolation)')
+    parser.add_argument('--stop-on-stdin-eof', action='store_true', help='Stop owned children when the launching editor closes its stdin pipe; account mode requires --character-id')
     parser.add_argument('--character-id', help='Enter this existing character UUID after account login, without a terminal selection prompt')
     parser.add_argument('--account-login', action='store_true', help='System-browser OIDC and owned character entry; requires configured loopback provider/database')
     parser.add_argument('--persistence', action='store_true', help='Opt-in trusted development character checkpoints; requires local THEIA_DATABASE_URL')
@@ -468,6 +485,9 @@ def main(argv=None):
     parser.add_argument('--melee-weapons', type=Path, help='Explicit weapon-timed melee profile; requires classic account-backed combat')
     parser.add_argument('--dodge-profile', type=Path, help='Opt-in checked dodge movement; V key')
     args = parser.parse_args(argv)
+    stopped = threading.Event()
+    if args.stop_on_stdin_eof:
+        threading.Thread(target=watch_owner, args=(sys.stdin.buffer, stopped), daemon=True).start()
     if args.population_config:
         if args.gameplay_manifest:
             parser.error('--population-config cannot be mixed with a singleton gameplay manifest')
@@ -584,7 +604,7 @@ def main(argv=None):
         from player_assets import default_player_assets
         players = args.players or (default_player_assets() if graybox else Path('build/reference-scene'))
         play(args.world.resolve() if args.world else None, players.resolve(), args.clients, args.binaries.resolve(), args.tick_hz, args.transport,
-             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot, args.document_catalog.resolve() if args.document_catalog else None, args.quest_item_rewards.resolve() if args.quest_item_rewards else None, args.fantasy_ui, args.ui_scale, args.ui_preferences, args.authored_world.resolve() if args.authored_world else None, args.population_config.resolve() if args.population_config else None, args.test_route.resolve() if args.test_route else None, args.character_id)
+             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot, args.document_catalog.resolve() if args.document_catalog else None, args.quest_item_rewards.resolve() if args.quest_item_rewards else None, args.fantasy_ui, args.ui_scale, args.ui_preferences, args.authored_world.resolve() if args.authored_world else None, args.population_config.resolve() if args.population_config else None, args.test_route.resolve() if args.test_route else None, args.character_id, stopped.is_set if args.stop_on_stdin_eof else None)
 
 
 if __name__ == '__main__':

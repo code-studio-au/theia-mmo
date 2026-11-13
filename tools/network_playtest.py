@@ -16,6 +16,7 @@ import tempfile
 import time
 
 from launch_environment import client_environment
+from launcher_owner import watch_owner
 from network_profile import Profile
 from udp_impairment import Relay
 
@@ -289,15 +290,6 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
         (output / 'session.json').write_text(json.dumps(summary, indent=2) + '\n')
         if cleanup_errors:
             raise RuntimeError('Playtest cleanup failed: ' + '; '.join(cleanup_errors))
-
-
-def watch_owner(stream, stopped):
-    """A private piped stdin closes even if the owning editor crashes."""
-    try:
-        while stream.read(4096):
-            pass
-    finally:
-        stopped.set()
 
 
 def main():

@@ -94,6 +94,7 @@ def run(args):
             with (folder/'launcher.log').open('w') as log:
                 launcher = subprocess.Popen([sys.executable, 'tools/play.py', *common,
                     *(['--character-id', character_id] if resumed else []),
+                    *(['--stop-on-stdin-eof'] if resumed and args.owned_stop else []),
                     '--account-login', '--equipment', '--status-effects', *launch_profiles,
                     *(['--progression', '--rewards'] if args.kill else []),
                     '--binaries', str(binaries), '--players', str(args.players.resolve()),
@@ -103,7 +104,7 @@ def run(args):
                     if not resumed:
                         launcher.stdin.write('PoolArden\n')
                         launcher.stdin.flush()
-                    else:
+                    elif not args.owned_stop:
                         launcher.stdin.close()
                     def state():
                         assert launcher.poll() is None, 'Owned typed population launcher exited'
@@ -156,7 +157,10 @@ def run(args):
                         experience=observed.get('committed_progression'), rewards=observed.get('available_rewards')))
                 finally:
                     if launcher.poll() is None:
-                        launcher.send_signal(signal.SIGINT)
+                        if resumed and args.owned_stop:
+                            launcher.stdin.close()
+                        else:
+                            launcher.send_signal(signal.SIGINT)
                         try:
                             launcher.wait(timeout=30)
                         except subprocess.TimeoutExpired:
@@ -212,7 +216,7 @@ def run(args):
                 assert identity.password not in text and cluster.password not in text
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
-    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=True,
+    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=True, owner_pipe_stop=args.owned_stop,
         mouse_or_keyboard_automation=False, scope=('Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
@@ -220,6 +224,7 @@ def run(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--owned-stop', action='store_true', help='Stop the resumed account launcher by closing its owner pipe')
     parser.add_argument('--repeat-kill', action='store_true', help='Kill again after restart; require new XP but no repeated training reward')
     parser.add_argument('--claim-reward', action='store_true', help='Defeat one NPC, collect the training reward and verify durable inventory')
     parser.add_argument('--kill', action='store_true', help='Defeat one NPC and verify durable first-tag XP and training reward')
