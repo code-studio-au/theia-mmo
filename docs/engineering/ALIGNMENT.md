@@ -1,3 +1,29 @@
+P4-03 rolling-ground test-route preparation, 13 November 2026:
+Long path segments now project onto their continuous navigation/collision floor
+at 0.1 m intervals before retaining roughly metre-spaced follower points. Strict
+navigation layer sampling, grounded capsule checks and final segment-clearance
+validation are retained. Endpoint floor changes refuse; budgets remain 8192
+projection samples and 256 retained points. This changes test-route preparation,
+not actor authority or ordinary NPC path behavior. The initial straight shortcut
+near the valley cottage still refuses because the capsule has no safe support.
+Three waypoint-guided valley approaches now pass preflight instead of failing
+because linearly interpolated endpoint heights disagree with rolling terrain.
+Actual rolling-route regression checks short retained segments and wrong-floor
+refusal; strict workspace/all-target Clippy/fmt pass. Native real server/client
+follows the western approach through authored scenery/terrain: 111 grounded
+points, 48.93 s, about 0.108 m goal error and 2.575 radians total requested turn
+(about 148 degrees). Authority receives 1554 inputs without rejection or movement
+recovery. No OS character/camera input. Screenshot inspected at 1600x1000;
+RX 7900 XTX/RADV Vulkan validation has zero GPU diagnostics. Native qualifier
+now accepts a bounded --seconds 1..300 observation window for longer routes.
+Evidence: build/test-route-grounding-{build,tests}.log;
+build/test-route-input-v1/valley-*-grounded.log;
+build/test-route-valley-direct-grounded.log;
+build/test-route-valley-native-v1/{qualification.json,scene.png,client.log,server.log}.
+The player can now approach the populated grove through checked test travel;
+quest/NPC interaction, explicit target/range binding and kill automation remain
+separate follow-ups. No universal route coverage or performance/capacity claim.
+
 P4-03 / P5-17 per-player checked routes in managed playtests, 13 November 2026:
 Schema-1 test scenarios may assign a client-only route file, exclusive with a step
 controller. Route files resolve relative to the scenario; the existing byte/path

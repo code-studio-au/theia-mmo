@@ -72,15 +72,18 @@ impl Travel {
                 .map(|&p| GlobalPosition::new(p).ok_or("Invalid test waypoint".into()))
                 .collect::<theia_network::Result<Vec<_>>>()?;
             let mut points = Vec::new();
+            let mut samples = 0;
             for pair in waypoints.windows(2) {
-                for point in query.route(pair[0], pair[1])? {
-                    let point = ground.at(point)?;
-                    if points.last() != Some(&point) {
-                        points.push(point);
-                    }
-                    if points.len() > navigation::MAX_ROUTE_POINTS {
-                        return Err("Test route exceeds waypoint budget".into());
-                    }
+                let path = query.route(pair[0], pair[1])?;
+                for segment in path.windows(2) {
+                    project_segment(
+                        &query,
+                        &mut ground,
+                        segment[0],
+                        segment[1],
+                        &mut points,
+                        &mut samples,
+                    )?;
                 }
             }
             navigation::authored_checks::clearance(
@@ -230,6 +233,55 @@ impl Travel {
         ))
     }
 }
+/// Follow the same floor continuously, rather than interpolating a long segment's
+/// endpoint heights across rolling terrain. All original strict layer tolerances
+/// and collision checks remain in force. Keep metre-spaced ground points for the
+/// follower, then run ordinary clearance again over their connecting segments.
+fn project_segment(
+    query: &navigation::query::Query,
+    ground: &mut navigation::authored_checks::Grounding<'_>,
+    start: GlobalPosition,
+    end: GlobalPosition,
+    points: &mut Vec<GlobalPosition>,
+    samples: &mut usize,
+) -> theia_network::Result<()> {
+    let mut previous = ground.at(start)?;
+    let expected_end = ground.at(end)?;
+    if points.last() != Some(&previous) {
+        points.push(previous);
+    }
+    let a = start.metres();
+    let b = end.metres();
+    let steps = ((b[0] - a[0]).hypot(b[2] - a[2]) / 0.1).ceil().max(1.) as usize;
+    *samples = samples
+        .checked_add(steps)
+        .filter(|n| *n <= 8192)
+        .ok_or("Test route grounding sample budget exceeded")?;
+    for step in 1..=steps {
+        let fraction = step as f64 / steps as f64;
+        let x = a[0] + (b[0] - a[0]) * fraction;
+        let z = a[2] + (b[2] - a[2]) * fraction;
+        let candidate = GlobalPosition::new([x, previous.metres()[1], z])
+            .ok_or("Invalid projected route point")?;
+        let sampled = query.sample(candidate)?;
+        previous = ground
+            .at(GlobalPosition::new([x, sampled.metres()[1], z]).ok_or("Invalid route height")?)?;
+        if step == steps && distance(previous, expected_end) > 0.3 {
+            return Err("Test route projection changed floor".into());
+        }
+        let last = points.last().unwrap().metres();
+        if step == steps || (x - last[0]).hypot(z - last[2]) >= 1. {
+            if points.last() != Some(&previous) {
+                points.push(previous);
+            }
+            if points.len() > navigation::MAX_ROUTE_POINTS {
+                return Err("Test route exceeds waypoint budget".into());
+            }
+        }
+    }
+    Ok(())
+}
+
 fn distance(a: GlobalPosition, b: GlobalPosition) -> f64 {
     a.metres()
         .into_iter()
@@ -268,6 +320,28 @@ mod tests {
             point(8., -20.),
         ])
         .unwrap()
+    }
+    #[test]
+    #[ignore = "requires THEIA_ROUTE_WORLD and THEIA_ROUTE_FILE with actual authored navigation"]
+    fn actual_rolling_route_is_grounded_continuously_without_floor_snapping() {
+        let world = std::path::PathBuf::from(std::env::var_os("THEIA_ROUTE_WORLD").unwrap());
+        let path = std::path::PathBuf::from(std::env::var_os("THEIA_ROUTE_FILE").unwrap());
+        let source = procedural::Source::Authored(std::sync::Arc::new(
+            theia_network::authored_world::Store::open(&world).unwrap(),
+        ));
+        let bytes = std::fs::read(&path).unwrap();
+        let (_, travel) = Travel::load(&path, &bytes, &source).unwrap();
+        assert!(travel.points.len() > 4);
+        for pair in travel.points.windows(2) {
+            let a = pair[0].metres();
+            let b = pair[1].metres();
+            assert!((a[0] - b[0]).hypot(a[2] - b[2]) <= 1.11);
+        }
+        let mut invalid: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        for point in invalid["waypoints"].as_array_mut().unwrap() {
+            point[1] = serde_json::json!(point[1].as_f64().unwrap() + 20.);
+        }
+        assert!(Travel::load(&path, &serde_json::to_vec(&invalid).unwrap(), &source).is_err());
     }
     #[test]
     fn continuous_walk_with_bounded_corner_turns_arrives_at_all_frame_rates() {

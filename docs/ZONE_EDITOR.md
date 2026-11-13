@@ -4810,3 +4810,11 @@ any child, passes it only to that player and retains the assignment in its sessi
 report. Other players can remain manual. A player cannot specify both route and
 step-controller files. Route starting feet must match that player's admitted start.
 The native editor's controller choices are unchanged in this slice.
+
+
+Route preparation follows rolling ground continuously at 0.1 m validation
+intervals, retaining roughly metre-spaced points for steering. It retains strict
+floor/capsule checks and refuses unsafe shortcuts; it does not relax collision
+checks to make a path succeed. Routes are bounded to 8192 preparation samples and
+256 retained points. For longer native observations, the population qualifier
+accepts `--seconds 75` (allowed 1–300 seconds).

@@ -1,3 +1,9 @@
+Test-travel progress: managed per-player route assignment and native rolling-valley
+travel are now qualified (13 November 2026). The approximately 49-second grove
+approach uses ordinary input without OS mouse corrections. Remaining requested
+flow: interaction/target range binding, target invalidation and full quest/kill
+orchestration; editor route authoring remains a separate convenience follow-up.
+
 Test-travel progress, 13 November 2026: explicit client --test-route now follows
 startup-checked static navigation through normal Classic input. Actual native
 28 m/two-corner travel completes without OS mouse steering or repeated full spins.
