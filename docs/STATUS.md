@@ -1,3 +1,19 @@
+P4-03 headless authoritative quest-route qualification, 13 November 2026:
+The opt-in follower now has a real authored-World regression: shared Classic
+controls emit ordinary queued commands through authority and Avian collision,
+with owner-side terrain polling outside fixed simulation. The contact-v3 village/
+grove trail completes all 136 grounded points outward and back at 20/30/60 Hz.
+Outward takes 52.8–53.2 simulated seconds and return 53.17–53.7; endpoint error
+is at most 0.25 m, neutral input stops movement, and recoveries remain zero.
+A turn budget derived from route bends rejects repeated waypoint spins. Thirteen
+controller unit tests pass, two asset-dependent tests remain opt-in; the new
+actual-route test passes separately. Fmt and strict workspace/all-target Clippy
+pass. No renderer, display, mouse, authenticated transport, quest UI or durable
+reward acceptance is claimed. Full native checked-route quest flow remains pending.
+Evidence: build/quest-route-authority-final.log. Reproduce with THEIA_ROUTE_WORLD
+and THEIA_ROUTE_FILE, then cargo test -p theia-client
+actual_route_walks_out_and_back_through_authority_at_all_rates -- --ignored --nocapture.
+
 P3-11 / P5-17 population quest-reference and occurrence prerequisite, 13 November 2026:
 Quest catalogue validation now recognizes the installed passive population's creature
 type independently of its live actors. Reward/document/area alias checks use the

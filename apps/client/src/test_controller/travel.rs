@@ -6,6 +6,9 @@ use std::path::Path;
 use theia_core::{coordinates::GlobalPosition, facing::Facing};
 use theia_network::{navigation, procedural};
 
+#[cfg(test)]
+mod authority_tests;
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Document {
