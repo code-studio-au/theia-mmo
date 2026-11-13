@@ -35,17 +35,26 @@ impl Manager {
         self.child.is_some()
     }
     pub fn start(&mut self, snapshot: &Path, players: &Path) -> Result<(), String> {
-        self.start_mode(snapshot, players, false, false)
+        self.start_mode(snapshot, players, false, false, None)
     }
     pub fn start_population(&mut self, snapshot: &Path, players: &Path) -> Result<(), String> {
-        self.start_mode(snapshot, players, true, false)
+        self.start_mode(snapshot, players, true, false, None)
     }
     pub fn start_account_population(
         &mut self,
         snapshot: &Path,
         players: &Path,
     ) -> Result<(), String> {
-        self.start_mode(snapshot, players, true, true)
+        self.start_mode(snapshot, players, true, true, None)
+    }
+    pub fn start_account_catalogues(
+        &mut self,
+        snapshot: &Path,
+        players: &Path,
+        items: &Path,
+        rewards: &Path,
+    ) -> Result<(), String> {
+        self.start_mode(snapshot, players, true, true, Some((items, rewards)))
     }
     fn start_mode(
         &mut self,
@@ -53,6 +62,7 @@ impl Manager {
         players: &Path,
         population: bool,
         account: bool,
+        catalogues: Option<(&Path, &Path)>,
     ) -> Result<(), String> {
         if self.running() {
             return Err("Stop the current network playtest first".into());
@@ -132,6 +142,13 @@ impl Manager {
         }
         if account {
             command.arg("--package").arg(&snapshot);
+            if let Some((items, rewards)) = catalogues {
+                command
+                    .arg("--items")
+                    .arg(items)
+                    .arg("--reward-catalog")
+                    .arg(rewards);
+            }
         } else {
             command
                 .arg("--scenario")

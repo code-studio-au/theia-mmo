@@ -43,6 +43,31 @@ class AccountPopulation(unittest.TestCase):
                 (root/'content/gameplay'/path.name).write_bytes(b'changed source')
                 self.assertNotEqual(path.read_bytes(), b'changed source')
 
+    def test_selected_catalogues_are_frozen_and_enable_shared_corpse_pickup(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            args.items = root/'items.json'
+            args.reward_catalog = root/'rewards.json'
+            args.items.write_text('{"schema":2}')
+            args.reward_catalog.write_text('{"rewards":[{"scope":"per_creature_life"}]}')
+            command = launcher.prepare(args, root)
+            self.assertIn('--creature-loot', command)
+            self.assertEqual(command.count('--items'), 1)
+            self.assertEqual(command.count('--reward-catalog'), 1)
+            self.assertEqual((args.output/'profiles/selected-items.json').read_bytes(), args.items.read_bytes())
+            self.assertEqual((args.output/'profiles/selected-rewards.json').read_bytes(), args.reward_catalog.read_bytes())
+            self.assertTrue(json.loads((args.output/'launch.json').read_text())['creature_loot'])
+
+    def test_partial_catalogue_selection_refuses_without_creating_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            args.items = root/'missing.json'
+            with self.assertRaisesRegex(ValueError, 'together'):
+                launcher.prepare(args, root)
+            self.assertFalse(args.output.exists())
+
     def test_existing_output_is_not_replaced_and_explicit_character_excludes_picker(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

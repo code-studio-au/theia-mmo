@@ -18,7 +18,7 @@ from qualify_world_input_os import wait, capture_ready
 
 
 def run(args):
-    if args.creature_loot and (args.repeat_kill or args.account_package):
+    if args.creature_loot and args.repeat_kill:
         raise ValueError('Corpse acceptance uses the normal launcher and one kill followed by restart')
     args.claim_reward = args.claim_reward or args.creature_loot
     expected_revision = 4 if args.creature_loot else 2
@@ -122,6 +122,9 @@ def run(args):
                     command = [sys.executable, 'tools/account_population_playtest.py',
                                '--package', str(package), '--players', str(args.players.resolve()),
                                '--binaries', str(binaries), '--output', str(folder/'owned')]
+                    if args.creature_loot:
+                        command.extend(['--items', str(Path('content/gameplay/development-loot-items.json').resolve()),
+                                        '--reward-catalog', str((Path('content/gameplay')/reward_file).resolve())])
                 launcher = subprocess.Popen(command, env=env, stdin=subprocess.PIPE,
                                             stdout=log, stderr=subprocess.STDOUT, text=True)
                 try:

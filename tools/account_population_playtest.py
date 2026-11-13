@@ -34,12 +34,28 @@ def prepare(args, repository):
     for path in [package/'population.json', package/'world/authored.world.json', players/'character.glb']:
         if not path.is_file():
             raise ValueError(f'Missing account playtest dependency: {path}')
+    items = getattr(args, 'items', None)
+    rewards = getattr(args, 'reward_catalog', None)
+    if bool(items) != bool(rewards):
+        raise ValueError('Select item and reward catalogues together')
+    overrides = {'--items': items, '--reward-catalog': rewards}
     profiles = []
+    corpse_loot = False
     for flag, name in PROFILES:
-        with (repository/'content/gameplay'/name).open('rb') as file:
+        selected = overrides.get(flag)
+        source = selected.resolve() if selected else repository/'content/gameplay'/name
+        if selected:
+            name = 'selected-items.json' if flag == '--items' else 'selected-rewards.json'
+        with source.open('rb') as file:
             data = file.read(1024 * 1024 + 1)
         if len(data) > 1024 * 1024:
             raise ValueError(f'Account playtest profile exceeds byte budget: {name}')
+        if selected and flag == '--reward-catalog':
+            document = json.loads(data)
+            if not isinstance(document, dict) or not isinstance(document.get('rewards'), list):
+                raise ValueError('Invalid reward catalogue')
+            corpse_loot = any(isinstance(row, dict) and row.get('scope') == 'per_creature_life'
+                              for row in document['rewards'])
         profiles.append((flag, name, data))
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     frozen = output/'profiles'
@@ -48,6 +64,8 @@ def prepare(args, repository):
                '--players', str(players), '--binaries', str(binaries), '--window-size', args.window_size,
                '--classic', '--account-login', '--equipment', '--status-effects', '--progression', '--rewards',
                '--public-avatar-life', '--stop-on-stdin-eof', '--session-directory', str(output/'runtime')]
+    if corpse_loot:
+        command.append('--creature-loot')
     command.extend(['--character-id', args.character_id] if args.character_id else ['--character-picker'])
     if (package/'creature.glb').is_file():
         command.extend(['--creature-asset', str(package/'creature.glb')])
@@ -56,7 +74,7 @@ def prepare(args, repository):
         (frozen/name).write_bytes(data)
         command.extend([flag, str(frozen/name)])
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
-    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records,
+    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot,
         scope='One authenticated character on the exported population; development typed combat and durable grants; no Test Player controllers or NPC retaliation'), indent=2)+'\n')
     return command
 
@@ -68,6 +86,8 @@ def main():
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--window-size', default='1280x720')
+    parser.add_argument('--items', type=Path, help='Explicit item catalogue, paired with --reward-catalog')
+    parser.add_argument('--reward-catalog', type=Path, help='Explicit rewards; per-life entries enable ordinary corpse pickup')
     parser.add_argument('--character-id', help='Optional existing owned character; otherwise publish the private picker')
     args = parser.parse_args()
     repository = Path(__file__).resolve().parent.parent

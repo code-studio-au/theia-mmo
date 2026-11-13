@@ -18,6 +18,7 @@ pub(super) struct Draft {
     finished: bool,
     target: Option<PathBuf>,
     player_assets: Option<PathBuf>,
+    account_catalogues: Option<(PathBuf, PathBuf)>,
     message: String,
     action: Option<Control>,
 }
@@ -59,7 +60,8 @@ impl Mode {
             Self::World => &[0, 1, 2, 3],
             Self::NetworkTest => &[0, 3, 4],
             Self::Population => &[0, 1, 2, 3, 4, 5, 7],
-            Self::PopulationTest | Self::AccountPopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7],
+            Self::PopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7],
+            Self::AccountPopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
             _ => &[0, 1],
         }
     }
@@ -140,6 +142,8 @@ pub(super) fn setup(mut commands: Commands) {
                             "Minimum spacing (metres)",
                             "Player asset directory",
                             "Creature appearance GLB (optional)",
+                            "Item catalogue",
+                            "Reward / corpse-loot catalogue",
                         ]
                         .into_iter()
                         .enumerate()
@@ -303,6 +307,8 @@ pub(super) fn open(
                 .as_ref()
                 .and_then(|m| m.creature_asset.as_ref())
                 .map_or_else(String::new, |p| p.display().to_string()),
+            "content/gameplay/development-equipment-items.json".into(),
+            "content/gameplay/development-rewards.json".into(),
         ]
     } else if mode.world() {
         [
@@ -331,10 +337,14 @@ pub(super) fn open(
             String::new(),
             String::new(),
             String::new(),
+            String::new(),
+            String::new(),
         ]
     } else {
         [
             format!("build/{slug}-particles"),
+            String::new(),
+            String::new(),
             String::new(),
             String::new(),
             String::new(),
@@ -359,9 +369,36 @@ pub(super) fn open(
         finished: false,
         target: None,
         player_assets: None,
+        account_catalogues: None,
         message: "Choose a new folder; existing exports are never overwritten.".into(),
         action: None,
     });
+}
+fn check_account_catalogues(items: &str, rewards: &str) -> Result<(PathBuf, PathBuf), String> {
+    let read = |value: &str, limit| {
+        if value.trim().is_empty() || value.contains(['\0', '\n', '\r']) {
+            return Err("Choose existing item and reward catalogues".to_string());
+        }
+        let path = std::fs::canonicalize(value.trim()).map_err(|e| e.to_string())?;
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        std::fs::File::open(&path)
+            .map_err(|e| e.to_string())?
+            .take(limit + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|e| e.to_string())?;
+        if bytes.len() as u64 > limit {
+            return Err("Catalogue exceeds its size limit".into());
+        }
+        Ok((path, bytes))
+    };
+    let (items_path, items) = read(items, theia_core::inventory::MAX_CATALOG_BYTES as u64)?;
+    let (rewards_path, rewards) = read(rewards, theia_core::rewards::MAX_CATALOG_BYTES as u64)?;
+    let inventory = theia_network::renet_runtime::inventory::Profile::from_json(&items)
+        .map_err(|e| format!("Item catalogue: {e}"))?;
+    theia_network::reward_wire::Profile::from_json_with_creature_loot(&rewards, &inventory)
+        .map_err(|e| format!("Reward catalogue: {e}"))?;
+    Ok((items_path, rewards_path))
 }
 fn slug(name: &str) -> String {
     let mut result = String::new();
@@ -493,6 +530,17 @@ pub(super) fn finish(
                         .as_deref_mut()
                         .ok_or_else(|| "Network launcher is unavailable".to_string())
                         .and_then(|m| {
+                            if let Some((items, rewards)) = &draft.account_catalogues {
+                                return m.start_account_catalogues(
+                                    draft.target.as_deref().expect("Export target"),
+                                    draft
+                                        .player_assets
+                                        .as_deref()
+                                        .expect("Checked player assets"),
+                                    items,
+                                    rewards,
+                                );
+                            }
                             let start = if draft.mode == Mode::AccountPopulationTest {
                                 network_playtest::Manager::start_account_population
                             } else if draft.mode == Mode::PopulationTest {
@@ -638,6 +686,17 @@ pub(super) fn finish(
                     if !path.join("character.glb").is_file() {
                         return Err("Player asset directory must contain character.glb".into());
                     }
+                    if draft.mode == Mode::AccountPopulationTest {
+                        let path = |index| {
+                            fields
+                                .iter()
+                                .find(|(_, f, _)| f.0 == index)
+                                .map(|(_, _, t)| t.value().to_string())
+                                .unwrap_or_default()
+                        };
+                        draft.account_catalogues =
+                            Some(check_account_catalogues(&path(8), &path(9))?);
+                    }
                     draft.player_assets = Some(path);
                     if draft.mode == Mode::NetworkTest {
                         manager.template = input
@@ -754,7 +813,7 @@ pub(super) fn finish(
         } else if description {
             **text = match draft.mode {
                 Mode::NetworkTest => "Starts one server and a client per enabled Test Player from this zone snapshot. Stop from the Zone menu. Zone files change only with Save.",
-                Mode::AccountPopulationTest => "Sign in, then choose or create one persistent character. Uses development equipment, combat, XP and training rewards. Requires configured account services. Test Player presets are used only by network playtests.",
+                Mode::AccountPopulationTest => "Sign in, then choose or create one persistent character. Uses the selected items and rewards; per-enemy rewards enable corpse pickup. Existing characters require matching item catalogues. Requires configured account services.",
                 Mode::PopulationTest => "Starts a checked passive population with one client per enabled Test Player. Stop through the Zone menu. Choose the matching creature profile and player assets.",
                 Mode::Population => "Exports one enabled passive spawn group, its static world and checked navigation. Choose a matching creature profile. Does not start a server.",
                 Mode::World => "Exports the current zone. Use a matching gameplay template for quest areas and NPC references. Save particle edits first.",
@@ -839,6 +898,40 @@ impl Report<'_, '_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn account_catalogues_share_runtime_validation_and_refuse_mismatched_items() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content/gameplay");
+        let path = |name: &str| root.join(name).display().to_string();
+        assert!(
+            check_account_catalogues(
+                &path("development-equipment-items.json"),
+                &path("development-rewards.json")
+            )
+            .is_ok()
+        );
+        assert!(
+            check_account_catalogues(
+                &path("development-loot-items.json"),
+                &path("development-creature-loot-rewards.json")
+            )
+            .is_ok()
+        );
+        assert!(
+            check_account_catalogues(
+                &path("development-equipment-items.json"),
+                &path("development-creature-loot-rewards.json")
+            )
+            .is_err()
+        );
+        assert!(check_account_catalogues("", &path("development-rewards.json")).is_err());
+        assert!(
+            check_account_catalogues(
+                &path("development-loot-items.json"),
+                &path("development-quest-required-loot.json")
+            )
+            .is_err()
+        );
+    }
     #[test]
     fn slug_is_safe_and_bounded() {
         assert_eq!(slug("My New Zone!"), "my-new-zone");

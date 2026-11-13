@@ -1,3 +1,28 @@
+P3-11 / P5-17 explicit editor item and loot catalogue selection, 13 November 2026:
+Account population Start now exposes item and reward/corpse-loot catalogue paths.
+Bounded editor reads use the runtime parsers to reject missing/mismatched items,
+invalid catalogues and unsupported quest-only loot before export. The owned wrapper
+freezes the selected bytes into its existing per-run profile set; per-creature-life
+entries enable the ordinary corpse pickup path automatically. Existing training
+catalogues remain the defaults. Selection is explicit and does not migrate saved
+inventories or bypass server admission compatibility checks.
+242 editor tests pass (11 asset checks ignored), 20 Python launcher/freeze tests
+pass (one asset check skipped), along with fmt, strict workspace/all-target Clippy,
+editor build and Python compilation. All three private PostgreSQL gameplay-profile
+contracts pass: incompatible admission preserves state, and the worker remains
+available after refusal/cancellation. This is safe refusal, not content migration.
+Actual native editor catalogue entry, export, character creation, six-cast kill,
+two corpse pickups, Stop, database restart, matching-character selection and Stop
+pass. Inventory revision 4 and 25 XP persist, claims remain consumed at revisions
+2/3/4, source zones remain unchanged and owned services/tickets clean up. Native
+UI input is restricted to the owned editor; gameplay uses ordinary typed requests.
+Zero GPU diagnostics on Linux AMD RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6.
+Evidence: build/editor-loot-catalogues-native-v1/qualification.json and fresh/resumed
+proofs, build/editor-loot-catalogues-regression.log, editor-loot-compatibility-v2/tests.log.
+Prerequisites: shared population corpse loot, frozen owned launch, editor account
+picker. No new loot rules, general catalogue authoring, saved-data migration,
+Windows native, multi-NPC pursuit/retaliation or MMO-scale claim. Local only.
+
 P3-09 / P3-11 shared corpse loot in normal population launches, 13 November 2026:
 Remove the population-only rejection of --creature-loot. Normal launcher/client/
 server admission now uses the same checked reward catalogue, first-tag recipient,

@@ -16,6 +16,7 @@ from gpu_validation import check_gpu_diagnostics
 
 
 def run(args):
+    expected_revision = 4 if args.creature_loot else 2
     out = args.output.resolve()
     out.mkdir(mode=0o700, parents=True, exist_ok=False)
     incoming = args.zone.read_bytes()
@@ -52,6 +53,8 @@ def run(args):
             if not resumed:
                 env.update(THEIA_POPULATION_TYPED_QUALIFY=str(game), THEIA_POPULATION_KILL_QUALIFY='1',
                            THEIA_POPULATION_REWARD_QUALIFY='1')
+                if args.creature_loot:
+                    env['THEIA_POPULATION_LOOT_QUALIFY'] = '1'
             desktop = None
             with (folder/'editor.log').open('w') as log:
                 editor = subprocess.Popen([str(args.binary.resolve()), '--zone', str(source), '--report', str(report),
@@ -106,6 +109,12 @@ def run(args):
                     field = wait(lambda: next((f for f in state()['export_dialog']['fields'] if f['index']==0 and min(f['size'])>0),None))
                     type_text(field['centre'], destination)
                     assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index']==0)==str(destination)
+                    if args.creature_loot:
+                        for index, path in [(8, 'content/gameplay/development-loot-items.json'),
+                                            (9, 'content/gameplay/development-creature-loot-rewards.json')]:
+                            field = next(f for f in state()['export_dialog']['fields'] if f['index']==index)
+                            type_text(field['centre'], path)
+                            assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index']==index)==path
                     click(next(b['centre'] for b in state()['export_dialog']['buttons'] if b['action']=='Export'))
                     wait(lambda: state()['network_playtest']['active'], 90)
                     owned = wait(lambda: next((p for p in (destination/'runs').glob('session-*') if p.is_dir()),None), 45)
@@ -149,7 +158,7 @@ def run(args):
                         assert proof['remaining']==0 and proof['reward_collected'] and proof['bystanders_unchanged']
                     def committed():
                         value = gameplay()
-                        return value if value and value.get('committed_progression')==25 and value.get('available_rewards')==0 and value['inventory_bag']['revision']==2 else None
+                        return value if value and value.get('committed_progression')==25 and value.get('available_rewards')==0 and value['inventory_bag']['revision']==expected_revision else None
                     observed = wait(committed, 20)
                     if resumed:
                         assert observed['inventory_bag']==original_bag
@@ -174,8 +183,8 @@ def run(args):
                     assert account['verified_logins']==1 and account['created_characters']==(0 if resumed else 1)
                     saved=next(json.loads(line.removeprefix('account_persistence_summary ')) for line in server.splitlines() if line.startswith('account_persistence_summary '))
                     assert not saved['failed'] and saved['worker']['incompatible_gameplay_profiles']==0
-                    sql=cluster.query('SELECT experience FROM theia.progression; SELECT consumed_revision FROM theia.reward_claims;')
-                    assert sql.returncode==0 and sql.stdout.splitlines()==['25','2']
+                    sql=cluster.query('SELECT experience FROM theia.progression; SELECT consumed_revision FROM theia.reward_claims ORDER BY consumed_revision;')
+                    assert sql.returncode==0 and sql.stdout.splitlines()==(['25','2','3','4'] if args.creature_loot else ['25','2'])
                     (folder/'database-proof.txt').write_text(sql.stdout)
                     desktop.key('F12')
                     wait(lambda: capture_ready(report.with_suffix('.png')),30)
@@ -185,7 +194,7 @@ def run(args):
                         assert check_gpu_diagnostics(text)==0
                         assert identity.password not in text and cluster.password not in text
                     results.append(dict(resumed=resumed, editor_start=True, picker='select' if resumed else 'create',
-                                        editor_stop=True, experience=25, inventory_revision=2, source_unchanged=True,
+                                        editor_stop=True, experience=25, inventory_revision=expected_revision, source_unchanged=True,
                                         invalid_name_refused=not resumed))
                 finally:
                     if desktop:
@@ -207,6 +216,7 @@ def run(args):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--creature-loot', action='store_true', help='Select ordinary loot catalogues in the editor dialog')
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--zone',type=Path,required=True)
     parser.add_argument('--creature',type=Path,default=Path('content/gameplay/development-creature-passive.json'))
