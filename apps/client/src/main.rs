@@ -1243,6 +1243,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             && population.is_some()
             && ability_profile.is_some()
             && membership_profile.is_some(),
+        connected
+            && population.is_some()
+            && player_life_profile.is_some()
+            && character_stats.is_some()
+            && combat_catalog.is_some(),
     )?;
     app.add_systems(Last, reference_scene::grip::observe);
     app.add_systems(Last, reference_scene::attack::observe);

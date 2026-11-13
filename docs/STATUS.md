@@ -1,3 +1,24 @@
+P5-17 native editor resource-cast acceptance, 13 November 2026:
+The bounded population command qualifier now also accepts the editor's resource-only
+combat context without requiring or inventing persistent equipment or membership.
+It selects an already frontal in-range NPC and uses normal target/cast requests,
+watching exact actor/NPC lives, resource spending and four untouched bystanders.
+After scene readiness and bounded warmup, the real editor-exported package passes:
+one accepted cast, zero rejected requests, one damage event, target 100→80 HP and
+minimum mana 75 from 100 with normal subsequent regeneration. Player health stays
+100, generation 1, and no inventory exists. Screenshot confirms the selected damaged
+wolf and 25-mana action. An initial ungated run was rejected once during startup;
+the final v2 check requires a clean first request. No OS input or pose changes.
+The preserved account-backed typed kill/collection/restart path also passes after
+the shared driver refactor: 25 XP, consumed reward and identical revision-2 bag.
+Formatting, strict workspace/all-target Clippy, client build, Python compilation
+and diff checks pass. Both native modes report zero GPU diagnostics on RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6. Owned services/tickets are cleaned up.
+Evidence: build/editor-population-resource-cast-native-v2/qualification.json and
+scene.png; build/population-resource-mode-typed-regression-v1/qualification.json;
+build/editor-population-resource-cast-build.log. No membership/typed damage claim
+for the resource-only mode. All changes remain local.
+
 P5-17 managed population mana-cost combat, 13 November 2026:
 Editor population exports now freeze the existing resource-aware Arcane Bolt
 catalogue (25 mana per cast) alongside their already exported character stats and

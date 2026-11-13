@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import signal
 import subprocess
+import time
 from gpu_validation import check_gpu_diagnostics
 from launch_environment import client_environment
 from player_assets import default_player_assets
@@ -16,6 +17,8 @@ from qualify_world_input_os import wait, capture_ready
 def run(args):
     if not math.isfinite(args.seconds) or not 1 <= args.seconds <= 300:
         raise ValueError("Qualification duration must be 1..300 seconds")
+    if args.resource_cast and (not args.player_life or args.seconds < 25):
+        raise ValueError('Resource cast qualification requires player life and at least 25 seconds')
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     common = ['--authored-world', str(args.world.resolve()), '--prediction', '--classic',
@@ -36,6 +39,8 @@ def run(args):
                        THEIA_GRAYBOX_QUALIFY=str(out), THEIA_GRAYBOX_QUALIFY_SECONDS=str(math.ceil(args.seconds)))
     if args.player_life:
         environment['THEIA_WORLD_INPUT_OS_QUALIFY'] = str(out)
+    if args.resource_cast:
+        environment['THEIA_POPULATION_RESOURCE_QUALIFY'] = str(out)
     suffix = '.exe' if os.name == 'nt' else ''
     server_binary = args.binaries.resolve()/('theia-server'+suffix)
     client_binary = args.binaries.resolve()/('theia-client'+suffix)
@@ -55,6 +60,15 @@ def run(args):
                                        '--player-assets', str(args.players.resolve()), '--window-size', '1600x1000',
                                        '--test-window', '1/1', '--renet-connect', address, str(tickets/'client-1.token')],
                                       env=environment, stdout=client_log, stderr=client_log)
+            if args.resource_cast:
+                def ready_to_cast():
+                    assert client.poll() is None, 'Native client exited before cast readiness'
+                    state = json.loads((out/'input-os.json').read_text())
+                    return state['connected'] and len(state.get('combat_targets') or []) == 5 and (state.get('minimap') or {}).get('known_pixels', 0) > 0
+                wait(ready_to_cast, 15)
+                warmed = time.monotonic()
+                wait(lambda: ready_to_cast() and time.monotonic()-warmed >= 10, 15)
+                (out/'combat.start').write_text('start\n')
             assert client.wait(timeout=args.seconds+60) == 0, 'Native population client failed; see client.log'
         assert capture_ready(out/'scene.png'), 'Missing native screenshot'
         report = json.loads((out/'world.json').read_text())
@@ -75,6 +89,15 @@ def run(args):
             assert len(actors) == 1 and actors[0]['actor'] == state['actor'], actors
             assert actors[0]['generation'] == 1 and not actors[0]['dead'], actors
             life = dict(health=100, generation=1, deaths=0, public_actors=actors)
+        resource_cast = None
+        if args.resource_cast:
+            resource_cast = json.loads((out/'typed-combat.json').read_text())
+            assert resource_cast['passed'] and resource_cast['casts'] == 1, resource_cast
+            assert resource_cast['remaining'] == 80 and resource_cast['mana_spent'], resource_cast
+            assert resource_cast['bystanders_unchanged'] and resource_cast['player_health'] == 100, resource_cast
+            assert resource_cast['inventory_revision'] is None, resource_cast
+            assert state['combat']['started'] == 1 and state['combat']['rejected_requests'] == 0, state['combat']
+            assert state['combat']['minimum_mana'] == 75 and state['combat']['damage'] == 1, state['combat']
         travel = None
         if args.route is not None:
             reports = [json.loads(line)['test_controller'] for line in (out/'client.log').read_text().splitlines()
@@ -89,7 +112,7 @@ def run(args):
             assert abs(travel['feet'][1]-goal[1]) <= .3, travel
             assert report['moving_frames'] > 0, report
         (out/'qualification.json').write_text(json.dumps(dict(
-            passed=True, targets=5, creature_visuals=visuals, connected=True, travel=travel, player_life=life,
+            passed=True, targets=5, creature_visuals=visuals, connected=True, travel=travel, player_life=life, resource_cast=resource_cast,
             scope='Actual native Linux Vulkan client with five passive creature rigs; no OS movement, model-catalog resolution, pursuit or Windows claim'), indent=2)+'\n')
     finally:
         for process in [client, server]:
@@ -108,6 +131,7 @@ if __name__ == '__main__':
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--world', type=Path, required=True)
     parser.add_argument('--population', type=Path, required=True)
+    parser.add_argument('--resource-cast', action='store_true', help='Qualify one ordinary 25-mana/20-damage cast without OS input')
     parser.add_argument('--combat-catalog', type=Path, default=Path('content/gameplay/development-abilities.json'), help='Exact combat catalogue to qualify, including an editor-exported snapshot')
     parser.add_argument('--player-life', action='store_true', help='Qualify standalone population health and public life state')
     parser.add_argument('--route', type=Path, help='Optional checked route controller; no OS movement input')

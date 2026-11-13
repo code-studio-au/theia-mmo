@@ -17,6 +17,7 @@ struct Run {
     started: Option<Instant>,
     done: bool,
     kill: bool,
+    resources_only: bool,
     collect_reward: bool,
     reward_requested: bool,
     life: Option<LifeKey>,
@@ -40,13 +41,27 @@ impl Run {
         self.finish(serde_json::json!({"passed":false,"error":reason,"casts":self.casts}));
     }
 }
-pub(crate) fn install(app: &mut App, context: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let Some(output) = std::env::var_os("THEIA_POPULATION_TYPED_QUALIFY") else {
+pub(crate) fn install(
+    app: &mut App,
+    typed_context: bool,
+    resource_context: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let typed = std::env::var_os("THEIA_POPULATION_TYPED_QUALIFY");
+    let resources = std::env::var_os("THEIA_POPULATION_RESOURCE_QUALIFY");
+    if typed.is_some() && resources.is_some() {
+        return Err("Choose one population qualification mode".into());
+    }
+    let resources_only = resources.is_some();
+    let Some(output) = typed.or(resources) else {
         return Ok(());
     };
-    if !context {
+    if !(if resources_only {
+        resource_context
+    } else {
+        typed_context
+    }) {
         return Err(
-            "Population qualification requires connected typed population membership".into(),
+            "Population qualification requires matching connected combat/life profiles".into(),
         );
     }
     let output = PathBuf::from(output);
@@ -57,8 +72,11 @@ pub(crate) fn install(app: &mut App, context: bool) -> Result<(), Box<dyn std::e
         output,
         started: None,
         done: false,
-        kill: std::env::var("THEIA_POPULATION_KILL_QUALIFY").as_deref() == Ok("1"),
-        collect_reward: std::env::var("THEIA_POPULATION_REWARD_QUALIFY").as_deref() == Ok("1"),
+        resources_only,
+        kill: !resources_only
+            && std::env::var("THEIA_POPULATION_KILL_QUALIFY").as_deref() == Ok("1"),
+        collect_reward: !resources_only
+            && std::env::var("THEIA_POPULATION_REWARD_QUALIFY").as_deref() == Ok("1"),
         reward_requested: false,
         life: None,
         target: None,
@@ -89,24 +107,19 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
     if !network.connected() {
         return;
     }
-    let (
-        Some(life),
-        Some(inventory),
-        Some(combat),
-        Some(targeting),
-        Some(correction),
-        Some(position),
-    ) = (
+    let (Some(life), Some(combat), Some(targeting), Some(correction), Some(position)) = (
         state.player_life.as_ref().and_then(|p| p.current()),
-        state.inventory.as_ref(),
         state.combat.as_ref(),
         state.targeting.as_ref(),
         state.correction,
         state.authority_focus(),
-    )
-    else {
+    ) else {
         return;
     };
+    let inventory = state.inventory.as_ref();
+    if !run.resources_only && inventory.is_none() {
+        return;
+    }
     if run.life.is_some_and(|key| key != life.key) || life.health == 0 {
         run.fail("Player life changed during qualification");
         return;
@@ -163,8 +176,11 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
         return;
     }
     if health.current < 100 && (!run.kill || health.current == 0) {
-        if run.entered && run.spent_mana && life.combat.is_some_and(|v| !v.in_combat()) {
+        if run.spent_mana
+            && (run.resources_only || (run.entered && life.combat.is_some_and(|v| !v.in_combat())))
+        {
             if run.collect_reward {
+                let inventory = inventory.expect("Typed qualifier requires inventory");
                 let Some(rewards) = state.rewards.as_ref() else {
                     return;
                 };
@@ -186,35 +202,39 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
                     return;
                 }
             }
+            let membership = !run.resources_only;
             let collected = run.collect_reward;
             let casts = run.casts;
             run.finish(serde_json::json!({"passed":true,"reward_collected":collected,"casts":casts,"target":target.entity.value(),
-                "epoch":target.epoch.value(),"remaining":health.current,"inventory_revision":inventory.bag.revision(),
-                "entered_and_exited_combat":true,"mana_spent":true,"bystanders_unchanged":true,
+                "epoch":target.epoch.value(),"remaining":health.current,"inventory_revision":inventory.map(|i| i.bag.revision()),
+                "entered_and_exited_combat":membership,"mana_spent":true,"bystanders_unchanged":true,
                 "player_health":life.health,"player_generation":life.key.generation.get()}));
         }
         return;
     }
-    let wand = "theia.dev.training-wand";
-    if inventory
-        .bag
-        .main_hand()
-        .is_none_or(|s| s.item().as_str() != wand)
-    {
-        if !run.equipped && !state.inventory_pending {
-            let Some(slot) = inventory
-                .bag
-                .slots()
-                .iter()
-                .position(|s| s.as_ref().is_some_and(|s| s.item().as_str() == wand))
-            else {
-                run.fail("Committed inventory has no training wand");
-                return;
-            };
-            run.equipped =
-                network.request_equipment(EquipmentOperation::Equip { from: slot as u8 });
+    if !run.resources_only {
+        let inventory = inventory.expect("Typed qualifier requires inventory");
+        let wand = "theia.dev.training-wand";
+        if inventory
+            .bag
+            .main_hand()
+            .is_none_or(|s| s.item().as_str() != wand)
+        {
+            if !run.equipped && !state.inventory_pending {
+                let Some(slot) = inventory
+                    .bag
+                    .slots()
+                    .iter()
+                    .position(|s| s.as_ref().is_some_and(|s| s.item().as_str() == wand))
+                else {
+                    run.fail("Committed inventory has no training wand");
+                    return;
+                };
+                run.equipped =
+                    network.request_equipment(EquipmentOperation::Equip { from: slot as u8 });
+            }
+            return;
         }
-        return;
     }
     if targeting.selected != Some(target.entity) {
         return;
