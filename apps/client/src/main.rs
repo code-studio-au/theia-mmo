@@ -1188,6 +1188,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "abilities":ability_profile.is_some(), "membership":membership_profile.is_some(), "solo_credit":credit_bytes.is_some()},
                 "player_life_profile": player_life_profile.as_ref().map(|p|p.hash()),
                 "public_avatar_life_profile": public_avatar_profile.as_ref().map(|p|p.hash()),
+                "public_creature_attack_profile": public_attack_profile.as_ref().filter(|_| public_population_attack_profile.is_none()).map(|p|p.hash()),
+                "public_population_attack_profile": public_population_attack_profile.as_ref().map(|p|p.hash()),
                 "interface": {"enabled": fantasy_ui.is_some(), "preferred_scale": ui_scale, "saved_preferences": ui_preferences.is_some(), "world_effects_visible": world_effects_visible},
                 "fixed_reward_catalog": journal_profile.as_ref().and_then(|p|p.item_rewards()).map(|r|r.id().as_str()),
                 "population": population.as_ref().map(|p| serde_json::json!({"count":p.count(), "respawn_ms":p.respawn_ms()})),

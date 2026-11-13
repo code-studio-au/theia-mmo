@@ -1,3 +1,9 @@
+Public population presentation update, 14 November 2026: pursuing editor account
+launches now enable bounded public NPC attack timing and standard Bevy animation.
+Two native clients pass simultaneous/remote-victim playback at 20/30/60 Hz; normal
+account kill/loot and durable restart pass. Next: competing attackers with shared
+threat and durable first-tag receipts. See STATUS for exact evidence and limits.
+
 Population threat/editor update, 13 November 2026: pursuing editor account
 populations now automatically select shared reset and damage-threat profiles.
 Independent typed-cast tables and actual encrypted competing-player victim transfer

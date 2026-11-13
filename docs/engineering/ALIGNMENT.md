@@ -1,3 +1,33 @@
+P3-06 / P3-09 / P3-14 / P5-17 public population attack presentation,
+14 November 2026: the normal population launch accepts the existing public attack
+flag, selecting the distinct bounded NP01 profile. Pursuing editor account launches
+automatically select it; passive definitions retain their existing private setup.
+Existing standard Bevy wolf clips resolve each actor's public victim independently,
+including remote observers, cancellation, retirement and expiry. Player facing and
+selection remain manual. No new attack/damage/loot rules or timing formula.
+
+Three batch presentation contracts pass at 20/30/60 Hz alongside the retained
+singleton/private tests. Two actual encrypted native clients observe simultaneous
+NPC attacks, correct remote-victim facing and advancing Bevy playback at every
+supported rate. The copied native fixture uses 12 m perception and one damage per
+strike; it proves presentation, not balance, OIDC or durable competition. Exact
+binary hashes, per-NPC playback samples, transport counters and screenshots are in
+build/population-public-native-{20,30,60}-v2/qualification.json. Linux RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6 reports zero GPU diagnostics. No OS input used.
+
+The unchanged pursuing editor export also passes normal owned OIDC/PostgreSQL
+launch, 18 frozen source profiles, public attack animation, five-cast kill, both
+corpse pickups and database restart/character-picker rejoin. XP 25 and inventory
+revision 4 survive; observed transient health is 53 then 82. Evidence:
+build/population-public-account-native-v1/qualification.json. All 509 default
+network tests (17 fixture-dependent ignored), 265 client tests (four ignored),
+22 Python launcher checks (one skipped), strict workspace/all-target Clippy, fmt
+and diff checks pass. See build/population-public-adoption-checks.log and
+population-public-launch-python-tests.log. Retained authored multi-victim/transfer
+and impaired-network fixtures remain separate evidence. Windows, native competing
+attackers with durable grants and MMO capacity remain unqualified. Next: exercise
+shared damage threat and first-tag durable recipients together. Local only.
+
 P3-06 / P3-09 public population presentation resumed, 14 November 2026:
 The user authorizes continued development, local commits and mouse/display use,
 superseding the stop checkpoint below. Three explicit batch presentation tests

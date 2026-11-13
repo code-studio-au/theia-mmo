@@ -6,7 +6,7 @@ use std::path::{Component, Path, PathBuf};
 
 const MAX_BYTES: u64 = 4096;
 
-/// Keep pools separate from singleton pursuit/reset and unqualified grant modes.
+/// Keep pools separate from singleton configuration and unqualified grant modes.
 pub fn validate_launch(args: &[String]) -> Result<()> {
     let count = args
         .iter()
@@ -28,12 +28,7 @@ pub fn validate_launch(args: &[String]) -> Result<()> {
             return Err(format!("Population configuration requires {required}").into());
         }
     }
-    for unsupported in [
-        "--creature-profile",
-        "--navigation",
-        "--quest-loot",
-        "--public-creature-attacks",
-    ] {
+    for unsupported in ["--creature-profile", "--navigation", "--quest-loot"] {
         if args.iter().any(|a| a == unsupported) {
             return Err(format!("Population configuration does not support {unsupported}").into());
         }
@@ -212,6 +207,8 @@ mod tests {
         assert!(validate_launch(&lives).is_ok());
         lives.push("--creature-loot".into());
         assert!(validate_launch(&lives).is_ok());
+        lives.push("--public-creature-attacks".into());
+        assert!(validate_launch(&lives).is_ok());
         for grant in ["--progression-catalog", "--reward-catalog"] {
             let mut refused = valid.clone();
             refused.extend([grant.into(), "grant.json".into()]);
@@ -240,7 +237,6 @@ mod tests {
             "--navigation",
             "--progression-catalog",
             "--quest-loot",
-            "--public-creature-attacks",
         ] {
             let mut args = valid.clone();
             args.push(extra.into());

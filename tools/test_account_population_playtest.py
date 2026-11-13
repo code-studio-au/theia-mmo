@@ -36,6 +36,8 @@ class AccountPopulation(unittest.TestCase):
             self.assertIn('--account-login', command)
             self.assertNotIn('--creature-profile', command)
             self.assertNotIn('--test-controller', command)
+            self.assertNotIn('--public-creature-attacks', command)
+            self.assertFalse(report['public_creature_attacks'])
             self.assertEqual(command[command.index('--session-directory')+1], str(args.output/'runtime'))
             for record in report['profiles']:
                 path = args.output/record['file']
@@ -71,6 +73,8 @@ class AccountPopulation(unittest.TestCase):
             self.assertTrue(report['creature_reset'])
             self.assertEqual(len(report['profiles']), 18)
             self.assertTrue(report['creature_threat'])
+            self.assertTrue(report['public_creature_attacks'])
+            self.assertEqual(command.count('--public-creature-attacks'), 1)
             self.assertEqual(command.count('--creature-threat'), 1)
             self.assertEqual(command.count('--creature-reset'), 1)
             path = Path(command[command.index('--creature-reset')+1])

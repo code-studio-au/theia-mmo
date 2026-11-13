@@ -93,6 +93,8 @@ def prepare(args, repository):
                '--public-avatar-life', '--stop-on-stdin-eof', '--session-directory', str(output/'runtime')]
     if corpse_loot:
         command.append('--creature-loot')
+    if pursuit:
+        command.append('--public-creature-attacks')
     command.extend(['--character-id', args.character_id] if args.character_id else ['--character-picker'])
     if (package/'creature.glb').is_file():
         command.extend(['--creature-asset', str(package/'creature.glb')])
@@ -101,8 +103,8 @@ def prepare(args, repository):
         (frozen/name).write_bytes(data)
         command.extend([flag, str(frozen/name)])
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
-    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=pursuit, creature_threat=pursuit,
-        scope='One authenticated character on the exported population; development typed combat and durable grants; shared NPC retaliation and configured pursuit, return reset and damage threat; no Test Player controllers'), indent=2)+'\n')
+    (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=pursuit, creature_threat=pursuit, public_creature_attacks=pursuit,
+        scope='One authenticated character on the exported population; development typed combat and durable grants; shared NPC retaliation and configured pursuit, return reset, damage threat and public attack timing; no Test Player controllers'), indent=2)+'\n')
     return command
 
 
