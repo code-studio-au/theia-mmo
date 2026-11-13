@@ -1,3 +1,20 @@
+P3-07 / P5-17 checked passive population package export, 13 November 2026:
+The editor headless export now accepts --population with an explicit creature
+profile. It exports the static world, retains the complete spawn-zone document,
+runs the external route-free navigation baker, and validates actual placement
+through the same startup loader used by server/client before publishing a new
+package. Exactly one enabled passive group is supported (runtime cap 16);
+quest contacts/areas, particle/test-player presets, model IDs and aggression
+refuse explicitly. Failed baking/placement leaves no partial destination;
+existing exports and source documents are preserved. No runtime Recast dependency.
+Prerequisites: checked population admission and route-free authored baking.
+Three exporter tests pass, including actual nine-tile baking/reload and spacing
+failure. Actual editor CLI export then admits two encrypted Classic peers through
+the real server with matching real headless client configuration. Strict workspace
+Clippy and fmt pass. Evidence: build/population-export-{tests,cli,connected,clippy}.log;
+build/passive-editor-package-v1. This slice is CLI/package plumbing; interactive
+export controls follow. No new rendering, multiplayer pursuit or quest claim.
+
 P4-03 / P3-07 route-free authored navigation bake, 13 November 2026:
 Add bake-authored-area SOURCE OUTPUT CENTRE_X CENTRE_Z for static population
 navigation without a fabricated patrol. The existing bounded nine-tile collision

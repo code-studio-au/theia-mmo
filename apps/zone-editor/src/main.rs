@@ -38,6 +38,7 @@ pub mod play_orbit;
 mod playtest;
 mod playtest_avatar;
 mod playtest_controls;
+mod population_export;
 mod properties;
 mod property_tabs;
 mod quest_area_authoring;
@@ -672,7 +673,28 @@ fn run() -> Result<(), String> {
         return Ok(());
     }
     if let Some(path) = &options.export {
-        let report = if options.network_test {
+        let report = if options.population {
+            let baker = options
+                .navigation_baker
+                .clone()
+                .map(Ok)
+                .unwrap_or_else(population_export::default_baker)?;
+            population_export::publish(
+                editor.zone(),
+                path,
+                options.content_id.as_deref().expect("Checked export ID"),
+                options.revision.expect("Checked export revision"),
+                population_export::Settings {
+                    creature: options
+                        .population_creature
+                        .as_deref()
+                        .expect("Checked creature profile"),
+                    baker: &baker,
+                    spacing: options.population_spacing.unwrap_or(3.),
+                },
+                &scenery_library,
+            )?
+        } else if options.network_test {
             network_test_export::publish(
                 editor.zone(),
                 path,

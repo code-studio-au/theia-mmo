@@ -4699,3 +4699,31 @@ an OS window/input. Evidence is `build/authored-valley-spawn-renet-test.log`,
 `starter-valley-client-offscreen.png`. These separate network and offscreen checks
 do not claim native end-to-end input/Windows qualification. Quest contacts,
 multiple wolves, pickups and account/combat wiring are not yet part of this scene.
+
+
+## Passive population package export — 13 November 2026
+
+Export one enabled passive spawn group together with its static world and freshly
+baked navigation. The creature profile must match the group's creature ID and have
+no aggression; the current runtime limit is 16 actors. This explicit mode refuses
+quest contacts/areas, particles, test-player presets and unresolved model IDs.
+Ordinary world export retains its spawn-group refusal.
+
+```sh
+target/debug/theia-zone-editor --zone my-zone.json \
+  --export build/my-population-v1 --population \
+  --population-creature content/gameplay/development-creature-patrol.json \
+  --content-id theia.zone.my-population --revision 1
+```
+
+Build `theia-nav-bake` alongside the editor, or pass `--navigation-baker PATH`.
+`--population-spacing METRES` defaults to 3 (allowed 0.25–32). The bounded bake
+covers the nine chunks around the player spawn; the world must supply bakeable
+collision there, and the group must fit validated reachable navigation. All
+placement checks finish before publication. Choose a new output directory.
+
+The package contains `world/`, `navigation/`, the full `zone.json`, `creature.json`,
+`population.json` and `population-export.json`. Launch with `tools/play.py` using
+`--authored-world PACKAGE/world --population-config PACKAGE/population.json`;
+the launcher enables Classic combat. Optional `--creature-asset PATH` is client
+presentation only. Export does not start a server or change the source zone.

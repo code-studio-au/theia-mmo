@@ -241,16 +241,14 @@ fn authored_area_bake_preserves_checked_geometry_without_inventing_a_patrol() {
     .unwrap();
     let source = authored_world::Store::open(&world).unwrap();
     let old = nav::Store::open(&existing, source.identity()).unwrap();
-    let scratch = Scratch(
-        std::env::temp_dir().join(format!(
+    let scratch = Scratch(std::env::temp_dir().join(format!(
             "theia-area-bake-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_nanos()
-        )),
-    );
+        )));
     fs::create_dir(&scratch.0).unwrap();
     let output = scratch.0.join("navigation");
     let run = |output: &Path, x: &str, z: &str| {

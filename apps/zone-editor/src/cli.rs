@@ -29,6 +29,10 @@ pub struct Options {
     pub mailbox: Option<PathBuf>,
     pub export: Option<PathBuf>,
     pub network_test: bool,
+    pub population: bool,
+    pub population_creature: Option<PathBuf>,
+    pub navigation_baker: Option<PathBuf>,
+    pub population_spacing: Option<f64>,
     pub export_quest_areas: Option<PathBuf>,
     pub quest_catalog: Option<PathBuf>,
     pub gameplay_template: Option<PathBuf>,
@@ -143,18 +147,57 @@ impl Options {
                     )
                 }
                 "--headless" => result.headless = true,
+                "--population" => result.population = true,
+                "--population-creature" => {
+                    result.population_creature = Some(
+                        args.next()
+                            .ok_or("--population-creature needs a profile")?
+                            .into(),
+                    )
+                }
+                "--navigation-baker" => {
+                    result.navigation_baker = Some(
+                        args.next()
+                            .ok_or("--navigation-baker needs an executable")?
+                            .into(),
+                    )
+                }
+                "--population-spacing" => {
+                    result.population_spacing = Some(
+                        args.next()
+                            .ok_or("--population-spacing needs metres")?
+                            .parse()
+                            .map_err(|_| "Invalid population spacing")?,
+                    )
+                }
                 "--check-playtest" => {
                     result.check_playtest = true;
                     result.headless = true;
                 }
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--gameplay-template MANIFEST] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|test-player|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--gameplay-template MANIFEST] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|test-player|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test | --population --population-creature FILE [--navigation-baker BIN] [--population-spacing METRES]]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
                 _ => return Err(format!("Unknown argument: {arg}")),
             }
+        }
+        if result.population
+            && (result.export.is_none()
+                || result.population_creature.is_none()
+                || result.network_test
+                || result.gameplay_template.is_some()
+                || result.output.is_some())
+        {
+            return Err("--population requires --export and --population-creature; excludes gameplay-template, network-test and output".into());
+        }
+        if !result.population
+            && (result.population_creature.is_some()
+                || result.navigation_baker.is_some()
+                || result.population_spacing.is_some())
+        {
+            return Err("Population profile/baker/spacing options require --population".into());
         }
         if result.network_test && (result.export.is_none() || result.output.is_some()) {
             return Err("--network-test requires --export and excludes --output".into());
