@@ -1179,6 +1179,12 @@ impl Authority {
     }
 }
 impl World {
+    /// Includes defeated actors until their fresh-ID respawn replaces this life.
+    pub(super) fn has_combat_incarnation(&self, key: EntityKey) -> bool {
+        self.combat
+            .as_ref()
+            .is_some_and(|combat| combat.creatures.iter().any(|creature| creature.key == key))
+    }
     pub fn enable_combat(
         &mut self,
         catalog: &[u8],

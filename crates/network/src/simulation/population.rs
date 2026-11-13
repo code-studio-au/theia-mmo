@@ -55,6 +55,20 @@ impl Binding {
 }
 
 impl World {
+    /// Resolve trusted combat facts even after targetability ends on death.
+    /// Retired lives after respawn, unbound targets and player IDs do not resolve.
+    pub(super) fn combat_creature_definition(
+        &self,
+        key: EntityKey,
+    ) -> Option<&super::creatures::Definition> {
+        if !self.has_combat_incarnation(key) {
+            return None;
+        }
+        if let Some(patrol) = self.patrol.as_ref().filter(|p| p.key == key) {
+            return Some(patrol.profile().definition());
+        }
+        self.population_binding.as_ref().map(Binding::definition)
+    }
     /// Resolve one passive creature type for this pool before publishing actors.
     /// Multi-creature pursuit is not installed yet; aggressive definitions fail
     /// explicitly rather than silently losing their behavior.

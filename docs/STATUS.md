@@ -1,3 +1,23 @@
+P3-10 / P5-17 population fatal-hit definition prerequisite, 13 November 2026:
+Trusted XP fact collection can resolve each bound passive population incarnation
+through combat health after death removes targetability. Respawn replaces that
+identity, so replaying the old fatal batch no longer resolves it. Progression
+profile admission accepts the installed population definition and still rejects
+foreign recipe IDs. Existing patrol recipient policy and profile identity remain.
+This creates bounded facts only: population progression CLI remains explicitly
+refused, no durable grant/quest integration or first-tag policy expansion is claimed.
+The adopted first-tag recipient policy must be connected per population actor before
+normal pool rewards are enabled; existing development fatal-hit policy is not a
+new production reward decision.
+Actual navigation/World tests kill five independent actors at 20/30/60 Hz, verify
+five actor/victim/type facts, duplicate-batch deduplication, untargetable dead actors
+and stale-fact rejection after fresh respawns. The initial smaller native-combat
+fixture passed those cases but could not satisfy the retained over-capacity spatial
+fixture; the complete check passes on the established western-grove valley fixture.
+All 492 network-library tests, fmt and strict workspace/all-target Clippy pass.
+No rendering change or new GPU/SQL/Windows claim.
+Evidence: build/population-xp-facts-{checks,valley-check,network-regressions}.log.
+
 P5-17 / P2-13 saved particles in authored population playtests, 13 November 2026:
 Population exports now retain saved particle placements through the existing
 world exporter. The predicted authored-world store admits manifest-bound particle

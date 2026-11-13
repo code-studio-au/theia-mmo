@@ -167,6 +167,14 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
         world
             .enable_combat(ABILITIES, combat::DEVELOPMENT_HEALTH, 30_000)
             .unwrap();
+        world
+            .enable_progression(Arc::new(
+                theia_network::progression_wire::Profile::from_json(include_bytes!(
+                    "../../../content/gameplay/development-progression.json"
+                ))
+                .unwrap(),
+            ))
+            .unwrap();
         let mut actors = Vec::new();
         for key in &keys {
             let mut body = feet[0].metres();
@@ -204,6 +212,8 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
             assert_eq!(health.position.metres(), body);
         }
         let hz = u64::from(rate.hz());
+        let mut fatal_events = Vec::new();
+        let mut facts = Vec::new();
         for sequence in 1..=5 {
             for (&actor, &target) in actors.iter().zip(&keys) {
                 let result = world.cast(
@@ -223,8 +233,29 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
             }
             for _ in 0..2 * hz {
                 world.step();
+                let events = world.combat_events();
+                facts.extend(world.experience_opportunities(events).unwrap());
+                fatal_events.extend(
+                    events
+                        .iter()
+                        .filter(|event| matches!(event, combat::Event::Damage { remaining: 0, .. }))
+                        .cloned(),
+                );
             }
         }
+        assert_eq!(facts.len(), 5);
+        assert_eq!(fatal_events.len(), 5);
+        for (fact, (&actor, &victim)) in facts.iter().zip(actors.iter().zip(&keys)) {
+            assert_eq!(fact.actor, world.entity_key(actor).unwrap());
+            assert_eq!(fact.event.id.victim(), victim);
+            assert_eq!(&fact.event.creature, definition.id());
+            assert!(
+                world.creature_definition(victim).is_none(),
+                "Dead actors remain untargetable"
+            );
+        }
+        let doubled = [fatal_events.clone(), fatal_events.clone()].concat();
+        assert_eq!(world.experience_opportunities(&doubled).unwrap(), facts);
         let dead = world.combat_snapshot(actors[0]).unwrap();
         assert!(dead.targets.iter().all(|t| t.current == 0));
         let deadline = dead.targets[0].respawn_at.unwrap();
@@ -247,6 +278,13 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
                 .all(|t| t.current == 0)
         );
         world.step();
+        assert!(
+            world
+                .experience_opportunities(&fatal_events)
+                .unwrap()
+                .is_empty(),
+            "Old death facts must not resolve after fresh-ID respawn"
+        );
         let alive = world.combat_snapshot(actors[0]).unwrap();
         assert_eq!(alive.targets.len(), 5);
         for (i, health) in alive.targets.iter().enumerate() {
