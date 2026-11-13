@@ -679,7 +679,12 @@ fn run() -> Result<(), String> {
                 .clone()
                 .map(Ok)
                 .unwrap_or_else(population_export::default_baker)?;
-            population_export::publish(
+            let publish = if options.network_test {
+                population_export::publish_network
+            } else {
+                population_export::publish
+            };
+            publish(
                 editor.zone(),
                 path,
                 options.content_id.as_deref().expect("Checked export ID"),

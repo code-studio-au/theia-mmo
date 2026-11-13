@@ -28,10 +28,9 @@ pub(super) fn publish(
     if players.is_empty() {
         return Err("Enable at least one test player before exporting a network test".into());
     }
-    let scripts = players
-        .iter()
-        .map(|p| controller(p.controller.as_deref()))
-        .collect::<Result<Vec<_>, _>>()?;
+    for player in &players {
+        controller(player.controller.as_deref())?;
+    }
     // Reserve only a new directory; on error remove only the directory we own.
     // Never modify the source zone, controller files or an earlier test export.
     fs::create_dir(output)
@@ -47,32 +46,7 @@ pub(super) fn publish(
             scenery,
         )?;
         let world = Store::open(&world_path).map_err(|e| e.to_string())?;
-        for player in &players {
-            let feet = GlobalPosition::new(player.position).ok_or("Invalid test player feet")?;
-            let owner =
-                procedural::owner(feet).ok_or("Test player leaves supported network world")?;
-            let patch = world.patch(owner).map_err(|e| e.to_string())?;
-            if !patch.covers(feet, None) || patch.try_landing_spawn(feet).is_none() {
-                return Err(format!(
-                    "Test player {} needs clear space and bounded landing support",
-                    player.client_id
-                ));
-            }
-        }
-        if scripts.iter().any(Option::is_some) {
-            fs::create_dir(output.join("controllers")).map_err(|e| e.to_string())?;
-            fs::write(output.join(WALK_TURN_PATH), WALK_TURN).map_err(|e| e.to_string())?;
-        }
-        let entries: Vec<_> = players.iter().zip(scripts).map(|(p, script)| serde_json::json!({
-            "client_id":p.client_id,"feet":p.position,"controller":script,"network":p.network,
-        })).collect();
-        let scenario =
-            serde_json::json!({"schema":1,"world_identity":world.identity(),"players":entries});
-        let bytes = serde_json::to_vec_pretty(&scenario).map_err(|e| e.to_string())?;
-        if bytes.len() > theia_network::renet_runtime::test_players::MAX_BYTES {
-            return Err("Network test scenario exceeds launcher byte budget".into());
-        }
-        fs::write(output.join("scenario.json"), bytes).map_err(|e| e.to_string())?;
+        write_scenario(zone, &world, output)?;
         let report = serde_json::json!({
             "clients":players.len(),"world":"world","scenario":"scenario.json","world_export":world_report,
             "scope":"Local movement test; final spawn admission remains server-authoritative; no account or combat session",
@@ -88,6 +62,50 @@ pub(super) fn publish(
         let _ = fs::remove_dir_all(output);
     }
     result
+}
+
+/// Publish checked test-player starts and immutable controller scripts into an owned stage.
+pub(super) fn write_scenario(zone: &Zone, world: &Store, output: &Path) -> Result<usize, String> {
+    let players: Vec<_> = zone.test_players.iter().filter(|p| p.enabled).collect();
+    if players.is_empty() {
+        return Err("Enable at least one test player before exporting a network test".into());
+    }
+    let scripts = players
+        .iter()
+        .map(|p| controller(p.controller.as_deref()))
+        .collect::<Result<Vec<_>, _>>()?;
+    for player in &players {
+        let feet = GlobalPosition::new(player.position).ok_or("Invalid test player feet")?;
+        let owner = procedural::owner(feet).ok_or("Test player leaves supported network world")?;
+        let patch = world.patch(owner).map_err(|e| e.to_string())?;
+        if !patch.covers(feet, None) || patch.try_landing_spawn(feet).is_none() {
+            return Err(format!(
+                "Test player {} needs clear space and bounded landing support",
+                player.client_id
+            ));
+        }
+    }
+    if scripts.iter().any(Option::is_some) {
+        fs::create_dir(output.join("controllers")).map_err(|e| e.to_string())?;
+        fs::write(output.join(WALK_TURN_PATH), WALK_TURN).map_err(|e| e.to_string())?;
+    }
+    let entries: Vec<_> = players
+        .iter()
+        .zip(scripts)
+        .map(|(p, script)| {
+            serde_json::json!({
+                "client_id":p.client_id,"feet":p.position,"controller":script,"network":p.network,
+            })
+        })
+        .collect();
+    let scenario =
+        serde_json::json!({"schema":1,"world_identity":world.identity(),"players":entries});
+    let bytes = serde_json::to_vec_pretty(&scenario).map_err(|e| e.to_string())?;
+    if bytes.len() > theia_network::renet_runtime::test_players::MAX_BYTES {
+        return Err("Network test scenario exceeds launcher byte budget".into());
+    }
+    fs::write(output.join("scenario.json"), bytes).map_err(|e| e.to_string())?;
+    Ok(players.len())
 }
 
 #[cfg(test)]

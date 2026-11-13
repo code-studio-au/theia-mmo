@@ -31,6 +31,17 @@ impl Manager {
         self.child.is_some()
     }
     pub fn start(&mut self, snapshot: &Path, players: &Path) -> Result<(), String> {
+        self.start_mode(snapshot, players, false)
+    }
+    pub fn start_population(&mut self, snapshot: &Path, players: &Path) -> Result<(), String> {
+        self.start_mode(snapshot, players, true)
+    }
+    fn start_mode(
+        &mut self,
+        snapshot: &Path,
+        players: &Path,
+        population: bool,
+    ) -> Result<(), String> {
         if self.running() {
             return Err("Stop the current network playtest first".into());
         }
@@ -85,8 +96,16 @@ impl Manager {
                 "python3".into()
             }
         });
-        let child = Process::new(python)
-            .arg(script)
+        let mut command = Process::new(python);
+        command.arg(script);
+        if population {
+            command
+                .arg("--population-config")
+                .arg(snapshot.join("population.json"))
+                .arg("--combat-catalog")
+                .arg(snapshot.join("combat.json"));
+        }
+        let child = command
             .arg("--scenario")
             .arg(snapshot.join("scenario.json"))
             .arg("--world")

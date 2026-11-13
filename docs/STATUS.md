@@ -1,3 +1,31 @@
+P3-07 / P5-17 editor-owned population playtests, 13 November 2026:
+Zone -> Start population playtest exports one checked passive group plus enabled
+test players and starts the managed server/client session. The seven-field dialog
+checks profile, spacing and player assets; repeated starts propose fresh snapshot
+folders. Zone -> Stop network playtest and editor owner-exit use existing cleanup.
+Shared scenario export checks every start against actual static collision, copies
+controller scripts, and binds starts to the exported static world identity. The
+snapshot retains the full source zone and an immutable development combat catalog.
+Plain passive export still refuses test-player presets; explicit CLI combination
+--population --network-test produces the same snapshot without launching a server.
+Acceptance: 232 editor tests pass (ten optional skipped), actual population/network
+snapshot reload passes, combined real CLI export passes, and fmt plus strict
+workspace/all-target Clippy pass. Owned native 3440x1440 editor starts two real
+1280x720 Classic clients; second peer has 40 ms each-way delay/5 ms jitter and
+completes its normal-input walk/turn/strafe/jump controller. Both receive combat
+and targeting states. Explicit Stop cleans children/tickets; source bytes and
+normalized saved zone agree. RX 7900 XTX/RADV device 29772 Vulkan/KHRONOS logs
+have zero GPU diagnostics. Dialog screenshot inspected. Initial harness expected
+an info log hidden at default verbosity; its timeout closed the owned editor and
+independently verified owner-exit cleanup. Fixed harness uses real server admissions;
+the complete rerun passes. No OS-driven character/camera movement was needed.
+Evidence: build/population-network-{snapshot-tests,cli}.log;
+build/population-editor-playtest-{regressions,final-checks}.log;
+build/population-editor-playtest-native-v2/{qualification.json,dialog.png,package/runs/};
+v1/owner-exit-check.json. Reusable tool: tools/qualify_editor_population_playtest.py.
+This remains passive combat targets/respawns, not pursuit, quest publication,
+model-catalog resolution, Windows execution or capacity qualification.
+
 P3-07 / P5-17 managed multi-client population launcher, 13 November 2026:
 tools/network_playtest.py now accepts --population-config with optional explicit
 --combat-catalog and client-only --creature-asset. First validate the scenario's

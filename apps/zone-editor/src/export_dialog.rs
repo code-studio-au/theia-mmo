@@ -26,18 +26,29 @@ enum Mode {
     World,
     NetworkTest,
     Population,
+    PopulationTest,
     ParticleChunks,
     ReplaceParticleChunks,
 }
 impl Mode {
     fn world(self) -> bool {
-        matches!(self, Self::World | Self::NetworkTest | Self::Population)
+        matches!(
+            self,
+            Self::World | Self::NetworkTest | Self::Population | Self::PopulationTest
+        )
+    }
+    fn population(self) -> bool {
+        matches!(self, Self::Population | Self::PopulationTest)
+    }
+    fn network(self) -> bool {
+        matches!(self, Self::NetworkTest | Self::PopulationTest)
     }
     fn fields(self) -> &'static [usize] {
         match self {
             Self::World => &[0, 1, 2, 3],
             Self::NetworkTest => &[0, 3, 4],
             Self::Population => &[0, 1, 2, 3, 4, 5],
+            Self::PopulationTest => &[0, 1, 2, 3, 4, 5, 6],
             _ => &[0, 1],
         }
     }
@@ -116,6 +127,7 @@ pub(super) fn setup(mut commands: Commands) {
                             "Gameplay template (optional)",
                             "Player asset directory",
                             "Minimum spacing (metres)",
+                            "Player asset directory",
                         ]
                         .into_iter()
                         .enumerate()
@@ -204,11 +216,12 @@ pub(super) fn open(
     manager: Option<Res<network_playtest::Manager>>,
 ) {
     let network = std::mem::take(&mut requests.network_playtest);
+    let population_test = std::mem::take(&mut requests.population_playtest);
     let world = std::mem::take(&mut requests.export_world);
     let population = std::mem::take(&mut requests.export_population);
     let chunks = std::mem::take(&mut requests.export_particle_chunks);
     let replace = std::mem::take(&mut requests.replace_particle_chunks);
-    if !(world || chunks || replace || network || population)
+    if !(world || chunks || replace || network || population || population_test)
         || session.has_modal()
         || !windows.single().is_ok_and(|window| window.focused)
     {
@@ -223,13 +236,15 @@ pub(super) fn open(
         return;
     }
     let slug = slug(&session.editor.zone().name);
-    if network
+    if (network || population_test)
         && (session.network_active || !session.editor.zone().test_players.iter().any(|p| p.enabled))
     {
         session.status = "Enable a test player and stop any existing network session first".into();
         return;
     }
-    let mode = if network {
+    let mode = if population_test {
+        Mode::PopulationTest
+    } else if network {
         Mode::NetworkTest
     } else if population {
         Mode::Population
@@ -240,15 +255,28 @@ pub(super) fn open(
     } else {
         Mode::World
     };
-    let values = if mode == Mode::Population {
+    let values = if mode.population() {
         [
-            format!("build/{slug}-population-v1"),
+            if mode == Mode::PopulationTest {
+                format!(
+                    "build/{slug}-population-{}",
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map_or(0, |d| d.as_nanos())
+                )
+            } else {
+                format!("build/{slug}-population-v1")
+            },
             format!("theia.zone.{slug}"),
             "1".into(),
             String::new(),
             population_export::default_baker()
                 .map_or_else(|_| String::new(), |p| p.display().to_string()),
             "3".into(),
+            manager
+                .as_ref()
+                .and_then(|m| m.player_assets.as_ref())
+                .map_or_else(String::new, |p| p.display().to_string()),
         ]
     } else if mode.world() {
         [
@@ -275,10 +303,12 @@ pub(super) fn open(
                 .and_then(|m| m.player_assets.as_ref())
                 .map_or_else(String::new, |p| p.display().to_string()),
             String::new(),
+            String::new(),
         ]
     } else {
         [
             format!("build/{slug}-particles"),
+            String::new(),
             String::new(),
             String::new(),
             String::new(),
@@ -425,12 +455,18 @@ pub(super) fn finish(
         match result {
             Ok(_) => {
                 draft.finished = true;
-                if draft.mode == Mode::NetworkTest {
+                if draft.mode.network() {
                     let result = manager
                         .as_deref_mut()
                         .ok_or_else(|| "Network launcher is unavailable".to_string())
                         .and_then(|m| {
-                            m.start(
+                            let start = if draft.mode == Mode::PopulationTest {
+                                network_playtest::Manager::start_population
+                            } else {
+                                network_playtest::Manager::start
+                            };
+                            start(
+                                m,
                                 draft.target.as_deref().expect("Export target"),
                                 draft
                                     .player_assets
@@ -542,13 +578,13 @@ pub(super) fn finish(
                     ))
                 }
             };
-            let population_settings = if draft.mode == Mode::Population {
+            let population_settings = if draft.mode.population() {
                 population_values(&fields).map(Some)
             } else {
                 Ok(None)
             };
             let input = input.and_then(|input| {
-                if draft.mode == Mode::NetworkTest {
+                if draft.mode.network() {
                     let manager = manager
                         .as_deref_mut()
                         .ok_or("Network launcher is unavailable")?;
@@ -557,7 +593,13 @@ pub(super) fn finish(
                     }
                     let value = fields
                         .iter()
-                        .find(|(_, f, _)| f.0 == 4)
+                        .find(|(_, f, _)| {
+                            f.0 == if draft.mode == Mode::PopulationTest {
+                                6
+                            } else {
+                                4
+                            }
+                        })
                         .map(|(_, _, t)| t.value().to_string())
                         .unwrap_or_default();
                     if value.trim().is_empty() || value.contains(['\0', '\n', '\r']) {
@@ -568,10 +610,12 @@ pub(super) fn finish(
                         return Err("Player asset directory must contain character.glb".into());
                     }
                     draft.player_assets = Some(path);
-                    manager.template = input
-                        .1
-                        .as_ref()
-                        .and_then(|(_, _, template)| template.clone());
+                    if draft.mode == Mode::NetworkTest {
+                        manager.template = input
+                            .1
+                            .as_ref()
+                            .and_then(|(_, _, template)| template.clone());
+                    }
                 }
                 Ok(input)
             });
@@ -579,14 +623,19 @@ pub(super) fn finish(
                 Ok(((path, world, chunks), population)) => {
                     let zone = session.editor.zone().clone();
                     let replace = draft.mode == Mode::ReplaceParticleChunks;
-                    let network = draft.mode == Mode::NetworkTest;
+                    let network = draft.mode.network();
                     draft.message = format!("Exporting {}…", path.display());
                     draft.target = Some(path.clone());
                     let scenery = scenery.as_deref().cloned().unwrap_or_default();
                     draft.task = Some(IoTaskPool::get().spawn(async move {
                         if let Some((id, revision, template)) = world {
                             if let Some((baker, spacing)) = population {
-                                population_export::publish(
+                                let publish = if network {
+                                    population_export::publish_network
+                                } else {
+                                    population_export::publish
+                                };
+                                publish(
                                     &zone,
                                     &path,
                                     &id,
@@ -652,6 +701,7 @@ pub(super) fn finish(
                 Mode::NetworkTest => "Start network playtest",
                 Mode::World => "Export world",
                 Mode::Population => "Export passive population",
+                Mode::PopulationTest => "Start population playtest",
                 Mode::ParticleChunks => "Export particles to chunks",
                 Mode::ReplaceParticleChunks => "Replace all world particles",
             }
@@ -661,6 +711,7 @@ pub(super) fn finish(
                 Mode::NetworkTest => "Start network playtest",
                 Mode::World => "Export world",
                 Mode::Population => "Export passive population",
+                Mode::PopulationTest => "Start population playtest",
                 Mode::ParticleChunks => "Export particles",
                 Mode::ReplaceParticleChunks => "Replace all particles",
             }
@@ -668,20 +719,21 @@ pub(super) fn finish(
         } else if description {
             **text = match draft.mode {
                 Mode::NetworkTest => "Starts one server and a client per enabled Test Player from this zone snapshot. Stop from the Zone menu. Zone files change only with Save.",
+                Mode::PopulationTest => "Starts a checked passive population with one client per enabled Test Player. Stop through the Zone menu. Choose the matching creature profile and player assets.",
                 Mode::Population => "Exports one enabled passive spawn group, its static world and checked navigation. Choose a matching creature profile. Does not start a server.",
                 Mode::World => "Exports the current zone. Use a matching gameplay template for quest areas and NPC references. Save particle edits first.",
                 Mode::ParticleChunks => "Copies a particle-free chunk world with these placements. Save particle edits first.",
                 Mode::ReplaceParticleChunks => "Replaces ALL particle placements in a new copy of the chunk world with this zone's placements. An empty zone removes all world particles. Save particle edits first."
             }.into();
         } else if caption.is_some_and(|caption| caption.0 == 3) {
-            **text = if draft.mode == Mode::Population {
+            **text = if draft.mode.population() {
                 "Passive creature profile"
             } else {
                 "Gameplay template (optional)"
             }
             .into();
         } else if caption.is_some_and(|caption| caption.0 == 4) {
-            **text = if draft.mode == Mode::Population {
+            **text = if draft.mode.population() {
                 "Navigation baker executable"
             } else {
                 "Player asset directory"
@@ -917,6 +969,10 @@ mod tests {
 
     #[test]
     fn network_dialog_filters_fields_and_rejects_missing_player_assets_before_export() {
+        check_network_dialog(false);
+        check_network_dialog(true);
+    }
+    fn check_network_dialog(population: bool) {
         let mut zone = Zone {
             schema: 12,
             ..default()
@@ -954,16 +1010,33 @@ mod tests {
             ..default()
         });
         app.update();
-        app.world_mut()
-            .resource_mut::<workspace::Requests>()
-            .network_playtest = true;
+        if population {
+            app.world_mut()
+                .resource_mut::<workspace::Requests>()
+                .population_playtest = true;
+        } else {
+            app.world_mut()
+                .resource_mut::<workspace::Requests>()
+                .network_playtest = true;
+        }
         app.update();
         let mut rows = app.world_mut().query::<(&FieldRow, &Node)>();
         for (row, node) in rows.iter(app.world()) {
-            assert_eq!(node.display == Display::Flex, [0, 3, 4].contains(&row.0));
+            assert_eq!(
+                node.display == Display::Flex,
+                if population {
+                    row.0 <= 6
+                } else {
+                    [0, 3, 4].contains(&row.0)
+                }
+            );
         }
         // Keyboard navigation must skip the hidden manifest metadata fields.
-        for expected in [3, 4, 0] {
+        for expected in if population {
+            vec![1, 2, 3, 4, 5, 6, 0]
+        } else {
+            vec![3, 4, 0]
+        } {
             app.world_mut()
                 .resource_mut::<ButtonInput<KeyCode>>()
                 .press(KeyCode::Tab);
@@ -973,6 +1046,14 @@ mod tests {
             app.world_mut()
                 .resource_mut::<ButtonInput<KeyCode>>()
                 .reset_all();
+        }
+        if population {
+            let mut fields = app.world_mut().query::<(&Field, &mut EditableText)>();
+            for (field, mut text) in fields.iter_mut(app.world_mut()) {
+                if field.0 == 3 {
+                    text.editor_mut().set_text("profile.json");
+                }
+            }
         }
         app.world_mut()
             .resource_mut::<Session>()

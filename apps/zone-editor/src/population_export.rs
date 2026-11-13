@@ -29,7 +29,21 @@ pub(super) fn default_baker() -> Result<PathBuf, String> {
 }
 
 fn validate(zone: &Zone, profile: &creatures::Profile, spacing: f64) -> Result<u64, String> {
+    validate_mode(zone, profile, spacing, false)
+}
+
+fn validate_mode(
+    zone: &Zone,
+    profile: &creatures::Profile,
+    spacing: f64,
+    network: bool,
+) -> Result<u64, String> {
     zone.validate()?;
+    if network && !zone.test_players.iter().any(|p| p.enabled) {
+        return Err(
+            "Enable at least one test player before exporting a population playtest".into(),
+        );
+    }
     let groups: Vec<_> = zone.spawn_groups.iter().filter(|g| g.enabled).collect();
     if groups.len() != 1 {
         return Err("Population export requires exactly one enabled spawn group".into());
@@ -45,7 +59,7 @@ fn validate(zone: &Zone, profile: &creatures::Profile, spacing: f64) -> Result<u
                 .into(),
         );
     }
-    if !zone.particles.is_empty() || !zone.test_players.is_empty() {
+    if !zone.particles.is_empty() || (!network && !zone.test_players.is_empty()) {
         return Err(
             "Passive population export does not yet support particles or test-player presets"
                 .into(),
@@ -66,6 +80,29 @@ pub(super) fn publish(
     settings: Settings<'_>,
     scenery: &crate::scenery_library::Library,
 ) -> Result<serde_json::Value, String> {
+    publish_mode(zone, output, id, revision, settings, scenery, false)
+}
+
+pub(super) fn publish_network(
+    zone: &Zone,
+    output: &Path,
+    id: &str,
+    revision: u32,
+    settings: Settings<'_>,
+    scenery: &crate::scenery_library::Library,
+) -> Result<serde_json::Value, String> {
+    publish_mode(zone, output, id, revision, settings, scenery, true)
+}
+
+fn publish_mode(
+    zone: &Zone,
+    output: &Path,
+    id: &str,
+    revision: u32,
+    settings: Settings<'_>,
+    scenery: &crate::scenery_library::Library,
+    network: bool,
+) -> Result<serde_json::Value, String> {
     if output.exists() {
         return Err("Population export requires a new output directory".into());
     }
@@ -76,7 +113,11 @@ pub(super) fn publish(
         .read_to_end(&mut creature)
         .map_err(|e| e.to_string())?;
     let profile = creatures::Profile::from_json(&creature).map_err(|e| e.to_string())?;
-    let group = validate(zone, &profile, settings.spacing)?;
+    let group = if network {
+        validate_mode(zone, &profile, settings.spacing, true)?
+    } else {
+        validate(zone, &profile, settings.spacing)?
+    };
     let baker = settings
         .baker
         .canonicalize()
@@ -97,10 +138,13 @@ pub(super) fn publish(
     fs::create_dir(&stage).map_err(|e| e.to_string())?;
     let mut destination_created = false;
     let result = (|| {
-        // Only population metadata is excluded from static collision/visual export.
+        // Exclude runtime population and optional test-player metadata from static export.
         // Preserve the complete validated authoring document beside that world.
         let mut geometry = zone.clone();
         geometry.spawn_groups.clear();
+        if network {
+            geometry.test_players.clear();
+        }
         let world_report = crate::export::publish_with_assets(
             &geometry,
             &stage.join("world"),
@@ -113,6 +157,17 @@ pub(super) fn publish(
         fs::write(stage.join("creature.json"), &creature).map_err(|e| e.to_string())?;
         let store =
             Arc::new(authored_world::Store::open(&stage.join("world")).map_err(|e| e.to_string())?);
+        let clients = if network {
+            let clients = crate::network_test_export::write_scenario(zone, &store, &stage)?;
+            fs::write(
+                stage.join("combat.json"),
+                include_bytes!("../../../content/gameplay/development-abilities.json"),
+            )
+            .map_err(|e| e.to_string())?;
+            clients
+        } else {
+            0
+        };
         let access = store.spawn(0).ok_or("Exported world has no player spawn")?;
         let centre = procedural::owner(access).ok_or("Player spawn outside navigation domain")?;
         let baked = Command::new(&baker)
@@ -142,7 +197,7 @@ pub(super) fn publish(
         )
         .map_err(|e| format!("Population placement: {e}"))?;
         let report = serde_json::json!({"population_export":{"passed":true,"group":group,
-            "count":loaded.count(),"respawn_ms":loaded.respawn_ms(),"world":world_report,
+            "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
             "scope":"One checked passive population and matching static world/navigation; no server launched, model catalog, pursuit or quest publication"}});
@@ -154,6 +209,13 @@ pub(super) fn publish(
         // Reserve exclusively, and expose the runtime configuration last.
         fs::create_dir(output).map_err(|e| e.to_string())?;
         destination_created = true;
+        if network {
+            for name in ["scenario.json", "combat.json", "controllers"] {
+                if stage.join(name).exists() {
+                    fs::rename(stage.join(name), output.join(name)).map_err(|e| e.to_string())?;
+                }
+            }
+        }
         for name in [
             "world",
             "navigation",
@@ -305,6 +367,87 @@ mod tests {
         );
         assert_eq!(fs::read(output.join("keep")).unwrap(), b"keep");
         assert_eq!(fs::read(&creature).unwrap(), CREATURE);
+        assert_eq!(zone, original);
+    }
+    #[test]
+    #[ignore = "requires THEIA_NAV_BAKER actual offline binary"]
+    fn population_network_snapshot_preserves_players_and_binds_scenario_to_its_world() {
+        let root = Folder::new();
+        let creature = root.0.join("profile.json");
+        fs::write(&creature, CREATURE).unwrap();
+        let baker = PathBuf::from(std::env::var_os("THEIA_NAV_BAKER").unwrap());
+        let mut zone = fixture();
+        zone.test_players = (1..=2)
+            .map(|slot| theia_zone::test_players::TestPlayer {
+                id: 10 + u64::from(slot),
+                name: format!("Player {slot}"),
+                client_id: slot,
+                enabled: true,
+                position: [8192. + f64::from(slot), 0.1, 8192.],
+                controller: (slot == 2).then(|| "test.walk-turn".into()),
+                network: Default::default(),
+            })
+            .collect();
+        let original = zone.clone();
+        let output = root.0.join("package");
+        let settings = || Settings {
+            creature: &creature,
+            baker: &baker,
+            spacing: 3.,
+        };
+        assert!(
+            publish(
+                &zone,
+                &output,
+                "theia.test.population",
+                1,
+                settings(),
+                &Default::default()
+            )
+            .is_err()
+        );
+        assert!(!output.exists());
+        let report = publish_network(
+            &zone,
+            &output,
+            "theia.test.population",
+            1,
+            settings(),
+            &Default::default(),
+        )
+        .unwrap();
+        assert_eq!(report["population_export"]["clients"], 2);
+        assert_eq!(report["population_export"]["count"], 5);
+        assert_eq!(Zone::load(&output.join("zone.json")).unwrap(), zone);
+        let store = Arc::new(authored_world::Store::open(&output.join("world")).unwrap());
+        let scenario: serde_json::Value =
+            serde_json::from_slice(&fs::read(output.join("scenario.json")).unwrap()).unwrap();
+        assert_eq!(
+            scenario["world_identity"],
+            serde_json::json!(store.identity())
+        );
+        assert_eq!(
+            scenario["players"][0]["feet"],
+            serde_json::json!(zone.test_players[0].position)
+        );
+        assert_eq!(
+            scenario["players"][1]["controller"],
+            "controllers/walk-turn.json"
+        );
+        assert_eq!(
+            fs::read(output.join("controllers/walk-turn.json")).unwrap(),
+            include_bytes!("../../../content/testing/walk-turn-controller.json")
+        );
+        assert_eq!(
+            fs::read(output.join("combat.json")).unwrap(),
+            include_bytes!("../../../content/gameplay/development-abilities.json")
+        );
+        let loaded = population::configuration::Loaded::open(
+            &output.join("population.json"),
+            &procedural::Source::Authored(store),
+        )
+        .unwrap();
+        assert_eq!(loaded.count(), 5);
         assert_eq!(zone, original);
     }
     #[test]

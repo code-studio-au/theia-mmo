@@ -4746,3 +4746,27 @@ and optional client-only `--creature-asset FILE`. Static-world identity is check
 before the population/combat preflight. Per-player delay/jitter and managed
 stop/owner-exit cleanup remain available. This launcher support does not yet
 make the ordinary network snapshot exporter accept spawn groups.
+
+
+## Start a population playtest from the editor — 13 November 2026
+
+Enable one passive spawn group and one or two Test Players, then choose
+**Zone → Start population playtest…**. Supply the matching creature profile,
+navigation baker and player asset directory (`character.glb`). Choose minimum
+spacing and a fresh snapshot folder. Start exports and validates the complete
+snapshot before launching a server and one real client per enabled test player.
+Assigned test controllers and per-player network conditions are retained.
+**Zone → Stop network playtest** stops the session; closing the owning editor
+also cleans up its server, clients, relays and temporary tickets.
+
+The snapshot preserves the full zone, scenario, optional controller scripts,
+checked population/navigation/static world and `combat.json` (the development
+ability catalog). Standard placeholder targets remain unless the external
+launcher receives an explicit `--creature-asset` override; this does not resolve
+spawn-group model IDs. Passive-only export restrictions otherwise still apply.
+
+For a matching headless snapshot, combine `--population --network-test` with the
+population export command above. This writes the package without launching.
+Replay it with `tools/network_playtest.py --scenario PACKAGE/scenario.json
+--world PACKAGE/world --population-config PACKAGE/population.json
+--combat-catalog PACKAGE/combat.json --players PLAYER_DIRECTORY --output NEW_RUN`.

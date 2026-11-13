@@ -85,7 +85,7 @@ with (out / 'editor.log').open('w') as log:
         result = json.loads((destination / 'population-export.json').read_text())['population_export']
         assert result['passed'] and result['count'] == 5, result
         assert source.read_bytes() == original and args.zone.read_bytes() == original
-        assert json.loads((destination / 'zone.json').read_text()) == json.loads(original)
+        assert json.loads((destination / 'zone.json').read_text()) == state()['document']
         x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
         report.with_suffix('.png').rename(out / 'finished.png')
         (out / 'qualification.json').write_text(json.dumps(dict(passed=True,
