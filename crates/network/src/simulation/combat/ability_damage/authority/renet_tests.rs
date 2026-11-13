@@ -68,6 +68,7 @@ struct Session {
     dialogue: Option<Arc<crate::dialogue::Profile>>,
     public_avatar: Option<Arc<crate::avatar_life_wire::Profile>>,
     public_attacks: Option<Arc<crate::creature_attack_wire::Profile>>,
+    public_population: Option<Arc<crate::creature_attack_wire::population::PopulationProfile>>,
     source: [u8; 32],
     identity: [u8; 32],
     physical: Arc<crate::simulation::combat::physical::Profile>,
@@ -283,6 +284,7 @@ fn fixture_population_behavior(
         dialogue: None,
         public_avatar: None,
         public_attacks: None,
+        public_population: None,
         source,
         identity,
         physical: world.physical_damage_profile().unwrap().clone(),
@@ -308,6 +310,7 @@ fn fixture_population_behavior(
 struct Seen {
     avatars: Vec<crate::avatar_life_wire::Observation>,
     public_attacks: Vec<crate::creature_attack_wire::Observation>,
+    public_population: Vec<crate::creature_attack_wire::population::Frame>,
     batches: u64,
     deaths: usize,
     respawns: usize,
@@ -322,6 +325,7 @@ struct Peer {
     _talk: mpsc::Sender<net::dialogue::Intent>,
     avatars: JoinHandle<Vec<crate::avatar_life_wire::Observation>>,
     public_attacks: JoinHandle<Vec<crate::creature_attack_wire::Observation>>,
+    public_population: JoinHandle<Vec<crate::creature_attack_wire::population::Frame>>,
     state: watch::Receiver<State>,
     seen: watch::Receiver<Seen>,
     melee: watch::Sender<Option<net::MeleeChoice>>,
@@ -390,14 +394,33 @@ impl Peer {
         let (life_events, mut life_rx) = mpsc::channel(16);
         let (public_events, mut public_rx) =
             mpsc::channel(net::creature_attacks::PRESENTATION_CAPACITY);
-        let public_mode =
-            session
-                .public_attacks
-                .clone()
-                .map(|profile| net::creature_attacks::Client {
-                    profile,
-                    events: public_events,
-                });
+        let public_mode = session.public_attacks.clone().map(|profile| {
+            net::creature_attacks::Mode::Singleton(net::creature_attacks::Client {
+                profile,
+                events: public_events,
+            })
+        });
+        let (population_events, mut population_rx) =
+            mpsc::channel(net::creature_attacks::population::PRESENTATION_CAPACITY);
+        let public_mode = if let Some(profile) = &session.public_population {
+            assert!(public_mode.is_none());
+            Some(net::creature_attacks::Mode::Population(
+                net::creature_attacks::population::Client {
+                    profile: profile.clone(),
+                    events: population_events,
+                },
+            ))
+        } else {
+            public_mode
+        };
+        let public_population = tokio::spawn(async move {
+            let mut observed = Vec::new();
+            while let Some(value) = population_rx.recv().await {
+                assert!(observed.len() < 128);
+                observed.push(value);
+            }
+            observed
+        });
         let public_attacks = tokio::spawn(async move {
             let mut observed = Vec::new();
             while let Some(value) = public_rx.recv().await {
@@ -489,6 +512,7 @@ impl Peer {
             _talk: talk_actions,
             avatars,
             public_attacks,
+            public_population,
             state,
             seen,
             melee,
@@ -539,6 +563,7 @@ impl Peer {
         };
         seen.avatars = self.avatars.await.unwrap();
         seen.public_attacks = self.public_attacks.await.unwrap();
+        seen.public_population = self.public_population.await.unwrap();
         seen.life = life;
         seen
     }

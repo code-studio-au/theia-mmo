@@ -212,7 +212,13 @@ fn receive_queue_failure_and_wrong_context_refuse_without_advancing_state() {
     assert!(Client { profile, events }.validate().is_err());
 }
 
-async fn upload(address: SocketAddr, ticket: Vec<u8>, identity: [u8; 32], channel: u8) {
+async fn upload(
+    address: SocketAddr,
+    ticket: Vec<u8>,
+    identity: [u8; 32],
+    channel: u8,
+    population: bool,
+) {
     let token = net::read_ticket(&ticket, address).unwrap();
     let mut transport = secure_client(
         UdpSocket::bind("127.0.0.1:0").unwrap(),
@@ -242,7 +248,14 @@ async fn upload(address: SocketAddr, ticket: Vec<u8>, identity: [u8; 32], channe
                 }
             }
             if welcomed && !sent {
-                client.send_message(channel, wire::TAG.to_vec());
+                client.send_message(
+                    channel,
+                    if population {
+                        wire::population::TAG.to_vec()
+                    } else {
+                        wire::TAG.to_vec()
+                    },
+                );
                 sent = true;
             }
             crate::renet_transport::confirm_connection(&mut client, &mut connection_confirmed)
@@ -259,7 +272,12 @@ async fn upload(address: SocketAddr, ticket: Vec<u8>, identity: [u8; 32], channe
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_public_attack_uploads_on_both_channels_disconnect_without_gameplay_effects() {
-    for channel in [CREATURE_ATTACK_CHANNEL, EVENT_CHANNEL] {
+    for (channel, population) in [
+        (CREATURE_ATTACK_CHANNEL, false),
+        (EVENT_CHANNEL, false),
+        (CREATURE_ATTACK_CHANNEL, true),
+        (EVENT_CHANNEL, true),
+    ] {
         let (world, _) = fixture();
         let identity = world.identity();
         // World owns terrain; no external database, provider or desktop process.
@@ -276,7 +294,7 @@ async fn encrypted_public_attack_uploads_on_both_channels_disconnect_without_gam
         let ticket = issuer.issue(1, None, 60).unwrap().bytes().to_vec();
         let (stop, shutdown) = tokio::sync::watch::channel(false);
         let server = tokio::spawn(net::run_server_measured(transport, shutdown, world));
-        upload(address, ticket, identity, channel).await;
+        upload(address, ticket, identity, channel, population).await;
         stop.send_replace(true);
         let stats = server.await.unwrap().unwrap();
         assert_eq!(stats.public_attack_uploads_rejected, 1);

@@ -11,6 +11,7 @@ pub struct State {
     pub player_identity: Option<crate::player_identity_wire::State>,
     pub public_avatar_life: Option<crate::avatar_life_wire::ClientState>,
     pub public_creature_attack: Option<crate::creature_attack_wire::ClientState>,
+    pub public_population_attack: Option<crate::creature_attack_wire::population::PopulationState>,
     pub player_life: Option<crate::player_life_wire::ClientState>,
     pub quest_journal: Option<crate::quest_journal_wire::State>,
     pub quest_journal_reply: Option<crate::quest_journal_wire::Reply>,

@@ -11,22 +11,32 @@ const THREAT: &[u8] =
     include_bytes!("../../../../../../../../content/gameplay/development-creature-threat.json");
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_competing_damage_transfers_private_windup_and_keeps_public_facts_all_rates() {
-    competition(false, false, false).await;
+    competition(false, false, false, false).await;
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_public_attack_timing_reaches_victim_and_observer_all_rates() {
-    competition(true, false, false).await;
+    competition(true, false, false, false).await;
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_avatar_and_npc_contracts_coexist_on_the_priority_channel_all_rates() {
-    competition(true, true, false).await;
+    competition(true, true, false, false).await;
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 async fn encrypted_authored_population_competing_damage_transfers_private_victim_all_rates() {
-    competition(false, false, true).await;
+    competition(false, false, true, false).await;
 }
-async fn competition(public_attacks: bool, public_avatar: bool, population: bool) {
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+async fn encrypted_authored_population_public_frames_transfer_windup_to_both_peers_all_rates() {
+    competition(false, false, true, true).await;
+}
+async fn competition(
+    public_attacks: bool,
+    public_avatar: bool,
+    population: bool,
+    public_population: bool,
+) {
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let mut f = if population {
             fixture_population_behavior(rate, true, true, true)
@@ -42,6 +52,10 @@ async fn competition(public_attacks: bool, public_avatar: bool, population: bool
         if public_attacks {
             f.world.enable_public_creature_attacks().unwrap();
             f.session.public_attacks = f.world.public_creature_attack_profile().cloned();
+        }
+        if public_population {
+            f.world.enable_public_population_attacks().unwrap();
+            f.session.public_population = f.world.public_population_attack_profile().cloned();
         }
         if public_avatar {
             f.world.enable_public_avatar_life().unwrap();
@@ -96,6 +110,7 @@ async fn competition(public_attacks: bool, public_avatar: bool, population: bool
         let ready = |s: &State, _: &Seen| {
             (!public_avatar || s.public_avatar_life.is_some())
                 && (!public_attacks || s.public_creature_attack.is_some())
+                && (!public_population || s.public_population_attack.is_some())
                 && s.autoattack.is_some()
                 && s.chunk_ack.is_some()
                 && s.inventory.is_some()
@@ -148,6 +163,22 @@ async fn competition(public_attacks: bool, public_avatar: bool, population: bool
             assert!(private.windup.is_none());
             assert_eq!(private.health, 100);
         }
+        if public_population {
+            for peer in [&mut a, &mut b] {
+                peer.until(|s, _| {
+                    s.public_population_attack
+                        .as_ref()
+                        .and_then(|p| p.current())
+                        .is_some_and(|f| {
+                            f.actors.iter().any(|v| {
+                                v.creature == npc
+                                    && v.windup.is_some_and(|w| w.target == a_life.actor)
+                            })
+                        })
+                })
+                .await;
+            }
+        }
         b._casts
             .try_send(net::CastChoice {
                 ability: ContentId::new("theia.dev.sword-slash").unwrap(),
@@ -192,6 +223,22 @@ async fn competition(public_attacks: bool, public_avatar: bool, population: bool
                         .as_ref()
                         .and_then(|p| p.current())
                         .is_some_and(|p| p.windup.is_some_and(|w| w.target == b_life.actor))
+                })
+                .await;
+            }
+        }
+        if public_population {
+            for peer in [&mut a, &mut b] {
+                peer.until(|s, _| {
+                    s.public_population_attack
+                        .as_ref()
+                        .and_then(|p| p.current())
+                        .is_some_and(|f| {
+                            f.actors.iter().any(|v| {
+                                v.creature == npc
+                                    && v.windup.is_some_and(|w| w.target == b_life.actor)
+                            })
+                        })
                 })
                 .await;
             }
@@ -271,7 +318,30 @@ async fn competition(public_attacks: bool, public_avatar: bool, population: bool
             assert_eq!(stats.public_attack_uploads_rejected, 0);
         } else {
             assert!(seen_a.public_attacks.is_empty() && seen_b.public_attacks.is_empty());
-            assert_eq!(stats.public_attack_states_sent, 0);
+            if !public_population {
+                assert_eq!(stats.public_attack_states_sent, 0);
+            }
+        }
+        if public_population {
+            for seen in [&seen_a, &seen_b] {
+                assert!(!seen.public_population.is_empty());
+                assert!(seen.public_population.iter().all(|f| f.actors.len() == 5));
+                for target in [a_life.actor, b_life.actor] {
+                    assert!(seen.public_population.iter().any(|f| f.actors.iter().any(
+                        |v| v.creature == npc && v.windup.is_some_and(|w| w.target == target)
+                    )));
+                }
+            }
+            assert!(stats.public_attack_states_sent >= 4);
+            assert!(
+                stats.public_attack_max_frame_bytes
+                    <= crate::creature_attack_wire::population::MAX_FRAME_BYTES
+            );
+            assert!(
+                stats.public_attack_max_queue_bytes <= crate::renet_transport::CHANNEL_MEMORY_BYTES
+            );
+            assert_eq!(stats.public_attack_backpressure_disconnects, 0);
+            assert_eq!(stats.public_attack_uploads_rejected, 0);
         }
         // NPC retaliation is private to its victim. Both peers must agree on
         // public outgoing results, while neither receives the other's strike.

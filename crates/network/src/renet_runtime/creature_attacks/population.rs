@@ -1,5 +1,5 @@
-//! Population timing validation and bounded presentation handoff.
-//! Session/channel adoption is separate; queue pressure is an explicit failure.
+//! Population timing on the reliable priority channel and bounded presentation handoff.
+//! Readiness gates publication; queue pressure is an explicit failure.
 use crate::{
     Result,
     client::TransportStats,
@@ -76,6 +76,66 @@ pub fn receive(
     }
     Ok(())
 }
+pub(super) fn publish(
+    server: &mut super::RenetServer,
+    peers: &mut std::collections::BTreeMap<u64, super::Peer>,
+    world: &mut crate::simulation::World,
+    stats: &mut super::ServerStats,
+) -> Result<()> {
+    let Some(profile) = world.public_population_attack_profile().cloned() else {
+        return Ok(());
+    };
+    let view = world
+        .public_population_attack_snapshot()?
+        .ok_or("Missing population attack observation")?;
+    let bytes = wire::encode(&profile, world.tick_rate(), &view)?;
+    let mut slow = Vec::new();
+    for (&id, peer) in peers.iter_mut() {
+        if !peer.public_presentation_ready {
+            continue;
+        }
+        if let Some(old) = &peer.public_population_attack_sent {
+            // Leave/retirement can occur between fixed ticks. Defer that full
+            // update to the next authority tick instead of publishing conflicting
+            // contents for one tick on the reliable ordered channel.
+            if old.tick == view.tick
+                || (old.epoch == view.epoch
+                    && old.actors.len() == view.actors.len()
+                    && old.actors.iter().zip(&view.actors).all(|(a, b)| {
+                        a.profile == b.profile && a.creature == b.creature && a.windup == b.windup
+                    }))
+            {
+                continue;
+            }
+        }
+        if !server.can_send_message(
+            id,
+            crate::renet_transport::CREATURE_ATTACK_CHANNEL,
+            bytes.len(),
+        ) {
+            slow.push(id);
+            continue;
+        }
+        server.send_message(
+            id,
+            crate::renet_transport::CREATURE_ATTACK_CHANNEL,
+            bytes.clone(),
+        );
+        stats.public_attack_max_queue_bytes = stats.public_attack_max_queue_bytes.max(
+            crate::renet_transport::CHANNEL_MEMORY_BYTES
+                - server
+                    .channel_available_memory(id, crate::renet_transport::CREATURE_ATTACK_CHANNEL),
+        );
+        stats.public_attack_max_frame_bytes = stats.public_attack_max_frame_bytes.max(bytes.len());
+        stats.public_attack_states_sent = stats.public_attack_states_sent.saturating_add(1);
+        peer.public_population_attack_sent = Some(view.clone());
+    }
+    stats.public_attack_backpressure_disconnects = stats
+        .public_attack_backpressure_disconnects
+        .saturating_add(slow.len() as u64);
+    super::retire_peers(server, peers, world, &slow)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -298,6 +358,119 @@ mod tests {
             }
             .validate()
             .is_err()
+        );
+    }
+    #[test]
+    #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+    fn authored_population_publication_waits_for_readiness_and_retires_slow_peer() {
+        use crate::{
+            authored_world, navigation, procedural,
+            simulation::{World, creatures, population::Binding},
+        };
+        let store = Arc::new(
+            authored_world::Store::open(std::path::Path::new(
+                &std::env::var_os("THEIA_AUTHORED_WORLD").unwrap(),
+            ))
+            .unwrap(),
+        );
+        let nav = navigation::Store::open(
+            std::path::Path::new(&std::env::var_os("THEIA_AUTHORED_NAV").unwrap()),
+            store.identity(),
+        )
+        .unwrap();
+        let request = serde_json::from_slice(
+            &std::fs::read(std::env::var_os("THEIA_AUTHORED_SPAWNS").unwrap()).unwrap(),
+        )
+        .unwrap();
+        let prepared = navigation::spawn_preparation::check_authored(&store, &nav, &request)
+            .unwrap()
+            .into_prepared()
+            .unwrap();
+        let saved = store.spawn(0).unwrap().metres();
+        let mut creature: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../../content/gameplay/development-creature-passive.json"
+        ))
+        .unwrap();
+        creature["aggro"] = serde_json::json!({"perception_metres":1.,"leash_metres":35.,"chase_speed":5.,"return_speed":5.,"los_grace_ms":2000,"engagement_ms":30000,"reacquire_ms":2000});
+        let creature = serde_json::to_vec(&creature).unwrap();
+        let definition = creatures::Definition::from_json(&creature).unwrap();
+        let mut world = World::with_terrain_source(
+            [saved[0], saved[2]],
+            1.,
+            procedural::Source::Authored(store),
+        )
+        .unwrap();
+        world.enable_prediction().unwrap();
+        world.enable_classic().unwrap();
+        world
+            .enable_navigating_population(
+                prepared,
+                Binding::new(definition.id(), definition.clone(), 30).unwrap(),
+                navigation::worker::Worker::load(&nav).unwrap(),
+            )
+            .unwrap();
+        let stats =
+            include_bytes!("../../../../../content/gameplay/development-character-stats.json");
+        world
+            .enable_resource_combat(
+                include_bytes!("../../../../../content/gameplay/development-abilities.json"),
+                100,
+                30000,
+                stats,
+            )
+            .unwrap();
+        let life = crate::player_life_wire::Profile::from_json(
+            stats,
+            &creature,
+            include_bytes!("../../../../../content/gameplay/development-creature-retaliation.json"),
+            include_bytes!("../../../../../content/gameplay/development-player-respawn.json"),
+        )
+        .unwrap();
+        world.enable_population_player_life(Arc::new(life)).unwrap();
+        world.enable_public_population_attacks().unwrap();
+        world.require_client_chunks().unwrap();
+        let mut server = super::super::RenetServer::new(
+            crate::renet_transport::connection_config_with_public_attacks(),
+        );
+        server.add_connection(1);
+        let peer = crate::renet_runtime::admit_peer(
+            &mut world,
+            &mut server,
+            1,
+            None,
+            None,
+            tokio::time::Instant::now(),
+        )
+        .unwrap()
+        .unwrap();
+        let actor = peer.actor;
+        let mut peers = std::collections::BTreeMap::from([(1, peer)]);
+        let mut stats = super::super::ServerStats::default();
+        publish(&mut server, &mut peers, &mut world, &mut stats).unwrap();
+        assert_eq!(stats.public_attack_states_sent, 0);
+        peers.get_mut(&1).unwrap().public_presentation_ready = true;
+        publish(&mut server, &mut peers, &mut world, &mut stats).unwrap();
+        assert_eq!(stats.public_attack_states_sent, 1);
+        world.step();
+        publish(&mut server, &mut peers, &mut world, &mut stats).unwrap();
+        assert_eq!(stats.public_attack_states_sent, 1);
+        peers.get_mut(&1).unwrap().public_population_attack_sent = None;
+        let available =
+            server.channel_available_memory(1, crate::renet_transport::CREATURE_ATTACK_CHANNEL);
+        server.send_message(
+            1,
+            crate::renet_transport::CREATURE_ATTACK_CHANNEL,
+            vec![0; available],
+        );
+        publish(&mut server, &mut peers, &mut world, &mut stats).unwrap();
+        assert!(peers.is_empty());
+        assert!(world.player_life_snapshot(actor).is_none());
+        assert_eq!(
+            (
+                stats.public_attack_states_sent,
+                stats.public_attack_backpressure_disconnects
+            ),
+            (1, 1)
         );
     }
 }

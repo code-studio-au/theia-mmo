@@ -1,3 +1,29 @@
+P3-06 / P3-09 reliable priority delivery for public population timing,
+13 November 2026: authenticated gameplay sessions now distinguish singleton and
+population timing modes. Population frames use the existing reliable ordered priority
+channel, bind presentation state to admitted world/profile/rate, and reach a bounded
+frame queue. Movement corrections/snapshots retain rate agreement checks. Whole
+frames wait for presentation readiness; unchanged contents are suppressed. Changes
+between fixed ticks defer until the next authority tick to avoid same-tick conflicts.
+Slow server peers are explicitly retired rather than losing critical transitions.
+Both singleton and population timing upload tags are rejected on event and priority
+channels. The retained native app construction still selects singleton mode; normal
+population/editor public timing remains gated pending standard Bevy presentation.
+Two actual encrypted peers receive full five-NPC frames at 20/30/60 Hz under loss,
+jitter, duplication and reordering. Both observe the old/new victim windups around
+competing accepted attacks, private cancellation and a real incoming strike. Other
+NPCs are idle in this transport fixture; multiple simultaneous public authorities
+remain the separate authored World test. Synthetic inventory/admission ports are
+explicit: no SQL/OIDC, native visuals or durable competing grants claim here.
+An authored authority/Renet queue check qualifies readiness, unchanged publication
+and full critical-queue retirement. Client saturation/closed-queue handoff and both
+upload families on both channels pass. All 509 default network tests pass (17 ignored)
+and all 17 authored population checks pass separately. Strict workspace/all-target
+Clippy, fmt and diff pass. Evidence: build/population-public-encrypted-session-tests.log,
+population-public-session-safety-tests.log and population-public-session-final-checks.log.
+Next: standard Bevy animation/event consumption, native observation and then normal
+launcher/editor public timing adoption. Local only.
+
 P3-06 / P3-09 bounded client handoff for public population timing,
 13 November 2026: added population timing receive validation and a bounded full-frame
 presentation queue using the retained critical-event capacity. Profile, world epoch,

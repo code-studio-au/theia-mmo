@@ -19,6 +19,24 @@ pub struct Client {
     pub profile: Arc<Profile>,
     pub events: mpsc::Sender<Observation>,
 }
+pub enum Mode {
+    Singleton(Client),
+    Population(population::Client),
+}
+impl Mode {
+    pub fn validate(&self) -> Result<()> {
+        match self {
+            Self::Singleton(mode) => mode.validate(),
+            Self::Population(mode) => mode.validate(),
+        }
+    }
+    pub fn life(&self) -> &crate::player_life_wire::Profile {
+        match self {
+            Self::Singleton(mode) => mode.profile.life(),
+            Self::Population(mode) => mode.profile.source().life(),
+        }
+    }
+}
 impl Client {
     pub fn validate(&self) -> Result<()> {
         if self.events.max_capacity() != PRESENTATION_CAPACITY || self.events.is_closed() {
@@ -33,6 +51,7 @@ pub(super) fn publish(
     world: &mut World,
     stats: &mut ServerStats,
 ) -> Result<()> {
+    population::publish(server, peers, world, stats)?;
     let Some(profile) = world.public_creature_attack_profile().cloned() else {
         return Ok(());
     };

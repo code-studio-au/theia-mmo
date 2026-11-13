@@ -104,6 +104,7 @@ struct Peer {
     identity_sent: Option<crate::player_identity_wire::State>,
     avatar_life_sent: Option<crate::avatar_life_wire::Observation>,
     public_attack_sent: Option<crate::creature_attack_wire::Observation>,
+    public_population_attack_sent: Option<crate::creature_attack_wire::population::Frame>,
     public_presentation_ready: bool,
     life_sent: Option<crate::simulation::combat::player_life::Observation>,
     lifecycle_requests: u32,
@@ -618,6 +619,7 @@ fn admit_peer(
         identity_sent: None,
         avatar_life_sent: None,
         public_attack_sent: None,
+        public_population_attack_sent: None,
         public_presentation_ready: false,
         life_sent: None,
         lifecycle_requests: 0,
@@ -1234,6 +1236,7 @@ async fn run_server_inner(
     }
     let mut chat = local_chat::Bridge::new(&world)?;
     let public_presentation_enabled = world.public_creature_attack_profile().is_some()
+        || world.public_population_attack_profile().is_some()
         || world.public_avatar_life_profile().is_some();
     let mut server = RenetServer::new(if public_presentation_enabled {
         connection_config_with_public_presentation()
@@ -1461,7 +1464,7 @@ async fn run_server_inner(
                         if crate::avatar_life_wire::is_state(&bytes) {
                             stats.avatar_life_uploads_rejected+=1;invalid_control=true;break;
                         }
-                        if crate::creature_attack_wire::is_state(&bytes) {
+                        if crate::creature_attack_wire::is_state(&bytes) || crate::creature_attack_wire::population::is_state(&bytes) {
                             stats.public_attack_uploads_rejected+=1;invalid_control=true;break;
                         }
                         if crate::player_life_wire::is_any_state(&bytes) {
@@ -1799,7 +1802,7 @@ pub struct TargetingClient {
 struct ClientMode {
     chat: Option<crate::chat_client::Client>,
     avatar_life: Option<avatar_life::Client>,
-    public_attacks: Option<creature_attacks::Client>,
+    public_attacks: Option<creature_attacks::Mode>,
     classic_source: Option<[u8; 32]>,
     dodge: Option<DodgeClient>,
     player_life: Option<player_life::Client>,
@@ -1941,7 +1944,7 @@ pub struct DodgeClient {
 pub struct GameplayClient {
     pub chat: Option<crate::chat_client::Client>,
     pub avatar_life: Option<avatar_life::Client>,
-    pub public_attacks: Option<creature_attacks::Client>,
+    pub public_attacks: Option<creature_attacks::Mode>,
     pub classic_source: Option<[u8; 32]>,
     pub dodge: Option<DodgeClient>,
     pub player_life: Option<player_life::Client>,
@@ -2136,7 +2139,7 @@ async fn run_client_inner(
             || ready.is_none()
             || player_life
                 .as_ref()
-                .is_none_or(|life| life.profile.hash() != mode.profile.life().hash())
+                .is_none_or(|life| life.profile.hash() != mode.life().hash())
         {
             return Err(
                 "Public creature attacks require matching Classic player life and readiness".into(),
@@ -2226,6 +2229,9 @@ async fn run_client_inner(
     let mut targeting: Option<crate::targeting_wire::State> = None;
     let mut avatar_life_state: Option<crate::avatar_life_wire::ClientState> = None;
     let mut public_attack_state: Option<crate::creature_attack_wire::ClientState> = None;
+    let mut public_population_attack_state: Option<
+        crate::creature_attack_wire::population::PopulationState,
+    > = None;
     let mut player_life_state: Option<crate::player_life_wire::ClientState> = None;
     let mut ready_sequence = 0u64;
     let mut last_ready = None;
@@ -2477,8 +2483,11 @@ async fn run_client_inner(
                             continue;
                         }
                         let mode=public_attacks.as_ref().ok_or("Unexpected public NPC timing")?;
-                        creature_attacks::receive(mode,welcome,[snapshot_rate,correction.map(|c|c.state.rate)],&bytes,&mut public_attack_state,&mut stats)?;
-                        state.send_modify(|value|{value.public_creature_attack=public_attack_state.clone();value.transport=Some(stats.clone());});
+                        match mode {
+                            creature_attacks::Mode::Singleton(mode) => creature_attacks::receive(mode,welcome,[snapshot_rate,correction.map(|c|c.state.rate)],&bytes,&mut public_attack_state,&mut stats)?,
+                            creature_attacks::Mode::Population(mode) => creature_attacks::population::receive(mode,welcome,[snapshot_rate,correction.map(|c|c.state.rate)],&bytes,&mut public_population_attack_state,&mut stats)?,
+                        }
+                        state.send_modify(|value|{value.public_creature_attack=public_attack_state.clone();value.public_population_attack=public_population_attack_state.clone();value.transport=Some(stats.clone());});
                     }
                 }
                 // Snapshots may arrive before reliable welcome; discard those
@@ -2491,7 +2500,7 @@ async fn run_client_inner(
                             None=>crate::prediction_wire::Corrected::decode(&bytes)?,
                         }};
                         if avatar_life_state.as_ref().is_some_and(|s|s.rate()!=packet.state.rate) {return Err("Correction disagrees with public avatar rate".into());}
-                        if public_attack_state.as_ref().is_some_and(|s|s.rate()!=packet.state.rate) {return Err("Correction disagrees with public attack rate".into());}
+                        if public_attack_state.as_ref().is_some_and(|s|s.rate()!=packet.state.rate) || public_population_attack_state.as_ref().is_some_and(|s|s.rate()!=packet.state.rate) {return Err("Correction disagrees with public attack rate".into());}
                         if player_life_state.as_ref().is_some_and(|s|s.rate()!=packet.state.rate) {return Err("Correction disagrees with player-life rate".into());}
                         let Some(welcome)=&admission else {continue;};
                         if packet.state.world!=welcome.world || packet.state.actor.epoch.value()!=welcome.epoch || packet.state.actor.entity.value()!=welcome.id || packet.state.ready_sequence>ready_sequence || crate::procedural::owner(packet.state.pose.feet).is_none() || packet.state.pose.feet.metres()[1].abs()>1023. {return Err("Foreign prediction correction".into());}
@@ -2503,7 +2512,7 @@ async fn run_client_inner(
                     }
                     let snapshot = Snapshot::decode(&bytes)?;
                     if avatar_life_state.as_ref().is_some_and(|s|s.rate().hz()!=snapshot.tick_hz) {return Err("Snapshot disagrees with public avatar rate".into());}
-                    if public_attack_state.as_ref().is_some_and(|s|s.rate().hz()!=snapshot.tick_hz) {return Err("Snapshot disagrees with public attack rate".into());}
+                    if public_attack_state.as_ref().is_some_and(|s|s.rate().hz()!=snapshot.tick_hz) || public_population_attack_state.as_ref().is_some_and(|s|s.rate().hz()!=snapshot.tick_hz) {return Err("Snapshot disagrees with public attack rate".into());}
                     if player_life_state.as_ref().is_some_and(|s|s.rate().hz()!=snapshot.tick_hz) {return Err("Snapshot disagrees with player-life rate".into());}
                     if status_state.as_ref().is_some_and(|s|s.rate.hz()!=snapshot.tick_hz) {return Err("Authority snapshot disagrees with status tick rate".into());}
                     stats.snapshots_received += 1;
@@ -2518,7 +2527,7 @@ async fn run_client_inner(
                         stats.rtt_ms = info.rtt * 1000.; stats.packet_loss = info.packet_loss;
                         stats.bytes_sent_per_second = info.bytes_sent_per_second;
                         stats.bytes_received_per_second = info.bytes_received_per_second;
-                        let mut update=State { chat:chat.as_ref().and_then(|c|c.view()), player_identity:identity_state.clone(), public_avatar_life:avatar_life_state.clone(), public_creature_attack:public_attack_state.clone(), quest_journal:None, quest_journal_reply:None, quest_journal_pending:false, player_life:player_life_state.clone(), quest_lifecycle:None, quest_lifecycle_reply:None, quest_lifecycle_pending:false, dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), approved_document:inventory.as_ref().and_then(|m|m.approved_document), document_reply:inventory.as_ref().and_then(|m|m.document_reply), combat:combat_state.clone(), autoattack:melee_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
+                        let mut update=State { chat:chat.as_ref().and_then(|c|c.view()), player_identity:identity_state.clone(), public_avatar_life:avatar_life_state.clone(), public_creature_attack:public_attack_state.clone(), public_population_attack:public_population_attack_state.clone(), quest_journal:None, quest_journal_reply:None, quest_journal_pending:false, player_life:player_life_state.clone(), quest_lifecycle:None, quest_lifecycle_reply:None, quest_lifecycle_pending:false, dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), approved_document:inventory.as_ref().and_then(|m|m.approved_document), document_reply:inventory.as_ref().and_then(|m|m.document_reply), combat:combat_state.clone(), autoattack:melee_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
                         if let Some(mode)=&journal {mode.copy_to(&mut update);}
                         if let Some(mode)=&lifecycle {mode.copy_to(&mut update);}
                         if let Some(mode)=&dialogue {mode.copy_to(&mut update);}

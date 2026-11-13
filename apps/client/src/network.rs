@@ -685,10 +685,12 @@ impl Network {
                                     }
                                 }),
                                 public_attacks: public_attack_profile.map(|profile| {
-                                    theia_network::renet_runtime::creature_attacks::Client {
-                                        profile,
-                                        events: public_attack_events,
-                                    }
+                                    theia_network::renet_runtime::creature_attacks::Mode::Singleton(
+                                        theia_network::renet_runtime::creature_attacks::Client {
+                                            profile,
+                                            events: public_attack_events,
+                                        },
+                                    )
                                 }),
                                 journal: journal_profile.map(|profile| {
                                     theia_network::renet_runtime::quest_journal::Client {
