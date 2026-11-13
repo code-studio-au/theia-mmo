@@ -420,6 +420,8 @@ pub(super) struct Authority {
     threat: Option<threat::Runtime>,
     population_threat: Vec<threat::Runtime>,
     public_attack: Option<std::sync::Arc<crate::creature_attack_wire::Profile>>,
+    public_population_attack:
+        Option<std::sync::Arc<crate::creature_attack_wire::population::PopulationProfile>>,
     public_life: Option<std::sync::Arc<crate::avatar_life_wire::Profile>>,
     catalog_digest: [u8; 32],
     projectiles: Vec<projectiles::Active>,
@@ -589,6 +591,7 @@ impl Authority {
             threat: None,
             population_threat: Vec::new(),
             public_attack: None,
+            public_population_attack: None,
             public_life: None,
             catalog_digest: crate::terrain::sha256(bytes),
             projectiles: Vec::with_capacity(projectiles::MAX_ACTIVE),
@@ -666,6 +669,10 @@ impl Authority {
             .map_or(base, |p| p.identity(base));
         let base = self
             .public_attack
+            .as_ref()
+            .map_or(base, |p| p.identity(base));
+        let base = self
+            .public_population_attack
             .as_ref()
             .map_or(base, |p| p.identity(base));
         self.public_life.as_ref().map_or(base, |p| p.identity(base))

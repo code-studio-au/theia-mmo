@@ -976,19 +976,24 @@ fn check_retaliators(world: &mut World, players: &[u64], keys: &[EntityKey], rat
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_shared_pursuit_chases_attacks_and_returns_each_home_at_all_rates() {
-    qualify_shared_population_pursuit(false, false);
+    qualify_shared_population_pursuit(false, false, false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_return_reset_is_independent_and_preserves_fresh_lives_at_all_rates() {
-    qualify_shared_population_pursuit(true, false);
+    qualify_shared_population_pursuit(true, false, false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_threat_tables_select_independent_victims_and_retire_lives_at_all_rates() {
-    qualify_shared_population_pursuit(true, true);
+    qualify_shared_population_pursuit(true, true, false);
 }
-fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_public_windups_match_independent_authorities_and_fresh_lives_at_all_rates() {
+    qualify_shared_population_pursuit(true, true, true);
+}
+fn qualify_shared_population_pursuit(reset: bool, threat: bool, public: bool) {
     use theia_core::pursuit::Mode;
     let store = Arc::new(
         authored_world::Store::open(std::path::Path::new(
@@ -1114,6 +1119,27 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
                 ))
                 .unwrap();
         }
+        let mut public_state = if public {
+            let before = world.identity();
+            world.enable_public_population_attacks().unwrap();
+            assert_ne!(world.identity(), before);
+            let installed = world.identity();
+            assert!(world.enable_public_population_attacks().is_err());
+            assert!(world.enable_public_creature_attacks().is_err());
+            assert_eq!(world.identity(), installed);
+            Some(
+                crate::creature_attack_wire::population::PopulationState::new(
+                    world.public_population_attack_profile().unwrap().clone(),
+                    world.epoch,
+                    rate,
+                    installed,
+                )
+                .unwrap(),
+            )
+        } else {
+            None
+        };
+        let mut public_windups = std::collections::BTreeSet::new();
         let encounters: Vec<_> = keys
             .iter()
             .map(|k| world.creature_credit_encounter_for(*k).unwrap())
@@ -1145,6 +1171,27 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
         for _ in 0..rate.hz() * 8 {
             world.poll_terrain();
             world.step();
+            if let Some(state) = &mut public_state {
+                let view = world.public_population_attack_snapshot().unwrap().unwrap();
+                assert_eq!(view.actors.len(), keys.len());
+                for observation in &view.actors {
+                    if let Some(w) = observation.windup {
+                        assert_eq!(w.target, world.entity_key(actor).unwrap());
+                        public_windups.insert(observation.creature.entity.value());
+                    }
+                }
+                if let Some(private) = world.player_life_snapshot(actor).unwrap().windup {
+                    assert!(view.actors.iter().any(|v| v.creature == private.creature
+                        && v.windup.is_some_and(|w| w.completes == private.completes)));
+                }
+                let bytes = crate::creature_attack_wire::population::encode(
+                    world.public_population_attack_profile().unwrap(),
+                    rate,
+                    &view,
+                )
+                .unwrap();
+                state.apply(&bytes).unwrap();
+            }
             assert!(
                 world.player_life_error().is_none(),
                 "{:?}",
@@ -1164,6 +1211,9 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
             "{rate:?}: only {} creatures chased",
             moved.len()
         );
+        if public {
+            assert!(public_windups.len() >= 2);
+        }
         assert!(world.player_life_snapshot(actor).unwrap().health < 1000);
         assert!(world.combat_membership(actor).unwrap().in_combat());
         assert!(world.combat_membership_error().is_none());
@@ -1448,6 +1498,17 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
             assert_eq!(health(&world, pair[1]), other_damaged);
         }
         world.leave(actor);
+        if public {
+            assert!(
+                world
+                    .public_population_attack_snapshot()
+                    .unwrap()
+                    .unwrap()
+                    .actors
+                    .iter()
+                    .all(|v| v.windup.is_none())
+            );
+        }
         for _ in 0..rate.hz() * 10 {
             world.poll_terrain();
             world.step();
@@ -1551,6 +1612,19 @@ fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
         }
         let fresh = world.combat.as_ref().unwrap().creatures[0].key;
         assert_ne!(fresh, keys[0]);
+        if let Some(state) = &mut public_state {
+            let view = world.public_population_attack_snapshot().unwrap().unwrap();
+            assert!(view.actors.iter().any(|v| v.creature == fresh));
+            assert!(!view.actors.iter().any(|v| v.creature == keys[0]));
+            let bytes = crate::creature_attack_wire::population::encode(
+                world.public_population_attack_profile().unwrap(),
+                rate,
+                &view,
+            )
+            .unwrap();
+            state.apply(&bytes).unwrap();
+            assert!(state.active_at(keys[0], world.tick).is_none());
+        }
         assert!(world.creature_pursuit_directive_for(keys[0]).is_none());
         assert_eq!(
             world.creature_pursuit_directive_for(fresh).unwrap().mode,

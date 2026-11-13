@@ -14,7 +14,10 @@ impl World {
             .combat
             .as_ref()
             .ok_or("Public creature attacks require combat")?;
-        if combat.public_attack.is_some() || !combat.ordinary_target_ready() {
+        if combat.public_attack.is_some()
+            || combat.public_population_attack.is_some()
+            || !combat.ordinary_target_ready()
+        {
             return Err(
                 "Public creature attacks require ready pursuit/life and no prior adoption".into(),
             );
@@ -37,6 +40,15 @@ impl World {
             .pve
             .as_ref()
             .ok_or("Public creature attacks lost life authority")?;
+        self.creature_attack_observation(combat, pve, profile)
+            .map(Some)
+    }
+    fn creature_attack_observation(
+        &self,
+        combat: &super::Combat,
+        pve: &super::Authority,
+        profile: &Profile,
+    ) -> Result<Observation> {
         if pve.error.is_some()
             || pve.profile.hash() != profile.life().hash()
             || self.creature_threat_error().is_some()
@@ -89,6 +101,69 @@ impl World {
         if !crate::creature_attack_wire::valid(profile, self.rate, &value) {
             return Err("Invalid public creature authority observation".into());
         }
-        Ok(Some(value))
+        Ok(value)
+    }
+    /// Authority-only opt-in. Normal launch remains gated until priority
+    /// transport and multi-NPC presentation are connected and qualified.
+    pub fn enable_public_population_attacks(&mut self) -> Result<()> {
+        if self.tick != 0 || !self.players.is_empty() || !self.classic || self.population.is_none()
+        {
+            return Err("Public population attacks require inactive classic population".into());
+        }
+        let combat = self
+            .combat
+            .as_ref()
+            .ok_or("Public population attacks require combat")?;
+        combat.checked_reset_encounters()?;
+        if combat.pve.is_some()
+            || combat.retaliators.is_empty()
+            || combat.public_attack.is_some()
+            || combat.public_population_attack.is_some()
+            || combat.lives.as_ref().is_none_or(|l| !l.ready())
+        {
+            return Err(
+                "Public population attacks require matching pursuit/life authorities".into(),
+            );
+        }
+        let profile = Arc::new(
+            crate::creature_attack_wire::population::PopulationProfile::new(Arc::new(
+                Profile::new(combat.retaliators[0].profile.clone()),
+            )),
+        );
+        self.combat.as_mut().unwrap().public_population_attack = Some(profile);
+        Ok(())
+    }
+    pub fn public_population_attack_profile(
+        &self,
+    ) -> Option<&Arc<crate::creature_attack_wire::population::PopulationProfile>> {
+        self.combat.as_ref()?.public_population_attack.as_ref()
+    }
+    pub fn public_population_attack_snapshot(
+        &self,
+    ) -> Result<Option<crate::creature_attack_wire::population::Frame>> {
+        let Some(combat) = &self.combat else {
+            return Ok(None);
+        };
+        let Some(profile) = &combat.public_population_attack else {
+            return Ok(None);
+        };
+        if combat.retaliators.len() != combat.creatures.len()
+            || combat.retaliators.len() > crate::creature_attack_wire::population::MAX_ACTORS
+        {
+            return Err("Public population attack identities unavailable".into());
+        }
+        let mut actors = combat
+            .retaliators
+            .iter()
+            .map(|pve| self.creature_attack_observation(combat, pve, profile.source()))
+            .collect::<Result<Vec<_>>>()?;
+        actors.sort_by_key(|v| v.creature.entity);
+        let frame = crate::creature_attack_wire::population::Frame {
+            epoch: self.epoch,
+            tick: self.tick,
+            actors,
+        };
+        crate::creature_attack_wire::population::encode(profile, self.rate, &frame)?;
+        Ok(Some(frame))
     }
 }

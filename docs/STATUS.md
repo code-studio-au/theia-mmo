@@ -1,3 +1,23 @@
+P3-06 / P3-09 authoritative public population timing, 13 November 2026:
+Added an explicit authority-only population timing installer/profile and sorted full
+snapshots. Both singleton and population snapshots reuse the same observation builder:
+windups require a living NPC, attack-capable pursuit phase and exact living player
+life. Population identity is distinct, and singleton/population public modes cannot
+be installed together. Full snapshots validate through the bounded population codec.
+An actual authored 20/30/60 Hz check observes at least two independent NPC windups,
+compares public completion/creature identities with the private victim windup, clears
+all windups after departure, and replaces the old NPC ID after ordinary weapon kill
+and fresh-life respawn. The decoded presentation state cannot retain its old windup.
+All 507 default network tests pass (15 ignored), including retained encrypted public
+timing/privacy contracts. The authored population authority check passes separately;
+strict workspace/all-target Clippy, fmt and diff checks pass. Evidence:
+build/population-public-attack-authority-tests.log and population-public-authority-final-checks.log.
+Prerequisites: shared pursuit/retaliation, independent threat/reset and codec 76f3d884.
+Normal launcher/editor public attack support remains gated. No population priority
+transport, animation, native presentation or capacity claim yet. Next: reliable
+priority batch delivery with bounded presentation queues and explicit backpressure.
+Local only.
+
 P3-06 / P3-09 bounded public population-windup codec, 13 November 2026:
 Added a separate, explicitly identified whole-population timing frame/profile.
 Up to 16 sorted exact NPC identities share one authority tick; frames contain only
