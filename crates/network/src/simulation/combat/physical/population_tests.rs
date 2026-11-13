@@ -1,0 +1,248 @@
+//! Real authored five-creature physical melee, with no renderer or fake equipment protocol.
+use super::*;
+use crate::{
+    authored_world,
+    navigation::{self, spawn_candidates::Request, spawn_preparation},
+    procedural,
+    simulation::combat::autoattack,
+    simulation::population::Binding,
+    wire::{ChunkReady, VERSION},
+};
+use theia_core::time::TickRate;
+const ITEMS: &[u8] =
+    include_bytes!("../../../../../../content/gameplay/development-equipment-items.json");
+const WEAPONS: &[u8] =
+    include_bytes!("../../../../../../content/gameplay/development-melee-weapons.json");
+const STATS: &[u8] =
+    include_bytes!("../../../../../../content/gameplay/development-character-stats.json");
+const CREATURE: &[u8] =
+    include_bytes!("../../../../../../content/gameplay/development-creature-passive.json");
+const DEFINITIONS: &[u8] = include_bytes!(
+    "../../../../../../content/gameplay/development-physical-damage-definitions.json"
+);
+const DAMAGE_STATS: &[u8] =
+    include_bytes!("../../../../../../content/gameplay/development-physical-damage-stats.json");
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_physical_swings_resolve_each_life_independently_at_all_rates() {
+    let store = Arc::new(
+        authored_world::Store::open(std::path::Path::new(
+            &std::env::var_os("THEIA_AUTHORED_WORLD").unwrap(),
+        ))
+        .unwrap(),
+    );
+    let nav = navigation::Store::open(
+        std::path::Path::new(&std::env::var_os("THEIA_AUTHORED_NAV").unwrap()),
+        store.identity(),
+    )
+    .unwrap();
+    let request: Request = serde_json::from_slice(
+        &std::fs::read(std::env::var_os("THEIA_AUTHORED_SPAWNS").unwrap()).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(request.count, 5);
+    let definition = creatures::Definition::from_json(CREATURE).unwrap();
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let prepared = spawn_preparation::check_authored(&store, &nav, &request)
+            .unwrap()
+            .into_prepared()
+            .unwrap();
+        let feet = prepared.points().to_vec();
+        let saved = store.spawn(0).unwrap().metres();
+        let mut world = World::with_terrain_source(
+            [saved[0], saved[2]],
+            1.,
+            procedural::Source::Authored(store.clone()),
+        )
+        .unwrap();
+        assert!(world.set_tick_rate(rate));
+        world.enable_prediction().unwrap();
+        world.enable_classic().unwrap();
+        let keys = world
+            .enable_defined_population(
+                prepared,
+                Binding::new(definition.id(), definition.clone(), 1).unwrap(),
+            )
+            .unwrap();
+        world
+            .enable_status_combat(
+                include_bytes!(
+                    "../../../../../../content/gameplay/development-classic-abilities.json"
+                ),
+                100,
+                1000,
+                STATS,
+                include_bytes!("../../../../../../content/gameplay/development-statuses.json"),
+            )
+            .unwrap();
+        world.enable_autoattack(WEAPONS, ITEMS).unwrap();
+        let before = world.identity();
+        assert!(
+            world
+                .enable_physical_damage(DEFINITIONS, DAMAGE_STATS, ITEMS)
+                .is_err()
+        );
+        assert_eq!(world.identity(), before);
+        let life = crate::player_life_wire::Profile::from_json(
+            STATS,
+            CREATURE,
+            include_bytes!(
+                "../../../../../../content/gameplay/development-creature-retaliation.json"
+            ),
+            include_bytes!("../../../../../../content/gameplay/development-player-respawn.json"),
+        )
+        .unwrap();
+        world
+            .enable_passive_population_player_life(Arc::new(life))
+            .unwrap();
+        let before = world.identity();
+        let mut wrong = ITEMS.to_vec();
+        wrong.push(b' ');
+        assert!(
+            world
+                .enable_physical_damage(DEFINITIONS, DAMAGE_STATS, &wrong)
+                .is_err()
+        );
+        assert_eq!(world.identity(), before);
+        world
+            .enable_physical_damage(DEFINITIONS, DAMAGE_STATS, ITEMS)
+            .unwrap();
+        assert_ne!(world.identity(), before);
+        let installed = world.identity();
+        assert!(
+            world
+                .enable_physical_damage(DEFINITIONS, DAMAGE_STATS, ITEMS)
+                .is_err()
+        );
+        assert_eq!(world.identity(), installed);
+        let profile = world.physical_damage_profile().unwrap().clone();
+        let mut players = Vec::new();
+        for point in feet {
+            let mut body = point.metres();
+            body[1] += f64::from(crate::world::PAWN_Y);
+            let id = world
+                .join_restored(GlobalPosition::new(body).unwrap())
+                .unwrap();
+            let chunks = world
+                .procedural()
+                .unwrap()
+                .patch(world.global_position(id).unwrap())
+                .unwrap()
+                .ids
+                .iter()
+                .map(|c| [c.x, c.z])
+                .collect();
+            assert!(world.client_ready(
+                id,
+                &ChunkReady {
+                    version: VERSION,
+                    epoch: world.epoch(),
+                    sequence: 1,
+                    chunks
+                }
+            ));
+            world.observe_combat_equipment(
+                world.entity_key(id).unwrap(),
+                Some((
+                    crate::terrain::sha256(ITEMS),
+                    1,
+                    Some(ContentId::new("theia.dev.training-sword").unwrap()),
+                )),
+            );
+            players.push(id);
+        }
+        let player_lives: Vec<_> = players
+            .iter()
+            .map(|&id| world.player_life_snapshot(id).unwrap().key)
+            .collect();
+        let initial_targets = world.combat_snapshot(players[0]).unwrap().targets;
+        let positions: Vec<_> = keys
+            .iter()
+            .map(|key| {
+                initial_targets
+                    .iter()
+                    .find(|t| t.key == *key)
+                    .unwrap()
+                    .position
+            })
+            .collect();
+        let mut targets = keys.clone();
+        for generation in 1..=2 {
+            for (&id, &target) in players.iter().zip(&targets) {
+                assert!(world.select_target(id, Some(target)));
+                let reply = world.request_autoattack(
+                    id,
+                    autoattack::Request {
+                        epoch: world.epoch(),
+                        stream_epoch: world.correction(id).unwrap().state.input.stream_epoch,
+                        sequence: generation,
+                        target: Some(target),
+                    },
+                );
+                assert_eq!(reply.outcome, autoattack::Outcome::Engaged);
+            }
+            let mut remaining = vec![100; 5];
+            let mut deaths = 0;
+            for _ in 0..u64::from(rate.hz()) * 60 {
+                world.step();
+                for event in world.combat_events() {
+                    if let Event::PhysicalDamage(fact) = event {
+                        let index = targets
+                            .iter()
+                            .position(|&key| key == fact.target)
+                            .expect("Only current exact victims");
+                        assert_eq!(fact.actor, world.entity_key(players[index]).unwrap());
+                        assert_eq!(fact.actor_generation, Some(player_lives[index].generation));
+                        let expected = profile
+                            .weapon_result(
+                                &ContentId::new("theia.dev.training-sword").unwrap(),
+                                fact.roll,
+                                remaining[index],
+                            )
+                            .unwrap();
+                        assert_eq!(fact.result, expected);
+                        assert_eq!(fact.remaining, remaining[index] - expected.health_lost);
+                        remaining[index] = fact.remaining;
+                        if fact.remaining == 0 {
+                            deaths += 1;
+                        }
+                    }
+                }
+                if deaths == 5 {
+                    break;
+                }
+            }
+            assert_eq!(deaths, 5);
+            assert_eq!(remaining, vec![0; 5]);
+            for _ in 0..=rate.hz() {
+                world.step();
+            }
+            let snapshot = world.combat_snapshot(players[0]).unwrap();
+            // Identity allocation follows death order, not spawn-point order.
+            let fresh: Vec<_> = positions
+                .iter()
+                .map(|position| {
+                    snapshot
+                        .targets
+                        .iter()
+                        .find(|target| target.position == *position)
+                        .unwrap()
+                        .key
+                })
+                .collect();
+            assert_eq!(fresh.len(), 5);
+            assert!(fresh.iter().all(|key| !targets.contains(key)));
+            for &old in &targets {
+                assert!(world.creature_definition(old).is_none());
+                assert!(!world.select_target(players[0], Some(old)));
+            }
+            targets = fresh;
+            for (&id, &life) in players.iter().zip(&player_lives) {
+                let current = world.player_life_snapshot(id).unwrap();
+                assert_eq!(current.key, life);
+                assert_eq!(current.health, 100);
+            }
+            assert!(world.physical_damage_error().is_none());
+        }
+    }
+}

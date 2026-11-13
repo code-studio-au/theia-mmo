@@ -305,20 +305,41 @@ impl World {
             .as_ref()
             .ok_or("Physical damage requires basic melee")?;
         if combat.physical.is_some()
-            || combat.pve.is_none()
+            || combat.lives.is_none()
             || crate::terrain::sha256(items) != melee.items_digest()
         {
             return Err(
                 "Physical damage requires matching life/equipment and one configuration".into(),
             );
         }
-        let patrol = self
-            .patrol
-            .as_ref()
-            .ok_or("Physical damage requires a known patrol")?;
-        if combat.creatures.len() != 1 || combat.creatures[0].key != patrol.key {
-            return Err("Initial physical damage requires one identified creature".into());
-        }
+        let definition = if let Some(patrol) = &self.patrol {
+            if combat.pve.is_none()
+                || combat.creatures.len() != 1
+                || combat.creatures[0].key != patrol.key
+            {
+                return Err("Physical damage requires the identified patrol life".into());
+            }
+            patrol.profile().definition()
+        } else {
+            let binding = self
+                .population_binding
+                .as_ref()
+                .ok_or("Physical damage requires a bound creature type")?;
+            if self.population.is_none()
+                || combat.pve.is_some()
+                || combat.creatures.is_empty()
+                || combat.creatures.len() > crate::targeting::MAX_TARGETS
+                || combat.creatures.iter().any(|creature| {
+                    creature.maximum != combat.creatures[0].maximum
+                        || self.creature_definition(creature.key) != Some(binding.definition())
+                })
+            {
+                return Err(
+                    "Physical damage requires a checked homogeneous passive population".into(),
+                );
+            }
+            binding.definition()
+        };
         let items = inventory::Catalog::from_json(items)?;
         let profile = Profile::new(
             definitions,
@@ -327,7 +348,7 @@ impl World {
                 weapons: melee.catalog(),
                 items: &items,
                 abilities: &combat.catalog,
-                creature: patrol.profile().definition(),
+                creature: definition,
                 player_maximum_health: combat
                     .resources
                     .as_ref()
@@ -351,6 +372,13 @@ impl World {
     }
 }
 impl Authority {
+    pub(super) fn physical_target_matches(&self, world: &World, target: EntityKey) -> bool {
+        self.physical.as_ref().is_some_and(|physical| {
+            world
+                .creature_definition(target)
+                .is_some_and(|definition| definition.id() == physical.profile.creature_definition())
+        })
+    }
     pub(super) fn physical_melee_event_slots(&self, target: EntityKey) -> usize {
         if self.physical.is_none() {
             return 2;
@@ -378,7 +406,7 @@ impl Authority {
         sequence: u64,
     ) -> Result<()> {
         if self.events.len() + self.physical_melee_event_slots(target) > self.step_event_budget()
-            || world.patrol.as_ref().is_none_or(|p| p.key != target)
+            || !self.physical_target_matches(world, target)
         {
             return Err("Physical melee event/creature context unavailable".into());
         }
@@ -506,3 +534,6 @@ mod world_tests;
 
 #[cfg(test)]
 mod renet_tests;
+
+#[cfg(test)]
+mod population_tests;

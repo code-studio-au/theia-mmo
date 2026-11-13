@@ -350,7 +350,7 @@ impl Authority {
         {
             return Err(Pause::NotReady);
         }
-        if self.physical.is_some() && world.patrol.as_ref().is_none_or(|p| p.key != target) {
+        if self.physical.is_some() && !self.physical_target_matches(world, target) {
             return Err(Pause::InvalidTarget);
         }
         let actor = world.players.get(&id).ok_or(Pause::DeadPlayer)?;

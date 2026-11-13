@@ -1,3 +1,20 @@
+P3-09 / P5-17 passive population physical melee, 13 November 2026:
+Explicit physical-damage installation now accepts checked homogeneous passive
+populations with shared player lives and exact equipment bindings. Outgoing weapon
+eligibility/resolution checks the exact live creature type instead of requiring a
+patrol. Existing paired patrol requirements and incoming retaliation are retained.
+The real authored western-grove fixture uses five equipped players and five NPCs:
+weapon-timed swings kill two generations at 20/30/60 Hz; each hit matches the existing
+physical reference calculation, actual health loss and exact player life. Fresh
+NPCs are matched by spawn position rather than death/identity allocation order;
+retired target selection fails and player health/lives remain unchanged. Missing
+player-life context, mismatched item bytes and repeated installation leave identity
+unchanged. All 500 ordinary network-library tests and the separate asset-dependent
+population test pass, along with fmt and strict workspace/all-target Clippy.
+Evidence: build/population-physical-final.log. This uses existing fixture formulas;
+no new Classic coefficients, outgoing avoidance tables, population retaliation,
+first-tag rewards, normal launcher flags or editor controls are adopted. No display.
+
 P3-09 / P5-17 bounded combat-membership registry prerequisite, 13 November 2026:
 Membership now keeps exact creature keys in a bounded registry instead of one NPC
 field. Player observation retires missing NPC lifetimes independently, resolves
