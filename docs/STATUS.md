@@ -1,3 +1,17 @@
+P3-10 / P3-11 population repeat kill after restart, 13 November 2026:
+The native normal-launch qualifier can now kill again after database/server restart
+and fresh account login. Both exact server epochs defeat one NPC in five casts;
+four bystanders and the player's 100 HP remain unchanged in each run. The second
+life grants another 25 XP: SQL and client agree on 50 total and two XP receipts.
+The already consumed training claim stays at revision 2, inventory stays byte-equal
+with 100 tokens, and no second reward is offered or consumed. Both combat membership
+entry/exit checks pass. This tests repeat kills across server epochs, not timed
+respawn within one running server. No OS input is automated. Python compilation
+and diff checks pass; native RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6 checks
+report zero GPU diagnostics. Owned services/passwords/tickets are cleaned up.
+Evidence: build/population-repeat-kill-native-v1/qualification.json and both runs'
+typed-combat.json, database-proof.txt and consumed-proof.txt. Changes remain local.
+
 P3-10 / P3-11 / P5-17 native population training reward collection, 13 November 2026:
 The opt-in native qualifier now collects the committed once-per-character training
 offer through the normal client reward request. Actual account-backed population

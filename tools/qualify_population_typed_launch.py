@@ -17,6 +17,7 @@ from qualify_world_input_os import wait, capture_ready
 
 
 def run(args):
+    args.claim_reward = args.claim_reward or args.repeat_kill
     args.kill = args.kill or args.claim_reward
     args.combat = args.combat or args.kill
     out = args.output.resolve()
@@ -67,6 +68,8 @@ def run(args):
         for resumed in (False, True):
             if resumed:
                 cluster.restart()
+            execute_combat = args.combat and (not resumed or args.repeat_kill)
+            expected_kills = 2 if resumed and args.repeat_kill else 1
             folder = out/('resumed' if resumed else 'fresh')
             folder.mkdir()
             env = {k: v for k, v in base_env.items() if not k.startswith('THEIA_')}
@@ -80,11 +83,11 @@ def run(args):
                 THEIA_TEST_BROWSER_USER=identity.users[0][0], THEIA_TEST_BROWSER_PASSWORD=identity.users[0][1],
                 BROWSER=f'{sys.executable} {Path("tools/qualify_account_launcher.py").resolve()} --owned-browser %s',
                 THEIA_WORLD_INPUT_OS_QUALIFY=str(folder))
-            if args.combat and not resumed:
+            if execute_combat:
                 env['THEIA_POPULATION_TYPED_QUALIFY'] = str(folder)
                 if args.kill:
                     env['THEIA_POPULATION_KILL_QUALIFY'] = '1'
-                if args.claim_reward:
+                if args.claim_reward and not resumed:
                     env['THEIA_POPULATION_REWARD_QUALIFY'] = '1'
             previous_tickets = set(Path('build/development-session').glob('renet-*'))
             with (folder/'launcher.log').open('w') as log:
@@ -115,7 +118,7 @@ def run(args):
                     observed = wait(lambda: ready() if time.monotonic()-admitted_at >= 10 else None, 20)
                     assert observed['combat']['in_combat'] is False
                     combat_proof = None
-                    if args.combat and not resumed:
+                    if execute_combat:
                         (folder/'combat.start').write_text('start\n')
                         def completed():
                             state()
@@ -131,9 +134,9 @@ def run(args):
                     if args.kill:
                         def committed():
                             value = state()
-                            return value if value.get('committed_progression') == 25 and value.get('available_rewards') == (0 if args.claim_reward else 1) else None
+                            return value if value.get('committed_progression') == 25 * expected_kills and value.get('available_rewards') == (0 if args.claim_reward else 1) else None
                         observed = wait(committed, 15)
-                        if not resumed:
+                        if execute_combat:
                             assert combat_proof['remaining'] == 0
                     assert len(observed['public_avatar_life']['actors']) == 1
                     if resumed:
@@ -164,10 +167,10 @@ def run(args):
             saved = next(json.loads(line.removeprefix('account_persistence_summary '))
                          for line in server.splitlines() if line.startswith('account_persistence_summary '))
             assert not saved['failed'] and saved['worker']['inventory_ensures'] == 1
-            if args.combat and not resumed:
-                assert saved['worker']['inventory_committed'] == 1
+            if execute_combat:
+                assert saved['worker']['inventory_committed'] == (0 if resumed else 1)
                 if args.claim_reward:
-                    assert saved['worker']['reward_committed'] == 1
+                    assert saved['worker']['reward_committed'] == (0 if resumed else 1)
                 transport = next(json.loads(line.removeprefix('transport_summary '))
                                  for line in server.splitlines() if line.startswith('transport_summary '))
                 assert transport['ability_damage']['arcane']['health_lost'] > 0
@@ -184,7 +187,7 @@ def run(args):
             assert account['verified_logins'] == 1
             if args.kill:
                 rows = cluster.query("SELECT p.experience,(SELECT count(*) FROM theia.reward_claims r WHERE r.realm_id=p.realm_id AND r.character_id=p.character_id) FROM theia.progression p; SELECT count(*) FROM theia.experience_receipts;")
-                assert rows.returncode == 0 and rows.stdout.splitlines() == ['25|1', '1'], rows.stdout
+                assert rows.returncode == 0 and rows.stdout.splitlines() == [f'{25 * expected_kills}|1', str(expected_kills)], rows.stdout
                 (folder/'database-proof.txt').write_text(rows.stdout)
                 if args.claim_reward:
                     consumed = cluster.query('SELECT consumed_revision FROM theia.reward_claims;')
@@ -199,13 +202,14 @@ def run(args):
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
     result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True,
-        mouse_or_keyboard_automation=False, scope=('Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
+        mouse_or_keyboard_automation=False, scope=('Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--repeat-kill', action='store_true', help='Kill again after restart; require new XP but no repeated training reward')
     parser.add_argument('--claim-reward', action='store_true', help='Defeat one NPC, collect the training reward and verify durable inventory')
     parser.add_argument('--kill', action='store_true', help='Defeat one NPC and verify durable first-tag XP and training reward')
     parser.add_argument('--combat', action='store_true', help='Equip and cast through normal network commands without OS input')
