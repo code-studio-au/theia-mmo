@@ -209,10 +209,16 @@ impl Options {
         if result.population
             && (result.export.is_none()
                 || result.population_creature.is_none()
-                || result.gameplay_template.is_some()
                 || result.output.is_some())
         {
-            return Err("--population requires --export and --population-creature; excludes gameplay-template and output".into());
+            return Err(
+                "--population requires --export and --population-creature; excludes output".into(),
+            );
+        }
+        if result.population && result.network_test && result.gameplay_template.is_some() {
+            return Err(
+                "Population quest snapshots require an account launch, not Test Player mode".into(),
+            );
         }
         if !result.population
             && (result.population_creature.is_some()

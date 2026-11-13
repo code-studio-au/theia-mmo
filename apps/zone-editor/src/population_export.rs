@@ -34,6 +34,7 @@ pub(super) struct Settings<'a> {
     pub baker: &'a Path,
     pub spacing: f64,
     pub appearance: Option<&'a Path>,
+    pub gameplay: Option<&'a Path>,
 }
 
 pub(super) fn default_baker() -> Result<PathBuf, String> {
@@ -45,7 +46,7 @@ pub(super) fn default_baker() -> Result<PathBuf, String> {
 }
 
 fn validate(zone: &Zone, profile: &creatures::Definition, spacing: f64) -> Result<u64, String> {
-    validate_mode(zone, profile, spacing, false, false)
+    validate_mode(zone, profile, spacing, false, false, false)
 }
 
 fn validate_mode(
@@ -54,6 +55,7 @@ fn validate_mode(
     spacing: f64,
     network: bool,
     account: bool,
+    gameplay: bool,
 ) -> Result<u64, String> {
     zone.validate()?;
     if network && !zone.test_players.iter().any(|p| p.enabled) {
@@ -62,20 +64,26 @@ fn validate_mode(
         );
     }
     if network {
+        if gameplay {
+            return Err(
+                "Population quest snapshots require an account launch, not Test Player mode".into(),
+            );
+        }
         crate::network_test_export::validate_controllers(zone, true)?;
     }
     let groups: Vec<_> = zone.spawn_groups.iter().filter(|g| g.enabled).collect();
     if groups.len() != 1 {
         return Err("Population export requires exactly one enabled spawn group".into());
     }
-    if !zone.quest_areas.is_empty()
-        || zone
-            .markers
-            .iter()
-            .any(|m| m.kind == MarkerKind::Npc && m.definition.is_some())
+    if !gameplay
+        && (!zone.quest_areas.is_empty()
+            || zone
+                .markers
+                .iter()
+                .any(|m| m.kind == MarkerKind::Npc && m.definition.is_some()))
     {
         return Err(
-            "Passive population export does not publish quest areas or NPC dialogue contacts"
+            "Population quest areas and NPC dialogue contacts require an explicit gameplay template"
                 .into(),
         );
     }
@@ -145,8 +153,15 @@ fn publish_mode(
         .map_err(|e| e.to_string())?;
     let profile = creatures::Definition::from_json(&creature).map_err(|e| e.to_string())?;
     let live = network || account;
-    let group = if live {
-        validate_mode(zone, &profile, settings.spacing, network, account)?
+    let group = if live || settings.gameplay.is_some() {
+        validate_mode(
+            zone,
+            &profile,
+            settings.spacing,
+            network,
+            account,
+            settings.gameplay.is_some(),
+        )?
     } else {
         validate(zone, &profile, settings.spacing)?
     };
@@ -186,9 +201,29 @@ fn publish_mode(
             &stage.join("world"),
             id,
             revision,
-            None,
+            settings.gameplay,
             scenery,
         )?;
+        let gameplay_manifest = if settings.gameplay.is_some() {
+            // Inspect the exact snapshot actually written, not a second read of
+            // mutable template inputs. Reject mismatched kill/reward definitions
+            // before baking navigation or exposing the outer package.
+            let manifest = stage.join("world/gameplay/gameplay.manifest.json");
+            let snapshot =
+                theia_network::gameplay_bundle::snapshot(&manifest).map_err(|e| e.to_string())?;
+            let declared = creatures::Profile::from_json(
+                snapshot
+                    .profile("creature")
+                    .ok_or("Population gameplay snapshot needs a creature profile")?,
+            )
+            .map_err(|e| e.to_string())?;
+            if declared.id() != profile.id() {
+                return Err("Population creature ID differs from the gameplay template".into());
+            }
+            Some("world/gameplay/gameplay.manifest.json")
+        } else {
+            None
+        };
         zone.save(&stage.join("zone.json"))?;
         fs::write(stage.join("creature.json"), &creature).map_err(|e| e.to_string())?;
         if let Some(bytes) = &appearance {
@@ -252,7 +287,8 @@ fn publish_mode(
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
-            "scope":"One checked population with configured creature behavior and matching static world/navigation; no server launched, model catalog or quest publication"}});
+            "gameplay_manifest":gameplay_manifest,
+            "scope":"One checked population with configured creature behavior and matching static world/navigation; optional explicit quest/contact snapshot, no server launched; population definition controls NPC behavior, template patrol is not instantiated"}});
         fs::write(
             stage.join("population-export.json"),
             serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?,
@@ -361,8 +397,156 @@ mod tests {
     fn account_export_does_not_require_enabled_test_players() {
         let zone = fixture();
         let profile = creatures::Definition::from_json(CREATURE).unwrap();
-        assert!(validate_mode(&zone, &profile, 3., true, false).is_err());
-        assert_eq!(validate_mode(&zone, &profile, 3., false, true).unwrap(), 1);
+        assert!(validate_mode(&zone, &profile, 3., true, false, false).is_err());
+        assert_eq!(
+            validate_mode(&zone, &profile, 3., false, true, false).unwrap(),
+            1
+        );
+    }
+    fn quest_fixture() -> Zone {
+        let mut zone = fixture();
+        zone.markers.push(theia_zone::markers::Marker {
+            id: 20,
+            name: "Guide".into(),
+            kind: MarkerKind::Npc,
+            position: [8193., 0.008, 8191.],
+            yaw_degrees: 0.,
+            radius_metres: 1.,
+            definition: Some("theia.dev.guide".into()),
+        });
+        zone.quest_areas.push(theia_zone::quest_areas::QuestArea {
+            id: 21,
+            definition: "theia.dev.area.western-overlook".into(),
+            name: "Overlook".into(),
+            min: [8180., -2., 8180.],
+            max: [8184., 4., 8184.],
+            map_objectives: vec!["theia.dev.quest-overlook.objective.reach".into()],
+        });
+        zone
+    }
+    fn quest_template() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../content/development-gameplay-classic-quest-loot-fixture.json")
+    }
+    #[test]
+    fn quest_metadata_requires_explicit_template_and_never_enters_test_player_mode() {
+        let zone = quest_fixture();
+        let profile = creatures::Definition::from_json(CREATURE).unwrap();
+        assert!(validate_mode(&zone, &profile, 3., false, true, false).is_err());
+        assert!(validate_mode(&zone, &profile, 3., false, true, true).is_ok());
+        assert!(validate_mode(&zone, &profile, 3., true, false, true).is_err());
+    }
+    #[test]
+    #[cfg(unix)]
+    fn mismatched_quest_contact_or_creature_leaves_no_published_population() {
+        for contact in [true, false] {
+            let root = Folder::new();
+            let creature = root.0.join("creature.json");
+            let mut definition: serde_json::Value = serde_json::from_slice(CREATURE).unwrap();
+            let mut zone = quest_fixture();
+            if contact {
+                zone.markers[0].definition = Some("theia.dev.other-guide".into());
+            } else {
+                definition["id"] = "theia.dev.other-creature".into();
+                zone.spawn_groups[0].creature = "theia.dev.other-creature".into();
+            }
+            fs::write(&creature, serde_json::to_vec(&definition).unwrap()).unwrap();
+            let output = root.0.join("package");
+            let original = zone.clone();
+            let error = publish_account(
+                &zone,
+                &output,
+                "theia.test.quest-population",
+                1,
+                Settings {
+                    creature: &creature,
+                    baker: Path::new("/bin/false"),
+                    spacing: 3.,
+                    appearance: None,
+                    gameplay: Some(&quest_template()),
+                },
+                &Default::default(),
+            )
+            .unwrap_err();
+            assert!(
+                error.contains(if contact {
+                    "does not match"
+                } else {
+                    "creature ID differs"
+                }),
+                "{error}"
+            );
+            assert!(!output.exists());
+            assert_eq!(zone, original);
+            assert_eq!(fs::read_dir(&root.0).unwrap().count(), 1);
+        }
+    }
+    #[test]
+    #[ignore = "requires THEIA_NAV_BAKER actual offline binary"]
+    fn population_quest_snapshot_binds_contact_areas_and_exact_profiles_before_navigation() {
+        let root = Folder::new();
+        let creature = root.0.join("creature.json");
+        fs::write(&creature, CREATURE).unwrap();
+        let baker = PathBuf::from(std::env::var_os("THEIA_NAV_BAKER").unwrap());
+        let zone = quest_fixture();
+        let original = zone.clone();
+        let template = quest_template();
+        let source = theia_network::gameplay_bundle::snapshot(&template).unwrap();
+        let output = root.0.join("package");
+        let report = publish_account(
+            &zone,
+            &output,
+            "theia.test.quest-population",
+            2,
+            Settings {
+                creature: &creature,
+                baker: &baker,
+                spacing: 3.,
+                appearance: None,
+                gameplay: Some(&template),
+            },
+            &Default::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            report["population_export"]["gameplay_manifest"],
+            "world/gameplay/gameplay.manifest.json"
+        );
+        let saved = theia_network::gameplay_bundle::snapshot(
+            &output.join("world/gameplay/gameplay.manifest.json"),
+        )
+        .unwrap();
+        for role in ["quest", "dialogue", "items", "rewards", "progression"] {
+            assert_eq!(saved.profile(role), source.profile(role));
+        }
+        let areas: serde_json::Value =
+            serde_json::from_slice(saved.profile("quest_areas").unwrap()).unwrap();
+        assert_eq!(
+            areas["areas"][0]["min"],
+            serde_json::json!(zone.quest_areas[0].min)
+        );
+        assert_eq!(
+            areas["areas"][0]["max"],
+            serde_json::json!(zone.quest_areas[0].max)
+        );
+        let store = Arc::new(authored_world::Store::open(&output.join("world")).unwrap());
+        let dialogue =
+            theia_network::dialogue::Profile::from_json(saved.profile("dialogue").unwrap())
+                .unwrap();
+        let theia_network::dialogue::Placement::Feet(feet) =
+            store.contact_placement(&dialogue).unwrap()
+        else {
+            panic!("Expected authored feet")
+        };
+        assert_eq!(feet.metres(), zone.markers[0].position);
+        let loaded = population::configuration::Loaded::open(
+            &output.join("population.json"),
+            &procedural::Source::Authored(store),
+        )
+        .unwrap();
+        assert_eq!(loaded.count(), 5);
+        assert_eq!(Zone::load(&output.join("zone.json")).unwrap(), original);
+        assert_eq!(zone, original);
     }
     #[test]
     #[ignore = "requires THEIA_NAV_BAKER actual offline binary"]
@@ -394,6 +578,7 @@ mod tests {
                 baker: &baker,
                 spacing: 3.,
                 appearance: None,
+                gameplay: None,
             },
             &Default::default(),
         )
@@ -455,6 +640,7 @@ mod tests {
             baker: Path::new("/bin/false"),
             spacing: 3.,
             appearance: None,
+            gameplay: None,
         };
         let bad_appearance = root.0.join("invalid.glb");
         fs::write(&bad_appearance, b"Not a GLB").unwrap();
@@ -547,6 +733,7 @@ mod tests {
             baker: &baker,
             spacing: 3.,
             appearance: appearance.as_deref(),
+            gameplay: None,
         };
         assert!(
             publish(
@@ -678,6 +865,7 @@ mod tests {
                 baker: &baker,
                 spacing: 3.,
                 appearance: None,
+                gameplay: None,
             },
             &Default::default(),
         )
@@ -738,6 +926,7 @@ mod tests {
                 baker: &baker,
                 spacing: 3.,
                 appearance: None,
+                gameplay: None,
             },
             &Default::default(),
         )
@@ -772,6 +961,7 @@ mod tests {
                 baker: &baker,
                 spacing: 32.,
                 appearance: None,
+                gameplay: None,
             },
             &Default::default(),
         )

@@ -1,3 +1,10 @@
+Population authored quest export, 14 November 2026: headless --population plus
+an explicit gameplay template now publishes checked quest/contact/area snapshots
+with matching static world/navigation. Native world-bound guide acceptance,
+quest-map lifecycle, kill/item credit, turn-in and durable rejoins pass. Next:
+complete snapshot selection in the account wrapper and explicit editor dialog
+integration. See STATUS for exact scope, tests and fixture/platform limits.
+
 Population kill-journal update, 14 November 2026: native authenticated accepted
 kill credit now passes before corpse pickup (kill 1/1, possession 0/1), followed by
 pickup, visible turn-in and durable restart. Next: checked authored contact/quest

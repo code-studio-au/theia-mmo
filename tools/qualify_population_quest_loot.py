@@ -29,6 +29,16 @@ def run(args):
     out = args.output.resolve()
     out.mkdir(mode=0o700, parents=True, exist_ok=False)
     package, binaries = args.population.resolve(), args.binaries.resolve()
+    published = {}
+    if args.published_gameplay:
+        source = args.published_gameplay.resolve()
+        manifest = json.loads(source.read_text())
+        for role, relative in manifest.items():
+            if role in ['schema', 'id', 'revision']:
+                continue
+            path = (source.parent/relative).resolve()
+            assert path.is_relative_to(source.parent) and path.is_file()
+            published[role] = path
     journal = json.loads(Path('content/quests/development-journal-items.json').read_text())
     quest = next(q for q in journal['quests'] if q['id'] == QUEST)
     quest['prerequisites'] = []
@@ -42,16 +52,27 @@ def run(args):
         quest['description'] = 'Population qualification: defeat one creature and bring its pelt to the guide.'
     journal['quests'] = [quest]
     journal['id'] = 'theia.dev.population-quest-loot-fixture'
-    (out/'journal.json').write_text(json.dumps(journal, indent=2)+'\n')
+    journal_bytes = (json.dumps(journal, indent=2)+'\n').encode()
+    if published:
+        assert json.loads(published['quest'].read_bytes()) == journal, 'Published fixture quest differs'
+        journal_bytes = published['quest'].read_bytes()
+    (out/'journal.json').write_bytes(journal_bytes)
+    def role_for_option(flag):
+        return {'--abilities': 'abilities', '--character-stats': 'stats', '--statuses': 'statuses',
+                '--items': 'items', '--reward-catalog': 'rewards', '--progression-catalog': 'progression',
+                '--quest-catalog': 'quest', '--dialogue-catalog': 'dialogue'}.get(flag, flag.removeprefix('--').replace('-', '_'))
     profiles = []
     for flag, filename in [*PROFILES, RESET_PROFILE, THREAT_PROFILE]:
         if flag == '--items':
             filename = 'development-loot-items.json'
         elif flag == '--reward-catalog':
             filename = 'development-quest-required-loot-fixture.json'
-        profiles.extend([flag, str((Path('content/gameplay')/filename).resolve())])
+        role = role_for_option(flag)
+        profiles.extend([flag, str(published.get(role, (Path('content/gameplay')/filename).resolve()))])
     access = json.loads((package/'population.json').read_text())['access_from']
-    guide = f'{access[0]+1},{access[1]},{access[2]-1}'
+    guide = 'authored' if published else f'{access[0]+1},{access[1]},{access[2]-1}'
+    dialogue = published.get('dialogue', Path('content/quests/development-journal-dialogue.json').resolve())
+    area_options = ['--quest-areas', str(published['quest_areas'])] if 'quest_areas' in published else []
     base_env = build_environment(os.environ)
     desktop = Desktop()
     results = []
@@ -89,7 +110,7 @@ def run(args):
                     '--population-config', str(package/'population.json'), '--classic', '--account-login',
                     '--equipment', '--status-effects', '--progression', '--rewards', '--public-avatar-life',
                     '--public-creature-attacks', '--creature-loot', '--quest-journal', '--quest-items', '--quest-loot',
-                    '--quest-catalog', str(out/'journal.json'), '--guide-position', guide,
+                    '--quest-catalog', str(out/'journal.json'), '--guide-position', guide, '--dialogue-catalog', str(dialogue), *area_options,
                     '--stop-on-stdin-eof', '--session-directory', str(runtime),
                     *(['--character-id', character] if character else ['--character-picker']),
                     *profiles, '--players', str(args.players.resolve()), '--binaries', str(binaries),
@@ -98,10 +119,10 @@ def run(args):
                     command = [sys.executable, 'tools/account_population_playtest.py',
                         '--package', str(package), '--players', str(args.players.resolve()),
                         '--binaries', str(binaries), '--output', str(folder/'owned'),
-                        '--items', str(Path('content/gameplay/development-loot-items.json').resolve()),
-                        '--reward-catalog', str(Path('content/gameplay/development-quest-required-loot-fixture.json').resolve()),
+                        '--items', str(published.get('items', Path('content/gameplay/development-loot-items.json').resolve())),
+                        '--reward-catalog', str(published.get('rewards', Path('content/gameplay/development-quest-required-loot-fixture.json').resolve())),
                         '--quest-catalog', str(out/'journal.json'), '--guide-position', guide,
-                        '--dialogue-catalog', str(Path('content/quests/development-journal-dialogue.json').resolve()),
+                        '--dialogue-catalog', str(dialogue), *area_options,
                         *(['--character-id', character] if character else [])]
                 with (folder/'launcher.log').open('w') as log:
                     launcher = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT)
@@ -150,6 +171,12 @@ def run(args):
                             assert progress() is None
                             action('Active')
                             assert all(value == 0 for value in progress()['counts'].values())
+                            if area_options:
+                                active_map = wait(lambda: value if (value := state()['minimap'])['visible'] and value['objective_regions'] == 1 and value['objective_pixels'] > 0 else None)
+                                (folder/'accepted-map.json').write_text(json.dumps(active_map, indent=2)+'\n')
+                                (folder/'capture.request').write_text('capture\n')
+                                wait(lambda: capture_ready(folder/'input-os.png'))
+                                (folder/'input-os.png').rename(folder/'quest-accepted.png')
                         elif phase == 2:
                             assert progress()['status'] == 'Completed'
                         else:
@@ -166,6 +193,8 @@ def run(args):
                                 assert before_pickup['inventory_bag']['revision'] == 3
                                 assert not any(s and s['item'] == 'theia.dev.wolf-pelt' for s in before_pickup['inventory_bag']['slots'])
                                 assert sum(t['current'] == 0 for t in before_pickup['combat_targets']) == 1
+                                if area_options:
+                                    wait(lambda: state()['minimap']['objective_regions'] == 0)
                                 (folder/'kill-before-pickup.json').write_text(json.dumps(before_pickup, indent=2)+'\n')
                                 (folder/'loot.start').write_text('collect\n')
                             def completed():
@@ -208,9 +237,12 @@ def run(args):
                 if args.account_package:
                     frozen = json.loads((folder/'owned/launch.json').read_text())
                     assert frozen['quest_journal'] and frozen['quest_items'] and frozen['quest_loot']
-                    assert len(frozen['profiles']) == 20 and frozen['guide_position'] == guide
+                    assert len(frozen['profiles']) == 20 + bool(area_options) and frozen['guide_position'] == guide
                     for profile in frozen['profiles']:
                         assert hashlib.sha256((folder/'owned'/profile['file']).read_bytes()).hexdigest() == profile['sha256']
+                        source = published.get(role_for_option(profile['option']))
+                        if source:
+                            assert (folder/'owned'/profile['file']).read_bytes() == source.read_bytes()
                 assert selected.returncode == 0 and len(selected.stdout.splitlines()) == 1
                 if character:
                     assert selected.stdout.strip() == character
@@ -256,7 +288,7 @@ def run(args):
         desktop.close()
     assert not any((out/'cluster'/name).exists() for name in ['password', 'pgpass'])
     result = dict(passed=True, runs=results, postgres_process_restarts=2, pid_bound_quest_clicks=True, frozen_account_package=args.account_package, accepted_kill_objective=args.kill_objective,
-        fixture='Explicit one-pelt journal; normal pursuing editor population and ordinary gameplay requests',
+        fixture='Explicit one-pelt journal; normal pursuing editor population and ordinary gameplay requests', authored_guide=bool(published),
         binaries={name: hashlib.sha256((binaries/name).read_bytes()).hexdigest() for name in ['theia-client', 'theia-server']})
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps(dict(passed=True, output=str(out))))
@@ -270,4 +302,5 @@ if __name__ == '__main__':
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--account-package', action='store_true', help='Qualify the frozen account wrapper instead of direct normal play')
     parser.add_argument('--kill-objective', action='store_true', help='Also require an accepted kill, observing its credit before corpse pickup')
+    parser.add_argument('--published-gameplay', type=Path, help='Use exact published fixture roles and the world-bound authored guide')
     run(parser.parse_args())

@@ -67,16 +67,23 @@ def prepare(args, repository):
     quests = getattr(args, 'quest_catalog', None)
     dialogue = getattr(args, 'dialogue_catalog', None)
     guide = getattr(args, 'guide_position', None)
+    areas = getattr(args, 'quest_areas', None)
     if any([quests, dialogue, guide]) and not all([quests, dialogue, guide]):
         raise ValueError('Select quest and dialogue catalogues and a guide position together')
+    if areas and not quests:
+        raise ValueError('Quest areas require an explicit quest journal')
     pursuit = configured_pursuit(package)
     overrides = {'--items': items, '--reward-catalog': rewards}
     selected_names = {'--items': 'selected-items.json', '--reward-catalog': 'selected-rewards.json',
-                      '--quest-catalog': 'selected-quests.json', '--dialogue-catalog': 'selected-dialogue.json'}
+                      '--quest-catalog': 'selected-quests.json', '--dialogue-catalog': 'selected-dialogue.json',
+                      '--quest-areas': 'selected-areas.json'}
     quest_profiles = []
     if quests:
         overrides.update({'--quest-catalog': quests, '--dialogue-catalog': dialogue})
         quest_profiles = [(flag, selected_names[flag]) for flag in ['--quest-catalog', '--dialogue-catalog']]
+        if areas:
+            overrides['--quest-areas'] = areas
+            quest_profiles.append(('--quest-areas', selected_names['--quest-areas']))
     profiles = []
     corpse_loot = False
     quest_loot = False
@@ -124,7 +131,7 @@ def prepare(args, repository):
         command.extend([flag, str(frozen/name)])
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
     (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=pursuit, creature_threat=pursuit, public_creature_attacks=pursuit,
-        quest_journal=bool(quests), quest_items=bool(quests), quest_loot=quest_loot, guide_position=guide,
+        quest_journal=bool(quests), quest_items=bool(quests), quest_loot=quest_loot, quest_areas=bool(areas), guide_position=guide,
         scope='One authenticated character on the exported population; development typed combat and durable grants; shared NPC retaliation and configured pursuit, return reset, damage threat and public attack timing; no Test Player controllers'), indent=2)+'\n')
     return command
 
@@ -141,6 +148,7 @@ def main():
     parser.add_argument('--quest-catalog', type=Path, help='Explicit inventory-bound expanded journal; paired with dialogue and guide position')
     parser.add_argument('--dialogue-catalog', type=Path, help='Explicit quest contact dialogue; requires --quest-catalog')
     parser.add_argument('--guide-position', help='Explicit quest contact x,z or x,y,z feet, or authored; requires --quest-catalog')
+    parser.add_argument('--quest-areas', type=Path, help='Explicit authored quest/map areas; requires --quest-catalog')
     parser.add_argument('--character-id', help='Optional existing owned character; otherwise publish the private picker')
     args = parser.parse_args()
     repository = Path(__file__).resolve().parent.parent

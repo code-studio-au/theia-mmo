@@ -87,6 +87,8 @@ class AccountPopulation(unittest.TestCase):
                 args = self.fixture(root)
                 args.quest_catalog, args.dialogue_catalog = root/'quests.json', root/'dialogue.json'
                 args.guide_position = '8193,0.008,8191'
+                args.quest_areas = root/'areas.json'
+                args.quest_areas.write_text('{"schema":1,"areas":[]}')
                 args.quest_catalog.write_text('{"schema":3,"quests":[]}')
                 args.dialogue_catalog.write_text('{"schema":1}')
                 args.items, args.reward_catalog = root/'items.json', root/'rewards.json'
@@ -94,7 +96,9 @@ class AccountPopulation(unittest.TestCase):
                 args.reward_catalog.write_text(json.dumps({'rewards': [dict(scope='per_creature_life', quest_required=conditional)]}))
                 command = launcher.prepare(args, root)
                 report = json.loads((args.output/'launch.json').read_text())
-                self.assertEqual(len(report['profiles']), 18)
+                self.assertEqual(len(report['profiles']), 19)
+                self.assertTrue(report['quest_areas'])
+                self.assertEqual(Path(command[command.index('--quest-areas')+1]).read_bytes(), args.quest_areas.read_bytes())
                 self.assertTrue(report['quest_journal'] and report['quest_items'])
                 self.assertEqual(report['quest_loot'], conditional)
                 self.assertEqual('--quest-loot' in command, conditional)
@@ -128,6 +132,15 @@ class AccountPopulation(unittest.TestCase):
             args.items.write_text('{"schema":2}')
             args.reward_catalog.write_text('{"rewards":[{"scope":"per_creature_life","quest_required":true}]}')
             with self.assertRaisesRegex(ValueError, 'inventory-bound quest journal'):
+                launcher.prepare(args, root)
+            self.assertFalse(args.output.exists())
+
+    def test_quest_areas_without_journal_refuse_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            args.quest_areas = root/'missing-areas.json'
+            with self.assertRaisesRegex(ValueError, 'Quest areas require'):
                 launcher.prepare(args, root)
             self.assertFalse(args.output.exists())
 

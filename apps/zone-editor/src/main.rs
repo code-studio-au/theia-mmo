@@ -712,6 +712,7 @@ fn run() -> Result<(), String> {
                     baker: &baker,
                     spacing: options.population_spacing.unwrap_or(3.),
                     appearance: options.creature_asset.as_deref(),
+                    gameplay: options.gameplay_template.as_deref(),
                 },
                 &scenery_library,
             )?

@@ -1,3 +1,21 @@
+Population quest/contact export (14 November 2026): the headless population
+workflow now accepts an explicit `--gameplay-template MANIFEST` alongside
+`--population --population-creature FILE --export NEW_DIR`. It reuses the existing
+schema-16+ template publisher: one dialogue-matched authored NPC contact, validated
+quest/map areas, and exact other profile bytes in `world/gameplay/`. The template
+creature ID must match the population definition. The population definition supplies
+live behavior; the template's singleton patrol is retained as source metadata and
+is not instantiated. Quest/contact drafts still require an explicit template.
+Synthetic `--network-test` cannot activate this account gameplay snapshot.
+
+Normal account launch can select the published quest/dialogue/items/rewards files,
+`--quest-areas` for the published area catalogue and `--guide-position authored`.
+The wrapper freezes the selected files; normal preflight validates all runtime
+bindings. Native five-NPC kill/pelt quest, map highlight, consumption and two
+database restarts pass; see STATUS. Full exported-manifest selection and editor
+account-dialog template controls are the next integration slice. Existing dialog
+launches retain their prior explicit item/reward workflow.
+
 Explicit account population journals (14 November 2026): after a checked population
 export, the account wrapper can launch an explicitly selected inventory-bound
 expanded journal and one dialogue contact:

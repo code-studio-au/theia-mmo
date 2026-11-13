@@ -1,3 +1,44 @@
+P5-17 / P3-09 / P3-11 / P3-15 population authored quest/contact snapshot,
+14 November 2026: explicit headless population export accepts --gameplay-template
+and reuses the existing schema-16+ quest/contact/area publisher. Exact source
+quest/dialogue/item/reward roles are retained; authored areas replace the template
+area role, and the single supported guide is matched to dialogue and validated
+against static support. Check the actually written template snapshot's creature
+ID against the independent population definition before navigation baking or
+publication. The population definition remains the active NPC behavior; the
+retained template patrol is not instantiated. Mismatched contact/creature IDs clean
+staging and leave no output. Unselected templates remain inactive, and synthetic
+Test Player mode still refuses these account gameplay snapshots.
+
+The real baker test verifies exact profile preservation, authored area bounds,
+guide feet, five placements, immutable source and matched navigation. An actual
+CLI export is in build/population-authored-quest-package-v1 with source fixture
+in population-authored-quest-input-v1 and editor/baker hashes in export-binaries.json.
+The account wrapper can additionally freeze an explicitly selected quest-area
+profile; it requires a journal. Native acceptance reads the exported guide via
+--guide-position authored and exact exported quest/dialogue/items/rewards/areas.
+All 21 frozen runtime roles match the corresponding exported bytes. The authored
+hunt area appears on acceptance and clears after kill 1/1, while possession remains
+0/1 and the bag unchanged. Pickup, visible turn-in and two PostgreSQL restarts
+preserve Completed (both objectives 1), 75 XP, revision 6, 102 tokens/no pelts.
+
+Evidence: build/population-authored-quest-native-v1/qualification.json,
+accepted/quest-accepted.png, accepted-map.json, kill-before-pickup.json, phase SQL
+and screenshots. Native Linux 1280x720 RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, zero GPU diagnostics. Explicit flat five-NPC/one-kill/one-pelt,
+guaranteed-loot fixture; ordinary gameplay requests and PID-bound quest buttons.
+This is explicit headless export plus normal account play, not new editor dialog
+controls, area traversal credit, general multiple NPC contacts or Windows/MMO scale.
+
+All 244 default editor tests pass (12 fixture-dependent ignored); the one encrypted
+socket test was rerun with loopback access after sandbox EPERM. The new real-baker
+test also passes. 28 Python launcher tests pass (one skipped), fmt, strict workspace/
+all-target Clippy, compile and diff checks pass. Logs: build/population-authored-quest-
+{tests,export-test,editor-suite,encrypted-regression,python-tests,clippy}.log.
+Next: select the complete exported gameplay snapshot in the account wrapper, then
+connect explicit template selection to the editor's account population dialog.
+Keep changes local and preserve independent default population launches.
+
 P3-09 / P3-11 population kill and possession journal integration,
 14 November 2026: the frozen account/native qualifier now optionally combines
 one accepted kill objective with the one-pelt possession objective. A bounded

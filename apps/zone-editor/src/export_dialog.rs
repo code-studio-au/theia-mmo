@@ -738,6 +738,7 @@ pub(super) fn finish(
                                         baker: &baker,
                                         spacing,
                                         appearance: appearance.as_deref(),
+                                        gameplay: None,
                                     },
                                     &scenery,
                                 )
