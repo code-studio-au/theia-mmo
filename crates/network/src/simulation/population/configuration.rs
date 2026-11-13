@@ -6,7 +6,7 @@ use std::path::{Component, Path, PathBuf};
 
 const MAX_BYTES: u64 = 4096;
 
-/// Keep the initial passive pool separate from singleton patrol/encounter modes.
+/// Keep passive pools separate from singleton pursuit/reset and unqualified grant modes.
 pub fn validate_launch(args: &[String]) -> Result<()> {
     let count = args
         .iter()
@@ -36,8 +36,6 @@ pub fn validate_launch(args: &[String]) -> Result<()> {
         "--quest-loot",
         "--creature-threat",
         "--creature-reset",
-        "--creature-credit",
-        "--combat-membership",
         "--public-creature-attacks",
     ] {
         if args.iter().any(|a| a == unsupported) {
@@ -110,6 +108,9 @@ impl Loaded {
         self.binding
             .profile_identity(self.prepared.profile_identity(base))
     }
+    pub fn definition(&self) -> &creatures::Definition {
+        self.binding.definition()
+    }
     /// Exact checked bytes for shared player-life profile identity on both peers.
     pub fn creature_bytes(&self) -> &[u8] {
         &self.creature_bytes
@@ -181,6 +182,16 @@ mod tests {
             .map(str::to_owned),
         );
         assert!(validate_launch(&lives).is_ok());
+        lives.extend(
+            [
+                "--combat-membership",
+                "membership.json",
+                "--creature-credit",
+                "credit.json",
+            ]
+            .map(str::to_owned),
+        );
+        assert!(validate_launch(&lives).is_ok());
         assert!(validate_launch(&[]).is_ok());
         for removed in [
             "--authored-world",
@@ -204,8 +215,6 @@ mod tests {
             "--quest-loot",
             "--creature-threat",
             "--creature-reset",
-            "--creature-credit",
-            "--combat-membership",
             "--public-creature-attacks",
         ] {
             let mut args = valid.clone();

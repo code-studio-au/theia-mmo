@@ -692,9 +692,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .1,
                     creature: patrol_binding
                         .as_ref()
-                        .ok_or("Physical damage requires creature")?
-                        .0
-                        .definition(),
+                        .map(|p| p.0.definition())
+                        .or_else(|| population.as_ref().map(|p| p.definition()))
+                        .ok_or("Physical damage requires creature")?,
                     player_maximum_health: character_stats
                         .as_ref()
                         .ok_or("Physical damage requires vitals")?
@@ -720,11 +720,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let physical = physical_profile
             .clone()
             .ok_or("Ordinary outcomes require physical damage")?;
-        if patrol_binding
-            .as_ref()
-            .is_none_or(|p| p.0.aggro().is_none())
+        if population.is_none()
+            && patrol_binding
+                .as_ref()
+                .is_none_or(|p| p.0.aggro().is_none())
         {
-            return Err("Ordinary outcomes require pursuit".into());
+            return Err("Ordinary outcomes require pursuit or a checked passive population".into());
         }
         let mut bytes = Vec::new();
         std::fs::File::open(args.remove(i))?
@@ -1153,6 +1154,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "inventory_profile": inventory_profile.as_ref().map(|p|p.hash()),
                 "journal_profile": journal_profile.as_ref().map(|p|p.hash()),
                 "progression_profile": progression_profile.as_ref().map(|p|p.hash()),
+                "typed_combat": {"physical":physical_profile.is_some(), "ordinary":white_profile.is_some(),
+                    "abilities":ability_profile.is_some(), "membership":membership_profile.is_some(), "solo_credit":credit_bytes.is_some()},
                 "player_life_profile": player_life_profile.as_ref().map(|p|p.hash()),
                 "public_avatar_life_profile": public_avatar_profile.as_ref().map(|p|p.hash()),
                 "interface": {"enabled": fantasy_ui.is_some(), "preferred_scale": ui_scale, "saved_preferences": ui_preferences.is_some(), "world_effects_visible": world_effects_visible},

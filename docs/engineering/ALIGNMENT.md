@@ -1,3 +1,27 @@
+P3-09 / P5-17 normal typed-population profile admission, 13 November 2026:
+Normal population client configuration now binds physical damage to the checked
+standalone creature definition and accepts outgoing ordinary/typed ability profiles
+without inventing a pursuit controller. The shared population gate permits combat
+membership and explicit solo first-tag credit; singleton pursuit/reset/public NPC
+attacks and unqualified progression/loot launch combinations remain refused.
+Configuration reports expose the installed typed-combat capabilities.
+The new owned qualifier uses the actual play launcher, OIDC login, PostgreSQL-backed
+inventory and native encrypted client. Fresh admission and database process restart/
+rejoin pass with five NPCs, player health 100, out-of-combat membership and identical
+inventory at revision 0. Both logins verify; inventory ensures and exact gameplay
+profile checks succeed. Native screenshots after bounded graphics warmup show all
+five wolf rigs, health/mana, combat state and Arcane Bolt/Sword Slash actions. Initial
+captures were too early for GPU pipeline readiness; the final qualifier waits for
+asset/readiness observations plus a bounded warmup before capture.
+This qualifies real account-backed profile admission and UI, not native typed hits,
+first-tag grants or NPC retaliation. No OS mouse/keyboard input was automated.
+Private services/processes/tickets are cleaned up; password files are removed.
+Configuration tests, launcher regressions, Python compilation, formatting, strict
+workspace/all-target Clippy and client/server build pass. RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6, 1280x720, zero GPU diagnostics. Evidence:
+build/population-typed-native-v3/qualification.json and its configuration/fresh/resumed
+artifacts; build/population-typed-launch-build.log.
+
 P3-09 / P3-10 / P3-11 population first-tag SQL receipts, 13 November 2026:
 The owned PostgreSQL competing-hitter qualifier now also loads the checked five-NPC
 population package produced by the editor. Two public World actors contest one NPC;
