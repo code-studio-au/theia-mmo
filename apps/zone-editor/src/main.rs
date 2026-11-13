@@ -641,6 +641,12 @@ fn main() {
 }
 fn run() -> Result<(), String> {
     let options = cli::Options::parse()?;
+    // Validate context before prepare can write an explicitly requested output.
+    let creature_context = options
+        .creature_definition
+        .as_deref()
+        .map(spawn_groups::Context::load)
+        .transpose()?;
     let editor = options.prepare()?;
     let scenery_library = options
         .scenery_library
@@ -736,7 +742,11 @@ fn run() -> Result<(), String> {
         .map(quest_inspector::Context::load)
         .transpose()?;
     if options.headless {
-        println!("{}", cli::summary(&editor));
+        let mut report = cli::summary(&editor);
+        if let Some(context) = &creature_context {
+            report["creature_definition"] = context.summary();
+        }
+        println!("{report}");
         return Ok(());
     }
     let initial_target = camera_views::terrain_target(editor.zone());
@@ -750,6 +760,7 @@ fn run() -> Result<(), String> {
     app.insert_resource(scenery_library);
     let mut session = Session::new(editor, path, saved_zone);
     session.quest_context = quest_context;
+    session.creature_context = creature_context;
     match options.capture_view {
         Some(cli::CaptureView::Spawn) => session.inspect_spawn = true,
         Some(cli::CaptureView::TestPlayer) => {

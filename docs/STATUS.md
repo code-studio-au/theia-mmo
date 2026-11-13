@@ -1,3 +1,14 @@
+P5-17 creature context startup and headless validation, 13 November 2026:
+Editor --creature-definition FILE seeds the same direct-load context. Headless mode
+reports its ID/canonical path without creating a window. Context validation runs
+before prepare can write an explicit --output; missing/invalid inputs preserve an
+existing output file. Export modes refuse this context flag and continue using
+--population-creature for their explicit binding. Two real-binary Python checks
+pass with display variables removed, covering standalone/legacy files, read-only
+source bytes, failure-before-output and unambiguous export refusal. Editor build,
+fmt and strict workspace/all-target Clippy pass; native startup remains unverified.
+Evidence: build/editor-creature-cli-{checks,runtime}.log.
+
 P5-17 direct creature loading in the editor, headless checkpoint, 13 November 2026:
 File → Load creature definition uses the existing bounded JSON browser and accepts
 standalone or validated legacy creature files without a quest template. Loading

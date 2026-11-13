@@ -4728,6 +4728,17 @@ external dependency path. Reload the file in a later editor session as needed.
 This menu flow has headless controller tests; native visual/input verification is
 pending while the user reserves the display.
 
+For startup selection, pass `--creature-definition FILE`. Add `--headless` to
+validate it and include its ID/canonical path in the JSON report without opening
+a window. This context validates before any requested `--output` write. Export
+commands use `--population-creature` instead; the context flag refuses export
+modes rather than leaving two competing file choices.
+
+```sh
+target/debug/theia-zone-editor --headless \
+  --creature-definition content/gameplay/development-creature-passive.json
+```
+
 Standalone creature definitions use schema 3 with `id`,
 `speed_metres_per_second`, `wait_ms`, explicit boolean `can_deflect`, and optional
 validated `aggro`. They have no `route` field. Population export and loading also

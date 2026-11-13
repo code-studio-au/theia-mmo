@@ -8,6 +8,9 @@ pub(super) struct Context {
     definition: theia_network::simulation::creatures::Definition,
 }
 impl Context {
+    pub fn summary(&self) -> serde_json::Value {
+        serde_json::json!({"path":self.path,"id":self.definition.id().as_str()})
+    }
     pub fn load(path: &std::path::Path) -> Result<Self, String> {
         use std::io::Read;
         use theia_network::simulation::creatures;
