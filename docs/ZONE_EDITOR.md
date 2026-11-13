@@ -79,6 +79,10 @@ also accepts `python3 tools/play.py --authored-world WORLD --population-config F
 with the usual `--binaries`/`--players` paths if needed. It implies Classic combat
 and checks the configuration before starting game processes. Normal editor
 Play/export population integration is still pending.
+An optional `--creature-asset PATH_TO_QUALIFIED_WOLF_GLB` on the client or launcher
+uses the existing wolf presentation for this single creature type. The launcher
+passes it only to clients. Five passive rigs are natively qualified on Linux Vulkan;
+this does not resolve explicit saved model IDs or activate roaming/pursuit.
 
 It verifies development-capsule standing space, custom bounds, spacing and sampled
 access routes; reports rejection counts and insufficient results; and creates no

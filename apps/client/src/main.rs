@@ -301,7 +301,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         None
     };
-    let creature_asset = creature_visual::parse(&mut args, patrol_binding.is_some())?;
+    let creature_asset =
+        creature_visual::parse(&mut args, patrol_binding.is_some() || population.is_some())?;
     let fantasy_ui = fantasy_ui::parse(&mut args, classic && combat_catalog.is_some())?;
     let explicit_ui_scale = args.iter().any(|arg| arg == "--ui-scale");
     let ui_scale = fantasy_ui::parse_scale(&mut args, fantasy_ui.is_some())?;

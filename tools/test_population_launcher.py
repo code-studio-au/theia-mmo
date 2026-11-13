@@ -58,6 +58,15 @@ class PopulationLauncher(unittest.TestCase):
         self.assertIsNone(args['navigation'])
         self.assertIsNone(args['character_stats'])
 
+    def test_cli_keeps_explicit_creature_art_as_a_client_presentation_override(self):
+        with patch.object(play, 'play') as launch:
+            play.main(['--authored-world', 'world', '--population-config', 'population.json',
+                       '--creature-asset', 'wolf.glb'])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['creature_asset'], Path('wolf.glb').resolve())
+        self.assertIsNone(args['creature_profile'])
+        self.assertIsNone(args['navigation'])
+
     def test_singleton_bundle_conflict_refuses_before_loading_or_launching(self):
         with patch.object(play, 'play') as launch, redirect_stderr(io.StringIO()):
             with self.assertRaises(SystemExit):
@@ -97,6 +106,8 @@ class PopulationLauncher(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             args = self.fixture(root)
+            args['creature_asset'] = root/'wolf.glb'
+            args['creature_asset'].write_bytes(b'presentation path fixture')
             report = dict(renderer_started=False, network_started=False, saved_state_admitted=False)
             commands, stopped = [], []
             class Process:
@@ -126,6 +137,9 @@ class PopulationLauncher(unittest.TestCase):
                 self.assertEqual(command.count('--population-config'), 1)
                 self.assertEqual(command[command.index('--population-config')+1], str(root/'population.json'))
                 self.assertNotIn('--creature-profile', command)
+            self.assertNotIn('--creature-asset', commands[0])
+            for command in commands[1:]:
+                self.assertEqual(command[command.index('--creature-asset')+1], str(root/'wolf.glb'))
             self.assertEqual(stopped, ['server'])
             self.assertEqual(list((root/'build/development-session').glob('renet-*')), [])
 

@@ -1,3 +1,23 @@
+P3-07 passive population creature presentation, 13 November 2026:
+The client now permits its existing explicit --creature-asset override with a
+checked single-type passive population. The normal development launcher forwards
+art only to clients. Reuse standard Bevy scene/skin/animation/selection-ring code;
+no new renderer, actor collision or authoritative model policy. Saved group model
+IDs still refuse until catalog resolution is implemented; this override does not
+silently satisfy such references. Existing qualified wolf GLB contract is unchanged.
+An actual local server/native Classic client admits the checked five-actor group;
+five independent rigs and animation players attach, all enter idle, and maximum
+visuals is five with zero dropped cues. Screenshot inspected at 1600x1000. Linux
+RX 7900 XTX (RADV NAVI31), device 29772, Mesa 26.2.6, Vulkan/KHRONOS validation:
+zero GPU diagnostics. No OS movement automation; owned processes/tickets clean up.
+This is initial passive presentation evidence, not native damage/death animation,
+model catalogs, pursuit, Windows or a performance/capacity qualification.
+Three configuration tests, all 55 launcher/bundle tests (including actual headless
+preflight), binary builds, fmt and strict workspace/all-target Clippy pass.
+Evidence: build/population-native-wolves-v1/{qualification.json,world.json,scene.png,
+client.log,server.log}; build/population-visual-{build,config-tests,launcher-tests,
+clippy}.log. Reusable qualifier: tools/qualify_population_visual.py.
+
 P3-07 / P5-17 native spawn controls qualification, 13 November 2026:
 After renewed user authorization for mouse/display use, an isolated owned editor
 session passes boundary vertex movement, midpoint insertion/removal, whole-boundary

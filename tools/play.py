@@ -42,8 +42,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     if population_config is not None:
         if authored_world is None or not prediction or not classic or combat_catalog is None:
             raise ValueError('Population configuration requires authored Classic predicted combat')
-        if creature_profile is not None or navigation is not None or creature_asset is not None:
-            raise ValueError('Population configuration excludes patrol and creature-art overrides')
+        if creature_profile is not None or navigation is not None:
+            raise ValueError('Population configuration excludes patrol overrides')
         population_config = Path(population_config).resolve()
     if dev_spawn is None:
         dev_spawn = '8000,8000'
@@ -267,7 +267,7 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
         required.append(reward_catalog)
         scene.extend(['--reward-catalog', str(reward_catalog)])
     if creature_asset is not None:
-        if not creature_profile:
+        if not creature_profile and population_config is None:
             raise ValueError('Creature art requires authoritative creature combat')
         if not creature_asset.is_file():
             raise ValueError(f'Missing creature art: {creature_asset}')

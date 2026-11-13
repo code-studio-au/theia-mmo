@@ -31,7 +31,6 @@ pub fn validate_launch(args: &[String]) -> Result<()> {
     for unsupported in [
         "--creature-profile",
         "--navigation",
-        "--creature-asset",
         "--creature-retaliation",
         "--player-respawn",
         "--progression-catalog",
@@ -157,6 +156,9 @@ mod tests {
         .map(str::to_owned)
         .collect();
         assert!(validate_launch(&valid).is_ok());
+        let mut presentation = valid.clone();
+        presentation.extend(["--creature-asset".into(), "wolf.glb".into()]);
+        assert!(validate_launch(&presentation).is_ok());
         assert!(validate_launch(&[]).is_ok());
         for removed in [
             "--authored-world",
@@ -175,7 +177,6 @@ mod tests {
             "--population-config",
             "--creature-profile",
             "--navigation",
-            "--creature-asset",
             "--creature-retaliation",
             "--player-respawn",
             "--progression-catalog",
