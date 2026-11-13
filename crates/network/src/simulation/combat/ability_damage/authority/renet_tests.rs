@@ -92,18 +92,37 @@ fn fixture(rate: TickRate) -> Fixture {
     fixture_mode(rate, false)
 }
 fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
+    fixture_population_mode(rate, membership, false)
+}
+fn fixture_population_mode(rate: TickRate, membership: bool, population: bool) -> Fixture {
     let mut creature: serde_json::Value = serde_json::from_slice(include_bytes!(
         "../../../../../../../content/gameplay/development-creature-patrol.json"
     ))
     .unwrap();
     creature["speed_metres_per_second"] = serde_json::json!(0.1);
     creature["aggro"] = serde_json::json!({"perception_metres":1.0,"leash_metres":35.0,"chase_speed":5.0,"return_speed":5.0,"los_grace_ms":2000,"engagement_ms":30000,"reacquire_ms":2000});
-    let creature = serde_json::to_vec(&creature).unwrap();
-    let (mut world, npc) = creatures::tests::fixture_profile_at(rate, [8008., 8002.], &creature);
+    let creature = if population {
+        include_bytes!("../../../../../../../content/gameplay/development-creature-passive.json")
+            .to_vec()
+    } else {
+        serde_json::to_vec(&creature).unwrap()
+    };
+    let (mut world, npc, placement) = if population {
+        population::prepare(rate, &creature)
+    } else {
+        let (world, npc) = creatures::tests::fixture_profile_at(rate, [8008., 8002.], &creature);
+        (world, npc, [8008., 8002.])
+    };
     world.enable_prediction().unwrap();
     world.enable_classic().unwrap();
     world
-        .enable_status_combat(ABILITIES, 1000, 5000, VITALS, STATUSES)
+        .enable_status_combat(
+            ABILITIES,
+            1000,
+            if population { 30_000 } else { 5000 },
+            VITALS,
+            STATUSES,
+        )
         .unwrap();
     let life = Arc::new(
         crate::player_life_wire::Profile::from_json(
@@ -116,7 +135,13 @@ fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
         )
         .unwrap(),
     );
-    world.enable_player_life(life.clone()).unwrap();
+    if population {
+        world
+            .enable_passive_population_player_life(life.clone())
+            .unwrap();
+    } else {
+        world.enable_player_life(life.clone()).unwrap();
+    }
     world
         .enable_autoattack(
             include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json"),
@@ -175,21 +200,20 @@ fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
         .as_mut()
         .unwrap()
         .random = outcomes::Random::seed_for_test([7; 32]);
-    let source = world
-        .combat
-        .as_ref()
-        .unwrap()
-        .identity(world.patrol_identity.unwrap());
+    let source = population::combat_source(&world);
     let identity = world.identity();
     assert_eq!(identity, crate::classic::profile_identity(source));
     let patch = world
         .procedural
         .as_ref()
         .unwrap()
-        .patch(GlobalPosition::new([8008., 0., 8002.]).unwrap())
+        .patch(GlobalPosition::new([placement[0], 0., placement[1]]).unwrap())
         .unwrap()
         .clone();
-    let mut position = patch.try_spawn(8008., 8002.).unwrap().metres();
+    let mut position = patch
+        .try_spawn(placement[0], placement[1])
+        .unwrap()
+        .metres();
     position[1] += f64::from(crate::world::PAWN_Y);
     let position = GlobalPosition::new(position).unwrap();
     let items = net::inventory::Profile::from_json(ITEMS).unwrap();
@@ -832,3 +856,5 @@ mod credit;
 mod reset;
 
 mod threat;
+
+mod population;

@@ -240,6 +240,7 @@ pub(super) struct Patrol {
     travelled: f64,
 }
 impl Patrol {
+    #[cfg(test)]
     pub(super) fn position(&self) -> GlobalPosition {
         self.position
     }

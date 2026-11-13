@@ -264,6 +264,30 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
             assert_eq!(world.identity(), installed);
             assert!(world.creature_credit_encounter().is_none());
         }
+        if competing {
+            let items = crate::renet_runtime::inventory::Profile::from_json(ITEMS).unwrap();
+            let rewards =
+                include_bytes!("../../../../../../content/gameplay/development-rewards.json");
+            let mut wrong: serde_json::Value = serde_json::from_slice(rewards).unwrap();
+            wrong["rewards"][0]["creature"] = "theia.dev.other-creature".into();
+            let wrong = Arc::new(
+                crate::reward_wire::Profile::from_json(
+                    &serde_json::to_vec(&wrong).unwrap(),
+                    &items,
+                )
+                .unwrap(),
+            );
+            let before = world.identity();
+            assert!(world.enable_rewards(wrong).is_err());
+            assert_eq!(world.identity(), before);
+            let profile =
+                Arc::new(crate::reward_wire::Profile::from_json(rewards, &items).unwrap());
+            world.enable_rewards(profile.clone()).unwrap();
+            let installed = world.identity();
+            assert_ne!(installed, before);
+            assert!(world.enable_rewards(profile).is_err());
+            assert_eq!(world.identity(), installed);
+        }
         let ability_profile = world.ability_damage_profile().cloned();
         let ordinary_profile = world.white_melee_profile().cloned();
         for &key in &keys {
@@ -447,10 +471,30 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
                 }
             }
             let mut deaths = 0;
+            let mut fatal_events = Vec::new();
             for _ in 0..u64::from(rate.hz()) * 60 {
                 world.step();
                 for event in world.combat_events().to_vec() {
                     let recipient = world.kill_recipient(&event).unwrap();
+                    if competing {
+                        // Repeated facts within a batch must enqueue one opportunity.
+                        let offers = world
+                            .reward_opportunities(&[event.clone(), event.clone()])
+                            .unwrap();
+                        if let Some((owner, victim)) = recipient {
+                            assert_eq!(offers.len(), 1);
+                            assert_eq!(offers[0].actor, owner);
+                            assert_eq!(
+                                offers[0].event.id,
+                                theia_core::progression::KillId::from_victim(victim)
+                            );
+                            let index = targets.iter().position(|&key| key == victim).unwrap();
+                            assert_eq!(offers[0].position, positions[index]);
+                            fatal_events.push(event.clone());
+                        } else {
+                            assert!(offers.is_empty());
+                        }
+                    }
                     let is_ability = matches!(&event, Event::AbilityDamage(_));
                     let (actor, actor_generation, target, after, lost) = match event {
                         Event::PhysicalDamage(fact) => {
@@ -628,6 +672,15 @@ fn qualify(ordinary: bool, ability: Option<&str>, competing: bool) {
                 })
                 .collect();
             assert_eq!(fresh.len(), 5);
+            if competing {
+                assert_eq!(fatal_events.len(), 5);
+                assert!(
+                    world
+                        .reward_opportunities(&fatal_events)
+                        .unwrap()
+                        .is_empty()
+                );
+            }
             assert!(fresh.iter().all(|key| !targets.contains(key)));
             for &old in &targets {
                 assert!(world.creature_definition(old).is_none());

@@ -1,3 +1,26 @@
+P3-09 / P3-10 / P5-17 population reward routing, 13 November 2026:
+Rewards now bind the checked population creature definition and resolve the exact
+fatal life and authoritative corpse position, removing the singleton patrol-only
+assumption. Existing recipient policy, fixed-step work bounds and durable-owner
+responsibilities remain unchanged. Wrong creature profiles and repeated installation
+refuse without changing identity. Across five NPCs, eight players and two generations
+at 20/30/60 Hz, first-tag reward ownership, duplicate-fact suppression, exact corpse
+positions and rejection of retired-life facts pass using actual authored assets.
+Two additional encrypted two-client checks use the real checked five-NPC population
+at all three rates with delayed/reordered/lost/duplicated UDP. Only the first tagger
+receives XP/reward work; the competing finisher cannot pick up the private corpse.
+Full-bag retry, successful pickup, stale-claim refusal and unchanged bystander health
+pass. The two-hit transport fixture explicitly sets one NPC to 20 HP; it does not
+establish normal balance. Inventory/progression owners are synthetic committed ports:
+this is no new SQL durability, OIDC, native UI or ordinary-launch adoption claim.
+Prerequisites are checked population placement, shared player lives, typed combat,
+combat membership and exact-life first-tag credit, qualified in preceding slices.
+All seven authored-population checks and 501 regular network tests pass (seven
+asset-dependent checks ignored in the regular suite). Formatting and strict
+workspace/all-target Clippy pass; rendering is unchanged. Evidence:
+build/population-rewards-final.log, build/population-encrypted-credit-check.log
+and build/population-rewards-lint.log.
+
 P5-17 standalone creature context native editor qualification, 13 November 2026:
 Owned native Linux checks now cover File -> Load creature definition, selecting an
 unresolved spawn group, Use loaded creature, undo/reapply and population export.

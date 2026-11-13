@@ -1183,9 +1183,16 @@ impl Authority {
 impl World {
     /// Includes defeated actors until their fresh-ID respawn replaces this life.
     pub(super) fn has_combat_incarnation(&self, key: EntityKey) -> bool {
+        self.combat_creature_position(key).is_some()
+    }
+    /// Retain the authoritative corpse position until this exact life retires.
+    pub(super) fn combat_creature_position(&self, key: EntityKey) -> Option<GlobalPosition> {
         self.combat
-            .as_ref()
-            .is_some_and(|combat| combat.creatures.iter().any(|creature| creature.key == key))
+            .as_ref()?
+            .creatures
+            .iter()
+            .find(|creature| creature.key == key)
+            .map(|creature| creature.position)
     }
     pub fn enable_combat(
         &mut self,

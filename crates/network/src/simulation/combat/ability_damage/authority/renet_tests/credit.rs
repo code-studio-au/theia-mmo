@@ -45,20 +45,30 @@ impl AccountAdmissions for CreditAdmissions {
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_competing_hitter_routes_only_tag_owner_to_xp_and_reward_queues_at_all_rates() {
-    exercise_credit(false, false).await;
+    exercise_credit(false, false, false).await;
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_per_life_loot_requires_private_pickup_and_preserves_full_bag_availability_at_all_rates()
  {
-    exercise_credit(true, false).await;
+    exercise_credit(true, false, false).await;
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_conditional_loot_routes_original_tag_life_and_private_pickup_at_all_rates() {
-    exercise_credit(true, true).await;
+    exercise_credit(true, true, false).await;
 }
-async fn exercise_credit(per_life: bool, conditional: bool) {
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+async fn encrypted_authored_population_competing_hitter_routes_only_tag_owner_at_all_rates() {
+    exercise_credit(false, false, true).await;
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+async fn encrypted_authored_population_private_loot_preserves_tag_owner_at_all_rates() {
+    exercise_credit(true, false, true).await;
+}
+async fn exercise_credit(per_life: bool, conditional: bool, population: bool) {
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
-        let mut f = fixture_mode(rate, true);
+        let mut f = fixture_population_mode(rate, true, population);
         let npc = f.npc;
         f.world.enable_creature_credit(SOLO).unwrap();
         let xp = Arc::new(crate::progression_wire::Profile::from_json(XP).unwrap());
@@ -127,12 +137,7 @@ async fn exercise_credit(per_life: bool, conditional: bool) {
         }
         f.session.progression = Some(xp.clone());
         f.session.identity = f.world.identity();
-        let combat_source = f
-            .world
-            .combat
-            .as_ref()
-            .unwrap()
-            .identity(f.world.patrol_identity.unwrap());
+        let combat_source = population::combat_source(&f.world);
         f.session.source = crate::progression_wire::profile_identity(
             crate::simulation::rewards::profile_identity(combat_source, rewards.hash()),
             xp.hash(),
@@ -259,9 +264,30 @@ async fn exercise_credit(per_life: bool, conditional: bool) {
                 && s.rewards.is_some()
                 && s.correction.is_some()
                 && s.snapshot.as_ref().is_some_and(|v| v.players.len() == 2)
+                && s.combat
+                    .as_ref()
+                    .is_some_and(|v| v.targets.len() == if population { 5 } else { 1 })
         };
         let first = a.until(ready).await;
-        b.until(ready).await;
+        let second = b.until(ready).await;
+        if population {
+            for state in [&first, &second] {
+                let targets = &state.combat.as_ref().unwrap().targets;
+                assert_eq!(
+                    targets
+                        .iter()
+                        .filter(|t| t.entity == npc.entity && t.current == 20)
+                        .count(),
+                    1
+                );
+                assert!(
+                    targets
+                        .iter()
+                        .filter(|t| t.entity != npc.entity)
+                        .all(|t| t.current == t.maximum)
+                );
+            }
+        }
         let owner = first
             .player_life
             .as_ref()
@@ -289,6 +315,11 @@ async fn exercise_credit(per_life: bool, conditional: bool) {
         let final_a = a
             .until(|s, seen| {
                 seen.facts.len() == 2
+                    && s.combat.as_ref().is_some_and(|v| {
+                        v.targets
+                            .iter()
+                            .any(|t| t.entity == npc.entity && t.current == 0)
+                    })
                     && s.player_life
                         .as_ref()
                         .and_then(|p| p.current())
@@ -324,6 +355,17 @@ async fn exercise_credit(per_life: bool, conditional: bool) {
         assert!(reward.position.metres().into_iter().all(f64::is_finite));
         assert!(xp_receivers[1].try_recv().is_err());
         assert!(reward_receivers[1].try_recv().is_err());
+        if population {
+            let targets = &final_a.combat.as_ref().unwrap().targets;
+            assert_eq!(targets.len(), 5);
+            assert_eq!(targets.iter().filter(|t| t.current == 0).count(), 1);
+            assert!(
+                targets
+                    .iter()
+                    .filter(|t| t.entity != npc.entity)
+                    .all(|t| t.current == t.maximum)
+            );
+        }
         // Queued work has not been committed by these synthetic owners.
         assert_eq!(final_a.progression.as_ref().unwrap().progress.total(), 0);
         if per_life {

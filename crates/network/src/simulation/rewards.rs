@@ -70,14 +70,20 @@ impl World {
         {
             return Err("Per-life corpse interaction and pickup are not installed".into());
         }
-        let patrol = self
+        let creature = self
             .patrol
             .as_ref()
+            .map(|patrol| patrol.definition())
+            .or_else(|| {
+                self.population_binding
+                    .as_ref()
+                    .map(|binding| binding.definition().id())
+            })
             .ok_or("Rewards require an authoritative creature")?;
         if profile
             .catalog()
             .definitions()
-            .any(|d| d.creature() != patrol.definition())
+            .any(|d| d.creature() != creature)
         {
             return Err("Reward definition does not match installed creature".into());
         }
@@ -118,30 +124,33 @@ impl World {
         let Some(profile) = &self.rewards else {
             return Ok(Vec::new());
         };
-        let Some(patrol) = &self.patrol else {
-            return Err("Reward creature missing".into());
-        };
         let mut result = Vec::new();
         for event in events {
             let Some((actor, target)) = self.kill_recipient(event)? else {
                 continue;
             };
-            if target != patrol.key || self.entity_key(actor.entity.value()) != Some(actor) {
+            let Some(creature) = self.combat_creature_definition(target) else {
+                continue;
+            };
+            if self.entity_key(actor.entity.value()) != Some(actor) {
                 continue;
             }
+            let Some(position) = self.combat_creature_position(target) else {
+                continue;
+            };
             for definition in profile
                 .catalog()
                 .definitions()
-                .filter(|d| d.creature() == patrol.definition())
+                .filter(|d| d.creature() == creature.id())
             {
                 let opportunity = Opportunity {
                     actor,
                     reward: definition.id().clone(),
                     event: KillEvent {
                         id: KillId::from_victim(target),
-                        creature: patrol.definition().clone(),
+                        creature: creature.id().clone(),
                     },
-                    position: patrol.position(),
+                    position,
                 };
                 if result.contains(&opportunity) {
                     continue;
