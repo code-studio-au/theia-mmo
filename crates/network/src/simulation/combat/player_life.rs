@@ -609,9 +609,10 @@ impl World {
                 .worker
                 .take()
                 .ok_or("Pursuit requires prepared navigation worker")?;
-            Some(pursuit::Runtime::new(
-                settings, patrol.key, self.rate, worker,
-            )?)
+            let runtime =
+                pursuit::Runtime::new(settings, patrol.key, self.rate, worker.navigation())?;
+            combat.pursuit_navigation = Some(crate::navigation::scheduler::Scheduler::new(worker));
+            Some(runtime)
         } else {
             None
         };

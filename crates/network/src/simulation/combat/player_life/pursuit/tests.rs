@@ -2,6 +2,7 @@
 //! gentle-terrain triangulation fixture; not native or authenticated peers.
 use super::*;
 use crate::{
+    navigation::worker::Worker,
     simulation::{World, creatures},
     wire::Intent,
 };
@@ -188,17 +189,9 @@ fn unavailable_navigation_cancels_chase_without_a_direct_line_fallback() {
     let (mut world, _) = fixture(TickRate::Hz30);
     let patch = world.patrol.as_ref().unwrap().patch.clone();
     let query = creatures::tests::query_fixture(&world, &patch, 80.);
-    let runtime = world
-        .combat
-        .as_mut()
-        .unwrap()
-        .pve
-        .as_mut()
-        .unwrap()
-        .pursuit
-        .as_mut()
-        .unwrap();
-    runtime.worker = Worker::spawn(query, runtime.worker.navigation()).unwrap();
+    let combat = world.combat.as_mut().unwrap();
+    let identity = combat.pursuit_navigation.as_ref().unwrap().navigation();
+    combat.pursuit_navigation = Some(Scheduler::new(Worker::spawn(query, identity).unwrap()));
     let actor = join(&mut world, 8018.);
     let anchor = world.patrol_snapshot().unwrap().position;
     for _ in 0..60 {
@@ -247,17 +240,15 @@ fn creature_death_respawn_and_explicit_despawn_retire_old_path_identity() {
     let fresh = world.patrol.as_ref().unwrap().key;
     assert_ne!(fresh, npc);
     assert_eq!(world.creature_pursuit_metrics().unwrap().acquisitions, 2);
-    let runtime = world
+    let navigation = world
         .combat
         .as_ref()
         .unwrap()
-        .pve
-        .as_ref()
-        .unwrap()
-        .pursuit
+        .pursuit_navigation
         .as_ref()
         .unwrap();
-    if let Some(request) = runtime.worker.pending() {
+    assert!(navigation.pending(npc).is_none());
+    if let Some(request) = navigation.pending(fresh) {
         assert_eq!(request.tag.creature, fresh);
     }
     assert!(world.remove_development_target(fresh));
@@ -464,7 +455,7 @@ fn prepared_transfer_cancels_old_windup_and_invalidates_every_old_route_handle_a
             target: old.target,
         });
         runtime.reply = Some(Reply {
-            navigation: runtime.worker.navigation(),
+            navigation: runtime.navigation,
             request: old_request,
             route: Ok(vec![position, target.position]),
         });
@@ -500,7 +491,7 @@ fn prepared_transfer_cancels_old_windup_and_invalidates_every_old_route_handle_a
         // Model a late old reply after commit, using an otherwise valid live
         // navigation incarnation/window. It must never become the new path.
         runtime.reply = Some(Reply {
-            navigation: runtime.worker.navigation(),
+            navigation: runtime.navigation,
             request: old_request,
             route: Ok(vec![position, target.position]),
         });
@@ -509,6 +500,7 @@ fn prepared_transfer_cancels_old_windup_and_invalidates_every_old_route_handle_a
             .advance(
                 world.tick,
                 npc,
+                combat.pursuit_navigation.as_mut().unwrap(),
                 policy::Observation {
                     position,
                     alive: true,
@@ -579,4 +571,69 @@ fn failed_transfer_keeps_old_pursuit_windup_and_route_revision_unchanged() {
     assert_eq!(combat.pve.as_ref().unwrap().policy.windup_until(), windup);
     assert_eq!(combat.pve.as_ref().unwrap().policy.target(), victim);
     world.combat = Some(combat);
+}
+
+#[test]
+fn independent_pursuit_controllers_share_one_worker_without_crossing_targets() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, npc) = fixture(rate);
+        let a = join(&mut world, 8018.);
+        let b = join(&mut world, 8020.);
+        let mut combat = world.combat.take().unwrap();
+        let mut first = combat.pve.as_mut().unwrap().pursuit.take().unwrap();
+        let second_key = EntityKey {
+            entity: theia_core::identity::EntityId::new(100).unwrap(),
+            ..npc
+        };
+        let mut second = Runtime::new(first.settings, second_key, rate, first.navigation).unwrap();
+        let mut scheduler = combat.pursuit_navigation.take().unwrap();
+        let position = GlobalPosition::new(world.patrol_snapshot().unwrap().position).unwrap();
+        let targets = [a, b].map(|actor| policy::Target {
+            key: combat.actors[&actor].life.as_ref().unwrap().state.key(),
+            position: world.global_position(actor).unwrap(),
+            alive: true,
+            visible: true,
+            in_melee: false,
+        });
+        // Controller/transport contract only. These observations do not install
+        // a second world creature or qualify collision movement for populations.
+        for now in 1..=u64::from(rate.hz()) {
+            scheduler.pump(now).unwrap();
+            for (runtime, key, target) in [
+                (&mut first, npc, targets[0]),
+                (&mut second, second_key, targets[1]),
+            ] {
+                if let Some(reply) = scheduler.take_reply(key, now) {
+                    assert_eq!(reply.request.tag.target, Some(target.key));
+                    runtime.reply = Some(reply);
+                }
+                runtime
+                    .advance(
+                        now,
+                        key,
+                        &mut scheduler,
+                        policy::Observation {
+                            position,
+                            alive: true,
+                            candidates: &[],
+                            target: Some(target),
+                            provoked: Some(target),
+                            blocked: false,
+                        },
+                    )
+                    .unwrap();
+                assert_eq!(runtime.directive().target, Some(target.key));
+                if let Some(path) = &runtime.path {
+                    assert_eq!(path.target, Some(target.key));
+                    assert!(distance(*path.points.last().unwrap(), target.position) < 0.1);
+                }
+            }
+            if first.metrics.published > 0 && second.metrics.published > 0 {
+                break;
+            }
+            thread::sleep(Duration::from_millis(2));
+        }
+        assert!(first.metrics.published > 0 && second.metrics.published > 0);
+        assert_eq!(scheduler.registered(), 2);
+    }
 }

@@ -427,6 +427,7 @@ pub(super) struct Authority {
     outcome_metrics: OutcomeMetrics,
     pve: Option<player_life::Authority>,
     retaliators: Vec<player_life::Authority>,
+    pursuit_navigation: Option<crate::navigation::scheduler::Scheduler>,
     lives: Option<player_life::Lives>,
     resources_hash: Option<[u8; 32]>,
     statuses: Option<statuses::Registry>,
@@ -592,6 +593,7 @@ impl Authority {
             outcome_metrics: OutcomeMetrics::default(),
             pve: None,
             retaliators: Vec::new(),
+            pursuit_navigation: None,
             lives: None,
             resources_hash,
             statuses: statuses.map(statuses::Registry::new),
@@ -995,6 +997,9 @@ impl Authority {
                     continue;
                 };
                 let previous = creature.key;
+                if let Some(navigation) = &mut self.pursuit_navigation {
+                    navigation.retire(previous);
+                }
                 creature.key.entity = theia_core::identity::EntityId::new(next).unwrap();
                 if let Some(home) = world.patrol_respawn(previous, creature.key) {
                     creature.position = home;

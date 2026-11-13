@@ -1,8 +1,11 @@
-//! Opt-in single-creature pursuit. Searches/polling stay on the owner pump and
+//! Per-creature pursuit policy. Searches/polling stay on the owner pump and
 //! dedicated worker; fixed ticks consume only bounded immutable replies.
 use crate::{
     Result,
-    navigation::worker::{Reply, Request, Tag, Worker},
+    navigation::{
+        scheduler::Scheduler,
+        worker::{Reply, Request, Tag},
+    },
     simulation::creatures::PursuitMotion,
 };
 use std::time::Duration;
@@ -41,7 +44,7 @@ pub(super) struct Runtime {
     settings: policy::Settings,
     state: policy::State,
     rate: TickRate,
-    worker: Worker,
+    navigation: [u8; 32],
     reply: Option<Reply>,
     path: Option<Path>,
     tag: Option<Tag>,
@@ -82,7 +85,7 @@ impl Runtime {
         settings: policy::Settings,
         npc: EntityKey,
         rate: TickRate,
-        worker: Worker,
+        navigation: [u8; 32],
     ) -> Result<Self> {
         let state =
             policy::State::new(settings, npc, rate).map_err(|_| "Invalid pursuit settings")?;
@@ -90,7 +93,7 @@ impl Runtime {
             settings,
             state,
             rate,
-            worker,
+            navigation,
             reply: None,
             path: None,
             tag: None,
@@ -139,23 +142,19 @@ impl Runtime {
             .ok_or("Perception clock exhausted")?;
         Ok(true)
     }
-    /// Owner pump only. Never starts a search or waits for one.
-    pub(super) fn poll(&mut self) -> Result<()> {
-        if let Some(reply) = self
-            .worker
-            .poll()
-            .map_err(|_| "Pursuit worker closed or mismatched")?
-        {
-            self.reply = Some(reply);
-        }
-        Ok(())
-    }
     pub(super) fn advance(
         &mut self,
         now: u64,
         npc: EntityKey,
+        navigation: &mut Scheduler,
         mut observation: policy::Observation<'_>,
     ) -> Result<PursuitMotion> {
+        if navigation.navigation() != self.navigation {
+            return Err("Pursuit navigation identity changed".into());
+        }
+        if !observation.alive {
+            navigation.retire(npc);
+        }
         observation.blocked |= self.failed_route;
         self.failed_route = false;
         let previous = self.state.directive().mode;
@@ -222,7 +221,7 @@ impl Runtime {
         if let Some(reply) = self.reply.take() {
             let points = self
                 .tag
-                .and_then(|tag| reply.current(self.worker.navigation(), tag, now));
+                .and_then(|tag| reply.current(self.navigation, tag, now));
             if let Some(points) = points.filter(|_| {
                 centre(reply.request.start).is_ok_and(|p| distance(p, observation.position) <= 1.)
                     && centre(reply.request.end).is_ok_and(|p| distance(p, goal) <= 2.)
@@ -243,7 +242,7 @@ impl Runtime {
             } else {
                 self.metrics.rejected += 1;
                 let current = self.tag.is_some_and(|tag| reply.request.tag == tag)
-                    && reply.navigation == self.worker.navigation()
+                    && reply.navigation == self.navigation
                     && (reply.request.submitted..=reply.request.expires).contains(&now);
                 // A missing/disconnected route never produces movement. The
                 // next tick feeds confirmed failure back to the policy.
@@ -272,7 +271,12 @@ impl Runtime {
                 p.index >= p.points.len()
                     || p.expires.saturating_sub(now) <= u64::from(self.rate.hz()) / 4
             });
-        if refresh && now >= self.next_request && self.worker.pending().is_none() {
+        if refresh
+            && now >= self.next_request
+            && navigation
+                .pending(npc)
+                .is_none_or(|request| Some(request.tag) != self.tag)
+        {
             let revision = self
                 .revision
                 .checked_add(1)
@@ -292,7 +296,7 @@ impl Runtime {
                 submitted: now,
                 expires,
             };
-            self.worker
+            navigation
                 .submit(request)
                 .map_err(|e| format!("Pursuit request refused: {e:?}"))?;
             self.revision = revision;
@@ -426,12 +430,19 @@ impl super::Combat {
             .cancelled
             .saturating_add(u64::from(transfer.cancelled));
     }
-    pub(in crate::simulation) fn poll_pursuit(&mut self) {
-        if let Some(pve) = &mut self.pve
-            && let Some(runtime) = &mut pve.pursuit
-            && let Err(error) = runtime.poll()
-        {
-            pve.error = Some(error.to_string());
+    pub(in crate::simulation) fn poll_pursuit(&mut self, now: u64) {
+        let Some(navigation) = &mut self.pursuit_navigation else {
+            return;
+        };
+        let failure = navigation.pump(now).err();
+        for pve in self.pve.iter_mut().chain(&mut self.retaliators) {
+            if let Some(runtime) = &mut pve.pursuit {
+                if let Some(error) = failure {
+                    pve.error = Some(format!("Pursuit navigation failed: {error:?}"));
+                } else if let Some(reply) = navigation.take_reply(pve.npc, now) {
+                    runtime.reply = Some(reply);
+                }
+            }
         }
     }
     fn pursuit_target(
@@ -518,6 +529,9 @@ impl super::Combat {
             runtime.advance(
                 world.tick,
                 pve.npc,
+                self.pursuit_navigation
+                    .as_mut()
+                    .ok_or("Pursuit navigation unavailable")?,
                 policy::Observation {
                     position,
                     alive,

@@ -1,3 +1,25 @@
+P3-06 / P3-09 pursuit controller on shared navigation, 13 November 2026:
+Moved navigation ownership from each pursuit controller to the combat owner.
+The owner pump dispatches through one bounded scheduler and delivers exact-NPC
+replies; controllers retain their existing perception/chase/melee/leash/return
+policies. Changed engagements can replace obsolete queued work. Death, despawn
+and fresh-ID respawn retire old navigation slots. The retained singleton runtime
+now exercises this same shared transport instead of owning a private worker.
+A two-controller contract passes at 20/30/60 Hz with distinct target lives and
+route endpoints. This test does not install or move a second world creature.
+All 502 network library tests pass (10 ignored), all six navigation-worker tests,
+strict workspace/all-target Clippy and fmt pass. Existing pursuit lifecycle and
+encrypted threat/reset regressions remain green. Evidence:
+build/pursuit-shared-scheduler-final-checks.log.
+Two actual native clients with owned OIDC/PostgreSQL pass the existing chase,
+melee, leash and saved-patrol return qualification: one acquisition/return/arrival,
+31 published routes, zero blocked/failed paths, zero GPU diagnostics; owned
+services stop and private tickets are removed. Linux RX 7900 XTX / RADV NAVI31 /
+Vulkan only; no Windows or capacity claim. No OS input automation.
+Evidence: build/pursuit-shared-scheduler-native-v1/verification.json.
+Prerequisite: bounded dispatcher e3822a18. Population pursuit remains gated until
+shared checked per-creature movement and full world engagement tests pass. Local only.
+
 P3-06 / P3-09 bounded shared navigation scheduling, 13 November 2026:
 Added a 16-creature dispatcher around the existing dedicated navigation worker.
 Each exact creature identity retains bounded latest-request/reply storage;

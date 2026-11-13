@@ -252,7 +252,7 @@ impl World {
     }
     fn poll_terrain_inner(&mut self, additional: &[GlobalPosition]) {
         if let Some(combat) = &mut self.combat {
-            combat.poll_pursuit();
+            combat.poll_pursuit(self.tick);
         }
         if self.dev_tour
             && let Some(&id) = self.players.keys().next()
