@@ -122,6 +122,22 @@ class PopulationLauncher(unittest.TestCase):
         self.assertTrue(args['public_avatar_life'])
         self.assertEqual(args['player_respawn'], Path('respawn.json').resolve())
 
+    def test_population_quest_catalogue_keeps_explicit_journal_and_no_patrol(self):
+        with patch.object(play, 'play') as launch:
+            play.main(['--authored-world', 'world', '--population-config', 'population.json',
+                       '--quest-journal', '--quest-catalog', 'journal.json', '--quest-items',
+                       '--quest-loot', '--creature-loot'])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['quest_catalog'], Path('journal.json').resolve())
+        self.assertTrue(args['quest_journal'] and args['quest_items'] and args['quest_loot'])
+        self.assertIsNone(args['creature_profile'])
+        self.assertIsNone(args['navigation'])
+        for prefix in [[], ['--gameplay-manifest', 'missing.json']]:
+            with patch.object(play, 'play') as launch, redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    play.main([*prefix, '--quest-catalog', 'unused.json'])
+                launch.assert_not_called()
+
     def test_cli_population_grants_keep_the_population_without_a_patrol_override(self):
         with patch.object(play, 'play') as launch:
             play.main(['--authored-world', 'world', '--population-config', 'population.json',

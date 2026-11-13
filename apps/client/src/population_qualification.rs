@@ -26,6 +26,8 @@ struct Run {
     collect_loot: bool,
     pickup: Option<(theia_core::rewards::ClaimId, u64)>,
     pickups: u32,
+    expected_pickups: u32,
+    inventory_before: Option<(u64, u32, u32)>,
     life: Option<LifeKey>,
     target: Option<EntityKey>,
     requested_target: Option<EntityId>,
@@ -85,6 +87,16 @@ pub(crate) fn install(
                 .ok_or("Invalid population qualification target")
         })
         .transpose()?;
+    let expected_pickups = std::env::var_os("THEIA_POPULATION_LOOT_COUNT_QUALIFY")
+        .map(|value| {
+            value
+                .to_str()
+                .and_then(|value| value.parse::<u32>().ok())
+                .filter(|value| (1..=2).contains(value))
+                .ok_or("Population qualification expects one or two corpse pickups")
+        })
+        .transpose()?
+        .unwrap_or(2);
     app.insert_resource(Run {
         output,
         started: None,
@@ -99,6 +111,8 @@ pub(crate) fn install(
             && std::env::var("THEIA_POPULATION_LOOT_QUALIFY").as_deref() == Ok("1"),
         pickup: None,
         pickups: 0,
+        expected_pickups,
+        inventory_before: None,
         life: None,
         target: None,
         requested_target,
@@ -269,7 +283,7 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
                     }
                     return;
                 }
-                if run.pickups != 2 {
+                if run.pickups != run.expected_pickups {
                     return;
                 }
                 let count = |item: &str| {
@@ -282,9 +296,12 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
                         .map(|stack| stack.count())
                         .sum::<u32>()
                 };
-                if inventory.bag.revision() != 4
-                    || count("theia.dev.wolf-pelt") != 1
-                    || count("theia.dev.training-token") != 101
+                let (revision, tokens, pelts) =
+                    run.inventory_before.expect("Equipped before combat");
+                let training = u32::from(run.collect_reward);
+                if inventory.bag.revision() != revision + u64::from(training + run.expected_pickups)
+                    || count("theia.dev.wolf-pelt") != pelts + run.expected_pickups - 1
+                    || count("theia.dev.training-token") != tokens + training + 1
                 {
                     run.fail("Committed corpse inventory differs from expected grants");
                     return;
@@ -325,6 +342,23 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
             }
             return;
         }
+        run.inventory_before.get_or_insert_with(|| {
+            let count = |item: &str| {
+                inventory
+                    .bag
+                    .slots()
+                    .iter()
+                    .flatten()
+                    .filter(|stack| stack.item().as_str() == item)
+                    .map(|stack| stack.count())
+                    .sum()
+            };
+            (
+                inventory.bag.revision(),
+                count("theia.dev.training-token"),
+                count("theia.dev.wolf-pelt"),
+            )
+        });
     }
     if targeting.selected != Some(target.entity) {
         return;

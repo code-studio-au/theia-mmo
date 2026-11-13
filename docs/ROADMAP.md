@@ -1,3 +1,11 @@
+Population quest-required loot update, 14 November 2026: normal explicit
+population launches now share inventory-bound conditional loot. Native owned
+account tests pass pre-acceptance denial, later eligible pickup, visible quest
+turn-in/consumption and two PostgreSQL restarts; final Completed/75 XP/revision 6
+is preserved. Editor exports remain explicit and unchanged. Next: frozen quest
+profiles in the account population wrapper. See STATUS and LOOT_TABLES for exact
+fixture, input, test and platform limits.
+
 Native population competition update, 14 November 2026: two authenticated native
 clients now pass normal threat transfer, first-tag XP, private corpse pickup and
 exact PostgreSQL restart/rejoin. Next: normal population quest-only loot integration

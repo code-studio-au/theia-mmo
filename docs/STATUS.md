@@ -1,3 +1,44 @@
+P3-05 / P3-09 / P3-11 / P3-15 normal population quest-required loot,
+14 November 2026: normal population launch now accepts the existing conditional
+loot mode. The launcher accepts an explicit --quest-catalog with quests/journal,
+refusing a catalogue without its mode or alongside a frozen gameplay manifest.
+The existing exact inventory/journal/reward bindings and first-tag eligibility
+remain authoritative. Editor population exports do not silently attach quests.
+
+Owned OIDC/PostgreSQL and native 1280x720 qualification uses the unchanged pursuing
+five-creature package, an explicit one-pelt journal, nearby guide and guaranteed
+conditional-pelt/ordinary-token fixture. Before acceptance, eight normal casts
+kill one NPC, award 25 XP and only ordinary loot: bag revision 3, 101 tokens,
+no pelt. After actual PostgreSQL restart and same-character rejoin, PID-bound
+quest-button acceptance succeeds. Five normal casts kill a fresh life; two corpse
+pickups make the quest Ready. Visible turn-in consumes the pelt and awards 25 XP.
+A second process restart/rejoin preserves Completed, 75 XP, revision 6, 102 tokens
+and no pelts. Both deaths leave the four other creatures undamaged. Health is
+transient: 44/58/78 at the three observations. Ordinary equipment, mana, facing,
+range and cast validation apply; combat/pickup uses normal test-driver requests.
+
+SQL retains the original denied pelt generation unchanged after acceptance and
+restart, one later eligible generation and four consumed claims. Exact observed
+bag/journal heads are recorded. Evidence: build/population-quest-loot-native-v1/
+qualification.json, phase screenshots and generation-rights.txt, binary hashes,
+transport/persistence summaries. Linux RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, zero GPU diagnostics. This is native Linux/30 Hz and explicit fixture
+integration, not random rates, editor quest publishing, Windows or MMO capacity.
+The bounded test driver now checks one or two pickups against the committed
+pre-combat bag, supporting resumed characters without changing production loot.
+
+All 509 default network tests (17 fixture-dependent ignored), 265 client tests
+(four ignored), 23 Python launcher checks (one skipped), fmt, strict workspace/
+all-target Clippy and diff checks pass. Logs: build/population-quest-{network,
+client}-tests.log, population-quest-launcher-tests.log and
+population-quest-loot-clippy.log. Retained actual encrypted two-recipient
+conditional population routing also passes at 20/30/60 Hz on the authored map:
+build/population-quest-encrypted-library-tests.log. Those synthetic admission
+ports prove routing separately from the native SQL flow. An initial unnecessarily
+broad cargo test build was interrupted during unrelated example linking because
+free disk space was low; the library-only rerun passes. Continue with explicit frozen account-launch
+quest profiles and native reuse; general quest authoring remains separate. Local only.
+
 P3-06 / P3-09 / P3-10 / P5-17 authenticated native population competition,
 14 November 2026: two distinct OIDC accounts now qualify the ordinary pursuing
 editor population together through one normal authoritative server. The owner

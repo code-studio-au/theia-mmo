@@ -28,7 +28,7 @@ pub fn validate_launch(args: &[String]) -> Result<()> {
             return Err(format!("Population configuration requires {required}").into());
         }
     }
-    for unsupported in ["--creature-profile", "--navigation", "--quest-loot"] {
+    for unsupported in ["--creature-profile", "--navigation"] {
         if args.iter().any(|a| a == unsupported) {
             return Err(format!("Population configuration does not support {unsupported}").into());
         }
@@ -209,6 +209,8 @@ mod tests {
         assert!(validate_launch(&lives).is_ok());
         lives.push("--public-creature-attacks".into());
         assert!(validate_launch(&lives).is_ok());
+        lives.push("--quest-loot".into());
+        assert!(validate_launch(&lives).is_ok());
         for grant in ["--progression-catalog", "--reward-catalog"] {
             let mut refused = valid.clone();
             refused.extend([grant.into(), "grant.json".into()]);
@@ -236,7 +238,6 @@ mod tests {
             "--creature-profile",
             "--navigation",
             "--progression-catalog",
-            "--quest-loot",
         ] {
             let mut args = valid.clone();
             args.push(extra.into());
