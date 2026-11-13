@@ -9,6 +9,8 @@ mod chunk_world;
 pub mod classic_controls;
 mod combat;
 mod combat_feedback;
+#[path = "../../common/creature_asset.rs"]
+mod creature_asset;
 mod creature_visual;
 mod dialogue;
 mod documents;
@@ -1147,6 +1149,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "interface": {"enabled": fantasy_ui.is_some(), "preferred_scale": ui_scale, "saved_preferences": ui_preferences.is_some(), "world_effects_visible": world_effects_visible},
                 "fixed_reward_catalog": journal_profile.as_ref().and_then(|p|p.item_rewards()).map(|r|r.id().as_str()),
                 "population": population.as_ref().map(|p| serde_json::json!({"count":p.count(), "respawn_ms":p.respawn_ms()})),
+                "creature_appearance": creature_asset.is_some(),
                 "renderer_started": false, "network_started": false, "saved_state_admitted": false
             }))?
         );

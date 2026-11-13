@@ -264,7 +264,10 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
         reason = 'failed'
         raise
     finally:
-        summary = dict(reason=reason, cleanup_errors=cleanup_errors, population=configuration.get('population'), clients=[dict(client_id=p.client_id, started=p.client_id in launched_ids, network=asdict(p.network),
+        summary = dict(reason=reason, cleanup_errors=cleanup_errors, population=configuration.get('population'),
+                       creature_appearance=configuration.get('creature_appearance', False),
+                       creature_asset=str(creature_asset) if creature_asset else None,
+                       clients=[dict(client_id=p.client_id, started=p.client_id in launched_ids, network=asdict(p.network),
                        added_base_rtt_ms=p.network.added_rtt_ms, controller=str(p.controller) if p.controller else None, route=str(p.route) if p.route else None, relay=r.stats)
                        for p, r in zip(scenario.players, relays)],
                        scope='Local encrypted development tickets; optional bounded movement controllers; no account persistence or scripted combat')

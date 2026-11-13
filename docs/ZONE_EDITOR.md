@@ -4853,3 +4853,16 @@ paths, unsafe floors and route budgets fail export without replacing an existing
 package. Normal network export has no navigation bake and refuses these assignments;
 use the population playtest flow. The existing one-passive-group/16-actor and
 nine-navigation-tile limits remain. This assignment controls test clients.
+
+Population export and Start population playtest also offer **Creature appearance
+GLB (optional)**. It is copied into the new package as `creature.glb`; the export
+report records its SHA-256 and editor-launched clients use the copy. Leave it blank
+for the existing default presentation. `--creature-asset FILE` seeds the editor
+field and can accompany a headless `--population` export.
+
+This uses the current six-animation creature adapter: a GLB 2 file at most 8 MiB,
+with one scene, mesh, material, skin and embedded binary buffer, plus the named
+Idle, Walk, Run, Attack, Hit and Death clips. Images must be in the binary payload;
+external/data URIs are refused. Bevy validates and loads the actual render data.
+The qualified wolf fixture is `build/creature-wolf-stage-v1/wolf.glb`. This optional
+appearance does not resolve authored group model IDs or change server gameplay.

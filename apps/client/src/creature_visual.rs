@@ -71,7 +71,7 @@ fn attack_cue(state: &theia_network::client::State, creature: EntityKey) -> Opti
     })
 }
 
-const NAMES: [&str; 6] = ["Idle", "Walk", "Run", "Attack", "Hit", "Death"];
+use crate::creature_asset::NAMES;
 const LIMIT: usize = theia_network::targeting::MAX_TARGETS;
 const CORPSE_SECONDS: f64 = 15.;
 
@@ -254,6 +254,7 @@ pub(crate) fn parse(
     {
         return Err("Creature asset must be a GLB of at most 8 MiB".into());
     }
+    crate::creature_asset::read(&path)?;
     Ok(Some(path))
 }
 

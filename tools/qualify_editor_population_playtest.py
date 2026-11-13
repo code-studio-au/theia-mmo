@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import signal
 import subprocess
+import time
 from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 from gpu_validation import check_gpu_diagnostics
@@ -16,6 +17,7 @@ parser.add_argument('--creature', type=Path, required=True)
 parser.add_argument('--players', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
 parser.add_argument('--assign-patrol', action='store_true', help='Assign the first authored patrol to player one through the editor, including undo')
+parser.add_argument('--creature-asset', type=Path, help='Optional embedded creature appearance to seed and freeze through the dialog')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -28,7 +30,8 @@ env = client_environment(dict(os.environ, DISPLAY=':0', XDG_RUNTIME_DIR='/run/us
     THEIA_PARTICLE_EDITOR_DATA_DIR=str(out / 'particle-data')))
 x = None
 with (out / 'editor.log').open('w') as log:
-    p = subprocess.Popen([str(args.binary.resolve()), '--zone', str(source), '--report', str(report), '--player-assets', str(args.players.resolve())],
+    p = subprocess.Popen([str(args.binary.resolve()), '--zone', str(source), '--report', str(report), '--player-assets', str(args.players.resolve()),
+        *(['--creature-asset', str(args.creature_asset.resolve())] if args.creature_asset else [])],
         env=env, stdout=log, stderr=log)
     try:
         w = wait(lambda: owned_window(p.pid), 45)
@@ -37,6 +40,21 @@ with (out / 'editor.log').open('w') as log:
             assert p.poll() is None, 'Editor exited unexpectedly'
             return json.loads(report.read_text())
         wait(lambda: report.exists() and state().get('menus'), 45)
+        # Initial font/window layout can move menu bounds after the first report.
+        # Wait for stable native geometry before using any reported click centre.
+        previous = None
+        stable_since = time.monotonic()
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            geometry = [(m['name'],m['centre'],m['size']) for m in state()['menus'] if m['role']=='button']
+            if geometry != previous:
+                previous = geometry
+                stable_since = time.monotonic()
+            elif time.monotonic()-stable_since >= .75:
+                break
+            time.sleep(.05)
+        else:
+            raise TimeoutError('Editor startup menu geometry did not settle')
         def fresh():
             old = state()['input_elapsed']
             return wait(lambda: state() if state()['input_elapsed'] > old else None)
@@ -89,6 +107,8 @@ with (out / 'editor.log').open('w') as log:
             if c['target'] == 'PopulationPlaytest' and c['menu_item'] and min(c['size']) > 0), None))
         click(control['centre'])
         wait(lambda: state()['export_dialog'])
+        if args.creature_asset:
+            assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index']==7) == str(args.creature_asset.resolve())
         destination = out / 'package'
         fill(0, destination)
         fill(3, args.creature.resolve())
@@ -139,6 +159,10 @@ with (out / 'editor.log').open('w') as log:
             assert check_gpu_diagnostics(log_file.read_text()) == 0
         result = json.loads((destination / 'population-export.json').read_text())['population_export']
         assert result['passed'] and result['count'] == 5, result
+        if args.creature_asset:
+            assert (destination/'creature.glb').read_bytes() == args.creature_asset.read_bytes()
+            assert result['appearance']['file'] == 'creature.glb'
+            assert summary['creature_appearance'] and summary['creature_asset']==str(destination/'creature.glb')
         assert source.read_bytes() == original and args.zone.read_bytes() == original
         assert json.loads((destination / 'zone.json').read_text()) == state()['document']
         x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
@@ -146,7 +170,7 @@ with (out / 'editor.log').open('w') as log:
         (out / 'qualification.json').write_text(json.dumps(dict(passed=True,
             invalid_spacing_refused=True, count=result['count'], source_unchanged=True,
             package=str(destination), started_clients=2, stopped=True, controller_finished=True,
-            assigned_patrol=assigned, travel=travel, run=str(run)), indent=2))
+            assigned_patrol=assigned, travel=travel, appearance=result.get('appearance'), run=str(run)), indent=2))
     finally:
         if x: x.close()
         if p.poll() is None:

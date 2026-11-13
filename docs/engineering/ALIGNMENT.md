@@ -1,3 +1,38 @@
+P5-17 / P4-03 frozen creature appearance in population playtests, 13 November 2026:
+Population export/Start dialogs now offer an optional creature GLB. Editor
+--creature-asset seeds that field and also works with headless population export.
+The worker copies validated bytes as creature.glb into the owned snapshot and
+records their SHA-256; managed population clients receive that copy. Source edits
+cannot change the published copy. Appearance is client-only and does not change
+population authority/identity, spawn bindings, health or model-ID resolution.
+The shared current-adapter envelope check accepts bounded embedded GLB 2 assets
+(8 MiB file, 2 MiB aligned JSON, one binary buffer/scene/mesh/material/skin) with
+exactly Idle/Walk/Run/Attack/Hit/Death named clips. External buffer/image URIs,
+truncation, malformed chunks and incompatible adapter shape refuse. Bevy remains
+the actual mesh/skin/animation loader and performs runtime data validation.
+Client configuration reports expose selected appearance without starting rendering
+or networking; managed session reports retain the copied path and selection.
+236 ordinary editor tests pass (10 optional ignored), plus the actual navigation/
+appearance snapshot and unsafe-floor refusal test. Shared asset tests pass in both
+apps, five dialog tests and 17 launcher regressions pass; malformed asset export
+refuses before baking/publication. The refusal fixture's remaining-input count was
+corrected after adding its second input file. Fmt and strict workspace/all-target
+Clippy pass. Actual client preflight accepts the wolf and refuses malformed GLB.
+Native editor assignment/undo, optional appearance field, package export, two-client
+Start, patrol arrival and Stop pass. First client arrives in 11.85 s with 0.181 m
+authority error and manual release; frozen appearance is recorded for both clients.
+The first automation attempt hit startup menu timing; the harness now waits for
+stable menu geometry. Separate native playback from the exported appearance loads
+five animated wolf rigs, with five idle transitions and no dropped cues. Screenshots
+inspected at editor 3440x1440 and client 1600x1000. Linux AMD Radeon RX 7900 XTX
+(RADV NAVI31), Vulkan device 29772, validation clean. Source files and original
+review editor untouched; owned children/tickets close. No generic model catalogue,
+pursuit/loot/quest binding or native Windows acceptance claim.
+Evidence: build/population-appearance-{build,checks,refusal,launcher-tests,final-checks}.log;
+build/population-appearance-preflight-v1/qualification.json;
+build/editor-population-appearance-native-v2/{qualification.json,dialog.png,package};
+build/population-frozen-appearance-native-v1/{qualification.json,scene.png,client.log}.
+
 P5-17 / P4-03 editor-authored test-player travel, 13 November 2026:
 Test Player property actions now cycle next/previous authored patrol paths, using
 stable path IDs in the existing controller reference. Assignment preserves feet,

@@ -9,6 +9,8 @@ mod camera_views;
 #[path = "../../common/classic_controls.rs"]
 pub mod classic_controls;
 mod cli;
+#[path = "../../common/creature_asset.rs"]
+mod creature_asset;
 mod exit_dialog;
 mod export;
 mod export_dialog;
@@ -697,6 +699,7 @@ fn run() -> Result<(), String> {
                         .expect("Checked creature profile"),
                     baker: &baker,
                     spacing: options.population_spacing.unwrap_or(3.),
+                    appearance: options.creature_asset.as_deref(),
                 },
                 &scenery_library,
             )?
@@ -798,6 +801,7 @@ fn run() -> Result<(), String> {
     })
     .insert_resource(network_playtest::Manager::new(
         options.player_assets.clone(),
+        options.creature_asset.clone(),
     ))
     .add_systems(Update, network_playtest::poll)
     .init_resource::<test_players::Scene>()

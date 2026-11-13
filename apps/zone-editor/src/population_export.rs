@@ -18,6 +18,7 @@ pub(super) struct Settings<'a> {
     pub creature: &'a Path,
     pub baker: &'a Path,
     pub spacing: f64,
+    pub appearance: Option<&'a Path>,
 }
 
 pub(super) fn default_baker() -> Result<PathBuf, String> {
@@ -121,6 +122,10 @@ fn publish_mode(
     } else {
         validate(zone, &profile, settings.spacing)?
     };
+    let appearance = settings
+        .appearance
+        .map(crate::creature_asset::read)
+        .transpose()?;
     let baker = settings
         .baker
         .canonicalize()
@@ -158,6 +163,9 @@ fn publish_mode(
         )?;
         zone.save(&stage.join("zone.json"))?;
         fs::write(stage.join("creature.json"), &creature).map_err(|e| e.to_string())?;
+        if let Some(bytes) = &appearance {
+            fs::write(stage.join("creature.glb"), bytes).map_err(|e| e.to_string())?;
+        }
         let store =
             Arc::new(authored_world::Store::open(&stage.join("world")).map_err(|e| e.to_string())?);
         let access = store.spawn(0).ok_or("Exported world has no player spawn")?;
@@ -200,6 +208,7 @@ fn publish_mode(
             0
         };
         let report = serde_json::json!({"population_export":{"passed":true,"group":group,
+            "appearance":appearance.as_ref().map(|bytes|serde_json::json!({"file":"creature.glb","sha256":theia_network::terrain::sha256(bytes)})),
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
@@ -218,6 +227,10 @@ fn publish_mode(
                     fs::rename(stage.join(name), output.join(name)).map_err(|e| e.to_string())?;
                 }
             }
+        }
+        if appearance.is_some() {
+            fs::rename(stage.join("creature.glb"), output.join("creature.glb"))
+                .map_err(|e| e.to_string())?;
         }
         for name in [
             "world",
@@ -340,7 +353,24 @@ mod tests {
             creature: &creature,
             baker: Path::new("/bin/false"),
             spacing: 3.,
+            appearance: None,
         };
+        let bad_appearance = root.0.join("invalid.glb");
+        fs::write(&bad_appearance, b"Not a GLB").unwrap();
+        let error = publish(
+            &zone,
+            &output,
+            "theia.test.population",
+            1,
+            Settings {
+                appearance: Some(&bad_appearance),
+                ..settings()
+            },
+            &Default::default(),
+        )
+        .unwrap_err();
+        assert!(error.contains("GLB"), "{error}");
+        assert!(!output.exists());
         assert!(
             publish(
                 &zone,
@@ -354,7 +384,7 @@ mod tests {
             .contains("navigation bake failed")
         );
         assert!(!output.exists());
-        assert_eq!(fs::read_dir(&root.0).unwrap().count(), 1);
+        assert_eq!(fs::read_dir(&root.0).unwrap().count(), 2); // Only the two input fixtures remain.
         fs::create_dir(&output).unwrap();
         fs::write(output.join("keep"), b"keep").unwrap();
         assert!(
@@ -404,12 +434,18 @@ mod tests {
             ],
         });
         zone.test_players[0].controller = Some("theia.zone.patrol.30".into());
+        let appearance = std::env::var_os("THEIA_CREATURE_ASSET").map(|source| {
+            let copy = root.0.join("appearance.glb");
+            fs::copy(source, &copy).unwrap();
+            copy
+        });
         let original = zone.clone();
         let output = root.0.join("package");
         let settings = || Settings {
             creature: &creature,
             baker: &baker,
             spacing: 3.,
+            appearance: appearance.as_deref(),
         };
         assert!(
             publish(
@@ -473,6 +509,17 @@ mod tests {
         .unwrap();
         assert_eq!(loaded.count(), 5);
         assert_eq!(zone, original);
+        if let Some(source) = &appearance {
+            let original = fs::read(source).unwrap();
+            assert_eq!(fs::read(output.join("creature.glb")).unwrap(), original);
+            assert_eq!(
+                report["population_export"]["appearance"]["file"],
+                "creature.glb"
+            );
+            fs::write(source, b"Changed appearance source").unwrap();
+            assert_eq!(fs::read(output.join("creature.glb")).unwrap(), original);
+            fs::write(source, original).unwrap();
+        }
         let route_bytes = fs::read(output.join("routes/player-1.json")).unwrap();
         let mut wrong_floor = zone.clone();
         wrong_floor.paths[0].points[1][1] += 20.;
@@ -525,6 +572,7 @@ mod tests {
                 creature: &creature,
                 baker: &baker,
                 spacing: 3.,
+                appearance: None,
             },
             &Default::default(),
         )
@@ -584,6 +632,7 @@ mod tests {
                 creature: &creature,
                 baker: &baker,
                 spacing: 3.,
+                appearance: None,
             },
             &Default::default(),
         )
@@ -617,6 +666,7 @@ mod tests {
                 creature: &creature,
                 baker: &baker,
                 spacing: 32.,
+                appearance: None,
             },
             &Default::default(),
         )

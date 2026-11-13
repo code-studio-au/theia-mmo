@@ -38,6 +38,7 @@ pub struct Options {
     pub gameplay_template: Option<PathBuf>,
     pub scenery_library: Option<PathBuf>,
     pub player_assets: Option<PathBuf>,
+    pub creature_asset: Option<PathBuf>,
     pub check_scenery: bool,
     pub content_id: Option<String>,
     pub revision: Option<u32>,
@@ -120,6 +121,13 @@ impl Options {
                             .into(),
                     );
                 }
+                "--creature-asset" => {
+                    result.creature_asset = Some(
+                        args.next()
+                            .ok_or("--creature-asset needs an embedded creature GLB")?
+                            .into(),
+                    );
+                }
                 "--player-assets" => {
                     result.player_assets = Some(
                         args.next()
@@ -176,7 +184,7 @@ impl Options {
                 }
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--gameplay-template MANIFEST] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|test-player|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test] [--population --population-creature FILE [--navigation-baker BIN] [--population-spacing METRES]]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--creature-asset EMBEDDED_GLB] [--gameplay-template MANIFEST] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|test-player|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test] [--population --population-creature FILE [--navigation-baker BIN] [--population-spacing METRES]]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
@@ -244,6 +252,11 @@ impl Options {
             && (result.capture.is_some() || result.report.is_some() || result.mailbox.is_some())
         {
             return Err("--capture, --report and --mailbox require a window".into());
+        }
+        if result.creature_asset.is_some() && result.headless && !result.population {
+            return Err(
+                "Creature appearance requires a population export or interactive editor".into(),
+            );
         }
         Ok(result)
     }

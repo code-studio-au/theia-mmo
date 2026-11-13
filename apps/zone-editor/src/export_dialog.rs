@@ -47,8 +47,8 @@ impl Mode {
         match self {
             Self::World => &[0, 1, 2, 3],
             Self::NetworkTest => &[0, 3, 4],
-            Self::Population => &[0, 1, 2, 3, 4, 5],
-            Self::PopulationTest => &[0, 1, 2, 3, 4, 5, 6],
+            Self::Population => &[0, 1, 2, 3, 4, 5, 7],
+            Self::PopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7],
             _ => &[0, 1],
         }
     }
@@ -128,6 +128,7 @@ pub(super) fn setup(mut commands: Commands) {
                             "Player asset directory",
                             "Minimum spacing (metres)",
                             "Player asset directory",
+                            "Creature appearance GLB (optional)",
                         ]
                         .into_iter()
                         .enumerate()
@@ -277,6 +278,10 @@ pub(super) fn open(
                 .as_ref()
                 .and_then(|m| m.player_assets.as_ref())
                 .map_or_else(String::new, |p| p.display().to_string()),
+            manager
+                .as_ref()
+                .and_then(|m| m.creature_asset.as_ref())
+                .map_or_else(String::new, |p| p.display().to_string()),
         ]
     } else if mode.world() {
         [
@@ -304,10 +309,12 @@ pub(super) fn open(
                 .map_or_else(String::new, |p| p.display().to_string()),
             String::new(),
             String::new(),
+            String::new(),
         ]
     } else {
         [
             format!("build/{slug}-particles"),
+            String::new(),
             String::new(),
             String::new(),
             String::new(),
@@ -391,7 +398,7 @@ fn values(fields: &Query<(Entity, &Field, &mut EditableText)>) -> Result<WorldIn
 
 fn population_values(
     fields: &Query<(Entity, &Field, &mut EditableText)>,
-) -> Result<(PathBuf, f64), String> {
+) -> Result<(PathBuf, f64, Option<PathBuf>), String> {
     let value = |index| {
         fields
             .iter()
@@ -412,7 +419,12 @@ fn population_values(
         .ok()
         .filter(|n| n.is_finite() && (0.25..=32.).contains(n))
         .ok_or("Minimum spacing must be between 0.25 and 32 metres")?;
-    Ok((PathBuf::from(baker), spacing))
+    let appearance = value(7);
+    if appearance.contains(['\0', '\n', '\r']) {
+        return Err("Choose a valid creature appearance path".into());
+    }
+    let appearance = (!appearance.is_empty()).then(|| PathBuf::from(appearance));
+    Ok((PathBuf::from(baker), spacing, appearance))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -629,7 +641,7 @@ pub(super) fn finish(
                     let scenery = scenery.as_deref().cloned().unwrap_or_default();
                     draft.task = Some(IoTaskPool::get().spawn(async move {
                         if let Some((id, revision, template)) = world {
-                            if let Some((baker, spacing)) = population {
+                            if let Some((baker, spacing, appearance)) = population {
                                 let publish = if network {
                                     population_export::publish_network
                                 } else {
@@ -646,6 +658,7 @@ pub(super) fn finish(
                                             .ok_or("Choose a passive creature profile")?,
                                         baker: &baker,
                                         spacing,
+                                        appearance: appearance.as_deref(),
                                     },
                                     &scenery,
                                 )
@@ -927,7 +940,7 @@ mod tests {
             .resource_mut::<workspace::Requests>()
             .export_population = true;
         app.update();
-        for expected in [1, 2, 3, 4, 5, 0] {
+        for expected in [1, 2, 3, 4, 5, 7, 0] {
             app.world_mut()
                 .resource_mut::<ButtonInput<KeyCode>>()
                 .press(KeyCode::Tab);
@@ -1025,7 +1038,7 @@ mod tests {
             assert_eq!(
                 node.display == Display::Flex,
                 if population {
-                    row.0 <= 6
+                    row.0 <= 7
                 } else {
                     [0, 3, 4].contains(&row.0)
                 }
@@ -1033,7 +1046,7 @@ mod tests {
         }
         // Keyboard navigation must skip the hidden manifest metadata fields.
         for expected in if population {
-            vec![1, 2, 3, 4, 5, 6, 0]
+            vec![1, 2, 3, 4, 5, 6, 7, 0]
         } else {
             vec![3, 4, 0]
         } {

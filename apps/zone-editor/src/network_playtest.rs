@@ -11,16 +11,18 @@ use std::{
 pub(super) struct Manager {
     child: Option<Child>,
     pub player_assets: Option<PathBuf>,
+    pub creature_asset: Option<PathBuf>,
     pub template: Option<PathBuf>,
     pub output: Option<PathBuf>,
     log: Option<PathBuf>,
     stopping: bool,
 }
 impl Manager {
-    pub fn new(player_assets: Option<PathBuf>) -> Self {
+    pub fn new(player_assets: Option<PathBuf>, creature_asset: Option<PathBuf>) -> Self {
         Self {
             child: None,
             player_assets,
+            creature_asset,
             template: None,
             output: None,
             log: None,
@@ -104,6 +106,11 @@ impl Manager {
                 .arg(snapshot.join("population.json"))
                 .arg("--combat-catalog")
                 .arg(snapshot.join("combat.json"));
+            if snapshot.join("creature.glb").is_file() {
+                command
+                    .arg("--creature-asset")
+                    .arg(snapshot.join("creature.glb"));
+            }
         }
         let child = command
             .arg("--scenario")
