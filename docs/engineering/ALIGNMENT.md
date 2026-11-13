@@ -1,3 +1,23 @@
+P3-09 / P5-17 native typed population cast without OS input, 13 November 2026:
+An explicit bounded client qualifier now exercises the normal equipment, target and
+cast request paths. It selects a healthy NPC already within the player's frontal
+spell range, never moves/turns the player or camera, requests the committed training
+wand equip, and permits at most three casts. It watches the exact player/NPC lives,
+refuses changed lives/bystander damage and waits for combat membership to clear.
+The actual normal account-backed launch passes: one Arcane cast spends mana and
+reduces one NPC from 100 to 81 HP; four bystanders remain at full health. Player
+health stays 100 and generation 1. Membership enters then exits after hostility grace.
+The inventory owner commits exactly one equip at revision 1. PostgreSQL process
+restart and fresh OIDC rejoin preserve the identical equipped inventory. Native
+screenshots show the selected damaged NPC and equipped wand. No OS pointer, keyboard,
+movement or facing automation is used; this is normal network-command execution,
+not a new physical input acceptance or NPC kill/reward/retaliation claim.
+Formatting, strict workspace/all-target Clippy, Python compilation and client build
+pass. Both native runs have zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6, 1280x720. Owned services/processes/tickets are cleaned up.
+Evidence: build/population-typed-combat-native-v1/qualification.json and
+fresh/typed-combat.json; build/population-typed-combat-build.log.
+
 P3-09 / P5-17 normal typed-population profile admission, 13 November 2026:
 Normal population client configuration now binds physical damage to the checked
 standalone creature definition and accepts outgoing ordinary/typed ability profiles

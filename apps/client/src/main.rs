@@ -30,6 +30,7 @@ mod network;
 mod particle_world;
 mod physics;
 mod player_life;
+mod population_qualification;
 mod progression;
 mod projectile_qualification;
 mod projectile_visual;
@@ -1232,6 +1233,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     pursuit_qualification::install(&mut app)?;
     melee_qualification::install(&mut app)?;
     projectile_qualification::install(&mut app)?;
+    population_qualification::install(
+        &mut app,
+        connected
+            && population.is_some()
+            && ability_profile.is_some()
+            && membership_profile.is_some(),
+    )?;
     app.add_systems(Last, reference_scene::grip::observe);
     app.add_systems(Last, reference_scene::attack::observe);
     app.insert_resource(camera_collision.unwrap_or(if graybox || chunks.is_some() {

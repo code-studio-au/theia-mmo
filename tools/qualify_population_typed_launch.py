@@ -75,6 +75,8 @@ def run(args):
                 THEIA_TEST_BROWSER_USER=identity.users[0][0], THEIA_TEST_BROWSER_PASSWORD=identity.users[0][1],
                 BROWSER=f'{sys.executable} {Path("tools/qualify_account_launcher.py").resolve()} --owned-browser %s',
                 THEIA_WORLD_INPUT_OS_QUALIFY=str(folder))
+            if args.combat and not resumed:
+                env['THEIA_POPULATION_TYPED_QUALIFY'] = str(folder)
             previous_tickets = set(Path('build/development-session').glob('renet-*'))
             with (folder/'launcher.log').open('w') as log:
                 launcher = subprocess.Popen([sys.executable, 'tools/play.py', *common,
@@ -102,6 +104,20 @@ def run(args):
                     admitted_at = time.monotonic()
                     observed = wait(lambda: ready() if time.monotonic()-admitted_at >= 10 else None, 20)
                     assert observed['combat']['in_combat'] is False
+                    combat_proof = None
+                    if args.combat and not resumed:
+                        (folder/'combat.start').write_text('start\n')
+                        def completed():
+                            state()
+                            value = json.loads((folder/'typed-combat.json').read_text())
+                            assert value['passed'], value
+                            return value
+                        combat_proof = wait(completed, 40)
+                        observed = ready()
+                        assert observed and observed['main_hand_item'] == 'theia.dev.training-wand'
+                        assert combat_proof['player_health'] == 100 and combat_proof['remaining'] < 100
+                        assert combat_proof['inventory_revision'] == 1
+
                     assert len(observed['public_avatar_life']['actors']) == 1
                     if resumed:
                         assert observed['inventory_bag'] == original_bag
@@ -111,7 +127,7 @@ def run(args):
                     wait(lambda: capture_ready(folder/'input-os.png'), 15)
                     results.append(dict(resumed=resumed, health=100, creatures=5,
                         inventory_revision=observed['inventory_bag']['revision'],
-                        membership_events=observed['combat']['membership_events']))
+                        membership_events=observed['combat']['membership_events'], combat=combat_proof))
                 finally:
                     if launcher.poll() is None:
                         launcher.send_signal(signal.SIGINT)
@@ -130,6 +146,13 @@ def run(args):
             saved = next(json.loads(line.removeprefix('account_persistence_summary '))
                          for line in server.splitlines() if line.startswith('account_persistence_summary '))
             assert not saved['failed'] and saved['worker']['inventory_ensures'] == 1
+            if args.combat and not resumed:
+                assert saved['worker']['inventory_committed'] == 1
+                transport = next(json.loads(line.removeprefix('transport_summary '))
+                                 for line in server.splitlines() if line.startswith('transport_summary '))
+                assert transport['ability_damage']['arcane']['health_lost'] > 0
+                assert transport['ability_damage']['arcane']['attempts'] <= 3
+                assert transport['rejected_inputs'] == 0
             assert saved['worker']['incompatible_gameplay_profiles'] == 0
             account = next(json.loads(line.removeprefix('account_summary '))
                            for line in server.splitlines() if line.startswith('account_summary '))
@@ -140,13 +163,14 @@ def run(args):
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
     result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True,
-        mouse_or_keyboard_automation=False, scope='Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim')
+        mouse_or_keyboard_automation=False, scope=('Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--combat', action='store_true', help='Equip and cast through normal network commands without OS input')
     parser.add_argument('--population', type=Path, required=True)
     parser.add_argument('--players', type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
