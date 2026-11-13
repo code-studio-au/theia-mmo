@@ -418,6 +418,7 @@ pub(super) struct Authority {
     credit: Option<credit::Runtime>,
     reset: Option<reset::Runtime>,
     threat: Option<threat::Runtime>,
+    population_threat: Vec<threat::Runtime>,
     public_attack: Option<std::sync::Arc<crate::creature_attack_wire::Profile>>,
     public_life: Option<std::sync::Arc<crate::avatar_life_wire::Profile>>,
     catalog_digest: [u8; 32],
@@ -586,6 +587,7 @@ impl Authority {
             credit: None,
             reset: None,
             threat: None,
+            population_threat: Vec::new(),
             public_attack: None,
             public_life: None,
             catalog_digest: crate::terrain::sha256(bytes),
@@ -657,7 +659,11 @@ impl Authority {
         let base = self.membership.as_ref().map_or(base, |p| p.identity(base));
         let base = self.credit.as_ref().map_or(base, |p| p.identity(base));
         let base = self.reset.as_ref().map_or(base, |p| p.identity(base));
-        let base = self.threat.as_ref().map_or(base, |p| p.identity(base));
+        let base = self
+            .threat
+            .as_ref()
+            .or_else(|| self.population_threat.first())
+            .map_or(base, |p| p.identity(base));
         let base = self
             .public_attack
             .as_ref()
@@ -677,7 +683,9 @@ impl Authority {
             pve.retired_player(id, rate);
         }
         for pve in &mut self.retaliators {
-            pve.retired_player(id, rate);
+            if !self.population_threat.iter().any(|t| t.npc == pve.npc) {
+                pve.retired_player(id, rate);
+            }
         }
         self.actors.remove(&id);
         if let Some(statuses) = &mut self.statuses {
@@ -1017,6 +1025,9 @@ impl Authority {
                 }
                 for pve in &mut self.retaliators {
                     pve.respawned_creature(previous, creature.key, world.rate);
+                }
+                for threat in self.threat.iter_mut().chain(&mut self.population_threat) {
+                    threat.respawned(previous, creature.key);
                 }
                 creature.current = creature.maximum;
                 creature.respawn_at = None;

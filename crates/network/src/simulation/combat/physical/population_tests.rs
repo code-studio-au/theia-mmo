@@ -976,14 +976,19 @@ fn check_retaliators(world: &mut World, players: &[u64], keys: &[EntityKey], rat
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_shared_pursuit_chases_attacks_and_returns_each_home_at_all_rates() {
-    qualify_shared_population_pursuit(false);
+    qualify_shared_population_pursuit(false, false);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_return_reset_is_independent_and_preserves_fresh_lives_at_all_rates() {
-    qualify_shared_population_pursuit(true);
+    qualify_shared_population_pursuit(true, false);
 }
-fn qualify_shared_population_pursuit(reset: bool) {
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_threat_tables_select_independent_victims_and_retire_lives_at_all_rates() {
+    qualify_shared_population_pursuit(true, true);
+}
+fn qualify_shared_population_pursuit(reset: bool, threat: bool) {
     use theia_core::pursuit::Mode;
     let store = Arc::new(
         authored_world::Store::open(std::path::Path::new(
@@ -1093,6 +1098,13 @@ fn qualify_shared_population_pursuit(reset: bool) {
                 ))
                 .unwrap();
         }
+        if threat {
+            world
+                .enable_creature_threat(include_bytes!(
+                    "../../../../../../content/gameplay/development-creature-threat.json"
+                ))
+                .unwrap();
+        }
         let encounters: Vec<_> = keys
             .iter()
             .map(|k| world.creature_credit_encounter_for(*k).unwrap())
@@ -1147,6 +1159,110 @@ fn qualify_shared_population_pursuit(reset: bool) {
         assert!(world.combat_membership(actor).unwrap().in_combat());
         assert!(world.combat_membership_error().is_none());
         assert!(world.creature_credit_error().is_none());
+        if threat {
+            let second = world
+                .join_restored(world.global_position(actor).unwrap())
+                .unwrap();
+            let chunks = world
+                .procedural()
+                .unwrap()
+                .patch(world.global_position(second).unwrap())
+                .unwrap()
+                .ids
+                .iter()
+                .map(|c| [c.x, c.z])
+                .collect();
+            assert!(world.client_ready(
+                second,
+                &ChunkReady {
+                    version: VERSION,
+                    epoch: world.epoch(),
+                    sequence: 1,
+                    chunks
+                }
+            ));
+            let a = world.player_life_snapshot(actor).unwrap().key;
+            let b = world.player_life_snapshot(second).unwrap().key;
+            let pair: Vec<_> = keys
+                .iter()
+                .copied()
+                .filter(|key| moved.contains(&key.entity.value()))
+                .take(2)
+                .collect();
+            // Trusted prepared-fact fixture: test table/selection isolation,
+            // not damage admission, ability timing or live competing clients.
+            let mut combat = world.combat.take().unwrap();
+            for (npc, source, damage) in [(pair[0], b, 100), (pair[1], a, 100), (pair[1], b, 1)] {
+                let plan = combat.prepare_threat(npc, source, damage).unwrap();
+                combat.commit_threat(plan);
+            }
+            world.combat = Some(combat);
+            world.step();
+            assert!(
+                world.creature_threat_error().is_none(),
+                "{:?}",
+                world.creature_threat_error()
+            );
+            assert_eq!(
+                world
+                    .creature_pursuit_directive_for(pair[0])
+                    .unwrap()
+                    .target,
+                Some(b)
+            );
+            assert_eq!(
+                world
+                    .creature_pursuit_directive_for(pair[1])
+                    .unwrap()
+                    .target,
+                Some(a)
+            );
+            assert_eq!(
+                world
+                    .creature_threat_entries_for(pair[0])
+                    .unwrap()
+                    .iter()
+                    .find(|e| e.life == b)
+                    .unwrap()
+                    .damage_threat,
+                100
+            );
+            assert_eq!(
+                world
+                    .creature_threat_entries_for(pair[1])
+                    .unwrap()
+                    .iter()
+                    .find(|e| e.life == b)
+                    .unwrap()
+                    .damage_threat,
+                1
+            );
+            world.leave(second);
+            world.step();
+            assert_eq!(
+                world
+                    .creature_pursuit_directive_for(pair[0])
+                    .unwrap()
+                    .target,
+                Some(a)
+            );
+            assert_eq!(
+                world
+                    .creature_pursuit_directive_for(pair[1])
+                    .unwrap()
+                    .target,
+                Some(a)
+            );
+            for npc in &pair {
+                assert!(
+                    !world
+                        .creature_threat_entries_for(*npc)
+                        .unwrap()
+                        .iter()
+                        .any(|e| e.life == b)
+                );
+            }
+        }
         if reset {
             let pair: Vec<_> = keys
                 .iter()

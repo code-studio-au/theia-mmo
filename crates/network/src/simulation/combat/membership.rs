@@ -289,7 +289,11 @@ impl Authority {
                         let active = e.alive
                             && matches!(e.mode, Mode::Chase | Mode::Attack)
                             && (e.target == Some(owner)
-                                || self.threat.as_ref().is_some_and(|t| t.contains(owner)));
+                                || self
+                                    .threat
+                                    .iter()
+                                    .chain(&self.population_threat)
+                                    .any(|t| t.npc == e.npc && t.contains(owner)));
                         (e.npc, resolved, active)
                     })
                     .collect();

@@ -323,6 +323,7 @@ impl Runtime {
 }
 
 impl super::Combat {
+    #[cfg(test)]
     pub(in crate::simulation::combat) fn threat_policy_target(
         &self,
     ) -> Option<theia_core::player_life::LifeKey> {
@@ -339,11 +340,6 @@ impl super::Combat {
             .policy
             .target()
     }
-    pub(in crate::simulation::combat) fn threat_current_victim(
-        &self,
-    ) -> Option<theia_core::player_life::LifeKey> {
-        self.threat_current_victim_for(self.pve.as_ref()?.npc)
-    }
     pub(in crate::simulation::combat) fn threat_current_victim_for(
         &self,
         npc: EntityKey,
@@ -359,6 +355,7 @@ impl super::Combat {
             .and_then(|r| r.directive().target)
             .or_else(|| actor.policy.target())
     }
+    #[cfg(test)]
     pub(in crate::simulation::combat) fn threat_candidate(
         &self,
         world: &crate::simulation::World,
@@ -395,6 +392,7 @@ impl super::Combat {
             && distance(anchor, position) <= runtime.settings.leash_metres)
             .then_some(target)
     }
+    #[cfg(test)]
     pub(in crate::simulation::combat) fn prepare_threat_transfer(
         &self,
         world: &crate::simulation::World,

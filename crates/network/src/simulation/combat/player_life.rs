@@ -61,14 +61,14 @@ impl Lives {
 }
 pub(super) struct Authority {
     pub(super) profile: Arc<Profile>,
-    npc: EntityKey,
+    pub(super) npc: EntityKey,
     policy: retaliation::State,
     error: Option<String>,
     metrics: Metrics,
     pursuit: Option<pursuit::Runtime>,
 }
 pub(super) struct PreparedRetaliation {
-    npc: EntityKey,
+    pub(super) npc: EntityKey,
     policy: retaliation::State,
 }
 impl Authority {
@@ -120,6 +120,7 @@ impl Combat {
     }
     pub(super) fn population_target_ready(&self, npc: EntityKey) -> bool {
         self.reset.as_ref().is_none_or(|reset| reset.ready())
+            && self.population_threat.iter().all(|threat| threat.ready())
             && self.population_encounter(npc).is_none_or(|(mode, _)| {
                 matches!(
                     mode,
@@ -140,16 +141,6 @@ impl Combat {
             directive.mode
         };
         Some((pve.npc, mode, directive.target))
-    }
-    /// Retained singleton threat/public-attack adapters require exactly one encounter.
-    pub(in crate::simulation::combat) fn checked_reset_encounter(
-        &self,
-    ) -> Result<(EntityKey, theia_core::pursuit::Mode, Option<LifeKey>)> {
-        let encounters = self.checked_reset_encounters()?;
-        if encounters.len() != 1 {
-            return Err("Adapter requires one pursuit encounter".into());
-        }
-        Ok(encounters[0])
     }
     pub(in crate::simulation::combat) fn checked_reset_encounters(
         &self,

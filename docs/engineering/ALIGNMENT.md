@@ -1,3 +1,25 @@
+P3-06 / P3-09 independent bounded population threat tables, 13 November 2026:
+The shared threat adapter now stores an independent bounded table per configured
+pursuing creature. Exact-victim facts, victim/path transfer, participant retirement,
+death/return cleanup and fresh-ID rebinding use the existing shared rules. Membership
+keeps participants active only for their own enemy's table. Profile identity is
+composed once, while diagnostics aggregate table counters and offer exact-NPC views.
+Normal population/editor threat launch remains gated pending ordinary typed-cast and
+live competing-attacker qualification. This core slice does not enable that flag.
+The authored-world 20/30/60 Hz check uses explicit trusted prepared threat facts to
+isolate table selection: two enemies choose different player lives, retain separate
+100-versus-1 threat contributions, remove the departed life and transfer back to the
+remaining life independently. It then passes return/reset isolation, ordinary weapon
+kill/credit and fresh-life respawn. The facts are not network damage input or ability
+timing evidence. The retained suite caught an old-key window on singleton respawn;
+shared respawn rebinding now updates both singleton and population tables immediately.
+All 504 network tests pass (13 ignored), the new authored-world check passes, and
+strict workspace/all-target Clippy, fmt and diff checks pass. Evidence:
+build/population-threat-tables-final-checks.log and population-threat-tables-world-tests.log.
+No native, competing live-client, public attack presentation or capacity claim for
+population threat yet. Next: ordinary typed damage-to-threat integration and then
+normal launcher/editor admission. Local only.
+
 P3-06 / P3-09 victim-bound prepared threat facts, 13 November 2026:
 Damage-to-threat preparation now receives the exact victim NPC from the existing
 credit fact, validates that encounter, and retains the NPC identity through commit.

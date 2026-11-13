@@ -379,6 +379,7 @@ impl Authority {
             && self.pve.is_none()
             && self.lives.as_ref().is_some_and(|lives| lives.ready())
             && self.reset.as_ref().is_none_or(|reset| reset.ready())
+            && self.population_threat.iter().all(|threat| threat.ready())
             && self
                 .physical
                 .as_ref()
