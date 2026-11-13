@@ -213,7 +213,7 @@ fn publish_mode(
             let clients = crate::network_test_export::write_scenario(zone, &store, &stage)?;
             fs::write(
                 stage.join("combat.json"),
-                include_bytes!("../../../content/gameplay/development-abilities.json"),
+                include_bytes!("../../../content/gameplay/development-resource-abilities.json"),
             )
             .map_err(|e| e.to_string())?;
             theia_network::player_life_wire::Profile::from_json(
@@ -536,7 +536,7 @@ mod tests {
         );
         assert_eq!(
             fs::read(output.join("combat.json")).unwrap(),
-            include_bytes!("../../../content/gameplay/development-abilities.json")
+            include_bytes!("../../../content/gameplay/development-resource-abilities.json")
         );
         let loaded = population::configuration::Loaded::open(
             &output.join("population.json"),

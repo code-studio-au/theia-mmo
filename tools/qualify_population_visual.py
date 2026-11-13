@@ -19,7 +19,7 @@ def run(args):
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     common = ['--authored-world', str(args.world.resolve()), '--prediction', '--classic',
-              '--combat-catalog', str(Path('content/gameplay/development-abilities.json').resolve()),
+              '--combat-catalog', str(args.combat_catalog.resolve()),
               '--population-config', str(args.population.resolve())]
     if args.player_life:
         common.extend(['--character-stats', str(Path('content/gameplay/development-character-stats.json').resolve()),
@@ -108,6 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--world', type=Path, required=True)
     parser.add_argument('--population', type=Path, required=True)
+    parser.add_argument('--combat-catalog', type=Path, default=Path('content/gameplay/development-abilities.json'), help='Exact combat catalogue to qualify, including an editor-exported snapshot')
     parser.add_argument('--player-life', action='store_true', help='Qualify standalone population health and public life state')
     parser.add_argument('--route', type=Path, help='Optional checked route controller; no OS movement input')
     parser.add_argument('--seconds', type=float, default=25, help='Bounded native observation duration (1..300 seconds)')

@@ -1,3 +1,23 @@
+P5-17 managed population mana-cost combat, 13 November 2026:
+Editor population exports now freeze the existing resource-aware Arcane Bolt
+catalogue (25 mana per cast) alongside their already exported character stats and
+shared life profiles. Managed playtests therefore advertise the real ability cost
+instead of the prior free development spell. This remains basic damage combat with
+development tickets; equipment, typed first-tag grants and durable inventory still
+require the separate account-backed launch. No new account bypass is introduced.
+The actual offline-baker export test, formatting, strict workspace/all-target
+Clippy and editor build pass. Fresh headless export plus two actual managed native
+clients pass: five wolf rigs, two admissions, completed authored controller, three
+public-life frames, zero rejected inputs/recoveries and clean shutdown. A separate
+native screenshot confirms the 25-mana action and health/mana UI with five wolves.
+No new cast-execution claim is made by these launch/UI checks. No OS input is used;
+the source zone is unchanged and owned processes/tickets are cleaned up.
+RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics; managed
+1280x720 clients and 1600x1000 visual check. Evidence:
+build/editor-population-mana-build.log,
+build/editor-population-mana-native-v1/verification.json and
+build/editor-population-mana-visual-v1/qualification.json/scene.png.
+
 P3-10 / P3-11 population repeat kill after restart, 13 November 2026:
 The native normal-launch qualifier can now kill again after database/server restart
 and fresh account login. Both exact server epochs defeat one NPC in five casts;
