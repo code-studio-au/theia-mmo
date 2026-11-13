@@ -1,3 +1,23 @@
+Requested future improvement — navigation-driven gameplay test travel, 13 November 2026:
+The user observed automated quest travel repeatedly alternating a few steps with
+several camera rotations and requested a better pathing approach. Track this as a
+future test-controller improvement under P4-03 navigation and the existing gameplay
+qualification work; it is not implemented and does not interrupt the active MMO/
+editor population slices. Reuse checked world/navigation routes and normal Classic
+movement/facing commands, with bounded turn rate, waypoint tolerance, progress
+monitoring and cancellation. Camera presentation should not be the navigation sensor
+or require repeated OS mouse corrections. Authority still owns collision, speed,
+positions, targeting, facing validation and combat; no teleport or authority bypass.
+Prerequisites: exact source/navigation identity, a checked route to the interaction/
+combat range, and existing prediction/correction and test-controller channels.
+Acceptance: repeat the walk-to-NPC / quest / approach-enemy / kill flow using real
+server commands, without step-spin cycles; stop cleanly on no route, stalled
+progress, invalidated target, death or manual takeover. Record arrival/range and
+server results separately from UI input tests. Keep a small dedicated native mouse/
+keyboard smoke test for controls; ordinary travel automation uses the controller.
+This is test-only path following, not a decision to add player auto-run-to-target,
+automatic combat facing or action-camera behavior to the adopted playable controls.
+
 P5-17 / P2-13 closeout scope, 12 November 2026: integrated authoring and
 bounded Linux world playback are implemented. Finish native preference
 save/relaunch and an instrumented editor memory soak, then return to playable

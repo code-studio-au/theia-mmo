@@ -1,3 +1,9 @@
+User steering, 13 November 2026: continue active MMO/editor implementation and
+local commits. Mouse/display use is now permitted as needed; earlier headless-only
+entries retain their historical evidence limits. Navigation-driven quest-test
+travel is requested as a future improvement; concrete scope/prerequisites and
+acceptance checks are recorded at the top of ROADMAP.md and CODEX_TASKS.md.
+
 P3-07 / P5-17 editor creature assignment and population inspection, 13 November 2026:
 Loaded gameplay context now retains its validated creature definition. Spawn-zone
 Attributes offers Use loaded creature, assigning only that logical reference via
