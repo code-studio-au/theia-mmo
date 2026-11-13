@@ -1138,9 +1138,7 @@ fn spawn_creature_assignment_commits_pending_fields_and_refreshes_loaded_context
         app.world_mut()
             .query::<&Text>()
             .iter(app.world())
-            .any(|text| text
-                .0
-                .contains("aggressive creature definitions are unsupported"))
+            .any(|text| text.0.contains("Pursuing definition resolved"))
     );
     // Context removal alone must refresh the cached inspection, without a zone edit.
     let revision = app.world().resource::<Session>().editor.revision();

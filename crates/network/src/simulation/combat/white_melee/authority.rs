@@ -174,7 +174,7 @@ impl World {
             .as_ref()
             .ok_or("Ordinary outcomes require combat")?;
         if combat.white_melee.is_some()
-            || (!combat.supports_white_melee() && !combat.passive_physical_ready(self))
+            || (!combat.supports_white_melee() && !combat.population_physical_ready(self))
         {
             return Err(
                 "Ordinary outcomes require a checked pursuit or passive population configuration"
@@ -284,7 +284,7 @@ impl Authority {
         weapon: &melee::Weapon,
         sequence: u64,
     ) -> Result<()> {
-        if (!self.ordinary_target_ready() && !self.passive_physical_ready(world))
+        if (!self.ordinary_target_ready() && !self.population_physical_ready(world))
             || self.events.len() + self.physical_melee_event_slots(target)
                 > self.step_event_budget()
             || !self.physical_target_matches(world, target)

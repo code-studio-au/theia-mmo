@@ -1,3 +1,11 @@
+Population gameplay/editor update, 13 November 2026: configured spawn-group NPCs
+now use shared perception, chase, collision-checked movement, melee facing, return
+and fresh-life respawn. Native exported-account chase/kill/corpse pickup and durable
+restart pass; multi-enemy return/kill/credit/respawn passes on the authored map at
+20/30/60 Hz. Next: per-creature evade/reset, threat transfer and public attack
+presentation, then competing live attackers. General content/AI authoring and
+broader navigation coverage remain separate. See STATUS for exact evidence/limits.
+
 Checked-travel quest acceptance, 13 November 2026: the full authored introduction,
 three-kill follow-up, checked outward/return legs, turn-in and durable restart/rejoin
 pass natively without step-spin camera steering. Endpoint input is now life-bound;

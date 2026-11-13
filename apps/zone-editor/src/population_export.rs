@@ -1,4 +1,4 @@
-//! Publish one checked passive population with its freshly exported static world.
+//! Publish one checked population with its freshly exported static world.
 //! Navigation stays in the external offline baker, never the editor or server graph.
 use std::{
     fs,
@@ -252,7 +252,7 @@ fn publish_mode(
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
-            "scope":"One checked passive population and matching static world/navigation; no server launched, model catalog, pursuit or quest publication"}});
+            "scope":"One checked population with configured creature behavior and matching static world/navigation; no server launched, model catalog or quest publication"}});
         fs::write(
             stage.join("population-export.json"),
             serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?,
@@ -439,7 +439,7 @@ mod tests {
             "../../../content/gameplay/development-creature-pursuit.json"
         ))
         .unwrap();
-        assert!(validate(&zone, &aggressive, 3.).is_err());
+        assert!(validate(&zone, &aggressive, 3.).is_ok());
     }
     #[test]
     #[cfg(unix)]

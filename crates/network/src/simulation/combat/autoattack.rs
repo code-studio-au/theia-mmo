@@ -342,9 +342,12 @@ impl Authority {
         if !self.player_alive(id) {
             return Err(Pause::DeadPlayer);
         }
+        if !self.population_target_ready(target) {
+            return Err(Pause::NotReady);
+        }
         if self.white_melee.is_some()
             && !self.ordinary_target_ready()
-            && !self.passive_physical_ready(world)
+            && !self.population_physical_ready(world)
         {
             return Err(Pause::NotReady);
         }

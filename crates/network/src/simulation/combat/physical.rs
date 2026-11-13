@@ -372,7 +372,7 @@ impl World {
     }
 }
 impl Authority {
-    pub(super) fn passive_physical_ready(&self, world: &World) -> bool {
+    pub(super) fn population_physical_ready(&self, world: &World) -> bool {
         world.population.is_some()
             && world.population_binding.is_some()
             && world.patrol.is_none()
@@ -384,11 +384,12 @@ impl Authority {
                 .is_some_and(|physical| physical.error.is_none())
     }
     pub(super) fn physical_target_matches(&self, world: &World, target: EntityKey) -> bool {
-        self.physical.as_ref().is_some_and(|physical| {
-            world
-                .creature_definition(target)
-                .is_some_and(|definition| definition.id() == physical.profile.creature_definition())
-        })
+        self.population_target_ready(target)
+            && self.physical.as_ref().is_some_and(|physical| {
+                world.creature_definition(target).is_some_and(|definition| {
+                    definition.id() == physical.profile.creature_definition()
+                })
+            })
     }
     pub(super) fn physical_melee_event_slots(&self, target: EntityKey) -> usize {
         if self.physical.is_none() {

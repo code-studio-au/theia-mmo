@@ -474,10 +474,37 @@ impl super::Combat {
         world: &crate::simulation::World,
     ) -> Option<PursuitMotion> {
         let mut pve = self.pve.take()?;
-        let Some(mut runtime) = pve.pursuit.take() else {
-            self.pve = Some(pve);
-            return None;
-        };
+        let blocked = world.patrol.as_ref().is_some_and(|p| p.motion_blocked);
+        let motion = self.advance_creature_pursuit(world, &mut pve, blocked);
+        self.pve = Some(pve);
+        motion
+    }
+    pub(in crate::simulation) fn advance_population_pursuit(
+        &mut self,
+        world: &crate::simulation::World,
+    ) -> Vec<(EntityKey, PursuitMotion)> {
+        let mut actors = std::mem::take(&mut self.retaliators);
+        let mut result = Vec::with_capacity(actors.len());
+        for pve in &mut actors {
+            let blocked = world
+                .population_motion
+                .iter()
+                .find(|p| p.key == pve.npc)
+                .is_none_or(|p| p.blocked);
+            if let Some(motion) = self.advance_creature_pursuit(world, pve, blocked) {
+                result.push((pve.npc, motion));
+            }
+        }
+        self.retaliators = actors;
+        result
+    }
+    fn advance_creature_pursuit(
+        &mut self,
+        world: &crate::simulation::World,
+        pve: &mut super::Authority,
+        blocked: bool,
+    ) -> Option<PursuitMotion> {
+        let mut runtime = pve.pursuit.take()?;
         let result = (|| -> Result<PursuitMotion> {
             if pve.error.is_some() {
                 return Err("Pursuit is halted after an authority error".into());
@@ -525,7 +552,6 @@ impl super::Combat {
             } else {
                 Vec::new()
             };
-            let blocked = world.patrol.as_ref().is_some_and(|p| p.motion_blocked);
             runtime.advance(
                 world.tick,
                 pve.npc,
@@ -570,21 +596,45 @@ impl super::Combat {
                 theia_core::retaliation::State::new(pve.profile.retaliation().clone(), world.rate);
         }
         pve.pursuit = Some(runtime);
-        self.pve = Some(pve);
         Some(motion)
     }
 }
 impl crate::simulation::World {
+    pub fn creature_pursuit_directive_for(&self, npc: EntityKey) -> Option<policy::Directive> {
+        let combat = self.combat.as_ref()?;
+        combat
+            .pve
+            .iter()
+            .chain(&combat.retaliators)
+            .find(|p| p.npc == npc)?
+            .pursuit
+            .as_ref()
+            .map(Runtime::directive)
+    }
+    /// Singleton metrics or sums across the bounded population. A population
+    /// has independent anchors, so its aggregate last_anchor remains None.
     pub fn creature_pursuit_metrics(&self) -> Option<Metrics> {
-        Some(
-            self.combat
-                .as_ref()?
-                .pve
-                .as_ref()?
-                .pursuit
-                .as_ref()?
-                .metrics(),
-        )
+        let combat = self.combat.as_ref()?;
+        if let Some(runtime) = combat.pve.as_ref().and_then(|p| p.pursuit.as_ref()) {
+            return Some(runtime.metrics());
+        }
+        let mut total = Metrics::default();
+        let mut found = false;
+        for runtime in combat.retaliators.iter().filter_map(|p| p.pursuit.as_ref()) {
+            found = true;
+            let m = runtime.metrics();
+            total.acquisitions += m.acquisitions;
+            total.chase_ticks += m.chase_ticks;
+            total.attack_ticks += m.attack_ticks;
+            total.returns += m.returns;
+            total.arrivals += m.arrivals;
+            total.blocked += m.blocked;
+            total.requests += m.requests;
+            total.published += m.published;
+            total.rejected += m.rejected;
+            total.failed += m.failed;
+        }
+        found.then_some(total)
     }
     pub fn creature_pursuit_directive(&self) -> Option<policy::Directive> {
         Some(

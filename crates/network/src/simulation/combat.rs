@@ -495,7 +495,9 @@ impl Authority {
         }
     }
     fn damage(&mut self, world: &mut World, hit: Hit) {
-        if self.reset.is_some() && !self.ordinary_target_ready() {
+        if !self.population_target_ready(hit.target)
+            || (self.reset.is_some() && !self.ordinary_target_ready())
+        {
             return;
         }
         self.apply_damage(
@@ -726,6 +728,9 @@ impl Authority {
         moved: bool,
     ) -> std::result::Result<(), Reason> {
         let actor = world.players.get(&id).ok_or(Reason::Interrupted)?;
+        if !self.population_target_ready(target) {
+            return Err(Reason::NotReady);
+        }
         if !self.player_alive(id) {
             return Err(Reason::Interrupted);
         }
@@ -1001,7 +1006,10 @@ impl Authority {
                     navigation.retire(previous);
                 }
                 creature.key.entity = theia_core::identity::EntityId::new(next).unwrap();
-                if let Some(home) = world.patrol_respawn(previous, creature.key) {
+                if let Some(home) = world
+                    .patrol_respawn(previous, creature.key)
+                    .or_else(|| world.population_respawn(previous, creature.key))
+                {
                     creature.position = home;
                 }
                 if let Some(pve) = &mut self.pve {

@@ -122,7 +122,7 @@ impl World {
         let combat = self.combat.as_ref().ok_or("Membership requires combat")?;
         let encounters = combat.membership_encounters(self)?;
         if combat.membership.is_some()
-            || (!combat.ordinary_target_ready() && !combat.passive_physical_ready(self))
+            || (!combat.ordinary_target_ready() && !combat.population_physical_ready(self))
             || combat.ability_damage.is_none()
             || combat.white_melee.is_none()
             || combat
@@ -192,7 +192,7 @@ impl Authority {
                 alive: self.creatures[0].current > 0,
             }]);
         }
-        if !self.passive_physical_ready(world) {
+        if !self.population_physical_ready(world) {
             return Err("Membership lost checked creature authority".into());
         }
         Ok(self
@@ -200,8 +200,10 @@ impl Authority {
             .iter()
             .map(|creature| Encounter {
                 npc: creature.key,
-                mode: Mode::Patrol,
-                target: None,
+                mode: self
+                    .population_encounter(creature.key)
+                    .map_or(Mode::Patrol, |e| e.0),
+                target: self.population_encounter(creature.key).and_then(|e| e.1),
                 alive: creature.current > 0,
             })
             .collect())

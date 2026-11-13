@@ -39,6 +39,8 @@ pub struct World {
     patrol_identity: Option<[u8; 32]>,
     population: Option<crate::navigation::spawn_preparation::Prepared>,
     population_binding: Option<population::Binding>,
+    population_motion: Vec<population::motion::Actor>,
+    population_navigation: Option<crate::navigation::worker::Worker>,
     quest_journal: Option<std::sync::Arc<crate::quest_journal::Profile>>,
     quest: Option<std::sync::Arc<crate::quest_wire::Profile>>,
     quest_lifecycle: Option<std::sync::Arc<crate::quest_lifecycle_wire::Profile>>,
@@ -104,6 +106,8 @@ impl Default for World {
             patrol_identity: None,
             population: None,
             population_binding: None,
+            population_motion: Vec::new(),
+            population_navigation: None,
             quest_journal: None,
             quest: None,
             quest_lifecycle: None,
@@ -1087,6 +1091,7 @@ impl World {
         let snapshot = self.step_movement();
         self.advance_creature_threat();
         self.advance_patrol();
+        self.advance_population_pursuit();
         self.advance_creature_credit();
         self.advance_creature_reset();
         if let Some(before) = before {

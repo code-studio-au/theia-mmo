@@ -187,6 +187,7 @@ pub enum Mode {
     Dead,
     Blocked,
 }
+#[derive(Clone, Copy)]
 pub(super) struct PursuitMotion {
     pub mode: theia_core::pursuit::Mode,
     pub goal: Option<GlobalPosition>,
@@ -377,7 +378,7 @@ impl Patrol {
             }
             return;
         }
-        if !world.move_patrol_target(self.key, position) {
+        if !world.move_creature_target(self.key, position) {
             self.body = before;
             self.mode = Mode::Dead;
             return;
@@ -494,7 +495,11 @@ impl World {
         });
         Ok(key)
     }
-    fn move_patrol_target(&mut self, key: EntityKey, position: GlobalPosition) -> bool {
+    pub(super) fn move_creature_target(
+        &mut self,
+        key: EntityKey,
+        position: GlobalPosition,
+    ) -> bool {
         let Some(target) = self
             .targets
             .get_mut(&key.entity.value())

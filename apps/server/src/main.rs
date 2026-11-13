@@ -370,10 +370,22 @@ async fn main() -> Result<()> {
                 .source;
             let loaded =
                 theia_network::simulation::population::configuration::Loaded::open(&path, source)?;
+            if loaded.definition().aggro().is_some()
+                && (creature_retaliation.is_none() || player_respawn.is_none())
+            {
+                return Err(
+                    "Aggressive population requires player-life and retaliation profiles".into(),
+                );
+            }
+            let pursuit_worker = loaded.pursuit_worker()?;
             respawn_ms = loaded.respawn_ms();
             population_bytes = Some(loaded.creature_bytes().to_vec());
             let (prepared, binding) = loaded.into_parts();
-            let targets = world.enable_defined_population(prepared, binding)?;
+            let targets = if let Some(worker) = pursuit_worker {
+                world.enable_navigating_population(prepared, binding, worker)?
+            } else {
+                world.enable_defined_population(prepared, binding)?
+            };
             println!(
                 "development_population count={} respawn_ms={respawn_ms}",
                 targets.len()

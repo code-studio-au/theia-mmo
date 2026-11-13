@@ -20,6 +20,8 @@ from qualify_world_input_os import wait, capture_ready
 def run(args):
     if args.creature_loot and args.repeat_kill:
         raise ValueError('Corpse acceptance uses the normal launcher and one kill followed by restart')
+    if args.pursuit and not args.creature_loot:
+        raise ValueError('Pursuit acceptance requires the corpse-loot lifecycle check')
     args.claim_reward = args.claim_reward or args.creature_loot
     expected_revision = 4 if args.creature_loot else 2
     expected_claims = 3 if args.creature_loot else 1
@@ -141,7 +143,7 @@ def run(args):
                         combat = value.get('combat') or {}
                         return value if (value['connected'] and len(value.get('combat_targets') or []) == 5
                             and value.get('inventory_bag') and combat.get('membership_events', 0) > 0
-                            and combat.get('player_health') == 100 and value.get('public_avatar_life')
+                            and (0 < combat.get('player_health', 0) <= 100 if args.pursuit else combat.get('player_health') == 100) and value.get('public_avatar_life')
                             and (value.get('creature_visuals') or {}).get('players') == 5
                             and (value.get('minimap') or {}).get('known_pixels', 0) > 0) else None
                     if use_picker:
@@ -164,7 +166,8 @@ def run(args):
                     # finish. Allow the same bounded warmup on fresh and resumed runs.
                     admitted_at = time.monotonic()
                     observed = wait(lambda: ready() if time.monotonic()-admitted_at >= 10 else None, 20)
-                    assert observed['combat']['in_combat'] is False
+                    if not args.pursuit:
+                        assert observed['combat']['in_combat'] is False
                     combat_proof = None
                     if execute_combat:
                         (folder/'combat.start').write_text('start\n')
@@ -182,7 +185,7 @@ def run(args):
                         if args.creature_loot:
                             assert combat_proof['corpse_pickups'] == 2
                         assert 0 < combat_proof['player_health'] <= 100 and combat_proof['remaining'] < 100
-                        if args.creature_loot:
+                        if args.creature_loot or args.pursuit:
                             assert combat_proof['incoming_retaliation'] and combat_proof['player_health'] < 100
                         else:
                             assert combat_proof['player_health'] == 100
@@ -246,6 +249,11 @@ def run(args):
                     assert transport['reward_opportunities_forwarded'] == expected_claims
                     assert saved['worker']['experience_committed'] == 1
                 assert transport['rejected_inputs'] == 0
+                if args.pursuit:
+                    pursuit = transport['creature_pursuit']
+                    assert pursuit['acquisitions'] > 0 and pursuit['chase_ticks'] > 0 and pursuit['published'] > 0
+                    assert pursuit['failed'] == 0 and pursuit['blocked'] == 0
+                    results[-1]['pursuit'] = pursuit
             assert saved['worker']['incompatible_gameplay_profiles'] == 0
             account = next(json.loads(line.removeprefix('account_summary '))
                            for line in server.splitlines() if line.startswith('account_summary '))
@@ -280,7 +288,7 @@ def run(args):
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
     result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=not args.picker, character_picker_rejoin=args.picker, character_picker_creation=args.create_picker, owner_pipe_stop=args.owned_stop, isolated_sessions=True, frozen_account_package=args.account_package,
-        mouse_or_keyboard_automation=False, scope=('Normal population corpse pickup through ordinary private requests, committed inventory and database restart; no OS input; stationary provoked retaliation verified' if args.creature_loot else 'Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
+        mouse_or_keyboard_automation=False, configured_pursuit=args.pursuit, scope=('Configured population chase and retaliation with normal corpse pickup, committed inventory and database restart; no OS input; no population evade-reset or public attack stream claim' if args.pursuit else 'Normal population corpse pickup through ordinary private requests, committed inventory and database restart; no OS input; stationary provoked retaliation verified' if args.creature_loot else 'Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 
@@ -297,6 +305,7 @@ if __name__ == '__main__':
     parser.add_argument('--kill', action='store_true', help='Defeat one NPC and verify durable first-tag XP and training reward')
     parser.add_argument('--combat', action='store_true', help='Equip and cast through normal network commands without OS input')
     parser.add_argument('--population', type=Path, required=True)
+    parser.add_argument('--pursuit', action='store_true', help='Require configured NPC acquisition, checked chase and retaliation')
     parser.add_argument('--players', type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)

@@ -103,6 +103,31 @@ impl Authority {
     }
 }
 impl Combat {
+    pub(in crate::simulation::combat) fn population_encounter(
+        &self,
+        npc: EntityKey,
+    ) -> Option<(theia_core::pursuit::Mode, Option<LifeKey>)> {
+        let actor = self.retaliators.iter().find(|p| p.npc == npc)?;
+        let directive = actor.pursuit.as_ref()?.directive();
+        Some((
+            if actor.error.is_some() {
+                theia_core::pursuit::Mode::Blocked
+            } else {
+                directive.mode
+            },
+            directive.target,
+        ))
+    }
+    pub(super) fn population_target_ready(&self, npc: EntityKey) -> bool {
+        self.population_encounter(npc).is_none_or(|(mode, _)| {
+            matches!(
+                mode,
+                theia_core::pursuit::Mode::Patrol
+                    | theia_core::pursuit::Mode::Chase
+                    | theia_core::pursuit::Mode::Attack
+            )
+        })
+    }
     pub(in crate::simulation::combat) fn membership_encounter(
         &self,
     ) -> Option<(EntityKey, theia_core::pursuit::Mode, Option<LifeKey>)> {
@@ -561,9 +586,17 @@ impl World {
         });
         Ok(())
     }
-    /// Neutral stationary creatures reuse the same retaliation policy independently.
-    /// No perception, pursuit, threat transfer or public attack stream is implied.
+    /// Install shared per-creature retaliation, plus configured pursuit when
+    /// prepared navigation and collision bodies were installed before combat.
+    /// Threat transfer and public attack streams remain separate adapters.
     pub fn enable_population_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {
+        let settings = self
+            .population_binding
+            .as_ref()
+            .and_then(|b| b.definition().aggro());
+        if settings.is_some() && self.population_navigation.is_none() {
+            return Err("Population pursuit navigation unavailable".into());
+        }
         self.enable_passive_population_player_life(profile.clone())?;
         let combat = self.combat.as_mut().unwrap();
         combat.retaliators = combat
@@ -578,6 +611,18 @@ impl World {
                 pursuit: None,
             })
             .collect();
+        if let Some(settings) = settings {
+            let worker = self.population_navigation.take().unwrap();
+            for actor in &mut combat.retaliators {
+                actor.pursuit = Some(pursuit::Runtime::new(
+                    settings,
+                    actor.npc,
+                    self.rate,
+                    worker.navigation(),
+                )?);
+            }
+            combat.pursuit_navigation = Some(crate::navigation::scheduler::Scheduler::new(worker));
+        }
         Ok(())
     }
     pub fn enable_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {

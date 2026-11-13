@@ -162,7 +162,7 @@ impl World {
         }
         let keys = if let Some((npc, _, _)) = combat.membership_encounter() {
             vec![npc]
-        } else if combat.passive_physical_ready(self) {
+        } else if combat.population_physical_ready(self) {
             combat
                 .creatures
                 .iter()
@@ -384,9 +384,23 @@ impl Authority {
             if runtime.error.is_some() {
                 return Ok(());
             }
-            if self.passive_physical_ready(world) {
+            if self.population_physical_ready(world) {
                 let keys: Vec<_> = self.creatures.iter().map(|creature| creature.key).collect();
-                return runtime.sync_passive(world.tick, &keys);
+                runtime.sync_passive(world.tick, &keys)?;
+                for key in keys {
+                    let resetting = self
+                        .population_encounter(key)
+                        .is_some_and(|(mode, _)| matches!(mode, Mode::Return | Mode::Blocked));
+                    let entry = runtime.encounters.get_mut(&key.entity.value()).unwrap();
+                    if entry.last_kill.is_none() && resetting && !entry.reset_mode {
+                        entry
+                            .ledger
+                            .reset(world.tick, entry.ledger.encounter())
+                            .map_err(|e| format!("Creature credit reset refused: {e:?}"))?;
+                    }
+                    entry.reset_mode = resetting;
+                }
+                return Ok(());
             }
             let (npc, mode, _) = self
                 .membership_encounter()

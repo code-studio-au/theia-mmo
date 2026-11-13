@@ -965,3 +965,271 @@ fn check_retaliators(world: &mut World, players: &[u64], keys: &[EntityKey], rat
     assert!(world.player_life_error().is_none());
     assert!(world.player_life_metrics().unwrap().strikes >= 2);
 }
+
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_shared_pursuit_chases_attacks_and_returns_each_home_at_all_rates() {
+    use theia_core::pursuit::Mode;
+    let store = Arc::new(
+        authored_world::Store::open(std::path::Path::new(
+            &std::env::var_os("THEIA_AUTHORED_WORLD").unwrap(),
+        ))
+        .unwrap(),
+    );
+    let nav = navigation::Store::open(
+        std::path::Path::new(&std::env::var_os("THEIA_AUTHORED_NAV").unwrap()),
+        store.identity(),
+    )
+    .unwrap();
+    let request: Request = serde_json::from_slice(
+        &std::fs::read(std::env::var_os("THEIA_AUTHORED_SPAWNS").unwrap()).unwrap(),
+    )
+    .unwrap();
+    let mut creature: serde_json::Value = serde_json::from_slice(CREATURE).unwrap();
+    creature["aggro"] = serde_json::json!({"perception_metres":30.,"leash_metres":50.,"chase_speed":5.,"return_speed":5.,"los_grace_ms":2000,"engagement_ms":30000,"reacquire_ms":2000});
+    let creature = serde_json::to_vec(&creature).unwrap();
+    let definition = creatures::Definition::from_json(&creature).unwrap();
+    let mut stats: serde_json::Value = serde_json::from_slice(STATS).unwrap();
+    stats["maximum_health"] = 1000.into();
+    let stats = serde_json::to_vec(&stats).unwrap();
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let prepared = spawn_preparation::check_authored(&store, &nav, &request)
+            .unwrap()
+            .into_prepared()
+            .unwrap();
+        let saved = store.spawn(0).unwrap().metres();
+        let mut world = World::with_terrain_source(
+            [saved[0], saved[2]],
+            1.,
+            procedural::Source::Authored(store.clone()),
+        )
+        .unwrap();
+        assert!(world.set_tick_rate(rate));
+        world.enable_prediction().unwrap();
+        world.enable_classic().unwrap();
+        let keys = world
+            .enable_navigating_population(
+                prepared,
+                Binding::new(definition.id(), definition.clone(), 1).unwrap(),
+                navigation::worker::Worker::load(&nav).unwrap(),
+            )
+            .unwrap();
+        let homes: Vec<_> = keys
+            .iter()
+            .map(|k| world.targets[&k.entity.value()].position)
+            .collect();
+        world
+            .enable_status_combat(
+                include_bytes!(
+                    "../../../../../../content/gameplay/development-classic-abilities.json"
+                ),
+                100,
+                1000,
+                &stats,
+                include_bytes!("../../../../../../content/gameplay/development-statuses.json"),
+            )
+            .unwrap();
+        world.enable_autoattack(WEAPONS, ITEMS).unwrap();
+        let life = crate::player_life_wire::Profile::from_json(
+            &stats,
+            &creature,
+            include_bytes!(
+                "../../../../../../content/gameplay/development-creature-retaliation.json"
+            ),
+            include_bytes!("../../../../../../content/gameplay/development-player-respawn.json"),
+        )
+        .unwrap();
+        world.enable_population_player_life(Arc::new(life)).unwrap();
+        world
+            .enable_physical_damage(DEFINITIONS, DAMAGE_STATS, ITEMS)
+            .unwrap();
+        world
+            .enable_white_melee(include_bytes!(
+                "../../../../../../content/gameplay/development-white-melee.json"
+            ))
+            .unwrap();
+        world
+            .enable_ability_damage(
+                include_bytes!(
+                    "../../../../../../content/gameplay/development-ability-starting.json"
+                ),
+                include_bytes!(
+                    "../../../../../../content/gameplay/development-ability-damage.json"
+                ),
+                include_bytes!(
+                    "../../../../../../content/gameplay/development-classic-abilities.json"
+                ),
+            )
+            .unwrap();
+        world
+            .enable_combat_membership(include_bytes!(
+                "../../../../../../content/gameplay/development-combat-membership.json"
+            ))
+            .unwrap();
+        world
+            .enable_creature_credit(include_bytes!(
+                "../../../../../../content/gameplay/development-creature-credit-solo.json"
+            ))
+            .unwrap();
+        let encounters: Vec<_> = keys
+            .iter()
+            .map(|k| world.creature_credit_encounter_for(*k).unwrap())
+            .collect();
+        let mut body = request.access_from;
+        body[1] += f64::from(crate::world::PAWN_Y);
+        let actor = world
+            .join_restored(GlobalPosition::new(body).unwrap())
+            .unwrap();
+        let chunks = world
+            .procedural()
+            .unwrap()
+            .patch(world.global_position(actor).unwrap())
+            .unwrap()
+            .ids
+            .iter()
+            .map(|c| [c.x, c.z])
+            .collect();
+        assert!(world.client_ready(
+            actor,
+            &ChunkReady {
+                version: VERSION,
+                epoch: world.epoch(),
+                sequence: 1,
+                chunks
+            }
+        ));
+        let mut moved = std::collections::BTreeSet::new();
+        for _ in 0..rate.hz() * 8 {
+            world.poll_terrain();
+            world.step();
+            assert!(
+                world.player_life_error().is_none(),
+                "{:?}",
+                world.player_life_error()
+            );
+            for (key, home) in keys.iter().zip(&homes) {
+                let a = world.targets[&key.entity.value()].position.metres();
+                let b = home.metres();
+                if (a[0] - b[0]).hypot(a[2] - b[2]) > 1. {
+                    moved.insert(key.entity.value());
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        assert!(
+            moved.len() >= 2,
+            "{rate:?}: only {} creatures chased",
+            moved.len()
+        );
+        assert!(world.player_life_snapshot(actor).unwrap().health < 1000);
+        assert!(world.combat_membership(actor).unwrap().in_combat());
+        assert!(world.combat_membership_error().is_none());
+        assert!(world.creature_credit_error().is_none());
+        world.leave(actor);
+        for _ in 0..rate.hz() * 10 {
+            world.poll_terrain();
+            world.step();
+            assert!(
+                world.player_life_error().is_none(),
+                "{:?}",
+                world.player_life_error()
+            );
+            if keys
+                .iter()
+                .all(|k| world.creature_pursuit_directive_for(*k).unwrap().mode == Mode::Patrol)
+            {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        for (key, home) in keys.iter().zip(&homes) {
+            let directive = world.creature_pursuit_directive_for(*key).unwrap();
+            assert_eq!(directive.mode, Mode::Patrol, "{rate:?} {key:?}");
+            let a = world.targets[&key.entity.value()].position.metres();
+            let b = home.metres();
+            assert!(
+                (a[0] - b[0]).hypot(a[2] - b[2]) < 0.2,
+                "Creature did not return to its own home"
+            );
+        }
+        for (key, old) in keys.iter().zip(&encounters) {
+            if moved.contains(&key.entity.value()) {
+                assert_ne!(world.creature_credit_encounter_for(*key).unwrap(), *old);
+            }
+        }
+        assert!(world.combat_membership_error().is_none());
+        assert!(world.creature_credit_error().is_none());
+        // Kill through the ordinary weapon path after the return, then ensure
+        // the replacement life owns a fresh controller and its original home.
+        let hunter = world
+            .join_restored(world.targets[&keys[0].entity.value()].position)
+            .unwrap();
+        let chunks = world
+            .procedural()
+            .unwrap()
+            .patch(homes[0])
+            .unwrap()
+            .ids
+            .iter()
+            .map(|c| [c.x, c.z])
+            .collect();
+        assert!(world.client_ready(
+            hunter,
+            &ChunkReady {
+                version: VERSION,
+                epoch: world.epoch(),
+                sequence: 1,
+                chunks
+            }
+        ));
+        equip(&mut world, hunter, 1, "theia.dev.training-sword");
+        engage(&mut world, hunter, keys[0], 1);
+        for _ in 0..rate.hz() * 45 {
+            world.poll_terrain();
+            world.step();
+            if !world.targets.contains_key(&keys[0].entity.value()) {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        assert!(
+            !world.targets.contains_key(&keys[0].entity.value()),
+            "Ordinary weapon failed: auto={:?}, life={:?}, credit={:?}, membership={:?}",
+            world.autoattack_snapshot(hunter),
+            world.player_life_snapshot(hunter),
+            world.creature_credit_error(),
+            world.combat_membership_error()
+        );
+        assert_eq!(
+            world.creature_kill_credit_for(keys[0]).unwrap().owner,
+            world.entity_key(hunter)
+        );
+        world.leave(hunter);
+        for _ in 0..rate.hz() * 2 {
+            world.poll_terrain();
+            world.step();
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        let fresh = world.combat.as_ref().unwrap().creatures[0].key;
+        assert_ne!(fresh, keys[0]);
+        assert!(world.creature_pursuit_directive_for(keys[0]).is_none());
+        assert_eq!(
+            world.creature_pursuit_directive_for(fresh).unwrap().mode,
+            Mode::Patrol
+        );
+        assert!(
+            world
+                .combat
+                .as_ref()
+                .unwrap()
+                .pursuit_navigation
+                .as_ref()
+                .unwrap()
+                .pending(keys[0])
+                .is_none()
+        );
+        let a = world.targets[&fresh.entity.value()].position.metres();
+        let b = homes[0].metres();
+        assert!((a[0] - b[0]).hypot(a[2] - b[2]) < 0.2);
+    }
+}

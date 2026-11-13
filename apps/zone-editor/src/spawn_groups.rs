@@ -89,7 +89,7 @@ fn inspect_binding(
     };
     let mut report = format!("Loaded creature: {}", definition.id().as_str());
     match theia_network::simulation::population::authoring::binding(zone, id, definition.clone()) {
-        Ok(binding) => report.push_str(&format!("\nPassive definition resolved · respawn {} s\nPlacement still needs world/navigation checks", binding.respawn_ms() / 1000)),
+        Ok(binding) => report.push_str(&format!("\n{} definition resolved · respawn {} s\nPlacement still needs world/navigation checks", if binding.definition().aggro().is_some() { "Pursuing" } else { "Passive" }, binding.respawn_ms() / 1000)),
         Err(error) => report.push_str(&format!("\nPopulation: {error}")),
     }
     report
@@ -456,7 +456,7 @@ mod tests {
         changed.creature = expected.into();
         assert_eq!(session.editor.zone().spawn_groups[0], changed);
         assert!(!can_bind_creature(&session));
-        assert!(inspection(&session).contains("aggressive creature definitions are unsupported"));
+        assert!(inspection(&session).contains("Pursuing definition resolved"));
         assert_eq!(session.saved_zone, saved);
         session.execute(Command::Undo {
             expected_revision: session.editor.revision(),

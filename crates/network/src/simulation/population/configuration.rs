@@ -6,7 +6,7 @@ use std::path::{Component, Path, PathBuf};
 
 const MAX_BYTES: u64 = 4096;
 
-/// Keep passive pools separate from singleton pursuit/reset and unqualified grant modes.
+/// Keep pools separate from singleton pursuit/reset and unqualified grant modes.
 pub fn validate_launch(args: &[String]) -> Result<()> {
     let count = args
         .iter()
@@ -37,9 +37,7 @@ pub fn validate_launch(args: &[String]) -> Result<()> {
         "--public-creature-attacks",
     ] {
         if args.iter().any(|a| a == unsupported) {
-            return Err(
-                format!("Passive population configuration does not support {unsupported}").into(),
-            );
+            return Err(format!("Population configuration does not support {unsupported}").into());
         }
     }
     if args
@@ -69,6 +67,7 @@ pub struct Loaded {
     prepared: navigation::spawn_preparation::Prepared,
     binding: Binding,
     creature_bytes: Vec<u8>,
+    navigation: navigation::Store,
 }
 impl Loaded {
     pub fn open(path: &Path, source: &procedural::Source) -> Result<Self> {
@@ -107,6 +106,7 @@ impl Loaded {
             prepared,
             binding,
             creature_bytes,
+            navigation: nav,
         })
     }
     pub fn profile_identity(&self, base: [u8; 32]) -> [u8; 32] {
@@ -125,6 +125,14 @@ impl Loaded {
     }
     pub fn count(&self) -> usize {
         self.prepared.points().len()
+    }
+    /// Server startup only; clients retain the same checked content identity
+    /// without starting an unused navigation thread.
+    pub fn pursuit_worker(&self) -> Result<Option<navigation::worker::Worker>> {
+        self.definition()
+            .aggro()
+            .map(|_| navigation::worker::Worker::load(&self.navigation))
+            .transpose()
     }
     pub fn into_parts(self) -> (navigation::spawn_preparation::Prepared, Binding) {
         (self.prepared, self.binding)

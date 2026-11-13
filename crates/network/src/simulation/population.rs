@@ -1,7 +1,8 @@
-//! Atomic admission of one checked stationary population before players/combat.
-//! This does not bind creature AI, models, group-specific rewards or roaming.
+//! Atomic admission of checked creature placements before players/combat.
+//! Optional prepared pursuit reuses the ordinary AI and static-world controller.
 pub mod authoring;
 pub mod configuration;
+pub(super) mod motion;
 use super::World;
 use crate::{
     Result,
@@ -13,8 +14,8 @@ use theia_core::{
     identity::{EntityId, EntityKey},
 };
 
-/// One resolved passive creature type and its authored group respawn policy.
-/// Presentation/model resolution and multi-creature pursuit remain separate.
+/// One resolved creature type and its authored group respawn policy.
+/// Presentation/model resolution remains separate.
 #[derive(Clone)]
 pub struct Binding {
     definition: super::creatures::Definition,
@@ -28,9 +29,6 @@ impl Binding {
     ) -> Result<Self> {
         if definition.id() != requested {
             return Err("Population creature reference does not match its definition".into());
-        }
-        if definition.aggro().is_some() {
-            return Err("Population pursuit is not connected; aggressive creature definitions are unsupported".into());
         }
         if !(1..=super::combat::MAX_RESPAWN_MS / 1000).contains(&respawn_seconds) {
             return Err("Population respawn delay must be 1..86400 seconds".into());
@@ -79,29 +77,107 @@ impl World {
         }
         self.population_binding.as_ref().map(Binding::definition)
     }
-    /// Exact live creature orientation. Stationary passive populations currently
-    /// spawn facing -Z (zero yaw), matching their stationary presentation; they
-    /// never track a selected player. Authored headings and pursuit are separate.
+    /// Exact live creature orientation. Stationary definitions spawn facing -Z;
+    /// pursuing creatures face their movement or their own current attack target.
     pub fn creature_facing(&self, key: EntityKey) -> Option<theia_core::facing::Facing> {
         self.creature_definition(key)?;
         if self.patrol.is_some() {
             self.patrol_facing(key)
         } else {
             self.population.as_ref()?;
-            Some(theia_core::facing::Facing::default())
+            Some(
+                self.population_motion
+                    .iter()
+                    .find(|p| p.key == key)
+                    .map_or_else(theia_core::facing::Facing::default, |p| p.facing),
+            )
         }
     }
-    /// Resolve one passive creature type for this pool before publishing actors.
-    /// Multi-creature pursuit is not installed yet; aggressive definitions fail
-    /// explicitly rather than silently losing their behavior.
+    /// Publish stationary definitions. Pursuing definitions must use the
+    /// prepared-navigation installer rather than silently losing their behavior.
     pub fn enable_defined_population(
         &mut self,
         prepared: Prepared,
         binding: Binding,
     ) -> Result<Vec<EntityKey>> {
+        if binding.definition().aggro().is_some() {
+            return Err("Aggressive population requires prepared pursuit navigation".into());
+        }
         let keys = self.enable_prepared_population(prepared)?;
         self.population_binding = Some(binding);
         Ok(keys)
+    }
+    /// Prepare all collision bodies and one shared worker before publishing actors.
+    /// Matching player-life installation subsequently binds the ordinary AI policy.
+    pub fn enable_navigating_population(
+        &mut self,
+        prepared: Prepared,
+        binding: Binding,
+        worker: crate::navigation::worker::Worker,
+    ) -> Result<Vec<EntityKey>> {
+        if binding.definition().aggro().is_none()
+            || worker.navigation() != prepared.navigation_identity()
+        {
+            return Err("Population pursuit requires matching settings and navigation".into());
+        }
+        let mut motion = Vec::with_capacity(prepared.points().len());
+        for (index, feet) in prepared.points().iter().enumerate() {
+            let owner = crate::procedural::owner(*feet).ok_or("Invalid population patch owner")?;
+            let patch = prepared
+                .patches()
+                .iter()
+                .find(|p| p.owner == owner)
+                .ok_or("Missing prepared population collision")?
+                .clone();
+            let mut position = feet.metres();
+            position[1] += f64::from(crate::world::PAWN_Y);
+            let key = EntityKey {
+                epoch: self.epoch,
+                entity: EntityId::new(
+                    self.next_id
+                        .checked_add(index as u64 + 1)
+                        .ok_or("Population IDs exhausted")?,
+                )
+                .ok_or("Invalid population ID")?,
+            };
+            motion.push(motion::Actor::new(
+                key,
+                GlobalPosition::new(position).ok_or("Invalid population position")?,
+                patch,
+            )?);
+        }
+        let keys = self.enable_prepared_population(prepared)?;
+        self.population_binding = Some(binding);
+        self.population_motion = motion;
+        self.population_navigation = Some(worker);
+        Ok(keys)
+    }
+    pub(super) fn advance_population_pursuit(&mut self) {
+        if self.population_motion.is_empty() {
+            return;
+        }
+        let Some(mut combat) = self.combat.take() else {
+            return;
+        };
+        let directives = combat.advance_population_pursuit(self);
+        self.combat = Some(combat);
+        let mut actors = std::mem::take(&mut self.population_motion);
+        for actor in &mut actors {
+            if let Some((_, directive)) = directives.iter().find(|(key, _)| *key == actor.key) {
+                actor.advance(self, *directive);
+            }
+        }
+        self.population_motion = actors;
+    }
+    pub(super) fn population_respawn(
+        &mut self,
+        previous: EntityKey,
+        next: EntityKey,
+    ) -> Option<GlobalPosition> {
+        self.population_motion
+            .iter_mut()
+            .find(|p| p.key == previous)
+            .map(|p| p.respawn(next))
     }
     /// Definition for an exact live actor incarnation, independent of its route.
     /// Unbound development targets and retired incarnations return None.

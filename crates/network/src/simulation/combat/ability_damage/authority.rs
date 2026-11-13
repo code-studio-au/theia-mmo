@@ -151,7 +151,7 @@ impl World {
             .as_ref()
             .ok_or("Ability damage requires combat")?;
         if combat.ability_damage.is_some()
-            || (!combat.supports_white_melee() && !combat.passive_physical_ready(self))
+            || (!combat.supports_white_melee() && !combat.population_physical_ready(self))
             || crate::terrain::sha256(abilities) != combat.catalog_digest
         {
             return Err(
@@ -201,7 +201,7 @@ impl Authority {
         hit: &Hit,
     ) -> Result<()> {
         if hit.sequence == 0
-            || (!self.ordinary_target_ready() && !self.passive_physical_ready(world))
+            || (!self.ordinary_target_ready() && !self.population_physical_ready(world))
             || world.entity_key(hit.actor.entity.value()) != Some(hit.actor)
             || self.events.len() + self.physical_melee_event_slots(hit.target)
                 > self.step_event_budget()

@@ -155,8 +155,11 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
             .iter()
             .filter(|target| {
                 let b = target.position.metres();
-                let distance = (a[0] - b[0]).hypot(a[2] - b[2]);
-                distance < if run.collect_loot { 2.8 } else { 25. }
+                let distance =
+                    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt();
+                // Pursuit stops just inside the ordinary 3 m melee reach.
+                // Keep pickup selection inside the same 3D interaction bound.
+                distance < if run.collect_loot { 2.95 } else { 25. }
                     && arc.contains(facing, position, target.position)
                     && combat
                         .targets

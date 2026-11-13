@@ -1,3 +1,48 @@
+P3-06 / P3-09 / P5-17 configured pursuit for editor populations, 13 November 2026:
+Spawn groups can now bind definitions with existing aggro settings. The normal
+server prepares one shared navigation worker plus independent collision bodies
+before admission; matching player-life setup installs the ordinary pursuit and
+retaliation controller per creature. Definitions without aggro retain stationary
+behavior. A group controls placement/count/respawn, not alternate combat rules.
+Pursuing creatures perceive, chase, face their own target in melee, return to their
+own anchor and respawn at their checked home with a fresh entity/path identity.
+Movement reuses the patrol's static-world controller and prepared coverage. No
+search, file access or awaited I/O was added to simulation steps. Membership and
+credit now observe each creature's phase; return/blocked phases refuse new attacks
+and reset that encounter's credit without changing other creatures' records.
+Editor creature inspection resolves pursuing definitions, and export carries those
+settings through the existing owned account launch. Existing singleton threat,
+evade-health/reset and public attack-stream adapters remain explicitly gated for
+populations; this slice does not claim those features or general AI authoring.
+All 502 network library tests pass (11 ignored); all 11 authored population checks
+pass separately, including encrypted ownership/private grant fixtures. The new
+actual-world test runs at 20/30/60 Hz: several enemies chase and retaliate, disconnect
+causes independent returns, credit encounters reset, ordinary weapon damage kills,
+kill credit belongs to the attacker, and the fresh life returns to its own home
+without an old navigation slot. It uses explicit 1000-health players to separate
+lifecycle checks from encounter balance. All 242 editor tests pass (11 asset checks
+ignored), 20 Python launcher tests pass (one skipped), strict workspace/all-target
+Clippy and fmt pass. Evidence: build/population-pursuit-final-checks.log and
+population-pursuit-world-tests.log.
+The actual headless editor export and native owned account launcher pass with a
+pursuing definition: one nearby enemy follows a checked path, attacks, dies after
+six casts, leaves two consumed corpse claims, and awards 25 XP. Four bystanders
+remain undamaged. Inventory revision 4, one pelt and 101 tokens survive PostgreSQL
+restart/character rejoin. Health is transient: 50 at first exit; the new runtime
+attacks again after rejoin (81 when observed), not persisted health. Both launches
+report acquisition/chase/published routes with zero blocked/failed paths. Zero GPU
+diagnostics on Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; screenshot
+inspected, no OS input automation. Evidence: build/population-pursuit-native-v3/
+qualification.json, pursuit-evidence.json and fresh/resumed server logs. The first
+native attempts exposed old harness assumptions (initially out of combat and a
+2.8 m corpse filter); the harness now permits configured acquisition and selects
+inside the actual 3 m three-dimensional pickup limit. The v3 supplemental evidence
+corrects its older report scope string using saved authoritative metrics.
+No native Windows, MMO-scale capacity, population threat/evade-reset/public attack
+presentation, or movement beyond prepared collision coverage claim. Next: connect
+the retained shared evade/reset and threat adapters per creature, then qualify
+multiple competing live attackers and public attack presentation. Local only.
+
 P3-06 / P3-09 shared checked creature displacement, 13 November 2026:
 Extracted the existing patrol's body-centre/feet conversion and Avian/static-world
 step into a shared creature movement function. It uses the same prepared patch,
