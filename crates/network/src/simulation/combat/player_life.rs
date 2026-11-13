@@ -492,6 +492,44 @@ impl Combat {
     }
 }
 impl World {
+    /// Shared player health/respawn in the checked passive pool. This installs
+    /// no NPC retaliation, pursuit, membership, typed damage or credit policy.
+    /// Normal population launch flags remain gated until those slices qualify.
+    pub fn enable_passive_population_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {
+        let binding = self
+            .population_binding
+            .as_ref()
+            .ok_or("Population player life requires a bound passive creature type")?;
+        let combat = self
+            .combat
+            .as_ref()
+            .ok_or("Population player life requires resource combat")?;
+        if self.tick != 0
+            || !self.players.is_empty()
+            || !self.predicted
+            || !self.classic
+            || self.population.is_none()
+            || self.patrol.is_some()
+            || combat.lives.is_some()
+            || combat.pve.is_some()
+            || combat.resources_hash != Some(profile.stats_hash())
+            || binding.definition().identity() != profile.creature_definition_identity()
+            || combat.creatures.is_empty()
+            || combat.creatures.len() > crate::targeting::MAX_TARGETS
+        {
+            return Err(
+                "Population player life requires matching inactive type/stats and checked actors"
+                    .into(),
+            );
+        }
+        self.combat.as_mut().unwrap().lives = Some(Lives {
+            profile,
+            respawns: 0,
+            held_respawns: 0,
+            error: None,
+        });
+        Ok(())
+    }
     pub fn enable_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {
         let combat = self
             .combat

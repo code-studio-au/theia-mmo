@@ -9,6 +9,20 @@ use theia_network::{
     wire::{ChunkReady, VERSION},
 };
 const ABILITIES: &[u8] = include_bytes!("../../../content/gameplay/development-abilities.json");
+const STATS: &[u8] = include_bytes!("../../../content/gameplay/development-character-stats.json");
+const PASSIVE: &[u8] =
+    include_bytes!("../../../content/gameplay/development-creature-passive.json");
+fn life_profile(stats: &[u8], creature: &[u8]) -> Arc<theia_network::player_life_wire::Profile> {
+    Arc::new(
+        theia_network::player_life_wire::Profile::from_json(
+            stats,
+            creature,
+            include_bytes!("../../../content/gameplay/development-creature-retaliation.json"),
+            include_bytes!("../../../content/gameplay/development-player-respawn.json"),
+        )
+        .unwrap(),
+    )
+}
 
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
@@ -180,9 +194,57 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
                 .is_err()
         );
         assert_eq!(world.identity(), identity);
+        let life = life_profile(STATS, PASSIVE);
+        assert!(
+            world
+                .enable_passive_population_player_life(life.clone())
+                .is_err()
+        );
+        assert_eq!(world.identity(), identity);
         world
-            .enable_combat(ABILITIES, combat::DEVELOPMENT_HEALTH, 30_000)
+            .enable_resource_combat(ABILITIES, combat::DEVELOPMENT_HEALTH, 30_000, STATS)
             .unwrap();
+        let before_life = world.identity();
+        let mut changed_stats: serde_json::Value = serde_json::from_slice(STATS).unwrap();
+        changed_stats["maximum_health"] = serde_json::json!(101);
+        let mut changed_type: serde_json::Value = serde_json::from_slice(PASSIVE).unwrap();
+        changed_type["can_deflect"] = serde_json::json!(true);
+        for invalid in [
+            life_profile(&serde_json::to_vec(&changed_stats).unwrap(), PASSIVE),
+            life_profile(STATS, &serde_json::to_vec(&changed_type).unwrap()),
+        ] {
+            assert!(
+                world
+                    .enable_passive_population_player_life(invalid)
+                    .is_err()
+            );
+            assert_eq!(world.identity(), before_life);
+            assert!(world.player_life_profile().is_none());
+        }
+        world
+            .enable_passive_population_player_life(life.clone())
+            .unwrap();
+        let base = combat::resource_profile_identity(
+            expected_identity,
+            ABILITIES,
+            combat::DEVELOPMENT_HEALTH,
+            30_000,
+            STATS,
+        )
+        .unwrap();
+        assert_eq!(
+            world.identity(),
+            theia_network::classic::profile_identity(
+                theia_network::player_life_wire::profile_identity(base, &life)
+            )
+        );
+        let with_life = world.identity();
+        assert!(
+            world
+                .enable_passive_population_player_life(life.clone())
+                .is_err()
+        );
+        assert_eq!(world.identity(), with_life);
         world
             .enable_progression(Arc::new(
                 theia_network::progression_wire::Profile::from_json(include_bytes!(
@@ -244,6 +306,15 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
             actors.push(id);
         }
         let initial = world.combat_snapshot(actors[0]).unwrap();
+        let player_lives: Vec<_> = actors
+            .iter()
+            .map(|&actor| {
+                let state = world.player_life_snapshot(actor).unwrap();
+                assert_eq!(state.health, 100);
+                assert!(state.windup.is_none());
+                state.key
+            })
+            .collect();
         assert_eq!(initial.targets.len(), 5);
         for (health, feet) in initial.targets.iter().zip(&feet) {
             let mut body = feet.metres();
@@ -359,6 +430,14 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
         for (&actor, &old) in actors.iter().zip(&keys) {
             assert!(!world.select_target(actor, Some(old)));
         }
+        for (&actor, &life) in actors.iter().zip(&player_lives) {
+            let state = world.player_life_snapshot(actor).unwrap();
+            assert_eq!(state.key, life);
+            assert_eq!(state.health, 100);
+            assert!(state.windup.is_none());
+        }
+        assert_eq!(world.player_life_metrics().unwrap().strikes, 0);
+        assert!(world.player_life_error().is_none());
         assert_eq!(
             world.targeting_snapshot(actors[0]).unwrap().targets.len(),
             5

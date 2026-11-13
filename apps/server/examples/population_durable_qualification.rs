@@ -3,7 +3,9 @@
 //! adopt population first-tag eligibility, normal launch flags, OIDC or native UI.
 #[path = "../../../crates/persistence/tests/support/mod.rs"]
 mod support;
-use std::{collections::BTreeSet, num::NonZeroU128, path::PathBuf, sync::Arc, time::Duration};
+use std::{
+    collections::BTreeSet, io::Read, num::NonZeroU128, path::PathBuf, sync::Arc, time::Duration,
+};
 use theia_core::{content::ContentId, coordinates::GlobalPosition, progression::KillEvent};
 use theia_network::{
     procedural::Source,
@@ -15,6 +17,7 @@ use theia_persistence::{
     QuestJournalCommand, RealmId, Store, Worker,
 };
 const XP: &[u8] = include_bytes!("../../../content/gameplay/development-progression.json");
+const STATS: &[u8] = include_bytes!("../../../content/gameplay/development-character-stats.json");
 fn id(value: &str) -> ContentId {
     ContentId::new(value).unwrap()
 }
@@ -55,11 +58,24 @@ fn prepare(bytes: &[u8]) -> theia_network::Result<(World, u64, quest_journal::Pr
     world.enable_prediction()?;
     world.enable_classic()?;
     world.enable_defined_population(prepared, binding)?;
-    world.enable_combat(
+    world.enable_resource_combat(
         include_bytes!("../../../content/gameplay/development-abilities.json"),
         100,
         respawn_ms,
+        STATS,
     )?;
+    let mut creature = Vec::new();
+    std::fs::File::open(package.join("creature.json"))?
+        .take(theia_network::simulation::creatures::MAX_PROFILE_BYTES as u64 + 1)
+        .read_to_end(&mut creature)?;
+    world.enable_passive_population_player_life(Arc::new(
+        theia_network::player_life_wire::Profile::from_json(
+            STATS,
+            &creature,
+            include_bytes!("../../../content/gameplay/development-creature-retaliation.json"),
+            include_bytes!("../../../content/gameplay/development-player-respawn.json"),
+        )?,
+    ))?;
     world.enable_progression(Arc::new(
         theia_network::progression_wire::Profile::from_json(XP)?,
     ))?;
@@ -154,6 +170,7 @@ async fn main() -> theia_network::Result<()> {
     let bytes = quest_bytes();
     let (mut world, actor, journal) = prepare(&bytes)?;
     let identity = world.identity();
+    let player_life = world.player_life_snapshot(actor).unwrap().key;
     let xp = ProgressionCatalog::from_json(XP)?;
     let quest = QuestJournalCatalog::from_json(&bytes, &xp)?;
     let realm = RealmId::random();
@@ -300,9 +317,14 @@ async fn main() -> theia_network::Result<()> {
         theia_core::quests::journal::Status::Ready
     );
     assert_eq!(world.movement_recoveries(), 0);
+    let alive = world.player_life_snapshot(actor).unwrap();
+    assert_eq!(alive.key, player_life);
+    assert_eq!(alive.health, 100);
+    assert!(alive.windup.is_none());
     println!(
         "{}",
         serde_json::json!({"passed":true,"population_receipts":true,"actors":5,
+        "shared_player_life":true,"player_health":100,
         "distinct_lives":10,"experience":250,"quest_count":10,"duplicate_awards":0,
         "sql_lock_prevented_ack":true,"simulation_advanced_while_sql_blocked":true,
         "connection_restart_verified":true,"recipient_policy":"single-player development last-hit fixture",

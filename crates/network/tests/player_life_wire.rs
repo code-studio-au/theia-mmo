@@ -19,6 +19,31 @@ const RESPAWN: &[u8] = include_bytes!("../../../content/gameplay/development-pla
 fn profile() -> Arc<Profile> {
     Arc::new(Profile::from_json(STATS, CREATURE, POLICY, RESPAWN).unwrap())
 }
+#[test]
+fn standalone_creature_type_preserves_behavior_binding_and_exact_source_identity() {
+    let legacy = profile();
+    let standalone = Profile::from_json(
+        STATS,
+        include_bytes!("../../../content/gameplay/development-creature-passive.json"),
+        POLICY,
+        RESPAWN,
+    )
+    .unwrap();
+    assert_eq!(
+        standalone.creature_definition_identity(),
+        legacy.creature_definition_identity()
+    );
+    assert_eq!(standalone.creature(), legacy.creature());
+    assert_ne!(standalone.hash(), legacy.hash());
+    assert_ne!(standalone.creature_hash(), legacy.creature_hash());
+    let observation = value(&standalone);
+    let encoded = wire::encode(&standalone, TickRate::Hz30, &observation).unwrap();
+    assert_eq!(
+        wire::decode(&standalone, actor(2), TickRate::Hz30, &encoded).unwrap(),
+        observation
+    );
+    assert!(wire::decode(&legacy, actor(2), TickRate::Hz30, &encoded).is_err());
+}
 fn actor(id: u64) -> EntityKey {
     EntityKey {
         epoch: WorldEpoch::new(1).unwrap(),

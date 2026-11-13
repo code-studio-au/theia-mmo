@@ -9,6 +9,7 @@ pub struct Profile {
     stats_hash: [u8; 32],
     creature_hash: [u8; 32],
     creature: ContentId,
+    creature_definition: [u8; 32],
     life: Arc<player_life::Profile>,
     retaliation: Arc<retaliation::Profile>,
 }
@@ -20,7 +21,7 @@ impl Profile {
         respawn: &[u8],
     ) -> Result<Self> {
         let stats_profile = resources::Profile::from_json(stats)?;
-        let creature_profile = creatures::Profile::from_json(creature)?;
+        let creature_profile = creatures::Definition::from_json(creature)?;
         let policy = retaliation::Profile::from_json(retaliation)?;
         let life = player_life::Profile::from_json(respawn, &stats_profile)?;
         if policy.creature() != creature_profile.id() {
@@ -36,6 +37,7 @@ impl Profile {
             stats_hash: crate::terrain::sha256(stats),
             creature_hash: crate::terrain::sha256(creature),
             creature: creature_profile.id().clone(),
+            creature_definition: creature_profile.identity(),
             life: Arc::new(life),
             retaliation: Arc::new(policy),
         })
@@ -51,6 +53,9 @@ impl Profile {
     }
     pub fn creature(&self) -> &ContentId {
         &self.creature
+    }
+    pub fn creature_definition_identity(&self) -> [u8; 32] {
+        self.creature_definition
     }
     pub fn life(&self) -> &player_life::Profile {
         &self.life

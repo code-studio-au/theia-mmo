@@ -1,3 +1,20 @@
+P3-09 / P5-17 passive population player-life admission, 13 November 2026:
+An explicit pre-admission World API installs shared player lives for checked passive
+populations with matching creature behavior and combat resources. Standalone and
+legacy creature inputs retain exact source identities; canonical behavior permits
+validated population binding. Missing combat, mismatched stats/behavior and repeated
+installation fail without changing World identity. Five players retain their exact
+lives and full health across five NPC deaths/fresh-ID respawns at 20/30/60 Hz.
+Nine wire tests and all 498 network-library tests pass, along with fmt and strict
+workspace/all-target Clippy. The updated owned PostgreSQL fixture records ten distinct
+NPC lives, 250 XP and ten quest counts; duplicate replay adds nothing, simulation
+advances during a blocked SQL award, and process restart retains receipts. Shared
+player life remains healthy throughout. Evidence: build/population-player-lives-
+{checks,final}.log and build/population-durable-v3/verification.json.
+This opt-in headless API adds no NPC retaliation, pursuit, typed population damage,
+membership, first-tag policy or normal launcher/client adoption. The SQL fixture
+retains its explicit single-player development last-hit scope. No display access.
+
 P3-09 / P5-17 shared player-life ownership prerequisite, 13 November 2026:
 Player profile/admission, health liveness, respawn counters/errors and private
 life observations now have a separate Lives owner in combat authority. NPC

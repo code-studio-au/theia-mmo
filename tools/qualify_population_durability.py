@@ -24,6 +24,7 @@ def run(output, sdk, binary, package):
                    if line.startswith('{')]
         result = next(record for record in records if record.get('population_receipts'))
         assert result['passed'] and result['distinct_lives'] == 10
+        assert result['shared_player_life'] and result['player_health'] == 100
         cluster.restart()
         query = cluster.query('''
             SELECT n.display_name,p.experience,q.revision
