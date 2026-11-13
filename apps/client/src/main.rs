@@ -328,7 +328,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         character_stats.as_ref().map(|(bytes, _)| bytes.as_slice()),
         patrol_binding
             .as_ref()
-            .map(|(_, _, bytes)| bytes.as_slice()),
+            .map(|(_, _, bytes)| bytes.as_slice())
+            .or_else(|| population.as_ref().map(|p| p.creature_bytes())),
     )?;
     if patrol_binding
         .as_ref()
@@ -1152,6 +1153,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "inventory_profile": inventory_profile.as_ref().map(|p|p.hash()),
                 "journal_profile": journal_profile.as_ref().map(|p|p.hash()),
                 "progression_profile": progression_profile.as_ref().map(|p|p.hash()),
+                "player_life_profile": player_life_profile.as_ref().map(|p|p.hash()),
+                "public_avatar_life_profile": public_avatar_profile.as_ref().map(|p|p.hash()),
                 "interface": {"enabled": fantasy_ui.is_some(), "preferred_scale": ui_scale, "saved_preferences": ui_preferences.is_some(), "world_effects_visible": world_effects_visible},
                 "fixed_reward_catalog": journal_profile.as_ref().and_then(|p|p.item_rewards()).map(|r|r.id().as_str()),
                 "population": population.as_ref().map(|p| serde_json::json!({"count":p.count(), "respawn_ms":p.respawn_ms()})),

@@ -31,8 +31,6 @@ pub fn validate_launch(args: &[String]) -> Result<()> {
     for unsupported in [
         "--creature-profile",
         "--navigation",
-        "--creature-retaliation",
-        "--player-respawn",
         "--progression-catalog",
         "--creature-loot",
         "--quest-loot",
@@ -67,6 +65,7 @@ struct Document {
 pub struct Loaded {
     prepared: navigation::spawn_preparation::Prepared,
     binding: Binding,
+    creature_bytes: Vec<u8>,
 }
 impl Loaded {
     pub fn open(path: &Path, source: &procedural::Source) -> Result<Self> {
@@ -83,10 +82,11 @@ impl Loaded {
             return Err("Unsupported population configuration schema".into());
         }
         let zone = theia_zone::Zone::load(&contained(root, &document.zone)?)?;
-        let definition = creatures::Definition::from_json(&crate::content::read_bounded(
+        let creature_bytes = crate::content::read_bounded(
             &contained(root, &document.creature)?,
             creatures::MAX_PROFILE_BYTES as u64,
-        )?)?;
+        )?;
+        let definition = creatures::Definition::from_json(&creature_bytes)?;
         // Refuse unresolved behavior/model/count before opening navigation.
         authoring::binding(&zone, document.group, definition.clone())?;
         let nav =
@@ -100,11 +100,19 @@ impl Loaded {
             document.minimum_spacing_metres,
             document.access_from,
         )?;
-        Ok(Self { prepared, binding })
+        Ok(Self {
+            prepared,
+            binding,
+            creature_bytes,
+        })
     }
     pub fn profile_identity(&self, base: [u8; 32]) -> [u8; 32] {
         self.binding
             .profile_identity(self.prepared.profile_identity(base))
+    }
+    /// Exact checked bytes for shared player-life profile identity on both peers.
+    pub fn creature_bytes(&self) -> &[u8] {
+        &self.creature_bytes
     }
     pub fn respawn_ms(&self) -> u32 {
         self.binding.respawn_ms()
@@ -159,6 +167,20 @@ mod tests {
         let mut presentation = valid.clone();
         presentation.extend(["--creature-asset".into(), "wolf.glb".into()]);
         assert!(validate_launch(&presentation).is_ok());
+        let mut lives = valid.clone();
+        lives.extend(
+            [
+                "--creature-retaliation",
+                "policy.json",
+                "--player-respawn",
+                "respawn.json",
+                "--character-stats",
+                "stats.json",
+                "--public-avatar-life",
+            ]
+            .map(str::to_owned),
+        );
+        assert!(validate_launch(&lives).is_ok());
         assert!(validate_launch(&[]).is_ok());
         for removed in [
             "--authored-world",
@@ -177,8 +199,6 @@ mod tests {
             "--population-config",
             "--creature-profile",
             "--navigation",
-            "--creature-retaliation",
-            "--player-respawn",
             "--progression-catalog",
             "--creature-loot",
             "--quest-loot",

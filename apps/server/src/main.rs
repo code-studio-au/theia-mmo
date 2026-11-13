@@ -45,6 +45,7 @@ async fn main() -> Result<()> {
     let mut player_respawn = None;
     let mut player_stats_bytes = None;
     let mut patrol_bytes = None;
+    let mut population_bytes = None;
     let mut status_catalog = None;
     let mut patrol_profile = None;
     let mut population_config = None;
@@ -303,7 +304,7 @@ async fn main() -> Result<()> {
     }
     if creature_retaliation.is_some()
         && (!predicted
-            || patrol_profile.is_none()
+            || (patrol_profile.is_none() && population_config.is_none())
             || character_stats.is_none()
             || combat_catalog.is_none())
     {
@@ -370,6 +371,7 @@ async fn main() -> Result<()> {
             let loaded =
                 theia_network::simulation::population::configuration::Loaded::open(&path, source)?;
             respawn_ms = loaded.respawn_ms();
+            population_bytes = Some(loaded.creature_bytes().to_vec());
             let (prepared, binding) = loaded.into_parts();
             let targets = world.enable_defined_population(prepared, binding)?;
             println!(
@@ -471,11 +473,16 @@ async fn main() -> Result<()> {
                 .ok_or("Missing player life stats")?,
             patrol_bytes
                 .as_deref()
+                .or(population_bytes.as_deref())
                 .ok_or("Missing player life creature")?,
             &policy,
             &respawn,
         )?);
-        world.enable_player_life(profile)?;
+        if population_bytes.is_some() {
+            world.enable_passive_population_player_life(profile)?;
+        } else {
+            world.enable_player_life(profile)?;
+        }
         println!("development_player_life enabled=true transient=true");
     }
     if let Some(path) = melee_weapons {

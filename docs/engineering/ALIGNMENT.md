@@ -1,3 +1,25 @@
+P3-09 / P5-17 normal passive-population player-life launch, 13 November 2026:
+The ordinary client/server population path now accepts paired player-respawn and
+retaliation-policy profiles to bind shared player life, using the exact checked
+standalone creature bytes from the population package. It installs no NPC retaliation
+or pursuit. The normal Python launcher selects resources without inventing a patrol
+or navigation override. Public player-life replication is supported; richer population
+membership/credit/progression/loot launch gates remain in place.
+Headless configuration reports expose both life profile hashes and validate the real
+schema-3 five-NPC package without starting renderer or transport. An owned native
+Linux client/server check passes: five wolf rigs, health 100, mana 100, generation 1,
+zero player deaths and one live public actor. Screenshot inspection confirms the
+health/mana/alive interface; no OS mouse or keyboard automation was used. The visual
+qualifier now serializes its duration as integer seconds, as required by the client,
+so fractional CLI parsing cannot silently fall back to the 65-second default.
+Configuration tests, all seven launcher tests including actual binary preflight,
+Python compilation, formatting, strict workspace/all-target Clippy and client/server
+build pass. Native Vulkan validation has zero diagnostics on RX 7900 XTX / RADV
+NAVI31 / Mesa 26.2.6, 1600x1000. Owned processes and tickets are cleaned up.
+Evidence: build/population-life-configuration.json, build/population-life-native-v2,
+build/population-life-launch-build.log and build/population-life-launch-final.log.
+Managed editor export of these life profiles is the next integration step.
+
 P3-09 / P3-11 population quest-loot transport, 13 November 2026:
 The encrypted authored-population fixture now covers quest-conditioned private loot
 and public player-life replication. At 20/30/60 Hz, the original tag owner's exact

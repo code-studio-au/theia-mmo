@@ -94,7 +94,7 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
         raise ValueError('Dodge requires normal-speed predicted terrain and secure Renet without a tour')
     if bool(creature_retaliation) != bool(player_respawn):
         raise ValueError('Retaliation and player respawn profiles must be selected together')
-    if creature_retaliation and (not prediction or not creature_profile or not character_stats or not combat_catalog):
+    if creature_retaliation and (not prediction or (not creature_profile and population_config is None) or not character_stats or not combat_catalog):
         raise ValueError('Player life requires predicted creature combat and character stats')
     if quest_loot and (not quest_items or not creature_loot or not reward_catalog):
         raise ValueError('Quest loot requires item journal, creature loot and rewards')
@@ -532,7 +532,7 @@ def main(argv=None):
         args.progression = args.progression or args.quests
         quest_catalog = Path('content/quests/development-journal.json' if args.quest_journal else 'content/gameplay/development-quest.json').resolve() if args.quests else None
         args.equipment = args.equipment or args.rewards or args.vendors
-        args.creatures = args.creatures or args.rewards or args.progression or args.creature_retaliation is not None
+        args.creatures = args.creatures or args.rewards or args.progression or (args.creature_retaliation is not None and args.population_config is None)
         progression_catalog = Path('content/gameplay/development-progression.json').resolve() if args.progression else None
         reward_catalog = Path('content/gameplay/development-rewards.json').resolve() if args.rewards else None
         args.inventory = args.inventory or args.equipment
@@ -545,7 +545,7 @@ def main(argv=None):
             parser.error('--equipment requires an equipment-capable item catalog')
         if args.statuses and not args.status_effects:
             parser.error('--statuses requires --status-effects')
-        args.resources = args.resources or args.status_effects or args.creatures
+        args.resources = args.resources or args.status_effects or args.creatures or args.creature_retaliation is not None
         args.combat = args.combat or args.spell_feedback or args.resources
         if args.character_stats and not args.resources:
             parser.error('--character-stats requires --resources')

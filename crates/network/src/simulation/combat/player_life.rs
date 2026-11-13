@@ -499,7 +499,7 @@ impl Combat {
 impl World {
     /// Shared player health/respawn in the checked passive pool. This installs
     /// no NPC retaliation, pursuit, membership, typed damage or credit policy.
-    /// Normal population launch flags remain gated until those slices qualify.
+    /// Normal population launch can bind these lives without installing NPC attacks.
     pub fn enable_passive_population_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {
         let binding = self
             .population_binding

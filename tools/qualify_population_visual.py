@@ -21,6 +21,11 @@ def run(args):
     common = ['--authored-world', str(args.world.resolve()), '--prediction', '--classic',
               '--combat-catalog', str(Path('content/gameplay/development-abilities.json').resolve()),
               '--population-config', str(args.population.resolve())]
+    if args.player_life:
+        common.extend(['--character-stats', str(Path('content/gameplay/development-character-stats.json').resolve()),
+                       '--creature-retaliation', str(Path('content/gameplay/development-creature-retaliation.json').resolve()),
+                       '--player-respawn', str(Path('content/gameplay/development-player-respawn.json').resolve()),
+                       '--public-avatar-life'])
     route_args = ['--test-route', str(args.route.resolve())] if args.route is not None else []
     environment = client_environment(os.environ)
     for key in list(environment):
@@ -28,7 +33,9 @@ def run(args):
             environment.pop(key)
     environment.update(WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',
                        WGPU_VALIDATION='1', RUST_LOG='info',
-                       THEIA_GRAYBOX_QUALIFY=str(out), THEIA_GRAYBOX_QUALIFY_SECONDS=str(args.seconds))
+                       THEIA_GRAYBOX_QUALIFY=str(out), THEIA_GRAYBOX_QUALIFY_SECONDS=str(math.ceil(args.seconds)))
+    if args.player_life:
+        environment['THEIA_WORLD_INPUT_OS_QUALIFY'] = str(out)
     suffix = '.exe' if os.name == 'nt' else ''
     server_binary = args.binaries.resolve()/('theia-server'+suffix)
     client_binary = args.binaries.resolve()/('theia-client'+suffix)
@@ -58,6 +65,16 @@ def run(args):
         assert visuals['max_visuals'] == 5 and visuals['transitions'][0] >= 5, visuals
         assert visuals['dropped_cues'] == 0, visuals
         assert check_gpu_diagnostics((out/'client.log').read_text()) == 0
+        life = None
+        if args.player_life:
+            state = json.loads((out/'input-os.json').read_text())
+            combat = state['combat']
+            assert combat['player_health'] == 100 and combat['player_generation'] == 1, combat
+            assert combat['player_deaths'] == 0, combat
+            actors = state['public_avatar_life']['actors']
+            assert len(actors) == 1 and actors[0]['actor'] == state['actor'], actors
+            assert actors[0]['generation'] == 1 and not actors[0]['dead'], actors
+            life = dict(health=100, generation=1, deaths=0, public_actors=actors)
         travel = None
         if args.route is not None:
             reports = [json.loads(line)['test_controller'] for line in (out/'client.log').read_text().splitlines()
@@ -72,7 +89,7 @@ def run(args):
             assert abs(travel['feet'][1]-goal[1]) <= .3, travel
             assert report['moving_frames'] > 0, report
         (out/'qualification.json').write_text(json.dumps(dict(
-            passed=True, targets=5, creature_visuals=visuals, connected=True, travel=travel,
+            passed=True, targets=5, creature_visuals=visuals, connected=True, travel=travel, player_life=life,
             scope='Actual native Linux Vulkan client with five passive creature rigs; no OS movement, model-catalog resolution, pursuit or Windows claim'), indent=2)+'\n')
     finally:
         for process in [client, server]:
@@ -91,6 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--world', type=Path, required=True)
     parser.add_argument('--population', type=Path, required=True)
+    parser.add_argument('--player-life', action='store_true', help='Qualify standalone population health and public life state')
     parser.add_argument('--route', type=Path, help='Optional checked route controller; no OS movement input')
     parser.add_argument('--seconds', type=float, default=25, help='Bounded native observation duration (1..300 seconds)')
     parser.add_argument('--players', type=Path, default=default_player_assets())

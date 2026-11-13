@@ -58,6 +58,18 @@ class PopulationLauncher(unittest.TestCase):
         self.assertIsNone(args['navigation'])
         self.assertIsNone(args['character_stats'])
 
+    def test_cli_population_player_life_selects_resources_without_a_patrol(self):
+        with patch.object(play, 'play') as launch:
+            play.main(['--authored-world', 'world', '--population-config', 'population.json',
+                       '--creature-retaliation', 'retaliation.json',
+                       '--player-respawn', 'respawn.json', '--public-avatar-life'])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertIsNone(args['creature_profile'])
+        self.assertIsNone(args['navigation'])
+        self.assertIsNotNone(args['character_stats'])
+        self.assertTrue(args['public_avatar_life'])
+        self.assertEqual(args['player_respawn'], Path('respawn.json').resolve())
+
     def test_cli_keeps_explicit_creature_art_as_a_client_presentation_override(self):
         with patch.object(play, 'play') as launch:
             play.main(['--authored-world', 'world', '--population-config', 'population.json',
