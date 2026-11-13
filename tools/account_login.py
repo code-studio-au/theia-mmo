@@ -129,18 +129,32 @@ class AccountClient:
                 except AccountError:
                     pass
 
-    def choose_character(self, read=input, write=print):
+    def characters(self):
+        """Bounded display data for the authenticated account; never credentials."""
         result, _ = self.request('/characters')
         if not isinstance(result, dict) or not isinstance(result.get('characters'), list) or len(result['characters']) > 8:
             raise AccountError('Invalid character list')
-        characters = result['characters']
+        characters = []
+        seen = set()
+        for row in result['characters']:
+            try:
+                identifier = str(uuid.UUID(row['id']))
+                name = row['name']
+                if identifier == str(uuid.UUID(int=0)) or identifier in seen or not isinstance(name, str) or not 1 <= len(name) <= 80 or not name.isprintable():
+                    raise ValueError()
+            except (KeyError, TypeError, ValueError, AttributeError):
+                raise AccountError('Invalid character list') from None
+            seen.add(identifier)
+            characters.append(dict(id=identifier, name=name))
+        return characters
+
+    def choose_character(self, read=input, write=print):
+        characters = self.characters()
         if not characters:
             name = read('Name your first character (3–20 letters): ').strip()
             character, _ = self.request('/characters', {'name': name})
         else:
             for index, character in enumerate(characters, 1):
-                if not isinstance(character, dict) or not isinstance(character.get('name'), str) or not 1 <= len(character['name']) <= 80 or not character['name'].isprintable():
-                    raise AccountError('Invalid character list')
                 write(f"{index}. {character['name']}")
             can_create = len(characters) < 8
             if can_create:

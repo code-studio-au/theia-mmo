@@ -1,3 +1,25 @@
+P3-03 / P5-17 private account character-picker handoff, 13 November 2026:
+Normal play can publish a bounded authenticated character list into its exclusively
+reserved session directory, then await a bounded schema-1 selection file instead
+of terminal input. Picker mode requires account login, an owner pipe and a new
+session directory, and excludes an explicit character-ID override. Only IDs from
+that account's validated list are selectable; actual admission still goes through
+the ordinary server ownership/profile checks. Display data contains names/IDs only,
+is published atomically with private permissions, and excludes provider/session
+credentials. Selections must be published atomically by the caller. Empty accounts
+currently refuse; creation and the editor picker UI are subsequent work.
+The normal terminal menu now uses the same bounded validated list. Fifteen real
+localhost account tests, five handoff tests, thirteen population launcher tests
+(one asset check skipped), 13 authored-launch and 49 bundle tests pass. Coverage
+includes invalid/duplicate IDs, unlisted and oversized selection, cancellation,
+timeout, unknown fields and private publication. Python compilation/diff pass.
+Native owned OIDC/SQL kill/collection, restart, private picker rejoin and owner-pipe
+shutdown pass: 25 XP, consumed reward and identical inventory revision 2 persist.
+No OS input is automated. RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6 reports
+zero GPU diagnostics; owned services/tickets/password files are cleaned up.
+Evidence: build/population-account-picker-native-v1/qualification.json and resumed
+runtime/characters.json/selection.json. Local only; no editor picker UI claim yet.
+
 P3-01 / P3-03 / P5-17 isolated account launch sessions, 13 November 2026:
 Normal play accepts --session-directory and reserves that directory exclusively
 with private permissions for logs and temporary tickets. Existing directories are

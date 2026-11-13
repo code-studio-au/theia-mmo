@@ -17,6 +17,7 @@ from qualify_world_input_os import wait, capture_ready
 
 
 def run(args):
+    args.owned_stop = args.owned_stop or args.picker
     args.claim_reward = args.claim_reward or args.repeat_kill
     args.kill = args.kill or args.claim_reward
     args.combat = args.combat or args.kill
@@ -94,7 +95,7 @@ def run(args):
             assert not runtime.exists()
             with (folder/'launcher.log').open('w') as log:
                 launcher = subprocess.Popen([sys.executable, 'tools/play.py', *common,
-                    *(['--character-id', character_id] if resumed else []),
+                    *(['--character-picker'] if resumed and args.picker else ['--character-id', character_id] if resumed else []),
                     *(['--stop-on-stdin-eof'] if resumed and args.owned_stop else []),
                     '--session-directory', str(runtime),
                     '--account-login', '--equipment', '--status-effects', *launch_profiles,
@@ -119,6 +120,16 @@ def run(args):
                             and combat.get('player_health') == 100 and value.get('public_avatar_life')
                             and (value.get('creature_visuals') or {}).get('players') == 5
                             and (value.get('minimap') or {}).get('known_pixels', 0) > 0) else None
+                    if resumed and args.picker:
+                        def choices_ready():
+                            assert launcher.poll() is None, 'Owned picker launcher exited'
+                            return json.loads((runtime/'characters.json').read_text())
+                        choices = wait(choices_ready, 60)
+                        assert choices['schema'] == 1 and len(choices['characters']) == 1
+                        assert choices['characters'][0]['id'] == character_id
+                        pending = runtime/'selection.pending'
+                        pending.write_text(json.dumps(dict(schema=1, character_id=character_id)))
+                        pending.replace(runtime/'selection.json')
                     observed = wait(ready, 90)
                     # Asset entities can be admitted before their GPU pipelines
                     # finish. Allow the same bounded warmup on fresh and resumed runs.
@@ -218,7 +229,7 @@ def run(args):
                 assert identity.password not in text and cluster.password not in text
                 assert check_gpu_diagnostics(text) == 0
     assert not any((out/'cluster'/name).exists() for name in ('password', 'pgpass'))
-    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=True, owner_pipe_stop=args.owned_stop, isolated_sessions=True,
+    result = dict(passed=True, runs=results, database_restart=True, private_services_closed=True, explicit_character_rejoin=not args.picker, character_picker_rejoin=args.picker, owner_pipe_stop=args.owned_stop, isolated_sessions=True,
         mouse_or_keyboard_automation=False, scope=('Two native population kills across a database/server restart award 50 XP while the consumed training reward stays unchanged; no OS input or timed respawn claim' if args.repeat_kill else 'Normal population kill, durable XP and training reward collection with restart; no OS input or per-life loot claim' if args.claim_reward else 'Normal typed population kill, committed first-tag XP/training claim, equipment and database restart; no OS input, NPC retaliation or loot-consumption claim' if args.kill else 'Normal typed population cast, committed equipment, combat membership and inventory restart; no OS input, NPC retaliation or reward-grant claim' if args.combat else 'Normal typed population profile admission, owned OIDC/SQL inventory and native UI; no combat execution, NPC retaliation or reward-grant claim'))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
@@ -226,6 +237,7 @@ def run(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--picker', action='store_true', help='Rejoin through the private owned character-selection handoff')
     parser.add_argument('--owned-stop', action='store_true', help='Stop the resumed account launcher by closing its owner pipe')
     parser.add_argument('--repeat-kill', action='store_true', help='Kill again after restart; require new XP but no repeated training reward')
     parser.add_argument('--claim-reward', action='store_true', help='Defeat one NPC, collect the training reward and verify durable inventory')

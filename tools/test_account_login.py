@@ -150,6 +150,15 @@ class CharacterMenu(unittest.TestCase):
         self.assertIn('N. Create a character',shown)
         self.assertEqual(len(prompts),1)
 
+    def test_character_list_rejects_bad_or_duplicate_ids_and_omits_extra_fields(self):
+        for rows in [[{'id':'bad','name':'Legacy'}], [{'id':'0'*32,'name':'Legacy'}],
+                     [{'id':self.old,'name':'Legacy'}]*2]:
+            with self.subTest(rows=rows), service(lambda *_:(200,{},json.dumps({'characters':rows}).encode())) as base:
+                with self.assertRaises(AccountError):
+                    AccountClient(base).characters()
+        with service(lambda *_:(200,{},json.dumps({'characters':[{'id':self.old,'name':'Legacy','unused':'hidden'}]}).encode())) as base:
+            self.assertEqual(AccountClient(base).characters(), [{'id':self.old,'name':'Legacy'}])
+
     def test_create_another_character_on_existing_account(self):
         calls=[];answers=iter(['n','Newhero'])
         def respond(path, body):
@@ -165,7 +174,7 @@ class CharacterMenu(unittest.TestCase):
         calls=[];shown=[]
         def respond(path, body):
             calls.append((path,body))
-            return 200, {}, json.dumps({'characters':[{'id':self.old,'name':'Legacy'}]*8}).encode()
+            return 200, {}, json.dumps({'characters':[{'id':f'74686569-6100-0000-0000-{i:012d}','name':'Legacy'} for i in range(1,9)]}).encode()
         with service(respond) as base:
             with self.assertRaisesRegex(AccountError,'limit reached'):
                 AccountClient(base).choose_character(read=lambda _:'N',write=shown.append)

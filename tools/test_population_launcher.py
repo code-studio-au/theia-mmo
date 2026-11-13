@@ -83,6 +83,16 @@ class PopulationLauncher(unittest.TestCase):
                           stop_requested=lambda: False)
         launch.assert_not_called()
 
+    def test_picker_refuses_missing_ownership_or_conflicting_explicit_character_before_io(self):
+        for options in [dict(), dict(account_login=True),
+                        dict(account_login=True, stop_requested=lambda: False),
+                        dict(account_login=True, stop_requested=lambda: False, session_directory='unused',
+                             character_id='12345678-1234-1234-1234-123456789abc')]:
+            with self.subTest(options=options), patch.object(play.subprocess, 'Popen') as launch:
+                with self.assertRaisesRegex(ValueError, 'Character picker'):
+                    play.play(None, Path('missing'), 1, Path('missing'), character_picker=True, **options)
+                launch.assert_not_called()
+
     def test_cli_population_player_life_selects_resources_without_a_patrol(self):
         with patch.object(play, 'play') as launch:
             play.main(['--authored-world', 'world', '--population-config', 'population.json',
