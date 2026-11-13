@@ -48,6 +48,16 @@ target/debug/theia-nav-bake bake-authored build/starter-valley-village-world-v2 
 target/debug/theia-nav-bake verify-authored build/starter-valley-village-world-v2 build/starter-valley-navigation-v1
 ```
 
+For a passive population without a patrol, bake the bounded area directly:
+
+```sh
+target/debug/theia-nav-bake bake-authored-area WORLD NEW_NAVIGATION CENTRE_X CENTRE_Z
+```
+
+The centre is an integer 128 m chunk coordinate. This uses the same collision,
+clearance erosion, tile bounds and verification; it emits no patrol routes.
+Placement still needs `spawns-zone` or the runtime population preparation checks.
+
 For the dressed valley, offline input allows 32,768 vertices / 65,536 triangles
 per clipped tile (measured maximum 24,272 / 45,146). Runtime limits remain nine
 tiles, 8,192 vertices / 4,096 polygons per tile, and 256 route points. Nine tiles

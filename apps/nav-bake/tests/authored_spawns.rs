@@ -228,3 +228,77 @@ fn authored_spawn_cli_is_repeatable_rejects_wrong_layers_and_preserves_packages(
         "authored_spawn_cli passed=true repeatable=true wrong_height_refused=true inaccessible_anchor_refused=true insufficient_candidates_reported=true source_preserved=true report={report}"
     );
 }
+
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_area_bake_preserves_checked_geometry_without_inventing_a_patrol() {
+    use theia_network::{authored_world, navigation as nav};
+    let world = PathBuf::from(std::env::var_os("THEIA_AUTHORED_WORLD").unwrap());
+    let existing = PathBuf::from(std::env::var_os("THEIA_AUTHORED_NAV").unwrap());
+    let request: Request = serde_json::from_slice(
+        &fs::read(std::env::var_os("THEIA_AUTHORED_SPAWNS").unwrap()).unwrap(),
+    )
+    .unwrap();
+    let source = authored_world::Store::open(&world).unwrap();
+    let old = nav::Store::open(&existing, source.identity()).unwrap();
+    let scratch = Scratch(
+        std::env::temp_dir().join(format!(
+            "theia-area-bake-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        )),
+    );
+    fs::create_dir(&scratch.0).unwrap();
+    let output = scratch.0.join("navigation");
+    let run = |output: &Path, x: &str, z: &str| {
+        Command::new(env!("CARGO_BIN_EXE_theia-nav-bake"))
+            .arg("bake-authored-area")
+            .arg(&world)
+            .arg(output)
+            .args([x, z])
+            .output()
+            .unwrap()
+    };
+    // Fixture navigation covers the nine tiles around the grove's access anchor.
+    let centre = theia_network::procedural::owner(
+        theia_core::coordinates::GlobalPosition::new(request.access_from).unwrap(),
+    )
+    .unwrap();
+    let result = run(&output, &centre.x.to_string(), &centre.z.to_string());
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let baked = nav::Store::open(&output, source.identity()).unwrap();
+    baked.verify().unwrap();
+    assert!(baked.manifest().routes.is_empty());
+    assert_eq!(baked.manifest().tiles.len(), 9);
+    assert_eq!(baked.manifest().tiles.len(), old.manifest().tiles.len());
+    for tile in &baked.manifest().tiles {
+        assert_eq!(
+            fs::read(output.join(nav::tile_name(tile.id))).unwrap(),
+            fs::read(existing.join(nav::tile_name(tile.id))).unwrap()
+        );
+    }
+    let before = nav::spawn_preparation::check_authored(&source, &old, &request).unwrap();
+    let after = nav::spawn_preparation::check_authored(&source, &baked, &request).unwrap();
+    assert_eq!(
+        before.report()["authored_spawn_candidates"]["accepted"],
+        after.report()["authored_spawn_candidates"]["accepted"]
+    );
+    assert_eq!(after.into_prepared().unwrap().points().len(), 5);
+    let manifest = fs::read(output.join(nav::MANIFEST)).unwrap();
+    assert!(
+        !run(&output, &centre.x.to_string(), &centre.z.to_string())
+            .status
+            .success()
+    );
+    assert_eq!(fs::read(output.join(nav::MANIFEST)).unwrap(), manifest);
+    let invalid = scratch.0.join("invalid");
+    assert!(!run(&invalid, "-1", "63").status.success());
+    assert!(!invalid.exists());
+}

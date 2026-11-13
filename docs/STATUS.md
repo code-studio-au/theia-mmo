@@ -1,3 +1,17 @@
+P4-03 / P3-07 route-free authored navigation bake, 13 November 2026:
+Add bake-authored-area SOURCE OUTPUT CENTRE_X CENTRE_Z for static population
+navigation without a fabricated patrol. The existing bounded nine-tile collision
+bake/publication/verification pipeline is shared; route manifests may already be
+empty under schema 1. Existing authored patrol baking still emits its checked route.
+Actual valley test produces nine byte-identical collision-derived tiles to the
+existing patrol bake, no routes, and the same five accepted spawn points. Existing
+output refuses without mutation and invalid centres leave no output. The normal
+patrol CLI also rebakes/verifies successfully; nine ordinary baker tests pass.
+Fmt and strict workspace/all-target Clippy pass. Evidence:
+build/population-area-{bake-test,bake-regressions,bake-clippy,legacy-route}.log.
+This is an offline prerequisite for complete population package export, not a new
+runtime navigation format, larger coverage or editor export completion.
+
 P3-07 passive population creature presentation, 13 November 2026:
 The client now permits its existing explicit --creature-asset override with a
 checked single-type passive population. The normal development launcher forwards

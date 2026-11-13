@@ -10,13 +10,34 @@ use theia_network::{
 };
 
 pub(super) fn bake(source: &Path, output: &Path, route: &Path) -> Result<()> {
+    let (request, endpoints) = request(route)?;
+    let centre = procedural::owner(endpoints[0]).ok_or("Route outside prediction domain")?;
+    bake_region(source, output, centre, Some((request, endpoints)))
+}
+
+/// Passive populations need static navigation, not a fabricated patrol route.
+pub(super) fn bake_area(
+    source: &Path,
+    output: &Path,
+    centre: theia_core::coordinates::ChunkId,
+) -> Result<()> {
+    if !procedural::contains(centre) {
+        return Err("Authored navigation centre outside supported world".into());
+    }
+    bake_region(source, output, centre, None)
+}
+
+fn bake_region(
+    source: &Path,
+    output: &Path,
+    centre: theia_core::coordinates::ChunkId,
+    route: Option<(Route, Vec<GlobalPosition>)>,
+) -> Result<()> {
     let started = Instant::now();
     if output.exists() {
         return Err("Navigation output exists; choose a new directory".into());
     }
     let store = Store::open(source)?;
-    let (request, endpoints) = request(route)?;
-    let centre = procedural::owner(endpoints[0]).ok_or("Route outside prediction domain")?;
     let agent = Agent::development();
     let mut tiles = Vec::new();
     let mut inputs = Vec::new();
@@ -41,8 +62,15 @@ pub(super) fn bake(source: &Path, output: &Path, route: &Path) -> Result<()> {
         );
         tiles.push(tile);
     }
-    let query = theia_nav_bake::Query::new(&tiles)?;
-    let points = routed_points(&store, &query, &endpoints)?;
+    let routes = if let Some((request, endpoints)) = route {
+        let query = theia_nav_bake::Query::new(&tiles)?;
+        vec![Route {
+            id: request.id,
+            points: routed_points(&store, &query, &endpoints)?,
+        }]
+    } else {
+        vec![]
+    };
     let encoded = tiles
         .iter()
         .map(nav::Tile::encode)
@@ -59,10 +87,7 @@ pub(super) fn bake(source: &Path, output: &Path, route: &Path) -> Result<()> {
                 sha256: theia_network::terrain::sha256(b),
             })
             .collect(),
-        routes: vec![Route {
-            id: request.id,
-            points,
-        }],
+        routes,
     };
     let bytes = manifest.encode()?;
     if let Some(parent) = output.parent().filter(|p| !p.as_os_str().is_empty()) {
@@ -85,7 +110,7 @@ pub(super) fn bake(source: &Path, output: &Path, route: &Path) -> Result<()> {
     result?;
     println!(
         "{}",
-        serde_json::json!({"authored_navigation_bake":{"passed":true,"source":store.identity(),"tiles":tiles.len(),"inputs":inputs,"route_points":manifest.routes[0].points.len(),"elapsed_ms":started.elapsed().as_millis(),"scope":"Offline navigation from admitted authored collision; no creature runtime or exhaustive containment acceptance"}})
+        serde_json::json!({"authored_navigation_bake":{"passed":true,"source":store.identity(),"tiles":tiles.len(),"inputs":inputs,"route_points":manifest.routes.iter().map(|r| r.points.len()).sum::<usize>(),"elapsed_ms":started.elapsed().as_millis(),"scope":"Offline navigation from admitted authored collision; no creature runtime or exhaustive containment acceptance"}})
     );
     Ok(())
 }
