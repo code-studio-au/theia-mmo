@@ -25,14 +25,46 @@ const DAMAGE_STATS: &[u8] =
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_physical_swings_resolve_each_life_independently_at_all_rates() {
-    qualify(false);
+    qualify(false, None);
 }
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_ordinary_swings_resolve_each_life_independently_at_all_rates() {
-    qualify(true);
+    qualify(true, None);
 }
-fn qualify(ordinary: bool) {
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_special_damage_resolves_each_life_independently_at_all_rates() {
+    qualify(true, Some("theia.dev.sword-slash"));
+}
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_arcane_damage_resolves_each_life_independently_at_all_rates() {
+    qualify(true, Some("theia.dev.arcane-bolt"));
+}
+fn equip(world: &mut World, id: u64, revision: u64, item: &str) {
+    world.observe_combat_equipment(
+        world.entity_key(id).unwrap(),
+        Some((
+            crate::terrain::sha256(ITEMS),
+            revision,
+            Some(ContentId::new(item).unwrap()),
+        )),
+    );
+}
+fn engage(world: &mut World, id: u64, target: EntityKey, sequence: u64) {
+    let reply = world.request_autoattack(
+        id,
+        autoattack::Request {
+            epoch: world.epoch(),
+            stream_epoch: world.correction(id).unwrap().state.input.stream_epoch,
+            sequence,
+            target: Some(target),
+        },
+    );
+    assert_eq!(reply.outcome, autoattack::Outcome::Engaged);
+}
+fn qualify(ordinary: bool, ability: Option<&str>) {
     let store = Arc::new(
         authored_world::Store::open(std::path::Path::new(
             &std::env::var_os("THEIA_AUTHORED_WORLD").unwrap(),
@@ -133,23 +165,40 @@ fn qualify(ordinary: bool) {
             // No accidental admission of singleton pursuit-dependent consumers.
             let identity = world.identity();
             assert!(world.enable_public_creature_attacks().is_err());
-            assert!(
-                world
-                    .enable_ability_damage(
-                        include_bytes!(
-                            "../../../../../../content/gameplay/development-ability-starting.json"
-                        ),
-                        include_bytes!(
-                            "../../../../../../content/gameplay/development-ability-damage.json"
-                        ),
-                        include_bytes!(
-                            "../../../../../../content/gameplay/development-classic-abilities.json"
-                        )
-                    )
-                    .is_err()
-            );
             assert_eq!(world.identity(), identity);
         }
+        if ability.is_some() {
+            let starting = include_bytes!(
+                "../../../../../../content/gameplay/development-ability-starting.json"
+            );
+            let policy = include_bytes!(
+                "../../../../../../content/gameplay/development-ability-damage.json"
+            );
+            let abilities = include_bytes!(
+                "../../../../../../content/gameplay/development-classic-abilities.json"
+            );
+            let before = world.identity();
+            let mut changed = abilities.to_vec();
+            changed.push(b' ');
+            assert!(
+                world
+                    .enable_ability_damage(starting, policy, &changed)
+                    .is_err()
+            );
+            assert_eq!(world.identity(), before);
+            world
+                .enable_ability_damage(starting, policy, abilities)
+                .unwrap();
+            assert_ne!(world.identity(), before);
+            let installed = world.identity();
+            assert!(
+                world
+                    .enable_ability_damage(starting, policy, abilities)
+                    .is_err()
+            );
+            assert_eq!(world.identity(), installed);
+        }
+        let ability_profile = world.ability_damage_profile().cloned();
         let ordinary_profile = world.white_melee_profile().cloned();
         for &key in &keys {
             assert_eq!(
@@ -248,22 +297,42 @@ fn qualify(ordinary: bool) {
         for generation in 1..=2 {
             for (&id, &target) in players.iter().zip(&targets) {
                 assert!(world.select_target(id, Some(target)));
-                let reply = world.request_autoattack(
-                    id,
-                    autoattack::Request {
-                        epoch: world.epoch(),
-                        stream_epoch: world.correction(id).unwrap().state.input.stream_epoch,
-                        sequence: generation,
-                        target: Some(target),
-                    },
-                );
-                assert_eq!(reply.outcome, autoattack::Outcome::Engaged);
+                if let Some(ability) = ability {
+                    equip(
+                        &mut world,
+                        id,
+                        generation * 2,
+                        if ability.ends_with("arcane-bolt") {
+                            "theia.dev.training-wand"
+                        } else {
+                            "theia.dev.training-sword"
+                        },
+                    );
+                    let epoch = world.epoch();
+                    let reply = world.cast(
+                        id,
+                        super::super::Request {
+                            epoch,
+                            sequence: generation,
+                            target,
+                            ability: ContentId::new(ability).unwrap(),
+                        },
+                    );
+                    assert!(
+                        matches!(reply.reply.outcome, super::super::Outcome::Started { .. }),
+                        "{:?}",
+                        reply.reply
+                    );
+                } else {
+                    engage(&mut world, id, target, generation);
+                }
             }
+            let mut ability_hits = 0;
             let mut remaining = vec![100; 5];
             let mut deaths = 0;
             for _ in 0..u64::from(rate.hz()) * 60 {
                 world.step();
-                for event in world.combat_events() {
+                for event in world.combat_events().to_vec() {
                     let (actor, actor_generation, target, after, lost) = match event {
                         Event::PhysicalDamage(fact) => {
                             assert!(!ordinary);
@@ -306,6 +375,38 @@ fn qualify(ordinary: bool) {
                                 expected.health_lost,
                             )
                         }
+                        Event::AbilityDamage(fact) => {
+                            let index = targets.iter().position(|&key| key == fact.target).unwrap();
+                            assert_eq!(fact.ability.as_str(), ability.unwrap());
+                            let expected = ability_profile
+                                .as_ref()
+                                .unwrap()
+                                .evaluate(
+                                    &fact.ability,
+                                    fact.defender,
+                                    fact.draws,
+                                    remaining[index],
+                                )
+                                .unwrap();
+                            assert_eq!(fact.result, expected);
+                            ability_hits += 1;
+                            equip(
+                                &mut world,
+                                players[index],
+                                generation * 2 + 1,
+                                "theia.dev.training-sword",
+                            );
+                            if fact.remaining > 0 {
+                                engage(&mut world, players[index], fact.target, generation);
+                            }
+                            (
+                                fact.actor,
+                                Some(fact.actor_generation),
+                                fact.target,
+                                fact.remaining,
+                                expected.damage.health_lost,
+                            )
+                        }
                         _ => continue,
                     };
                     let index = targets
@@ -325,6 +426,7 @@ fn qualify(ordinary: bool) {
                 }
             }
             assert_eq!(deaths, 5);
+            assert_eq!(ability_hits, if ability.is_some() { 5 } else { 0 });
             assert_eq!(remaining, vec![0; 5]);
             for _ in 0..=rate.hz() {
                 world.step();
@@ -363,6 +465,7 @@ fn qualify(ordinary: bool) {
             }
             assert!(world.physical_damage_error().is_none());
             assert!(world.white_melee_error().is_none());
+            assert!(world.ability_damage_error().is_none());
             if ordinary {
                 assert_eq!(world.white_melee_metrics().unwrap().incoming.attempts, 0);
             }

@@ -1,3 +1,20 @@
+P3-09 / P5-17 passive population typed ability damage, 13 November 2026:
+Explicit typed ability installation and resolution now accept the checked passive
+physical/ordinary population context. Both melee specials and arcane projectile
+impacts validate exact live creature identities and use population defensive facing;
+existing pursuit readiness/return behavior is preserved. Wrong ability-catalogue
+bytes and duplicate installation fail without changing World identity.
+Four separately selected authored fixtures pass at 20/30/60 Hz: physical swings,
+ordinary swings, sword specials and cast-time arcane projectiles. Five players use
+required equipment, each resolves one typed ability against its NPC then ordinary
+swings finish the life; both generations compare exact resolved draws/results and
+health loss with the existing profiles. All ten ability facts per rate preserve
+player life identity; stale NPCs are refused, and no incoming strikes occur.
+All 500 ordinary network-library tests, fmt and strict workspace/all-target Clippy
+pass. Evidence: build/population-abilities-final.log. This does not install passive
+population membership/credit, NPC retaliation/pursuit, normal launcher flags or
+editor controls. Existing fixture numerical rules remain; no display access.
+
 P3-09 / P5-17 passive population ordinary melee outcomes, 13 November 2026:
 Explicit ordinary weapon outcomes now admit checked passive physical populations
 with healthy shared player-life authority. Exact live creature-facing lookup keeps

@@ -151,11 +151,11 @@ impl World {
             .as_ref()
             .ok_or("Ability damage requires combat")?;
         if combat.ability_damage.is_some()
-            || !combat.supports_white_melee()
+            || (!combat.supports_white_melee() && !combat.passive_physical_ready(self))
             || crate::terrain::sha256(abilities) != combat.catalog_digest
         {
             return Err(
-                "Ability damage requires pursuit and one exact active ability catalogue".into(),
+                "Ability damage requires checked creature context and one exact active ability catalogue".into(),
             );
         }
         let ordinary = combat
@@ -201,11 +201,11 @@ impl Authority {
         hit: &Hit,
     ) -> Result<()> {
         if hit.sequence == 0
-            || !self.ordinary_target_ready()
+            || (!self.ordinary_target_ready() && !self.passive_physical_ready(world))
             || world.entity_key(hit.actor.entity.value()) != Some(hit.actor)
             || self.events.len() + self.physical_melee_event_slots(hit.target)
                 > self.step_event_budget()
-            || world.patrol.as_ref().is_none_or(|p| p.key != hit.target)
+            || !self.physical_target_matches(world, hit.target)
         {
             return Err("Ability-damage actor, target or event capacity unavailable".into());
         }
