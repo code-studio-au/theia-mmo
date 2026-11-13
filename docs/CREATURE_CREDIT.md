@@ -1,3 +1,26 @@
+P3-06 / P3-09 / P3-10 / P3-11 pursuing population durable competition,
+14 November 2026: extend the retained owned World/PostgreSQL qualifier with an
+explicit --threat population mode and 20/30/60 Hz selection. It uses the normal
+configured navigation, retaliation, reset, shared damage threat and public NP01
+observation. Accepted Arcane casts move the victim from the first tagger to the
+finisher; exact public/private windups agree and an incoming ordinary strike reaches
+the finisher. Every live sample checks damage-threat totals against actual health
+lost and unchanged tag ownership. Death clears the table; neighbouring NPC health
+is unchanged. The existing no-cost/unequipped Arcane and synthetic account/accepted
+legacy quest fixtures remain explicit, without production gameplay changes.
+
+At all three rates the first tagger alone receives 25 XP, one accepted quest count
+and one unconsumed training claim. SQL lock withholding, continued fixed steps,
+replay idempotency, wrong-recipient refusal, fresh Store connection and PostgreSQL
+process restart all pass. Passive-population and singleton receipt regressions
+also pass. Evidence: build/population-threat-receipts-{20,30,60,passive,singleton}-v1/
+verification.json. Strict workspace/all-target Clippy, fmt, 25 server tests, Python
+compile and diff checks pass; see population-threat-receipt-final-checks.log and
+population-threat-receipt-server-tests.log. Socket-dependent tests were rerun outside
+the restricted sandbox. This adds no OIDC, encrypted-client, corpse-consumption,
+native Windows or MMO capacity claim. Next: competing authenticated native clients
+with normal durable grants/loot, retaining these separate receipt contracts. Local only.
+
 Population durability follow-up, 13 November 2026: the owned qualifier accepts
 `--population PACKAGE` and checks one contested NPC among five checked passive actors.
 First tag owns the durable XP, legacy quest count and training claim; the finisher's

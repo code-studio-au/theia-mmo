@@ -1,3 +1,9 @@
+Population durable competition update, 14 November 2026: actual authored World
+victim transfer, matched public/private windups and unchanged first-tag SQL receipts
+pass at 20/30/60 Hz with PostgreSQL restart. Retained passive/singleton receipts pass.
+Next: competing authenticated native clients with normal durable grants and loot.
+See STATUS for fixture boundaries; no new gameplay rule or renderer change.
+
 Public population presentation update, 14 November 2026: pursuing editor account
 launches now enable bounded public NPC attack timing and standard Bevy animation.
 Two native clients pass simultaneous/remote-victim playback at 20/30/60 Hz; normal

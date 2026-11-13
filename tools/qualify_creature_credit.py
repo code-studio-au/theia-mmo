@@ -7,15 +7,22 @@ import subprocess
 from private_postgres import Cluster
 
 
-def run(output, sdk, binary, terrain, navigation, population=None):
+def run(output, sdk, binary, terrain, navigation, population=None, threat=False, tick_hz=30):
+    if threat and population is None:
+        raise ValueError('Threat receipts require an explicit pursuing population package')
+    if tick_hz not in (20, 30, 60):
+        raise ValueError('Unsupported simulation rate')
     output = output.resolve()
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     with Cluster(output/'cluster', sdk.resolve()) as cluster:
         durability = cluster.query('SHOW fsync; SHOW synchronous_commit; SHOW full_page_writes;')
         assert durability.returncode == 0 and durability.stdout.split() == ['on', 'on', 'on']
         env = cluster.test_environment()
-        for key in ('DISPLAY', 'WAYLAND_DISPLAY', 'THEIA_POPULATION_PACKAGE'):
+        for key in ('DISPLAY', 'WAYLAND_DISPLAY', 'THEIA_POPULATION_PACKAGE', 'THEIA_CREDIT_THREAT', 'THEIA_CREDIT_TICK_HZ'):
             env.pop(key, None)
+        env['THEIA_CREDIT_TICK_HZ'] = str(tick_hz)
+        if threat:
+            env['THEIA_CREDIT_THREAT'] = '1'
         if population is not None:
             env['THEIA_POPULATION_PACKAGE'] = str(population.resolve())
         else:
@@ -31,6 +38,11 @@ def run(output, sdk, binary, terrain, navigation, population=None):
         assert result['population_first_tag'] == (population is not None)
         assert result['population_actors'] == (5 if population is not None else 1)
         assert result['defeated_lives'] == 1
+        assert result['damage_threat'] == threat and result['tick_hz'] == tick_hz
+        if threat:
+            assert all(result['threat_proof'].values())
+            assert result['threat_metrics']['transfers'] > 0
+            assert result['threat_metrics']['health_lost'] == 100
         # Both the qualifier process and PostgreSQL process have ended before
         # these persisted recipient/receipt rows are read again.
         cluster.restart()
@@ -62,7 +74,9 @@ if __name__ == '__main__':
     parser.add_argument('--sdk', type=Path, default=Path('build/postgres-sdk'))
     parser.add_argument('--binary', type=Path, default=Path('target/debug/examples/creature_credit_durable_qualification'))
     parser.add_argument('--population', type=Path, help='Checked five-actor population package instead of the saved-terrain patrol fixture')
+    parser.add_argument('--threat', action='store_true', help='Require pursuing population victim transfer with unchanged first-tag durable recipients')
+    parser.add_argument('--tick-hz', type=int, choices=(20,30,60), default=30)
     parser.add_argument('--terrain', type=Path, default=Path('build/graybox-terrain-v1'))
     parser.add_argument('--navigation', type=Path, default=Path('build/navigation-terrain-v1'))
     args = parser.parse_args()
-    print(json.dumps(run(args.output, args.sdk, args.binary, args.terrain, args.navigation, args.population), indent=2))
+    print(json.dumps(run(args.output, args.sdk, args.binary, args.terrain, args.navigation, args.population, args.threat, args.tick_hz), indent=2))

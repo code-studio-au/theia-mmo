@@ -29,16 +29,27 @@ const ABILITIES: &[u8] =
 const XP: &[u8] = include_bytes!("../../../content/gameplay/development-progression.json");
 const QUEST: &[u8] = include_bytes!("../../../content/gameplay/development-quest.json");
 const REWARDS: &[u8] = include_bytes!("../../../content/gameplay/development-rewards.json");
-async fn world() -> theia_network::Result<(World, [f64; 2], bool)> {
+async fn world() -> theia_network::Result<(World, [f64; 2], bool, bool)> {
     let package = std::env::var_os("THEIA_POPULATION_PACKAGE");
-    let passive_population = package.is_some();
+    let population_enabled = package.is_some();
+    let threat = std::env::var("THEIA_CREDIT_THREAT").as_deref() == Ok("1");
+    if threat && !population_enabled {
+        return Err("Threat receipt fixture requires an explicit population package".into());
+    }
+    let rate = theia_core::time::TickRate::from_hz(
+        std::env::var("THEIA_CREDIT_TICK_HZ")
+            .unwrap_or_else(|_| "30".into())
+            .parse()?,
+    )
+    .ok_or("Unsupported receipt fixture rate")?;
     let (mut world, creature, placement, respawn_ms) = if let Some(package) = package {
-        population::prepare(PathBuf::from(package)).await?
+        population::prepare(PathBuf::from(package), rate, threat).await?
     } else {
         let terrain = PathBuf::from(std::env::var("THEIA_TEST_SAVED_TERRAIN")?);
         let navigation = PathBuf::from(std::env::var("THEIA_TEST_NAVIGATION")?);
         let source = Source::Saved(Arc::new(saved_terrain::Store::open(&terrain)?));
         let mut world = World::with_terrain_source([8008., 8002.], 1., source.clone())?;
+        assert!(world.set_tick_rate(rate));
         world.enable_prediction()?;
         world.enable_classic()?;
         theia_server::development::prepare_guide(
@@ -85,7 +96,9 @@ async fn world() -> theia_network::Result<(World, [f64; 2], bool)> {
         include_bytes!("../../../content/gameplay/development-creature-retaliation.json"),
         include_bytes!("../../../content/gameplay/development-player-respawn.json"),
     )?);
-    if passive_population {
+    if threat {
+        world.enable_population_player_life(life)?;
+    } else if population_enabled {
         world.enable_passive_population_player_life(life)?;
     } else {
         world.enable_player_life(life)?;
@@ -113,6 +126,15 @@ async fn world() -> theia_network::Result<(World, [f64; 2], bool)> {
     world.enable_creature_credit(include_bytes!(
         "../../../content/gameplay/development-creature-credit-solo.json"
     ))?;
+    if threat {
+        world.enable_creature_reset(include_bytes!(
+            "../../../content/gameplay/development-creature-return-reset.json"
+        ))?;
+        world.enable_creature_threat(include_bytes!(
+            "../../../content/gameplay/development-creature-threat.json"
+        ))?;
+        world.enable_public_population_attacks()?;
+    }
     let items = theia_network::renet_runtime::inventory::Profile::from_json(ITEMS)?;
     world.enable_rewards(Arc::new(theia_network::reward_wire::Profile::from_json(
         REWARDS, &items,
@@ -120,14 +142,14 @@ async fn world() -> theia_network::Result<(World, [f64; 2], bool)> {
     world.enable_progression(Arc::new(
         theia_network::progression_wire::Profile::from_json(XP)?,
     ))?;
-    if !passive_population {
+    if !population_enabled {
         world.enable_quest_lifecycle(Arc::new(
             theia_network::quest_lifecycle_wire::Profile::from_json(QUEST)?,
         ))?;
     }
     // The population branch checks SQL recipient receipts directly; it does not
     // adopt the legacy singleton quest interaction mode into a population World.
-    Ok((world, placement, passive_population))
+    Ok((world, placement, population_enabled, threat))
 }
 fn join(world: &mut World, placement: [f64; 2]) -> theia_network::Result<u64> {
     let point = GlobalPosition::new([placement[0], 0., placement[1]]).unwrap();
@@ -187,7 +209,12 @@ fn attack(
 #[tokio::main]
 async fn main() -> theia_network::Result<()> {
     let (url, mut admin, driver) = support::owned().await;
-    let (mut world, placement, passive_population) = world().await?;
+    let (mut world, placement, population_enabled, threat) = world().await?;
+    let cast_window = world
+        .tick_rate()
+        .ticks_for(Duration::from_millis(2166))
+        .unwrap();
+    let mut threat_proof = population::ThreatProof::default();
     let identity = world.identity();
     let a = join(&mut world, placement)?;
     let b = join(&mut world, placement)?;
@@ -197,8 +224,11 @@ async fn main() -> theia_network::Result<()> {
     let mut first_sequence = 1;
     loop {
         attack(&mut world, a, npc, first_sequence)?;
-        for _ in 0..65 {
+        for _ in 0..cast_window {
             world.step();
+            if threat {
+                threat_proof.observe(&world, npc, a, b)?;
+            }
         }
         if world.creature_tag_owner_for(npc) == Some(owner) {
             break;
@@ -211,8 +241,11 @@ async fn main() -> theia_network::Result<()> {
     let mut events = None;
     for sequence in 1..=30 {
         attack(&mut world, b, npc, sequence)?;
-        for _ in 0..65 {
+        for _ in 0..cast_window {
             world.step();
+            if threat {
+                threat_proof.observe(&world, npc, a, b)?;
+            }
             if world.creature_kill_credit_for(npc).is_some() {
                 events = Some(world.combat_events().to_vec());
                 break;
@@ -234,7 +267,10 @@ async fn main() -> theia_network::Result<()> {
             |e| matches!(e,combat::Event::AbilityDamage(f) if f.actor==killer&&f.remaining==0)
         )
     );
-    if passive_population {
+    if threat {
+        threat_proof.check(&world, npc);
+    }
+    if population_enabled {
         let health = world.combat_snapshot(a).unwrap().targets;
         assert_eq!(health.len(), 5);
         assert_eq!(health.iter().filter(|h| h.current == 0).count(), 1);
@@ -244,8 +280,14 @@ async fn main() -> theia_network::Result<()> {
                 .filter(|h| h.key != npc)
                 .all(|h| h.current == h.maximum)
         );
-        assert_eq!(world.player_life_snapshot(a).unwrap().health, 100);
-        assert_eq!(world.player_life_snapshot(b).unwrap().health, 100);
+        for actor in [a, b] {
+            let health = world.player_life_snapshot(actor).unwrap().health;
+            if threat {
+                assert!(health > 0 && health <= 100);
+            } else {
+                assert_eq!(health, 100);
+            }
+        }
     }
     let realm = RealmId::random();
     let mut store = Store::connect_loopback(&url, realm).await?;
@@ -385,7 +427,7 @@ async fn main() -> theia_network::Result<()> {
     }
     println!(
         "{}",
-        serde_json::json!({"passed":true,"actual_world_competing_hitter":true,"population_first_tag":passive_population,"population_actors":if passive_population {5} else {1},"defeated_lives":1,"actual_postgres":true,"sql_lock_prevented_ack":true,"simulation_advanced_while_sql_blocked":true,"owner_xp":25,"owner_quest_count":1,"owner_training_claims":1,"killer_xp":0,"killer_quest_count":0,"killer_training_claims":0,"replay_no_duplicate":true,"wrong_recipient_replay_refused":true,"connection_restart_verified":true,"oidc":false,"encrypted_clients":false,"native_ui":false,"loot_claim_consumed":false})
+        serde_json::json!({"passed":true,"actual_world_competing_hitter":true,"population_first_tag":population_enabled,"population_actors":if population_enabled {5} else {1},"tick_hz":world.tick_rate().hz(),"damage_threat":threat,"threat_proof":threat.then_some(&threat_proof),"threat_metrics":world.creature_threat_metrics(),"defeated_lives":1,"actual_postgres":true,"sql_lock_prevented_ack":true,"simulation_advanced_while_sql_blocked":true,"owner_xp":25,"owner_quest_count":1,"owner_training_claims":1,"killer_xp":0,"killer_quest_count":0,"killer_training_claims":0,"replay_no_duplicate":true,"wrong_recipient_replay_refused":true,"connection_restart_verified":true,"oidc":false,"encrypted_clients":false,"native_ui":false,"loot_claim_consumed":false})
     );
     drop(restarted);
     drop(admin);
