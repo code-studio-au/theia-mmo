@@ -1,3 +1,20 @@
+P3-07 / P5-17 managed multi-client population launcher, 13 November 2026:
+tools/network_playtest.py now accepts --population-config with optional explicit
+--combat-catalog and client-only --creature-asset. First validate the scenario's
+static-world identity, then preflight the complete checked population/combat
+configuration before creating any owned server, relay or client. Existing local
+player positions, per-peer impairment, owner EOF and stop cleanup remain in use.
+Fourteen launcher tests pass, including failed population preflight, forwarding
+and cleanup. An actual managed Linux Vulkan session admits two native clients to
+five passive actors; one peer adds 40 ms each-way delay and 5 ms jitter. Server
+reports two test admissions, two combat and targeting states, no refused inputs
+or movement recoveries; 25-second duration stop removes tickets and all owned
+children without cleanup errors. RX 7900 XTX/RADV Vulkan validation logs are clean.
+Evidence: build/population-managed-launcher-tests.log;
+build/population-managed-v1/{qualification.json,launcher.log,session/}.
+This is launcher support; editor snapshot/start wiring follows. No movement,
+combat exercise, capacity or Windows execution claim in this check.
+
 P4-03 / P3-07 population navigation at authored world edges, 13 November 2026:
 Route-free area baking now distinguishes absent clipped surfaces and a successful
 bake with no walkable polygons from invalid input/backend failures. Only the first

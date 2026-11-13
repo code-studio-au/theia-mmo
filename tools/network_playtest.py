@@ -109,7 +109,8 @@ def stop(process, server=False):
             process.wait(timeout=5)
 
 
-def run(scenario_path, world, players, binaries, output, *, duration=None, window_size='1280x720', stop_requested=lambda: False):
+def run(scenario_path, world, players, binaries, output, *, duration=None, window_size='1280x720', stop_requested=lambda: False,
+        population_config=None, combat_catalog=None, creature_asset=None):
     if stop_requested():
         return
     scenario = Scenario.load(scenario_path)
@@ -126,6 +127,19 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
             raise ValueError(f'Missing test dependency: {path}')
     if output.exists():
         raise ValueError('Choose a fresh playtest output directory')
+    if population_config is None and (combat_catalog is not None or creature_asset is not None):
+        raise ValueError('Population combat and creature presentation require a population configuration')
+    if population_config is not None:
+        population_config = Path(population_config).resolve()
+        combat_catalog = Path(combat_catalog or Path(__file__).resolve().parent.parent /
+                              'content/gameplay/development-abilities.json').resolve()
+        for path in (population_config, combat_catalog):
+            if not path.is_file():
+                raise ValueError(f'Missing population dependency: {path}')
+    if creature_asset is not None:
+        creature_asset = Path(creature_asset).resolve()
+        if not creature_asset.is_file():
+            raise ValueError(f'Missing creature presentation: {creature_asset}')
     environment = client_environment(os.environ)
     # Ordinary manual controls until a controller is explicitly assigned.
     for name in list(environment):
@@ -140,6 +154,22 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
     configuration = json.loads(checked.stdout[start:]) if start >= 0 else {}
     if configuration.get('classic_source') != list(scenario.identity):
         raise ValueError('Test scenario belongs to a different authored world')
+    # Bind player starts to the static world, then independently validate the
+    # complete population/combat identity before starting any owned child.
+    if population_config is not None:
+        scene.extend(['--population-config', str(population_config), '--combat-catalog', str(combat_catalog)])
+        checked = subprocess.run([str(client_binary), *scene,
+                                  *(['--creature-asset', str(creature_asset)] if creature_asset else []),
+                                  '--configuration-report'], env=environment,
+                                 capture_output=True, text=True, timeout=30)
+        if checked.returncode:
+            raise ValueError(f'Population validation failed: {checked.stderr.strip()}')
+        start = checked.stdout.find('{')
+        configuration = json.loads(checked.stdout[start:]) if start >= 0 else {}
+        population = configuration.get('population')
+        if (not isinstance(population, dict) or type(population.get('count')) is not int
+                or not 1 <= population['count'] <= 16):
+            raise ValueError('Client did not validate a bounded population')
     for controller in {p.controller for p in scenario.players if p.controller is not None}:
         checked_script = subprocess.run([str(client_binary), *scene, '--test-controller', str(controller), '--configuration-report'],
                                         env=environment, capture_output=True, text=True, timeout=30)
@@ -196,7 +226,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
                 relay.start(backend)
                 processes.append(subprocess.Popen([str(client_binary), *scene, '--window-size', window_size,
                     '--test-window', f'{view_index}/{len(scenario.players)}',
-                    '--player-assets', str(players), *(['--test-controller', str(player.controller)] if player.controller else []), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
+                    '--player-assets', str(players), *(['--creature-asset', str(creature_asset)] if creature_asset else []), *(['--test-controller', str(player.controller)] if player.controller else []), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
                     str(Path(tickets) / f'client-{player.client_id}.token')], env=environment,
                     stdout=files.enter_context((output / f'client-{player.client_id}.log').open('w')), stderr=subprocess.STDOUT))
                 files.callback(cleanup, stop, processes[-1])
@@ -225,7 +255,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
         reason = 'failed'
         raise
     finally:
-        summary = dict(reason=reason, cleanup_errors=cleanup_errors, clients=[dict(client_id=p.client_id, started=p.client_id in launched_ids, network=asdict(p.network),
+        summary = dict(reason=reason, cleanup_errors=cleanup_errors, population=configuration.get('population'), clients=[dict(client_id=p.client_id, started=p.client_id in launched_ids, network=asdict(p.network),
                        added_base_rtt_ms=p.network.added_rtt_ms, controller=str(p.controller) if p.controller else None, relay=r.stats)
                        for p, r in zip(scenario.players, relays)],
                        scope='Local encrypted development tickets; optional bounded movement controllers; no account persistence or scripted combat')
@@ -251,6 +281,9 @@ def main():
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--duration', type=float)
+    parser.add_argument('--population-config', type=Path)
+    parser.add_argument('--combat-catalog', type=Path)
+    parser.add_argument('--creature-asset', type=Path)
     parser.add_argument('--window-size', default='1280x720')
     parser.add_argument('--stop-on-stdin-eof', action='store_true', help='Stop owned children when the launching editor closes its stdin pipe')
     args = parser.parse_args()
@@ -261,7 +294,8 @@ def main():
     if args.stop_on_stdin_eof:
         threading.Thread(target=watch_owner, args=(sys.stdin.buffer, stopped), daemon=True).start()
     run(args.scenario, args.world, args.players, args.binaries, args.output,
-        duration=args.duration, window_size=args.window_size, stop_requested=stopped.is_set)
+        duration=args.duration, window_size=args.window_size, stop_requested=stopped.is_set,
+        population_config=args.population_config, combat_catalog=args.combat_catalog, creature_asset=args.creature_asset)
 
 
 if __name__ == '__main__':

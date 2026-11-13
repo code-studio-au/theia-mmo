@@ -85,7 +85,7 @@ class LifecycleTests(unittest.TestCase):
         self.output = self.root / 'session'
         self.processes, self.relays = [], []
 
-    def execute(self, *, fail_client=None, stop_startup=False, identity=None, owner_stops_after=None):
+    def execute(self, *, fail_client=None, stop_startup=False, identity=None, owner_stops_after=None, population=False, invalid_population=False):
         stopped = threading.Event()
         owner = self
         class Child:
@@ -114,9 +114,35 @@ class LifecycleTests(unittest.TestCase):
                 owner.relays.append(self)
             def start(self, backend): self.backend = backend
             def close(self): self.closed = True
-        checked = SimpleNamespace(returncode=0, stdout=json.dumps(dict(classic_source=identity or list(range(32)))), stderr='')
+        checked = SimpleNamespace(returncode=0, stdout=json.dumps(dict(classic_source=identity or list(range(32)),
+            population=None if invalid_population else dict(count=5, respawn_ms=30000))), stderr='')
+        extra = {}
+        if population:
+            for name in ['population.json', 'abilities.json', 'wolf.glb']:
+                (self.root/name).write_text('fixture')
+            extra = dict(population_config=self.root/'population.json', combat_catalog=self.root/'abilities.json',
+                         creature_asset=self.root/'wolf.glb')
         with patch.object(play.subprocess, 'Popen', Child), patch.object(play.subprocess, 'run', return_value=checked), patch.object(play, 'Relay', Connection):
-            play.run(self.path, self.world, self.art, self.binaries, self.output, stop_requested=stopped.is_set)
+            play.run(self.path, self.world, self.art, self.binaries, self.output, stop_requested=stopped.is_set, **extra)
+
+    def test_population_configuration_reaches_both_clients_and_server_but_art_only_clients(self):
+        self.execute(population=True)
+        self.assertEqual(len(self.processes), 3)
+        for child in self.processes:
+            args = child.arguments
+            self.assertEqual(args[args.index('--population-config')+1], str(self.root/'population.json'))
+            self.assertEqual(args[args.index('--combat-catalog')+1], str(self.root/'abilities.json'))
+            self.assertEqual('--creature-asset' in args, child is not self.processes[0])
+        self.assertTrue(all(p.returncode == 0 for p in self.processes))
+        self.assertFalse(list(self.output.glob('tickets-*')))
+        summary = json.loads((self.output/'session.json').read_text())
+        self.assertEqual(summary['population']['count'], 5)
+
+    def test_unvalidated_population_never_creates_session_or_children(self):
+        with self.assertRaisesRegex(ValueError, 'bounded population'):
+            self.execute(population=True, invalid_population=True)
+        self.assertFalse(self.processes)
+        self.assertFalse(self.output.exists())
 
     def test_owner_exit_during_client_startup_stops_started_children_and_cancels_rest(self):
         self.execute(owner_stops_after=2)

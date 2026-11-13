@@ -4737,3 +4737,12 @@ Minimum spacing is editable in metres. Tab/Shift-Tab traverses all six fields;
 invalid spacing is rejected before starting work. Export runs in the background
 and preserves the editor document. This action publishes the package; use the
 launcher command above to play it.
+
+
+For an existing checked population package and a separately authored matching
+schema-1 test scenario, `tools/network_playtest.py` accepts
+`--population-config PACKAGE/population.json`, optional `--combat-catalog FILE`,
+and optional client-only `--creature-asset FILE`. Static-world identity is checked
+before the population/combat preflight. Per-player delay/jitter and managed
+stop/owner-exit cleanup remain available. This launcher support does not yet
+make the ordinary network snapshot exporter accept spawn groups.
