@@ -23,7 +23,7 @@ SECOND = 'theia.dev.quest-follow-up'
 WOLVES = SECOND + '.objective.wolves'
 
 
-def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None):
+def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None, checked_travel=False):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
     expected_head = base_head + (3 if reach_areas else 0)
@@ -110,7 +110,25 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
     def feet():
         return state()['dodge']['authority_feet']
 
+    def activate():
+        assert owned_window(state()['pid']) == window, 'Quest input window ownership changed'
+        desktop.focus(window)
+        wait(lambda: state()['cursor']['focused'])
+
     def face(point):
+        if checked_travel:
+            activate()
+            # This qualifier uses the default Classic bindings/rate. Turn the
+            # character through ordinary A/D; never steer travel with the camera.
+            for _ in range(12):
+                player = feet()
+                yaw = math.atan2(-(point[0]-player[0]), -(point[2]-player[2]))
+                error = math.atan2(math.sin(yaw-state()['classic_facing']*math.tau/65536), math.cos(yaw-state()['classic_facing']*math.tau/65536))
+                if abs(error) < .09:
+                    return
+                desktop.hold_key('a' if error > 0 else 'd', min(.5, max(.015, abs(error)/math.pi)))
+                time.sleep(.15)
+            raise AssertionError('Bounded ordinary keyboard facing did not settle')
         player = feet()
         yaw = math.atan2(-(point[0]-player[0]), -(point[2]-player[2]))
         for _ in range(6):
@@ -150,6 +168,38 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         travel_count += 1
         points = list(reversed(authored_trail)) if reverse else authored_trail
         observations = []
+        if checked_travel:
+            # Join only the nearby checked endpoint after normal combat movement.
+            # Long-distance traversal belongs to the prepared client follower.
+            assert math.dist(feet(), points[0]) < 40, 'Combat moved too far from the checked route'
+            if math.dist(feet(), points[0]) >= .4:
+                approach(lambda: points[0], tolerance=.4)
+            activate()
+            if reverse:
+                desktop.key('F7')
+            else:
+                desktop.key_state('Shift_L', True)
+                try:
+                    desktop.key('F7')
+                finally:
+                    desktop.key_state('Shift_L', False)
+            leg = 'return' if reverse else 'outward'
+            wait(lambda: state()['test_controller']['active'] or state()['test_controller']['travel']['failure'],10)
+            def arrived():
+                observed = state()
+                controller = observed['test_controller']
+                travel = controller['travel']
+                if observed['combat']['player_health'] == 0:
+                    raise AssertionError('Player died during checked quest travel')
+                assert travel['failure'] is None, travel
+                return observed if travel['leg']==leg and travel['finished'] and not controller['active'] else None
+            observed = wait(arrived, 120)
+            assert math.dist(feet(), points[-1]) < .4
+            activate()
+            (folder / f'trail-{travel_count}-{leg}.json').write_text(json.dumps(dict(
+                input='checked client route through ordinary Classic input',
+                controller=observed['test_controller'], feet=feet(), tick=observed['dodge']['tick']),indent=2)+'\n')
+            return
         for point in points:
             approach(lambda: point, tolerance=.6)
             observations.append(dict(requested=point, feet=feet(), tick=state()['dodge']['tick']))
@@ -292,12 +342,14 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         from quest_reach_area_os import flow as area_flow
         area_proof = area_flow(desktop, state, folder, quest, journal, feet, face,
                                close_panels, speak, action, capture,
-                               area=authored_area, travel=walk_trail if authored_trail else None)
+                               area=authored_area, travel=walk_trail if authored_trail else None,
+                               travel_label='checked client route with ordinary keyboard endpoint alignment' if checked_travel else None)
         assert journal()['revision'] == expected_head
         assert journal()['ui']['submitted'] == 6 and journal()['ui']['applied'] == 6
         assert journal()['ui']['rejected'] == 0
     return dict(passed=True, resumed=False, revision=expected_head, xp=expected_xp,
                 actions=6 if reach_areas else 4, reach_area=area_proof,
+                travel_input='checked client route plus ordinary keyboard alignment' if checked_travel else 'normal OS movement',
                 player_deaths=state()['combat']['player_deaths'], returned_via_respawn=returned_via_respawn,
                 semantic_choices=4, preaccept_noop_choices=2 if repeat_interaction else 0, kills=3, ui=journal()['ui'], adapter=state()['adapter'])
 

@@ -4878,3 +4878,9 @@ render-origin changes, and use the existing F9/world-effects visibility control.
 Particle collision remains presentation-only; world collision, navigation and
 server population/combat are unchanged. These are bounded authored worlds, not a
 new streaming or MMO-capacity implementation.
+
+For an opt-in checked route, **Shift+F7** explicitly restarts the outward leg after
+a respawn or interrupted return. The player must still be at the original checked
+start. Ordinary F7 keeps its existing manual/next-leg behavior. The authored quest
+qualifier's `--checked-travel` wiring has headless checks; complete native quest
+playback with this option remains pending.

@@ -1,3 +1,25 @@
+P4-03 checked quest-travel wiring, headless checkpoint, 13 November 2026:
+Shift+F7 explicitly restarts an opt-in checked route outward, including after a
+return-leg interruption or player respawn. It clears the old input-incarnation
+context, requires focused activation and retains the original checked-start guard;
+no position, authority or normal player-control change. F7 retains its existing
+next-leg/manual behavior. Completed-route status exposes the new shortcut.
+The existing authored quest qualifier accepts --checked-travel to prepare a paused
+route and use the follower for long village/grove legs. Short endpoint/combat
+alignment uses bounded ordinary A/D holds instead of camera corrections. Ordinary
+quest/UI/combat commands remain. Holds release on exceptions and reject foreign
+focus/invalid duration. Cursor readiness now uses one telemetry snapshot per poll.
+Thirteen controller tests and actual contact-v3 world/navigation route preparation
+plus wrong-floor refusal pass. Two Python input-helper safety checks use mocks with
+no X connection; Python compilation, fmt and strict workspace/all-target Clippy pass.
+The native attempt reached login and the paused 136-point route, but stopped during
+cursor readiness before any quest action. User resumed mouse/display use and now
+requires headless work; owned test services/processes are closed. Full checked-route
+quest/combat/area completion, restart/rejoin and updated native status rendering
+remain unverified. Preserve the earlier completed manual-travel quest evidence.
+Evidence: build/quest-checked-travel-{build,headless-checks,final-headless}.log;
+build/authored-quests-checked-travel-native-v1/ (incomplete attempt, not acceptance).
+
 P3-10 / P5-17 population fatal-hit definition prerequisite, 13 November 2026:
 Trusted XP fact collection can resolve each bound passive population incarnation
 through combat health after death removes targetability. Respawn replaces that

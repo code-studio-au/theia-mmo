@@ -96,6 +96,13 @@ impl Travel {
         }
         self.reset();
     }
+    pub fn restart_outward(&mut self) {
+        if self.returning {
+            self.points.reverse();
+            self.returning = false;
+        }
+        self.reset();
+    }
     pub fn next_action(&self) -> &'static str {
         if self.return_trip && self.finished() {
             if self.returning { "outward" } else { "return" }
@@ -268,6 +275,94 @@ mod tests {
         value["start_paused"] = serde_json::json!("true");
         assert!(serde_json::from_value::<Document>(value).is_err());
     }
+    #[test]
+    fn outward_restart_key_requires_focus_and_clears_previous_incarnation_context() {
+        use super::super::{Run, Script, toggle};
+        use bevy::prelude::*;
+        let mut travel = route();
+        travel.return_trip = true;
+        travel.index = travel.points.len();
+        travel.restart();
+        travel.cancel("Player cannot act");
+        let mut run = Run::new(Script {
+            schema: 1,
+            name: "Travel".into(),
+            repeat: false,
+            steps: vec![],
+        });
+        run.travel = Some(travel);
+        run.active = false;
+        run.context = Some((
+            theia_core::identity::EntityKey {
+                epoch: theia_core::identity::WorldEpoch::new(1).unwrap(),
+                entity: theia_core::identity::EntityId::new(2).unwrap(),
+            },
+            3,
+        ));
+        let mut app = App::new();
+        app.insert_resource(run)
+            .init_resource::<ButtonInput<KeyCode>>()
+            .add_systems(Update, toggle);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: false,
+                ..default()
+            })
+            .id();
+        {
+            let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            keys.press(KeyCode::ShiftLeft);
+            keys.press(KeyCode::F7);
+        }
+        app.update();
+        assert!(!app.world().resource::<Run>().active);
+        assert!(
+            app.world()
+                .resource::<Run>()
+                .travel
+                .as_ref()
+                .unwrap()
+                .returning
+        );
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        app.update();
+        let run = app.world().resource::<Run>();
+        assert!(run.active);
+        assert!(!run.travel.as_ref().unwrap().returning);
+        assert!(run.travel.as_ref().unwrap().failure.is_none());
+        assert!(run.context.is_none());
+    }
+
+    #[test]
+    fn explicit_outward_restart_after_death_keeps_the_original_start_guard() {
+        let mut travel = route();
+        let original = travel.points.clone();
+        travel.return_trip = true;
+        travel.index = travel.points.len();
+        travel.restart();
+        assert!(travel.returning);
+        travel.cancel("Player cannot act");
+        travel.restart_outward();
+        assert!(!travel.returning);
+        assert_eq!(travel.points, original);
+        assert!(
+            travel
+                .sample(0.1, *original.last().unwrap(), Facing::default(), 3.)
+                .is_none()
+        );
+        assert_eq!(
+            travel.failure,
+            Some("Player is not at the checked route start")
+        );
+        travel.restart_outward();
+        assert!(
+            travel
+                .sample(0.1, original[0], Facing::default(), 3.)
+                .is_some()
+        );
+    }
+
     #[test]
     fn return_leg_is_explicit_only_after_arrival_and_preserves_start_checks() {
         let mut travel = route();

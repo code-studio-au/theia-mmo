@@ -164,6 +164,19 @@ class Desktop:
         self.t.XTestFakeRelativeMotionEvent(self.display,int(x),int(y),0);self.x.XFlush(self.display);time.sleep(.2)
     def key(self,name):
         self.key_state(name,True);self.key_state(name,False)
+    def hold_key(self,name,seconds):
+        """Bounded gameplay hold without the UI key helper's 100 ms minimum."""
+        assert math.isfinite(seconds) and 0 < seconds <= 1
+        self.owned_focus()
+        code=self.x.XKeysymToKeycode(self.display,self.x.XStringToKeysym(name.encode()))
+        assert code
+        self.held_keys.add(name)
+        self.t.XTestFakeKeyEvent(self.display,code,1,0);self.x.XFlush(self.display)
+        try:
+            time.sleep(seconds)
+        finally:
+            self.t.XTestFakeKeyEvent(self.display,code,0,0);self.x.XFlush(self.display)
+            self.held_keys.discard(name)
     def drag(self,window,point,scale):
         self.move(window,point,scale);self.button(3,True)
         for _ in range(8):

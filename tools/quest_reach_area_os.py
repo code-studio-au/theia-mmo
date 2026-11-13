@@ -7,7 +7,7 @@ from qualify_world_input_os import wait
 QUEST = 'theia.dev.quest-overlook'
 
 
-def flow(desktop, state, folder, quest, journal, feet, face, close_panels, speak, action, capture, area=None, travel=None):
+def flow(desktop, state, folder, quest, journal, feet, face, close_panels, speak, action, capture, area=None, travel=None, travel_label=None):
     # Select via the normal offered quest button, then use only camera/W movement.
     speak()
     action(QUEST, 'Active')
@@ -51,7 +51,7 @@ def flow(desktop, state, folder, quest, journal, feet, face, close_panels, speak
     action(QUEST, 'Completed')
     wait(lambda: journal()['xp'] == 150)
     capture('area-completed.png')
-    proof = dict(passed=True, input='manual camera facing + normal W key',
+    proof = dict(passed=True, input=travel_label or 'manual camera facing + normal W key',
                  outward_start=start, outward_reached_feet=reached,
                  outward_elapsed_seconds=elapsed, return_feet=feet(),
                  area_id=area['id'] if area else 'theia.dev.area.western-overlook',

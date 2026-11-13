@@ -116,6 +116,15 @@ impl Run {
             }
         }
     }
+    fn restart_outward(&mut self) {
+        if let Some(travel) = &mut self.travel {
+            travel.restart_outward();
+            self.active = true;
+            self.step = 0;
+            self.elapsed = 0.;
+            self.context = None;
+        }
+    }
     fn sample(&mut self, seconds: f64, ready: bool) -> Option<(Step, f64)> {
         self.waiting = !ready;
         if !self.active || !ready || self.step >= self.script.steps.len() {
@@ -225,7 +234,11 @@ fn activate(
 }
 fn toggle(keys: Res<ButtonInput<KeyCode>>, windows: Query<&Window>, mut run: ResMut<Run>) {
     if keys.just_pressed(KeyCode::F7) && windows.single().is_ok_and(|w| w.focused) {
-        run.toggle();
+        if run.travel.is_some() && keys.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
+            run.restart_outward();
+        } else {
+            run.toggle();
+        }
     }
 }
 fn ready(
@@ -396,7 +409,7 @@ fn status(run: Res<Run>, mut labels: Query<&mut Text, With<Status>>) {
             format!("{} | Stopped: {reason} [F7: restart]", run.script.name)
         } else if let Some(travel) = run.travel.as_ref().filter(|travel| travel.finished()) {
             format!(
-                "{} | Arrived, manual control [F7: {}]",
+                "{} | Arrived, manual control [F7: {} | Shift+F7: outward]",
                 run.script.name,
                 travel.next_action()
             )

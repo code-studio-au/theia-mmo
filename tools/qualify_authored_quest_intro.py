@@ -21,9 +21,12 @@ for name in ('world', 'navigation', 'gameplay-manifest', 'players', 'output'):
     parser.add_argument('--' + name, type=Path, required=True)
 parser.add_argument('--route', required=True)
 parser.add_argument('--reach-area', action='store_true', help='Also complete the authored western-overlook quest')
+parser.add_argument('--checked-travel', action='store_true', help='Use the checked client follower for quest travel; ordinary keys still drive combat and UI')
 parser.add_argument('--quest-trail', type=Path, help='Also complete the three-kill follow-up using this checked route request')
 parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
 args = parser.parse_args()
+if args.checked_travel and not args.quest_trail:
+    parser.error('--checked-travel requires --quest-trail')
 if args.reach_area and not args.quest_trail:
     parser.error('--reach-area requires --quest-trail')
 out = args.output.resolve()
@@ -55,6 +58,11 @@ if args.quest_trail:
         check=True, capture_output=True, text=True, timeout=60)
     (out / 'route-check.log').write_text(result.stdout)
     trail = json.loads(result.stdout.splitlines()[-1])['authored_navigation_route']['route']['points']
+test_route = None
+if args.checked_travel:
+    test_route = out / 'test-route.json'
+    test_route.write_text(json.dumps(dict(schema=1, name='Village to western grove',
+        navigation=str(args.navigation.resolve()), waypoints=trail, start_paused=True, return_trip=True),indent=2)+'\n')
 os.environ.setdefault('DISPLAY', ':0')
 x = Desktop()
 x.prepare_wheel()
@@ -89,7 +97,7 @@ try:
                     '--binaries', str(args.binaries.resolve()), '--players', str(args.players.resolve()),
                     '--authored-world', str(args.world.resolve()), '--navigation', str(args.navigation.resolve()),
                     '--gameplay-manifest', str(manifest), '--gameplay-validator', str(args.binaries.resolve() / 'examples/validate_gameplay'),
-                    '--window-size', '1280x720']
+                    '--window-size', '1280x720', *(['--test-route',str(test_route)] if test_route else [])]
                 launcher = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT, text=True)
                 try:
                     launcher.stdin.write('1\n' if resumed else 'ValleyArden\n')
@@ -108,12 +116,15 @@ try:
                     wait(lambda: state()['window'][:2] == [1280, 720] and state()['cursor']['focused']
                          and state().get('minimap', {}).get('known_pixels', 0) > 0)
                     x.move(window, [640, 360], initial['window'][2])
-                    wait(lambda: state()['cursor']['position'] and math.dist(state()['cursor']['position'], [640,360]) < 2)
+                    def cursor_ready():
+                        position = state()['cursor']['position']
+                        return position is not None and math.dist(position, [640,360]) < 2
+                    wait(cursor_ready)
                     def play_state():
                         report = state()
                         assert report['connected'], 'Owned client disconnected during quest qualification'
                         return report
-                    proof = flow(x, window, play_state, folder, resumed=resumed, intro_only=not bool(trail), authored_trail=trail, reach_areas=args.reach_area, authored_area=area)
+                    proof = flow(x, window, play_state, folder, resumed=resumed, intro_only=not bool(trail), authored_trail=trail, reach_areas=args.reach_area, authored_area=area, checked_travel=args.checked_travel)
                     launcher.send_signal(signal.SIGINT)
                     assert launcher.wait(timeout=30) == 0
                     results.append(proof)
