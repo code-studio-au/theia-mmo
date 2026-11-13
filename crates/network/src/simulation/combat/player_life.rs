@@ -47,12 +47,17 @@ pub(super) struct Player {
     home: GlobalPosition,
 }
 /// Shared player life ownership is independent of any one NPC engagement.
-/// The current installation API still admits the existing paired profile only.
+/// Installed through paired pursuit or explicitly checked passive-population admission.
 pub(super) struct Lives {
     pub(super) profile: Arc<Profile>,
     respawns: u64,
     held_respawns: u64,
     error: Option<String>,
+}
+impl Lives {
+    pub(super) fn ready(&self) -> bool {
+        self.error.is_none()
+    }
 }
 pub(super) struct Authority {
     pub(super) profile: Arc<Profile>,

@@ -372,6 +372,17 @@ impl World {
     }
 }
 impl Authority {
+    pub(super) fn passive_physical_ready(&self, world: &World) -> bool {
+        world.population.is_some()
+            && world.population_binding.is_some()
+            && world.patrol.is_none()
+            && self.pve.is_none()
+            && self.lives.as_ref().is_some_and(|lives| lives.ready())
+            && self
+                .physical
+                .as_ref()
+                .is_some_and(|physical| physical.error.is_none())
+    }
     pub(super) fn physical_target_matches(&self, world: &World, target: EntityKey) -> bool {
         self.physical.as_ref().is_some_and(|physical| {
             world

@@ -25,6 +25,14 @@ const DAMAGE_STATS: &[u8] =
 #[test]
 #[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
 fn authored_population_physical_swings_resolve_each_life_independently_at_all_rates() {
+    qualify(false);
+}
+#[test]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+fn authored_population_ordinary_swings_resolve_each_life_independently_at_all_rates() {
+    qualify(true);
+}
+fn qualify(ordinary: bool) {
     let store = Arc::new(
         authored_world::Store::open(std::path::Path::new(
             &std::env::var_os("THEIA_AUTHORED_WORLD").unwrap(),
@@ -116,6 +124,40 @@ fn authored_population_physical_swings_resolve_each_life_independently_at_all_ra
         );
         assert_eq!(world.identity(), installed);
         let profile = world.physical_damage_profile().unwrap().clone();
+        if ordinary {
+            world
+                .enable_white_melee(include_bytes!(
+                    "../../../../../../content/gameplay/development-white-melee.json"
+                ))
+                .unwrap();
+            // No accidental admission of singleton pursuit-dependent consumers.
+            let identity = world.identity();
+            assert!(world.enable_public_creature_attacks().is_err());
+            assert!(
+                world
+                    .enable_ability_damage(
+                        include_bytes!(
+                            "../../../../../../content/gameplay/development-ability-starting.json"
+                        ),
+                        include_bytes!(
+                            "../../../../../../content/gameplay/development-ability-damage.json"
+                        ),
+                        include_bytes!(
+                            "../../../../../../content/gameplay/development-classic-abilities.json"
+                        )
+                    )
+                    .is_err()
+            );
+            assert_eq!(world.identity(), identity);
+        }
+        let ordinary_profile = world.white_melee_profile().cloned();
+        for &key in &keys {
+            assert_eq!(
+                world.creature_facing(key),
+                Some(theia_core::facing::Facing::default())
+            );
+        }
+
         let mut players = Vec::new();
         for point in feet {
             let mut body = point.metres();
@@ -150,6 +192,42 @@ fn authored_population_physical_swings_resolve_each_life_independently_at_all_ra
                 )),
             );
             players.push(id);
+        }
+        if ordinary {
+            let center = world
+                .combat_snapshot(players[0])
+                .unwrap()
+                .targets
+                .iter()
+                .find(|t| t.key == keys[0])
+                .unwrap()
+                .position
+                .metres();
+            for (offset, in_front) in [(-0.5, true), (0.5, false)] {
+                let patch = world
+                    .procedural()
+                    .unwrap()
+                    .patch(GlobalPosition::new(center).unwrap())
+                    .unwrap();
+                let mut body = patch
+                    .try_spawn(center[0], center[2] + offset)
+                    .unwrap()
+                    .metres();
+                body[1] += f64::from(crate::world::PAWN_Y);
+                let probe = world
+                    .join_restored(GlobalPosition::new(body).unwrap())
+                    .unwrap();
+                let actor = world.entity_key(probe).unwrap();
+                assert!(world.creature_facing(actor).is_none());
+                let state = world
+                    .combat
+                    .as_ref()
+                    .unwrap()
+                    .ordinary_creature_state(&world, keys[0], actor)
+                    .unwrap();
+                assert_eq!(state.in_front, in_front);
+                world.leave(probe);
+            }
         }
         let player_lives: Vec<_> = players
             .iter()
@@ -186,26 +264,60 @@ fn authored_population_physical_swings_resolve_each_life_independently_at_all_ra
             for _ in 0..u64::from(rate.hz()) * 60 {
                 world.step();
                 for event in world.combat_events() {
-                    if let Event::PhysicalDamage(fact) = event {
-                        let index = targets
-                            .iter()
-                            .position(|&key| key == fact.target)
-                            .expect("Only current exact victims");
-                        assert_eq!(fact.actor, world.entity_key(players[index]).unwrap());
-                        assert_eq!(fact.actor_generation, Some(player_lives[index].generation));
-                        let expected = profile
-                            .weapon_result(
-                                &ContentId::new("theia.dev.training-sword").unwrap(),
-                                fact.roll,
-                                remaining[index],
+                    let (actor, actor_generation, target, after, lost) = match event {
+                        Event::PhysicalDamage(fact) => {
+                            assert!(!ordinary);
+                            let index = targets.iter().position(|&key| key == fact.target).unwrap();
+                            let expected = profile
+                                .weapon_result(
+                                    &ContentId::new("theia.dev.training-sword").unwrap(),
+                                    fact.roll,
+                                    remaining[index],
+                                )
+                                .unwrap();
+                            assert_eq!(fact.result, expected);
+                            (
+                                fact.actor,
+                                fact.actor_generation,
+                                fact.target,
+                                fact.remaining,
+                                expected.health_lost,
                             )
-                            .unwrap();
-                        assert_eq!(fact.result, expected);
-                        assert_eq!(fact.remaining, remaining[index] - expected.health_lost);
-                        remaining[index] = fact.remaining;
-                        if fact.remaining == 0 {
-                            deaths += 1;
                         }
+                        Event::WhiteMelee(fact) => {
+                            assert!(ordinary);
+                            let index = targets.iter().position(|&key| key == fact.target).unwrap();
+                            let expected = ordinary_profile
+                                .as_ref()
+                                .unwrap()
+                                .evaluate_outgoing(
+                                    &ContentId::new("theia.dev.training-sword").unwrap(),
+                                    fact.defender,
+                                    fact.draws,
+                                    remaining[index],
+                                )
+                                .unwrap();
+                            assert_eq!(fact.result, expected);
+                            (
+                                fact.actor,
+                                fact.actor_generation,
+                                fact.target,
+                                fact.remaining,
+                                expected.health_lost,
+                            )
+                        }
+                        _ => continue,
+                    };
+                    let index = targets
+                        .iter()
+                        .position(|&key| key == target)
+                        .expect("Only current exact victims");
+                    assert_eq!(actor, world.entity_key(players[index]).unwrap());
+                    assert_eq!(actor_generation, Some(player_lives[index].generation));
+                    assert_eq!(after, remaining[index] - lost);
+                    remaining[index] = after;
+                    if after == 0 {
+                        deaths += 1;
                     }
                 }
                 if deaths == 5 {
@@ -234,7 +346,14 @@ fn authored_population_physical_swings_resolve_each_life_independently_at_all_ra
             assert!(fresh.iter().all(|key| !targets.contains(key)));
             for &old in &targets {
                 assert!(world.creature_definition(old).is_none());
+                assert!(world.creature_facing(old).is_none());
                 assert!(!world.select_target(players[0], Some(old)));
+            }
+            for &key in &fresh {
+                assert_eq!(
+                    world.creature_facing(key),
+                    Some(theia_core::facing::Facing::default())
+                );
             }
             targets = fresh;
             for (&id, &life) in players.iter().zip(&player_lives) {
@@ -243,6 +362,10 @@ fn authored_population_physical_swings_resolve_each_life_independently_at_all_ra
                 assert_eq!(current.health, 100);
             }
             assert!(world.physical_damage_error().is_none());
+            assert!(world.white_melee_error().is_none());
+            if ordinary {
+                assert_eq!(world.white_melee_metrics().unwrap().incoming.attempts, 0);
+            }
         }
     }
 }

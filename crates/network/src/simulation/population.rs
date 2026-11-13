@@ -79,6 +79,18 @@ impl World {
         }
         self.population_binding.as_ref().map(Binding::definition)
     }
+    /// Exact live creature orientation. Stationary passive populations currently
+    /// spawn facing -Z (zero yaw), matching their stationary presentation; they
+    /// never track a selected player. Authored headings and pursuit are separate.
+    pub fn creature_facing(&self, key: EntityKey) -> Option<theia_core::facing::Facing> {
+        self.creature_definition(key)?;
+        if self.patrol.is_some() {
+            self.patrol_facing(key)
+        } else {
+            self.population.as_ref()?;
+            Some(theia_core::facing::Facing::default())
+        }
+    }
     /// Resolve one passive creature type for this pool before publishing actors.
     /// Multi-creature pursuit is not installed yet; aggressive definitions fail
     /// explicitly rather than silently losing their behavior.

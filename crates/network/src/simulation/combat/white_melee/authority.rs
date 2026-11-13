@@ -173,8 +173,13 @@ impl World {
             .combat
             .as_ref()
             .ok_or("Ordinary outcomes require combat")?;
-        if combat.white_melee.is_some() || !combat.supports_white_melee() {
-            return Err("Ordinary outcomes require one pursuit configuration".into());
+        if combat.white_melee.is_some()
+            || (!combat.supports_white_melee() && !combat.passive_physical_ready(self))
+        {
+            return Err(
+                "Ordinary outcomes require a checked pursuit or passive population configuration"
+                    .into(),
+            );
         }
         let physical = combat
             .physical
@@ -229,7 +234,7 @@ impl Authority {
             .global_position(attacker.entity.value())
             .ok_or("Missing ordinary attacker position")?;
         let facing = world
-            .patrol_facing(npc)
+            .creature_facing(npc)
             .ok_or("Missing authoritative creature facing")?;
         Ok(DefenderState {
             standing: true,
@@ -279,10 +284,10 @@ impl Authority {
         weapon: &melee::Weapon,
         sequence: u64,
     ) -> Result<()> {
-        if !self.ordinary_target_ready()
+        if (!self.ordinary_target_ready() && !self.passive_physical_ready(world))
             || self.events.len() + self.physical_melee_event_slots(target)
                 > self.step_event_budget()
-            || world.patrol.as_ref().is_none_or(|p| p.key != target)
+            || !self.physical_target_matches(world, target)
         {
             return Err("Ordinary event/creature context unavailable".into());
         }

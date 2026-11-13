@@ -151,9 +151,12 @@ impl World {
             .as_ref()
             .ok_or("Ability damage requires combat")?;
         if combat.ability_damage.is_some()
+            || !combat.supports_white_melee()
             || crate::terrain::sha256(abilities) != combat.catalog_digest
         {
-            return Err("Ability damage requires one exact active ability catalogue".into());
+            return Err(
+                "Ability damage requires pursuit and one exact active ability catalogue".into(),
+            );
         }
         let ordinary = combat
             .white_melee

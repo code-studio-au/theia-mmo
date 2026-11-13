@@ -1,3 +1,20 @@
+P3-09 / P5-17 passive population ordinary melee outcomes, 13 November 2026:
+Explicit ordinary weapon outcomes now admit checked passive physical populations
+with healthy shared player-life authority. Exact live creature-facing lookup keeps
+patrol orientation and defines stationary population zero yaw (-Z), matching the
+existing stationary presentation without target tracking. Outgoing eligibility and
+resolution use exact bound target identity; the incoming pursuit adapter is unchanged.
+The five-player/five-NPC authored fixture checks two generations at 20/30/60 Hz,
+each server-resolved draw/result/health change against the existing ordinary profile,
+no incoming strikes, stable player lives, fresh NPC IDs and retired facing refusal.
+Additional supported front/back probe positions confirm defensive orientation. Public
+attack telegraphs and typed ability installation remain explicitly pursuit-gated.
+All 500 ordinary network-library tests and both separately selected authored physical/
+ordinary population tests pass; fmt and strict workspace/all-target Clippy pass.
+Evidence: build/population-ordinary-final.log. No new formula coefficients, native
+rendering, population pursuit/retaliation, first-tag rewards, launcher flags or editor
+controls are claimed. Headless only; authored population headings remain future work.
+
 P3-09 / P5-17 passive population physical melee, 13 November 2026:
 Explicit physical-damage installation now accepts checked homogeneous passive
 populations with shared player lives and exact equipment bindings. Outgoing weapon
