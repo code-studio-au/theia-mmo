@@ -175,6 +175,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let test_controller = test_controller::from_args(
         &mut args,
         classic && matches!(&source, theia_network::procedural::Source::Authored(_)),
+        &source,
     )?;
     if classic && !prediction {
         return Err("Classic controls require predicted terrain".into());

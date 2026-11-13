@@ -18,6 +18,7 @@ def run(args):
     common = ['--authored-world', str(args.world.resolve()), '--prediction', '--classic',
               '--combat-catalog', str(Path('content/gameplay/development-abilities.json').resolve()),
               '--population-config', str(args.population.resolve())]
+    route_args = ['--test-route', str(args.route.resolve())] if args.route is not None else []
     environment = client_environment(os.environ)
     for key in list(environment):
         if key.startswith('THEIA_') and key.endswith(('_AUTOPLAY', '_QUALIFY')):
@@ -40,7 +41,7 @@ def run(args):
                 found = re.search(r'listening=(\S+) local_tickets=', (out/'server.log').read_text())
                 return found.group(1) if found else None
             address = wait(ready, 45)
-            client = subprocess.Popen([str(client_binary), *common, '--creature-asset', str(args.creature.resolve()),
+            client = subprocess.Popen([str(client_binary), *common, *route_args, '--creature-asset', str(args.creature.resolve()),
                                        '--player-assets', str(args.players.resolve()), '--window-size', '1600x1000',
                                        '--test-window', '1/1', '--renet-connect', address, str(tickets/'client-1.token')],
                                       env=environment, stdout=client_log, stderr=client_log)
@@ -54,8 +55,19 @@ def run(args):
         assert visuals['max_visuals'] == 5 and visuals['transitions'][0] >= 5, visuals
         assert visuals['dropped_cues'] == 0, visuals
         assert check_gpu_diagnostics((out/'client.log').read_text()) == 0
+        travel = None
+        if args.route is not None:
+            reports = [json.loads(line)['test_controller'] for line in (out/'client.log').read_text().splitlines()
+                       if line.startswith('{"test_controller":')]
+            assert reports, 'No route controller observations'
+            travel = reports[-1]
+            assert travel['finished'] and travel['travel']['finished'] and travel['travel']['failure'] is None, travel
+            goal = json.loads(args.route.read_text())['waypoints'][-1]
+            assert sum((travel['feet'][i]-goal[i])**2 for i in [0,2])**.5 <= .3, travel
+            assert abs(travel['feet'][1]-goal[1]) <= .3, travel
+            assert report['moving_frames'] > 0, report
         (out/'qualification.json').write_text(json.dumps(dict(
-            passed=True, targets=5, creature_visuals=visuals, connected=True,
+            passed=True, targets=5, creature_visuals=visuals, connected=True, travel=travel,
             scope='Actual native Linux Vulkan client with five passive creature rigs; no OS movement, model-catalog resolution, pursuit or Windows claim'), indent=2)+'\n')
     finally:
         for process in [client, server]:
@@ -74,6 +86,7 @@ if __name__ == '__main__':
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--world', type=Path, required=True)
     parser.add_argument('--population', type=Path, required=True)
+    parser.add_argument('--route', type=Path, help='Optional checked route controller; no OS movement input')
     parser.add_argument('--players', type=Path, default=default_player_assets())
     parser.add_argument('--creature', type=Path, default=Path('build/creature-wolf-stage-v1/wolf.glb'))
     parser.add_argument('--output', type=Path, required=True)

@@ -4,6 +4,8 @@ use serde::Deserialize;
 use std::{collections::BTreeSet, path::PathBuf};
 use theia_core::identity::EntityKey;
 
+mod travel;
+
 const MAX_BYTES: usize = 32 * 1024;
 #[derive(Clone, Copy, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
@@ -61,6 +63,7 @@ impl Script {
 #[derive(Resource)]
 pub(crate) struct Run {
     script: Script,
+    travel: Option<travel::Travel>,
     pub active: bool,
     step: usize,
     elapsed: f64,
@@ -72,6 +75,7 @@ impl Run {
     fn new(script: Script) -> Self {
         Self {
             script,
+            travel: None,
             active: true,
             step: 0,
             elapsed: 0.,
@@ -81,7 +85,12 @@ impl Run {
         }
     }
     pub fn description(&self) -> serde_json::Value {
-        serde_json::json!({"name":self.script.name,"steps":self.script.steps.len(),"repeat":self.script.repeat})
+        serde_json::json!({"name":self.script.name,"steps":self.script.steps.len(),"repeat":self.script.repeat,"travel":self.travel.as_ref().map(|t| t.description())})
+    }
+    fn finished(&self) -> bool {
+        self.travel
+            .as_ref()
+            .map_or(self.step >= self.script.steps.len(), |t| t.finished())
     }
     fn toggle(&mut self) {
         self.active = !self.active;
@@ -89,6 +98,9 @@ impl Run {
             self.step = 0;
             self.elapsed = 0.;
             self.context = None;
+            if let Some(travel) = &mut self.travel {
+                travel.reset();
+            }
         }
     }
     fn sample(&mut self, seconds: f64, ready: bool) -> Option<(Step, f64)> {
@@ -117,21 +129,45 @@ impl Run {
 pub(crate) fn from_args(
     args: &mut Vec<String>,
     allowed: bool,
+    source: &theia_network::procedural::Source,
 ) -> Result<Option<Run>, Box<dyn std::error::Error>> {
-    let Some(i) = args.iter().position(|s| s == "--test-controller") else {
+    let Some(i) = args
+        .iter()
+        .position(|s| s == "--test-controller" || s == "--test-route")
+    else {
         return Ok(None);
     };
-    args.remove(i);
-    if !allowed || i >= args.len() || args.iter().any(|s| s == "--test-controller") {
+    let route = args.remove(i) == "--test-route";
+    if !allowed
+        || i >= args.len()
+        || args
+            .iter()
+            .any(|s| s == "--test-controller" || s == "--test-route")
+    {
         return Err("Test controller requires one script and an authored Classic world".into());
     }
     use std::io::Read;
     let path = PathBuf::from(args.remove(i));
     let mut bytes = Vec::new();
-    std::fs::File::open(path)?
+    std::fs::File::open(&path)?
         .take(MAX_BYTES as u64 + 1)
         .read_to_end(&mut bytes)?;
-    Ok(Some(Run::new(Script::parse(&bytes)?)))
+    if bytes.len() > MAX_BYTES {
+        return Err("Controller script exceeds 32 KiB".into());
+    }
+    if route {
+        let (name, travel) = travel::Travel::load(&path, &bytes, source)?;
+        let mut run = Run::new(Script {
+            schema: 1,
+            name,
+            repeat: false,
+            steps: vec![],
+        });
+        run.travel = Some(travel);
+        Ok(Some(run))
+    } else {
+        Ok(Some(Run::new(Script::parse(&bytes)?)))
+    }
 }
 #[derive(Component)]
 struct Toggle;
@@ -145,7 +181,7 @@ fn setup(mut commands: Commands) {
             Node {
                 position_type: PositionType::Absolute,
                 left: px(12),
-                bottom: px(128),
+                top: px(160),
                 padding: UiRect::axes(px(10), px(6)),
                 border: UiRect::all(px(1)),
                 ..default()
@@ -218,9 +254,18 @@ fn drive(
     mut intent: ResMut<crate::movement::MoveIntent>,
     mut orbit: ResMut<crate::camera::Orbit>,
     buttons: Res<ButtonInput<MouseButton>>,
+    keys: Res<ButtonInput<KeyCode>>,
 ) {
     if !run.active {
         return;
+    }
+    if run.travel.is_some()
+        && (controller.manual_movement_pressed(&keys)
+            || buttons.pressed(MouseButton::Left)
+            || buttons.pressed(MouseButton::Right))
+    {
+        run.active = false;
+        run.travel.as_mut().unwrap().cancel("Manual takeover");
     }
     intent.direction = Vec2::ZERO;
     intent.jump = false;
@@ -229,6 +274,11 @@ fn drive(
     if let Some(c) = state.correction {
         let context = (c.state.actor, c.state.input.stream_epoch);
         if run.context != Some(context) {
+            if run.context.is_some()
+                && let Some(travel) = &mut run.travel
+            {
+                travel.cancel("Player incarnation or input stream changed");
+            }
             run.step = 0;
             run.elapsed = 0.;
             run.context = Some(context);
@@ -239,7 +289,40 @@ fn drive(
         && scene.ready()
         && character.is_some()
         && ready(&state, gray.patch.as_deref());
-    if let Some((step, seconds)) = run.sample(time.delta_secs_f64(), allowed) {
+    let sample = if run.travel.is_some() {
+        run.waiting = !allowed;
+        let active = run.active;
+        let admitted = run.context.is_some();
+        let travel = run.travel.as_mut().unwrap();
+        if state.error.is_some() {
+            travel.cancel("Network error");
+        }
+        if admitted && !network.can_act() {
+            travel.cancel("Player cannot act");
+        }
+        if active && allowed {
+            let feet = network
+                .prediction
+                .as_ref()
+                .and_then(|p| p.pose())
+                .map(|p| p.feet)
+                .or_else(|| state.correction.map(|c| c.state.pose.feet));
+            feet.and_then(|feet| {
+                travel.sample(
+                    time.delta_secs_f64(),
+                    feet,
+                    controller.facing(),
+                    controller.keyboard_turn_rate(),
+                )
+            })
+        } else {
+            travel.wait(time.delta_secs_f64());
+            None
+        }
+    } else {
+        run.sample(time.delta_secs_f64(), allowed)
+    };
+    if let Some((step, seconds)) = sample {
         let sample = controller.sample_script(
             [step.strafe, -step.forward],
             step.turn,
@@ -262,7 +345,7 @@ fn drive(
         run.last_report = time.elapsed_secs_f64();
         eprintln!(
             "{}",
-            serde_json::json!({"test_controller":{"name":run.script.name,"active":run.active,"step":run.step,"waiting":run.waiting,"finished":run.step>=run.script.steps.len(),"feet":state.correction.map(|c|c.state.pose.feet.metres()),"facing":controller.facing().radians()}})
+            serde_json::json!({"test_controller":{"name":run.script.name,"active":run.active,"step":run.step,"waiting":run.waiting,"finished":run.finished(),"travel":run.travel.as_ref().map(|t| t.description()),"feet":state.correction.map(|c|c.state.pose.feet.metres()),"facing":controller.facing().radians()}})
         );
     }
 }
@@ -270,10 +353,18 @@ fn status(run: Res<Run>, mut labels: Query<&mut Text, With<Status>>) {
     for mut text in &mut labels {
         text.0 = if !run.active {
             format!("{} | Manual [F7: restart script]", run.script.name)
+        } else if let Some(reason) = run.travel.as_ref().and_then(|t| t.failure) {
+            format!("{} | Stopped: {reason} [F7: manual]", run.script.name)
         } else if run.waiting {
             format!("{} | Waiting for world [F7: manual]", run.script.name)
-        } else if run.step >= run.script.steps.len() {
+        } else if run.finished() {
             format!("{} | Finished [F7: manual]", run.script.name)
+        } else if let Some(travel) = &run.travel {
+            format!(
+                "{} | Waypoint {} [F7: manual]",
+                run.script.name,
+                travel.index + 1
+            )
         } else {
             format!(
                 "{} | Step {}/{} [F7: manual]",

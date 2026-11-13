@@ -1,3 +1,31 @@
+P4-03 / P2-04 checked test-route travel foundation, 13 November 2026:
+The native client accepts explicit --test-route FILE, exclusive with the existing
+step controller. Startup loads exact-source authored navigation, computes paths,
+grounds their points and checks sampled capsule clearance before rendering or
+connecting. The bounded follower emits ordinary Classic walk/turn input, uses
+predicted feet for steering, and reports authoritative correction feet separately.
+No pose teleport, actor facing bypass or OS mouse-driven travel is used.
+Configured movement keys, Escape or mouse buttons yield to manual control; F7
+also returns to manual. Incarnation/input-stream changes, inability to act, network
+errors, route departure, stalls, lost readiness and total travel limit stop input.
+Test-only tolerances are 0.25 m arrival, 1 m start/corridor, 8 s no progress,
+10 s lost readiness and 600 s total; these do not change gameplay movement rules.
+Pure steering tests cover 20/30/60/144 FPS, yaw wrap, bounded turns and failures.
+All 255 client tests pass (two optional skipped); nine Classic-control tests and
+strict workspace/all-target Clippy/fmt pass. Real headless preflight rejects wrong
+floor/source, zero-length routes and conflicting controller flags. Native real
+server/client completes the 28 m, three-segment route in about 11.91 s, ends
+0.175 m from the goal and requests 3.058 radians total turn (about 175 degrees).
+Authority reports 728 inputs with zero rejection/recovery; five passive creature
+rigs remain admitted. RX 7900 XTX/RADV Vulkan/KHRONOS at 1600x1000 has no GPU
+diagnostics. Screenshot inspected; test status moved clear of the target HUD.
+Evidence: build/test-route-{build,final-checks,final-lint}.log;
+build/test-route-input-v1/preflight-results.json;
+build/test-route-native-v2/{qualification.json,world.json,scene.png,client.log,server.log}.
+This completes static-route travel only. Managed per-player route selection,
+obstacle-rich native runs and the complete NPC/quest/approach/kill flow with target
+invalidation remain follow-ups; normal player manual-facing policy is unchanged.
+
 P3-07 / P5-17 editor-owned population playtests, 13 November 2026:
 Zone -> Start population playtest exports one checked passive group plus enabled
 test players and starts the managed server/client session. The seven-field dialog

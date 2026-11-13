@@ -237,6 +237,27 @@ impl Controller {
         sample.sprint = self.running;
         sample
     }
+    pub fn keyboard_turn_rate(&self) -> f64 {
+        self.turn_radians_per_second
+    }
+    /// Opt-in automation yields to the configured manual movement bindings.
+    pub fn manual_movement_pressed(&self, keys: &ButtonInput<KeyCode>) -> bool {
+        let b = &self.bindings;
+        [
+            Some(b.forward),
+            Some(b.backward),
+            b.turn_left,
+            b.turn_right,
+            Some(b.strafe_left),
+            Some(b.strafe_right),
+            Some(b.jump),
+            Some(b.walk_run_toggle),
+            Some(KeyCode::Escape),
+        ]
+        .into_iter()
+        .flatten()
+        .any(|key| keys.pressed(key))
+    }
     /// Local test-controller actions, using the same character-relative axes and
     /// configured keyboard turn rate. The server still validates ordinary intent.
     pub fn sample_script(
@@ -285,6 +306,20 @@ impl Controller {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn test_travel_takeover_observes_configured_movement_and_escape_only() {
+        let controller =
+            Controller::parse(include_bytes!("../../content/input/classic-controls.json")).unwrap();
+        let mut keys = ButtonInput::<KeyCode>::default();
+        keys.press(KeyCode::KeyI);
+        assert!(!controller.manual_movement_pressed(&keys));
+        keys.press(controller.bindings.forward);
+        assert!(controller.manual_movement_pressed(&keys));
+        keys.reset_all();
+        keys.press(KeyCode::Escape);
+        assert!(controller.manual_movement_pressed(&keys));
+        assert!(controller.keyboard_turn_rate() > 0.);
+    }
     #[test]
     fn scripted_actions_match_normal_character_relative_movement_and_turn_rate() {
         for seconds in [1. / 30., 1. / 60., 0.1] {

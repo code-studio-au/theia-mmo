@@ -1,3 +1,10 @@
+Test-travel progress, 13 November 2026: explicit client --test-route now follows
+startup-checked static navigation through normal Classic input. Actual native
+28 m/two-corner travel completes without OS mouse steering or repeated full spins.
+See STATUS for evidence and limits. Remaining work for the request below: managed
+per-player route selection, native obstacle-route acceptance, interaction/target
+range binding and the full quest travel/kill flow with target invalidation.
+
 Requested future improvement — navigation-driven gameplay test travel, 13 November 2026:
 The user observed automated quest travel repeatedly alternating a few steps with
 several camera rotations and requested a better pathing approach. Track this as a

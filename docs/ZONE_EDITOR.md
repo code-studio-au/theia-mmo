@@ -4770,3 +4770,35 @@ population export command above. This writes the package without launching.
 Replay it with `tools/network_playtest.py --scenario PACKAGE/scenario.json
 --world PACKAGE/world --population-config PACKAGE/population.json
 --combat-catalog PACKAGE/combat.json --players PLAYER_DIRECTORY --output NEW_RUN`.
+
+
+## Checked route travel for native tests — 13 November 2026
+
+The client can consume navigation from an editor population package with
+`--test-route FILE` alongside its ordinary authored-world/Classic connection
+options. This is opt-in test automation, exclusive with `--test-controller`.
+Normal gameplay receives no path-following behavior.
+
+```json
+{
+  "schema": 1,
+  "name": "Walk to the grove",
+  "navigation": "package/navigation",
+  "waypoints": [[8192, 0.008, 8198], [8192, 0.008, 8186], [8200, 0.008, 8186]]
+}
+```
+
+Navigation paths are relative to the route file (absolute paths also work).
+Waypoints are global XYZ feet in metres and must lie on the intended floor of
+that exact authored world. Startup computes a route between them and verifies
+navigation and collision clearance. The player must begin within one metre of
+the checked first point. Travel uses normal Classic walking and bounded keyboard
+turning; it stops within 0.25 m of each point. It does not select or attack targets.
+Movement keys, Escape, either mouse button or F7 return manual control. Restarting
+with F7 requires the original route start again. Stalled progress, lost world
+readiness or invalid player context stops the controller and reports a reason.
+
+`tools/qualify_population_visual.py --route FILE` optionally exercises this path
+against its real server/native client and checks authoritative arrival. The
+editor's per-player controller menu still offers its existing step controller;
+route selection and full quest-flow migration are separate follow-ups.
