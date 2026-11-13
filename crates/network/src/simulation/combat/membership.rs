@@ -1,4 +1,4 @@
-//! Explicit opt-in single-creature membership. Permission consumers are separate.
+//! Bounded creature membership state. Public admission still requires pursuit.
 use super::{Authority, World};
 use crate::Result;
 use std::{collections::BTreeMap, sync::Arc};
@@ -29,7 +29,7 @@ pub fn identity_for_profile(
 }
 pub(super) struct Runtime {
     profile: Arc<crate::combat_membership_wire::Profile>,
-    npc: EntityKey,
+    npcs: Vec<EntityKey>,
     states: BTreeMap<u64, State>,
     error: Option<String>,
 }
@@ -38,6 +38,68 @@ pub(super) struct Planned {
     state: State,
 }
 impl Runtime {
+    fn new(
+        profile: Arc<crate::combat_membership_wire::Profile>,
+        npcs: &[EntityKey],
+    ) -> Result<Self> {
+        Self::validate_npcs(&profile, npcs)?;
+        Ok(Self {
+            profile,
+            npcs: npcs.to_vec(),
+            states: BTreeMap::new(),
+            error: None,
+        })
+    }
+    fn validate_npcs(
+        profile: &crate::combat_membership_wire::Profile,
+        npcs: &[EntityKey],
+    ) -> Result<()> {
+        if npcs.is_empty()
+            || npcs.len() > crate::targeting::MAX_TARGETS
+            || npcs.len() > profile.policy().maximum_opponents()
+            || npcs.iter().enumerate().any(|(i, key)| {
+                npcs[..i].iter().any(|prior| prior.entity == key.entity)
+                    || key.epoch != npcs[0].epoch
+            })
+        {
+            return Err(
+                "Membership creature registry exceeds bounds or contains invalid identities".into(),
+            );
+        }
+        Ok(())
+    }
+    fn contains(&self, npc: EntityKey) -> bool {
+        self.npcs.contains(&npc)
+    }
+    /// Retire exact old lives before applying current observations. Work on a
+    /// copy so a refused observation cannot partially alter the player's state.
+    fn observe(
+        &self,
+        state: &State,
+        tick: u64,
+        current: &[(EntityKey, bool, bool)],
+    ) -> Result<State> {
+        let keys: Vec<_> = current.iter().map(|entry| entry.0).collect();
+        Self::validate_npcs(&self.profile, &keys)?;
+        let mut next = state.clone();
+        let owner = next.owner();
+        for old in &self.npcs {
+            if !keys.contains(old) {
+                next.forget(tick, owner, *old)
+                    .map_err(|e| format!("Membership retirement refused: {e:?}"))?;
+            }
+        }
+        for &(npc, resolved, active) in current {
+            if resolved {
+                next.forget(tick, owner, npc)
+                    .map_err(|e| format!("Membership resolution refused: {e:?}"))?;
+            } else {
+                next.encounter(tick, owner, npc, active)
+                    .map_err(|e| format!("Membership encounter refused: {e:?}"))?;
+            }
+        }
+        Ok(next)
+    }
     pub(super) fn identity(&self, base: [u8; 32]) -> [u8; 32] {
         identity(base, self.profile.hash())
     }
@@ -69,12 +131,7 @@ impl World {
         {
             return Err("Membership supports one opt-in typed-damage creature encounter".into());
         }
-        self.combat.as_mut().unwrap().membership = Some(Runtime {
-            profile,
-            npc,
-            states: BTreeMap::new(),
-            error: None,
-        });
+        self.combat.as_mut().unwrap().membership = Some(Runtime::new(profile, &[npc])?);
         Ok(())
     }
     pub fn combat_membership_profile(
@@ -133,7 +190,7 @@ impl Authority {
             return Ok(None);
         };
         if runtime.error.is_some()
-            || runtime.npc != npc
+            || !runtime.contains(npc)
             || world.entity_key(owner.actor.entity.value()) != Some(owner.actor)
             || !self
                 .actors
@@ -192,28 +249,132 @@ impl Authority {
                 if world.entity_key(id) != Some(owner.actor) {
                     continue;
                 }
-                let state = runtime.states.entry(id).or_insert_with(|| {
+                let state = runtime.states.get(&id).cloned().unwrap_or_else(|| {
                     State::new(runtime.profile.policy().clone(), world.rate, owner)
                 });
-                if runtime.npc != npc || resolved {
-                    state
-                        .forget(world.tick, owner, runtime.npc)
-                        .map_err(|e| format!("Membership retirement refused: {e:?}"))?;
-                }
                 let active = alive
                     && matches!(mode, Mode::Chase | Mode::Attack)
                     && (target == Some(owner)
                         || self.threat.as_ref().is_some_and(|t| t.contains(owner)));
-                state
-                    .encounter(world.tick, owner, npc, active)
-                    .map_err(|e| format!("Membership encounter refused: {e:?}"))?;
+                let next = runtime.observe(&state, world.tick, &[(npc, resolved, active)])?;
+                runtime.states.insert(id, next);
             }
-            runtime.npc = npc;
+            runtime.npcs = vec![npc];
             Ok(())
         })();
         if let Err(error) = result {
             runtime.error = Some(error.to_string());
         }
         self.membership = Some(runtime);
+    }
+}
+
+#[cfg(test)]
+mod registry_tests {
+    use super::*;
+    use std::num::NonZeroU64;
+    use theia_core::{
+        identity::{EntityId, WorldEpoch},
+        time::TickRate,
+    };
+    fn key(id: u64) -> EntityKey {
+        EntityKey {
+            epoch: WorldEpoch::new(1).unwrap(),
+            entity: EntityId::new(id).unwrap(),
+        }
+    }
+    fn profile() -> Arc<crate::combat_membership_wire::Profile> {
+        Arc::new(
+            crate::combat_membership_wire::Profile::from_json(include_bytes!(
+                "../../../../../content/gameplay/development-combat-membership.json"
+            ))
+            .unwrap(),
+        )
+    }
+    #[test]
+    fn retirement_preserves_other_opponents_and_new_lives_start_without_old_hostility() {
+        for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+            let runtime = Runtime::new(profile(), &[key(20), key(21)]).unwrap();
+            let owner = LifeKey {
+                actor: key(1),
+                generation: NonZeroU64::new(1).unwrap(),
+            };
+            let mut state = State::new(runtime.profile.policy().clone(), rate, owner);
+            state
+                .hostility(0, owner, key(20), Hostility::Outgoing)
+                .unwrap();
+            state
+                .hostility(0, owner, key(21), Hostility::Incoming)
+                .unwrap();
+            let active = runtime
+                .observe(&state, 1, &[(key(20), false, true), (key(21), false, true)])
+                .unwrap();
+            assert_eq!(active.summary().opponents, 2);
+            let retired = runtime
+                .observe(
+                    &active,
+                    2,
+                    &[(key(22), false, false), (key(21), false, true)],
+                )
+                .unwrap();
+            assert_eq!(retired.summary().opponents, 1);
+            assert!(retired.summary().incoming_hostility);
+            assert!(!retired.summary().outgoing_hostility);
+            assert!(retired.summary().active_encounter);
+            let resolved = runtime
+                .observe(&active, 2, &[(key(20), true, true), (key(21), false, true)])
+                .unwrap();
+            assert_eq!(resolved, retired);
+            let expired = runtime
+                .observe(
+                    &retired,
+                    4000,
+                    &[(key(22), false, false), (key(21), false, false)],
+                )
+                .unwrap();
+            assert!(!expired.summary().in_combat());
+            let mut foreign = key(21);
+            foreign.epoch = WorldEpoch::new(2).unwrap();
+            assert!(!runtime.contains(foreign));
+            assert!(
+                runtime
+                    .observe(
+                        &active,
+                        2,
+                        &[(key(20), true, false), (foreign, false, true)]
+                    )
+                    .is_err()
+            );
+            assert_eq!(active.summary().opponents, 2);
+            assert!(
+                runtime
+                    .observe(
+                        &active,
+                        0,
+                        &[(key(20), true, false), (key(21), false, true)]
+                    )
+                    .is_err()
+            );
+        }
+    }
+    #[test]
+    fn registry_checks_actor_capacity_and_exact_identity() {
+        assert!(Runtime::new(profile(), &[]).is_err());
+        assert!(Runtime::new(profile(), &[key(20), key(20)]).is_err());
+        let keys: Vec<_> = (20..=20 + crate::targeting::MAX_TARGETS as u64)
+            .map(key)
+            .collect();
+        assert!(Runtime::new(profile(), &keys).is_err());
+        assert!(Runtime::new(profile(), &keys[..crate::targeting::MAX_TARGETS]).is_ok());
+        let mut raw: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../../content/gameplay/development-combat-membership.json"
+        ))
+        .unwrap();
+        raw["maximum_opponents"] = 1.into();
+        let limited = Arc::new(
+            crate::combat_membership_wire::Profile::from_json(&serde_json::to_vec(&raw).unwrap())
+                .unwrap(),
+        );
+        assert!(Runtime::new(limited, &[key(20), key(21)]).is_err());
     }
 }

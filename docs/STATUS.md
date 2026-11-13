@@ -1,3 +1,19 @@
+P3-09 / P5-17 bounded combat-membership registry prerequisite, 13 November 2026:
+Membership now keeps exact creature keys in a bounded registry instead of one NPC
+field. Player observation retires missing NPC lifetimes independently, resolves
+only the specified opponent and preserves other active/hostility reasons. Refused
+observations leave the original player state unchanged. Empty, duplicate, mixed-
+epoch, over-target-budget and over-policy-capacity registries are rejected.
+Two new registry tests exercise retirement, replacement without inherited hostility,
+independent resolution, grace expiry and stale observations at 20/30/60 Hz. Existing
+World pursuit/typed-damage membership and encrypted owner-private tests regress.
+All 500 network-library tests, fmt and strict workspace/all-target Clippy pass.
+The initial restricted filtered run denied two private UDP sockets; the full
+headless rerun passed with localhost access and display variables removed.
+Public membership admission still requires the single typed pursuit encounter;
+this internal prerequisite does not enable passive-pool membership or first-tag
+rewards. Evidence: build/membership-registry-final.log. No display access.
+
 P3-09 / P5-17 passive population player-life admission, 13 November 2026:
 An explicit pre-admission World API installs shared player lives for checked passive
 populations with matching creature behavior and combat resources. Standalone and
