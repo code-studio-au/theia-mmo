@@ -44,6 +44,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
             raise ValueError('Population configuration requires authored Classic predicted combat')
         if creature_profile is not None or navigation is not None:
             raise ValueError('Population configuration excludes patrol overrides')
+        if (progression_catalog or reward_catalog) and not creature_credit:
+            raise ValueError('Population grants require explicit solo creature credit')
         population_config = Path(population_config).resolve()
     route_options = []
     if test_route is not None:
@@ -131,9 +133,9 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
         raise ValueError('Statuses require combat and character stats')
     if quest_catalog and not progression_catalog:
         raise ValueError("Quest objectives require progression")
-    if progression_catalog and (not account_login or not creature_profile):
+    if progression_catalog and (not account_login or (not creature_profile and population_config is None)):
         raise ValueError("Progression requires account login and creatures")
-    if reward_catalog and (not account_login or not item_catalog or not creature_profile):
+    if reward_catalog and (not account_login or not item_catalog or (not creature_profile and population_config is None)):
         raise ValueError('Rewards require account login, items and creature combat')
     if item_catalog and not account_login:
         raise ValueError('Persistent inventory requires --account-login')
@@ -532,7 +534,7 @@ def main(argv=None):
         args.progression = args.progression or args.quests
         quest_catalog = Path('content/quests/development-journal.json' if args.quest_journal else 'content/gameplay/development-quest.json').resolve() if args.quests else None
         args.equipment = args.equipment or args.rewards or args.vendors
-        args.creatures = args.creatures or args.rewards or args.progression or (args.creature_retaliation is not None and args.population_config is None)
+        args.creatures = args.creatures or ((args.rewards or args.progression or args.creature_retaliation is not None) and args.population_config is None)
         progression_catalog = Path('content/gameplay/development-progression.json').resolve() if args.progression else None
         reward_catalog = Path('content/gameplay/development-rewards.json').resolve() if args.rewards else None
         args.inventory = args.inventory or args.equipment

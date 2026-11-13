@@ -347,7 +347,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if i >= args.len() {
             return Err("Missing progression catalog".into());
         }
-        if !graybox || !prediction || patrol_binding.is_none() || combat_catalog.is_none() {
+        if !graybox
+            || !prediction
+            || (patrol_binding.is_none() && population.is_none())
+            || combat_catalog.is_none()
+        {
             return Err("Progression requires predicted saved terrain and creature combat".into());
         }
         let mut bytes = Vec::new();
@@ -837,7 +841,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if i >= args.len() {
             return Err("Missing reward catalog".into());
         }
-        if patrol_binding.is_none() || combat_catalog.is_none() {
+        if (patrol_binding.is_none() && population.is_none()) || combat_catalog.is_none() {
             return Err("Rewards require authoritative creature combat".into());
         }
         let mut bytes = Vec::new();

@@ -16,6 +16,7 @@ struct Run {
     output: PathBuf,
     started: Option<Instant>,
     done: bool,
+    kill: bool,
     life: Option<LifeKey>,
     target: Option<EntityKey>,
     equipped: bool,
@@ -54,6 +55,7 @@ pub(crate) fn install(app: &mut App, context: bool) -> Result<(), Box<dyn std::e
         output,
         started: None,
         done: false,
+        kill: std::env::var("THEIA_POPULATION_KILL_QUALIFY").as_deref() == Ok("1"),
         life: None,
         target: None,
         equipped: false,
@@ -71,7 +73,7 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
     }
     let now = Instant::now();
     let started = *run.started.get_or_insert(now);
-    if now.duration_since(started) > Duration::from_secs(30) {
+    if now.duration_since(started) > Duration::from_secs(if run.kill { 90 } else { 30 }) {
         run.fail("Bounded population combat deadline exceeded");
         return;
     }
@@ -156,7 +158,7 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
         run.fail("World changed or a bystander was damaged");
         return;
     }
-    if health.current < 100 {
+    if health.current < 100 && (!run.kill || health.current == 0) {
         if run.entered && run.spent_mana && life.combat.is_some_and(|v| !v.in_combat()) {
             let casts = run.casts;
             run.finish(serde_json::json!({"passed":true,"casts":casts,"target":target.entity.value(),
@@ -191,7 +193,8 @@ fn drive(network: Res<Network>, mut run: ResMut<Run>) {
         return;
     }
     if now >= run.next
-        && run.casts < 3
+        && run.casts < if run.kill { 12 } else { 3 }
+        && combat.vitals.is_some_and(|v| v.mana() >= 25)
         && combat.cast.is_none()
         && network.request_cast(
             ContentId::new("theia.dev.arcane-bolt").unwrap(),

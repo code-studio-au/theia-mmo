@@ -31,7 +31,6 @@ pub fn validate_launch(args: &[String]) -> Result<()> {
     for unsupported in [
         "--creature-profile",
         "--navigation",
-        "--progression-catalog",
         "--creature-loot",
         "--quest-loot",
         "--creature-threat",
@@ -43,6 +42,13 @@ pub fn validate_launch(args: &[String]) -> Result<()> {
                 format!("Passive population configuration does not support {unsupported}").into(),
             );
         }
+    }
+    if args
+        .iter()
+        .any(|a| matches!(a.as_str(), "--progression-catalog" | "--reward-catalog"))
+        && !args.iter().any(|a| a == "--creature-credit")
+    {
+        return Err("Population grants require explicit solo creature credit".into());
     }
     Ok(())
 }
@@ -192,6 +198,14 @@ mod tests {
             .map(str::to_owned),
         );
         assert!(validate_launch(&lives).is_ok());
+        for grant in ["--progression-catalog", "--reward-catalog"] {
+            let mut refused = valid.clone();
+            refused.extend([grant.into(), "grant.json".into()]);
+            assert!(validate_launch(&refused).is_err());
+            let mut accepted = lives.clone();
+            accepted.extend([grant.into(), "grant.json".into()]);
+            assert!(validate_launch(&accepted).is_ok());
+        }
         assert!(validate_launch(&[]).is_ok());
         for removed in [
             "--authored-world",

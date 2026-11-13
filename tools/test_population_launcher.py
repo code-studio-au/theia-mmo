@@ -70,6 +70,25 @@ class PopulationLauncher(unittest.TestCase):
         self.assertTrue(args['public_avatar_life'])
         self.assertEqual(args['player_respawn'], Path('respawn.json').resolve())
 
+    def test_cli_population_grants_keep_the_population_without_a_patrol_override(self):
+        with patch.object(play, 'play') as launch:
+            play.main(['--authored-world', 'world', '--population-config', 'population.json',
+                       '--account-login', '--progression', '--rewards', '--creature-credit', 'credit.json'])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertIsNone(args['creature_profile'])
+        self.assertIsNone(args['navigation'])
+        self.assertIsNotNone(args['progression_catalog'])
+        self.assertIsNotNone(args['reward_catalog'])
+
+    def test_population_grants_refuse_before_launch_without_explicit_credit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory))
+            args['progression_catalog'] = Path('xp.json')
+            with patch.object(play.subprocess, 'Popen') as child:
+                with self.assertRaisesRegex(ValueError, 'solo creature credit'):
+                    play.play(**args)
+            child.assert_not_called()
+
     def test_cli_keeps_explicit_creature_art_as_a_client_presentation_override(self):
         with patch.object(play, 'play') as launch:
             play.main(['--authored-world', 'world', '--population-config', 'population.json',

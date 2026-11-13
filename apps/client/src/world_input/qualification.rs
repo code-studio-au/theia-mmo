@@ -335,6 +335,10 @@ fn os_trace(world: &mut World) {
             .as_ref()
             .map(|v| serde_json::from_slice::<serde_json::Value>(&v.bag.to_json()).unwrap())
             .unwrap_or_default();
+        data["committed_progression"] =
+            serde_json::json!(state.progression.as_ref().map(|p| p.progress.total()));
+        data["available_rewards"] =
+            serde_json::json!(state.rewards.as_ref().map(|r| r.available.len()));
         data["ui_scale"] = serde_json::json!(
             world
                 .get_resource::<bevy::ui::UiScale>()

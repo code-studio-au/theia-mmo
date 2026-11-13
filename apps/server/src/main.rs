@@ -631,7 +631,9 @@ async fn main() -> Result<()> {
         return Err("Loopback relay qualification requires Renet tickets".into());
     }
     if progression_catalog.is_some()
-        && (!account_login || world.patrol_snapshot().is_none() || !world.combat_enabled())
+        && (!account_login
+            || (world.patrol_snapshot().is_none() && population_bytes.is_none())
+            || !world.combat_enabled())
     {
         return Err("Progression requires account login and authoritative creature combat".into());
     }
@@ -716,7 +718,7 @@ async fn main() -> Result<()> {
     if reward_catalog.is_some()
         && (!account_login
             || item_catalog.is_none()
-            || world.patrol_snapshot().is_none()
+            || (world.patrol_snapshot().is_none() && population_bytes.is_none())
             || !world.combat_enabled())
     {
         return Err(

@@ -1,3 +1,27 @@
+P3-09 / P3-10 / P3-11 / P5-17 normal population durable grants, 13 November 2026:
+Normal client/server and play launcher now accept progression and training rewards
+for a checked passive population when explicit solo first-tag credit is configured.
+Missing credit refuses before launch; population grant options no longer implicitly
+add the singleton patrol. Existing account, inventory and combat prerequisites remain.
+The bounded native qualifier can now defeat one NPC using ordinary equipment,
+target and cast requests, waiting for mana and checking exact lives and bystanders.
+Actual editor-exported five-NPC package passes with owned OIDC and PostgreSQL:
+five casts defeat one NPC, four bystanders remain unharmed, player health stays 100,
+and membership enters/exits. The client observes committed 25 XP and one unconsumed
+training reward offer. SQL confirms one XP receipt and one claim. Database process
+restart and fresh login preserve both grants and equipped inventory revision 1.
+No OS input or movement/camera manipulation is used. This is one native player and
+one defeated life; competing first-tag ownership is covered by separate encrypted
+and SQL fixtures, not a native multi-account contest. Loot consumption, population
+quest interaction, NPC retaliation and richer default editor playtests remain open.
+Configuration/launcher tests, Python compilation, client/server builds, formatting
+and denied-warning workspace/all-target Clippy pass. Native screenshots inspected;
+zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, 1280x720.
+Owned services and tickets are cleaned up. Evidence:
+build/population-grants-native-v1/qualification.json, fresh/typed-combat.json and
+fresh/resumed database-proof.txt; build/population-grants-launch-build.log and
+build/population-grants-authority-final.log. All changes remain local.
+
 P3-09 / P5-17 native typed population cast without OS input, 13 November 2026:
 An explicit bounded client qualifier now exercises the normal equipment, target and
 cast request paths. It selects a healthy NPC already within the player's frontal
