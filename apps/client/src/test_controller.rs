@@ -85,7 +85,7 @@ impl Run {
         }
     }
     pub fn description(&self) -> serde_json::Value {
-        serde_json::json!({"name":self.script.name,"steps":self.script.steps.len(),"repeat":self.script.repeat,"travel":self.travel.as_ref().map(|t| t.description())})
+        serde_json::json!({"name":self.script.name,"steps":self.script.steps.len(),"repeat":self.script.repeat,"active":self.active,"travel":self.travel.as_ref().map(|t| t.description())})
     }
     fn finished(&self) -> bool {
         self.travel
@@ -169,7 +169,7 @@ pub(crate) fn from_args(
         return Err("Controller script exceeds 32 KiB".into());
     }
     if route {
-        let (name, travel) = travel::Travel::load(&path, &bytes, source)?;
+        let (name, travel, start_paused) = travel::Travel::load(&path, &bytes, source)?;
         let mut run = Run::new(Script {
             schema: 1,
             name,
@@ -177,6 +177,7 @@ pub(crate) fn from_args(
             steps: vec![],
         });
         run.travel = Some(travel);
+        run.active = !start_paused;
         Ok(Some(run))
     } else {
         Ok(Some(Run::new(Script::parse(&bytes)?)))

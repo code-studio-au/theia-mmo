@@ -13,6 +13,8 @@ struct Document {
     name: String,
     navigation: String,
     waypoints: Vec<[f64; 3]>,
+    #[serde(default)]
+    start_paused: bool,
 }
 const ARRIVAL: f64 = 0.25;
 const STALL_SECONDS: f64 = 8.;
@@ -33,7 +35,7 @@ impl Travel {
         path: &Path,
         bytes: &[u8],
         source: &procedural::Source,
-    ) -> Result<(String, Self), String> {
+    ) -> Result<(String, Self, bool), String> {
         let doc: Document = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
         if doc.schema != 1
             || doc.name.trim().is_empty()
@@ -95,7 +97,7 @@ impl Travel {
             Ok(points)
         };
         let points = prepare().map_err(|e| format!("Test route preparation: {e}"))?;
-        Ok((doc.name, Self::new(points)?))
+        Ok((doc.name, Self::new(points)?, doc.start_paused))
     }
     fn new(points: Vec<GlobalPosition>) -> Result<Self, String> {
         if !(2..=navigation::MAX_ROUTE_POINTS).contains(&points.len()) {
@@ -310,6 +312,24 @@ fn segment_distance(p: GlobalPosition, a: GlobalPosition, b: GlobalPosition) -> 
 mod tests {
     use super::*;
     #[test]
+    fn paused_start_is_explicit_and_rejects_non_boolean_values() {
+        let mut value = serde_json::json!({"schema":1,"name":"Approach",
+            "navigation":"navigation","waypoints":[[0,0,0],[0,0,-2]]});
+        assert!(
+            !serde_json::from_value::<Document>(value.clone())
+                .unwrap()
+                .start_paused
+        );
+        value["start_paused"] = serde_json::json!(true);
+        assert!(
+            serde_json::from_value::<Document>(value.clone())
+                .unwrap()
+                .start_paused
+        );
+        value["start_paused"] = serde_json::json!("true");
+        assert!(serde_json::from_value::<Document>(value).is_err());
+    }
+    #[test]
     fn terminal_routes_release_input_once_and_restart_explicitly() {
         use crate::test_controller::{Run, Script};
         for failed in [false, true] {
@@ -361,7 +381,7 @@ mod tests {
             theia_network::authored_world::Store::open(&world).unwrap(),
         ));
         let bytes = std::fs::read(&path).unwrap();
-        let (_, travel) = Travel::load(&path, &bytes, &source).unwrap();
+        let (_, travel, _) = Travel::load(&path, &bytes, &source).unwrap();
         assert!(travel.points.len() > 4);
         for pair in travel.points.windows(2) {
             let a = pair[0].metres();

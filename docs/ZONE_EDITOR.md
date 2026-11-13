@@ -4826,3 +4826,8 @@ The ordinary `tools/play.py` launcher also accepts `--test-route FILE` for one
 authored Classic client, including its population launch. It preflights before
 server or account-login startup and sends the flag only to the client. For multiple
 clients use the managed scenario's per-player route assignments instead.
+
+A route document may also set `"start_paused": true` (default false). The client
+prepares and validates it at startup, then leaves normal controls available until
+you press F7 in that client. This is useful for accepting a quest before starting
+the approach. F7 does not bypass the original start-position check.

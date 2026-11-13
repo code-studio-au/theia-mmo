@@ -1,3 +1,21 @@
+P4-03 opt-in paused test-route start, 13 November 2026:
+A checked route may set start_paused=true. Navigation/collision preparation still
+runs before startup, but ordinary input remains available until the focused F7
+key starts the route. This permits quest acceptance before test travel. Default
+routes still start automatically. Arrival/failure releases ordinary input as before;
+F7 restart still requires the original checked start. Configuration reports expose
+whether the prepared controller starts active. Ten controller tests pass (one
+optional fixture ignored), fmt and denied-warning workspace/all-target Clippy pass.
+Owned native qualification observes four stationary inactive reports with zero
+travel elapsed, starts through the normal F7 key, then completes in 11.86 s with
+0.183 m final authoritative goal error and automatic manual release. Five actors,
+RX 7900 XTX/RADV Vulkan, no GPU diagnostics; original editor untouched.
+Evidence: build/test-route-paused-checks.log and
+build/test-route-paused-native-v1/{qualification.json,native/qualification.json}.
+The helper tools/qualify_test_route_paused.py creates a separate route copy and
+owned qualifier process group; no source route edits or game-state injection.
+Full quest/target/kill orchestration remains separate work.
+
 P4-03 normal-launcher checked test travel, 13 November 2026:
 tools/play.py accepts --test-route for one authored Classic client, preflights
 that route with the actual client before server/login startup, and forwards it
