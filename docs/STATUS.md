@@ -1,3 +1,32 @@
+P5-17 / P3-09 / P3-11 dressed valley authored overlook and dialogue close,
+14 November 2026: extend the checked population travel request to enter the saved
+western-overlook volume. Existing navigation preflight checks all 531 clearance
+samples; normal Classic input follows the prepared route. The native account flow
+now accepts the authored area quest after the three-kill follow-up, enters the
+volume, returns to the guide and completes it. Area occupancy grants no XP; turn-in
+raises the total from 125 to 150 XP, journal revision 14 and three Completed quests.
+No player death occurs (14 health remains). Both sessions have zero rejected
+dialogue requests. A real PostgreSQL restart/select restores those totals and offers the
+newly unlocked pelt quest. Completed quests are not reoffered.
+
+The native run exposed a dialogue timing bug: Escape could send the previous
+painted revision just after a new server view arrived, causing a rejected close.
+Keyboard/deferred Escape now uses the current authoritative view revision; pointer
+actions retain their painted identity. Regression coverage checks both policies.
+The OS qualifier also waits for root choices to paint before interacting. Earlier
+failed runs remain as evidence: v1 outdated no-offer assertion, v2 rejected close.
+
+Evidence: build/starter-valley-population-overlook-native-v3/qualification.json,
+binaries.json, route-check.log, fresh/reach-area-proof.json, trail proofs, phase
+SQL records and screenshots. All 22 profiles and five creature bindings are checked.
+266 client tests pass, four ignored; strict workspace/all-target Clippy, fmt,
+Python compile and diff checks pass. The socket test requires local network access;
+the first sandbox-only attempt was denied before binding. Logs:
+build/population-overlook-client-tests-native.log and population-overlook-clippy.log.
+Linux 1280x720 RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics.
+No Windows or performance claim. Next: ordinary conditional pelt pickup/turn-in in
+this same populated valley. Local commits only.
+
 P5-17 / P3-09 / P3-11 dressed valley population hunt and checked travel,
 14 November 2026: the account population wrapper accepts an explicit --test-route.
 Bound it to 32 KiB, require schema 1/start_paused and the selected package navigation,

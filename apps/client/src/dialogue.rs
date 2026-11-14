@@ -287,11 +287,7 @@ fn controls(
     }
     let action = if view.open.is_some() {
         if pointer_close.is_some() || escape || ui.close_when_open {
-            let revision = if ui.close_when_open {
-                Some(view.revision)
-            } else {
-                pointer_close.or(ui.displayed_revision)
-            };
+            let revision = close_revision(view.revision, escape, ui.close_when_open, pointer_close);
             ui.close_when_open = false;
             if escape {
                 ui.keyboard_actions += 1;
@@ -333,6 +329,21 @@ fn controls(
         && network.request_dialogue(revision, action)
     {
         ui.submitted += 1;
+    }
+}
+
+fn close_revision(
+    current: u64,
+    escape: bool,
+    deferred_escape: bool,
+    pointer: Option<u64>,
+) -> Option<u64> {
+    // Escape closes the current conversation, including a response that arrived
+    // before presentation refreshed. Pointer actions retain the painted identity.
+    if escape || deferred_escape {
+        Some(current)
+    } else {
+        pointer
     }
 }
 
@@ -556,6 +567,15 @@ pub(crate) fn qualification_choices(world: &mut World) -> Vec<serde_json::Value>
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn escape_closes_newly_received_view_but_pointer_keeps_painted_revision() {
+        assert_eq!(close_revision(10, true, false, Some(9)), Some(10));
+        assert_eq!(close_revision(10, true, false, None), Some(10));
+        assert_eq!(close_revision(10, false, true, None), Some(10));
+        assert_eq!(close_revision(10, false, false, Some(9)), Some(9));
+        assert_eq!(close_revision(10, false, false, None), None);
+    }
+
     #[test]
     fn exported_dialogue_bounds_use_window_pixels_without_rescaling_scroll_offsets() {
         let mut app = App::new();

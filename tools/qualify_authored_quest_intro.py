@@ -32,8 +32,8 @@ if args.sigint_stop and not args.population_package:
     parser.error('--sigint-stop requires a population account package')
 if args.population_package:
     package = args.population_package.resolve()
-    if args.route or args.reach_area:
-        parser.error('Population qualification excludes singleton routes and area-quest flow')
+    if args.route:
+        parser.error('Population qualification excludes singleton patrol routes')
     if args.quest_trail and not args.checked_travel:
         parser.error('Population follow-up requires checked travel')
     if args.world.resolve() != package/'world' or args.navigation.resolve() != package/'navigation':
@@ -235,4 +235,4 @@ finally:
 (out / 'qualification.json').write_text(json.dumps(dict(passed=True, runs=results,
     private_services_closed=True, database_restart=True,
     stop='SIGINT with owner pipe open' if args.sigint_stop else 'owner EOF' if args.population_package else 'SIGINT',
-    scope=('Dressed authored population: five native actors, checked travel, three independent creature kills, guide follow-up and durable rejoin; no pelt/area quest completion' if args.population_package and trail else 'Dressed authored population: five native actors, complete 22-profile snapshot, guide introduction, checkpoint and PostgreSQL restart/rejoin; no population combat or travel claim' if args.population_package else 'Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))
+    scope=('Dressed authored population: introduction, three kills, checked outward/return travel, authored overlook occupancy/turn-in and durable rejoin; no pelt quest completion' if args.population_package and area else 'Dressed authored population: five native actors, checked travel, three independent creature kills, guide follow-up and durable rejoin; no pelt/area quest completion' if args.population_package and trail else 'Dressed authored population: five native actors, complete 22-profile snapshot, guide introduction, checkpoint and PostgreSQL restart/rejoin; no population combat or travel claim' if args.population_package else 'Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))

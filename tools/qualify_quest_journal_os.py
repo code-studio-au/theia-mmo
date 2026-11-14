@@ -99,6 +99,9 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
             close_panels()
             desktop.click(window, wait(lambda: state()['guide_screen']), scale, 3)
             wait(lambda: state()['dialogue_open'])
+            # The network view can arrive before its choices are painted. Do not
+            # mistake that frame for a choice response and close/reopen the guide.
+            wait(lambda: journal()['choices'])
 
     def action(name, status):
         before = journal()['ui']['applied']
@@ -307,8 +310,17 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
             # Pickup legitimately changed the saved logout position.
             approach(lambda: [8004., 0., 8000.])
         speak()
-        if authored_trail and not reach_areas:
-            assert not any(b.get('quest') in [FIRST, SECOND] for b in journal()['buttons'])
+        if authored_trail:
+            # Wait for the reopened root dialogue's painted choices, not only
+            # its network-open bit. Later quests can legitimately remain offered.
+            wait(lambda: journal()['choices'])
+            completed = {q['id'] for q in journal()['quests'] if q['status'] == 'Completed'}
+            assert not any(b.get('quest') in completed for b in journal()['buttons'])
+            if population and reach_areas:
+                pelts = 'theia.dev.quest-wolf-pelts'
+                assert quest(pelts) is None
+                wait(lambda: any(b.get('quest') == pelts for b in journal()['buttons']))
+                assert state()['quest_marker']['visible_now']
         else:
             assert not journal()['buttons'], 'Completed quests were offered again'
             assert not state()['quest_marker']['visible_now']

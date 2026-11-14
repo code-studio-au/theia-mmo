@@ -1,3 +1,10 @@
+14 November 2026: the dressed population valley now passes all three introduction,
+kill/training and authored overlook quests through ordinary UI and checked travel.
+150 XP/revision 14 and the newly unlocked pelt offer survive PostgreSQL restart.
+Escape uses the current dialogue revision when presentation lags a server response.
+Next: normal conditional pelt pickup and consumption/turn-in in this same valley.
+Native Linux evidence and limits are in STATUS; local commits only.
+
 Dressed valley population hunt, 14 November 2026: checked outward/return travel,
 three independent kills with normal controls and zero player deaths, guide follow-up
 and durable 125 XP/revision 11 rejoin pass. Explicit account test routes are paused,

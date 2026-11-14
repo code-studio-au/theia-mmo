@@ -1,3 +1,13 @@
+Authored population overlook qualification (14 November 2026): use
+`content/navigation/starter-valley-population-overlook.json` with the exported
+starter-valley population package and `qualify_authored_quest_intro.py` options
+`--population-package PACKAGE --quest-trail ROUTE --checked-travel --reach-area`.
+The checked endpoint enters the saved western-overlook volume. Native acceptance,
+occupancy, return, turn-in and PostgreSQL restart pass: 150 XP/revision 14 and three
+Completed quests. The newly unlocked pelt quest remains offered. No player death;
+normal combat profiles remain unchanged. Full pelt completion remains separate.
+Evidence: `build/starter-valley-population-overlook-native-v3/qualification.json`.
+
 Explicit account test travel (14 November 2026): the account population wrapper can
 accept `--test-route FILE` for a development qualification. Routes must start paused
 and reference that package's navigation. The wrapper bounds and freezes the request,
