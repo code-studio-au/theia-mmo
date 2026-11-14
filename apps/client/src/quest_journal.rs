@@ -283,10 +283,19 @@ fn journal_text(profile: &Profile, state: &State) -> String {
         return "Waiting for your journal...".into();
     };
     let mut lines = Vec::new();
-    for quest in profile.catalog().quests() {
-        let Some(progress) = view.journal.progress(quest.id()) else {
-            continue;
-        };
+    let mut entries: Vec<_> = profile
+        .catalog()
+        .quests()
+        .filter_map(|quest| {
+            view.journal
+                .progress(quest.id())
+                .map(|progress| (quest, progress))
+        })
+        .collect();
+    // Keep the current objective visible above completed history in the bounded
+    // tracker. Preserve catalogue order within each group for stable scrolling.
+    entries.sort_by_key(|(_, progress)| progress.status() == Status::Completed);
+    for (quest, progress) in entries {
         let status = match progress.status() {
             Status::Active => "In progress",
             Status::Ready => "Return to your contact",

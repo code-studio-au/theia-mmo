@@ -1,3 +1,10 @@
+Unfinished quest tracker priority, 14 November 2026: Active and Ready entries
+appear before Completed history, preserving catalogue order inside each group.
+Completed quests remain in the existing scroll pane. Native 720p four-quest
+acceptance/Ready/completion/restart passes; current overlook/pelt objectives and
+return instructions are visible above history. See STATUS and
+`build/starter-valley-population-tracker-native-v1/qualification.json`.
+
 Fixed quest reward UI/native checkpoint, 6 November 2026:
 Opt-in schema 21 now has named fixed reward offers, unfinished tracker details,
 backpack-full refusal guidance and native free-space retry/whole-bundle turn-in.

@@ -1,3 +1,9 @@
+14 November 2026: the quest tracker lists Active/Ready objectives before completed
+history, with stable catalogue order inside each group. Native 720p overlook/pelt
+text is fully visible; the full four-quest loop and exact PostgreSQL restart pass
+again (250 XP, journal 24, bag 7). Next: guide vendor purchase in the exported valley.
+See STATUS for evidence and limits; local commits only.
+
 14 November 2026: all four dressed-population quests pass through ordinary UI,
 checked travel, normal probabilistic loot, corpse pickup and turn-in. Nine kills,
 one ordinary death/respawn, 250 capped XP, journal revision 25 and bag revision 6;

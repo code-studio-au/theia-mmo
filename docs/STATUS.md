@@ -1,3 +1,30 @@
+P2-14 / P3-11 unfinished quests first in the tracker, 14 November 2026:
+the four-quest native flow exposed a presentation problem at 1280x720: completed
+entries preceded the current pelt quest in catalogue order, placing its objective
+below the initial scroll viewport. Build tracker text with Active/Ready quests
+before Completed history, preserving catalogue order within each group. Keep all
+completed entries accessible through the existing standard Bevy scroll pane.
+Status/count updates do not change the unfinished grouping, and authoritative
+journal state, quest eligibility, rewards and dialogue actions are unchanged.
+
+Native 1280x720 acceptance, Ready and completion/rejoin pass with the rebuilt
+client. The active overlook and pelt objective/reward are fully visible above
+history, and the Ready pelt return instruction remains first. The complete normal
+four-quest loop also passes again: eight kills, one ordinary death/respawn, 250
+capped XP, journal revision 24 and bag revision 7. Exact quests/bag/rolls survive a
+real PostgreSQL restart. Different kill/roll counts legitimately differ from the
+previous run; the final head is checked against this run's committed events.
+
+Evidence: build/starter-valley-population-tracker-native-v1/qualification.json,
+binaries.json, tracker-{active,ready}-proof.json, fresh/area-accepted.png,
+pelt-{accepted,ready,completed}.png and resumed-completed-journal.png. All 22 frozen
+roles and five creature bindings remain checked. Linux RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6, zero GPU diagnostics. Debug rendering only; no performance or
+Windows claim. All 266 client tests pass, four ignored; strict workspace/all-target
+Clippy, fmt and diff checks pass. Logs: build/population-quest-tracker-{client-tests,
+clippy,build}.log. Next: ordinary guide vendor exchange in the same exported world.
+Local commits only.
+
 P5-17 / P3-09 / P3-11 dressed valley conditional pelt quest,
 14 November 2026: the native account qualifier now continues from the three earlier
 quests into the published pelt quest. Use normal 60% quest-required pelt and 25%
