@@ -4,11 +4,16 @@ Theia's narrative design lives in [story and lore](story/README.md): worldbuildi
 characters, campaign acts, quests and their approval/decision records. Narrative
 plans remain separate from implemented gameplay.
 
-Updated 2026-10-19 to follow the adopted [architecture](engineering/README.md).
-The target is modernized WoW-style presentation and tab targeting with GW2-inspired
-mobile combat: moving while casting by default unless an ability restricts it,
-a configurable hybrid 1.5-second GCD and 300 ms input queue, with explicit ability
-exceptions. These are design constraints, not existing combat implementation.
+Updated 2026-11-14 to reflect the adopted [architecture](engineering/README.md)
+and [THEIA-COMBAT-001 v1.0](COMBAT_TARGETING_MOVEMENT_SPEC.md), adopted 2026-11-01.
+The initial playable version uses Classic-style third-person controls, persistent
+explicit targets, manual authoritative character facing and character-relative
+movement. Weapon-timed autoattack is separate from hotkey abilities. Casting
+movement and interrupt restrictions belong to ability data. Action camera, active
+dodge, reticle targeting and automatic facing/tracking remain deferred; the earlier
+GW2/hybrid proposal is historical. See [migration and evidence](MOVEMENT_CAMERA_TARGET.md)
+for the contract and qualified slices, and [Classic formulas](CLASSIC_FORMULAS.md)
+for source/version uncertainty and metric mappings.
 
 The user wants a WoW-style MMORPG. Theia is now a game built with Bevy, rather
 than a replacement general-purpose engine. Use WoW as the gameplay reference and
@@ -43,7 +48,8 @@ Build a small starting-zone experience before expanding the world:
 5. Add the minimal inventory, progression and persistence needed to retain that
    experience across sessions. Then expand classes, groups and encounters.
 
-The first combat archetype, visual style, progression rules and precise camera
-behaviour remain design choices. Do not build every WoW subsystem at once or
+The initial control and targeting contract is adopted. Prototype ability values,
+progression fixtures and imported presentation do not establish final class balance
+or visual direction. Do not build every WoW subsystem at once or
 present the existing capsule scene as representative game content. The current
 milestones and execution evidence are tracked separately in ROADMAP and STATUS.
