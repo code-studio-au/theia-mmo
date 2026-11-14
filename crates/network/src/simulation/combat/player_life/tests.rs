@@ -496,6 +496,74 @@ fn leaving_reach_cancels_the_real_swing_before_damage_and_legacy_patrol_never_re
 }
 
 #[test]
+fn expired_cooldowns_remain_wire_safe_while_dead_or_interrupted() {
+    for death in [true, false] {
+        let (mut world, npc) = fixture(TickRate::Hz30, false);
+        if death {
+            let mut respawn: Value = serde_json::from_slice(RESPAWN).unwrap();
+            respawn["delay_ms"] = json!(6000);
+            world
+                .enable_player_life(Arc::new(
+                    Profile::from_json(
+                        STATS,
+                        CREATURE,
+                        POLICY,
+                        &serde_json::to_vec(&respawn).unwrap(),
+                    )
+                    .unwrap(),
+                ))
+                .unwrap();
+        }
+        let actor = join(&mut world, [8006., 8000.]);
+        let long = ContentId::new("theia.dev.long-bolt").unwrap();
+        let result = world.cast(
+            actor,
+            Request {
+                epoch: world.epoch(),
+                sequence: 1,
+                ability: long.clone(),
+                target: npc,
+            },
+        );
+        assert!(matches!(result.reply.outcome, Outcome::Started { .. }));
+        let deadline = world.combat.as_ref().unwrap().actors[&actor].cooldowns[&long];
+        if death {
+            let key = world.player_life_snapshot(actor).unwrap().key;
+            let mut combat = world.combat.take().unwrap();
+            assert!(
+                combat
+                    .damage_player(&mut world, key, 100)
+                    .unwrap()
+                    .unwrap()
+                    .died
+            );
+            world.combat = Some(combat);
+        }
+        while world.tick <= deadline {
+            if !death && world.tick + 1 == deadline {
+                world.combat.as_mut().unwrap().interrupt(actor);
+            }
+            world.step();
+            let catalog = &world.combat.as_ref().unwrap().catalog;
+            let state = crate::combat_wire::State::new(
+                world.epoch(),
+                world.combat_snapshot(actor).unwrap(),
+                catalog,
+            )
+            .unwrap();
+            let bytes = state.encode(catalog).unwrap();
+            crate::combat_wire::State::decode(&bytes, catalog).unwrap();
+        }
+        assert_eq!(world.player_alive(actor), !death);
+        assert!(
+            !world.combat.as_ref().unwrap().actors[&actor]
+                .cooldowns
+                .contains_key(&long)
+        );
+    }
+}
+
+#[test]
 fn death_cancels_both_cast_and_queue_preserves_cooldown_and_stops_dead_mana_regeneration() {
     let (mut world, npc) = fixture(TickRate::Hz30, true);
     let actor = join(&mut world, [8006., 8000.]);

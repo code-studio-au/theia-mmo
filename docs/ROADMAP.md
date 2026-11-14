@@ -1,3 +1,9 @@
+14 November 2026: fix cooldown expiry for dead/interrupted actors before their
+early returns. A normal pelt fight exposed a server exit before player respawn;
+the World/wire regression reproduces the exact error and passes after the fix.
+511 network tests and strict workspace Clippy pass. Native full pelt completion
+with ordinary death/respawn and restart is being rerun; no completion claim yet.
+
 14 November 2026: the dressed population valley now passes all three introduction,
 kill/training and authored overlook quests through ordinary UI and checked travel.
 150 XP/revision 14 and the newly unlocked pelt offer survive PostgreSQL restart.

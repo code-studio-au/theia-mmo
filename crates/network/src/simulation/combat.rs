@@ -1060,6 +1060,13 @@ impl Authority {
                 self.actors.remove(&id);
                 continue;
             };
+            // Dead and interrupted actors still publish combat views. Expire
+            // deadlines before either path can skip ordinary cast processing.
+            self.actors
+                .get_mut(&id)
+                .unwrap()
+                .cooldowns
+                .retain(|_, at| *at > world.tick);
             if !self.player_alive(id) {
                 continue;
             }
@@ -1180,11 +1187,6 @@ impl Authority {
                     self.cancel(key, queued.request.sequence, Reason::Unavailable);
                 }
             }
-            self.actors
-                .get_mut(&id)
-                .unwrap()
-                .cooldowns
-                .retain(|_, at| *at > world.tick);
         }
         self.advance_statuses(world);
         self.advance_autoattack(world);

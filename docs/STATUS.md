@@ -1,3 +1,27 @@
+P3-06 / P3-07 cooldown expiry during player death/interruption,
+14 November 2026: ordinary populated-valley pelt combat exposed a server exit with
+"Invalid cooldown order/deadline" after the player's death. Dead actors skipped
+cooldown cleanup; an expired entry then failed the combat wire's required future
+deadline invariant. Interruption on the expiry tick had the same early-return gap.
+Expire cooldowns before either early return. Preserve unexpired cooldowns, spell
+costs, death/respawn policy and strict packet validation.
+
+A World regression starts a real five-second cooldown, kills the player before
+its expiry under an explicit six-second test respawn policy, and encodes/decodes
+every completed-step combat view. The second case interrupts the live actor on
+the expiry tick. The regression reproduces the exact native error before the fix
+and passes afterward; existing death/cast/queue/future-cooldown behavior still passes.
+Evidence: build/population-death-cooldown-before.log and the network suite below.
+The failed native run is retained at build/starter-valley-population-pelts-native-v1:
+normal 60% pelt win and miss receipts, actual pickup advancing possession, then
+server failure on death. This is partial pelt evidence, not completed qualification.
+
+511 network tests pass, 17 ignored, with localhost transport access. Strict
+workspace/all-target Clippy, fmt and Python compile pass. Server/client rebuilds
+pass. Logs: build/population-death-cooldown-{network-native-tests,clippy,build}.log.
+The earlier sandbox suite's socket denials are retained separately. No rendering
+change; native pelt/respawn/restart completion is the next check. Local commits only.
+
 P5-17 / P3-09 / P3-11 dressed valley authored overlook and dialogue close,
 14 November 2026: extend the checked population travel request to enter the saved
 western-overlook volume. Existing navigation preflight checks all 531 clearance
