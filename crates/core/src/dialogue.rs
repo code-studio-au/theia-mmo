@@ -1,8 +1,10 @@
 //! Bounded informational dialogue. Pure navigation establishes no authorized
 //! interaction session, proximity, persistence or gameplay effects.
 use crate::content::ContentId;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+
+pub mod catalog;
 
 pub const MAX_PROFILE_BYTES: usize = 16 * 1024;
 pub const MAX_NODES: usize = 8;
@@ -12,7 +14,7 @@ pub const MAX_TEXT_BYTES: usize = 512;
 pub const MAX_CHOICE_BYTES: usize = 96;
 pub const PROFILE_DOMAIN: &[u8] = b"theia-informational-dialogue-v1\0";
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct Raw {
     schema: u32,
@@ -22,14 +24,14 @@ struct Raw {
     start: String,
     nodes: Vec<RawNode>,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct RawNode {
     id: String,
     text: String,
     choices: Vec<RawChoice>,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct RawChoice {
     id: String,

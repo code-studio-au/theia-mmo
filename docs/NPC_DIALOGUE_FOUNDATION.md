@@ -1,3 +1,48 @@
+14 November 2026 — P3-11 / P3-12 / P3-15 / P5-17 multiple-contact continuation:
+the user authorized progressing from the qualified single-guide valley to multiple
+authored contacts, including quests accepted from one NPC and returned to another.
+Keep the current playable package working while replacing its single-contact
+assumptions in bounded stages. The manual editor/account session is available for
+human feedback independently of this feature.
+
+Implemented content prerequisite: `theia_core::dialogue::catalog::Catalog` accepts
+schema 2 with `id`, positive `revision` and `contacts` (1..16 existing schema-1
+profiles embedded as objects). The total input is capped at 256 KiB; each compact
+profile retains the existing 16 KiB, eight-node/four-choice and text/acyclicity
+bounds. Sixteen contacts is an explicit initial Theia authoring budget. All catalog,
+profile, NPC, node and choice IDs must be globally distinct. Typed nested decoding
+rejects duplicate/unknown fields. Contacts are indexed by stable NPC content ID.
+
+`validate_quest_contacts` resolves giver and turn-in independently, checks each
+semantic interaction against its exact NPC and refuses quest/catalog/stage/objective
+IDs that alias dialogue definitions. This function does not validate creature,
+item, document or area references, static support, live entity/session/range, or
+persistence. Those retain their respective validators and authority boundaries.
+The old Profile loader still rejects schema 2. No default manifest, editor export,
+World, network, client UI or saved-account format adopts the new collection yet.
+
+Remaining concrete implementation/acceptance:
+- Publish a bounded authored contact collection with checked f64 feet and bind every
+  placement/profile to world admission identity. Preserve legacy schema-1/2 anchor
+  behavior and refuse duplicates, unsupported positions and missing definitions.
+- Install distinct noncombat, nonblocking contact entities. Keep one current
+  dialogue session per player with bounded request counts and monotonic revisions;
+  route choices, quest actions and vendor requests by that session's exact contact.
+  Wrong NPC, retired entity, stale revision and out-of-range actions must refuse.
+- Replicate bounded contact presence and resolve each visible/clicked entity to its
+  matching dialogue/quest marker. Do not substitute nearest-contact identity for
+  the explicitly clicked NPC. Keep the existing single-guide protocol as a tested
+  compatibility path until the new opt-in path passes.
+- Let the editor bind/export two NPC markers and launch their exact snapshot.
+  Demonstrate acceptance at A, a semantic interaction/turn-in at B, vendor binding,
+  and durable restart without duplicate quest/reward grants. Use normal controls
+  and standard Bevy presentation. Keep general NPC animation, roaming, additional
+  services and MMO scaling outside this contact slice.
+
+The core tests cover distinct giver/turn-in, choices on the wrong contact, missing
+contacts, global aliases, strict graphs/fields, byte/count limits and legacy refusal.
+Runtime and native multi-contact acceptance remain pending; see STATUS for checks.
+
 12 November 2026 — P5-17 / P3-12 / P3-15 editor contact binding:
 NPC markers expose an inline Catalog ID with existing validation, history and
 explicit Save. A gameplay-template export binds one matching NPC to its full XYZ

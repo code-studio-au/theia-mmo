@@ -1,3 +1,10 @@
+14 November 2026: bounded multi-contact content prerequisite passes core tests.
+Schema-2 contact collections resolve different quest giver/turn-in IDs and exact
+NPC choice ownership; duplicate/unknown definitions and budgets are checked.
+Normal gameplay still rejects this schema. Next: authored placement/World session
+identities, replicated presence/selection and editor export. See NPC_DIALOGUE_FOUNDATION
+and STATUS for implemented boundaries; no playable multi-contact claim yet.
+
 14 November 2026: disposable manual editor/account launcher and prefilled access
 road pass native dressed-valley export/create/Stop/re-export/select. Source copies,
 frozen binaries, all 22 roles and absence of gameplay drivers/test routes are checked.

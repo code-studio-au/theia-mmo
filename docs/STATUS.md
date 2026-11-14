@@ -1,3 +1,27 @@
+P3-11 / P3-12 / P3-15 multiple-contact content prerequisite, 14 November 2026:
+add an explicit pure schema-2 dialogue Catalog with 1..16 embedded, independently
+validated schema-1 contact profiles. Bound total input to 256 KiB, retain each
+profile's compact 16 KiB limit and graph/text limits, and require globally unique
+catalog/profile/NPC/node/choice IDs. Typed nested parsing rejects unknown/duplicate
+fields. Sixteen contacts is a Theia authoring budget, not a Classic parity claim.
+
+Quest contact validation resolves giver and turn-in independently and checks
+semantic choice ownership against the referenced NPC. Reject missing contacts and
+quest/catalog/stage/objective definitions that alias dialogue content. Other world
+references, support/range/session authorization and persistence remain separate.
+The legacy Profile loader rejects this new schema: normal manifests, authored
+export, World, transport and client remain on the qualified single-guide path.
+This is an implemented content prerequisite, not playable multiple NPC contacts.
+
+384 core tests pass, including four new catalogue cases; final focused tests and
+strict workspace/all-target Clippy, fmt and diff checks pass. Evidence:
+build/contact-catalog-core-tests.log, contact-catalog-focused-final.log and
+contact-catalog-clippy-final.log. No renderer/default-content change; the user's
+manual game runs frozen previously qualified binaries independently. Next: bound
+multi-contact authored placement and installed entity/session identities, then
+presence/selection and editor integration. Detailed acceptance and compatibility
+boundaries are in NPC_DIALOGUE_FOUNDATION.md. Local commits only.
+
 P5-17 / P3-03 manual editor account playtest, 14 November 2026:
 add tools/edit_local.py for a disposable Linux editor session backed by owned local
 OIDC/PostgreSQL. Copy the source zone and freeze editor/client/server/baker/validator
