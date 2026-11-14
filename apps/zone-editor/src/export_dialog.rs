@@ -329,7 +329,10 @@ pub(super) fn open(
                     .or_else(|| manager.as_ref().and_then(|m| m.template.as_ref()))
                     .map_or_else(String::new, |p| p.display().to_string())
             },
-            String::new(),
+            manager
+                .as_ref()
+                .and_then(|m| m.access_path)
+                .map_or_else(String::new, |id| id.to_string()),
         ]
     } else if mode.world() {
         [
@@ -1232,6 +1235,9 @@ mod tests {
         let selected = context.path.display().to_string();
         app.world_mut().resource_mut::<Session>().quest_context = Some(context);
         app.world_mut()
+            .resource_mut::<network_playtest::Manager>()
+            .access_path = Some(1201);
+        app.world_mut()
             .resource_mut::<workspace::Requests>()
             .account_population_playtest = true;
         app.update();
@@ -1240,6 +1246,12 @@ mod tests {
             fields
                 .iter(app.world())
                 .any(|(f, t)| f.0 == 10 && t.value() == selected.as_str())
+        );
+        let mut access_fields = app.world_mut().query::<(&Field, &EditableText)>();
+        assert!(
+            access_fields
+                .iter(app.world())
+                .any(|(field, text)| field.0 == 11 && text.value() == "1201")
         );
         let mut rows = app.world_mut().query::<(&FieldRow, &Node)>();
         for (row, node) in rows.iter(app.world()) {

@@ -233,7 +233,8 @@ impl Options {
             && (result.population_creature.is_some()
                 || result.navigation_baker.is_some()
                 || result.population_spacing.is_some()
-                || result.population_access_path.is_some())
+                || (result.population_access_path.is_some()
+                    && (result.headless || result.export.is_some() || result.output.is_some())))
         {
             return Err("Population profile/baker/spacing options require --population".into());
         }

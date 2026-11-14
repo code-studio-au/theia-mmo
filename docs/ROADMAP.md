@@ -1,3 +1,10 @@
+14 November 2026: disposable manual editor/account launcher and prefilled access
+road pass native dressed-valley export/create/Stop/re-export/select. Source copies,
+frozen binaries, all 22 roles and absence of gameplay drivers/test routes are checked.
+The user has the running session for usability feedback. See ZONE_EDITOR for launch
+instructions and STATUS for evidence. Next: bounded multiple-contact content and
+runtime integration; current playable still has one guide.
+
 14 November 2026: combat-earned first-kill reward claim and normal guide purchase
 pass twice in the exported populated valley. Three kills, two Completed quests,
 125 XP, 99 tokens and 31 stones; exact bag and both transaction receipts survive

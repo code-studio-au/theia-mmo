@@ -818,10 +818,14 @@ fn run() -> Result<(), String> {
         distance: if initial_target.is_some() { 120. } else { 32. },
         preset: camera_views::Preset::Perspective,
     })
-    .insert_resource(network_playtest::Manager::new(
-        options.player_assets.clone(),
-        options.creature_asset.clone(),
-    ))
+    .insert_resource({
+        let mut manager = network_playtest::Manager::new(
+            options.player_assets.clone(),
+            options.creature_asset.clone(),
+        );
+        manager.access_path = options.population_access_path;
+        manager
+    })
     .add_systems(Update, network_playtest::poll)
     .init_resource::<test_players::Scene>()
     .init_resource::<scenery_scene::Scene>()

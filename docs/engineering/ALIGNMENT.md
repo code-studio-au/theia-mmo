@@ -1,3 +1,35 @@
+P5-17 / P3-03 manual editor account playtest, 14 November 2026:
+add tools/edit_local.py for a disposable Linux editor session backed by owned local
+OIDC/PostgreSQL. Copy the source zone and freeze editor/client/server/baker/validator
+executables before starting services. Reject enabled Test Players and strip inherited
+gameplay automation/service credentials. No movement, combat, character selection
+or editor input is injected by this launcher. Keep the same services across editor
+Stop/Start; closing the editor waits for its owned launcher group to drain before
+stopping SQL. A new invocation creates a fresh account/database, not a saved-account
+installation. Original zone and existing local art remain untouched.
+
+Interactive --population-access-path now seeds the existing population dialog
+field; headless export retains its population gate. The field stays editable and
+all existing route/collision/admission checks apply. No autopilot or document edit.
+
+Native dressed-valley editor export/create/Stop/re-export/select passes with all
+22 published profiles and no test route or gameplay driver in either client.
+The same character is offered after Stop; the second session was handed to the
+user for manual play. Human usability feedback remains pending. The native check
+preserved source and copied draft bytes. Editor 3440x1440, client 1280x720, Linux
+RX 7900 XTX / RADV NAVI31 / Vulkan device 29772, zero GPU diagnostics. No Windows,
+performance or full manual quest-completion claim.
+
+Evidence: build/manual-valley-editor-v1/qualification.json, build.json,
+{fresh,resumed}-session.json, dialog/create-character/existing-character screenshots
+and private editor/session logs. build/manual-editor-native-v3.log completes;
+retained earlier attempts stopped on initial menu timing and the helper's uppercase
+name assertion (native X key input produced lowercase), not a gameplay error.
+245 editor tests pass (12 ignored), four launcher tests and four retained local-play
+tests pass; strict workspace/all-target Clippy, fmt, Python compile and diff checks
+pass. Logs: build/manual-editor-{editor-tests,launcher-tests,clippy,build}.log.
+Usage is in ZONE_EDITOR.md. Multiple-contact implementation remains separate work.
+
 P3-12 / P5-17 combat-earned reward claim and vendor trade, 14 November 2026:
 the populated starter-valley native account qualifier now completes the introduction
 and three-kill follow-up, claims the published first-kill reward through its painted

@@ -1,3 +1,41 @@
+Manual editor/account session (14 November 2026, P5-17 / P3-03):
+`tools/edit_local.py` opens an editable copy of a prepared zone with isolated local
+OIDC/PostgreSQL services and copies of the editor/client/server/baker/validator
+executables. It sends no mouse, keyboard, movement, combat or character-selection
+input. Browser sign-in uses the existing owned synthetic account helper. Account
+progress survives Stop/Start within the editor session. Closing the editor stops
+its owned services; each new invocation starts a fresh synthetic account/database.
+This is a disposable development session, not a persistent account installation.
+
+For the locally prepared populated valley:
+
+```sh
+python3 tools/edit_local.py \
+  --zone build/starter-valley-population-editor-native-v2/source.zone.json \
+  --scenery-library build/starter-valley-scenery-v2/catalog.json \
+  --players build/classic-directional-client-qualified-v1-20261103/art/player \
+  --creature-definition content/gameplay/development-creature-pursuit.json \
+  --creature-asset build/starter-valley-population-editor-native-v2/package/creature.glb \
+  --gameplay-template content/development-gameplay-classic-quest-loot.json \
+  --access-path 1201 --output build/my-manual-valley-session
+```
+
+Choose a new output directory per invocation. Existing prepared local assets and
+SDKs are required; missing inputs refuse before services start. The copied zone is
+`OUTPUT/draft.zone.json`; explicit editor Save affects this copy. Export packages
+use the dialog's destination. Select **Zone → Start account population playtest…**,
+review the prefilled template/access road, and Start. Create/select a character
+through the ordinary editor picker. **Zone → Stop network playtest** ends that
+client/server while keeping local account/database services available for another
+Start. Ordinary player controls remain manual; no checked test route is attached.
+
+The interactive editor now also accepts `--population-access-path ID` to prefill
+its population dialogs. This is session context, not a zone edit, path assignment,
+validation bypass or automatic movement. Headless exports retain their existing
+`--population` requirements. Native dressed-valley export/create/Stop/re-export/select passes with all 22
+profiles and no test route or gameplay driver. Evidence:
+`build/manual-valley-editor-v1/qualification.json`; human gameplay feedback is pending.
+
 Authored guide vendor qualification (14 November 2026): use --vendor-trade with
 qualify_authored_quest_intro.py and a complete population package, omitting the
 quest trail. After the introduction, the qualifier clicks the actual painted
