@@ -24,10 +24,13 @@ parser.add_argument('--route', help='Singleton patrol route identity')
 parser.add_argument('--population-package', type=Path, help='Checked complete population package; optional checked three-kill follow-up')
 parser.add_argument('--sigint-stop', action='store_true', help='Qualify account SIGINT shutdown with its owner pipe still open')
 parser.add_argument('--reach-area', action='store_true', help='Also complete the authored western-overlook quest')
+parser.add_argument('--population-pelts', action='store_true', help='Complete normal conditional pelt pickup and turn-in after the population overlook quest')
 parser.add_argument('--checked-travel', action='store_true', help='Use the checked client follower for quest travel; ordinary keys still drive combat and UI')
 parser.add_argument('--quest-trail', type=Path, help='Also complete the three-kill follow-up using this checked route request')
 parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
 args = parser.parse_args()
+if args.population_pelts and not (args.population_package and args.reach_area and args.checked_travel and args.quest_trail):
+    parser.error('--population-pelts requires a population package, overlook quest and checked travel')
 if args.sigint_stop and not args.population_package:
     parser.error('--sigint-stop requires a population account package')
 if args.population_package:
@@ -86,8 +89,26 @@ x = Desktop()
 x.prepare_wheel()
 launcher = None
 results = []
+previous_bag = None
+previous_rolls = None
 try:
     with Identity(out / 'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True) as identity, Cluster(out / 'cluster', Path('build/postgres-sdk'), isolate_process=True) as cluster:
+        def loot_audit(life):
+            assert len(life) == 16
+            encoded = bytes(life).hex()
+            # Only observe committed receipts. No SQL gameplay mutations or
+            # timing assumptions about an absent corpse after a probability miss.
+            result = cluster.query(f"""SELECT json_build_object(
+                'rolls',(SELECT json_agg(json_build_object('key',roll_key,'ticket',ticket,
+                    'eligible',generation_eligible,'bag',generation_bag_revision,
+                    'journal',generation_journal_revision) ORDER BY roll_key)
+                    FROM theia.loot_rolls WHERE victim_life=decode('{encoded}','hex')),
+                'pending',(SELECT count(*) FROM theia.reward_claims
+                    WHERE victim_life=decode('{encoded}','hex') AND consumed_revision IS NULL));""")
+            assert result.returncode == 0, result.stderr
+            value = json.loads(result.stdout)
+            return value if len(value['rolls'] or []) == 2 else None
+
         for resumed in (False, True):
             folder = out / ('resumed' if resumed else 'fresh')
             folder.mkdir()
@@ -180,7 +201,13 @@ try:
                         report = state()
                         assert report['connected'], 'Owned client disconnected during quest qualification'
                         return report
-                    proof = flow(x, window, play_state, folder, resumed=resumed, intro_only=not bool(trail), authored_trail=trail, reach_areas=args.reach_area, authored_area=area, checked_travel=args.checked_travel, population=bool(args.population_package))
+                    proof = flow(x, window, play_state, folder, resumed=resumed, intro_only=not bool(trail), authored_trail=trail, reach_areas=args.reach_area, authored_area=area, checked_travel=args.checked_travel, population=bool(args.population_package), population_pelts=args.population_pelts, loot_audit=loot_audit, population_pelt_revision=results[0]['revision'] if resumed and args.population_pelts else None)
+                    if args.population_pelts:
+                        bag = state()['inventory_bag']
+                        if resumed:
+                            assert bag == previous_bag, 'Completed pelt quest bag changed across restart'
+                        previous_bag = bag
+                        (folder/'pelt-bag.json').write_text(json.dumps(bag, indent=2)+'\n')
                     if args.population_package and not args.sigint_stop:
                         launcher.stdin.close()
                     else:
@@ -216,6 +243,7 @@ try:
             if args.population_package:
                 assert transport['patrol'] is None
                 assert transport['test_player_admissions'] == 0
+                assert transport['dialogue_requests_rejected'] == 0
             else:
                 assert transport['patrol']['moving_ticks'] > 0 and transport['patrol']['blocked'] == 0
             saved = next(json.loads(line.removeprefix('account_persistence_summary ')) for line in text.splitlines() if line.startswith('account_persistence_summary '))
@@ -223,7 +251,16 @@ try:
             db = cluster.query(query)
             assert db.returncode == 0
             (folder / 'database-proof.txt').write_text(db.stdout)
-            assert db.stdout.strip() == f"{proof['revision']}|{proof['xp']}|{3 if area else (2 if trail else 1)}"
+            assert db.stdout.strip() == f"{proof['revision']}|{proof['xp']}|{4 if args.population_pelts else 3 if area else (2 if trail else 1)}"
+            if args.population_pelts:
+                rolls = cluster.query("""SELECT encode(victim_life,'hex'),roll_key,ticket,
+                    generation_eligible,generation_bag_revision,generation_journal_revision
+                    FROM theia.loot_rolls ORDER BY victim_life,roll_key;""")
+                assert rolls.returncode == 0, rolls.stderr
+                (folder/'loot-rolls.txt').write_text(rolls.stdout)
+                if resumed:
+                    assert rolls.stdout == previous_rolls, 'Restart rerolled a saved creature life'
+                previous_rolls = rolls.stdout
             if resumed:
                 assert db.stdout == before.stdout
             for path in folder.glob('*.log'):
@@ -235,4 +272,4 @@ finally:
 (out / 'qualification.json').write_text(json.dumps(dict(passed=True, runs=results,
     private_services_closed=True, database_restart=True,
     stop='SIGINT with owner pipe open' if args.sigint_stop else 'owner EOF' if args.population_package else 'SIGINT',
-    scope=('Dressed authored population: introduction, three kills, checked outward/return travel, authored overlook occupancy/turn-in and durable rejoin; no pelt quest completion' if args.population_package and area else 'Dressed authored population: five native actors, checked travel, three independent creature kills, guide follow-up and durable rejoin; no pelt/area quest completion' if args.population_package and trail else 'Dressed authored population: five native actors, complete 22-profile snapshot, guide introduction, checkpoint and PostgreSQL restart/rejoin; no population combat or travel claim' if args.population_package else 'Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))
+    scope=('Dressed authored population: all four quests, normal conditional pelt rolls, ordinary corpse pickup and consumption/turn-in, checked travel and durable restart' if args.population_pelts else 'Dressed authored population: introduction, three kills, checked outward/return travel, authored overlook occupancy/turn-in and durable rejoin; no pelt quest completion' if args.population_package and area else 'Dressed authored population: five native actors, checked travel, three independent creature kills, guide follow-up and durable rejoin; no pelt/area quest completion' if args.population_package and trail else 'Dressed authored population: five native actors, complete 22-profile snapshot, guide introduction, checkpoint and PostgreSQL restart/rejoin; no population combat or travel claim' if args.population_package else 'Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))

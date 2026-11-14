@@ -45,13 +45,16 @@ def hold_alive(desktop, key, seconds, guard):
     desktop.hold_key(key, seconds, observe=guard.check)
 
 
-def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None, checked_travel=False, population=False):
+def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None, checked_travel=False, population=False, population_pelts=False, loot_audit=None, population_pelt_revision=None):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
     expected_head = base_head + (3 if reach_areas else 0)
     if resumed and item_quest:
         expected_head = 27 if quest_only else 24
     expected_xp = (250 if quest_only else 200) if resumed and item_quest else (150 if reach_areas else 125)
+    if resumed and population_pelts:
+        assert population_pelt_revision is not None
+        expected_head, expected_xp = population_pelt_revision, 250
 
     def journal():
         return state()['quest_journal']
@@ -318,9 +321,16 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
             assert not any(b.get('quest') in completed for b in journal()['buttons'])
             if population and reach_areas:
                 pelts = 'theia.dev.quest-wolf-pelts'
-                assert quest(pelts) is None
-                wait(lambda: any(b.get('quest') == pelts for b in journal()['buttons']))
-                assert state()['quest_marker']['visible_now']
+                if population_pelts:
+                    assert quest(pelts)['status'] == 'Completed'
+                    assert quest(pelts)['counts'][pelts+'.objective.pelts'] == 3
+                    assert not any(s and s['item']=='theia.dev.wolf-pelt' for s in state()['inventory_bag']['slots'])
+                    assert not journal()['buttons']
+                    wait(lambda: not state()['quest_marker']['visible_now'])
+                else:
+                    assert quest(pelts) is None
+                    wait(lambda: any(b.get('quest') == pelts for b in journal()['buttons']))
+                    assert state()['quest_marker']['visible_now']
         else:
             assert not journal()['buttons'], 'Completed quests were offered again'
             assert not state()['quest_marker']['visible_now']
@@ -430,11 +440,21 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         assert journal()['revision'] == expected_head
         assert journal()['ui']['submitted'] == 6 and journal()['ui']['applied'] == 6
         assert journal()['ui']['rejected'] == 0
+    pelt_proof = None
+    if population_pelts:
+        from population_pelt_quest_os import flow as pelt_flow
+        pelt_proof = pelt_flow(desktop, window, state, folder, quest, journal, feet, face,
+            approach, close_panels, speak, action, capture, walk_trail, reach_enemy,
+            await_respawn, authored_trail[-1], loot_audit)
+        expected_head, expected_xp = pelt_proof['revision'], 250
+        assert journal()['revision'] == expected_head
+        assert journal()['ui']['submitted'] == 8 and journal()['ui']['applied'] == 8
+        assert journal()['ui']['rejected'] == 0
     return dict(passed=True, resumed=False, revision=expected_head, xp=expected_xp,
-                actions=6 if reach_areas else 4, reach_area=area_proof,
+                actions=8 if population_pelts else 6 if reach_areas else 4, reach_area=area_proof, population_pelts=pelt_proof,
                 travel_input='checked client route plus ordinary keyboard alignment' if checked_travel else 'normal OS movement',
                 player_deaths=state()['combat']['player_deaths'], returned_via_respawn=returned_via_respawn,
-                semantic_choices=4, preaccept_noop_choices=2 if repeat_interaction else 0, kills=3, ui=journal()['ui'], adapter=state()['adapter'])
+                semantic_choices=4, preaccept_noop_choices=2 if repeat_interaction else 0, kills=state()['combat']['deaths']-initial_deaths, ui=journal()['ui'], adapter=state()['adapter'])
 
 
 

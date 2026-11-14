@@ -1,3 +1,14 @@
+Complete populated-valley quest qualification (14 November 2026): add
+`--population-pelts` to the population overlook command below. The qualifier uses
+the exported normal 60% pelt/25% token rules, ordinary corpse pickup and checked
+travel; it does not replace the gameplay profile or grant test inventory. The
+full four-quest run passes with ordinary death/respawn, three consumed pelts and
+PostgreSQL restart: 250 capped XP, journal revision 25 and bag revision 6 restored.
+Saved preacceptance denials and later wins/misses remain identical after restart.
+Evidence: `build/starter-valley-population-pelts-native-v3/qualification.json`.
+This qualifies one authenticated character and five independent creatures, not
+multiplayer capacity or final encounter balance.
+
 Authored population overlook qualification (14 November 2026): use
 `content/navigation/starter-valley-population-overlook.json` with the exported
 starter-valley population package and `qualify_authored_quest_intro.py` options

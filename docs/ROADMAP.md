@@ -1,3 +1,10 @@
+14 November 2026: all four dressed-population quests pass through ordinary UI,
+checked travel, normal probabilistic loot, corpse pickup and turn-in. Nine kills,
+one ordinary death/respawn, 250 capped XP, journal revision 25 and bag revision 6;
+four Completed quests, exact bag and saved rolls survive PostgreSQL restart.
+Next: unfinished quests first in the tracker, whose current 720p scroll viewport
+buries the fourth active quest behind completed entries. See STATUS for limits.
+
 14 November 2026: fix cooldown expiry for dead/interrupted actors before their
 early returns. A normal pelt fight exposed a server exit before player respawn;
 the World/wire regression reproduces the exact error and passes after the fix.

@@ -1,3 +1,47 @@
+P5-17 / P3-09 / P3-11 dressed valley conditional pelt quest,
+14 November 2026: the native account qualifier now continues from the three earlier
+quests into the published pelt quest. Use normal 60% quest-required pelt and 25%
+ordinary-token rolls, ordinary keyboard target/facing/casts, the checked travel
+route, real right-click corpse selection and Loot all. Existing old corpse rights
+remain bound to their original kill; accepting the quest grants no retroactive
+pelts. Opening a corpse does not advance possession. Pickups update the bag and
+objective together, and turn-in consumes exactly three pelts.
+
+The helper waits for normal mana recovery between pulls and uses the ordinary
+village respawn after death, within a bounded attempt/death budget. It reads SQL
+roll receipts to distinguish a committed miss from a delayed corpse; it never
+writes gameplay state. Target invalidation may precede the combat death event
+on another channel, so await that event before auditing the victim life. Every
+new kill has a durable journal receipt even when no objective changes; the final
+head is checked from the observed kill count, three possession updates and the
+acceptance/turn-in actions, rather than a fixed probabilistic-kill assumption.
+
+Native result: nine total creature kills (three initial, six pelt-stage), three
+eligible pelt wins and three misses, plus three original ineligible pelt receipts.
+One ordinary player death/respawn during the initial hunt succeeds with the cooldown
+expiry fix; the remaining route/combat completes with 9 health. All four quests
+complete at journal revision 25. XP reaches the configured 250 cap before the final
+turn-in; this does not promise uncapped rewards. Turn-in leaves no pelts and bag
+revision 6 (100 tokens, original stones/sword and equipped wand). A real PostgreSQL
+restart/select restores all four quests, exact XP/head/bag and identical saved rolls.
+Transient health starts at 100 on the new session as before; no durable-vitals claim.
+
+Evidence: build/starter-valley-population-pelts-native-v3/qualification.json,
+binaries.json, phase database-proof.txt, pelt-bag.json and loot-rolls.txt,
+fresh/population-pelt-{progress,proof}.json, pelt acceptance/ready/completed captures,
+checked route proofs and server summaries. Both sessions check all 22 profile roles
+and five creature bindings; zero rejected dialogue requests or GPU diagnostics.
+Linux 1280x720 RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6. No performance,
+Windows, multiplayer-capacity or final balance claim. Native v1 retains the server
+cooldown failure; v2 proves one successful respawn before the old target/death-event
+ordering assertion stopped the qualifier. The v3 run completes both corrections.
+
+17 account-wrapper tests, Python compile, fmt and diff checks pass. The unchanged
+binaries retain the 511-test network suite and strict workspace Clippy evidence in
+population-death-cooldown logs. Next: put unfinished quests before completed entries
+in the tracker; the four-quest 720p capture reveals the active pelt objective below
+the initial scroll viewport. Local commits only.
+
 P3-06 / P3-07 cooldown expiry during player death/interruption,
 14 November 2026: ordinary populated-valley pelt combat exposed a server exit with
 "Invalid cooldown order/deadline" after the player's death. Dead actors skipped
