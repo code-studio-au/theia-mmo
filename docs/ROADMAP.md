@@ -1,3 +1,9 @@
+14 November 2026: ordinary vendor purchase at the exported population guide and
+PostgreSQL restart pass: one token for three stones, exact bag/latest receipt, no
+repeat purchase. Journal-aware vendor commit/replay/refusal counters now match the
+legacy worker, with real SQL regression coverage. Next: earned first-kill reward
+claim and trade through the same journal-aware path. See STATUS for evidence/limits.
+
 14 November 2026: the quest tracker lists Active/Ready objectives before completed
 history, with stable catalogue order inside each group. Native 720p overlook/pelt
 text is fully visible; the full four-quest loop and exact PostgreSQL restart pass

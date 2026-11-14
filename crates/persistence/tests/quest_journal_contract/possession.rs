@@ -257,7 +257,8 @@ async fn vendor_acquisition_and_journal_rollback_together_then_exact_retry_retur
             .journal,
         active.journal
     );
-    let bought = store
+    let (publisher, worker) = theia_persistence::Worker::start(store);
+    let bought = publisher
         .purchase_vendor_with_quest_journal(b, WORLD, &vendor, &purchase, &q)
         .await
         .unwrap();
@@ -267,14 +268,30 @@ async fn vendor_acquisition_and_journal_rollback_together_then_exact_retry_retur
         journal.journal.progress(&id("quest")).unwrap().status(),
         Status::Ready
     );
-    let replay = store
+    let replay = publisher
         .purchase_vendor_with_quest_journal(b, WORLD, &vendor, &purchase, &q)
         .await
         .unwrap();
     assert!(replay.replayed);
     assert_eq!(replay.bag, bought.bag);
     assert_eq!(replay.journal.unwrap().journal, journal.journal);
-    store.close().await.unwrap();
+    let stale = Purchase {
+        expected_revision: bought.bag.revision() + 1,
+        offer: purchase.offer.clone(),
+    };
+    assert!(matches!(
+        publisher
+            .purchase_vendor_with_quest_journal(b, WORLD, &vendor, &stale, &q)
+            .await,
+        Err(Error::InventoryStale)
+    ));
+    let status = worker.shutdown().await.unwrap();
+    assert_eq!(status.vendor_committed, 1);
+    assert_eq!(status.vendor_replayed, 1);
+    assert_eq!(status.vendor_rejected, 1);
+    assert_eq!(status.inventory_committed, 1);
+    assert_eq!(status.inventory_replayed, 1);
+    assert!(!status.failed);
     drop(admin);
     driver.await.unwrap().unwrap();
 }

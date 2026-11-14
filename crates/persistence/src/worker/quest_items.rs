@@ -165,6 +165,7 @@ impl Publisher {
 impl Request {
     pub(super) async fn run(self, store: &mut Store, status: &mut WorkerStatus) -> Result<()> {
         // Accepted jobs survive response loss and drain before ownership release.
+        let vendor = matches!(&self.operation, Operation::Purchase { .. });
         let result = match self.operation {
             Operation::Items { profile, command } => {
                 store
@@ -212,6 +213,16 @@ impl Request {
             status.inventory_replayed = status
                 .inventory_replayed
                 .saturating_add(u64::from(applied.replayed));
+            if vendor {
+                status.vendor_committed = status
+                    .vendor_committed
+                    .saturating_add(u64::from(!applied.replayed));
+                status.vendor_replayed = status
+                    .vendor_replayed
+                    .saturating_add(u64::from(applied.replayed));
+            }
+        } else if vendor {
+            status.vendor_rejected = status.vendor_rejected.saturating_add(1);
         }
         respond(result, self.reply, status)
     }

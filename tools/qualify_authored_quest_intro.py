@@ -25,10 +25,13 @@ parser.add_argument('--population-package', type=Path, help='Checked complete po
 parser.add_argument('--sigint-stop', action='store_true', help='Qualify account SIGINT shutdown with its owner pipe still open')
 parser.add_argument('--reach-area', action='store_true', help='Also complete the authored western-overlook quest')
 parser.add_argument('--population-pelts', action='store_true', help='Complete normal conditional pelt pickup and turn-in after the population overlook quest')
+parser.add_argument('--vendor-trade', action='store_true', help='After the population introduction, buy the normal guide offer and verify durable rejoin')
 parser.add_argument('--checked-travel', action='store_true', help='Use the checked client follower for quest travel; ordinary keys still drive combat and UI')
 parser.add_argument('--quest-trail', type=Path, help='Also complete the three-kill follow-up using this checked route request')
 parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
 args = parser.parse_args()
+if args.vendor_trade and (not args.population_package or args.quest_trail):
+    parser.error('--vendor-trade requires a population package and the introduction-only flow')
 if args.population_pelts and not (args.population_package and args.reach_area and args.checked_travel and args.quest_trail):
     parser.error('--population-pelts requires a population package, overlook quest and checked travel')
 if args.sigint_stop and not args.population_package:
@@ -55,6 +58,11 @@ bundle = out / 'gameplay'
 shutil.copytree(args.gameplay_manifest.resolve().parent, bundle)
 manifest = bundle / args.gameplay_manifest.name
 document = json.loads(manifest.read_text())
+vendor_offer = None
+if args.vendor_trade:
+    offers = json.loads((bundle/document['vendor']).read_text())['offers']
+    assert len(offers) == 1, 'Native vendor fixture expects one published offer'
+    vendor_offer = offers[0]
 creature = (bundle / document['creature']).resolve()
 assert creature.is_relative_to(bundle)
 profile = json.loads(creature.read_text())
@@ -91,6 +99,8 @@ launcher = None
 results = []
 previous_bag = None
 previous_rolls = None
+vendor_bag = None
+vendor_sql = None
 try:
     with Identity(out / 'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True) as identity, Cluster(out / 'cluster', Path('build/postgres-sdk'), isolate_process=True) as cluster:
         def loot_audit(life):
@@ -188,10 +198,13 @@ try:
                     parent = re.search(r'^PPid:\s+(\d+)', Path(f'/proc/{initial["pid"]}/status').read_text(), re.M)
                     assert int(parent[1]) == launcher.pid
                     window = wait(lambda: owned_window(initial['pid']))
-                    x.focus(window)
                     subprocess.run(['wmctrl', '-i', '-r', hex(window), '-e', '0,40,40,1280,720'], check=True, timeout=3)
-                    wait(lambda: state()['window'][:2] == [1280, 720] and state()['cursor']['focused']
+                    wait(lambda: state()['window'][:2] == [1280, 720]
                          and state().get('minimap', {}).get('known_pixels', 0) > 0)
+                    # Let mapping/reparenting/resize settle before activation;
+                    # a window-manager resize can revoke earlier input focus.
+                    x.focus(window)
+                    wait(lambda: state()['cursor']['focused'])
                     x.move(window, [640, 360], initial['window'][2])
                     def cursor_ready():
                         position = state()['cursor']['position']
@@ -202,6 +215,11 @@ try:
                         assert report['connected'], 'Owned client disconnected during quest qualification'
                         return report
                     proof = flow(x, window, play_state, folder, resumed=resumed, intro_only=not bool(trail), authored_trail=trail, reach_areas=args.reach_area, authored_area=area, checked_travel=args.checked_travel, population=bool(args.population_package), population_pelts=args.population_pelts, loot_audit=loot_audit, population_pelt_revision=results[0]['revision'] if resumed and args.population_pelts else None)
+                    if args.vendor_trade:
+                        from quest_vendor_os import flow as vendor_flow
+                        proof['vendor'] = vendor_flow(x, window, play_state, folder, vendor_offer,
+                            resumed=resumed, expected_bag=vendor_bag)
+                        vendor_bag = proof['vendor']['bag']
                     if args.population_pelts:
                         bag = state()['inventory_bag']
                         if resumed:
@@ -248,6 +266,17 @@ try:
                 assert transport['patrol']['moving_ticks'] > 0 and transport['patrol']['blocked'] == 0
             saved = next(json.loads(line.removeprefix('account_persistence_summary ')) for line in text.splitlines() if line.startswith('account_persistence_summary '))
             assert not saved['failed'] and saved['worker']['committed_records'] > 0
+            if args.vendor_trade:
+                assert saved['worker']['vendor_committed'] == (0 if resumed else 1)
+                assert saved['worker']['vendor_rejected'] == 0
+                receipt = cluster.query("SELECT revision,encode(last_command,'hex'),encode(state,'hex') FROM theia.backpacks;")
+                assert receipt.returncode == 0, receipt.stderr
+                columns = receipt.stdout.strip().split('|')
+                assert len(columns)==3 and int(columns[0])==vendor_bag['revision'] and len(columns[1])==64
+                (folder/'vendor-database-proof.txt').write_text(receipt.stdout)
+                if resumed:
+                    assert receipt.stdout == vendor_sql, 'Saved purchase receipt or bag changed across restart'
+                vendor_sql = receipt.stdout
             db = cluster.query(query)
             assert db.returncode == 0
             (folder / 'database-proof.txt').write_text(db.stdout)
@@ -272,4 +301,4 @@ finally:
 (out / 'qualification.json').write_text(json.dumps(dict(passed=True, runs=results,
     private_services_closed=True, database_restart=True,
     stop='SIGINT with owner pipe open' if args.sigint_stop else 'owner EOF' if args.population_package else 'SIGINT',
-    scope=('Dressed authored population: all four quests, normal conditional pelt rolls, ordinary corpse pickup and consumption/turn-in, checked travel and durable restart' if args.population_pelts else 'Dressed authored population: introduction, three kills, checked outward/return travel, authored overlook occupancy/turn-in and durable rejoin; no pelt quest completion' if args.population_package and area else 'Dressed authored population: five native actors, checked travel, three independent creature kills, guide follow-up and durable rejoin; no pelt/area quest completion' if args.population_package and trail else 'Dressed authored population: five native actors, complete 22-profile snapshot, guide introduction, checkpoint and PostgreSQL restart/rejoin; no population combat or travel claim' if args.population_package else 'Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))
+    scope=('Dressed authored population: guide introduction and ordinary OS vendor purchase, exact cost/grant, durable bag/latest receipt and PostgreSQL restart; no population combat/travel claim' if args.vendor_trade else 'Dressed authored population: all four quests, normal conditional pelt rolls, ordinary corpse pickup and consumption/turn-in, checked travel and durable restart' if args.population_pelts else 'Dressed authored population: introduction, three kills, checked outward/return travel, authored overlook occupancy/turn-in and durable rejoin; no pelt quest completion' if args.population_package and area else 'Dressed authored population: five native actors, checked travel, three independent creature kills, guide follow-up and durable rejoin; no pelt/area quest completion' if args.population_package and trail else 'Dressed authored population: five native actors, complete 22-profile snapshot, guide introduction, checkpoint and PostgreSQL restart/rejoin; no population combat or travel claim' if args.population_package else 'Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))

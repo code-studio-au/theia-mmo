@@ -1,3 +1,38 @@
+P3-12 / P5-17 authored population guide vendor purchase, 14 November 2026:
+add --vendor-trade to the introduction-only population account qualifier. Read the
+single published offer's actual terms and click its painted Buy button with PID-
+bound OS input. Optional qualification telemetry now exposes those window-pixel
+button positions through existing Bevy layout/scale conversion. Product UI and
+vendor prices/grants are unchanged. Check exact cost/grant totals, unchanged hand/
+other items, committed bag revision and ordinary UI acknowledgement before exit.
+
+The native purchase exposed missing vendor diagnostics in the journal-aware item
+worker: it counted inventory commits but omitted vendor commit/replay/refusal
+counters. Classify purchase jobs and update those existing counters as the legacy
+vendor worker does, without changing transactions, queues or success timing. The
+existing owned-SQL vendor/journal rollback test now executes purchase, exact retry
+and stale refusal through the real worker and checks all three counters. It still
+proves atomic item/possession projection rollback and coherent replayed views.
+
+Native result: introduction Completed, 25 XP/journal revision 5; one token buys
+three stones (99 to 98 tokens, 28 to 31 stones), bag revision 1. A real PostgreSQL
+restart/select preserves the exact bag bytes and latest command receipt; no repeat
+purchase occurs. Fresh vendor_committed=1, resumed=0, refusals=0 in both sessions.
+All 22 frozen roles and five creature bindings remain checked; no combat/travel
+claim for this short run. Evidence: build/starter-valley-population-vendor-native-v3/
+qualification.json, binaries.json, phase vendor-proof.json, vendor-database-proof.txt
+and before/purchased/restored screenshots. Earlier v1 stopped at startup focus;
+activation now follows settled mapping/resize. V2 proves purchase before its old
+vendor-counter assertion exposed the diagnostic omission. Both failures remain.
+
+266 client tests pass (four ignored), seven persistence library tests and the
+owned SQL regression pass; strict workspace/all-target Clippy, fmt, Python compile
+and diff checks pass. Logs: build/population-vendor-{client-tests,persistence-tests,
+worker-sql-tests,clippy,build,server-build}.log. Linux 1280x720 RX 7900 XTX / RADV
+NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics. No Windows/performance claim.
+Next: earned first-kill reward claim and trade, including journal-aware reward
+counters. Local commits only.
+
 P2-14 / P3-11 unfinished quests first in the tracker, 14 November 2026:
 the four-quest native flow exposed a presentation problem at 1280x720: completed
 entries preceded the current pelt quest in catalogue order, placing its objective

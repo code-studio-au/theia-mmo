@@ -187,7 +187,16 @@ fn inventory_layout(world: &mut World) -> serde_json::Value {
         .next()
         .map(|s| [s.x, s.y]);
     let tooltip = crate::inventory::skin::tooltip_state(world);
-    serde_json::json!({"slots":slots,"scroll":scroll,"tooltip":tooltip,"split":inventory_widget::<crate::inventory::SplitButton>(world),
+    let offers: Vec<_> = world
+        .query::<(&crate::inventory::BuyButton, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
+        .iter(world)
+        .filter(|(_, node, _)| node.size().min_element() > 0.)
+        .map(|(button, node, transform)| serde_json::json!({
+            "index": button.0,
+            "point": (transform.affine().translation * crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+        }))
+        .collect();
+    serde_json::json!({"slots":slots,"scroll":scroll,"tooltip":tooltip,"offers":offers,"split":inventory_widget::<crate::inventory::SplitButton>(world),
         "destroy":inventory_widget::<crate::inventory::DestroyButton>(world),"cancel":inventory_widget::<crate::inventory::CancelButton>(world)})
 }
 fn os_trace(world: &mut World) {

@@ -1,3 +1,11 @@
+Authored guide vendor qualification (14 November 2026): use --vendor-trade with
+qualify_authored_quest_intro.py and a complete population package, omitting the
+quest trail. After the introduction, the qualifier clicks the actual painted
+vendor offer and checks its cost/grant and durable bag/latest receipt across a
+PostgreSQL restart. The normal published profile passes: one token for three
+stones, bag revision 1, 25 XP and journal revision 5. Evidence:
+`build/starter-valley-population-vendor-native-v3/qualification.json`.
+
 Complete populated-valley quest qualification (14 November 2026): add
 `--population-pelts` to the population overlook command below. The qualifier uses
 the exported normal 60% pelt/25% token rules, ordinary corpse pickup and checked
