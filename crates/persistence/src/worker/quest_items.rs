@@ -166,6 +166,7 @@ impl Request {
     pub(super) async fn run(self, store: &mut Store, status: &mut WorkerStatus) -> Result<()> {
         // Accepted jobs survive response loss and drain before ownership release.
         let vendor = matches!(&self.operation, Operation::Purchase { .. });
+        let reward = matches!(&self.operation, Operation::Claim { .. });
         let result = match self.operation {
             Operation::Items { profile, command } => {
                 store
@@ -221,8 +222,18 @@ impl Request {
                     .vendor_replayed
                     .saturating_add(u64::from(applied.replayed));
             }
+            if reward {
+                status.reward_committed = status
+                    .reward_committed
+                    .saturating_add(u64::from(!applied.replayed));
+                status.reward_replayed = status
+                    .reward_replayed
+                    .saturating_add(u64::from(applied.replayed));
+            }
         } else if vendor {
             status.vendor_rejected = status.vendor_rejected.saturating_add(1);
+        } else if reward {
+            status.reward_rejected = status.reward_rejected.saturating_add(1);
         }
         respond(result, self.reply, status)
     }

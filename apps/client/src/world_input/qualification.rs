@@ -197,6 +197,7 @@ fn inventory_layout(world: &mut World) -> serde_json::Value {
         }))
         .collect();
     serde_json::json!({"slots":slots,"scroll":scroll,"tooltip":tooltip,"offers":offers,"split":inventory_widget::<crate::inventory::SplitButton>(world),
+        "claim":inventory_widget::<crate::inventory::ClaimButton>(world),
         "destroy":inventory_widget::<crate::inventory::DestroyButton>(world),"cancel":inventory_widget::<crate::inventory::CancelButton>(world)})
 }
 fn os_trace(world: &mut World) {

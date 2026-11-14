@@ -1,3 +1,11 @@
+14 November 2026: combat-earned first-kill reward claim and normal guide purchase
+pass twice in the exported populated valley. Three kills, two Completed quests,
+125 XP, 99 tokens and 31 stones; exact bag and both transaction receipts survive
+PostgreSQL restart/rejoin without duplicate grants. Journal-aware reward counters
+and real commit/replay/refusal regression pass. See STATUS for evidence and limits.
+Next authorized work: repeatable manual editor/account playtest, then bounded
+multiple authored quest/vendor contacts with distinct giver and turn-in identities.
+
 14 November 2026: ordinary vendor purchase at the exported population guide and
 PostgreSQL restart pass: one token for three stones, exact bag/latest receipt, no
 repeat purchase. Journal-aware vendor commit/replay/refusal counters now match the

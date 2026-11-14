@@ -1,3 +1,37 @@
+P3-12 / P5-17 combat-earned reward claim and vendor trade, 14 November 2026:
+the populated starter-valley native account qualifier now completes the introduction
+and three-kill follow-up, claims the published first-kill reward through its painted
+Claim button, and buys the normal guide offer. Exact grants/costs, equipment, bag
+revision and ordinary UI acknowledgement are checked. No reward, price, combat,
+loot or editor UI rule changes. Optional input telemetry exposes the Claim position.
+
+The journal-aware persistence worker now counts reward commits, exact replays and
+refusals consistently with its legacy counterpart. The real owned-SQL regression
+checks one of each, alongside existing bag/document recovery assertions. Transactions,
+bounded queues and durable-before-success timing remain unchanged.
+
+Native v2 and v3 both pass: three kills, two Completed quests, 125 XP/journal
+revision 11; reward claim at bag revision 2, purchase at revision 3, final 99 tokens
+and 31 stones with the wand equipped. A real PostgreSQL restart and character rejoin
+preserve exact bag bytes, consumed reward receipt and latest purchase receipt.
+Fresh reward/vendor commits are one each; resumed commits are zero, with no refusals
+or repeat reward offer. All 22 frozen profiles and five creature bindings are checked.
+V1 retains its Manual takeover interruption during travel; no gameplay failure is
+inferred from that interrupted run.
+
+Evidence: build/starter-valley-population-earned-native-v{2,3}/qualification.json,
+binaries.json, phase vendor-proof.json, earned-reward-database-proof.txt,
+vendor-database-proof.txt and reward/purchase/restored screenshots. All 266 client
+tests pass (four ignored), seven persistence library tests and the real SQL regression
+pass. Strict workspace/all-target Clippy, fmt, Python compile and diff checks pass;
+logs: build/population-earned-{client-tests,persistence-tests,worker-sql-tests,clippy,
+build}.log. Linux 1280x720, RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6,
+zero GPU diagnostics. No Windows, performance or capacity claim.
+
+Next, authorized by the user: verify a repeatable manual editor/account valley
+playtest, then implement bounded multiple authored contacts (P3-11/12/15, P5-17),
+including distinct quest giver/turn-in identities. Those remain planned. Local only.
+
 P3-12 / P5-17 authored population guide vendor purchase, 14 November 2026:
 add --vendor-trade to the introduction-only population account qualifier. Read the
 single published offer's actual terms and click its painted Buy button with PID-

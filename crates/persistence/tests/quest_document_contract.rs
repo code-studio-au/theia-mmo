@@ -601,6 +601,17 @@ async fn delayed_open_rechecks_the_changed_locked_bag_and_worker_recovers_after_
         .claim_reward_with_quest_journal(who, WORLD, &rewards, available.id, 1, &p.journal)
         .await
         .unwrap();
+    let replay = publisher
+        .claim_reward_with_quest_journal(who, WORLD, &rewards, available.id, 1, &p.journal)
+        .await
+        .unwrap();
+    assert!(replay.replayed);
+    assert!(matches!(
+        publisher
+            .claim_reward_with_quest_journal(who, WORLD, &rewards, available.id, 3, &p.journal)
+            .await,
+        Err(Error::InventoryStale)
+    ));
     let read = publisher
         .open_quest_document(who, WORLD, &p.journal, open(&p, 3, 2, 0))
         .await
@@ -613,6 +624,9 @@ async fn delayed_open_rechecks_the_changed_locked_bag_and_worker_recovers_after_
     assert!(!status.failed);
     assert_eq!(status.journal_rejected, 2);
     assert_eq!(status.journal_events, 1);
+    assert_eq!(status.reward_committed, 1);
+    assert_eq!(status.reward_replayed, 1);
+    assert_eq!(status.reward_rejected, 1);
     drop(admin);
     driver.await.unwrap().unwrap();
 }
