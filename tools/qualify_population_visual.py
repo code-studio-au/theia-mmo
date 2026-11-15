@@ -19,6 +19,8 @@ def run(args):
         raise ValueError("Qualification duration must be 1..300 seconds")
     if args.resource_cast and (not args.player_life or args.seconds < 25):
         raise ValueError('Resource cast qualification requires player life and at least 25 seconds')
+    if args.observe_idle_travel and (not args.player_life or args.seconds < 25 or args.route):
+        raise ValueError('Idle travel requires player life, at least 25 seconds and a stationary player')
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     common = ['--authored-world', str(args.world.resolve()), '--prediction', '--classic',
@@ -57,7 +59,7 @@ def run(args):
                 return found.group(1) if found else None
             address = wait(ready, 45)
             client = subprocess.Popen([str(client_binary), *common, *route_args, '--creature-asset', str(args.creature.resolve()),
-                                       '--player-assets', str(args.players.resolve()), '--window-size', '1600x1000',
+                                       '--player-assets', str(args.players.resolve()), '--window-size', '1920x1440',
                                        '--test-window', '1/1', '--renet-connect', address, str(tickets/'client-1.token')],
                                       env=environment, stdout=client_log, stderr=client_log)
             if args.resource_cast:
@@ -69,6 +71,17 @@ def run(args):
                 warmed = time.monotonic()
                 wait(lambda: ready_to_cast() and time.monotonic()-warmed >= 10, 15)
                 (out/'combat.start').write_text('start\n')
+            idle_samples = []
+            if args.observe_idle_travel:
+                deadline = time.monotonic() + args.seconds + 60
+                while client.poll() is None and time.monotonic() < deadline:
+                    try:
+                        sample = json.loads((out/'input-os.json').read_text())
+                        if sample.get('connected') and len(sample.get('target_entities', [])) == 5:
+                            idle_samples.append(sample['target_entities'])
+                    except (FileNotFoundError, json.JSONDecodeError):
+                        pass
+                    time.sleep(.25)
             assert client.wait(timeout=args.seconds+60) == 0, 'Native population client failed; see client.log'
         assert capture_ready(out/'scene.png'), 'Missing native screenshot'
         report = json.loads((out/'world.json').read_text())
@@ -76,7 +89,13 @@ def run(args):
         assert report['target_count'] == 5, report
         visuals = report['creature_visuals']
         assert visuals['attached'] == 5 and visuals['players'] == 5, visuals
-        assert visuals['max_visuals'] == 5 and visuals['transitions'][0] >= 5, visuals
+        assert visuals['max_visuals'] == 5, visuals
+        if args.observe_idle_travel:
+            # A rig may finish loading after its authority starts the patrol;
+            # it need not enter the stationary animation first.
+            assert sum(visuals['transitions']) >= 5 and visuals['moving_frames'] > 0, visuals
+        else:
+            assert visuals['transitions'][0] >= 5, visuals
         assert visuals['dropped_cues'] == 0, visuals
         assert check_gpu_diagnostics((out/'client.log').read_text()) == 0
         life = None
@@ -99,6 +118,17 @@ def run(args):
             assert state['combat']['started'] == 1 and state['combat']['rejected_requests'] == 0, state['combat']
             assert state['combat']['minimum_mana'] == 75 and state['combat']['damage'] == 1, state['combat']
         travel = None
+        idle_travel = None
+        if args.observe_idle_travel:
+            (out/'idle-travel.json').write_text(json.dumps(idle_samples, indent=2)+'\n')
+            assert len(idle_samples) > 20, 'Insufficient connected movement observations'
+            initial = {t['entity']: t['position'] for t in idle_samples[0]}
+            moved = set()
+            for sample in idle_samples:
+                assert set(t['entity'] for t in sample) == set(initial), 'Actor identities changed'
+                moved.update(t['entity'] for t in sample if math.dist(t['position'], initial[t['entity']]) > 1.)
+            assert len(moved) == 5, f'Only {len(moved)} creatures moved over one metre'
+            idle_travel = dict(moved=sorted(moved), samples=len(idle_samples))
         if args.route is not None:
             reports = [json.loads(line)['test_controller'] for line in (out/'client.log').read_text().splitlines()
                        if line.startswith('{"test_controller":')]
@@ -112,8 +142,8 @@ def run(args):
             assert abs(travel['feet'][1]-goal[1]) <= .3, travel
             assert report['moving_frames'] > 0, report
         (out/'qualification.json').write_text(json.dumps(dict(
-            passed=True, targets=5, creature_visuals=visuals, connected=True, travel=travel, player_life=life, resource_cast=resource_cast,
-            scope='Actual native Linux Vulkan client with five passive creature rigs; no OS movement, model-catalog resolution, pursuit or Windows claim'), indent=2)+'\n')
+            passed=True, targets=5, creature_visuals=visuals, connected=True, travel=travel, player_life=life, resource_cast=resource_cast, idle_travel=idle_travel,
+            scope='Actual native Linux Vulkan client with five configured creature rigs; no OS movement, model-catalog resolution, combat pursuit or Windows claim'), indent=2)+'\n')
     finally:
         for process in [client, server]:
             if process and process.poll() is None:
@@ -134,6 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--resource-cast', action='store_true', help='Qualify one ordinary 25-mana/20-damage cast without OS input')
     parser.add_argument('--combat-catalog', type=Path, default=Path('content/gameplay/development-abilities.json'), help='Exact combat catalogue to qualify, including an editor-exported snapshot')
     parser.add_argument('--player-life', action='store_true', help='Qualify standalone population health and public life state')
+    parser.add_argument('--observe-idle-travel', action='store_true', help='Observe every authoritative creature moving over one metre while the player remains idle')
     parser.add_argument('--route', type=Path, help='Optional checked route controller; no OS movement input')
     parser.add_argument('--seconds', type=float, default=25, help='Bounded native observation duration (1..300 seconds)')
     parser.add_argument('--players', type=Path, default=default_player_assets())

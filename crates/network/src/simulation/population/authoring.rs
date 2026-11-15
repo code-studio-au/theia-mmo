@@ -8,6 +8,9 @@ use crate::{
 };
 use theia_zone::{Zone, spawn_groups::SpawnGroup};
 
+#[cfg(test)]
+mod patrol_tests;
+
 fn group(zone: &Zone, id: u64) -> Result<&SpawnGroup> {
     zone.validate()?;
     let group = zone
@@ -86,6 +89,11 @@ pub fn binding(zone: &Zone, id: u64, definition: Definition) -> Result<Binding> 
     if group.model.is_some() {
         return Err("Saved population model binding is not connected".into());
     }
+    if group.patrol_path.is_some() && definition.aggro().is_none() {
+        return Err(
+            "Patrol travel currently requires the ordinary pursuing creature definition".into(),
+        );
+    }
     let creature = theia_core::content::ContentId::new(&group.creature)
         .ok_or("Invalid population creature reference")?;
     Binding::new(&creature, definition, group.respawn_seconds)
@@ -107,7 +115,45 @@ pub fn prepare(
     let prepared =
         spawn_preparation::check_authored(store, navigation, &request)?.into_prepared()?;
     let group = group(zone, id)?;
-    if group.roam_radius_metres > 0. {
+    if let Some(path_id) = group.patrol_path {
+        let path = zone
+            .paths
+            .iter()
+            .find(|p| p.id == path_id)
+            .expect("Validated patrol reference");
+        for (index, home) in prepared.points().iter().enumerate() {
+            let within_home = |point: [f64; 3]| {
+                point
+                    .into_iter()
+                    .zip(home.metres())
+                    .map(|(a, b)| (a - b).powi(2))
+                    .sum::<f64>()
+                    <= 64. * 64.
+            };
+            if !path.points.iter().copied().all(within_home) {
+                return Err(format!(
+                    "Patrol '{}' for enemy {} exceeds 64 m from home",
+                    path.name,
+                    index + 1
+                )
+                .into());
+            }
+            let waypoints: Vec<_> = std::iter::once(home.metres())
+                .chain(path.points.iter().copied())
+                .collect();
+            let mut route =
+                navigation::authored_checks::grounded_route(store, navigation, &waypoints)
+                    .map_err(|e| format!("Patrol '{}' for enemy {}: {e}", path.name, index + 1))?;
+            // Keep idle routes well inside each actor's preloaded 3x3 collision
+            // patch, even when the home is adjacent to a chunk boundary.
+            if route.len() > 128 || route.iter().any(|p| !within_home(p.metres())) {
+                return Err(format!("Patrol '{}' for enemy {} exceeds 64 m from home or 128 outward steering points", path.name, index + 1).into());
+            }
+            let reverse: Vec<_> = route.iter().rev().skip(1).copied().collect();
+            route.extend(reverse);
+            binding.roaming.push(vec![route]);
+        }
+    } else if group.roam_radius_metres > 0. {
         if binding.definition().aggro().is_none() {
             return Err(
                 "Roaming currently requires the ordinary pursuing creature definition".into(),
@@ -194,6 +240,7 @@ mod tests {
             target_alive: 5,
             respawn_seconds: 61,
             roam_radius_metres: 0.,
+            patrol_path: None,
             seed: 17,
         });
         zone
@@ -275,5 +322,28 @@ mod tests {
         zone.spawn_groups[0].enabled = false;
         assert!(binding(&zone, 1, definition()).is_err());
         assert!(request(&zone, 1, 3., zone.spawn).is_err());
+        zone.spawn_groups[0].enabled = true;
+        zone.schema = 15;
+        zone.paths.push(theia_zone::paths::GuidePath {
+            id: 2,
+            name: "Meadow patrol".into(),
+            kind: theia_zone::paths::PathKind::Patrol,
+            width_metres: 1.,
+            points: vec![[1., 0., 1.], [6., 0., 1.]],
+        });
+        zone.spawn_groups[0].patrol_path = Some(2);
+        assert!(
+            binding(&zone, 1, definition())
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("pursuing creature")
+        );
+        let pursuing = Definition::from_json(include_bytes!(
+            "../../../../../content/gameplay/development-creature-deflect-pursuit.json"
+        ))
+        .unwrap();
+        zone.spawn_groups[0].creature = pursuing.id().as_str().into();
+        assert!(binding(&zone, 1, pursuing).is_ok());
     }
 }

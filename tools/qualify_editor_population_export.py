@@ -20,6 +20,7 @@ parser.add_argument('--scenery-library', type=Path)
 parser.add_argument('--gameplay-template', type=Path)
 parser.add_argument('--creature-asset', type=Path)
 parser.add_argument('--access-path', type=int, help='Explicit saved road guide for checked population access')
+parser.add_argument('--patrol-path', type=int, help='Assign/undo a saved Patrol guide through the inspector before export')
 parser.add_argument('--escort-destination', type=int, help='Delete/undo this destination and verify escort export rejection and route preparation')
 parser.add_argument('--load-creature-context', action='store_true', help='Load the standalone definition through File, assign/undo it, and verify export defaults')
 args = parser.parse_args()
@@ -53,7 +54,12 @@ with (out / 'editor.log').open('w') as log:
         x = Desktop(); x.focus(w)
         def state():
             assert p.poll() is None, 'Editor exited unexpectedly'
-            return wait(lambda: json.loads(report.read_text()), 2)
+            def read():
+                try:
+                    return json.loads(report.read_text())
+                except (FileNotFoundError, json.JSONDecodeError):
+                    return None
+            return wait(read, 2)
         wait(lambda: report.exists() and state().get('menus'), 45)
         geometry = None
         stable = time.monotonic()
@@ -139,6 +145,47 @@ with (out / 'editor.log').open('w') as log:
             x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             report.with_suffix('.png').rename(out / 'creature-assigned.png')
 
+        if args.patrol_path is not None:
+            before = state()['document']
+            group = before['spawn_groups'][0]['id']
+            click(next(m['centre'] for m in state()['menus'] if m['name'] == 'Content filter' and m['role'] == 'button' and min(m['size']) > 0))
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target'] == 'Filter(SpawnGroups)' and min(c['size']) > 0), None))['centre'])
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target'] == f'SpawnGroup({group})' and min(c['size']) > 0), None))['centre'])
+            wait(lambda: state()['spawn_group_selected'] == group)
+            click(next(c['centre'] for c in state()['property_tabs']['controls'] if c['tab'] == 'Attributes'))
+            def patrol_chord(key):
+                x.key_state('Control_L', True)
+                try:
+                    wait(lambda: state()['control_down'])
+                    x.key(key); fresh()
+                finally:
+                    x.key_state('Control_L', False)
+                wait(lambda: not state()['control_down'])
+            def patrol_field(value):
+                x.key('F9'); fresh()
+                for _ in range(32):
+                    row = next((f for f in state()['spawn_group_fields'] if f['field'] == 'SpawnPatrol' and f['focused']), None)
+                    if row: break
+                    x.key('Tab'); fresh()
+                assert row, state()['spawn_group_fields']
+                patrol_chord('a')
+                for character in str(value):
+                    x.key(character); fresh()
+                x.key('Return'); fresh()
+            patrol_field(args.patrol_path)
+            wait(lambda: state()['document']['spawn_groups'][0].get('patrol_path') == args.patrol_path)
+            assigned = state()['document']
+            assert assigned['schema'] == 15 and assigned['spawn_groups'][0]['roam_radius_metres'] == 0
+            patrol_field(999999)
+            wait(lambda: 'saved Patrol guide' in state()['status'])
+            assert state()['document'] == assigned
+            x.key('Escape'); fresh()
+            wait(lambda: not any(f['focused'] for f in state()['spawn_group_fields']))
+            patrol_chord('z'); wait(lambda: state()['document'] == before)
+            patrol_chord('y'); wait(lambda: state()['document'] == assigned)
+            x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
+            report.with_suffix('.png').rename(out / 'patrol-assigned.png')
+
         if args.escort_destination is not None:
             click(next(m['centre'] for m in state()['menus'] if m['name'] == 'Content filter' and m['role'] == 'button' and min(m['size']) > 0))
             click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target'] == 'Filter(Markers)' and min(c['size']) > 0), None))['centre'])
@@ -201,6 +248,9 @@ with (out / 'editor.log').open('w') as log:
         result = json.loads((destination / 'population-export.json').read_text())['population_export']
         assert result['passed'] and result['count'] == 5, result
         assert result['access_path'] == args.access_path
+        if args.patrol_path is not None:
+            assert result['patrol_path'] == args.patrol_path
+            assert len(result['idle_route_points']) == 5 and all(len(r) == 1 and 5 <= r[0] <= 255 for r in result['idle_route_points'])
         assert bool(result['gameplay_manifest']) == bool(args.gameplay_template)
         if args.escort_destination is not None:
             assert any(q['destination'] == args.escort_destination and q['steering_points'] >= 2 for q in result['quest_travel'])
@@ -219,6 +269,9 @@ with (out / 'editor.log').open('w') as log:
         (out / 'qualification.json').write_text(json.dumps(dict(passed=True,
             invalid_spacing_refused=True, invalid_access_id_refused=args.access_path is not None,
             access_path=args.access_path, gameplay_snapshot=bool(args.gameplay_template),
+            patrol_path=args.patrol_path, patrol_assignment_undo_redo=args.patrol_path is not None,
+            invalid_patrol_id_refused=args.patrol_path is not None,
+            idle_route_points=result.get('idle_route_points'),
             count=result['count'], source_unchanged=True,
             invalid_escort_refused=args.escort_destination is not None,
             quest_travel=result.get('quest_travel', []),

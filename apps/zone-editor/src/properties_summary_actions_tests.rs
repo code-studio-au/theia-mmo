@@ -982,6 +982,92 @@ fn spawn_population_attributes_commit_exact_values_and_reject_invalid_drafts() {
 }
 
 #[test]
+fn spawn_patrol_field_assigns_atomically_and_shares_undo_without_saving() {
+    let (mut app, _) = super::tests::fixture([128_000_000_000.125, 20.25, -128_000_000_000.5], 0);
+    let saved = app.world().resource::<Session>().saved_zone.clone();
+    spawn_groups::add(&mut app.world_mut().resource_mut::<Session>());
+    let path = {
+        let mut session = app.world_mut().resource_mut::<Session>();
+        let centre = spawn_groups::centre(&session.editor.zone().spawn_groups[0]);
+        let id = session.editor.zone().next_id().unwrap();
+        session.edit(vec![Edit::PutPath {
+            path: theia_zone::paths::GuidePath {
+                id,
+                name: "Meadow patrol".into(),
+                kind: theia_zone::paths::PathKind::Patrol,
+                width_metres: 1.,
+                points: vec![centre, [centre[0] + 4., centre[1], centre[2]]],
+            },
+        }]);
+        id
+    };
+    app.update();
+    app.update();
+    let field = app
+        .world_mut()
+        .query::<(Entity, &Input)>()
+        .iter(app.world())
+        .find_map(|(e, i)| matches!(i, Input::SpawnPatrol).then_some(e))
+        .unwrap();
+    let before = app.world().resource::<Session>().editor.zone().clone();
+    let history = app.world().resource::<Session>().editor.history();
+    app.world_mut()
+        .resource_mut::<InputFocus>()
+        .set(field, FocusCause::Navigated);
+    app.update();
+    type_value(&mut app, field, &path.to_string());
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    let assigned = app.world().resource::<Session>().editor.zone().clone();
+    assert_eq!(assigned.schema, 15);
+    assert_eq!(assigned.spawn_groups[0].patrol_path, Some(path));
+    assert_eq!(assigned.spawn_groups[0].roam_radius_metres, 0.);
+    assert_eq!(
+        app.world().resource::<Session>().editor.history().0,
+        history.0 + 1
+    );
+    for value in ["999999", "-1", "NaN", "0"] {
+        app.world_mut()
+            .resource_mut::<InputFocus>()
+            .set(field, FocusCause::Navigated);
+        app.update();
+        type_value(&mut app, field, value);
+        key(&mut app, KeyCode::Enter, Key::Enter);
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &assigned);
+        key(&mut app, KeyCode::Escape, Key::Escape);
+    }
+    {
+        let mut session = app.world_mut().resource_mut::<Session>();
+        let revision = session.editor.revision();
+        session.execute(Command::Undo {
+            expected_revision: revision,
+        });
+        assert_eq!(session.editor.zone(), &before);
+        let revision = session.editor.revision();
+        session.execute(Command::Redo {
+            expected_revision: revision,
+        });
+        assert_eq!(session.editor.zone(), &assigned);
+    }
+    app.update();
+    let radius = open(&mut app, 6);
+    type_value(&mut app, radius, "4");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    assert_eq!(app.world().resource::<Session>().editor.zone(), &assigned);
+    key(&mut app, KeyCode::Escape, Key::Escape);
+    app.world_mut()
+        .resource_mut::<InputFocus>()
+        .set(field, FocusCause::Navigated);
+    app.update();
+    type_value(&mut app, field, "");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    assert_eq!(
+        app.world().resource::<Session>().editor.zone().spawn_groups[0].patrol_path,
+        None
+    );
+    assert_eq!(app.world().resource::<Session>().saved_zone, saved);
+}
+
+#[test]
 fn spawn_boundary_inline_edit_and_topology_actions_share_exact_history() {
     use workspace::Control;
     let (mut app, _) = super::tests::fixture([128_000_000_000.125, 20.25, -128_000_000_000.5], 0);

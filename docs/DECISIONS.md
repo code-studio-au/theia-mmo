@@ -1,3 +1,18 @@
+15 November 2026 — explicit bounded population patrol guides:
+P3-07 / P4-03 / P5-17. Zone schema 15 adds an optional spawn-group Patrol guide
+reference. Older groups remain stationary or keep their existing roaming radius.
+Inspector assignment sets roaming to zero atomically; stored patrol plus roaming
+is invalid. Each spawned actor prepares home → authored guide → reversed route →
+home with the shared navigation and capsule clearance checks before admission.
+Keep sparse guide points unchanged. Limit every guide/derived point to 64 m from
+that actor's home and the outward route to 128 points (255 with return), inside
+the existing loaded collision patch. These are initial Theia engineering bounds,
+not Classic constants. Use existing 1.5 m/s idle travel and 2–6 second pauses;
+combat return resumes the captured segment, while respawn resets to home. Only
+the current ordinary pursuing definition and existing 16-actor runtime cap are
+supported. No search/I/O enters fixed ticks; no passive patrol or streamed-route
+claim. Route geometry participates in the shared gameplay identity.
+
 15 November 2026 — resume population excursions at the interruption anchor:
 P3-07 / P4-03. The pursuit controller captures the creature's actual location
 when combat begins and returns there after disengagement. Preserve the roaming

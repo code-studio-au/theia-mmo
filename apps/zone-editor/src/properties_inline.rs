@@ -13,6 +13,7 @@ pub(crate) enum Input {
     SpawnCreature,
     SpawnModel,
     SpawnSeed,
+    SpawnPatrol,
 }
 impl Input {
     pub(super) fn value(
@@ -24,14 +25,19 @@ impl Input {
         match self {
             Self::Number(index) => target.values().get(index).cloned(),
             Self::Name => session.editor.zone().authoring_name(id?).map(String::from),
-            Self::SpawnCreature | Self::SpawnModel | Self::SpawnSeed => match target {
-                Target::SpawnGroup(group, _) => Some(match self {
-                    Self::SpawnCreature => group.creature.clone(),
-                    Self::SpawnModel => group.model.clone().unwrap_or_default(),
-                    _ => group.seed.to_string(),
-                }),
-                _ => None,
-            },
+            Self::SpawnCreature | Self::SpawnModel | Self::SpawnSeed | Self::SpawnPatrol => {
+                match target {
+                    Target::SpawnGroup(group, _) => Some(match self {
+                        Self::SpawnCreature => group.creature.clone(),
+                        Self::SpawnModel => group.model.clone().unwrap_or_default(),
+                        Self::SpawnPatrol => group
+                            .patrol_path
+                            .map_or_else(String::new, |id| id.to_string()),
+                        _ => group.seed.to_string(),
+                    }),
+                    _ => None,
+                }
+            }
             Self::MarkerDefinition => match target {
                 Target::Marker(marker) => Some(marker.definition.clone().unwrap_or_default()),
                 _ => None,
@@ -100,25 +106,40 @@ fn commit(session: &mut Session, pending: &Pending, value: &str) -> Result<(), S
             id: pending.id.expect("Name fields require authored content"),
             name: value.into(),
         }),
-        Input::SpawnCreature | Input::SpawnModel | Input::SpawnSeed => match &pending.original {
-            Target::SpawnGroup(original, _) => {
-                let mut group = original.clone();
-                match pending.field {
-                    Input::SpawnCreature => group.creature = value.trim().into(),
-                    Input::SpawnModel => {
-                        group.model = (!value.trim().is_empty()).then(|| value.trim().to_owned())
+        Input::SpawnCreature | Input::SpawnModel | Input::SpawnSeed | Input::SpawnPatrol => {
+            match &pending.original {
+                Target::SpawnGroup(original, _) => {
+                    let mut group = original.clone();
+                    match pending.field {
+                        Input::SpawnCreature => group.creature = value.trim().into(),
+                        Input::SpawnModel => {
+                            group.model =
+                                (!value.trim().is_empty()).then(|| value.trim().to_owned())
+                        }
+                        Input::SpawnPatrol => {
+                            group.patrol_path = if value.trim().is_empty() {
+                                None
+                            } else {
+                                Some(value.trim().parse::<u64>().map_err(
+                                    |_| "Patrol path needs a whole-number guide ID, or blank",
+                                )?)
+                            };
+                            if group.patrol_path.is_some() {
+                                group.roam_radius_metres = 0.;
+                            }
+                        }
+                        _ => {
+                            group.seed = value
+                                .trim()
+                                .parse::<u64>()
+                                .map_err(|_| "Seed needs an unsigned whole number")?
+                        }
                     }
-                    _ => {
-                        group.seed = value
-                            .trim()
-                            .parse::<u64>()
-                            .map_err(|_| "Seed needs an unsigned whole number")?
-                    }
+                    (group != *original).then_some(Edit::PutSpawnGroup { group })
                 }
-                (group != *original).then_some(Edit::PutSpawnGroup { group })
+                _ => return Err("Spawn group is no longer available".into()),
             }
-            _ => return Err("Spawn group is no longer available".into()),
-        },
+        }
         Input::MarkerDefinition => match &pending.original {
             Target::Marker(original) => {
                 let mut marker = original.clone();

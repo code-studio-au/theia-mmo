@@ -83,15 +83,29 @@ fn inspect_binding(
     let Some(id) = id else {
         return String::new();
     };
+    let travel = zone
+        .spawn_groups
+        .iter()
+        .find(|g| g.id == id)
+        .and_then(|g| g.patrol_path)
+        .and_then(|id| zone.paths.iter().find(|p| p.id == id))
+        .map_or_else(String::new, |path| {
+            format!(
+                "\nPatrol: {} (#{}) · out and back\n1.5 m/s · pauses 2–6 s · checked at export",
+                path.name, path.id
+            )
+        });
     let Some(definition) = definition else {
-        return "Load gameplay to inspect its creature, or load a creature definition directly"
-            .into();
+        return format!(
+            "Load gameplay to inspect its creature, or load a creature definition directly{travel}"
+        );
     };
     let mut report = format!("Loaded creature: {}", definition.id().as_str());
     match theia_network::simulation::population::authoring::binding(zone, id, definition.clone()) {
         Ok(binding) => report.push_str(&format!("\n{} definition resolved · respawn {} s\nPlacement still needs world/navigation checks", if binding.definition().aggro().is_some() { "Pursuing" } else { "Passive" }, binding.respawn_ms() / 1000)),
         Err(error) => report.push_str(&format!("\nPopulation: {error}")),
     }
+    report.push_str(&travel);
     report
 }
 
@@ -159,6 +173,7 @@ pub(super) fn add(session: &mut Session) {
             target_alive: 3,
             respawn_seconds: 30,
             roam_radius_metres: 4.,
+            patrol_path: None,
             seed: 42,
         },
     }]);

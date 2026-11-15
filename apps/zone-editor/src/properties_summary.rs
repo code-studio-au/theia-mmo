@@ -317,7 +317,8 @@ pub(super) fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Inp
                 | super::inline::Input::MarkerDefinition
                 | super::inline::Input::SpawnCreature
                 | super::inline::Input::SpawnModel
-                | super::inline::Input::SpawnSeed => {
+                | super::inline::Input::SpawnSeed
+                | super::inline::Input::SpawnPatrol => {
                     entity.insert(super::area::TextField);
                 }
             }

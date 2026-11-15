@@ -325,10 +325,12 @@ fn publish_mode(
             "appearance":appearance.as_ref().map(|bytes|serde_json::json!({"file":"creature.glb","sha256":theia_network::terrain::sha256(bytes)})),
             "player_life":live,"account_playtest":account,
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
+            "patrol_path":zone.spawn_groups.iter().find(|g| g.id == group).and_then(|g| g.patrol_path),
+            "idle_route_points":loaded.idle_route_points(),
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
             "gameplay_manifest":gameplay_manifest,"access_path":settings.access_path,"quest_travel":quest_travel,"ground_items":ground_items,"test_travel":test_travel,
-            "scope":"One checked population with configured creature behavior and matching static world/navigation; optional explicit quest/contact snapshot, no server launched; population definition controls NPC behavior, template patrol is not instantiated"}});
+            "scope":"One checked population with configured creature behavior and matching static world/navigation; optional explicit quest/contact snapshot, no server launched; explicit group patrol/roaming is prepared, legacy singleton template patrol is not instantiated"}});
         fs::write(
             stage.join("population-export.json"),
             serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?,
@@ -405,6 +407,7 @@ mod tests {
                 target_alive: 5,
                 respawn_seconds: 3,
                 roam_radius_metres: 0.,
+                patrol_path: None,
                 seed: 42,
                 volume: theia_core::spawn_volume::PolygonVolume::new(
                     vec![

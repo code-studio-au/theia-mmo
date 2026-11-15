@@ -149,7 +149,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=14), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=15), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -774,7 +774,9 @@ impl Editor {
                             candidate.quest_areas.remove(index);
                         }
                         Edit::PutSpawnGroup { group } => {
-                            candidate.schema = candidate.schema.max(14);
+                            candidate.schema = candidate
+                                .schema
+                                .max(if group.patrol_path.is_some() { 15 } else { 14 });
                             if let Some(existing) =
                                 candidate.spawn_groups.iter_mut().find(|g| g.id == group.id)
                             {

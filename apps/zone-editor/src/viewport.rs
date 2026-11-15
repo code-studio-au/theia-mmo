@@ -856,7 +856,7 @@ pub(super) fn report(
     value["spawn_group_preview"] = spawn_groups.snapshot();
     value["spawn_group_fields"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,_,_,_,_,_,field,text),_,_,_,node,t,..)| {
         let field = field?;
-        if !matches!(field, properties::InlineInput::SpawnCreature | properties::InlineInput::SpawnModel | properties::InlineInput::SpawnSeed) || node.size().min_element() <= 0. { return None; }
+        if !matches!(field, properties::InlineInput::SpawnCreature | properties::InlineInput::SpawnModel | properties::InlineInput::SpawnSeed | properties::InlineInput::SpawnPatrol) || node.size().min_element() <= 0. { return None; }
         let text = text?;
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"field":format!("{field:?}"),"value":text.value().to_string(),"focused":focus.get()==Some(entity),

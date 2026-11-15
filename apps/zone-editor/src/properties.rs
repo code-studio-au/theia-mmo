@@ -1769,6 +1769,7 @@ mod roaming_attributes {
             target_alive: 5,
             respawn_seconds: 30,
             roam_radius_metres: 4.,
+            patrol_path: None,
             seed: 42,
         };
         for vertex in [None, Some(1)] {

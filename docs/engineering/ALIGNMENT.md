@@ -1,3 +1,26 @@
+15 November authored population patrol acceptance:
+Strict zone/history and runtime preflight checks pass, as do all five actual
+collision-driven patrols at 20/30/60 Hz. Native assignment/Undo/Redo/export and
+connected movement pass with unchanged source and zero GPU diagnostics; see STATUS.
+Next, correct the observed population presentation gap: startup enables target
+interpolation only for singleton patrols, and native rigs repeatedly switch gaits.
+
+P3-07 / P4-03 / P5-17, 15 November 2026 — explicit population patrol guides:
+Prerequisites: saved Patrol guides, atomic spawn-group edits/export, prepared idle
+excursions, navigation/capsule checks and corrected captured-anchor resumption.
+Add an optional spawn-group Patrol guide reference (zone schema 15). Assignment
+sets roaming radius to zero; explicit roaming and patrol cannot both be enabled.
+Prepare each actor's home-to-guide out-and-back route outside ticks, preserving
+authored sparse points and deriving checked steering. Initial Theia bounds: every
+steering point within 64 m of that actor's home, at most 128 outward steering
+points (255 including return), and existing 16-actor/pursuing-definition limits.
+Reuse the current 1.5 m/s idle travel and 2–6 second pauses; no new Classic claim.
+Expose the reference through exact editor fields/history and report it on export.
+Acceptance: legacy compatibility, strict reference/schema/mode validation, atomic
+refusal/undo, actual authored navigation/collision and authoritative repeated
+travel at 20/30/60 Hz, native edit/export and moving clients. Keep geometry/source
+and unrelated starter quests unchanged; no navigation search or I/O in ticks.
+
 15 November interrupted roaming acceptance:
 The regression first reproduced diagonal movement toward home after a captured-
 anchor return, then passed corrected terrain/controller motion at all three tick

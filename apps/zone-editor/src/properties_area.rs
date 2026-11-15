@@ -34,6 +34,7 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
             (inline::Input::SpawnCreature, "Creature ID", 2),
             (inline::Input::SpawnModel, "Model ID", 3),
             (inline::Input::SpawnSeed, "Seed", 4),
+            (inline::Input::SpawnPatrol, "Patrol path ID", 5),
         ]
     } else if marker {
         vec![(inline::Input::MarkerDefinition, "Catalog ID", 2)]
@@ -128,7 +129,7 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
             group.spawn((
                 theme::label(
                     if spawn {
-                        "File: export population. Zone: start playtest."
+                        "Patrol: saved Patrol guide ID; assignment sets roaming to zero. Blank clears it. File: export population. Zone: start playtest."
                     } else if marker {
                         "Blank leaves this marker unbound"
                     } else {

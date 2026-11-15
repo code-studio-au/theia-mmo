@@ -1,3 +1,32 @@
+15 November 2026 — P3-07 / P4-03 / P5-17 authored population patrols:
+Zone schema 15 supports a saved Patrol guide on a spawn group. Inspector assignment
+sets roaming to zero in one undoable edit; blank clears it. Legacy behavior,
+reference/kind/schema validation, failed-edit atomicity and shared Undo/Redo pass.
+Export and runtime prepare one checked home → guide → reversed return route per
+actor outside ticks; unsupported definitions, wrong-floor endpoints and routes
+beyond 64 m from any home reject. The guide remains two authored points; derived
+routes are bounded to 128 outward / 255 total points and included in identity.
+Actual authored world/navigation/collision movement completes endpoint → home →
+next departure for all five actors at 20/30/60 Hz, without blocked movement
+(build/population-patrol-authority-tests.log). This uses existing 1.5 m/s speed,
+2–6 second pauses and captured-anchor combat resumption. Library checks: 522
+network passes (18 explicitly ignored, with this new authored qualification run
+separately), 76 zone passes, 260 editor passes (16 explicit skips). All-target
+Clippy with denied warnings passes for zone/network/editor/nav-bake/server/client;
+all four application binaries build. See population-patrol-{library-tests,
+editor-tests,clippy,build}.log in build/. Native assignment, invalid ID, Undo/Redo,
+source preservation, gameplay snapshot and export pass in build/population-patrol-
+editor-native-v3/qualification.json. The two-point guide derives 5–7 total points
+per actor; the existing ranger escort still prepares 11 points. Connected native
+movement passes in build/population-patrol-client-native-v2/qualification.json:
+144 samples, all five stable actor IDs move over 1 m, five rigs, health 100/no
+player deaths, no network errors or GPU diagnostics. Linux RX 7900 XTX / RADV
+NAVI31 / Vulkan / Mesa 26.2.6, 1920x1440; no Windows execution. Inspector screenshot
+was inspected. Native evidence also exposes frequent walk/run switches: population
+startup does not yet enable the target interpolation used by singleton patrols.
+That presentation gap is the next slice; this is functional patrol acceptance,
+not a smooth-animation claim. No passive, social, streaming or capacity claim.
+
 15 November 2026 — P3-07 / P4-03 interrupted roaming correction:
 Population roaming now preserves the current excursion waypoint through combat.
 The existing pursuit policy returns to the captured interruption anchor; resetting

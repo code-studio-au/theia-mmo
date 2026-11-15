@@ -294,3 +294,28 @@ offline; no general runtime chasing/replanning, streamed navigation, player dama
 threat, loot, bosses or continent-wide routing is implied. No commit or push was
 performed. Concurrent story files remain untouched. Next is the separately scoped
 [P3-08 equipment and appearance slice](EQUIPMENT_FOUNDATION.md).
+
+
+## Authored population patrol assignments — 15 November 2026
+
+P3-07 / P4-03 / P5-17 extends the saved population adapter with an optional
+`patrol_path` reference (zone schema 15). Select a spawn group in the editor and
+enter a saved Patrol guide's ID under Attributes. Assignment disables random
+roaming in the same Undo step; blank clears the assignment. Reference deletion,
+wrong path kinds and simultaneous roaming/patrol refuse atomically. Legacy files
+without the field retain their prior behavior.
+
+Population export prepares each actor's home-to-guide journey and its reversed
+return using the same authored navigation, support and capsule-clearance checks
+as runtime startup. Guide points remain sparse authoring data. Every guide and
+steering point must stay within 64 m of each actor's home, with at most 128 outward
+steering points and 255 including return. The existing collision patch therefore
+covers idle travel. Existing 1.5 m/s speed and 2–6 second home pauses apply; combat
+return retains the interrupted segment and respawn restarts at home. These bounds
+are Theia extensions, not claims about Classic path constants.
+
+Only the ordinary pursuing definition is admitted initially. The 16-actor runtime
+cap, explicit one-group export and existing static collision/navigation scope
+remain. Export reports the chosen guide and each actor's derived route counts.
+This does not activate the older singleton patrol embedded in gameplay templates,
+provide passive wandering, or establish streamed navigation or MMO capacity.

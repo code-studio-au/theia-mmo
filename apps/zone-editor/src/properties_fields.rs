@@ -132,7 +132,8 @@ pub(super) fn prefix(target: &Target, index: usize) -> Option<(&'static str, f32
             2 => ("Min Y", 44., "m"),
             3 => ("Max Y", 44., "m"),
             4 => ("Alive", 44., ""),
-            _ => ("Respawn", 58., "s"),
+            5 => ("Respawn", 58., "s"),
+            _ => ("Roaming", 58., "m"),
         });
     }
     if index < 3 {

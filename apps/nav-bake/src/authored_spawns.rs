@@ -91,6 +91,7 @@ mod tests {
                 target_alive: 5,
                 respawn_seconds: 30,
                 roam_radius_metres: 0.,
+                patrol_path: None,
                 seed: u64::MAX,
             }],
             ..Default::default()

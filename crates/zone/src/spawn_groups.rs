@@ -25,6 +25,9 @@ pub struct SpawnGroup {
     /// Zero preserves stationary legacy groups; independent of spawn spacing.
     #[serde(default)]
     pub roam_radius_metres: f64,
+    /// Optional saved Patrol guide for checked out-and-back idle travel.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub patrol_path: Option<u64>,
     pub seed: u64,
 }
 /// Exact global X/Z edits, also available through the structured editor API.
@@ -101,6 +104,22 @@ impl SpawnGroup {
             (1..=86400).contains(&self.respawn_seconds),
             "Respawn delay must be 1..86400 seconds",
         )?;
+        if let Some(id) = self.patrol_path {
+            require(
+                zone.schema >= 15,
+                "Spawn patrol assignments require zone schema 15",
+            )?;
+            require(
+                self.roam_radius_metres == 0.,
+                "Clear roaming radius before assigning a patrol",
+            )?;
+            require(
+                zone.paths
+                    .iter()
+                    .any(|p| p.id == id && p.kind == super::paths::PathKind::Patrol),
+                "Spawn patrol must reference a saved Patrol guide",
+            )?;
+        }
         for &[x, z] in self.volume.polygon() {
             zone.check_position([x, self.volume.min_y(), z], 0.)?;
             zone.check_position([x, self.volume.max_y(), z], 0.)?;
@@ -131,6 +150,7 @@ mod tests {
             target_alive: 5,
             respawn_seconds: 30,
             roam_radius_metres: 0.,
+            patrol_path: None,
             seed: 42,
         }
     }
@@ -139,6 +159,74 @@ mod tests {
             expected_revision: editor.revision(),
             edits,
         })
+    }
+    #[test]
+    fn patrol_bindings_require_versioned_patrol_guides_and_preserve_legacy_and_atomic_history() {
+        use crate::paths::{GuidePath, PathKind};
+        let original = Zone {
+            schema: 14,
+            spawn_groups: vec![group([0.; 3])],
+            paths: vec![GuidePath {
+                id: 20,
+                name: "Meadow patrol".into(),
+                kind: PathKind::Patrol,
+                width_metres: 1.,
+                points: vec![[1., 0., 1.], [6., 0., 1.]],
+            }],
+            ..Default::default()
+        };
+        original.validate().unwrap();
+        let legacy = serde_json::to_value(&original).unwrap();
+        assert!(legacy["spawn_groups"][0].get("patrol_path").is_none());
+        let restored: Zone = serde_json::from_value(legacy).unwrap();
+        assert_eq!(restored, original);
+        let mut editor = Editor::new(original.clone()).unwrap();
+        let mut patrol = original.spawn_groups[0].clone();
+        patrol.patrol_path = Some(20);
+        apply(
+            &mut editor,
+            vec![Edit::PutSpawnGroup {
+                group: patrol.clone(),
+            }],
+        )
+        .unwrap();
+        assert_eq!(editor.zone().schema, 15);
+        let assigned = editor.zone().clone();
+        for change in 0..4 {
+            let mut invalid = assigned.clone();
+            match change {
+                0 => invalid.schema = 14,
+                1 => invalid.spawn_groups[0].patrol_path = Some(999),
+                2 => invalid.paths[0].kind = PathKind::Road,
+                _ => invalid.spawn_groups[0].roam_radius_metres = 4.,
+            }
+            assert!(invalid.validate().is_err());
+        }
+        assert!(apply(&mut editor, vec![Edit::DeletePath { id: 20 }]).is_err());
+        assert_eq!(editor.zone(), &assigned);
+        assert_eq!(editor.history(), (1, 0));
+        editor
+            .execute(Command::Undo {
+                expected_revision: 1,
+            })
+            .unwrap();
+        assert_eq!(editor.zone(), &original);
+        editor
+            .execute(Command::Redo {
+                expected_revision: 2,
+            })
+            .unwrap();
+        assert_eq!(editor.zone(), &assigned);
+        patrol.patrol_path = None;
+        apply(
+            &mut editor,
+            vec![
+                Edit::PutSpawnGroup { group: patrol },
+                Edit::DeletePath { id: 20 },
+            ],
+        )
+        .unwrap();
+        assert!(editor.zone().paths.is_empty());
     }
     #[test]
     fn groups_round_trip_and_share_far_translation_copy_name_and_atomic_history() {

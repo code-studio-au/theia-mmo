@@ -1923,6 +1923,7 @@ mod tests {
                 target_alive: 3,
                 respawn_seconds: 30,
                 roam_radius_metres: 0.,
+                patrol_path: None,
                 seed: 42,
             });
         zone.validate().unwrap();

@@ -167,6 +167,14 @@ impl Loaded {
     pub fn count(&self) -> usize {
         self.prepared.points().len()
     }
+    /// Diagnostic counts only; callers cannot inject unprepared idle routes.
+    pub fn idle_route_points(&self) -> Vec<Vec<usize>> {
+        self.binding
+            .roaming
+            .iter()
+            .map(|routes| routes.iter().map(Vec::len).collect())
+            .collect()
+    }
     /// Server startup only; clients retain the same checked content identity
     /// without starting an unused navigation thread.
     pub fn pursuit_worker(&self) -> Result<Option<navigation::worker::Worker>> {

@@ -1,3 +1,11 @@
+15 November 2026 — authored population patrols pass:
+Saved Patrol guide assignment, strict export/runtime preparation, real 20/30/60 Hz
+out-and-back movement and native editor/client integration pass; see STATUS.
+Next P3-07/P4-03: enable the existing target interpolation for authored populations.
+Native walk/run churn and startup inspection show only singleton patrols currently
+receive it. Preserve authoritative targeting/ranges and verify animation stability
+with the same exported two-point patrol. Named inspector choices can follow.
+
 15 November 2026 — interrupted population roaming resumes correctly:
 Combat return retains the current excursion waypoint instead of cutting directly
 home from the captured anchor. Reproduction and corrected 20/30/60 Hz terrain
