@@ -213,6 +213,20 @@ def run(args):
                         targets_ready = (args.quest_travel and resumed) or len(value.get('combat_targets') or [])==5
                         return value if value.get('connected') and targets_ready and value.get('inventory_bag') and (value.get('minimap') or {}).get('known_pixels',0)>0 else None
                     observed = wait(initial_gameplay, 90)
+                    party = wait(lambda: (gameplay().get('party') or {}).get('state'), 10)
+                    assert party['party'] is None and party['incoming'] is None and len(party['roster']) == 1
+                    party_window = wait(lambda: owned_window(gameplay()['pid']))
+                    desktop.focus(party_window)
+                    width, height, scale = gameplay()['window']
+                    desktop.move(party_window, [width*.55, height*.42], scale)
+                    wait(lambda: gameplay()['cursor']['focused'])
+                    desktop.key('o')
+                    wait(lambda: gameplay()['party']['open'], 5)
+                    (game/'capture.request').write_text('party-from-editor.png\n')
+                    wait(lambda: capture_ready(game/'input-os.png'), 20)
+                    (game/'input-os.png').rename(game/'party-from-editor.png')
+                    desktop.key('Escape')
+                    wait(lambda: not gameplay()['party']['open'], 5)
                     if args.quest_travel:
                         assert observed['window'][:2] == [3440, 1440], observed['window']
                     warm = time.monotonic()
@@ -291,6 +305,7 @@ def run(args):
                         manifest = destination/exported['gameplay_manifest']
                         roles = json.loads(manifest.read_text())
                         frozen = json.loads((owned/'launch.json').read_text())
+                        assert frozen['parties'] is True
                         assert len(frozen['profiles'])==(24 if args.quest_travel else 22)
                         assert frozen['gameplay_snapshot']['manifest_schema']==(21 if args.quest_travel else 19)
                         if args.quest_travel:
@@ -322,9 +337,11 @@ def run(args):
                     report.with_suffix('.png').rename(folder/'stopped.png')
                     for file in [folder/'editor.log',owned/'runtime/server.log',owned.with_suffix('.launcher.log')]:
                         text=file.read_text()
+                        assert 'Prediction paused: Unbound' not in text, 'Movement predictor rejected the admitted profile'
                         assert check_gpu_diagnostics(text)==0
                         assert identity.password not in text and cluster.password not in text
                     results.append(dict(resumed=resumed, editor_start=True, picker='select' if resumed else 'create',
+                                        party_controls=True,
                                         editor_stop=True, experience=expected_xp, inventory_revision=expected_revision, source_unchanged=True,
                                         authored_quest_completed=bool(args.gameplay_template),
                                         paused_test_road=1203 if args.quest_travel else None,

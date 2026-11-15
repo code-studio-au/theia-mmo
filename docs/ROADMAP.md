@@ -1,3 +1,9 @@
+15 November 2026 — editor party launch accepted:
+Owned account Start now enables parties. Native export/create/select, movement,
+all three travel quests, Stop and durable restart pass; see STATUS/PARTIES.
+Continue P4-11/P4-03 shared active escorts under the user's any-member-in-range
+rule, with explicit participation/lifecycle and individual turn-in checks.
+
 15 November 2026 — native party controls pass:
 Two OIDC accounts exercise all member/leader/invitation controls at 1920x1440,
 retain quests/bags/XP and rejoin solo after server/database restart. See STATUS

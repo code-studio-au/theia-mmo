@@ -96,3 +96,11 @@ controls and unchanged quest/bag/XP checks pass. Zero prediction-binding warning
 and GPU diagnostics on the same Linux RX 7900 XTX/Vulkan device; no Windows run.
 535 network tests, 281 client tests, format and strict network/client/server/editor
 Clippy pass. See STATUS for log paths and explicit skips.
+
+Editor account Start now enables this profile. Native `build/party-editor-native-v2/qualification.json`
+passes export, account create/select, the Party panel at 3440x1440, all three
+travel quests, editor Stop and durable PostgreSQL/server restart with the same
+journal revision 9, XP 75 and bag revision 2. Source bytes remain unchanged,
+owned services close and GPU/prediction-binding diagnostics are zero. The party
+screenshot was visually inspected. Same Linux GPU as above; no Windows run.
+All 263 editor tests (16 skips), build, format and strict Clippy pass; see STATUS.

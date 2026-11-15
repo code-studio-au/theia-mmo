@@ -1,3 +1,18 @@
+15 November 2026 — P4-11 / P5-17 editor party account launch accepted:
+The editor's owned account Start path now enables --parties; development Test
+Players retain their existing mode. Native build/party-editor-native-v2/
+qualification.json passes export, account create/select, Party [O] at 3440x1440,
+compass collection/delivery, ranger introduction and navmesh escort turn-in,
+editor Stop and PostgreSQL/server restart. The same character restores journal
+revision 9, XP 75 and bag revision 2; checked sources remain unchanged and owned
+services close. The party screenshot was visually inspected. Linux RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU or prediction-binding diagnostics;
+no Windows execution. All 263 editor tests pass (16 explicit skips), build,
+format and strict all-target Clippy pass; build/party-editor-{tests,build,fmt,
+clippy}.log and party-prediction-clippy.log. Earlier v1 failed on the now-fixed
+prediction binding and is not acceptance evidence. Next: shared active party
+escort journeys with individual arrival and turn-in; see the alignment record.
+
 15 November 2026 — party movement binding corrected:
 The first native party qualification covered stationary membership and missed a
 Classic-only local predictor binding. The subsequent editor quest probe failed

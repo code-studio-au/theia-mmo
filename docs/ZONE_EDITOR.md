@@ -1,3 +1,9 @@
+Party account playtests (15 November 2026): owned account Start enables the
+qualified party profile and Party [O] panel. Development Test Players keep their
+existing mode. Native export/create/select, all three travel quests, editor Stop
+and durable restart pass in build/party-editor-native-v2/qualification.json at
+3440x1440 on Linux RX 7900 XTX/Vulkan. Source remains unchanged; see STATUS.
+
 Escort overview (15 November 2026): select the ranger NPC, expand its escort
 quest under Attributes → Quests, then use View NPC and destination. The camera
 frames both saved markers while keeping the NPC and quest card selected. Select

@@ -1,3 +1,25 @@
+15 November editor party account adoption acceptance:
+Owned account Start enables parties; native export/create/select, Party [O], all
+three travel quests, Stop and PostgreSQL restart pass. All 263 editor tests,
+format/build/strict Clippy pass. See STATUS. Continue the shared-escort slice below.
+
+P4-11 / P4-03, 15 November 2026 — next shared escort slice (planned):
+Prerequisites: qualified authenticated party membership, private committed escort
+journals, prepared navmesh routes and ordinary contact replication. Participants
+are current party members with the same committed Active escort. Advance one
+shared journey when any living participant is within the existing 10-metre bound;
+all participating views receive the same authoritative position. Unaccepted and
+Ready/Completed characters retain their private contact state. Joining ongoing
+participants adopts the furthest existing route progress; leaving forks at the
+current position without rewinding. This merge policy is an explicit Theia rule.
+Arrival still requires each living character to reach the destination range;
+only their own durable journal becomes Ready and their own conversation completes
+and rewards it. No shared XP/loot/general quest credit. Bind the behavior in the
+party profile identity. Acceptance: 20/30/60-Hz range handoff, everyone-away stop,
+nonparticipant/solo isolation, late join, departure, disconnect and arrival
+eligibility; encrypted and native two-account contact observations with individual
+turn-in, restart and standard format/Clippy/tests. This is not implemented yet.
+
 15 November party movement regression acceptance:
 The stationary v1 UI test missed an incompatible local prediction binding. The
 exact full-profile binding and encrypted movement regressions now pass, along
