@@ -1319,6 +1319,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .into(),
             resize_constraints: bevy::window::WindowResizeConstraints {
                 min_width: width.min(1920) as f32,
+                // Window managers can otherwise subtract their panels/title bar
+                // from a desktop-height request during initial placement.
+                min_height: height.min(1440) as f32,
                 ..default()
             },
             resolution: WindowResolution::new(width, height).with_scale_factor_override(1.),

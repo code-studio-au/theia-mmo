@@ -1,3 +1,16 @@
+15 November viewport acceptance:
+Actual solo, paired-size and smaller diagnostic native viewports pass without
+external resizing; all screenshots match their requests. See STATUS for scope.
+
+P2-14 / P4-03 / P5-17, 15 November 2026 — actual playtest viewport sizing:
+Prerequisites: explicit solo/two-player sizes and standard Bevy window constraints.
+Native account launch exposed a 1368-pixel viewport for a 1440-pixel request.
+Preserve the requested height up to 1440 through Bevy's minimum-size constraint,
+alongside the existing 1920 width minimum. Smaller explicit diagnostic sizes
+remain valid. Acceptance: actual native 3440x1440 and paired 1920x1440 viewports
+without external resize commands, plus a smaller diagnostic viewport. No fullscreen
+or platform-specific runtime code; retain ordinary close/resize/window controls.
+
 15 November account AI road acceptance:
 Editor Start/create/play/Stop, PostgreSQL restart and existing-character selection
 pass in editor-account-test-road-v4. Invalid road refusal, manual startup, explicit

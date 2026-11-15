@@ -5186,3 +5186,9 @@ a respawn or interrupted return. The player must still be at the original checke
 start. Ordinary F7 keeps its existing manual/next-leg behavior. The authored quest
 qualifier's `--checked-travel` wiring has headless checks; complete native quest
 playback with this option remains pending.
+
+Playtest viewport sizing (15 November 2026): client windows enforce the requested
+height up to 1440 pixels through Bevy's standard minimum constraint, preventing
+initial desktop work-area clamping. Solo is 3440x1440; two-player testing remains
+1920x1440 per client, overlapping on smaller displays. Explicit smaller diagnostic
+sizes remain available. Native viewport evidence is in STATUS.

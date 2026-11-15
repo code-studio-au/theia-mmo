@@ -1,3 +1,16 @@
+15 November 2026 — P2-14 / P4-03 / P5-17 actual playtest viewport sizing:
+The standard Bevy minimum-height constraint now preserves requested client height
+up to 1440, alongside the existing 1920 width minimum. Explicit smaller diagnostic
+windows remain available. Native baseline reproduced 3440x1368; corrected solo
+3440x1440, two simultaneous 1920x1440 clients and 1280x720 diagnostic all pass
+without external resize commands. Evidence: build/playtest-window-sizing-v2/
+qualification.json and screenshots; AMD RX 7900 XTX / RADV NAVI31 / Vulkan, zero
+GPU diagnostics. These isolated offline scenes qualify viewport sizing, not
+multiplayer gameplay or Windows execution. Both test-window layout tests, format
+and denied-warning client Clippy pass (window-sizing-tests.log and
+window-sizing-clippy.log). The first qualification attempt used a connected-only
+arrangement flag on offline clients; the corrected harness preserves that guard.
+
 15 November 2026 — P3-11/12 / P4-03 / P5-17 account AI road integration:
 The editor account export dialog exposes an optional AI test road ID, blank by
 default and hidden in other export modes. Export validates the selected Road
