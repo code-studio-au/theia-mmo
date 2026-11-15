@@ -204,3 +204,12 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] Found that Q174's narrative stage explicitly required reaching level 80, but the authoring manifest still had `minimum_level: null` and `level_gate_approved: false`, and the derived reference had a historical `minLevel: 75`. Without a separate authorization check, an implementation could unlock the finale prematurely.
 - [x] Recorded a **creator-locked, non-executable level-80 authorization gate** on Q174 in both structured inventories: readiness work can precede level 80, but Q174 cannot complete and unlock Q175 until the character reaches level 80. Preserved historical planning pace rather than falsely changing every level annotation.
 - [ ] Rust quest engine must implement authoritative character-level evidence and gate Q174 completion/Q175 availability; documentation alone is not a tested runtime rule.
+
+## 16 November — Millhaven starter-zone design checkpoint
+
+- **APPROVED:** Millhaven is a small farming village, smaller than Stoneford; Valecrown is a larger royal city, with the High City encountered later. Preserve the established Human levels 1–20 story and NPC roles.
+- **APPROVED for all racial starter zones:** geography encloses three sides with only one traversable exit. The exit is never locked by level or quest completion; normal quest eligibility still applies.
+- **WORKING, not canon:** Millhaven valley concept has wooded/rugged north, west and south boundaries and one eastward road to Stoneford; village centre, western militia grounds, central healing house, southern farms and eastward stream, eastern merchant yard/caravan route and wagon site, northern woods and bandit hideout. Exact placements, dimensions, population and encounters require review.
+- **WORKING:** The bandits occupy a cave complex in the northern woodland; exterior lookout/camp and interior stolen cargo and leader quarters are proposed, as is open-world rather than instanced access. No exact room plan or mechanics approved.
+- **OPEN by explicit creator decision:** Whether the cave complex has older or later-revealed historical significance. Do not imply a Conclave/Sundering connection or seal a backstory until separately approved.
+- This checkpoint records design status only; it does not amend the protected campaign, World Bible or quest manifest, and is not approval of proposed details.
