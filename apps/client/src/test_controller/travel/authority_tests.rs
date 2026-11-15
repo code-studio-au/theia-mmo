@@ -11,7 +11,7 @@ use theia_network::{
 
 #[test]
 #[ignore = "requires THEIA_ROUTE_WORLD and THEIA_ROUTE_FILE with actual authored navigation"]
-fn actual_route_walks_out_and_back_through_authority_at_all_rates() {
+fn actual_route_runs_out_and_back_through_authority_at_all_rates() {
     let path = PathBuf::from(std::env::var_os("THEIA_ROUTE_FILE").unwrap());
     let source = procedural::Source::Authored(Arc::new(
         theia_network::authored_world::Store::open(&PathBuf::from(
@@ -88,6 +88,7 @@ fn actual_route_walks_out_and_back_through_authority_at_all_rates() {
                     controller.keyboard_turn_rate(),
                 );
                 let intent = if let Some((step, seconds)) = action {
+                    assert!(!step.walk, "Both checked travel legs must use run mode");
                     let input = controller.sample_script(
                         [step.strafe, -step.forward],
                         step.turn,

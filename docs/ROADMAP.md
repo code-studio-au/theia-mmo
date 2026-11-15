@@ -1,3 +1,9 @@
+15 November 2026 — party escort follow-up deferred:
+After the party system is implemented, share the ranger journey among participating
+party members, with any member in range permitting travel. Keep private solo
+escorts for now. User explicitly requested deferral; no party implementation is
+part of the compass AI running change. See DECISIONS.
+
 15 November 2026 — named patrol authoring passes:
 Previous/next/clear assignment and guide framing pass native editor/export checks,
 with exact Undo and source preservation. See STATUS. Next integration review:

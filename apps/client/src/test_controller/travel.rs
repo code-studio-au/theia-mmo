@@ -225,7 +225,7 @@ impl Travel {
             Step {
                 forward: if angle.abs() <= 0.12 { 1000 } else { 0 },
                 turn,
-                walk: true,
+                walk: false,
                 ..Default::default()
             },
             turn_seconds,
@@ -474,7 +474,7 @@ mod tests {
         assert!(Travel::load(&path, &serde_json::to_vec(&invalid).unwrap(), &source).is_err());
     }
     #[test]
-    fn continuous_walk_with_bounded_corner_turns_arrives_at_all_frame_rates() {
+    fn continuous_run_with_bounded_corner_turns_arrives_at_all_frame_rates() {
         for hz in [20., 30., 60., 144.] {
             let mut travel = route();
             let mut feet = point(0., 0.);
@@ -487,7 +487,7 @@ mod tests {
                 let Some((step, seconds)) = travel.sample(dt, feet, facing, rate) else {
                     break;
                 };
-                assert!(step.walk && !step.jump);
+                assert!(!step.walk && !step.jump);
                 assert_eq!(step.strafe, 0);
                 assert!(seconds <= dt);
                 let delta = f64::from(step.turn) * rate * seconds;
@@ -499,8 +499,8 @@ mod tests {
                 if step.forward != 0 {
                     translating += 1;
                 }
-                p[0] += forward[0] * f64::from(step.forward) / 1000. * 2.5 * dt;
-                p[2] += forward[1] * f64::from(step.forward) / 1000. * 2.5 * dt;
+                p[0] += forward[0] * f64::from(step.forward) / 1000. * 7. * dt;
+                p[2] += forward[1] * f64::from(step.forward) / 1000. * 7. * dt;
                 feet = GlobalPosition::new(p).unwrap();
             }
             assert!(travel.finished(), "{hz} Hz: {:?}", travel.description());
@@ -509,7 +509,12 @@ mod tests {
                 turning < 4.,
                 "No camera/full-spin correction loop: {turning}"
             );
-            assert!(translating > (10. * hz) as usize);
+            assert!(translating > (3. * hz) as usize);
+            assert!(
+                travel.elapsed < 7.,
+                "Run should finish promptly: {}",
+                travel.elapsed
+            );
         }
     }
     #[test]

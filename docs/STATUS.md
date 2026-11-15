@@ -1,3 +1,19 @@
+15 November 2026 — P4-03 compass AI runs in both directions:
+Checked AI route followers now emit normal Classic run input instead of forced
+walk input on both outward and return legs. Authored points, derived navigation,
+collision, start/corridor checks, corner steering, manual takeover and endpoint
+release remain unchanged. Manual walk/run preferences and server speeds are
+unchanged. All 279 client tests pass (four explicit skips); 20–144 FPS corner
+regression, build, format and strict all-target Clippy pass. The actual exported
+compass route also passes authoritative collision at 20/30/60 Hz, arriving and
+stopping in 14.08–14.20 seconds per leg with no movement recoveries. See build/
+compass-run-{tests,authority,client-tests,build,fmt,clippy}.log. Native v10 completed
+both players' compass/intro/escort flows and restored them after restart, with
+roughly 14.2-second compass legs versus roughly 37 seconds previously. Its final
+background sample-count assertion failed on the short restored UI flow; the
+qualification now explicitly waits for advancing observations and is being rerun.
+Full two-account acceptance is recorded separately after that check passes.
+
 15 November 2026 — P2-02 authored scene readiness recovery:
 The two-account quest run exposed a client exit after two minutes of successful
 play: a later readiness retraction still compared against the original startup

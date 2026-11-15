@@ -1,3 +1,11 @@
+15 November 2026 — deferred party escort behavior (user direction):
+Keep current solo escorts private per character. Once the party system exists,
+participating party members should see one shared ranger journey. Any participating
+member within the escort range keeps the ranger moving; she waits when none are
+in range. The user explicitly deferred implementation until the party system.
+Eligibility, joins/leaves and completion credit still need a concrete party slice;
+this decision does not claim shared escort behavior is implemented.
+
 15 November 2026 — bound continuous scene readiness waits:
 P2-02. Authored scene readiness may retract after successful initial loading.
 Timeouts measure each uninterrupted pending interval, not total client uptime.

@@ -1,3 +1,10 @@
+Running AI travel (15 November 2026): checked AI route followers now request
+normal Classic run input on outward and return legs. The compass road retains its
+two authored endpoints and paused F7 handoff; arrival still returns manual control
+for pickup or conversation. Sparse route preparation, collision and corridor
+checks are unchanged. This does not alter manual walk/run preferences or movement
+speeds in the authoritative simulation.
+
 Named AI road choices (15 November 2026): the account playtest dialog now offers
 Previous road, Next road and Manual play alongside the numeric AI test road field.
 The selected authored name appears above the field. Choose “Rowan to northern
