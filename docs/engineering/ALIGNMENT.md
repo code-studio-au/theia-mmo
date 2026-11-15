@@ -1,3 +1,9 @@
+15 November party movement regression acceptance:
+The stationary v1 UI test missed an incompatible local prediction binding. The
+exact full-profile binding and encrypted movement regressions now pass, along
+with native two-account movement, membership and database restart in v3 (144.14
+seconds). See STATUS/PARTIES. Editor full quest-flow qualification remains active.
+
 15 November playable party acceptance:
 Native two-account OIDC, all UI actions, preserved progress, server/PostgreSQL
 restart and solo rejoin pass in 140.52 seconds with zero GPU diagnostics. 281

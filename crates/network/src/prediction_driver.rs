@@ -104,7 +104,7 @@ impl Stats {
 }
 #[derive(Default)]
 pub struct Driver {
-    classic_source: Option<[u8; 32]>,
+    classic_world: Option<[u8; 32]>,
     dodge: Option<([u8; 32], std::sync::Arc<crate::dodging::Profile>)>,
     life_required: bool,
     life_held: bool,
@@ -127,8 +127,26 @@ pub struct Driven {
 }
 impl Driver {
     pub fn with_classic(source_world: [u8; 32], player_life: bool) -> Self {
+        Self::with_classic_social(source_world, player_life, None, false)
+    }
+    /// Preserve the complete admitted identity when opt-in social profiles wrap
+    /// Classic movement. This derives the exact expected hash; it does not relax
+    /// correction ownership or accept an arbitrary world supplied by the server.
+    pub fn with_classic_social(
+        source_world: [u8; 32],
+        player_life: bool,
+        chat_area: Option<theia_core::chat::Area>,
+        parties: bool,
+    ) -> Self {
+        let classic = crate::classic::profile_identity(source_world);
+        let chat = chat_area.map_or(classic, |area| crate::chat::profile_identity(classic, area));
+        let world = if parties {
+            crate::party_wire::profile_identity(chat)
+        } else {
+            chat
+        };
         Self {
-            classic_source: Some(source_world),
+            classic_world: Some(world),
             life_required: player_life,
             ..Self::default()
         }
@@ -174,11 +192,11 @@ impl Driver {
             return Ok(None);
         };
         let c = corrected.state;
-        let classic = if let Some(source) = self.classic_source {
+        let classic = if let Some(world) = self.classic_world {
             if !c.valid()
                 || corrected.speed != 1
                 || self.dodge.is_some()
-                || c.world != crate::classic::profile_identity(source)
+                || c.world != world
                 || c.pose.facing.is_none()
                 || intent.facing.is_none()
             {

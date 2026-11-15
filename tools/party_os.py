@@ -1,5 +1,6 @@
 """Native party controls using only owned-window mouse and keyboard input."""
 import json
+import math
 import time
 from qualify_world_input_os import wait, capture_ready
 
@@ -9,6 +10,7 @@ def flow(desktop, windows, states, folder):
     keys = [s()['actor'] for s in states]
     last = [0., 0.]
     steps = []
+    movement = []
     def view(index):
         return states[index]()['party']['state']
     def focus(index):
@@ -55,6 +57,10 @@ def flow(desktop, windows, states, folder):
         assert view(i)['party'] is None and view(i)['incoming'] is None
         focus(i); desktop.key('o')
         wait(lambda: states[i]()['party']['open'], 5)
+        start = states[i]()['dodge']['authority_feet']
+        desktop.hold_key('w', .35)
+        distance = wait(lambda: value if (value := math.dist(start, states[i]()['dodge']['authority_feet'])) > .4 else None, 5)
+        movement.append(distance)
     invite(); capture(1, 'party-invitation.png')
     click(1, 'decline'); solo()
     invite(); click(0, 'cancel'); solo()
@@ -74,7 +80,7 @@ def flow(desktop, windows, states, folder):
     desktop.key('o')
     wait(lambda: states[0]()['party']['open'], 5)
     capture(0, 'party-final.png')
-    result = dict(passed=True, steps=steps, final=[view(i) for i in [0,1]], progress_unchanged=True,
+    result = dict(passed=True, steps=steps, movement_metres=movement, final=[view(i) for i in [0,1]], progress_unchanged=True,
                   interface_then_party_escape=True)
     (folder/'party-proof.json').write_text(json.dumps(result, indent=2)+'\n')
     return result

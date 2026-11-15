@@ -67,7 +67,7 @@ One submitted click is reserved until acknowledgement; controls keep their paint
 revision. Interface Escape precedes Party, then the existing panels and target
 handling. The world keeps running while the panel is open.
 
-Native `build/party-ui-native-v1/qualification.json` passes on two real OIDC
+Stationary membership qualification `build/party-ui-native-v1/qualification.json` passes on two real OIDC
 accounts at 1920x1440 each, then the same characters after PostgreSQL/server
 restart: 13 accepted UI commands per phase, zero refusals/invalid uploads, exact
 unchanged journal/bag/XP and fresh solo membership on rejoin. Source hashes and
@@ -75,9 +75,24 @@ SQL checks pass; 140.52 seconds total. Invitation/member screenshots were visual
 inspected. Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU
 diagnostics; no Windows execution. 281 client tests (four explicit skips), build,
 format, strict client/server Clippy and 53 launcher tests (one explicit skip) pass.
-Editor account-launch adoption follows this opt-in acceptance.
+That first qualification did not exercise movement. The editor quest probe
+`build/party-editor-native-v1` subsequently exposed a local predictor still bound
+to the Classic-only identity: party-enabled corrections were refused, preventing
+movement. Its failure is not quest-flow acceptance. The predictor now derives the
+complete Classic → optional chat → optional party identity; foreign identities
+still fail. Encrypted worker regressions exercise real predicted facing/movement
+with parties and parties plus chat, and reject the old binding. Native qualifiers
+now require actual movement and reject prediction-binding warnings.
 
 Shared XP, loot, tags, quest credit and escort journeys remain separate slices.
 The user's later party-escort rule is any participating member in range keeps
 the shared ranger moving. Existing private solo quests remain unchanged until
 membership is integrated and that explicit eligibility/credit slice passes.
+
+Movement regression acceptance: `build/party-ui-native-v3/qualification.json`
+passes both real accounts before and after database/server restart in 144.14
+seconds. Ordinary W-key holds move each actor 0.93–1.63 metres; all membership
+controls and unchanged quest/bag/XP checks pass. Zero prediction-binding warnings
+and GPU diagnostics on the same Linux RX 7900 XTX/Vulkan device; no Windows run.
+535 network tests, 281 client tests, format and strict network/client/server/editor
+Clippy pass. See STATUS for log paths and explicit skips.

@@ -1,3 +1,19 @@
+15 November 2026 — party movement binding corrected:
+The first native party qualification covered stationary membership and missed a
+Classic-only local predictor binding. The subsequent editor quest probe failed
+because party-profile corrections were refused. The predictor now derives the
+exact Classic, optional chat and party identity; foreign bindings still fail.
+Encrypted worker tests now drive actual predicted movement/facing with parties
+and optional chat. All 535 network tests (18 skips), 281 client tests (four skips),
+format and strict network/client/server/editor all-target Clippy pass; see
+build/party-prediction-{network-tests,client-tests,fmt,clippy,build}.log.
+Native build/party-ui-native-v3/qualification.json passes two real OIDC clients,
+actual movement, all membership controls, preserved progress and database/server
+restart in 144.14 seconds. Both clients move 0.93–1.63 metres during short ordinary
+W-key holds, with zero prediction-binding warnings or GPU diagnostics. Linux
+1920x1440 each, RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; no Windows run.
+Editor adoption/full quest flow is still being qualified, not yet accepted.
+
 15 November 2026 — P4-11 playable party controls:
 Explicit --parties binds Classic account launches and the matching client
 preflight. Party [O] uses standard Bevy UI with trusted names, invite/accept/

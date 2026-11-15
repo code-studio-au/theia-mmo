@@ -240,6 +240,7 @@ def run(args):
             (folder/'database-proof.txt').write_text(rows.stdout)
             print('Both character journals and XP verified in PostgreSQL', flush=True)
             for log in [owner/'launcher.log', guest/'client.log']:
+                assert 'Prediction paused: Unbound' not in log.read_text(), 'Movement predictor rejected the admitted profile'
                 assert check_gpu_diagnostics(log.read_text()) == 0
                 adapters = [line for line in log.read_text().splitlines() if 'AdapterInfo' in line]
                 assert adapters

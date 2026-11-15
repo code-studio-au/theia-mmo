@@ -883,9 +883,11 @@ impl Network {
             local_track: None,
             prediction: prediction.then(|| {
                 if classic {
-                    theia_network::prediction_driver::Driver::with_classic(
+                    theia_network::prediction_driver::Driver::with_classic_social(
                         source_world,
                         life_enabled,
+                        None,
+                        parties,
                     )
                 } else if let Some(profile) = dodge_profile {
                     theia_network::prediction_driver::Driver::with_dodge(

@@ -377,6 +377,60 @@ async fn worker_flow(with_chat: bool) {
     })
     .await;
     let keys: Vec<_> = peers.iter().map(|p| p.view().state.view.owner).collect();
+    // Exercise the actual local predictor, not just transport snapshots. A
+    // social profile changes the admitted world hash without changing movement.
+    let mut predictor = crate::prediction_driver::Driver::with_classic_social(
+        classic_source,
+        false,
+        with_chat.then_some(area),
+        true,
+    );
+    let initial = peers[0].state.borrow().correction.unwrap().state.pose.feet;
+    let patch = crate::procedural::Patch::build(crate::procedural::owner(initial).unwrap());
+    let facing = theia_core::facing::Facing::from_units(16384);
+    let intent = crate::wire::Intent {
+        facing: Some(facing),
+        axes: facing.world_axes([1000, 0]).unwrap(),
+        ..Default::default()
+    };
+    let mut unbound = crate::prediction_driver::Driver::with_classic(classic_source, false);
+    assert!(
+        unbound
+            .tick(
+                &peers[0].state.borrow(),
+                intent,
+                Some(&patch),
+                std::time::Instant::now()
+            )
+            .is_err()
+    );
+    let began = Instant::now();
+    while began.elapsed() < Duration::from_millis(800) {
+        let state = peers[0].state.borrow().clone();
+        if let Some(driven) = predictor
+            .tick(&state, intent, Some(&patch), std::time::Instant::now())
+            .unwrap()
+            && let Some(commands) = driven.packet
+        {
+            peers[0]._commands.send(commands).await.unwrap();
+        }
+        tokio::time::sleep(Duration::from_millis(8)).await;
+    }
+    until(&peers, || {
+        let correction = peers[0].state.borrow().correction.unwrap().state;
+        correction.pose.facing == Some(facing)
+            && correction
+                .pose
+                .feet
+                .metres()
+                .into_iter()
+                .zip(initial.metres())
+                .map(|(a, b)| (a - b).powi(2))
+                .sum::<f64>()
+                > 0.25
+    })
+    .await;
+    assert!(predictor.stats.predicted_steps > 0 && predictor.stats.corrections > 0);
     assert_eq!(
         peers[0]
             .view()
