@@ -21,6 +21,7 @@ pub mod dodge_prediction;
 pub mod dodge_prediction_wire;
 pub mod dodging;
 pub mod gameplay_bundle;
+pub mod ground_placement;
 pub mod inventory_wire;
 pub mod kinematic;
 pub mod material_profile;

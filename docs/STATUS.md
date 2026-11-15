@@ -1,3 +1,19 @@
+15 November 2026 — P3-11/12 / P4-03 / P5-17 ground collection export preflight:
+Population export validates every ground collection position against staged static
+collision before publishing, reusing the server's nearby support/player-clearance
+check. The report records reward/quest/area, authored position and supported feet.
+The actual starter compass passes; wrong-floor/outside-patch cases fail. Full
+population export with the compass raised 8 m refuses with reward/area context,
+leaves neither output nor staging directories, then succeeds after restoration.
+Zone and catalogue source bytes remain unchanged. Evidence: ground-item-support-
+test.log and ground-item-atomic-export-test.log under build/. These are actual
+Linux authored collision/baker checks; no new rendered UI or Windows claim.
+Denied-warning network/server/editor Clippy passes in ground-item-export-clippy-
+final.log. All 252 editor tests and 522 network tests pass (15 and 17 explicit
+environment skips); see ground-item-editor-tests.log and ground-item-network-
+tests.log. The two authored export/support checks run separately above. Support/clearance
+validation does not establish navigation reachability from the player spawn.
+
 15 November 2026 — P3-12 / P2-14 / P5-17 moving contact presentation:
 NPC meshes/nameplates reuse the existing remote pose interpolation instead of
 jumping directly between presence positions. Missing contacts and identity changes

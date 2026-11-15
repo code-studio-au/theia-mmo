@@ -1,3 +1,8 @@
+15 November ground collection preflight acceptance:
+Actual starter-world support and atomic invalid/refused → restored/exported tests
+pass in ground-item-support-test.log and ground-item-atomic-export-test.log.
+No partial output or source mutation; support is not route reachability. See STATUS.
+
 P3-11/12 / P4-03 / P5-17, 15 November 2026 — ground collection export preflight:
 Prerequisites: immutable reward/item snapshots, static authored collision and the
 runtime ground support check. Share that check with the editor worker and reject

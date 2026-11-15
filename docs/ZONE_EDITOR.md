@@ -1,3 +1,12 @@
+Ground collection export preflight (15 November 2026, actual export acceptance passed):
+Population exports now check every ground reward against staged static collision,
+using the same nearby support/player-clearance helper as server admission. Failures
+name the reward and area and prevent package publication. The export report adds
+`ground_items` with quest/reward/area, authored position and resolved supported feet.
+This does not move the authored item or establish a route from the player spawn.
+Actual invalid/refused → restored/exported acceptance passes; see STATUS and
+build/ground-item-atomic-export-test.log.
+
 Starter quest continuation (15 November 2026, P3-11/12/15 / P4-03 / P5-17):
 `bash tools/edit_quests.sh` opens the prepared five-contact starter economy scene
 through the disposable editor/account workflow. It preserves the earlier wrappers.

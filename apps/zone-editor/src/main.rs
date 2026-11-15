@@ -18,6 +18,7 @@ mod export_dialog;
 mod file_picker;
 mod gameplay_export;
 mod gizmo;
+mod ground_item_export;
 #[cfg(test)]
 mod headless_ui;
 mod markers;

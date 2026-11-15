@@ -1,3 +1,11 @@
+15 November 2026 — moving contact and collection export checks:
+Contact presentation now interpolates authoritative NPC poses; actual escort
+wait/arrival/turn-in and PostgreSQL restart pass. Population export also rejects
+unsupported ground collection placements before publication; restoring the valid
+compass location succeeds without source mutation. See STATUS for evidence.
+Next editor integration: explicitly select a paused AI test road for an account
+playtest, keeping manual play the default and reusing the existing checked follower.
+
 15 November 2026 — NPC travel inspection implemented:
 The inspector now exposes escort destination/speed/range, ground collection and
 Ready wording, with direct selection of the destination marker. Native input and

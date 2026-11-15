@@ -265,19 +265,23 @@ fn publish_mode(
             &procedural::Source::Authored(store.clone()),
         )
         .map_err(|e| format!("Population placement: {e}"))?;
-        let quest_travel = if let Some(manifest) = gameplay_manifest {
+        let (quest_travel, ground_items) = if let Some(manifest) = gameplay_manifest {
             let snapshot = theia_network::gameplay_bundle::snapshot(&stage.join(manifest))
                 .map_err(|e| e.to_string())?;
-            crate::quest_travel_export::prepare(
+            let travel = crate::quest_travel_export::prepare(
                 zone,
                 snapshot
                     .profile("quest")
                     .ok_or("Gameplay snapshot needs quests")?,
                 &store,
                 loaded.navigation(),
-            )?
+            )?;
+            (
+                travel,
+                crate::ground_item_export::prepare(&snapshot, &store)?,
+            )
         } else {
-            Vec::new()
+            (Vec::new(), Vec::new())
         };
         let clients = if network {
             crate::network_test_export::write_scenario(zone, &store, &stage)?
@@ -307,7 +311,7 @@ fn publish_mode(
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
-            "gameplay_manifest":gameplay_manifest,"access_path":settings.access_path,"quest_travel":quest_travel,
+            "gameplay_manifest":gameplay_manifest,"access_path":settings.access_path,"quest_travel":quest_travel,"ground_items":ground_items,
             "scope":"One checked population with configured creature behavior and matching static world/navigation; optional explicit quest/contact snapshot, no server launched; population definition controls NPC behavior, template patrol is not instantiated"}});
         fs::write(
             stage.join("population-export.json"),
@@ -448,6 +452,92 @@ mod tests {
     fn quest_template() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../content/development-gameplay-classic-quest-loot-fixture.json")
+    }
+    #[test]
+    #[ignore = "requires THEIA_QUEST_TRAVEL_PACKAGE, THEIA_SCENERY_LIBRARY and THEIA_NAV_BAKER"]
+    fn authored_ground_item_failure_never_publishes_partial_population() {
+        let root = Folder::new();
+        let package = PathBuf::from(std::env::var_os("THEIA_QUEST_TRAVEL_PACKAGE").unwrap());
+        let baker = PathBuf::from(std::env::var_os("THEIA_NAV_BAKER").unwrap());
+        let library = crate::scenery_library::Library::load(&PathBuf::from(
+            std::env::var_os("THEIA_SCENERY_LIBRARY").unwrap(),
+        ))
+        .unwrap();
+        let zone = Zone::load(&package.join("zone.json")).unwrap();
+        let original = zone.clone();
+        let snapshot = theia_network::gameplay_bundle::snapshot(
+            &package.join("world/gameplay/gameplay.manifest.json"),
+        )
+        .unwrap();
+        let copied = root.0.join("gameplay");
+        fs::create_dir(&copied).unwrap();
+        let manifest = copied.join("gameplay.manifest.json");
+        fs::write(&manifest, snapshot.manifest()).unwrap();
+        for record in &snapshot.report().profiles {
+            let path = copied.join(&record.path);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, snapshot.profile(&record.kind).unwrap()).unwrap();
+        }
+        let rewards = copied.join(
+            &snapshot
+                .report()
+                .profiles
+                .iter()
+                .find(|p| p.kind == "rewards")
+                .unwrap()
+                .path,
+        );
+        let original_rewards = fs::read(&rewards).unwrap();
+        let mut bad: serde_json::Value = serde_json::from_slice(&original_rewards).unwrap();
+        let ground = bad["rewards"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|r| r.get("ground").is_some())
+            .unwrap();
+        ground["ground"]["position"][1] =
+            (ground["ground"]["position"][1].as_f64().unwrap() + 8.).into();
+        fs::write(&rewards, serde_json::to_vec(&bad).unwrap()).unwrap();
+        let creature = package.join("creature.json");
+        let output = root.0.join("package");
+        let publish = || {
+            publish_account(
+                &zone,
+                &output,
+                "theia.test.ground-preflight",
+                1,
+                Settings {
+                    creature: &creature,
+                    baker: &baker,
+                    spacing: 3.,
+                    appearance: None,
+                    gameplay: Some(&manifest),
+                    access_path: Some(1201),
+                },
+                &library,
+            )
+        };
+        let error = publish().unwrap_err();
+        assert!(
+            error.contains("theia.dev.compass-ground") && error.contains("Northern Meadow"),
+            "{error}"
+        );
+        assert!(!output.exists());
+        assert_eq!(
+            fs::read_dir(&root.0).unwrap().count(),
+            1,
+            "Staging directory leaked"
+        );
+        fs::write(&rewards, &original_rewards).unwrap();
+        let report = publish().unwrap();
+        assert_eq!(
+            report["population_export"]["ground_items"][0]["reward"],
+            "theia.dev.compass-ground"
+        );
+        assert!(output.join("population.json").is_file());
+        assert_eq!(zone, original);
+        assert_eq!(original_rewards, fs::read(&rewards).unwrap());
+        println!("{}", report["population_export"]["ground_items"]);
     }
     #[test]
     fn quest_metadata_requires_explicit_template_and_never_enters_test_player_mode() {

@@ -93,9 +93,7 @@ impl World {
                 .as_ref()
                 .and_then(|r| r.patch(ground.position))
                 .ok_or("Ground item collision is not prepared")?;
-            if patch.try_spawn_near(ground.position).is_none() {
-                return Err("Ground item has no supported reachable placement".into());
-            }
+            crate::ground_placement::supported(patch, ground.position)?;
         }
         self.rewards = Some(profile);
         Ok(())
