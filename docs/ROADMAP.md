@@ -1,3 +1,9 @@
+15 November 2026 — named patrol authoring passes:
+Previous/next/clear assignment and guide framing pass native editor/export checks,
+with exact Undo and source preservation. See STATUS. Next integration review:
+two-player quest isolation, using the existing private per-character escort and
+collection authority and real account/transport qualification helpers.
+
 15 November 2026 — population movement presentation passes:
 Authored populations now use target interpolation and authoritative gait samples.
 Native walking has zero run switches versus 121 in the baseline; client regressions

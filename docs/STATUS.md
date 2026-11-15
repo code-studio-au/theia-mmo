@@ -1,3 +1,20 @@
+15 November 2026 — P4-03 / P5-17 named population patrol controls:
+Spawn-group Attributes now has Previous patrol, Next patrol, Clear patrol and
+View patrol. Cycling includes unassigned and only visits saved Patrol guides in
+stable ID order, with the current name shown by the existing inspector summary.
+Numeric entry remains available. Assignment shares validated edits/Undo and clears
+roaming atomically. View frames the checked local guide bounds while retaining
+group selection and camera orientation; source and history remain unchanged.
+Busy and missing selections refuse before clearing previews. Mixed guide types,
+Undo/Redo, save preservation and ±128-billion-metre framing pass. All 261 editor
+tests pass (16 explicit skips), as do build, format and denied-warning Clippy:
+build/named-patrol-{tests,editor-tests,build,clippy,fmt}.log. Native named controls,
+invalid ID refusal, Undo/Redo, framing, unchanged source and checked export pass
+in build/named-patrol-editor-native-v1/qualification.json. The framed purple guide
+and four controls were visually inspected; export retains five checked patrols
+and the existing ranger escort. Linux 3440x1440 RX 7900 XTX / RADV NAVI31 / Vulkan,
+zero GPU diagnostics; no Windows execution or live-server claim for this UI slice.
+
 15 November 2026 — P3-07 / P4-03 population movement presentation:
 Pursuing population definitions now enable the existing TargetMotion/RemotePawn
 interpolation, using their configured chase/return speeds and current idle speed.

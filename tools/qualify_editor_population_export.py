@@ -21,9 +21,12 @@ parser.add_argument('--gameplay-template', type=Path)
 parser.add_argument('--creature-asset', type=Path)
 parser.add_argument('--access-path', type=int, help='Explicit saved road guide for checked population access')
 parser.add_argument('--patrol-path', type=int, help='Assign/undo a saved Patrol guide through the inspector before export')
+parser.add_argument('--named-patrol', action='store_true', help='Exercise named patrol cycling, clearing and framing before export')
 parser.add_argument('--escort-destination', type=int, help='Delete/undo this destination and verify escort export rejection and route preparation')
 parser.add_argument('--load-creature-context', action='store_true', help='Load the standalone definition through File, assign/undo it, and verify export defaults')
 args = parser.parse_args()
+if args.named_patrol and args.patrol_path is None:
+    parser.error('--named-patrol requires --patrol-path')
 if args.escort_destination is not None and (not args.gameplay_template or args.escort_destination <= 0):
     parser.error('--escort-destination requires a positive marker ID and gameplay template')
 out = args.output.resolve()
@@ -183,6 +186,28 @@ with (out / 'editor.log').open('w') as log:
             wait(lambda: not any(f['focused'] for f in state()['spawn_group_fields']))
             patrol_chord('z'); wait(lambda: state()['document'] == before)
             patrol_chord('y'); wait(lambda: state()['document'] == assigned)
+            if args.named_patrol:
+                def patrol_button(action):
+                    click(wait(lambda: next((c for c in state()['workspace_controls'] if c['target'] == f'Command({action})' and not c['menu_item'] and min(c['size']) > 0), None))['centre'])
+                def assigned_id():
+                    return state()['document']['spawn_groups'][0].get('patrol_path')
+                patrol_button('SpawnPatrolChoice(0)'); wait(lambda: assigned_id() is None)
+                patrol_button('SpawnPatrolChoice(1)'); wait(lambda: assigned_id() == args.patrol_path)
+                patrol_button('SpawnPatrolChoice(1)'); wait(lambda: assigned_id() is None)
+                patrol_button('SpawnPatrolChoice(-1)'); wait(lambda: assigned_id() == args.patrol_path)
+                patrol_chord('z'); wait(lambda: assigned_id() is None)
+                patrol_chord('y'); wait(lambda: assigned_id() == args.patrol_path)
+                original_view = state()['view']
+                source_before_view = state()['document']
+                patrol_button('ViewSpawnPatrol')
+                wait(lambda: state()['status'].startswith('Viewing patrol'))
+                after_view = state()
+                path = next(path for path in after_view['document']['paths'] if path['id'] == args.patrol_path)
+                origin = after_view['document']['origin']
+                expected = [(min(p[axis] for p in path['points']) + max(p[axis] for p in path['points'])) / 2 - origin[axis] for axis in range(3)]
+                assert all(abs(a-b) < .001 for a,b in zip(after_view['view']['target'], expected)), after_view['view']
+                assert all(after_view['view'][key] == original_view[key] for key in ['yaw','pitch','preset'])
+                assert after_view['document'] == source_before_view and after_view['spawn_group_selected'] == group
             x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             report.with_suffix('.png').rename(out / 'patrol-assigned.png')
 
@@ -270,6 +295,7 @@ with (out / 'editor.log').open('w') as log:
             invalid_spacing_refused=True, invalid_access_id_refused=args.access_path is not None,
             access_path=args.access_path, gameplay_snapshot=bool(args.gameplay_template),
             patrol_path=args.patrol_path, patrol_assignment_undo_redo=args.patrol_path is not None,
+            named_patrol_controls=args.named_patrol,
             invalid_patrol_id_refused=args.patrol_path is not None,
             idle_route_points=result.get('idle_route_points'),
             count=result['count'], source_unchanged=True,

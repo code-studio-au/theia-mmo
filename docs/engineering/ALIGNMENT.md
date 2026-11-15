@@ -1,3 +1,20 @@
+15 November named patrol controls acceptance:
+All 261 editor tests, build/format and strict Clippy pass. Native cycling, clear,
+Undo/Redo, invalid ID refusal, checked guide framing and export pass with unchanged
+source and zero GPU diagnostics; see STATUS. Next review targets the two-player
+quest isolation integration gap before choosing its smallest concrete slice.
+
+P4-03 / P5-17, 15 November 2026 — named population patrol controls:
+Prerequisites: schema-15 patrol assignment, validated shared edits/Undo, existing
+inspector status names and checked camera-local conversion. Add Previous patrol,
+Next patrol, Clear patrol and View patrol controls to the selected spawn group's
+Attributes panel. Cycle only saved Patrol guides in stable ID order, including the
+unassigned choice; retain numeric entry. Assignment still clears roaming in the
+same undoable edit. Framing preserves group selection, camera orientation, source
+and history. Disable/refuse without valid selection/guide or while busy. Acceptance:
+multiple guide kinds/IDs, undo/redo, no save, checked far-origin framing, busy/stale
+selection refusal, native named controls and export of the selected guide.
+
 15 November population movement presentation acceptance:
 All 278 client tests and strict Clippy pass. Native five-actor patrol records
 3,279 blended frames and zero run switches, versus 121 before the fix; maximum

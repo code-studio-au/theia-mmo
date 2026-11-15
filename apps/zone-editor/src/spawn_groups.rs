@@ -40,6 +40,93 @@ fn loaded_definition(
         .or_else(|| session.quest_context.as_ref().map(|c| c.creature()))
 }
 
+fn selected_group(session: &Session) -> Option<&SpawnGroup> {
+    session
+        .editor
+        .zone()
+        .spawn_groups
+        .iter()
+        .find(|group| Some(group.id) == session.spawn_group_selected)
+}
+fn assigned_patrol(session: &Session) -> Option<&theia_zone::paths::GuidePath> {
+    let id = selected_group(session)?.patrol_path?;
+    session
+        .editor
+        .zone()
+        .paths
+        .iter()
+        .find(|p| p.id == id && p.kind == theia_zone::paths::PathKind::Patrol)
+}
+pub(super) fn patrol_available(session: &Session, action: Action) -> bool {
+    if workspace::busy(session) || selected_group(session).is_none() {
+        return false;
+    }
+    match action {
+        Action::SpawnPatrolChoice(0) | Action::ViewSpawnPatrol => {
+            assigned_patrol(session).is_some()
+        }
+        Action::SpawnPatrolChoice(_) => session
+            .editor
+            .zone()
+            .paths
+            .iter()
+            .any(|p| p.kind == theia_zone::paths::PathKind::Patrol),
+        _ => false,
+    }
+}
+pub(super) fn choose_patrol(session: &mut Session, direction: i8) {
+    if !patrol_available(session, Action::SpawnPatrolChoice(direction)) {
+        return;
+    }
+    let mut group = selected_group(session).unwrap().clone();
+    let mut ids: Vec<_> = session
+        .editor
+        .zone()
+        .paths
+        .iter()
+        .filter(|p| p.kind == theia_zone::paths::PathKind::Patrol)
+        .map(|p| p.id)
+        .collect();
+    ids.sort_unstable();
+    let choices: Vec<_> = std::iter::once(None)
+        .chain(ids.into_iter().map(Some))
+        .collect();
+    let index = choices
+        .iter()
+        .position(|id| *id == group.patrol_path)
+        .unwrap_or(0);
+    group.patrol_path = match direction.cmp(&0) {
+        std::cmp::Ordering::Equal => None,
+        std::cmp::Ordering::Greater => choices[(index + 1) % choices.len()],
+        std::cmp::Ordering::Less => choices[(index + choices.len() - 1) % choices.len()],
+    };
+    if group.patrol_path.is_some() {
+        group.roam_radius_metres = 0.;
+    }
+    session.edit(vec![Edit::PutSpawnGroup { group }]);
+}
+pub(super) fn view_patrol(session: &mut Session, view: &mut View) {
+    if !patrol_available(session, Action::ViewSpawnPatrol) {
+        return;
+    }
+    let path = assigned_patrol(session).unwrap();
+    let mut minimum = Vec3::splat(f32::INFINITY);
+    let mut maximum = Vec3::splat(f32::NEG_INFINITY);
+    for &point in &path.points {
+        let Ok(local) = session.editor.zone().local(point) else {
+            session.status = "Patrol guide lies outside the current editor frame".into();
+            return;
+        };
+        let local = Vec3::from_array(local);
+        minimum = minimum.min(local);
+        maximum = maximum.max(local);
+    }
+    view.target = (minimum + maximum) / 2.;
+    view.distance = ((maximum - minimum).length() * 1.5 + path.width_metres as f32 * 2. + 8.)
+        .clamp(8., selection::MAX_VIEW_DISTANCE);
+    session.status = format!("Viewing patrol '{}' (#{})", path.name, path.id);
+}
+
 pub(super) fn can_bind_creature(session: &Session) -> bool {
     session.play.is_none()
         && loaded_definition(session).is_some_and(|definition| {
@@ -392,6 +479,95 @@ impl Report<'_, '_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn named_patrol_controls_cycle_only_patrols_share_undo_and_frame_without_editing() {
+        use theia_zone::paths::{GuidePath, PathKind};
+        for origin in [[0.; 3], [128_000_000_000.; 3], [-128_000_000_000.; 3]] {
+            let mut session = session(origin, 0.);
+            add(&mut session);
+            assert!(!patrol_available(&session, Action::SpawnPatrolChoice(1)));
+            let mut group = selected_group(&session).unwrap().clone();
+            group.roam_radius_metres = 4.;
+            session.edit(vec![Edit::PutSpawnGroup { group }]);
+            for (id, kind) in [
+                (12, PathKind::Patrol),
+                (4, PathKind::Road),
+                (7, PathKind::Patrol),
+                (15, PathKind::Stream),
+            ] {
+                session.edit(vec![Edit::PutPath {
+                    path: GuidePath {
+                        id,
+                        name: format!("Guide {id}"),
+                        kind,
+                        width_metres: 1.,
+                        points: vec![
+                            [origin[0] + 2., origin[1], origin[2] + 2.],
+                            [origin[0] + 10., origin[1], origin[2] + 6.],
+                        ],
+                    },
+                }]);
+            }
+            let before = session.editor.zone().clone();
+            let saved = session.saved_zone.clone();
+            let mut view = View {
+                target: Vec3::ZERO,
+                yaw: 0.6,
+                pitch: 0.8,
+                distance: 32.,
+                preset: camera_views::Preset::Perspective,
+                show_grid: true,
+            };
+            perform(Action::SpawnPatrolChoice(1), &mut session, &mut view);
+            assert_eq!(selected_group(&session).unwrap().patrol_path, Some(7));
+            assert_eq!(selected_group(&session).unwrap().roam_radius_metres, 0.);
+            assert!(inspection(&session).contains("Guide 7"));
+            let assigned = session.editor.zone().clone();
+            perform(Action::Undo, &mut session, &mut view);
+            assert_eq!(session.editor.zone(), &before);
+            perform(Action::Redo, &mut session, &mut view);
+            assert_eq!(session.editor.zone(), &assigned);
+            let history = session.editor.history();
+            let revision = session.editor.revision();
+            let selected = session.spawn_group_selected;
+            perform(Action::ViewSpawnPatrol, &mut session, &mut view);
+            assert_eq!(view.target, Vec3::new(6., 0., 4.));
+            assert_eq!((view.yaw, view.pitch), (0.6, 0.8));
+            assert_eq!(session.spawn_group_selected, selected);
+            assert!(session.path_selected.is_none());
+            assert_eq!(session.editor.zone(), &assigned);
+            assert_eq!(session.editor.history(), history);
+            assert_eq!(session.editor.revision(), revision);
+            for (direction, expected) in [
+                (1, Some(12)),
+                (1, None),
+                (-1, Some(12)),
+                (0, None),
+                (-1, Some(12)),
+            ] {
+                perform(
+                    Action::SpawnPatrolChoice(direction),
+                    &mut session,
+                    &mut view,
+                );
+                assert_eq!(selected_group(&session).unwrap().patrol_path, expected);
+            }
+            let protected = session.editor.zone().clone();
+            let target = view.target;
+            session.ui.input_owned = true;
+            for action in [Action::SpawnPatrolChoice(0), Action::ViewSpawnPatrol] {
+                assert!(!patrol_available(&session, action));
+                perform(action, &mut session, &mut view);
+            }
+            session.ui.input_owned = false;
+            session.spawn_group_selected = Some(999);
+            perform(Action::SpawnPatrolChoice(1), &mut session, &mut view);
+            perform(Action::ViewSpawnPatrol, &mut session, &mut view);
+            assert_eq!(session.editor.zone(), &protected);
+            assert_eq!(view.target, target);
+            assert_eq!(session.saved_zone, saved);
+        }
+    }
     #[test]
     fn standalone_assignment_uses_explicit_context_and_undo_preserves_the_loaded_type() {
         let mut session = session([0.; 3], 0.);

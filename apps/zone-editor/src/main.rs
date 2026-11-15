@@ -582,6 +582,8 @@ enum Action {
     AddSpawnGroup,
     ToggleSpawnGroup,
     BindSpawnCreature,
+    SpawnPatrolChoice(i8),
+    ViewSpawnPatrol,
     SpawnBoundaryPoint(i8),
     SpawnBoundaryWhole,
     SpawnBoundaryInsert,
@@ -1102,6 +1104,13 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
     if session.has_modal() {
         return;
     }
+    if matches!(
+        action,
+        Action::SpawnPatrolChoice(_) | Action::ViewSpawnPatrol
+    ) && !spawn_groups::patrol_available(session, action)
+    {
+        return;
+    }
     if matches!(action, Action::Duplicate) && (session.drag.is_some() || session.stroke.is_some()) {
         session.status = "Finish or cancel the preview before duplicating".into();
         return;
@@ -1174,6 +1183,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::AddSpawnGroup => spawn_groups::add(session),
         Action::ToggleSpawnGroup => spawn_groups::toggle(session),
         Action::BindSpawnCreature => spawn_groups::bind_creature(session),
+        Action::SpawnPatrolChoice(direction) => spawn_groups::choose_patrol(session, direction),
+        Action::ViewSpawnPatrol => spawn_groups::view_patrol(session, view),
         Action::SpawnBoundaryPoint(direction) => spawn_groups::boundary_action(
             session,
             workspace::Control::SpawnBoundaryPoint(direction),

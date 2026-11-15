@@ -652,6 +652,9 @@ impl Control {
             Self::AccountPopulationPlaytest => !session.network_active,
             Self::Command(Action::Play) => !session.network_active,
             Self::Command(Action::BindSpawnCreature) => spawn_groups::can_bind_creature(session),
+            Self::Command(action @ (Action::SpawnPatrolChoice(_) | Action::ViewSpawnPatrol)) => {
+                spawn_groups::patrol_available(session, action)
+            }
             Self::AssetPlace => session.ui.assets_open && session.assets.selected.is_some(),
             Self::Command(Action::CreateStarterBasin | Action::CreateStarterValley) => {
                 theia_zone::starter_basin::available(session.editor.zone())

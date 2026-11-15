@@ -126,6 +126,23 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
                         summary::field(row, input, order);
                     });
             }
+            if spawn {
+                group.spawn(Node {
+                    flex_wrap: FlexWrap::Wrap,
+                    column_gap: px(4),
+                    row_gap: px(4),
+                    ..default()
+                }).with_children(|row| {
+                    for (action, label) in [
+                        (Action::SpawnPatrolChoice(-1), "Previous patrol"),
+                        (Action::SpawnPatrolChoice(1), "Next patrol"),
+                        (Action::SpawnPatrolChoice(0), "Clear patrol"),
+                        (Action::ViewSpawnPatrol, "View patrol"),
+                    ] {
+                        row.spawn(workspace::button(workspace::Control::Command(action), label));
+                    }
+                });
+            }
             group.spawn((
                 theme::label(
                     if spawn {

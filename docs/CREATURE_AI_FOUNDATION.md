@@ -300,8 +300,12 @@ performed. Concurrent story files remain untouched. Next is the separately scope
 
 P3-07 / P4-03 / P5-17 extends the saved population adapter with an optional
 `patrol_path` reference (zone schema 15). Select a spawn group in the editor and
-enter a saved Patrol guide's ID under Attributes. Assignment disables random
-roaming in the same Undo step; blank clears the assignment. Reference deletion,
+use Previous patrol / Next patrol under Attributes, or enter a saved Patrol
+guide's ID. Cycling includes the unassigned choice and only visits Patrol guides
+in ID order; the inspector shows the chosen name. Clear patrol (or a blank ID)
+removes the assignment. View patrol frames the guide while retaining group
+selection and camera orientation, without modifying source or history. Assignment
+disables random roaming in the same Undo step. Reference deletion,
 wrong path kinds and simultaneous roaming/patrol refuse atomically. Legacy files
 without the field retain their prior behavior.
 
