@@ -1,3 +1,21 @@
+15 November escort overview acceptance:
+All 263 editor tests, build, strict Clippy and formatting pass. Native overview,
+retained NPC/card, destination selection, collection-guide regression and source/
+history preservation pass with zero GPU diagnostics. See STATUS and the native
+screenshot. Continue with the first bounded party-membership slice; shared escort
+journeys remain deferred until membership itself is implemented and qualified.
+
+P4-03 / P5-17, 15 November 2026 — escort location overview:
+Prerequisites: validated read-only quest context, linked destination markers,
+checked zone-local coordinates and existing editor camera framing. Add View NPC
+and destination beside Select destination marker in an escort quest card. Frame
+both saved marker positions with bounded camera distance, retaining selected NPC,
+orientation, source and Undo history. Guard busy/stale document/catalogue/marker
+links before changing the view. This frames locations only, not a straight-line
+navigation route. Acceptance: local and far-origin framing, selection/history and
+orientation preservation, stale/busy refusal, native button use and screenshot,
+editor regressions, format/strict Clippy and GPU validation.
+
 15 November route banner acceptance:
 Build, 279 client regressions, strict Clippy and format pass. Native UI bounds,
 visual captures at both sizes, clickable travel, two-character quest flows and

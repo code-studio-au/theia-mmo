@@ -1,3 +1,9 @@
+15 November 2026 — escort overview passes:
+The editor now frames both escort locations while retaining the NPC inspector;
+local/far-coordinate, stale/busy, native input and GPU checks pass. See STATUS.
+Next P4-11: bounded authoritative party invitations and membership, followed by
+transport/client integration. Shared escort progress remains a later consumer.
+
 15 November 2026 — route banner UI passes:
 Top-centred AI controls clear dialogue at both requested sizes and retain clickable
 travel/F7 controls; native two-account/restart and GPU checks pass. See STATUS.

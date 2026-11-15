@@ -284,6 +284,8 @@ struct TravelLink {
     destination: u64,
 }
 #[derive(Component)]
+struct TravelView(TravelLink);
+#[derive(Component)]
 struct CollectionLink {
     key: Key,
     area: String,
@@ -317,6 +319,7 @@ pub(super) fn plugin(app: &mut App) {
         .add_observer(toggle)
         .add_observer(choose)
         .add_observer(select_destination)
+        .add_observer(view_travel)
         .add_observer(view_collection);
 }
 fn selected(session: &Session) -> Option<&Marker> {
@@ -521,6 +524,22 @@ fn sync(
                                     theme::label("Select destination marker", 12., theme::BODY),
                                     Pickable::IGNORE,
                                 ));
+                                body.spawn((
+                                    TravelView(TravelLink {
+                                        key: key.as_ref().expect("Selected NPC").clone(),
+                                        destination,
+                                    }),
+                                    Button,
+                                    ActivateOnPress,
+                                    bevy::input_focus::tab_navigation::TabIndex(0),
+                                    Hovered::default(),
+                                    theme::button_node(),
+                                    BackgroundColor(theme::Variant::Default.background(false)),
+                                ))
+                                .with_child((
+                                    theme::label("View NPC and destination", 12., theme::BODY),
+                                    Pickable::IGNORE,
+                                ));
                             }
                             for pickup in &card.pickups {
                                 body.spawn((
@@ -646,6 +665,49 @@ fn select_destination(
     session.status = format!("Selected quest destination: {name}");
 }
 
+fn view_travel(
+    event: On<Activate>,
+    buttons: Query<&TravelView>,
+    mut session: ResMut<Session>,
+    view: Option<ResMut<crate::View>>,
+) {
+    let Ok(TravelView(link)) = buttons.get(event.entity) else {
+        return;
+    };
+    if workspace::busy(&session) || current_key(&session).as_ref() != Some(&link.key) {
+        return;
+    }
+    let Some(mut view) = view else {
+        return;
+    };
+    let zone = session.editor.zone();
+    let Some(npc) = selected(&session) else {
+        return;
+    };
+    let Some(destination) = zone
+        .markers
+        .iter()
+        .find(|m| m.id == link.destination && m.kind == MarkerKind::Quest)
+    else {
+        return;
+    };
+    let status = format!("Viewing {} and {}", npc.name, destination.name);
+    let locations = zone
+        .local(npc.position)
+        .and_then(|start| zone.local(destination.position).map(|end| (start, end)));
+    match locations {
+        Ok((start, end)) => {
+            let start = Vec3::from_array(start);
+            let end = Vec3::from_array(end);
+            view.target = (start + end) / 2.;
+            view.distance =
+                (start.distance(end) * 1.5 + 16.).clamp(18., crate::selection::MAX_VIEW_DISTANCE);
+            session.status = status;
+        }
+        Err(error) => session.status = format!("Cannot view escort locations: {error}"),
+    }
+}
+
 fn view_collection(
     event: On<Activate>,
     buttons: Query<&CollectionLink>,
@@ -682,6 +744,7 @@ pub(super) struct Report<'w, 's> {
             Option<&'static Toggle>,
             Has<Choose>,
             Option<&'static TravelLink>,
+            Option<&'static TravelView>,
             Option<&'static CollectionLink>,
             &'static ComputedNode,
             &'static bevy::ui::UiGlobalTransform,
@@ -690,6 +753,7 @@ pub(super) struct Report<'w, 's> {
             With<Toggle>,
             With<Choose>,
             With<TravelLink>,
+            With<TravelView>,
             With<CollectionLink>,
         )>,
     >,
@@ -700,10 +764,10 @@ impl Report<'_, '_> {
         let Some(marker) = selected(session) else {
             return serde_json::Value::Null;
         };
-        let controls: Vec<_> = self.buttons.iter().map(|(toggle, choose, travel, collection, node, transform)| {
+        let controls: Vec<_> = self.buttons.iter().map(|(toggle, choose, travel, overview, collection, node, transform)| {
             let factor = node.inverse_scale_factor() * scale;
-            serde_json::json!({"action": if choose { "Choose gameplay" } else if travel.is_some() { "Select destination" } else if collection.is_some() { "View collection" } else { "Toggle quest" },
-                "destination": travel.map(|t| t.destination),
+            serde_json::json!({"action": if choose { "Choose gameplay" } else if travel.is_some() { "Select destination" } else if overview.is_some() { "View escort locations" } else if collection.is_some() { "View collection" } else { "Toggle quest" },
+                "destination": travel.or(overview.map(|v| &v.0)).map(|t| t.destination),
                 "collection": collection.map(|p| serde_json::json!({"area":p.area,"position":p.position.metres()})),
                 "title": toggle.map(|t| &t.1),
                 "expanded": toggle.is_some_and(|t| self.details.get(t.0).is_ok_and(|n| n.display != Display::None)),
@@ -749,6 +813,101 @@ mod tests {
                 },
             ],
             ..Default::default()
+        }
+    }
+
+    fn travel_fixture(origin: [f64; 3]) -> (App, Entity) {
+        let mut app = fixture();
+        let mut zone = travel_zone();
+        zone.origin = origin;
+        zone.spawn = origin;
+        for marker in &mut zone.markers {
+            marker.position = std::array::from_fn(|i| marker.position[i] + origin[i]);
+        }
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            "unused.zone.json".into(),
+            Some(zone),
+        );
+        session.set_mode(EditorMode::Markers);
+        session.marker_selected = Some(1004);
+        session.quest_context =
+            Some(Context::load(&template("development-gameplay-starter-economy.json")).unwrap());
+        app.insert_resource(session).insert_resource(crate::View {
+            target: Vec3::ZERO,
+            yaw: 0.6,
+            pitch: 0.8,
+            distance: 120.,
+            preset: crate::camera_views::Preset::Perspective,
+            show_grid: true,
+        });
+        app.update();
+        let button = app
+            .world_mut()
+            .query_filtered::<Entity, With<TravelView>>()
+            .single(app.world())
+            .unwrap();
+        (app, button)
+    }
+
+    #[test]
+    fn escort_overview_retains_npc_inspection_and_history_at_local_and_far_origins() {
+        for origin in [0., 128_000_000_000., -128_000_000_000.] {
+            let (mut app, button) = travel_fixture([origin; 3]);
+            let original = app.world().resource::<Session>().editor.zone().clone();
+            app.world_mut().trigger(Activate { entity: button });
+            let view = app.world().resource::<crate::View>();
+            assert!(view.target.abs_diff_eq(Vec3::new(11., 0.03, 5.), 0.0001));
+            assert!((view.distance - (18_f32.hypot(10.) * 1.5 + 16.)).abs() < 0.001);
+            assert_eq!((view.yaw, view.pitch), (0.6, 0.8));
+            assert_eq!(view.preset, crate::camera_views::Preset::Perspective);
+            assert!(view.show_grid);
+            let session = app.world().resource::<Session>();
+            assert_eq!(session.marker_selected, Some(1004));
+            assert_eq!(session.editor.zone(), &original);
+            assert_eq!(session.editor.history(), (0, 0));
+            assert_eq!(session.editor.revision(), 0);
+            assert_eq!(session.status, "Viewing Elowen and Ancient tree");
+        }
+    }
+
+    #[test]
+    fn escort_overview_refuses_busy_or_stale_links_before_inspector_refresh() {
+        for change in 0..5 {
+            let (mut app, button) = travel_fixture([0.; 3]);
+            {
+                let mut session = app.world_mut().resource_mut::<Session>();
+                match change {
+                    0 => session.ui.input_owned = true,
+                    1 => session.document_id += 1,
+                    2 => session.marker_selected = None,
+                    3 => {
+                        session.quest_context = Some(
+                            Context::load(&template("development-gameplay-starter-economy.json"))
+                                .unwrap(),
+                        );
+                    }
+                    _ => {
+                        let mut marker = session.editor.zone().markers[1].clone();
+                        marker.position[0] += 5.;
+                        session
+                            .editor
+                            .execute(Command::Apply {
+                                expected_revision: 0,
+                                edits: vec![Edit::PutMarker { marker }],
+                            })
+                            .unwrap();
+                    }
+                }
+            }
+            let zone = app.world().resource::<Session>().editor.zone().clone();
+            let history = app.world().resource::<Session>().editor.history();
+            app.world_mut().trigger(Activate { entity: button });
+            let view = app.world().resource::<crate::View>();
+            assert_eq!((view.target, view.distance), (Vec3::ZERO, 120.));
+            let session = app.world().resource::<Session>();
+            assert_eq!(session.editor.zone(), &zone);
+            assert_eq!(session.editor.history(), history);
         }
     }
 

@@ -1,3 +1,9 @@
+Escort overview (15 November 2026): select the ranger NPC, expand its escort
+quest under Attributes → Quests, then use View NPC and destination. The camera
+frames both saved markers while keeping the NPC and quest card selected. Select
+destination marker remains available for editing that marker. The overview does
+not add waypoints or draw a route; navigation still derives the route at export.
+
 Running AI travel (15 November 2026): checked AI route followers now request
 normal Classic run input on outward and return legs. The compass road retains its
 two authored endpoints and paused F7 handoff; arrival still returns manual control

@@ -80,6 +80,18 @@ with (out/'editor.log').open('w') as log:
             assert text in '\n'.join(part for pair in follow['details'] for part in pair), (text, follow)
         click(reveal(title='Follow the NPC')['centre'])
         wait(lambda: control(title='Follow the NPC')['expanded'])
+        before_overview = state()['view']
+        zone = json.loads(original)
+        markers = {m['id']: m for m in zone['markers']}
+        centre = [(a+b)/2-o for a,b,o in zip(markers[1004]['position'], markers[1202]['position'], zone['origin'])]
+        click(reveal(action='View escort locations')['centre'])
+        wait(lambda: all(abs(a-b) < .0001 for a,b in zip(state()['view']['target'], centre)))
+        overview = state()
+        assert overview['marker_selected'] == 1004 and control(title='Follow the NPC')['expanded']
+        for key in ['yaw', 'pitch', 'preset']:
+            assert overview['view'][key] == before_overview[key]
+        assert overview['revision'] == initial['revision'] and overview['history'] == initial['history']
+        capture('escort-locations.png')
         destination = reveal(action='Select destination')
         capture('escort-details.png')
         click(destination['centre']); wait(lambda: state()['marker_selected'] == 1202)
@@ -127,6 +139,7 @@ with (out/'editor.log').open('w') as log:
 assert check_gpu_diagnostics((out/'editor.log').read_text()) == 0
 (out/'qualification.json').write_text(json.dumps(dict(passed=True, gpu=gpu,
     escort=follow, collection=compass, native_destination_selection=True,
+    native_escort_overview=overview['view'],
     native_collection_focus=focused['view'],
     collection_location_guides=guides, guide_deselection_checked=True,
     source_history_preserved=True, scope='Read-only quest content, not live progress'), indent=2)+'\n')

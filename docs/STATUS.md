@@ -1,3 +1,19 @@
+15 November 2026 — P4-03 / P5-17 escort location overview:
+Expanded escort quest cards now offer View NPC and destination alongside Select
+destination marker. The new action frames both checked local positions with
+bounded camera distance, retaining the selected NPC, expanded quest card, camera
+orientation, grid/preset, source and Undo history. Busy and stale document,
+catalogue, selection or edited-destination links refuse before view changes.
+Local and ±128-billion-metre origin tests pass. All 263 editor tests pass (16
+explicit skips), including the encrypted loopback export regression, as do build,
+format and denied-warning all-target Clippy; see build/escort-overview-{tests,
+editor-tests,build,fmt,clippy}.log. Native overview, subsequent destination
+selection, collection focus/guide controls and source/history preservation pass
+in build/escort-overview-editor-native-v1/qualification.json. Its screenshot was
+visually inspected: both locations and the retained quest card are visible.
+Linux 3440x1440 RX 7900 XTX / RADV NAVI31 / Vulkan, zero GPU diagnostics; no Windows
+execution. This is an authoring overview of locations, not a navigation route.
+
 15 November 2026 — P2-14 / P4-03 route banner dialogue clearance:
 The AI route status/toggle now sits at the top centre in a bounded half-width
 layout with standard Bevy text wrapping. It no longer covers NPC dialogue and
