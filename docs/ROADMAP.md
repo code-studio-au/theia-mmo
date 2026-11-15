@@ -1,3 +1,10 @@
+15 November 2026 — interrupted population roaming resumes correctly:
+Combat return retains the current excursion waypoint instead of cutting directly
+home from the captured anchor. Reproduction and corrected 20/30/60 Hz terrain
+movement pass, along with all network library tests. Next P3-07/P4-03/P5-17 slice:
+explicit saved Patrol guide assignments for spawn groups, prepared outside ticks
+and exposed through existing editor validation/history/export paths.
+
 15 November 2026 — named account AI roads pass:
 Manual/default, previous/next named road choices, export, full quest travel and
 PostgreSQL restart pass in the native editor/account workflow. Both client runs

@@ -1,3 +1,9 @@
+Population roaming resume, 15 November 2026 (P3-07 / P4-03):
+Preserve excursion progress through combat's captured-anchor return; respawn still
+resets home. The previously failing actual-motion regression passes at 20/30/60 Hz,
+with full network library and strict Clippy checks. Next: authored spawn-group
+Patrol guide bindings with checked startup preparation and editor integration.
+
 Named account roads, 15 November 2026 (P4-03 / P5-17):
 Previous/next/manual road choices retain explicit manual startup and checked paused
 routes. Full native account quests/Stop/restart and exact viewport sizing pass.

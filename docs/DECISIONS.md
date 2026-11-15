@@ -1,3 +1,11 @@
+15 November 2026 — resume population excursions at the interruption anchor:
+P3-07 / P4-03. The pursuit controller captures the creature's actual location
+when combat begins and returns there after disengagement. Preserve the roaming
+excursion and next waypoint through that interruption, then use the existing idle
+pause before continuing. Only respawn resets progress to home. Resetting progress
+on every combat tick was inconsistent with the return anchor and could cut across
+unvalidated corners. No Classic balance constants or navigation policy change.
+
 15 November 2026 — interpolate moving contacts with existing remote poses:
 Reuse RemotePawn for presentation of authoritative contact positions. Do not add
 physics bodies, client navigation, optimistic quest state or movement requests.

@@ -1,3 +1,17 @@
+15 November 2026 — P3-07 / P4-03 interrupted roaming correction:
+Population roaming now preserves the current excursion waypoint through combat.
+The existing pursuit policy returns to the captured interruption anchor; resetting
+the waypoint to zero incorrectly sent the actor diagonally home across its route.
+The new regression reproduced that direction error before the fix, then passed
+capture/return plus actual terrain/controller motion at 20/30/60 Hz. Respawn still
+returns home and resets progress; existing idle delay and walking speed remain.
+Evidence: roaming-resume-regression-before.log and -after.log in build/. All 522
+network library tests pass (17 explicit skips), denied-warning network/server
+Clippy passes, and the server builds (roaming-resume-network-tests.log,
+roaming-resume-clippy.log and roaming-resume-server-build.log). Format/diff checks
+pass. This is Linux headless authority/collision evidence, with no new renderer,
+GPU or Windows claim. No route search or I/O was added to fixed ticks.
+
 15 November 2026 — P4-03 / P5-17 named account AI road selection:
 The account export dialog has Previous road, Next road and Manual play controls,
 plus the authored road name. Cycling visits Road guides in stable ID order and

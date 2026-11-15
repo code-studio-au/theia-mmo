@@ -66,9 +66,9 @@ impl Actor {
         neighbours: &[(EntityKey, GlobalPosition)],
     ) {
         if directive.mode != Mode::Patrol {
-            // Combat returns to home, not the interrupted waypoint. Restart the
-            // checked excursion there rather than cutting across its corners.
-            self.waypoint = 0;
+            // Pursuit returns to the captured interruption anchor, which may
+            // lie midway along this segment. Preserve the next checked waypoint
+            // instead of cutting diagonally home; respawn resets it separately.
             self.wander_after = 0;
         }
         if !world.targets.contains_key(&self.key.entity.value()) || directive.mode == Mode::Dead {
@@ -243,32 +243,123 @@ mod tests {
     use super::*;
     use theia_core::identity::{EntityId, WorldEpoch};
     #[test]
-    fn interrupted_roaming_restarts_at_home_without_skipping_checked_waypoints() {
-        let (mut world, key) =
-            crate::simulation::creatures::tests::fixture(theia_core::time::TickRate::Hz30);
-        let home = GlobalPosition::new([8006., 1., 8000.]).unwrap();
-        let patch = world
-            .procedural
-            .as_ref()
-            .unwrap()
-            .patch(home)
-            .unwrap()
-            .clone();
-        let mut actor = Actor::new(key, home, patch, vec![vec![home; 4]]).unwrap();
-        actor.waypoint = 2;
-        actor.wander_after = 1;
-        actor.advance(
-            &mut world,
-            PursuitMotion {
-                mode: Mode::Return,
-                goal: None,
-                speed: 0.,
-                look_at: None,
-            },
-            &[],
-        );
-        assert_eq!(actor.waypoint, 0);
-        assert_eq!(actor.wander_after, 0);
+    fn interrupted_roaming_resumes_from_captured_anchor_without_cutting_back_home() {
+        use theia_core::{player_life::LifeKey, pursuit, time::TickRate};
+        let settings = crate::simulation::creatures::Profile::from_json(include_bytes!(
+            "../../../../../content/gameplay/development-creature-deflect-pursuit.json"
+        ))
+        .unwrap()
+        .definition()
+        .aggro()
+        .unwrap();
+        for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+            let (mut world, key) = crate::simulation::creatures::tests::fixture(rate);
+            let home = world.targets[&key.entity.value()].position;
+            let patch = world
+                .procedural
+                .as_ref()
+                .unwrap()
+                .patch(home)
+                .unwrap()
+                .clone();
+            let [x, _, z] = home.metres();
+            let feet = |x, z| patch.try_spawn(x, z).unwrap();
+            let centre = |point: GlobalPosition| {
+                let mut p = point.metres();
+                p[1] += f64::from(crate::world::PAWN_Y);
+                GlobalPosition::new(p).unwrap()
+            };
+            let route = vec![
+                feet(x, z),
+                feet(x + 10., z),
+                feet(x + 10., z + 10.),
+                feet(x + 10., z),
+                feet(x, z),
+            ];
+            // Interrupt midway along the second, perpendicular segment.
+            let anchor = centre(feet(x + 10., z + 4.));
+            let mut actor = Actor::new(key, home, patch.clone(), vec![route]).unwrap();
+            actor.position = anchor;
+            actor.waypoint = 2;
+            actor.wander_after = 1;
+            assert!(world.move_creature_target(key, anchor));
+            let target = pursuit::Target {
+                key: LifeKey {
+                    actor: EntityKey {
+                        epoch: key.epoch,
+                        entity: EntityId::new(999).unwrap(),
+                    },
+                    generation: std::num::NonZeroU64::MIN,
+                },
+                position: anchor,
+                alive: true,
+                visible: true,
+                in_melee: true,
+            };
+            let mut policy = pursuit::State::new(settings, key, rate).unwrap();
+            for tick in 1..=3 {
+                world.tick = tick;
+                let directive = policy
+                    .advance(
+                        tick,
+                        pursuit::Observation {
+                            position: actor.position,
+                            alive: true,
+                            candidates: &[],
+                            target: (tick == 1).then_some(target),
+                            provoked: (tick == 1).then_some(target),
+                            blocked: false,
+                        },
+                    )
+                    .unwrap();
+                assert_eq!(
+                    directive.mode,
+                    [Mode::Attack, Mode::Return, Mode::Patrol][tick as usize - 1]
+                );
+                if tick == 2 {
+                    assert_eq!(directive.goal, Some(anchor));
+                }
+                actor.advance(
+                    &mut world,
+                    PursuitMotion {
+                        mode: directive.mode,
+                        goal: directive.goal,
+                        speed: directive.speed,
+                        look_at: None,
+                    },
+                    &[],
+                );
+            }
+            // Let the ordinary idle delay expire, then observe actual collision-
+            // controlled motion. Resetting to waypoint zero moves diagonally home.
+            for tick in 4..=u64::from(rate.hz()) * 7 {
+                world.tick = tick;
+                actor.advance(
+                    &mut world,
+                    PursuitMotion {
+                        mode: Mode::Patrol,
+                        goal: None,
+                        speed: 0.,
+                        look_at: None,
+                    },
+                    &[],
+                );
+                assert!(!actor.blocked);
+            }
+            let now = actor.position.metres();
+            assert!(
+                (now[0] - anchor.metres()[0]).abs() < 0.1,
+                "{rate:?}: resumed toward home across the route corner: {now:?}"
+            );
+            assert!(now[2] > anchor.metres()[2] + 0.5);
+            let next = EntityKey {
+                epoch: key.epoch,
+                entity: EntityId::new(1000).unwrap(),
+            };
+            assert_eq!(actor.respawn(next), home);
+            assert_eq!(actor.waypoint, 0);
+            assert_eq!(actor.wander_after, 0);
+        }
     }
 
     #[test]

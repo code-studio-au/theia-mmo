@@ -1,3 +1,9 @@
+15 November interrupted roaming acceptance:
+The regression first reproduced diagonal movement toward home after a captured-
+anchor return, then passed corrected terrain/controller motion at all three tick
+rates. All 522 network library tests and strict network/server Clippy pass. STATUS
+records the headless scope; authored population patrol assignment is next.
+
 15 November named road acceptance:
 Native previous/next/manual selection passes through actual account export,
 quest travel and durable restart, with exact 3440x1440 client viewports. All 259
