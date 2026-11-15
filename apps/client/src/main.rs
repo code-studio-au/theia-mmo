@@ -28,6 +28,7 @@ mod movement_metrics;
 mod nameplates;
 mod network;
 mod particle_world;
+mod party;
 mod physics;
 mod player_life;
 mod population_qualification;
@@ -175,6 +176,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         false
     };
     let classic_controller = classic_controls::Controller::from_args(&mut args, classic)?;
+    let parties = party::parse(&mut args, classic)?;
     let test_controller = test_controller::from_args(
         &mut args,
         classic && matches!(&source, theia_network::procedural::Source::Authored(_)),
@@ -1180,7 +1182,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             serde_json::to_string_pretty(&serde_json::json!({
                 "schema": 1,
                 "scope": "Client content configuration only; no network, renderer or saved admission",
-                "world": theia_network::classic::profile_identity(content_identity),
+                "world": party::world_identity(theia_network::classic::profile_identity(content_identity), parties),
+                "parties": parties,
                 "classic_source": content_identity,
                 "test_controller":test_controller.as_ref().map(|run|run.description()),
                 "inventory_profile": inventory_profile.as_ref().map(|p|p.hash()),
@@ -1225,6 +1228,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|(profile, _)| profile.clone()),
             dodge_profile.clone(),
             classic,
+            parties,
             melee_profile.as_ref().map(|(_, catalog)| catalog.clone()),
             physical_profile.clone(),
             white_profile.clone(),
@@ -1236,6 +1240,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     if membership_profile.is_some() && net.is_none() {
         return Err("Combat membership requires network admission".into());
+    }
+    if parties && net.is_none() {
+        return Err("Parties require a connected account client".into());
     }
     if ability_profile.is_some() && net.is_none() {
         return Err("Ability damage requires network admission".into());
@@ -1480,6 +1487,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(controller) = classic_controller {
         app.insert_resource(controller);
     }
+    if parties {
+        party::install(&mut app);
+    }
     if let Some(profile) = dodge_profile {
         app.insert_resource(dodge::animation::Policy(profile))
             .init_resource::<dodge::animation::State>()
@@ -1607,6 +1617,7 @@ fn toggle_fullscreen(
 
 #[derive(bevy::ecs::system::SystemParam)]
 struct InputMode<'w> {
+    party: Option<Res<'w, party::Ui>>,
     book: Option<Res<'w, combat::book::Ui>>,
     interface: Option<Res<'w, fantasy_ui::settings::Ui>>,
     dialogue: Option<Res<'w, dialogue::Ui>>,
@@ -1660,7 +1671,8 @@ fn input(
         });
     if let Some(classic) = classic.as_mut() {
         classic.escape_owned_by_panel = keys.just_pressed(KeyCode::Escape)
-            && (combat::book::owns_escape(mode.book.as_deref())
+            && (party::owns_escape(mode.party.as_deref())
+                || combat::book::owns_escape(mode.book.as_deref())
                 || fantasy_ui::settings::owns_escape(mode.interface.as_deref())
                 || talking
                 || mode
@@ -1671,6 +1683,7 @@ fn input(
                 || mode.loot.as_ref().is_some_and(|u| u.open));
     }
     if keys.just_pressed(KeyCode::Escape)
+        && !party::owns_escape(mode.party.as_deref())
         && !combat::book::owns_escape(mode.book.as_deref())
         && !fantasy_ui::settings::owns_escape(mode.interface.as_deref())
         && !talking
@@ -1789,6 +1802,7 @@ mod control_tests {
             .init_resource::<documents::Ui>()
             .init_resource::<fantasy_ui::settings::Ui>()
             .init_resource::<combat::book::Ui>()
+            .init_resource::<party::Ui>()
             .insert_resource(fantasy_ui::Skin::fixture())
             .insert_resource(
                 classic_controls::Controller::parse(include_bytes!(
@@ -1799,7 +1813,12 @@ mod control_tests {
             .add_message::<AppExit>()
             .add_systems(
                 PreUpdate,
-                (fantasy_ui::settings::keyboard, combat::book::keyboard).chain(),
+                (
+                    fantasy_ui::settings::keyboard,
+                    party::keyboard,
+                    combat::book::keyboard,
+                )
+                    .chain(),
             )
             .add_systems(
                 Update,
@@ -1822,7 +1841,8 @@ mod control_tests {
         app.world_mut().resource_mut::<loot::Ui>().open = true;
         app.world_mut().resource_mut::<inventory::Ui>().open = true;
         app.world_mut().resource_mut::<combat::book::Ui>().open = true;
-        for step in 0..5 {
+        app.world_mut().resource_mut::<party::Ui>().open = true;
+        for step in 0..6 {
             {
                 let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
                 keys.release(KeyCode::Escape);
@@ -1831,10 +1851,11 @@ mod control_tests {
             }
             app.update();
             assert!(!app.world().resource::<fantasy_ui::settings::Ui>().open);
-            assert_eq!(app.world().resource::<combat::book::Ui>().open, step < 1);
-            assert_eq!(app.world().resource::<documents::Ui>().open, step < 2);
-            assert_eq!(app.world().resource::<loot::Ui>().open, step < 3);
-            assert_eq!(app.world().resource::<inventory::Ui>().open, step < 4);
+            assert_eq!(app.world().resource::<party::Ui>().open, step < 1);
+            assert_eq!(app.world().resource::<combat::book::Ui>().open, step < 2);
+            assert_eq!(app.world().resource::<documents::Ui>().open, step < 3);
+            assert_eq!(app.world().resource::<loot::Ui>().open, step < 4);
+            assert_eq!(app.world().resource::<inventory::Ui>().open, step < 5);
             assert!(
                 app.world()
                     .resource::<classic_controls::Controller>()

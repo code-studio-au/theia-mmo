@@ -372,6 +372,7 @@ fn os_trace(world: &mut World) {
                 .map_or(1., |scale| scale.0)
         );
         data["interface"] = crate::fantasy_ui::settings::snapshot(world);
+        data["party"] = crate::party::snapshot(world);
         data["ground_items"] = crate::inventory::ground::snapshot(world);
         data["ability_book"] = crate::combat::book::snapshot(world);
         data["action_bar"] = crate::combat::action_bar::snapshot(world);

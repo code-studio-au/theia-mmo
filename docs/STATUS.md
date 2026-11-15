@@ -1,3 +1,21 @@
+15 November 2026 — P4-11 playable party controls:
+Explicit --parties binds Classic account launches and the matching client
+preflight. Party [O] uses standard Bevy UI with trusted names, invite/accept/
+decline/cancel, leader promotion/removal and leave. Clicks retain painted revision
+and reserve one submission. Escape closes Interface before Party, then existing
+panels, without clearing the Classic target in that same frame. Read-only native
+diagnostics expose controls and private membership without granting actions.
+Two real OIDC accounts at 1920x1440 each complete all controls, restart PostgreSQL/
+server and rejoin the same characters solo; each phase has 13 accepted actions,
+zero refusals/invalid uploads and unchanged quests/bags/XP. SQL and source hashes
+pass in build/party-ui-native-v1/qualification.json (140.52 seconds). Invitation
+and member screenshots were visually inspected. Linux RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6, zero GPU diagnostics; no Windows execution. 281 client tests
+pass (four explicit skips), as do build, format, strict client/server Clippy and
+53 launcher tests (one skip); see build/party-ui-{client-tests,build,fmt,clippy,
+launcher-tests}.log. Shared rewards/quests/escorts remain separate. Next: enable
+this qualified mode in the editor's owned account playtests.
+
 15 November 2026 — P4-11 encrypted party control prerequisite:
 Bounded request/private-state codecs validate identity, counts, roster names,
 invitation shape and monotonic revisions/acknowledgements. Authenticated named

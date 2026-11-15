@@ -1,3 +1,23 @@
+15 November playable party acceptance:
+Native two-account OIDC, all UI actions, preserved progress, server/PostgreSQL
+restart and solo rejoin pass in 140.52 seconds with zero GPU diagnostics. 281
+client tests, build, strict Clippy, format and launcher tests pass; see STATUS.
+Next P4-11/P5-17: add qualified --parties to the editor's existing owned account
+launch (not development Test Players), retain package/source and picker/Start/Stop
+behavior, and verify the native editor/account flow. Shared quests remain later.
+
+P4-11, 15 November 2026 — playable party controls:
+Add explicit --parties to Classic account playtests and matching client preflight
+identity. Standard Bevy Party [O] controls present trusted names, invitation
+accept/decline/cancel, leader promotion/removal and leave. Preserve painted
+revisions and reserve one click until acknowledgement. Interface Escape precedes
+Party, then existing book/dialogue/document/loot/bag handling; world controls must
+not consume that same Escape. Read-only diagnostics support owned-window tests.
+Acceptance: real OIDC accounts at 1920x1440 each exercise every control, retain
+identical quests/bags/XP, rejoin solo after server/PostgreSQL restart, source files
+unchanged, native screenshots/GPU validation, client regressions and strict checks.
+Normal launches remain opt-in; editor default adoption follows native acceptance.
+
 15 November party transport prerequisite acceptance:
 535 network tests pass (18 explicit skips), with actual three-worker encrypted
 Classic and chat flows, codec invalid inputs and timeout/backpressure checks.

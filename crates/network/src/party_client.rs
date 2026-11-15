@@ -11,7 +11,7 @@ pub struct View {
 }
 /// Retain the identity and revision actually painted by the UI; the worker
 /// must never rebind an old click to a newer invitation or party membership.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Intent {
     pub owner: EntityKey,
     pub revision: u64,

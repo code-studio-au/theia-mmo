@@ -182,6 +182,8 @@ def prepare_profiles(args, repository, bundle=None):
                '--classic', '--account-login', '--equipment', '--status-effects', '--progression', '--rewards',
                '--public-avatar-life', '--stop-on-stdin-eof', '--session-directory', str(output/'runtime')]
     skin = getattr(args, 'fantasy_ui', None)
+    if getattr(args, 'parties', False):
+        command.append('--parties')
     command.extend(play.fantasy_ui_options(skin, True, True))
     if corpse_loot:
         command.append('--creature-loot')
@@ -208,7 +210,7 @@ def prepare_profiles(args, repository, bundle=None):
         records.append(dict(option=flag, file=f'profiles/{name}', sha256=hashlib.sha256(data).hexdigest()))
     (output/'launch.json').write_text(json.dumps(dict(schema=1, package=str(package), profiles=records, creature_loot=corpse_loot, creature_reset=encounter, creature_threat=encounter, public_creature_attacks=encounter,
         quest_journal=bool(quests), quest_items=quest_items, quest_loot=quest_loot, quest_areas=bool(areas), guide_position=guide, gameplay_snapshot=report,
-        test_route=route[1] if route else None,
+        test_route=route[1] if route else None, parties=bool(getattr(args, 'parties', False)),
         scope='One authenticated character on the exported population with frozen gameplay profiles and durable grants; shared NPC retaliation and configured pursuit, return reset, damage threat and public attack timing; no Test Player controllers'), indent=2)+'\n')
     return command
 
@@ -220,6 +222,7 @@ def main():
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--fantasy-ui', type=Path, default=os.environ.get('THEIA_FANTASY_UI'), help='Local Synty Fantasy Warrior HUD')
+    parser.add_argument('--parties', action='store_true', help='Enable party membership controls in this account test')
     parser.add_argument('--window-size', default='3440x1440')
     parser.add_argument('--test-route', type=Path, help='Explicit paused test travel; frozen locally and checked by normal client preflight')
     parser.add_argument('--items', type=Path, help='Explicit item catalogue, paired with --reward-catalog')

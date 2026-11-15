@@ -24,6 +24,7 @@ async fn main() -> Result<()> {
     let mut terrain_source = theia_network::procedural::Source::Procedural;
     let mut predicted = false;
     let mut classic = false;
+    let mut parties = false;
     let mut dodge_profile = None;
     let mut melee_weapons = None;
     let mut physical_definitions = None;
@@ -87,6 +88,9 @@ async fn main() -> Result<()> {
             "--dev-relays" => dev_relays=Some(args.next().ok_or("Missing relay endpoints")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?),
             "--prediction" => predicted=true,
             "--classic" => classic=true,
+            "--parties" => {
+                if std::mem::replace(&mut parties, true) { return Err("Choose party mode once".into()); }
+            }
             "--ability-starting" => {
                 if ability_starting.is_some(){return Err("Choose one ability starting profile".into());}
                 ability_starting=Some(PathBuf::from(args.next().ok_or("Missing ability starting profile")?));
@@ -360,6 +364,12 @@ async fn main() -> Result<()> {
             return Err("Classic controls require secure Renet admission".into());
         }
         world.enable_classic()?;
+    }
+    if parties {
+        if !account_login || !classic {
+            return Err("Parties require Classic account admission".into());
+        }
+        world.enable_parties()?;
     }
     if targeted {
         if !graybox || (tickets.is_none() && !account_login) {

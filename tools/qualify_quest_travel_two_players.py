@@ -61,7 +61,7 @@ def run(args):
         for resumed in (False, True):
             if resumed:
                 cluster.restart()
-            print('Quest travel: restored accounts' if resumed else 'Quest travel: fresh accounts', flush=True)
+            print(('Party controls' if args.party_only else 'Quest travel') + (': restored accounts' if resumed else ': fresh accounts'), flush=True)
             folder = out/('resumed' if resumed else 'fresh')
             owner, guest = folder/'owner', folder/'guest'
             owner.mkdir(parents=True); guest.mkdir()
@@ -86,7 +86,8 @@ def run(args):
                         '--package', str(package), '--players', str(args.players.resolve()),
                         '--binaries', str(binaries), '--output', str(owner/'owned'),
                         '--gameplay-manifest', str(manifest), '--test-route', str(route),
-                        '--fantasy-ui', str(args.fantasy_ui.resolve()), '--window-size', '1920x1440'],
+                        '--fantasy-ui', str(args.fantasy_ui.resolve()), '--window-size', '1920x1440',
+                        *(['--parties'] if args.party_only else [])],
                         env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT)
                     def choices_ready():
                         assert launcher.poll() is None, 'Owned account launcher exited'
@@ -143,52 +144,62 @@ def run(args):
                         assert value['window'][:2] == [1920., 1440.], value['window']
                     print('Both authenticated clients ready at 1920x1440', flush=True)
                     desktop = Desktop()
-                    untouched = retained(state_b())
-                    def peer_ranger():
-                        return wait(lambda: next((c for c in state_b()['contacts'] if c['npc'] == RANGER), None), 5)['global']
-                    home_b = peer_ranger()
-                    isolation_samples = 0
-                    peer_ticks = [set(), set()]
-                    def isolated_a():
-                        nonlocal isolation_samples
-                        peer = state_b()
-                        assert peer['connected'], 'Background player disconnected'
-                        peer_ticks[0].add(peer['dodge']['tick'])
-                        assert retained(peer) == untouched, 'Player one changed player two progress'
-                        if not resumed:
-                            assert math.dist(peer_ranger(), home_b) < .02, 'Player one moved player two ranger'
-                        isolation_samples += 1
-                        return state_a()
-                    proof_a = flow(desktop, windows[0], isolated_a, owner, resumed=resumed,
-                                   check_banner=args.route_banner and not resumed)
-                    observe_background(isolated_a, peer_ticks[0])
-                    print('First player verified; second player progress unchanged', flush=True)
-                    complete_a = retained(state_a())
-                    def isolated_b():
-                        nonlocal isolation_samples
-                        peer = state_a()
-                        assert peer['connected'], 'Background player disconnected'
-                        peer_ticks[1].add(peer['dodge']['tick'])
-                        assert retained(peer) == complete_a, 'Player two changed player one progress'
-                        isolation_samples += 1
-                        return state_b()
-                    proof_b = flow(desktop, windows[1], isolated_b, guest, resumed=resumed)
-                    observe_background(isolated_b, peer_ticks[1])
-                    print('Second player verified; first player progress unchanged', flush=True)
-                    completed = [retained(state_a()), retained(state_b())]
-                    for value in completed:
-                        assert value['revision'] == 9 and value['xp'] == 75
-                        assert len(value['quests']) == 3 and all(q['status'] == 'Completed' for q in value['quests'])
-                        assert value['bag']['revision'] == 2
-                    if resumed:
-                        assert completed == previous
-                    else:
+                    if args.party_only:
+                        from party_os import flow as party_flow
+                        completed = [retained(state_a()), retained(state_b())]
+                        if resumed: assert completed == previous
                         previous = completed
-                    assert all(len(ticks) > 10 for ticks in peer_ticks), 'Background observation did not advance'
-                    runs.append(dict(resumed=resumed, window_sizes=[[1920,1440],[1920,1440]],
-                        isolation_samples=isolation_samples, retained=completed,
-                        distinct_background_ticks=[len(ticks) for ticks in peer_ticks],
-                        proofs=[proof_a, proof_b]))
+                        proof = party_flow(desktop, windows, [state_a, state_b], folder)
+                        assert [retained(state_a()), retained(state_b())] == completed
+                        runs.append(dict(resumed=resumed, window_sizes=[[1920,1440],[1920,1440]],
+                            retained=completed, party=proof))
+                    else:
+                        untouched = retained(state_b())
+                        def peer_ranger():
+                            return wait(lambda: next((c for c in state_b()['contacts'] if c['npc'] == RANGER), None), 5)['global']
+                        home_b = peer_ranger()
+                        isolation_samples = 0
+                        peer_ticks = [set(), set()]
+                        def isolated_a():
+                            nonlocal isolation_samples
+                            peer = state_b()
+                            assert peer['connected'], 'Background player disconnected'
+                            peer_ticks[0].add(peer['dodge']['tick'])
+                            assert retained(peer) == untouched, 'Player one changed player two progress'
+                            if not resumed:
+                                assert math.dist(peer_ranger(), home_b) < .02, 'Player one moved player two ranger'
+                            isolation_samples += 1
+                            return state_a()
+                        proof_a = flow(desktop, windows[0], isolated_a, owner, resumed=resumed,
+                                       check_banner=args.route_banner and not resumed)
+                        observe_background(isolated_a, peer_ticks[0])
+                        print('First player verified; second player progress unchanged', flush=True)
+                        complete_a = retained(state_a())
+                        def isolated_b():
+                            nonlocal isolation_samples
+                            peer = state_a()
+                            assert peer['connected'], 'Background player disconnected'
+                            peer_ticks[1].add(peer['dodge']['tick'])
+                            assert retained(peer) == complete_a, 'Player two changed player one progress'
+                            isolation_samples += 1
+                            return state_b()
+                        proof_b = flow(desktop, windows[1], isolated_b, guest, resumed=resumed)
+                        observe_background(isolated_b, peer_ticks[1])
+                        print('Second player verified; first player progress unchanged', flush=True)
+                        completed = [retained(state_a()), retained(state_b())]
+                        for value in completed:
+                            assert value['revision'] == 9 and value['xp'] == 75
+                            assert len(value['quests']) == 3 and all(q['status'] == 'Completed' for q in value['quests'])
+                            assert value['bag']['revision'] == 2
+                        if resumed:
+                            assert completed == previous
+                        else:
+                            previous = completed
+                        assert all(len(ticks) > 10 for ticks in peer_ticks), 'Background observation did not advance'
+                        runs.append(dict(resumed=resumed, window_sizes=[[1920,1440],[1920,1440]],
+                            isolation_samples=isolation_samples, retained=completed,
+                            distinct_background_ticks=[len(ticks) for ticks in peer_ticks],
+                            proofs=[proof_a, proof_b]))
             finally:
                 if desktop: desktop.close()
                 stop(second)
@@ -222,7 +233,10 @@ def run(args):
                 (SELECT count(*) FROM theia.quest_journal_entries q WHERE q.realm_id=h.realm_id AND q.character_id=h.character_id AND q.status=2)
                 FROM theia.character_names n JOIN theia.quest_journal_heads h USING(realm_id,character_id)
                 JOIN theia.progression p USING(realm_id,character_id) ORDER BY n.display_name;''')
-            assert rows.returncode == 0 and rows.stdout.splitlines() == ['QuestGuest|9|75|3', 'QuestOwner|9|75|3'], rows.stdout
+            expected = ['QuestGuest|0|0|0', 'QuestOwner|0|0|0'] if args.party_only else ['QuestGuest|9|75|3', 'QuestOwner|9|75|3']
+            assert rows.returncode == 0 and rows.stdout.splitlines() == expected, rows.stdout
+            if args.party_only:
+                assert transport['party']['accepted'] >= 12 and transport['party']['refused'] == 0 and transport['party']['invalid_uploads'] == 0
             (folder/'database-proof.txt').write_text(rows.stdout)
             print('Both character journals and XP verified in PostgreSQL', flush=True)
             for log in [owner/'launcher.log', guest/'client.log']:
@@ -234,9 +248,9 @@ def run(args):
     assert not any((out/'cluster'/name).exists() for name in ['password','pgpass'])
     result = dict(passed=True, elapsed_seconds=time.monotonic()-started,
         authenticated_native_clients=2, database_restart=True,
-        source_unchanged=True, runs=runs, scope=__doc__)
+        source_unchanged=True, runs=runs, scope=('Native two-account party controls and solo rejoin after server/database restart; quests and bags unchanged' if args.party_only else __doc__))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
-    print('Two-account quest travel and database restart passed', flush=True)
+    print('Two-account ' + ('party controls' if args.party_only else 'quest travel') + ' and database restart passed', flush=True)
     return result
 
 
@@ -247,5 +261,6 @@ if __name__ == '__main__':
     parser.add_argument('--fantasy-ui', type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--party-only', action='store_true', help='Qualify party controls and solo rejoin, leaving all quest progress unchanged')
     parser.add_argument('--route-banner', action='store_true', help='Check dialogue clearance at both playtest sizes and activate outward travel with the banner')
     run(parser.parse_args())

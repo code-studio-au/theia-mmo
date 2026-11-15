@@ -2243,6 +2243,10 @@ For each task: inspect existing code first; write a short design and tests; impl
   tests (18 explicit skips) and strict network/client/server Clippy. Three actual
   Classic client workers exercise named leases and optional chat; OIDC/native UI
   acceptance follows. See ../STATUS.md for exact evidence and limits.
+  Playable opt-in Party [O] now passes native two-account OIDC controls, preserved
+  progress and solo rejoin after PostgreSQL/server restart (140.52 seconds), plus
+  281 client tests and strict checks. Editor account-launch adoption is next;
+  shared XP/loot/quest/escort rules remain separate unimplemented consumers.
 
 ### P4-12 — Chat/moderation
 - **Primary wave:** W7; work may begin earlier when prerequisites permit.

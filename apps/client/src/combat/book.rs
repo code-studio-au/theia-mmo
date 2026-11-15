@@ -178,6 +178,7 @@ pub(crate) fn keyboard(
     skin: Option<Res<crate::fantasy_ui::Skin>>,
     mut ui: ResMut<Ui>,
     mut settings: Option<ResMut<crate::fantasy_ui::settings::Ui>>,
+    party: Option<Res<crate::party::Ui>>,
 ) {
     ui.closed_this_frame = false;
     let Some(keys) = keys else {
@@ -195,6 +196,7 @@ pub(crate) fn keyboard(
     } else if keys.just_pressed(KeyCode::Escape)
         && ui.open
         && !crate::fantasy_ui::settings::owns_escape(settings.as_deref())
+        && !crate::party::owns_escape(party.as_deref())
     {
         ui.open = false;
         ui.closed_this_frame = true;

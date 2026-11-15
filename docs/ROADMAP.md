@@ -1,3 +1,9 @@
+15 November 2026 — native party controls pass:
+Two OIDC accounts exercise all member/leader/invitation controls at 1920x1440,
+retain quests/bags/XP and rejoin solo after server/database restart. See STATUS
+and PARTIES for evidence. Next: enable the qualified party mode in the editor's
+owned account-playtest launch and verify its normal Start/Stop flow.
+
 15 November 2026 — party encrypted transport prerequisite passes:
 Private state, named admission, bounded client waits and actual three-worker
 Classic/chat integration pass; see STATUS. Next: opt-in account launch integration,

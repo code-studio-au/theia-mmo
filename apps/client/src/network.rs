@@ -14,6 +14,7 @@ use tokio::sync::watch;
 
 #[derive(Resource)]
 pub struct Network {
+    party_actions: Option<tokio::sync::mpsc::Sender<theia_network::party_client::Intent>>,
     pub(crate) avatar_pose_resets: u64,
     avatar_life_events:
         Option<tokio::sync::mpsc::Receiver<theia_network::avatar_life_wire::Observation>>,
@@ -430,6 +431,11 @@ impl Network {
     pub(crate) fn state(&self) -> State {
         self.state.borrow().clone()
     }
+    pub(crate) fn party_action(&self, intent: theia_network::party_client::Intent) -> bool {
+        self.party_actions
+            .as_ref()
+            .is_some_and(|actions| actions.try_send(intent).is_ok())
+    }
     pub fn camera_test_blocked(&self) -> bool {
         self.smoke.as_ref().is_some_and(|s| {
             s.house
@@ -463,6 +469,7 @@ impl Network {
         dialogue_profile: Option<std::sync::Arc<theia_network::dialogue::Profile>>,
         dodge_profile: Option<std::sync::Arc<theia_network::dodging::Profile>>,
         classic: bool,
+        parties: bool,
         melee_catalog: Option<std::sync::Arc<theia_core::melee::Catalog>>,
         physical_profile: Option<
             std::sync::Arc<theia_network::simulation::combat::physical::Profile>,
@@ -533,6 +540,8 @@ impl Network {
                 theia_network::dodging::profile_identity(source_world, p)
             })
         };
+        let party_source = expected_world;
+        let expected_world = crate::party::world_identity(expected_world, parties);
         let dodge_input = dodge_profile
             .as_ref()
             .map(|p| theia_network::dodge_input::Input::new(source_world, p.clone()));
@@ -658,6 +667,7 @@ impl Network {
         let (quest_actions, quest_queue) = tokio::sync::mpsc::channel(4);
         let (dialogue_actions, dialogue_queue) = tokio::sync::mpsc::channel(4);
         let (items, item_queue) = tokio::sync::mpsc::channel(1);
+        let (party_actions, party_queue) = tokio::sync::mpsc::channel(4);
         let (pickups, pickup_queue) = tokio::sync::mpsc::channel(1);
         let loot_enabled = inventory_profile
             .as_ref()
@@ -694,7 +704,7 @@ impl Network {
                             shutdown,
                             expected_world,
                             theia_network::renet_runtime::GameplayClient {
-                                party: None,
+                                party: if parties { Some(theia_network::party_client::Client::new(party_source, party_queue)?) } else { None },
                                 chat: None,
                                 avatar_life: public_avatar_profile.map(|profile| {
                                     theia_network::renet_runtime::avatar_life::Client {
@@ -847,6 +857,7 @@ impl Network {
                 }
             })?;
         Ok(Self {
+            party_actions: parties.then_some(party_actions),
             physical_profile: physical_presentation,
             white_profile: white_presentation,
             dodge_input,

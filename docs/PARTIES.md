@@ -53,14 +53,29 @@ client wait deadlines use elapsed wall time.
 Three actual encrypted Classic client workers verify private invitations,
 acceptance, non-leader refusal, promotion, disconnect succession and leave. The
 same flow passes with chat enabled. Admissions in this headless test use named
-trusted leases; this is not native OIDC-account/UI acceptance. Application launch
-and player-facing controls still need integration. Normal launches remain off.
+trusted leases; native OIDC-account/UI evidence is recorded below. Standalone
+launches remain opt-in.
 
-First implement and test the bounded pure authority and World lifecycle. Then
-bind authenticated names, encrypted request/state transport and standard Bevy UI.
-The unintegrated core is not a playable-party claim. Acceptance includes actual
-two-account invite/accept, leader controls and leave/disconnect, bounded invalid
-requests, format, denied-warning Clippy and native GPU/UI evidence.
+## Playable opt-in
+
+`tools/play.py --parties` requires Classic account admission. Exported account
+packages can use `tools/account_population_playtest.py --parties`; source gameplay
+files are unchanged. Matching client/server preflight binds the party suffix.
+Party [O] opens the standard Bevy panel. Its named rows offer Invite, Accept,
+Decline, Cancel, Promote and Remove when appropriate, plus Leave party and Close.
+One submitted click is reserved until acknowledgement; controls keep their painted
+revision. Interface Escape precedes Party, then the existing panels and target
+handling. The world keeps running while the panel is open.
+
+Native `build/party-ui-native-v1/qualification.json` passes on two real OIDC
+accounts at 1920x1440 each, then the same characters after PostgreSQL/server
+restart: 13 accepted UI commands per phase, zero refusals/invalid uploads, exact
+unchanged journal/bag/XP and fresh solo membership on rejoin. Source hashes and
+SQL checks pass; 140.52 seconds total. Invitation/member screenshots were visually
+inspected. Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU
+diagnostics; no Windows execution. 281 client tests (four explicit skips), build,
+format, strict client/server Clippy and 53 launcher tests (one explicit skip) pass.
+Editor account-launch adoption follows this opt-in acceptance.
 
 Shared XP, loot, tags, quest credit and escort journeys remain separate slices.
 The user's later party-escort rule is any participating member in range keeps

@@ -274,6 +274,7 @@ fn controls(
         Option<Res<crate::fantasy_ui::settings::Ui>>,
         Option<Res<crate::combat::book::Ui>>,
     ),
+    party: Option<Res<crate::party::Ui>>,
 ) {
     let state = network.state();
     let pointer_choice = pending.choice.take();
@@ -285,7 +286,8 @@ fn controls(
     let Some(view) = &state.dialogue else {
         return;
     };
-    let loot_owns = crate::combat::book::owns_escape(book.as_deref())
+    let loot_owns = crate::party::owns_escape(party.as_deref())
+        || crate::combat::book::owns_escape(book.as_deref())
         || crate::fantasy_ui::settings::owns_escape(interface.as_deref())
         || loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame)
         || documents

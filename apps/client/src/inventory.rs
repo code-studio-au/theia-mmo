@@ -487,6 +487,7 @@ pub(crate) fn close_panel(
         Option<Res<crate::fantasy_ui::settings::Ui>>,
         Option<Res<crate::combat::book::Ui>>,
     ),
+    party: Option<Res<crate::party::Ui>>,
     windows: Query<&Window>,
 ) {
     let talking = dialogue
@@ -502,6 +503,7 @@ pub(crate) fn close_panel(
         });
     if windows.single().is_ok_and(|window| window.focused)
         && keys.just_pressed(KeyCode::Escape)
+        && !crate::party::owns_escape(party.as_deref())
         && !crate::combat::book::owns_escape(book.as_deref())
         && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
         && !talking
