@@ -14,6 +14,7 @@ pub mod facing;
 pub mod hit_outcomes;
 pub mod identity;
 pub mod inventory;
+pub mod party;
 pub mod player_life;
 pub mod progression;
 pub mod projectiles;

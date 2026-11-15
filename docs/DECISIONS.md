@@ -1,3 +1,11 @@
+15 November 2026 — bounded party membership slice:
+P4-11 follows authenticated actor admission and existing encrypted control/UI
+integration. Adopt the five-member/leader model evidenced by the original 2004
+Blizzard manual; record its limits and explicit session/invitation/request policies
+in PARTIES.md. Implement membership independently of shared rewards or escorts.
+Disconnect leaves the initial session-local party; death does not. No persistence
+or distributed service is introduced by this slice.
+
 15 November 2026 — deferred party escort behavior (user direction):
 Keep current solo escorts private per character. Once the party system exists,
 participating party members should see one shared ranger journey. Any participating

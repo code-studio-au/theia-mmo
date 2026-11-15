@@ -1,3 +1,10 @@
+15 November 2026 — party authority prerequisite passes:
+P4-11 bounded membership and World lifecycle pass core/network/format/strict Clippy
+checks; see STATUS. Continue with bounded encrypted party requests/private state,
+authenticated names and standard client controls, then real two-account native
+acceptance. This foundation is not yet a playable party system; shared escorts
+remain a subsequent eligibility/credit slice.
+
 15 November 2026 — escort overview passes:
 The editor now frames both escort locations while retaining the NPC inspector;
 local/far-coordinate, stale/busy, native input and GPU checks pass. See STATUS.

@@ -2235,7 +2235,10 @@ For each task: inspect existing code first; write a short design and tests; impl
 - **Dependencies (initial):** P4-10, P3-16, P1-03.
 - **Codex task:** Implement and document parties and group rules using approved architecture; add automated tests and observability; avoid blocking simulation or leaking renderer dependencies into headless server.
 - **Acceptance:** Implementation demonstrated for parties and group rules; automated correctness/error-path test; metrics or logs captured; integration with authoritative server and relevant Bevy client verified; documentation updated.
-- **Status:** NOT STARTED / NOT VERIFIED.
+- **Status:** IN PROGRESS. Bounded pure membership and optional World lifecycle
+  pass 66 core/525 network tests (18 explicit skips), format and strict Clippy on
+  15 November 2026. See ../PARTIES.md and ../STATUS.md. Transport and playable
+  account/client integration remain required; no shared credit/escort claim.
 
 ### P4-12 — Chat/moderation
 - **Primary wave:** W7; work may begin earlier when prerequisites permit.

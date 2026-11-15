@@ -1,3 +1,19 @@
+15 November party authority prerequisite acceptance:
+66 core and 525 network tests pass (18 explicit skips), including all-rate expiry,
+World death/respawn/retirement and bounded mixed commands. Format and strict
+all-target Clippy pass. No runtime transport/UI adoption yet. Continue with the
+bounded codec and admitted transport/client integration, then native acceptance.
+
+P4-11, 15 November 2026 — party membership foundation and integration:
+Actual prerequisites are authenticated admitted actor identities, bounded headless
+World lifecycle, encrypted control transport and existing Bevy UI/input ownership.
+Group encounters are not a prerequisite for basic membership. Implement the
+five-member authority, invitation expiry, leader controls and lifecycle first,
+then wire named account sessions and a playable UI. See ../PARTIES.md for the
+versioned Classic reference, explicit Theia policies and concrete acceptance.
+Shared rewards/quests/escort behavior is not part of membership. Continue after
+each local foundation/integration commit; no push is authorized.
+
 15 November escort overview acceptance:
 All 263 editor tests, build, strict Clippy and formatting pass. Native overview,
 retained NPC/card, destination selection, collection-guide regression and source/

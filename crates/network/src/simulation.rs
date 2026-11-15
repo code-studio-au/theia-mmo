@@ -5,6 +5,7 @@ pub mod creatures;
 pub mod dialogue;
 mod dodging;
 mod follow;
+mod parties;
 pub mod population;
 pub mod progression;
 pub mod quest_journal;
@@ -28,11 +29,13 @@ pub struct World {
     rate: TickRate,
     tick: u64,
     next_id: u64,
+    has_admitted_players: bool,
     movement_recoveries: u64,
     players: BTreeMap<u64, Actor>,
     targets: BTreeMap<u64, crate::targeting::Target>,
     targeting_enabled: bool,
     local_chat: Option<theia_core::chat::Area>,
+    parties: Option<theia_core::party::Authority>,
     dialogue: Option<dialogue::Authority>,
     follow: follow::Authority,
     vendor: Option<std::sync::Arc<crate::vendor_wire::Profile>>,
@@ -96,11 +99,13 @@ impl Default for World {
             rate: TickRate::default(),
             tick: 0,
             next_id: 0,
+            has_admitted_players: false,
             movement_recoveries: 0,
             players: BTreeMap::new(),
             targets: BTreeMap::new(),
             targeting_enabled: false,
             local_chat: None,
+            parties: None,
             dialogue: None,
             follow: follow::Authority::default(),
             vendor: None,
@@ -595,6 +600,7 @@ impl World {
             || self.combat.is_some()
             || self.patrol_identity.is_some()
             || self.population.is_some()
+            || self.parties.is_some()
         {
             return false;
         }
@@ -738,9 +744,14 @@ impl World {
     }
     pub fn identity(&self) -> [u8; 32] {
         let identity = self.identity_without_chat();
-        self.local_chat.map_or(identity, |area| {
+        let identity = self.local_chat.map_or(identity, |area| {
             crate::chat::profile_identity(identity, area)
-        })
+        });
+        if self.parties.is_some() {
+            parties::profile_identity(identity)
+        } else {
+            identity
+        }
     }
     fn identity_without_chat(&self) -> [u8; 32] {
         if let Some(terrain) = &self.procedural {
@@ -927,6 +938,15 @@ impl World {
             self.follow.leave(id);
             return None;
         }
+        if let Some(parties) = &mut self.parties {
+            parties
+                .admit(EntityKey {
+                    epoch: self.epoch,
+                    entity: EntityId::new(id).unwrap(),
+                })
+                .expect("Party capacity and incarnation match admitted World actors");
+        }
+        self.has_admitted_players = true;
         Some(id)
     }
     /// Trusted developer placement on prepared graybox geometry, before admission.
@@ -1053,6 +1073,13 @@ impl World {
         })
     }
     pub fn leave(&mut self, id: u64) {
+        if let Some(key) = self.entity_key(id)
+            && let Some(parties) = &mut self.parties
+        {
+            parties
+                .retire(key)
+                .expect("Admitted party incarnation retirement");
+        }
         self.follow.leave(id);
         self.players.remove(&id);
         if let Some(dialogue) = &mut self.dialogue {
@@ -1095,6 +1122,11 @@ impl World {
                 .collect()
         });
         let snapshot = self.step_movement();
+        if let Some(parties) = &mut self.parties {
+            parties
+                .advance(snapshot.tick)
+                .expect("Monotonic World party clock");
+        }
         self.advance_creature_threat();
         self.advance_patrol();
         self.advance_population_pursuit();

@@ -69,6 +69,61 @@ fn fixture(rate: TickRate, enable: bool) -> (World, EntityKey) {
 }
 
 #[test]
+fn party_membership_survives_authoritative_death_and_fresh_life() {
+    use theia_core::party::{Action, Request as PartyRequest};
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, _) = fixture(rate, true);
+        world.enable_parties().unwrap();
+        let leader = join(&mut world, [8006., 8000.]);
+        let member = join(&mut world, [8008., 8000.]);
+        let target = world.entity_key(member).unwrap();
+        let revision = world.party_view(leader).unwrap().revision;
+        world
+            .party_request(
+                leader,
+                PartyRequest {
+                    sequence: 1,
+                    revision,
+                    action: Action::Invite(target),
+                },
+            )
+            .unwrap();
+        let invited = world.party_view(member).unwrap();
+        world
+            .party_request(
+                member,
+                PartyRequest {
+                    sequence: 1,
+                    revision: invited.revision,
+                    action: Action::Accept(invited.membership.incoming.unwrap().id),
+                },
+            )
+            .unwrap();
+        let membership = world.party_view(leader).unwrap();
+        let life = world.player_life_snapshot(leader).unwrap().key;
+        let mut combat = world.combat.take().unwrap();
+        assert!(
+            combat
+                .damage_player(&mut world, life, 100)
+                .unwrap()
+                .unwrap()
+                .died
+        );
+        world.combat = Some(combat);
+        assert!(!world.player_alive(leader));
+        assert_eq!(world.party_view(leader).unwrap(), membership);
+        for _ in 0..rate.hz() {
+            world.step();
+        }
+        assert!(world.player_alive(leader));
+        assert_ne!(world.player_life_snapshot(leader).unwrap().key, life);
+        assert_eq!(world.party_view(leader).unwrap(), membership);
+        world.leave(leader);
+        assert!(world.party_view(member).unwrap().membership.party.is_none());
+    }
+}
+
+#[test]
 fn shared_player_lives_admit_die_and_respawn_without_an_npc_retaliation_controller() {
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let (mut world, _) = fixture(rate, true);

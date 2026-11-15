@@ -1,3 +1,19 @@
+15 November 2026 — P4-11 bounded party authority prerequisite:
+Pure five-member authority implements invitation/accept/decline/cancel, leave,
+leader removal/promotion, join-order succession, reserved slots, expiry, private
+view revisions and bounded request sequences/rates. World opt-in binds identity,
+freezes rate, admits/retires actors and expires invitations on its simulation clock.
+Default worlds remain unchanged. Death and respawn preserve membership; disconnect
+leaves and dissolves groups smaller than two. Setup distinguishes preauthored NPC
+IDs from actual player admission. Reference and explicit Theia policies: PARTIES.md.
+All 66 core tests and 525 network library tests pass (18 explicit skips), including
+10,000 mixed commands, expiry at 20/30/60 Hz, real death/respawn and existing
+encrypted UDP regressions. Formatting and denied-warning all-target Clippy pass;
+logs: build/party-{core-all-tests,foundation-network-tests,foundation-fmt,
+foundation-clippy}.log. Headless Linux evidence only; no rendering change or GPU
+claim. Not yet playable: transport/client UI and named account integration follow.
+Shared reward/quest/escort behavior remains unchanged.
+
 15 November 2026 — P4-03 / P5-17 escort location overview:
 Expanded escort quest cards now offer View NPC and destination alongside Select
 destination marker. The new action frames both checked local positions with
