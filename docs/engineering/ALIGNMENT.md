@@ -1,3 +1,22 @@
+P3-11/12 / P4-03 / P5-17, 15 November 2026 — ground collection export preflight:
+Prerequisites: immutable reward/item snapshots, static authored collision and the
+runtime ground support check. Share that check with the editor worker and reject
+unsupported collection locations before population publication. Report exact
+reward/quest/area/position identities. Acceptance: valid compass placement passes,
+wrong-floor and outside-world points fail, source bytes remain unchanged and no
+partial package publishes. Support/clearance does not imply navmesh reachability.
+
+P3-12 / P2-14 / P5-17, 15 November 2026 — moving contact presentation:
+Prerequisites: authoritative private escort presence, checked global coordinates,
+existing remote-actor interpolation and qualified destination-only travel.
+Reuse the remote pose interpolator for contact meshes/nameplates between received
+positions. Keep interaction distances and quest state on authoritative samples.
+Reset on missing contacts/new identity; never extrapolate. Acceptance: stable
+30 Hz motion at multiple render cadences, bounded stop, identity/hide reset,
+large-coordinate rebasing and actual native escort wait/arrival/turn-in/restart.
+Acceptance passes in contact-motion-native-v2: all three quests survive PostgreSQL
+restart, wait/arrival settle and no GPU diagnostics. See STATUS for measurements.
+
 15 November 2026 quest travel inspector acceptance:
 Starter escort/collection cards and ordinary destination selection pass on the
 Linux RX 7900 XTX/Vulkan native editor. Zone bytes/history remain unchanged and

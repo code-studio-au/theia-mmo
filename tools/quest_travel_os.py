@@ -67,8 +67,20 @@ def flow(desktop, window, state, folder, resumed=False):
         desktop.click(window,point,scale,1)
         wait(lambda: quest(q) and quest(q)['status']==expected and journal()['ui']['applied']==before+1 and not journal()['ui']['pending'])
     def travel(leg):
-        close();desktop.key('F7')
-        wait(lambda: state()['test_controller']['active'])
+        close()
+        # Dialogue range is wider than the checked follower's start tolerance.
+        # Walk to the actual authored endpoint before handing over normal input.
+        endpoint = [8194, 0, 8168] if leg == 'outward' else [8194, .634, 8260]
+        start_deadline = time.monotonic()+20
+        while math.hypot(feet()[0]-endpoint[0], feet()[2]-endpoint[2])>.45:
+            assert time.monotonic()<start_deadline, 'Route-start approach stalled'
+            walk(endpoint, stop=.3);time.sleep(.15)
+        desktop.key('F7')
+        def started():
+            controller = state()['test_controller']
+            assert not controller['travel']['failure'], controller['travel']
+            return controller['active']
+        wait(started)
         deadline=time.monotonic()+100
         while True:
             s=state()['test_controller'];t=s['travel']
@@ -132,13 +144,15 @@ def flow(desktop, window, state, folder, resumed=False):
         assert 9.<distance<=10.1,(feet(),paused,distance)
         time.sleep(1)
         assert math.dist(paused,contact(RANGER)['global'])<.02
+        assert math.dist(paused,contact(RANGER)['rendered_global'])<.02
         assert quest(FOLLOW)['status']=='Active' and journal()['xp']==50
         capture('ranger-waits.png')
         samples=[];deadline=time.monotonic()+180
         moving=False
         try:
             while quest(FOLLOW)['status']=='Active':
-                target=contact(RANGER)['global'];samples.append(dict(npc=target,player=feet()))
+                ranger=contact(RANGER);target=ranger['global']
+                samples.append(dict(npc=target,rendered=ranger['rendered_global'],player=feet()))
                 assert time.monotonic()<deadline, 'NPC did not arrive'
                 distance=math.dist(feet(),target)
                 face(target)
@@ -150,6 +164,9 @@ def flow(desktop, window, state, folder, resumed=False):
         finally:
             if moving: desktop.key_state('w',False)
         assert quest(FOLLOW)['status']=='Ready' and journal()['xp']==50
+        assert any(math.dist(s['npc'],s['rendered'])>.01 for s in samples), 'No interpolated contact samples'
+        assert max(math.dist(s['npc'],s['rendered']) for s in samples)<3., 'Contact presentation lag exceeded budget'
+        wait(lambda: math.dist(contact(RANGER)['global'],contact(RANGER)['rendered_global'])<.02)
         capture('ranger-at-tree-ready.png')
         speak(RANGER);action(FOLLOW,'Completed')
         assert journal()['revision']==9 and journal()['xp']==75

@@ -217,6 +217,9 @@ fn os_trace(world: &mut World) {
             "npc":state.guide.as_ref().and_then(|p| p.npc(key)).map(|id| id.as_str()),
             "entity":key.entity.value(), "screen":project(world,point).map(|p| p.to_array()),
             "global":state.guide.as_ref().and_then(|p| p.find(key)).map(|g| g.position.metres()),
+            "rendered_global":theia_core::coordinates::LocalPosition::new(point.to_array())
+                .and_then(|p|world.resource::<crate::floating_origin::Frame>().render.to_global(p))
+                .map(|p|p.metres()),
         })).collect();
         let enemy = state
             .targeting

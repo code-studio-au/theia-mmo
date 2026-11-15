@@ -1,3 +1,12 @@
+15 November 2026 — interpolate moving contacts with existing remote poses:
+Reuse RemotePawn for presentation of authoritative contact positions. Do not add
+physics bodies, client navigation, optimistic quest state or movement requests.
+Contact mesh/name presentation may trail receipt by a bounded interpolation
+interval; interaction range remains authoritative. Missing contacts and identity
+changes reset interpolation, and the existing remote discontinuity policy snaps
+large relocations. This improves moving NPC presentation without a protocol or
+simulation change; packet timing and low frame rates remain measurable limits.
+
 ## 15 November 2026 — shared escort export preflight
 
 P4-03 / P3-11/12 / P5-17. An editor export must not appear playable merely because

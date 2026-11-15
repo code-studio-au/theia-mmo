@@ -1,3 +1,21 @@
+15 November 2026 — P3-12 / P2-14 / P5-17 moving contact presentation:
+NPC meshes/nameplates reuse the existing remote pose interpolation instead of
+jumping directly between presence positions. Missing contacts and identity changes
+reset the pose; large relocations use the existing snap policy. Range/quest state
+remain authoritative. Tests cover 20/30/60/120/144 FPS, uneven frames, stopping,
+restart, rebasing and discontinuities. All 276 client tests pass (four explicit
+skips): 275 in contact-motion-client-tests.log plus the socket-restricted case in
+contact-motion-socket-test.log. Denied-warning Clippy passes in
+contact-motion-clippy.log. Native collection/escort/restart acceptance passes in
+build/contact-motion-native-v2/qualification.json: wait/resume, Ready before
+conversation, all three quests Completed, revision 9 / XP 75 after PostgreSQL
+restart. Linux RX 7900 XTX / RADV NAVI31 / Vulkan, zero GPU diagnostics; no Windows
+claim. The first run exposed a test-start tolerance mismatch; the ordinary-input
+test now approaches the route endpoint before enabling F7, without relaxing the
+controller guard. In 90 native escort samples, 89 show blended positions;
+maximum rendered/authority separation is 0.554 m. Rendered pose settles within
+0.02 m at wait and arrival. This is presentation evidence, not a frame-rate claim.
+
 15 November 2026 — P3-11/12 / P4-03 / P5-17 quest travel inspector:
 NPC quest cards now resolve escort destination names/coordinates, speed, follow
 range and conversation turn-in. Ground collection shows item, area, coordinates

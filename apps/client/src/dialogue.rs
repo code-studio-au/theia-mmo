@@ -1,5 +1,6 @@
 //! Standard Bevy informational guide/panel. Every displayed node is observed;
 //! widget choice and movement never advance dialogue optimistically.
+mod motion;
 mod names;
 mod qualification;
 use crate::{floating_origin::Frame, network::Network, scene::PawnAssets};
@@ -149,6 +150,7 @@ fn setup(
             GuideVisual,
             ContactDefinition(contact.npc().clone()),
             ContactKey::default(),
+            motion::Motion::default(),
             Mesh3d(pawns.mesh.clone()),
             MeshMaterial3d(materials.add(Color::srgb(0.1, 0.65, 0.72))),
             Transform::default(),
@@ -390,6 +392,7 @@ type Visual<'a> = (
     Option<&'a mut Transform>,
     Option<&'a ContactDefinition>,
     Option<&'a mut ContactKey>,
+    Option<&'a mut motion::Motion>,
 );
 type VisualFilter = Or<(With<GuideVisual>, With<Panel>)>;
 type ButtonView<'a> = (
@@ -401,6 +404,7 @@ type ButtonView<'a> = (
 );
 #[allow(clippy::too_many_arguments)]
 fn present(
+    time: Res<Time>,
     network: Res<Network>,
     config: Res<Config>,
     frame: Res<Frame>,
@@ -447,7 +451,7 @@ fn present(
                 .is_some_and(|report| report.chunks.contains(&[id.x, id.z]))
         })
     });
-    for (mut visibility, is_guide, is_panel, transform, definition, key) in &mut visuals {
+    for (mut visibility, is_guide, is_panel, transform, definition, key, motion) in &mut visuals {
         if is_panel.is_some() {
             *visibility = if ui.open {
                 Visibility::Inherited
@@ -480,7 +484,13 @@ fn present(
             if let Some(mut key) = key {
                 key.0 = contact.map(|c| c.key);
             }
-            if let Some(local) = contact.and_then(|guide| frame.render.to_local(guide.position)) {
+            let tick_seconds = state
+                .snapshot
+                .as_ref()
+                .map_or(1. / 30., |s| 1. / s.tick_hz as f32);
+            let position = motion
+                .and_then(|mut motion| motion.sample(contact, time.delta_secs(), tick_seconds));
+            if let Some(local) = position.and_then(|position| frame.render.to_local(position)) {
                 transform.unwrap().translation = Vec3::from_array(local.metres());
                 *visibility = Visibility::Inherited;
                 ui.visible_guide_frames += 1;

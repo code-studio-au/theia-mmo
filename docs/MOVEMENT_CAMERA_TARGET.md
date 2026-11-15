@@ -1,3 +1,12 @@
+15 November 2026 — moving contact presentation:
+Contact meshes and their overhead names now reuse the remote actor interpolation
+between received authoritative positions. Missing contacts and new identities
+clear the old pose; large discontinuities snap using the existing remote policy.
+Stationary contacts settle without extrapolation. Range checks, dialogue and
+quest progress continue to use server positions. Contact positions remain global
+f64 until the ordinary bounded render-frame conversion. Tests cover 20/30/60/120/
+144 FPS, uneven frames, waiting/restart and rebasing; native evidence is in STATUS.
+
 14 November 2026 — local prediction presentation correction:
 The compass AI test exposed whole-character speed variation when render frames
 spanned zero or multiple simulation ticks. Local rendering now interpolates the
