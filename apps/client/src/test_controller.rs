@@ -199,29 +199,64 @@ struct Status;
 fn setup(mut commands: Commands) {
     commands
         .spawn((
-            Toggle,
-            bevy::ui_widgets::Button,
             Node {
                 position_type: PositionType::Absolute,
-                left: px(12),
-                top: px(160),
-                padding: UiRect::axes(px(10), px(6)),
-                border: UiRect::all(px(1)),
+                left: percent(25),
+                width: percent(50),
+                top: px(12),
+                justify_content: JustifyContent::Center,
                 ..default()
             },
             GlobalZIndex(30),
-            BackgroundColor(Color::srgb(0.12, 0.13, 0.15)),
-            BorderColor::all(Color::srgb(0.35, 0.36, 0.39)),
-        ))
-        .with_child((
-            Status,
-            Text::new("Controller: waiting [F7: manual]"),
-            TextFont {
-                font_size: FontSize::Px(14.),
-                ..default()
-            },
             Pickable::IGNORE,
-        ));
+        ))
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    Toggle,
+                    bevy::ui_widgets::Button,
+                    Node {
+                        max_width: percent(100),
+                        padding: UiRect::axes(px(10), px(6)),
+                        border: UiRect::all(px(1)),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.12, 0.13, 0.15)),
+                    BorderColor::all(Color::srgb(0.35, 0.36, 0.39)),
+                ))
+                .with_child((
+                    Status,
+                    Text::new("Controller: waiting [F7: manual]"),
+                    TextFont {
+                        font_size: FontSize::Px(14.),
+                        ..default()
+                    },
+                    TextLayout::new(Justify::Center, LineBreak::WordOrCharacter),
+                    Pickable::IGNORE,
+                ));
+        });
+}
+
+/// Read-only painted button bounds for owned native input qualification.
+pub(crate) fn button_bounds(world: &mut World) -> Option<[f32; 4]> {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |s| s.0);
+    world
+        .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Toggle>>()
+        .iter(world)
+        .next()
+        .map(|(node, transform)| {
+            let factor = crate::fantasy_ui::window_factor(node, ui_scale);
+            let size = node.size() * factor;
+            let centre = transform.affine().translation * factor;
+            [
+                centre.x - size.x / 2.,
+                centre.y - size.y / 2.,
+                size.x,
+                size.y,
+            ]
+        })
 }
 fn activate(
     event: On<bevy::ui_widgets::Activate>,

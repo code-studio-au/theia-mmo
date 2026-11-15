@@ -1,3 +1,21 @@
+15 November route banner acceptance:
+Build, 279 client regressions, strict Clippy and format pass. Native UI bounds,
+visual captures at both sizes, clickable travel, two-character quest flows and
+PostgreSQL restart pass in route-banner-native-v3 with zero GPU diagnostics.
+Next bounded slice: frame the selected NPC and escort destination together while
+preserving NPC selection, camera orientation and source/history.
+
+P2-14 / P4-03, 15 November 2026 — resumed automatic implementation:
+The user renewed continuous local implementation/commits. Party escorts remain
+explicitly deferred. Next slice addresses the observed AI route banner covering
+ranger dialogue in the accepted native screenshots. Use standard Bevy UI to centre
+the existing clickable banner in the top half-width region, with bounded wrapping;
+retain its action and F7 controls. Prerequisites: checked paused routes, existing
+native quest dialogue and read-only UI diagnostics. Verify actual non-overlap and
+centering at 1920x1440 and 3440x1440, native button activation, quest interactions,
+format/strict Clippy/client regressions and GPU diagnostics. No gameplay authority
+or navigation changes. Continue to the next bounded slice after acceptance.
+
 15 November running compass and two-account acceptance:
 Local running change 9ed4fb99 passes client/authority/native checks. The complete
 native two-account quest and PostgreSQL restart qualification passes in 293.96

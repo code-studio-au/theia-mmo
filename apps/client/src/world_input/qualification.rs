@@ -346,6 +346,8 @@ fn os_trace(world: &mut World) {
             .get_resource::<crate::test_controller::Run>()
             .map(|run| run.description())
             .unwrap_or_default();
+        data["test_controller_button"] =
+            serde_json::json!(crate::test_controller::button_bounds(world));
         data["dialogue_pending"] = serde_json::json!(state.dialogue_pending);
         data["dialogue_ui"] = world
             .get_resource::<crate::dialogue::Ui>()

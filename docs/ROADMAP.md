@@ -1,3 +1,9 @@
+15 November 2026 — route banner UI passes:
+Top-centred AI controls clear dialogue at both requested sizes and retain clickable
+travel/F7 controls; native two-account/restart and GPU checks pass. See STATUS.
+Continue P4-03 / P5-17 with an editor action that frames the NPC and escort
+destination together without dropping the selected NPC or quest inspector.
+
 15 November 2026 — running compass and two-account travel accepted:
 Both directions use normal run input; actual native compass legs take about 14.2
 seconds. Two authenticated players complete independent travel quests and retain

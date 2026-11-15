@@ -1,6 +1,7 @@
 """Owned native input: authored collection travel and destination-only NPC escort."""
 import json
 import math
+import subprocess
 import time
 from qualify_world_input_os import wait, capture_ready
 
@@ -11,8 +12,9 @@ ROWAN = 'theia.dev.villager'
 RANGER = 'theia.dev.ranger'
 
 
-def flow(desktop, window, state, folder, resumed=False):
+def flow(desktop, window, state, folder, resumed=False, check_banner=False):
     scale = state()['window'][2]
+    banner_layouts = []
     def journal(): return state()['quest_journal']
     def quest(q): return next((p for p in journal()['quests'] if p['id'] == q), None)
     def feet(): return state()['dodge']['authority_feet']
@@ -29,6 +31,20 @@ def flow(desktop, window, state, folder, resumed=False):
         (folder/'capture.request').write_text(name+'\n')
         wait(lambda: capture_ready(folder/'input-os.png'))
         (folder/'input-os.png').rename(folder/name)
+    def banner_layout():
+        s = state()
+        bounds = s.get('test_controller_button')
+        if not bounds or min(bounds[2:]) <= 0:
+            return None
+        x, y, w, h = bounds
+        if abs(x+w/2-s['window'][0]/2) > 2 or y < 0 or y+h > 64 or w > s['window'][0]/2+2:
+            return None
+        for name in ['dialogue_body', 'offer_scroll']:
+            pane = s['quest_journal'].get(name)
+            if pane and min(pane['size']) > 0:
+                px, py = pane['point']; pw, ph = pane['size']
+                assert x+w <= px-pw/2 or px+pw/2 <= x or y+h <= py-ph/2 or py+ph/2 <= y, (bounds, pane)
+        return dict(window=s['window'], bounds=bounds)
     def close():
         for _ in range(4):
             s=state()
@@ -68,6 +84,24 @@ def flow(desktop, window, state, folder, resumed=False):
         approach(npc)
         desktop.click(window,wait(lambda: contact(npc)['screen']),scale,3)
         wait(lambda: state()['dialogue_open'] and not state()['dialogue_pending'])
+        if check_banner:
+            if not banner_layouts:
+                revision = journal()['revision']
+                for width in [3440, 1920]:
+                    # This desktop promotes an exact display-sized request to
+                    # fullscreen; leave that state before requesting a smaller
+                    # client area. Affect only this owned native window.
+                    subprocess.run(['wmctrl', '-i', '-r', hex(window), '-b', 'remove,fullscreen'], check=True)
+                    wait(lambda: '_NET_WM_STATE_FULLSCREEN' not in subprocess.check_output(
+                        ['xprop', '-id', hex(window), '_NET_WM_STATE'], text=True), 5)
+                    subprocess.run(['wmctrl', '-i', '-r', hex(window), '-b', 'remove,maximized_vert,maximized_horz'], check=True)
+                    subprocess.run(['wmctrl', '-i', '-r', hex(window), '-e', f'0,0,0,{width},1440'], check=True)
+                    wait(lambda: state()['window'][:2] == [width, 1440])
+                    focus()
+                    banner_layouts.append(wait(banner_layout))
+                    assert journal()['revision'] == revision and state()['dialogue_open']
+                    capture(f'route-banner-{width}.png')
+            wait(banner_layout)
     def action(q, expected):
         before=journal()['ui']['applied']
         def button(): return next((b['point'] for b in journal()['buttons'] if b['quest']==q),None)
@@ -88,7 +122,11 @@ def flow(desktop, window, state, folder, resumed=False):
         while math.hypot(feet()[0]-endpoint[0], feet()[2]-endpoint[2])>.45:
             assert time.monotonic()<start_deadline, 'Route-start approach stalled'
             walk(endpoint, stop=.3);time.sleep(.15)
-        desktop.key('F7')
+        if check_banner and leg == 'outward':
+            x, y, w, h = wait(banner_layout)['bounds']
+            desktop.click(window, [x+w/2, y+h/2], scale, 1)
+        else:
+            desktop.key('F7')
         def started():
             controller = state()['test_controller']
             assert not controller['travel']['failure'], controller['travel']
@@ -186,5 +224,7 @@ def flow(desktop, window, state, folder, resumed=False):
         assert journal()['revision']==9 and journal()['xp']==75
         capture('ranger-completed.png')
         result=dict(passed=True,resumed=False,revision=journal()['revision'],xp=journal()['xp'],outward=outward,returning=returning,home=home,paused=paused,waiting_distance=waiting_distance,follow_samples=samples,tab=[first,second,first])
+    if check_banner:
+        result.update(route_banner_layouts=banner_layouts, route_banner_clicked_outward=True)
     (folder/'quest-travel-proof.json').write_text(json.dumps(result,indent=2)+'\n')
     return result

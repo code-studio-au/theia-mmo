@@ -159,7 +159,8 @@ def run(args):
                             assert math.dist(peer_ranger(), home_b) < .02, 'Player one moved player two ranger'
                         isolation_samples += 1
                         return state_a()
-                    proof_a = flow(desktop, windows[0], isolated_a, owner, resumed=resumed)
+                    proof_a = flow(desktop, windows[0], isolated_a, owner, resumed=resumed,
+                                   check_banner=args.route_banner and not resumed)
                     observe_background(isolated_a, peer_ticks[0])
                     print('First player verified; second player progress unchanged', flush=True)
                     complete_a = retained(state_a())
@@ -246,4 +247,5 @@ if __name__ == '__main__':
     parser.add_argument('--fantasy-ui', type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--route-banner', action='store_true', help='Check dialogue clearance at both playtest sizes and activate outward travel with the banner')
     run(parser.parse_args())

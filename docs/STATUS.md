@@ -1,3 +1,21 @@
+15 November 2026 — P2-14 / P4-03 route banner dialogue clearance:
+The AI route status/toggle now sits at the top centre in a bounded half-width
+layout with standard Bevy text wrapping. It no longer covers NPC dialogue and
+quest offers. The same button action and F7 controls remain. Native measured
+bounds are [1486,12,469,31] at 3440x1440 and [726,12,469,31] at 1920x1440; both
+screenshots were visually inspected. Clicking the banner starts outward travel;
+F7 starts the return, and both players complete all three quests and restore exact
+progress after PostgreSQL restart. Acceptance: build/route-banner-native-v3/
+qualification.json and fresh/owner/route-banner-{3440,1920}.png; 297.14 seconds,
+source unchanged, Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6 and zero
+GPU diagnostics. No Windows execution. All 279 client tests (four explicit skips),
+build, format, strict all-target Clippy and Python compilation pass; logs in
+build/route-banner-{tests,build,fmt,clippy}.log. Earlier v1/v2 probes exposed this
+desktop promoting a display-sized window to fullscreen; the owned-window qualifier
+now explicitly leaves that state before checking the smaller size. Those probes
+are not acceptance evidence. Next: retain the NPC inspector while framing both
+escort locations in the editor.
+
 15 November 2026 — P3-11/12 / P4-03 two-account quest travel passes:
 Two independently authenticated native clients share one encrypted server at
 1920x1440 each. Both complete compass collection/delivery, ranger introduction and
