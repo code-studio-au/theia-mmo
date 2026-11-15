@@ -11,6 +11,7 @@ use std::{
 };
 use theia_core::{
     content::ContentId,
+    coordinates::GlobalPosition,
     inventory,
     quests::{
         catalog::{Catalog, Completion},
@@ -28,8 +29,15 @@ pub(super) struct Context {
     generation: u64,
     catalog: Catalog,
     rewards: Option<item_rewards::Catalog>,
-    pickups: Vec<(ContentId, String)>,
+    pickups: Vec<Pickup>,
     creature: theia_network::simulation::creatures::Definition,
+}
+#[derive(Clone, Debug, PartialEq)]
+struct Pickup {
+    quest: ContentId,
+    area: String,
+    position: GlobalPosition,
+    text: String,
 }
 impl Context {
     pub fn load(path: &Path) -> Result<Self, String> {
@@ -60,7 +68,10 @@ impl Context {
                     format!("{} × {}", grant.count(), items.definition(grant.item()).expect("Validated item").name())
                 }).collect::<Vec<_>>().join(", ");
                 let [x,y,z] = ground.position.metres();
-                Some((ground.quest.clone(), format!("{names}\nArea: {}\nGround position: {x:.3}, {y:.3}, {z:.3} m\nAvailable after acceptance; collected through normal world interaction.", ground.area)))
+                Some(Pickup {
+                    quest: ground.quest.clone(), area: ground.area.clone(), position: ground.position,
+                    text: format!("{names}\nArea: {}\nGround position: {x:.3}, {y:.3}, {z:.3} m\nAvailable after acceptance; collected through normal world interaction.", ground.area),
+                })
             }).collect()
         } else {
             Vec::new()
@@ -159,6 +170,12 @@ impl Context {
                     title: q.title().into(),
                     role,
                     destination: None,
+                    pickups: self
+                        .pickups
+                        .iter()
+                        .filter(|p| &p.quest == q.id())
+                        .cloned()
+                        .collect(),
                     details: vec![
                         ("Description".into(), q.description().into()),
                         ("Requirements".into(), requirements),
@@ -179,11 +196,10 @@ impl Context {
                     card.details
                         .insert(3, ("Ready to turn in".into(), label.into()));
                 }
-                let pickups = self
+                let pickups = card
                     .pickups
                     .iter()
-                    .filter(|(quest, _)| quest == q.id())
-                    .map(|(_, text)| text.as_str())
+                    .map(|p| p.text.as_str())
                     .collect::<Vec<_>>();
                 if !pickups.is_empty() {
                     card.details
@@ -248,6 +264,7 @@ struct Card {
     role: String,
     details: Vec<(String, String)>,
     destination: Option<u64>,
+    pickups: Vec<Pickup>,
 }
 #[derive(Component, Default)]
 struct Root(Option<Key>);
@@ -263,6 +280,12 @@ struct Key {
 struct TravelLink {
     key: Key,
     destination: u64,
+}
+#[derive(Component)]
+struct CollectionLink {
+    key: Key,
+    area: String,
+    position: GlobalPosition,
 }
 #[derive(Component)]
 struct Details;
@@ -291,7 +314,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_zone_systems(sync.after(crate::present))
         .add_observer(toggle)
         .add_observer(choose)
-        .add_observer(select_destination);
+        .add_observer(select_destination)
+        .add_observer(view_collection);
 }
 fn selected(session: &Session) -> Option<&Marker> {
     if session.play.is_some() || session.palette.is_some() || session.path_draft.is_some() {
@@ -496,6 +520,33 @@ fn sync(
                                     Pickable::IGNORE,
                                 ));
                             }
+                            for pickup in &card.pickups {
+                                body.spawn((
+                                    CollectionLink {
+                                        key: key.as_ref().expect("Selected NPC").clone(),
+                                        area: pickup.area.clone(),
+                                        position: pickup.position,
+                                    },
+                                    Button,
+                                    ActivateOnPress,
+                                    bevy::input_focus::tab_navigation::TabIndex(0),
+                                    Hovered::default(),
+                                    Node {
+                                        height: Val::Auto,
+                                        ..theme::button_node()
+                                    },
+                                    BackgroundColor(theme::Variant::Default.background(false)),
+                                ))
+                                .with_child((
+                                    theme::label(
+                                        &format!("View collection location: {}", pickup.area),
+                                        12.,
+                                        theme::BODY,
+                                    ),
+                                    TextLayout::linebreak(LineBreak::WordOrCharacter),
+                                    Pickable::IGNORE,
+                                ));
+                            }
                             for (title, text) in &card.details {
                                 label(body, title, 11., theme::DISPLAY);
                                 label(body, text, 11., theme::BODY);
@@ -593,6 +644,31 @@ fn select_destination(
     session.status = format!("Selected quest destination: {name}");
 }
 
+fn view_collection(
+    event: On<Activate>,
+    buttons: Query<&CollectionLink>,
+    mut session: ResMut<Session>,
+    view: Option<ResMut<crate::View>>,
+) {
+    let Ok(link) = buttons.get(event.entity) else {
+        return;
+    };
+    if workspace::busy(&session) || current_key(&session).as_ref() != Some(&link.key) {
+        return;
+    }
+    let Some(mut view) = view else {
+        return;
+    };
+    match session.editor.zone().local(link.position.metres()) {
+        Ok(local) => {
+            view.target = Vec3::from_array(local);
+            view.distance = 18.;
+            session.status = format!("Viewing collection location: {}", link.area);
+        }
+        Err(error) => session.status = format!("Cannot view {}: {error}", link.area),
+    }
+}
+
 #[derive(bevy::ecs::system::SystemParam)]
 #[allow(clippy::type_complexity)]
 pub(super) struct Report<'w, 's> {
@@ -603,10 +679,16 @@ pub(super) struct Report<'w, 's> {
             Option<&'static Toggle>,
             Has<Choose>,
             Option<&'static TravelLink>,
+            Option<&'static CollectionLink>,
             &'static ComputedNode,
             &'static bevy::ui::UiGlobalTransform,
         ),
-        Or<(With<Toggle>, With<Choose>, With<TravelLink>)>,
+        Or<(
+            With<Toggle>,
+            With<Choose>,
+            With<TravelLink>,
+            With<CollectionLink>,
+        )>,
     >,
     details: Query<'w, 's, &'static Node, With<Details>>,
 }
@@ -615,10 +697,11 @@ impl Report<'_, '_> {
         let Some(marker) = selected(session) else {
             return serde_json::Value::Null;
         };
-        let controls: Vec<_> = self.buttons.iter().map(|(toggle, choose, travel, node, transform)| {
+        let controls: Vec<_> = self.buttons.iter().map(|(toggle, choose, travel, collection, node, transform)| {
             let factor = node.inverse_scale_factor() * scale;
-            serde_json::json!({"action": if choose { "Choose gameplay" } else if travel.is_some() { "Select destination" } else { "Toggle quest" },
+            serde_json::json!({"action": if choose { "Choose gameplay" } else if travel.is_some() { "Select destination" } else if collection.is_some() { "View collection" } else { "Toggle quest" },
                 "destination": travel.map(|t| t.destination),
+                "collection": collection.map(|p| serde_json::json!({"area":p.area,"position":p.position.metres()})),
                 "title": toggle.map(|t| &t.1),
                 "expanded": toggle.is_some_and(|t| self.details.get(t.0).is_ok_and(|n| n.display != Display::None)),
                 "centre":(transform.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()})
@@ -663,6 +746,108 @@ mod tests {
             ],
             ..Default::default()
         }
+    }
+
+    fn collection_fixture(origin: [f64; 3]) -> (App, Entity) {
+        let mut app = fixture();
+        let zone = Zone {
+            schema: 4,
+            origin,
+            spawn: [origin[0], origin[1] + 0.1, origin[2]],
+            markers: vec![Marker {
+                id: 1005,
+                name: "Rowan".into(),
+                kind: MarkerKind::Npc,
+                position: [origin[0] + 2., origin[1] + 0.03, origin[2]],
+                yaw_degrees: 0.,
+                radius_metres: 1.,
+                definition: Some("theia.dev.villager".into()),
+            }],
+            ..default()
+        };
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            "unused.zone.json".into(),
+            Some(zone),
+        );
+        session.marker_selected = Some(1005);
+        session.quest_context =
+            Some(Context::load(&template("development-gameplay-starter-economy.json")).unwrap());
+        app.insert_resource(session).insert_resource(crate::View {
+            target: Vec3::ZERO,
+            yaw: 0.6,
+            pitch: 0.8,
+            distance: 120.,
+            preset: crate::camera_views::Preset::Perspective,
+            show_grid: true,
+        });
+        app.update();
+        let button = app
+            .world_mut()
+            .query_filtered::<Entity, With<CollectionLink>>()
+            .single(app.world())
+            .unwrap();
+        (app, button)
+    }
+
+    #[test]
+    fn collection_focus_uses_checked_local_position_and_preserves_document_and_selection() {
+        let (mut app, button) = collection_fixture([8192., 0., 8192.]);
+        let original = app.world().resource::<Session>().editor.zone().clone();
+        app.world_mut().trigger(Activate { entity: button });
+        let view = app.world().resource::<crate::View>();
+        assert!(
+            view.target
+                .abs_diff_eq(Vec3::new(2., 0.63387365, 68.), 0.00001)
+        );
+        assert_eq!((view.yaw, view.pitch, view.distance), (0.6, 0.8, 18.));
+        assert_eq!(view.preset, crate::camera_views::Preset::Perspective);
+        assert!(view.show_grid);
+        let session = app.world().resource::<Session>();
+        assert_eq!(session.marker_selected, Some(1005));
+        assert_eq!(session.editor.zone(), &original);
+        assert_eq!(session.editor.history(), (0, 0));
+        assert_eq!(session.editor.revision(), 0);
+        assert!(session.status.contains("Northern Meadow"));
+    }
+
+    #[test]
+    fn collection_focus_refuses_busy_and_stale_links_before_sync() {
+        for change in 0..4 {
+            let (mut app, button) = collection_fixture([8192., 0., 8192.]);
+            {
+                let mut session = app.world_mut().resource_mut::<Session>();
+                match change {
+                    0 => session.ui.input_owned = true,
+                    1 => {
+                        session.quest_context = Some(
+                            Context::load(&template("development-gameplay-starter-economy.json"))
+                                .unwrap(),
+                        )
+                    }
+                    2 => session.document_id += 1,
+                    _ => session.marker_selected = None,
+                }
+            }
+            app.world_mut().trigger(Activate { entity: button });
+            let view = app.world().resource::<crate::View>();
+            assert_eq!(view.target, Vec3::ZERO);
+            assert_eq!(view.distance, 120.);
+        }
+    }
+
+    #[test]
+    fn collection_focus_refuses_out_of_frame_content_without_camera_change() {
+        let (mut app, button) = collection_fixture([0.; 3]);
+        app.world_mut().trigger(Activate { entity: button });
+        assert_eq!(app.world().resource::<crate::View>().target, Vec3::ZERO);
+        assert_eq!(app.world().resource::<crate::View>().distance, 120.);
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .status
+                .contains("Outside local frame")
+        );
     }
 
     #[test]

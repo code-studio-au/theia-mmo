@@ -1,3 +1,9 @@
+15 November 2026 — collection location navigation passes:
+NPC quest cards focus the camera directly on their checked ground reward positions,
+with stale/busy guards and unchanged source/history. Native and editor regression
+checks pass; see STATUS. Next: make the exact collection point visible as a
+read-only editor guide while inspecting the linked NPC.
+
 15 November 2026 — explicit account AI road integration passes:
 The editor can export an optional checked Road as a paused F7 return-trip test.
 The compass remains two authored points; manual play is the default. Full native

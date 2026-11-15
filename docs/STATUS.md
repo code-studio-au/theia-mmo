@@ -1,3 +1,17 @@
+15 November 2026 — P3-11/12 / P4-03 / P5-17 collection camera inspection:
+Expanded NPC quest cards now offer View collection location with the area name.
+The action focuses the checked zone-local point at an 18 m camera distance while
+preserving orientation, selected NPC, source and Undo history. Busy, stale-context,
+stale-document/selection and out-of-frame links refuse. All seven inspector tests
+pass; the complete editor suite has 256 passing tests and 16 explicit skips (255
+in collection-focus-editor-tests.log, the sandbox-restricted loopback case passes
+separately in collection-focus-socket-test.log). Format and denied-warning Clippy
+pass. Native escort selection plus compass focus passes in
+build/editor-collection-focus-v1/qualification.json and screenshots, Linux
+3440x1440 RX 7900 XTX / RADV NAVI31 / Vulkan, zero GPU diagnostics. The camera
+focuses authored ground; this does not render a live collectible or player progress.
+No Windows execution claim.
+
 15 November 2026 — P2-14 / P4-03 / P5-17 actual playtest viewport sizing:
 The standard Bevy minimum-height constraint now preserves requested client height
 up to 1440, alongside the existing 1920 width minimum. Explicit smaller diagnostic

@@ -1,3 +1,8 @@
+Collection inspection, 15 November 2026 (P3-11/12 / P4-03 / P5-17):
+Read-only quest cards now focus the camera on checked ground reward positions.
+Native collection/escort selection preserves source/history; all editor regressions
+pass. Exact location guides are the next small editor integration slice.
+
 Starter travel integration, 15 November 2026 (P3-11/12 / P4-03 / P5-17):
 The destination-only ranger escort and two-point compass collection road pass
 actual authoritative gameplay/restart checks. Local movement uses the continuous

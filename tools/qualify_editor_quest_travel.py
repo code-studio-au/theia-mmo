@@ -91,6 +91,18 @@ with (out/'editor.log').open('w') as log:
         click(reveal(title="Rowan's lost compass")['centre'])
         wait(lambda: control(title="Rowan's lost compass")['expanded'])
         capture('collection-details.png')
+        location = reveal(action='View collection')
+        before_view = state()['view']
+        assert location['collection']['area'] == 'Northern Meadow'
+        origin = json.loads(original)['origin']
+        local = [p-o for p,o in zip(location['collection']['position'], origin)]
+        click(location['centre'])
+        wait(lambda: all(abs(a-b) < 0.00001 for a,b in zip(state()['view']['target'], local)))
+        focused = state()
+        assert focused['marker_selected'] == 1005 and focused['view']['distance'] == 18
+        for key in ['yaw', 'pitch', 'preset']:
+            assert focused['view'][key] == before_view[key]
+        capture('collection-location.png')
         final = state()
         assert final['document'] == initial['document']
         assert final['revision'] == initial['revision'] and final['history'] == initial['history']
@@ -106,4 +118,5 @@ with (out/'editor.log').open('w') as log:
 assert check_gpu_diagnostics((out/'editor.log').read_text()) == 0
 (out/'qualification.json').write_text(json.dumps(dict(passed=True, gpu=gpu,
     escort=follow, collection=compass, native_destination_selection=True,
+    native_collection_focus=focused['view'],
     source_history_preserved=True, scope='Read-only quest content, not live progress'), indent=2)+'\n')

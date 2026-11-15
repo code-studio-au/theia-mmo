@@ -1,3 +1,17 @@
+15 November collection inspection acceptance:
+Native ordinary-input focus reaches the compass's exact checked local point and
+preserves Rowan selection, camera orientation and source/history. Seven inspector
+regressions and the full editor suite pass; evidence and platform limits in STATUS.
+
+P3-11/12 / P4-03 / P5-17, 15 November 2026 — collection location inspection:
+Prerequisites: validated ground reward positions and read-only NPC quest cards.
+Add a View collection location action to focus the editor camera using the checked
+zone-local conversion. Preserve selection, orientation, source and Undo history;
+reject stale catalogue/document links, modal/busy states and out-of-frame points.
+Acceptance: starter compass focus at its exact local position, native clickable
+card, stale/out-of-frame refusal, no document mutation. This views authored content;
+it does not spawn inventory items or change live player progress.
+
 15 November viewport acceptance:
 Actual solo, paired-size and smaller diagnostic native viewports pass without
 external resizing; all screenshots match their requests. See STATUS for scope.

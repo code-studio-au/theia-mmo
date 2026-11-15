@@ -1,3 +1,10 @@
+Collection camera navigation (15 November 2026): select Rowan, open Attributes →
+Quests and expand Rowan's lost compass. View collection location: Northern Meadow
+focuses the camera on the authored pickup position. It retains the NPC selection,
+orientation and Undo history; it does not create an editor object or live pickup.
+Unsupported local-frame positions report an error. Native source-preservation and
+focus evidence: build/editor-collection-focus-v1/qualification.json.
+
 Optional account AI travel (15 November 2026, native acceptance passed):
 Zone → Start account population playtest now has AI test road ID. Leave it blank
 for manual play. For the prepared starter compass scene, enter 1203; access road
