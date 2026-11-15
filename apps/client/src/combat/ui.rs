@@ -572,7 +572,7 @@ fn compact_actions(
                             },
                             BackgroundColor(PANEL),
                             BorderColor::all(GOLD),
-                            GlobalZIndex(15),
+                            GlobalZIndex(70),
                         ));
                     });
                 }

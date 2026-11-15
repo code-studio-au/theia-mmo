@@ -102,10 +102,64 @@ pub fn prepare(
     spacing: f64,
     access: [f64; 3],
 ) -> Result<(spawn_preparation::Prepared, Binding)> {
-    let binding = binding(zone, id, definition)?;
+    let mut binding = binding(zone, id, definition)?;
     let request = request(zone, id, spacing, access)?;
     let prepared =
         spawn_preparation::check_authored(store, navigation, &request)?.into_prepared()?;
+    let group = group(zone, id)?;
+    if group.roam_radius_metres > 0. {
+        if binding.definition().aggro().is_none() {
+            return Err(
+                "Roaming currently requires the ordinary pursuing creature definition".into(),
+            );
+        }
+        for (index, home) in prepared.points().iter().enumerate() {
+            let mut routes = Vec::new();
+            for attempt in 0..16 {
+                let angle = (attempt as f64 * 2.399963 + (group.seed % 360) as f64 + index as f64)
+                    .rem_euclid(std::f64::consts::TAU);
+                let radius = group.roam_radius_metres * if attempt < 8 { 0.85 } else { 0.4 };
+                let [x, y, z] = home.metres();
+                let goal = [x + angle.cos() * radius, y, z + angle.sin() * radius];
+                let Some(goal_position) = theia_core::coordinates::GlobalPosition::new(goal) else {
+                    continue;
+                };
+                if !group.volume.contains(goal_position) {
+                    continue;
+                }
+                let Ok(mut route) = navigation::authored_checks::grounded_route(
+                    store,
+                    navigation,
+                    &[home.metres(), goal],
+                ) else {
+                    continue;
+                };
+                if route.len() > 128
+                    || route.iter().any(|p| {
+                        let p = p.metres();
+                        (p[0] - x).hypot(p[2] - z) > group.roam_radius_metres
+                            || !group
+                                .volume
+                                .contains(theia_core::coordinates::GlobalPosition::new(p).unwrap())
+                    })
+                {
+                    continue;
+                }
+                // Closed excursions keep subsequent random choices at the exact
+                // checked home; no path search or filesystem work in a tick.
+                let reverse: Vec<_> = route.iter().rev().skip(1).copied().collect();
+                route.extend(reverse);
+                routes.push(route);
+                if routes.len() == 4 {
+                    break;
+                }
+            }
+            if routes.is_empty() {
+                return Err(format!("No safe roaming route for enemy {}; reduce its roaming radius or adjust the boundary", index + 1).into());
+            }
+            binding.roaming.push(routes);
+        }
+    }
     Ok((prepared, binding))
 }
 
@@ -139,6 +193,7 @@ mod tests {
             .unwrap(),
             target_alive: 5,
             respawn_seconds: 61,
+            roam_radius_metres: 0.,
             seed: 17,
         });
         zone

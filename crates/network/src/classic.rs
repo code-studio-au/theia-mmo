@@ -57,7 +57,7 @@ pub fn ground_speeds() -> &'static GroundSpeeds {
 }
 /// The retained wire sprint bit means run / walk in v3. Accepted character
 /// facing selects backward travel; one axis unit tolerates strafe quantization.
-pub(crate) fn ground_speed(intent: Intent) -> Result<f32, &'static str> {
+pub fn ground_speed(intent: Intent) -> Result<f32, &'static str> {
     let facing = intent.facing.ok_or("Missing classic movement facing")?;
     if !intent.valid() || intent.dodge.is_some() {
         return Err("Invalid classic ground movement");

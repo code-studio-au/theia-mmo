@@ -181,6 +181,8 @@ def prepare_profiles(args, repository, bundle=None):
                '--players', str(players), '--binaries', str(binaries), '--window-size', args.window_size,
                '--classic', '--account-login', '--equipment', '--status-effects', '--progression', '--rewards',
                '--public-avatar-life', '--stop-on-stdin-eof', '--session-directory', str(output/'runtime')]
+    skin = getattr(args, 'fantasy_ui', None)
+    command.extend(play.fantasy_ui_options(skin, True, True))
     if corpse_loot:
         command.append('--creature-loot')
     if quests:
@@ -217,7 +219,8 @@ def main():
     parser.add_argument('--players', type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--window-size', default='1280x720')
+    parser.add_argument('--fantasy-ui', type=Path, default=os.environ.get('THEIA_FANTASY_UI'), help='Local Synty Fantasy Warrior HUD')
+    parser.add_argument('--window-size', default='3440x1440')
     parser.add_argument('--test-route', type=Path, help='Explicit paused test travel; frozen locally and checked by normal client preflight')
     parser.add_argument('--items', type=Path, help='Explicit item catalogue, paired with --reward-catalog')
     parser.add_argument('--reward-catalog', type=Path, help='Explicit rewards; per-life entries enable ordinary corpse pickup')

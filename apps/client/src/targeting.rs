@@ -99,7 +99,7 @@ pub(crate) fn controls(
         || dialogue
             .as_ref()
             .is_some_and(|u| u.open || u.pending || u.close_when_open);
-    if classic.is_some() && panel {
+    if classic.is_some() && panel && !keys.just_pressed(KeyCode::Tab) {
         return;
     }
     if keys.just_pressed(KeyCode::Backspace)
@@ -191,16 +191,18 @@ type ContextFilter = Or<(
     With<crate::fantasy_ui::UnitFrame>,
     With<crate::combat::TargetVitals>,
 )>;
+type PresentationContext<'w> = (
+    Res<'w, crate::world_input::Selection>,
+    Option<Res<'w, crate::classic_controls::Controller>>,
+    Option<Res<'w, crate::fantasy_ui::Skin>>,
+    Option<Res<'w, crate::dialogue::Config>>,
+);
 fn present(
     mut commands: Commands,
     scene: motion::Presentation,
     mut visuals: Query<VisualComponents<'_>>,
     mut hud: Query<&mut Text, With<TargetHud>>,
-    (selection, classic, skin): (
-        Res<crate::world_input::Selection>,
-        Option<Res<crate::classic_controls::Controller>>,
-        Option<Res<crate::fantasy_ui::Skin>>,
-    ),
+    (selection, classic, skin, dialogue): PresentationContext<'_>,
     mut context_nodes: Query<ContextNode<'_>, ContextFilter>,
 ) {
     let motion::Presentation {
@@ -347,7 +349,23 @@ fn present(
     }
     if let Ok(mut text) = hud.single_mut() {
         let value = if selection.friendly.is_some() && state.error.is_none() {
-            "Target: Guide\nF / right-click: interact".to_owned()
+            let name = dialogue
+                .as_ref()
+                .and_then(|d| {
+                    let presence = state
+                        .guide
+                        .as_ref()
+                        .filter(|p| p.profile_hash == d.0.hash())?;
+                    let key = selection.friendly?;
+                    presence.find(key)?;
+                    if d.0.catalog().is_some() {
+                        d.0.contact(presence.npc(key)?)
+                    } else {
+                        Some(d.0.profile())
+                    }
+                })
+                .map_or("Contact", |p| p.name());
+            format!("Target: {name}\nF / right-click: interact")
         } else {
             match view {
                 Some(v) if v.selected.is_some() => {

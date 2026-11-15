@@ -1,3 +1,80 @@
+P3-11/12/15 / P2-14 / P4-03 / P5-17, 15 November 2026 acceptance:
+The native quest/restart flow passes with the final continuous-frame movement
+sample (quest-travel-native-v7). The coin bag/vendor/tooltip and exact durable
+purchase/sale flow passes (quest-economy-native-20261115-v1). Both use actual
+3440x1440 Linux GPU windows and ordinary gameplay/UI inputs. Evidence, regression
+counts and limitations are in STATUS. Next bounded slice reuses the same authored
+navigation/collision checks to reject invalid escort exports before publication,
+then makes destination/speed/range bindings readable in the NPC quest inspector.
+The user authorized continued local commits and native display/input testing;
+there is no authorization to push.
+
+P3-11/12/15 / P2-14 / P5-17, 14 November 2026 — escort/collection continuation:
+prerequisites are the qualified contact catalogue, authored static navigation,
+private durable journals, possession transactions and existing ordinary input
+controller. User-selected scope: destination-only escort to the ancient tree,
+a two-point northern collection test path, HUD/targeting corrections and optional
+Interface debug stats. Preserve server truth and bounded fixed-step work.
+Acceptance: pre-acceptance/foreign-contact refusal; wait/resume at the radius;
+independent per-player journeys and disconnect cleanup; arrival without XP then
+exact conversation turn-in; pickup only when needed/in range; atomic item/journal
+updates and consumed delivery; replay/restart without duplicate rewards; real Tab/
+Shift+Tab and native GPU/UI checks at 3440x1440. STATUS distinguishes completed
+checks from the currently running native qualification. The final user refinement
+sets Elowen to Classic run speed (7 m/s); the 20/30/60 Hz authority test verifies
+that speed, waiting and turn-in. The compass stutter correction samples the
+continuous prediction clock without changing commands/authority; deterministic
+render-cadence regression and native movement measurements cover it.
+
+P2-14 / P3-05 / P3-11 / P3-12 / P4-03 / P5-17 starter economy continuation:
+prerequisites are the qualified exact contact collection, async atomic backpack
+store, item/quest reconciliation, Synty panels and checked authored travel.
+Add an explicit coin-enabled content/state schema with bounded integer copper,
+coin buy/sell recipes, private committed replication, starter merchant/ranger/
+villager markers and steward-to-ranger introduction. Fix map/tracker visibility
+independently of the backpack. Simplify checked steering without removing dense
+clearance validation or introducing runtime I/O.
+Acceptance: ordinary deletion/replacement of weapons, buy/sell exact deltas,
+insufficient funds/full bag/overflow refusal, equipped-item protection, exact
+retries and SQL restart; non-vendor bag isolation, stable map/tracker geometry;
+new quest completes only at its destination; 20/30/60 Hz route traversal and
+native GPU checks. STATUS records actual completed checks separately.
+
+P3-11 / P3-12 / P3-15 / P5-17 multiple-contact runtime, 14 November 2026:
+prerequisites are the adopted bounded core contact catalogue, qualified authored
+support, private dialogue, expanded journal, durable fixed rewards and editor
+snapshot export. Implement schema-3 complete placement validation, immutable sorted
+identity, separate nonblocking contact entities, one private revisioned session,
+DG02 bounded presence and exact client picking. Route every choice/quest/vendor
+through the actual entity's NPC definition. Legacy DG01 and single-guide identity
+remain separate. No awaited I/O enters simulation; actor collision remains absent.
+
+Concrete acceptance includes two authored contacts, acceptance at A and semantic
+interaction/turn-in at B, wrong-contact refusal, vendor restriction, independent
+two-peer sessions, and real account/SQL restart. Native editor and native account
+paths pass in multi-contact-editor-v1 and multi-contact-native-v2. Final regression and
+post-screenshot UI checks pass; see STATUS for counts and evidence. Keep production NPC art,
+moving contacts, grouped patrol assignment and capacity claims outside this slice.
+
+P2-13/14 / P3-07/09/11 / P5-17 playtest response, 14 November 2026:
+use standard Bevy UI/meshes for corpse loot motes, clickable separated nameplates,
+Synty journal presentation and road depth clearance. Keep loot visibility private
+and committed. Add authorable group roaming radius independently of spawn spacing;
+precompute bounded navigation/collision-checked excursions outside fixed simulation,
+then move through the existing authoritative controller. Combat soft separation
+adds bounded intent, never actor colliders or teleportation. Combat interrupts
+idle movement and return restarts its checked route from home. Existing threat/loot
+rights remain unchanged.
+Prerequisites are the already qualified population authority, pursuit/navigation,
+private rewards, editor export and Synty skin. Concrete acceptance covers empty/
+partial/full corpse lifecycle, overlap layout/steering, source-preserving ribbon
+geometry, safe idle movement at all supported tick rates, native UI/gameplay and
+PostgreSQL restart. These pass in playtest-feedback-native-v9 and the unit/editor
+checks recorded in STATUS; the final run restored revision 25 / XP 250 / exact
+inventory and loot rolls. Human feel review remains separate from automation.
+These are explicit Theia movement/presentation policies, not new Classic formula
+claims. No Windows native or MMO-scale performance qualification is implied.
+
 P3-11 / P3-12 / P3-15 multiple-contact content prerequisite, 14 November 2026:
 add an explicit pure schema-2 dialogue Catalog with 1..16 embedded, independently
 validated schema-1 contact profiles. Bound total input to 256 KiB, retain each

@@ -118,6 +118,9 @@ pub struct Driver {
 }
 pub struct Driven {
     pub pose: Pose,
+    /// Collision-checked rendering endpoints and the continuous clock phase.
+    /// None while the clock is suspended or life authority owns movement.
+    pub presentation: Option<([theia_core::coordinates::GlobalPosition; 2], f64)>,
     pub tick: u64,
     pub packet: Option<Commands>,
     pub reset: bool,
@@ -225,6 +228,7 @@ impl Driver {
             self.stats.life_waiting_frames += 1;
             return Ok(Some(Driven {
                 pose: c.pose,
+                presentation: None,
                 tick: c.input.tick,
                 packet: None,
                 reset,
@@ -335,6 +339,7 @@ impl Driver {
             self.stats.waiting_frames += 1;
             return Ok(Some(Driven {
                 pose: history.pose(),
+                presentation: None,
                 tick: history.input().tick,
                 packet: None,
                 reset,
@@ -429,6 +434,7 @@ impl Driver {
         });
         Ok(Some(Driven {
             pose: history.pose(),
+            presentation: Some((history.presentation_endpoints(), estimate.fract())),
             tick: history.input().tick,
             packet,
             reset,

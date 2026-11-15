@@ -512,3 +512,6 @@ mod quest_pickup;
 
 #[path = "rewards_contract/quest_worker.rs"]
 mod quest_worker;
+
+#[path = "rewards_contract/ground.rs"]
+mod ground;

@@ -363,6 +363,7 @@ mod tests {
                 model: None,
                 target_alive: 5,
                 respawn_seconds: 3,
+                roam_radius_metres: 0.,
                 seed: 42,
                 volume: theia_core::spawn_volume::PolygonVolume::new(
                     vec![
@@ -477,7 +478,7 @@ mod tests {
             .unwrap_err();
             assert!(
                 error.contains(if contact {
-                    "does not match"
+                    "Unknown or duplicate NPC contact"
                 } else {
                     "creature ID differs"
                 }),

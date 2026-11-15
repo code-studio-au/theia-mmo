@@ -91,8 +91,14 @@ impl Metrics {
             self.settling += 1;
             return;
         }
-        let expected =
-            length * if context.intent.sprint { 8. } else { 5. } * f64::from(context.speed);
+        let speed = if context.intent.facing.is_some() {
+            f64::from(theia_network::classic::ground_speed(context.intent).unwrap_or(0.))
+        } else if context.intent.sprint {
+            8.
+        } else {
+            5.
+        };
+        let expected = length * speed * f64::from(context.speed);
         if expected <= 0. {
             self.settling += 1;
             return;
@@ -127,6 +133,21 @@ mod tests {
     }
     fn position(x: f64) -> GlobalPosition {
         GlobalPosition::new([8000. + x, 0., 8000.]).unwrap()
+    }
+    #[test]
+    fn classic_walk_and_run_use_their_actual_expected_speeds() {
+        for (sprint, speed) in [(false, 2.5), (true, 7.)] {
+            let mut metrics = Metrics::default();
+            let mut c = context();
+            c.intent.facing = Some(theia_core::facing::Facing::default());
+            c.intent.sprint = sprint;
+            for i in 0..=100 {
+                let t = f64::from(i) / 20.;
+                metrics.observe(t, position(t * speed), c);
+            }
+            assert!(metrics.steady_speed_ratio_buckets[3] > 80);
+            assert!((metrics.max_steady_speed_ratio - 1.).abs() < 0.00001);
+        }
     }
     #[test]
     fn constant_global_speed_is_steady_and_input_transitions_do_not_create_false_holds() {

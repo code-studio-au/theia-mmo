@@ -1,3 +1,31 @@
+14 November 2026 — starter quest/HUD continuation:
+The opt-in starter economy slice now implements named contacts, coin presentation,
+slot-anchored item descriptions, target cycling/conditional enemy bars and optional
+Interface debug statistics. Rowan's compass uses ground collection then consumed
+delivery; its separate test path has two authored endpoints. Elowen runs within
+follow range along a destination-only navmesh route to the ancient tree, waits
+when the player falls behind, and requires conversation turn-in. The client now
+samples movement from the continuous prediction clock to correct compass-test
+whole-character stutter. Unit/SQL/route checks pass; final native acceptance and
+limitations are recorded in STATUS. Further NPC art, shared escorts and persistent
+partial escort progress remain separate work.
+
+14 November 2026 continuation: multiple contacts are now playable through the
+editor, authoritative server, encrypted presence and native client. Guide-to-steward
+acceptance/report/turn-in, fixed item reward, bound guide vendor and durable restart
+pass in `multi-contact-native-v2`; legacy single-guide content remains supported.
+See STATUS for precise checks, final UI refinement and evidence. Next authoring gap: deliberate
+patrol-route assignments for spawn groups, beyond the qualified bounded roaming.
+Earlier same-day prerequisite/single-guide notes below describe historical stages.
+
+14 November 2026: playtest feedback now drives the current playable slice:
+loot motes, readable enemy crowds/target labels, Synty quest presentation, road
+clearance and editable bounded idle roaming. Spawn spacing and roaming radius are
+independent. Source/export checks and the native four-quest, loot and PostgreSQL
+restart flow pass (playtest-feedback-native-v9); see STATUS for exact scope. Next: human
+movement/UI feel review, then resume bounded multiple-contact runtime integration.
+Hand-authored patrol assignments per grouped enemy remain a separate authoring slice.
+
 14 November 2026: bounded multi-contact content prerequisite passes core tests.
 Schema-2 contact collections resolve different quest giver/turn-in IDs and exact
 NPC choice ownership; duplicate/unknown definitions and budgets are checked.

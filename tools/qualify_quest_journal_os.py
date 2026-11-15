@@ -45,7 +45,7 @@ def hold_alive(desktop, key, seconds, guard):
     desktop.hold_key(key, seconds, observe=guard.check)
 
 
-def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None, checked_travel=False, population=False, population_pelts=False, loot_audit=None, population_pelt_revision=None):
+def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None, checked_travel=False, population=False, population_pelts=False, loot_audit=None, population_pelt_revision=None, death_budget=3):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
     expected_head = base_head + (3 if reach_areas else 0)
@@ -108,7 +108,17 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
 
     def action(name, status):
         before = journal()['ui']['applied']
-        point = wait(lambda: next((b['point'] for b in journal()['buttons'] if b['quest'] == name), None))
+        def button():
+            return next((b['point'] for b in journal()['buttons'] if b['quest'] == name), None)
+        point = wait(button)
+        for _ in range(24):
+            pane = journal().get('offer_scroll')
+            if not pane or pane['point'][1]-pane['size'][1]/2+4 <= point[1] <= pane['point'][1]+pane['size'][1]/2-4:
+                break
+            desktop.move(window, pane['point'], scale)
+            desktop.scroll(-1 if point[1] > pane['point'][1] else 1)
+            time.sleep(.1)
+            point = wait(button)
         desktop.click(window, point, scale, 1)
         wait(lambda: quest(name) and quest(name)['status'] == status and journal()['ui']['applied'] == before+1 and not journal()['ui']['pending'])
 
@@ -192,14 +202,30 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         raise AssertionError('Normal movement did not reach the contact')
 
     travel_count = 0
+    interrupted_outward = False
 
-    def walk_trail(reverse=False):
-        nonlocal travel_count
+    def walk_trail(reverse=False, combat=False):
+        nonlocal travel_count, interrupted_outward
         guard = LifeGuard(state)
         travel_count += 1
         points = list(reversed(authored_trail)) if reverse else authored_trail
         observations = []
+        if reverse and interrupted_outward:
+            # F7 restarts an unfinished leg from its original endpoint. After
+            # stopping to pull at range, walk back along the checked waypoints
+            # with ordinary keys instead of falsely marking that leg finished.
+            nearest = min(range(len(authored_trail)), key=lambda i: math.dist(feet(), authored_trail[i]))
+            assert math.dist(feet(), authored_trail[nearest]) < 40
+            for point in reversed(authored_trail[:nearest+1]):
+                approach(lambda: point, tolerance=.6)
+            interrupted_outward = False
+            (folder/f'trail-{travel_count}-return.json').write_text(json.dumps(dict(
+                input='ordinary keyboard along checked waypoints after ranged pull',
+                feet=feet(), tick=state()['dodge']['tick']), indent=2)+'\n')
+            return
         if checked_travel:
+            if not reverse:
+                interrupted_outward = False
             # Join only the nearby checked endpoint after normal combat movement.
             # Long-distance traversal belongs to the prepared client follower.
             assert math.dist(feet(), points[0]) < 40, 'Combat moved too far from the checked route'
@@ -212,23 +238,44 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
             else:
                 desktop.key_state('Shift_L', True)
                 try:
+                    time.sleep(.1)
                     desktop.key('F7')
+                    # Keep the modifier held until a rendered/input frame has
+                    # consumed F7, including slower native debug frames.
+                    time.sleep(.15)
                 finally:
                     desktop.key_state('Shift_L', False)
             leg = 'return' if reverse else 'outward'
             wait(lambda: state()['test_controller']['active'] or state()['test_controller']['travel']['failure'],10)
+            if travel_count == 1 and not reverse:
+                time.sleep(8)
+                for frame in range(4):
+                    guard.check()
+                    capture(f'road-moving-{frame}.png')
+                    time.sleep(.2)
             def arrived():
                 observed = guard.check()
                 controller = observed['test_controller']
                 travel = controller['travel']
                 assert travel['failure'] is None, travel
+                if combat and not reverse and math.dist(feet(), points[-1]) < 40:
+                    alive = {t['entity'] for t in observed['combat_targets'] if t['current'] > 0}
+                    if any(t['entity'] in alive and math.dist(feet(), t['position']) <= 27
+                           for t in observed['target_entities']):
+                        return observed
                 return observed if travel['leg']==leg and travel['finished'] and not controller['active'] else None
             observed = wait(arrived, 120)
-            assert math.dist(feet(), points[-1]) < .4
+            if observed['test_controller']['active']:
+                desktop.key('F7')
+                wait(lambda: not guard.check()['test_controller']['active'])
+                interrupted_outward = True
+            else:
+                assert math.dist(feet(), points[-1]) < .4
             activate()
             (folder / f'trail-{travel_count}-{leg}.json').write_text(json.dumps(dict(
                 input='checked client route through ordinary Classic input',
-                controller=observed['test_controller'], feet=feet(), tick=observed['dodge']['tick']),indent=2)+'\n')
+                paused_for_ranged_pull=interrupted_outward,
+                controller=state()['test_controller'], feet=feet(), tick=observed['dodge']['tick']),indent=2)+'\n')
             return
         for point in points:
             approach(lambda: point, tolerance=.6)
@@ -258,16 +305,43 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
     def await_respawn():
         wait(lambda: state()['combat']['player_health'] > 0 and
              math.hypot(feet()[0]-authored_trail[0][0], feet()[2]-authored_trail[0][2]) < 3, 30)
-        assert state()['combat']['player_deaths'] <= 3, 'Bounded quest test death budget exceeded'
+        assert state()['combat']['player_deaths'] <= death_budget, 'Bounded quest test death budget exceeded'
 
     def population_enemy():
         observed = state()
         alive = {t['entity'] for t in observed['combat_targets'] if t['current'] > 0}
         candidates = [t for t in observed['target_entities'] if t['entity'] in alive
                       and math.dist(feet(), t['position']) < 29.5]
+        if not candidates:
+            target = min((t for t in observed['target_entities'] if t['entity'] in alive),
+                         key=lambda t: math.dist(feet(), t['position']))
+            approach(lambda: next(t['position'] for t in state()['target_entities']
+                                  if t['entity'] == target['entity']), tolerance=27)
+            observed = state()
+            candidates = [t for t in observed['target_entities'] if t['entity'] in alive
+                          and math.dist(feet(), t['position']) < 29.5]
         assert candidates, 'No live population target within ordinary spell range'
         target = min(candidates, key=lambda t: math.dist(feet(), t['position']))
         face(target['position'])
+        # Exercise the actual separated UI target, when it is on screen.
+        time.sleep(.15)
+        for _ in range(6):
+            plate = next((p for p in state().get('nameplate_buttons', [])
+                          if p['entity'] == target['entity']), None)
+            if not plate:
+                break
+            clicks = state()['controls']['enemy_clicks']
+            desktop.click(window, plate['point'], scale, 1)
+            try:
+                wait(lambda: state()['selected_hostile'] == target['entity'] and
+                     state()['controls']['enemy_clicks'] > clicks, .4)
+            except TimeoutError:
+                # A chasing label can move out from under an old observation.
+                # Retry its current painted location, never write a target ID.
+                continue
+            (folder/'nameplate-selection.json').write_text(json.dumps(dict(
+                target=target['entity'], plate=plate, clicks=state()['controls']['enemy_clicks']))+'\n')
+            return
         for _ in range(8):
             if state()['selected_hostile'] == target['entity']:
                 return
@@ -280,7 +354,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         for _ in range(4):
             try:
                 if travel:
-                    walk_trail()
+                    walk_trail(combat=population)
                 if population:
                     population_enemy()
                 else:
@@ -350,6 +424,11 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
     speak()
     action(FIRST, 'Active')
     capture('quest-accepted.png')
+    desktop.key('j')
+    wait(lambda: journal()['ui']['expanded'])
+    capture('quest-journal-expanded.png')
+    desktop.key('j')
+    wait(lambda: not journal()['ui']['expanded'])
     for name in ['road', 'supplies', 'report']:
         ask(name)
     wait(lambda: quest(FIRST)['status'] == 'Ready')
@@ -401,7 +480,8 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
                 victim=victim, start_feet=start_feet, end_feet=feet(),
                 combat=state()['combat'], targets=state()['combat_targets'],
                 quest=quest(SECOND), xp=journal()['xp']), indent=2)+'\n')
-    assert state()['combat']['deaths'] == initial_deaths+3
+    # The durable journal/XP and combat observation are separate snapshots.
+    wait(lambda: state()['combat']['deaths'] == initial_deaths+3)
     capture('three-kills.png')
     returned_via_respawn = False
     if authored_trail:
@@ -436,6 +516,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         area_proof = area_flow(desktop, state, folder, quest, journal, feet, face,
                                close_panels, speak, action, capture,
                                area=authored_area, travel=walk_trail if authored_trail else None,
+                               await_respawn=await_respawn if authored_trail else None,
                                travel_label='checked client route with ordinary keyboard endpoint alignment' if checked_travel else None)
         assert journal()['revision'] == expected_head
         assert journal()['ui']['submitted'] == 6 and journal()['ui']['applied'] == 6
@@ -444,7 +525,8 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
     if population_pelts:
         from population_pelt_quest_os import flow as pelt_flow
         pelt_proof = pelt_flow(desktop, window, state, folder, quest, journal, feet, face,
-            approach, close_panels, speak, action, capture, walk_trail, reach_enemy,
+            approach, close_panels, speak, action, capture,
+            lambda reverse=False: walk_trail(reverse=reverse, combat=not reverse), reach_enemy,
             await_respawn, authored_trail[-1], loot_audit)
         expected_head, expected_xp = pelt_proof['revision'], 250
         assert journal()['revision'] == expected_head

@@ -90,8 +90,14 @@ impl Config {
                 slots[slot] = Stack::new(profile.catalog(), id, 1);
             }
         }
-        let seed = Bag::from_slots(profile.catalog(), 0, slots)
-            .map_err(|_| "Invalid development inventory seed")?;
+        let seed = Bag::from_parts_with_copper(
+            profile.catalog(),
+            0,
+            slots,
+            None,
+            profile.catalog().starting_copper(),
+        )
+        .map_err(|_| "Invalid development inventory seed")?;
         Ok(Self {
             documents: None,
             journal: None,
@@ -365,9 +371,9 @@ impl Owner {
             (Vec::new(), None)
         };
         let has_life = self.rewards.as_ref().is_some_and(|p| {
-            p.catalog()
-                .definitions()
-                .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+            p.catalog().definitions().any(|d| {
+                d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+            })
         });
         let mut interest_timer = tokio::time::interval(std::time::Duration::from_millis(500));
         interest_timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
@@ -672,11 +678,25 @@ impl Owner {
         Vec<RewardClaim>,
         Option<theia_core::coordinates::GlobalPosition>,
     )> {
-        if profile
+        // Refresh bounded static ground offers when the committed bag/journal
+        // changes. SQL enforces acceptance/need and durable nonrepeatability.
+        for definition in profile
             .catalog()
             .definitions()
-            .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+            .filter(|d| d.ground().is_some())
         {
+            match self
+                .publisher
+                .offer_reward(self.binding, self.world, profile, definition.id())
+                .await
+            {
+                Ok(_) | Err(Error::RewardNotNeeded) => {}
+                Err(error) => return Err(error.into()),
+            }
+        }
+        if profile.catalog().definitions().any(|d| {
+            d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+        }) {
             let position = self.loot_position()?;
             Ok((
                 if profile.quest_journal().is_some() {
@@ -796,7 +816,10 @@ fn reason(error: &Error) -> Option<Reason> {
         Error::VendorCommand(theia_core::vendors::Error::InsufficientCost) => Reason::EmptySource,
         Error::VendorCommand(theia_core::vendors::Error::NoCapacity) => Reason::Full,
         Error::VendorCommand(theia_core::vendors::Error::StaleRevision) => Reason::Stale,
-        Error::VendorCommand(theia_core::vendors::Error::RevisionExhausted) => Reason::Exhausted,
+        Error::VendorCommand(
+            theia_core::vendors::Error::RevisionExhausted
+            | theia_core::vendors::Error::CurrencyOverflow,
+        ) => Reason::Exhausted,
         Error::VendorCommand(theia_core::vendors::Error::UnknownOffer) => Reason::Conflict,
         Error::InventoryBusy => Reason::Busy,
         Error::InventoryStale | Error::InventoryCommand(Core::StaleRevision) => Reason::Stale,

@@ -1,3 +1,40 @@
+14 November 2026 — starter escort and collection implementation:
+The explicit `development-gameplay-starter-economy.json` package adds named
+contacts, Rowan's ground compass collection/delivery, and Elowen's private escort
+to the eastern ancient tree. Escort schema 5 binds one saved Quest marker and a
+metric speed/range policy; navigation derives and collision-checks the route at
+startup. The ranger runs at 7 m/s within 10 m and waits for the player beyond
+that boundary. Steering-point advancement does not insert idle simulation ticks.
+Arrival marks Ready; speaking to Elowen grants completion. Ready/Completed restore
+at the destination, while an interrupted Active journey restarts at home.
+Ground collection uses private durable reward claims and consumes the compass
+when delivered to Rowan. Its separate test road authors only two endpoints.
+Contacts retain stable identities as their positions move. Overhead names/roles
+use standard Bevy UI; contact bodies remain cyan fixtures without production art.
+See STATUS for actual automated/native acceptance and remaining limitations.
+
+14 November 2026 — runtime/editor continuation implemented:
+The earlier content-only prerequisite below is superseded for the explicit
+`development-gameplay-valley-contacts.json` package. Application loaders dispatch
+schema 1 single profiles or schema 2 catalogues; the core legacy loader still
+refuses catalogues. Authored anchor schema 3 binds every NPC's f64 feet, validates
+support and requires a complete unique catalogue mapping before installation.
+
+The owner installs distinct nonblocking entities atomically and routes one current
+conversation per actor by exact entity and content NPC. Quests may accept/turn in
+at different contacts; semantic choices are credited to the session NPC. Purchases
+require the vendor's specific NPC. Private rate/sequence/revision/range/life checks
+remain. Retirement preserves world identity and only closes affected sessions.
+
+Bounded DG02 presence is separate from DG01: maximum sixteen entries / 709 bytes.
+The client validates exact catalogue indices, unique stable incarnations/positions,
+actor and profile, then resolves each clicked mesh and open node to that contact.
+World/map quest markers and action buttons use the relevant giver or turn-in NPC.
+The native guide-to-steward quest, fixed reward, guide trade and PostgreSQL restart
+pass; see STATUS and build/multi-contact-native-v2/qualification.json. The editor's
+normal Catalog ID field/export path passes two contacts plus five roaming wolves.
+Native contact visuals remain cyan fixtures; broader NPC art/movement is not claimed.
+
 14 November 2026 — P3-11 / P3-12 / P3-15 / P5-17 multiple-contact continuation:
 the user authorized progressing from the qualified single-guide valley to multiple
 authored contacts, including quests accepted from one NPC and returned to another.

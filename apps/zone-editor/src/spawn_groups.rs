@@ -158,6 +158,7 @@ pub(super) fn add(session: &mut Session) {
             volume,
             target_alive: 3,
             respawn_seconds: 30,
+            roam_radius_metres: 4.,
             seed: 42,
         },
     }]);

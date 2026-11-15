@@ -44,7 +44,10 @@ impl World {
             || self.quest_journal.is_some()
             || self.quest.is_some()
             || self.quest_lifecycle.is_some()
-            || self.dialogue.is_none()
+            || self
+                .dialogue
+                .as_ref()
+                .is_none_or(|d| d.profile.catalog().is_some())
         {
             return Err(
                 "Explicit quests require inactive guide world and exclusive quest mode".into(),

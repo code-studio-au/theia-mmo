@@ -5,9 +5,15 @@ use crate::loot::{CorpsePick, CorpseVisual};
 struct PickAssets {
     mesh: Handle<Mesh>,
     material: Handle<StandardMaterial>,
+    sparkle_mesh: Handle<Mesh>,
+    sparkle_material: Handle<StandardMaterial>,
 }
 
 pub(super) fn reconcile(world: &mut World, state: &theia_network::client::State) {
+    let connected = world.resource::<crate::network::Network>().connected();
+    reconcile_observation(world, state, connected);
+}
+fn reconcile_observation(world: &mut World, state: &theia_network::client::State, connected: bool) {
     if !world.contains_resource::<PickAssets>() {
         let mesh = world
             .resource_mut::<Assets<Mesh>>()
@@ -20,11 +26,28 @@ pub(super) fn reconcile(world: &mut World, state: &theia_network::client::State)
                 unlit: true,
                 ..default()
             });
-        world.insert_resource(PickAssets { mesh, material });
+        let sparkle_mesh = world
+            .resource_mut::<Assets<Mesh>>()
+            .add(Sphere::new(0.045).mesh().ico(1).unwrap());
+        let sparkle_material =
+            world
+                .resource_mut::<Assets<StandardMaterial>>()
+                .add(StandardMaterial {
+                    base_color: Color::srgb(1., 0.78, 0.24),
+                    emissive: LinearRgba::rgb(3., 1.8, 0.25),
+                    unlit: true,
+                    ..default()
+                });
+        world.insert_resource(PickAssets {
+            mesh,
+            material,
+            sparkle_mesh,
+            sparkle_material,
+        });
     }
     let frame = world.resource::<crate::floating_origin::Frame>().render;
     let mut sources = Vec::new();
-    if world.resource::<crate::network::Network>().connected() && state.error.is_none() {
+    if connected && state.error.is_none() {
         for source in state
             .rewards
             .iter()
@@ -89,6 +112,23 @@ pub(super) fn reconcile(world: &mut World, state: &theia_network::client::State)
             bevy::light::NotShadowCaster,
             bevy::light::NotShadowReceiver,
         ));
+        // Eight reusable motes per authoritative private corpse. Child ownership
+        // removes every mote with the last committed claim (or chunk departure).
+        let assets = world.resource::<PickAssets>();
+        let mesh = assets.sparkle_mesh.clone();
+        let material = assets.sparkle_material.clone();
+        for index in 0..8 {
+            world.spawn((
+                Sparkle(index),
+                ChildOf(owner),
+                Mesh3d(mesh.clone()),
+                MeshMaterial3d(material.clone()),
+                Transform::default(),
+                bevy::picking::Pickable::IGNORE,
+                bevy::light::NotShadowCaster,
+                bevy::light::NotShadowReceiver,
+            ));
+        }
         world.spawn((
             WorldAssetRoot(scene),
             ChildOf(owner),
@@ -116,5 +156,94 @@ pub(super) fn reconcile(world: &mut World, state: &theia_network::client::State)
             .get_mut::<Visibility>(entity)
             .unwrap()
             .clone_from(&Visibility::Hidden);
+    }
+}
+
+#[derive(Component)]
+pub(super) struct Sparkle(u8);
+
+pub(super) fn animate(time: Res<Time>, mut motes: Query<(&Sparkle, &mut Transform)>) {
+    for (mote, mut transform) in &mut motes {
+        let phase = (time.elapsed_secs() * 0.45 + f32::from(mote.0) / 8.).fract();
+        let angle = f32::from(mote.0) * 2.39996 + phase * 0.7;
+        transform.translation = Vec3::new(
+            angle.cos() * 0.45,
+            -theia_network::world::PAWN_Y + 0.25 + phase * 1.35,
+            angle.sin() * 0.7,
+        );
+        transform.scale = Vec3::splat((phase * std::f32::consts::PI).sin().max(0.) * 1.3);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use theia_core::{
+        content::ContentId,
+        progression::KillId,
+        rewards::{ClaimId, CorpseSource},
+    };
+    #[test]
+    fn partial_loot_keeps_one_effect_and_last_claim_disconnect_or_unload_removes_it() {
+        let mut world = World::new();
+        world.init_resource::<Assets<Mesh>>();
+        world.init_resource::<Assets<StandardMaterial>>();
+        world.init_resource::<crate::floating_origin::Frame>();
+        world.insert_resource(Catalog {
+            scene: default(),
+            graph: default(),
+            nodes: vec![],
+            durations: vec![],
+        });
+        let (mut state, _) = crate::quest_journal::tests::fixture();
+        let actor = state.quest_journal.as_ref().unwrap().actor;
+        state.chunk_report = Some(theia_network::wire::ChunkReady {
+            version: theia_network::wire::VERSION,
+            epoch: actor.epoch.value(),
+            sequence: 1,
+            chunks: vec![[0, 0]],
+        });
+        let source = CorpseSource {
+            life: KillId::from_victim(actor),
+            position: GlobalPosition::new([2., 0.9, 2.]).unwrap(),
+        };
+        state.rewards = Some(theia_network::reward_wire::State {
+            actor,
+            generation: 1,
+            profile_hash: [1; 32],
+            available: (1..=2)
+                .map(|id| theia_network::reward_wire::Available {
+                    reward: ContentId::new("theia.test.loot").unwrap(),
+                    claim: ClaimId::new([id; 16]).unwrap(),
+                    corpse: Some(source),
+                })
+                .collect(),
+        });
+        let count = |world: &mut World| world.query::<&Sparkle>().iter(world).count();
+        reconcile_observation(&mut world, &state, true);
+        assert_eq!(count(&mut world), 8);
+        let root = world
+            .query_filtered::<Entity, With<CorpseVisual>>()
+            .single(&world)
+            .unwrap();
+        // A refused pickup changes no committed availability. Neither refusal
+        // nor a successful partial pickup restarts/duplicates the effect.
+        reconcile_observation(&mut world, &state, true);
+        state.rewards.as_mut().unwrap().available.pop();
+        reconcile_observation(&mut world, &state, true);
+        assert_eq!(count(&mut world), 8);
+        assert!(world.get_entity(root).is_ok());
+        let available = state.clone();
+        state.rewards.as_mut().unwrap().available.clear();
+        reconcile_observation(&mut world, &state, true);
+        assert_eq!(count(&mut world), 0);
+        reconcile_observation(&mut world, &available, true);
+        assert_eq!(count(&mut world), 8);
+        reconcile_observation(&mut world, &available, false);
+        assert_eq!(count(&mut world), 0);
+        state = available;
+        state.chunk_report.as_mut().unwrap().chunks.clear();
+        reconcile_observation(&mut world, &state, true);
+        assert_eq!(count(&mut world), 0);
     }
 }

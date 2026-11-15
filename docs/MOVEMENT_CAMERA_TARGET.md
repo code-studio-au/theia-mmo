@@ -1,3 +1,15 @@
+14 November 2026 — local prediction presentation correction:
+The compass AI test exposed whole-character speed variation when render frames
+spanned zero or multiple simulation ticks. Local rendering now interpolates the
+last two reconciled, collision-checked predicted positions using the continuous
+prediction clock fraction (one simulation tick of presentation delay), instead
+of restarting a one-tick tween each frame. Prediction and diagnostics sample the
+Bevy frame timestamp, avoiding variable CPU scheduling time within Update. It never extrapolates past checked
+positions or changes movement authority/commands. Stream resets discard the old
+endpoints. Regression covers 20/30/60 Hz simulation with 20/30/60/144 FPS and
+uneven frame times; motion diagnostics now use the actual Classic walk/run speed.
+Native evidence and frame-rate limits are recorded in STATUS.
+
 # Current target — strict WoW Classic controls, 1 November 2026
 
 The governing design is [THEIA-COMBAT-001 v1.0](COMBAT_TARGETING_MOVEMENT_SPEC.md).

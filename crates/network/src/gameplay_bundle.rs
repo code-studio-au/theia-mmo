@@ -91,7 +91,11 @@ impl Manifest {
                 theia_core::statuses::MAX_CATALOG_BYTES,
             ),
             ("creature", &self.creature, creatures::MAX_PROFILE_BYTES),
-            ("dialogue", &self.dialogue, dialogue::MAX_PROFILE_BYTES),
+            (
+                "dialogue",
+                &self.dialogue,
+                dialogue::catalog::MAX_CATALOG_BYTES,
+            ),
             ("vendor", &self.vendor, vendors::MAX_CATALOG_BYTES),
             ("rewards", &self.rewards, rewards::MAX_CATALOG_BYTES),
             (
@@ -280,11 +284,11 @@ fn check(
         &bytes["statuses"],
     )
     .map_err(|_| "Invalid ability/resource/status configuration")?;
-    let guide =
-        dialogue::Profile::from_json(&bytes["dialogue"]).map_err(|_| "Invalid dialogue profile")?;
+    let guide = crate::dialogue::Profile::from_content(&bytes["dialogue"])
+        .map_err(|_| "Invalid dialogue profile")?;
     let vendor = vendors::Catalog::from_json(&bytes["vendor"], &items)
         .map_err(|_| "Invalid vendor/item configuration")?;
-    if vendor.npc() != guide.npc() {
+    if guide.contact(vendor.npc()).is_none() {
         return Err("Vendor NPC differs from declared dialogue guide".into());
     }
     let creature = creatures::Profile::from_json(&bytes["creature"])
@@ -309,7 +313,10 @@ fn check(
     {
         return Err("Per-life loot requires schema 17 with a per-life recipe".into());
     }
-    if rewards.definitions().any(|r| r.creature() != creature.id()) {
+    if rewards
+        .definitions()
+        .any(|r| r.ground().is_none() && r.creature() != creature.id())
+    {
         return Err("Reward references an undeclared creature".into());
     }
     let progression = progression::Profile::from_json(&bytes["progression"])
@@ -319,6 +326,9 @@ fn check(
         .any(|(id, _)| id != creature.id())
     {
         return Err("Progression references an undeclared creature".into());
+    }
+    if !journal && guide.catalog().is_some() {
+        return Err("Contact catalogues require expanded quest journals".into());
     }
     if journal {
         let catalog = quests::catalog::Catalog::from_json(&bytes["quest"])
@@ -338,13 +348,7 @@ fn check(
             .transpose()?;
         if let Some(areas) = &areas {
             areas.validate_quests(&catalog)?;
-            let aliases = |id: &ContentId| {
-                id == guide.npc()
-                    || id == creature.id()
-                    || guide
-                        .nodes()
-                        .any(|n| n.choices().iter().any(|c| c.id() == id))
-            };
+            let aliases = |id: &ContentId| guide.defines(id) || id == creature.id();
             if aliases(areas.id()) || areas.areas().any(|a| aliases(a.id())) {
                 return Err("Area definitions alias declared World content".into());
             }
@@ -373,13 +377,7 @@ fn check(
             if let Some(areas) = &areas {
                 documents.validate_areas(areas)?;
             }
-            let aliases = |id: &ContentId| {
-                id == guide.npc()
-                    || id == creature.id()
-                    || guide
-                        .nodes()
-                        .any(|n| n.choices().iter().any(|c| c.id() == id))
-            };
+            let aliases = |id: &ContentId| guide.defines(id) || id == creature.id();
             if aliases(documents.id()) || documents.documents().any(|d| aliases(d.id())) {
                 return Err("Document definitions alias declared World content".into());
             }
@@ -387,13 +385,7 @@ fn check(
         if let Some(raw) = bytes.get("quest_item_rewards") {
             let fixed = quests::item_rewards::Catalog::from_json(raw, &catalog, &items)?;
             fixed.validate_context(areas.as_ref(), documents.as_ref())?;
-            let aliases = |id: &ContentId| {
-                id == guide.npc()
-                    || id == creature.id()
-                    || guide
-                        .nodes()
-                        .any(|n| n.choices().iter().any(|c| c.id() == id))
-            };
+            let aliases = |id: &ContentId| guide.defines(id) || id == creature.id();
             if aliases(fixed.id())
                 || fixed
                     .rewards()
@@ -403,8 +395,11 @@ fn check(
                 return Err("Fixed quest rewards alias declared World content".into());
             }
         }
+        if let Some(contacts) = guide.catalog() {
+            contacts.validate_quest_contacts(&catalog)?;
+        }
         for quest in catalog.quests() {
-            if quest.giver() != guide.npc() || quest.turn_in() != guide.npc() {
+            if guide.contact(quest.giver()).is_none() || guide.contact(quest.turn_in()).is_none() {
                 return Err("Journal contact differs from declared guide".into());
             }
             for objective in quest.stages().flat_map(|s| s.objectives()) {
@@ -424,10 +419,10 @@ fn check(
                         return Err("Journal references an undeclared creature".into());
                     }
                     quests::catalog::EventKey::NpcInteraction { npc, interaction }
-                        if npc != guide.npc()
-                            || !guide
-                                .nodes()
-                                .any(|n| n.choices().iter().any(|c| c.id() == interaction)) =>
+                        if guide.contact(npc).is_none_or(|p| {
+                            !p.nodes()
+                                .any(|n| n.choices().iter().any(|c| c.id() == interaction))
+                        }) =>
                     {
                         return Err("Journal references an undeclared semantic interaction".into());
                     }

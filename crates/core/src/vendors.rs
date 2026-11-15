@@ -28,22 +28,49 @@ struct RawOffer {
     grant: RawAmount,
 }
 #[derive(Deserialize)]
+#[serde(untagged)]
+enum RawAmount {
+    Item(RawItemAmount),
+    Coins(RawCoins),
+}
+#[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct RawAmount {
+struct RawItemAmount {
     item: String,
     count: u32,
 }
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawCoins {
+    copper: u64,
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Amount {
-    item: ContentId,
-    count: u32,
+pub enum Amount {
+    Item { item: ContentId, count: u32 },
+    Coins { copper: u64 },
 }
 impl Amount {
-    pub fn item(&self) -> &ContentId {
-        &self.item
+    pub fn item(&self) -> Option<&ContentId> {
+        match self {
+            Self::Item { item, .. } => Some(item),
+            Self::Coins { .. } => None,
+        }
     }
-    pub fn count(&self) -> u32 {
-        self.count
+    pub fn count(&self) -> u64 {
+        match self {
+            Self::Item { count, .. } => u64::from(*count),
+            Self::Coins { copper } => *copper,
+        }
+    }
+    pub fn label(&self, items: &inventory::Catalog) -> String {
+        match self {
+            Self::Item { item, count } => format!(
+                "{} {}",
+                count,
+                items.definition(item).map_or("Unknown item", |d| d.name())
+            ),
+            Self::Coins { copper } => inventory::format_coins(*copper),
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -54,6 +81,9 @@ pub struct Offer {
     grant: Amount,
 }
 impl Offer {
+    pub fn is_sale(&self) -> bool {
+        matches!(self.grant, Amount::Coins { .. })
+    }
     pub fn id(&self) -> &ContentId {
         &self.id
     }
@@ -85,22 +115,41 @@ fn define(
     }
     Ok(id)
 }
-fn amount(raw: RawAmount, items: &inventory::Catalog, cost: bool) -> Result<Amount, &'static str> {
-    let item = ContentId::new(&raw.item).ok_or("Invalid barter item ID")?;
-    let definition = items.definition(&item).ok_or("Unknown barter item")?;
-    if raw.count == 0
-        || raw.count > MAX_TRADE_UNITS
-        || raw.count > inventory::SLOT_COUNT as u32 * definition.maximum_stack()
-    {
-        return Err("Barter quantity exceeds bounded backpack capacity");
+fn amount(
+    raw: RawAmount,
+    items: &inventory::Catalog,
+    cost: bool,
+    schema: u32,
+) -> Result<Amount, &'static str> {
+    match raw {
+        RawAmount::Coins(raw) => {
+            if schema != 2
+                || !items.currency_enabled()
+                || raw.copper == 0
+                || raw.copper > inventory::MAX_COPPER
+            {
+                return Err("Invalid vendor coin price");
+            }
+            Ok(Amount::Coins { copper: raw.copper })
+        }
+        RawAmount::Item(raw) => {
+            let item = ContentId::new(&raw.item).ok_or("Invalid barter item ID")?;
+            let definition = items.definition(&item).ok_or("Unknown barter item")?;
+            if raw.count == 0
+                || raw.count > MAX_TRADE_UNITS
+                || raw.count > inventory::SLOT_COUNT as u32 * definition.maximum_stack()
+            {
+                return Err("Barter quantity exceeds bounded backpack capacity");
+            }
+            if cost && schema == 1 && definition.main_hand_appearance().is_some() {
+                return Err("Initial barter cannot consume equippable costs");
+            }
+            Ok(Amount::Item {
+                item,
+                count: raw.count,
+            })
+        }
     }
-    if cost && definition.main_hand_appearance().is_some() {
-        return Err("Initial barter cannot consume equippable costs");
-    }
-    Ok(Amount {
-        item,
-        count: raw.count,
-    })
 }
 impl Catalog {
     pub fn from_json(bytes: &[u8], items: &inventory::Catalog) -> Result<Self, &'static str> {
@@ -108,7 +157,10 @@ impl Catalog {
             return Err("Vendor profile exceeds byte budget");
         }
         let raw: Raw = serde_json::from_slice(bytes).map_err(|_| "Invalid vendor profile")?;
-        if raw.schema != 1 || !(1..=MAX_OFFERS).contains(&raw.offers.len()) {
+        if !matches!(raw.schema, 1 | 2)
+            || !(1..=MAX_OFFERS).contains(&raw.offers.len())
+            || (raw.schema == 2 && !items.currency_enabled())
+        {
             return Err("Invalid vendor schema/offer count");
         }
         let item_catalog = ContentId::new(&raw.item_catalog)
@@ -118,6 +170,7 @@ impl Catalog {
         let id = define(&raw.id, &mut ids, items)?;
         let npc = define(&raw.npc, &mut ids, items)?;
         let mut offers = BTreeMap::new();
+        let schema = raw.schema;
         for raw in raw.offers {
             let id = define(&raw.id, &mut ids, items)?;
             if raw.name.is_empty()
@@ -127,10 +180,15 @@ impl Catalog {
             {
                 return Err("Invalid barter offer name");
             }
-            let cost = amount(raw.cost, items, true)?;
-            let grant = amount(raw.grant, items, false)?;
-            if cost.item == grant.item {
+            let cost = amount(raw.cost, items, true, schema)?;
+            let grant = amount(raw.grant, items, false, schema)?;
+            if cost.item() == grant.item() {
                 return Err("Initial barter cost/output items must differ");
+            }
+            if schema == 2
+                && matches!(cost, Amount::Coins { .. }) == matches!(grant, Amount::Coins { .. })
+            {
+                return Err("Coin trade requires exactly one money leg");
             }
             offers.insert(
                 id.clone(),
@@ -189,61 +247,88 @@ impl Catalog {
             .filter(|r| *r <= inventory::MAX_REVISION)
             .ok_or(Error::RevisionExhausted)?;
         let mut slots = bag.slots().clone();
-        let mut remaining = offer.cost.count;
-        for slot in &mut slots {
-            if let Some(stack) = slot.as_ref().filter(|s| s.item() == &offer.cost.item) {
-                let take = remaining.min(stack.count());
-                let count = stack.count() - take;
-                *slot = if count == 0 {
-                    None
-                } else {
-                    Some(
-                        Stack::new(items, offer.cost.item.clone(), count)
-                            .ok_or(Error::InvalidRecipe)?,
-                    )
-                };
-                remaining -= take;
+        let mut copper = bag.copper();
+        let mut remaining = 0;
+        match &offer.cost {
+            Amount::Coins { copper: price } => {
+                copper = Some(
+                    copper
+                        .ok_or(Error::InvalidRecipe)?
+                        .checked_sub(*price)
+                        .ok_or(Error::InsufficientCost)?,
+                );
+            }
+            Amount::Item { item, count } => {
+                remaining = *count;
+                for slot in &mut slots {
+                    if let Some(stack) = slot.as_ref().filter(|s| s.item() == item) {
+                        let take = remaining.min(stack.count());
+                        let count = stack.count() - take;
+                        *slot = if count == 0 {
+                            None
+                        } else {
+                            Some(
+                                Stack::new(items, item.clone(), count)
+                                    .ok_or(Error::InvalidRecipe)?,
+                            )
+                        };
+                        remaining -= take;
+                    }
+                }
             }
         }
         if remaining > 0 {
             return Err(Error::InsufficientCost);
         }
-        // Reviewed reward policy (rewards.rs): merge in slot order, then fill
-        // empties. All work stays within three scans of sixteen slots.
-        let limit = items
-            .definition(&offer.grant.item)
-            .ok_or(Error::InvalidRecipe)?
-            .maximum_stack();
-        let mut remaining = offer.grant.count;
-        for slot in &mut slots {
-            if let Some(stack) = slot.as_ref().filter(|s| s.item() == &offer.grant.item) {
-                let count = stack.count();
-                let add = remaining.min(limit - count);
-                if add > 0 {
-                    *slot = Some(
-                        Stack::new(items, offer.grant.item.clone(), count + add)
-                            .ok_or(Error::InvalidRecipe)?,
-                    );
-                    remaining -= add;
+        match &offer.grant {
+            Amount::Coins { copper: price } => {
+                copper = Some(
+                    copper
+                        .ok_or(Error::InvalidRecipe)?
+                        .checked_add(*price)
+                        .filter(|c| *c <= inventory::MAX_COPPER)
+                        .ok_or(Error::CurrencyOverflow)?,
+                );
+            }
+            Amount::Item { item, count } => {
+                // Reviewed reward policy (rewards.rs): merge in slot order, then fill
+                // empties. All work stays within three scans of sixteen slots.
+                let limit = items
+                    .definition(item)
+                    .ok_or(Error::InvalidRecipe)?
+                    .maximum_stack();
+                let mut remaining = *count;
+                for slot in &mut slots {
+                    if let Some(stack) = slot.as_ref().filter(|s| s.item() == item) {
+                        let count = stack.count();
+                        let add = remaining.min(limit - count);
+                        if add > 0 {
+                            *slot = Some(
+                                Stack::new(items, item.clone(), count + add)
+                                    .ok_or(Error::InvalidRecipe)?,
+                            );
+                            remaining -= add;
+                        }
+                    }
+                }
+                for slot in &mut slots {
+                    if remaining == 0 {
+                        break;
+                    }
+                    if slot.is_none() {
+                        let add = remaining.min(limit);
+                        *slot =
+                            Some(Stack::new(items, item.clone(), add).ok_or(Error::InvalidRecipe)?);
+                        remaining -= add;
+                    }
+                }
+                if remaining > 0 {
+                    return Err(Error::NoCapacity);
                 }
             }
         }
-        for slot in &mut slots {
-            if remaining == 0 {
-                break;
-            }
-            if slot.is_none() {
-                let add = remaining.min(limit);
-                *slot = Some(
-                    Stack::new(items, offer.grant.item.clone(), add).ok_or(Error::InvalidRecipe)?,
-                );
-                remaining -= add;
-            }
-        }
-        if remaining > 0 {
-            return Err(Error::NoCapacity);
-        }
-        Bag::from_parts(items, revision, slots, bag.main_hand().cloned()).map_err(Error::ItemState)
+        Bag::from_parts_with_copper(items, revision, slots, bag.main_hand().cloned(), copper)
+            .map_err(Error::ItemState)
     }
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -261,6 +346,7 @@ pub enum Error {
     InsufficientCost,
     NoCapacity,
     InvalidRecipe,
+    CurrencyOverflow,
 }
 
 /// Byte-profile-bound offer index and the observed live interaction context.

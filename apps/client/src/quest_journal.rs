@@ -23,6 +23,7 @@ pub(crate) struct Definitions(pub Arc<Profile>);
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Ui {
     pub pending: bool,
+    pub expanded: bool,
     pub pointer_actions: u64,
     pub submitted: u64,
     pub applied: u64,
@@ -38,6 +39,10 @@ pub(crate) struct Ui {
 struct Pending(Option<Intent>);
 #[derive(Component)]
 struct Tracker;
+#[derive(Component)]
+struct JournalToggle;
+#[derive(Component)]
+struct JournalToggleLabel;
 #[derive(Component)]
 struct Scroll;
 #[derive(Component)]
@@ -58,7 +63,7 @@ pub(crate) fn install(app: &mut App, profile: Arc<Profile>) {
         .add_systems(Startup, setup.after(crate::dialogue::GuideUiSetup))
         .add_systems(
             Update,
-            (controls, present, scroll)
+            (journal_keys, controls, present, scroll)
                 .chain()
                 .after(crate::network::present),
         );
@@ -83,6 +88,7 @@ fn setup(
     commands
         .spawn((
             Scroll,
+            GlobalZIndex(10),
             crate::fantasy_ui::Panel::QuestTracker,
             Hovered::default(),
             ScrollPosition::default(),
@@ -101,9 +107,34 @@ fn setup(
             BackgroundColor(Color::srgba(0.02, 0.04, 0.07, 0.9)),
         ))
         .with_children(|root| {
-            root.spawn(text("Quests"));
+            root.spawn((
+                JournalToggle,
+                Button,
+                Hovered::default(),
+                AccessibleLabel::new("Expand or collapse quest journal"),
+                Node {
+                    width: percent(100),
+                    padding: UiRect::axes(px(6), px(5)),
+                    ..default()
+                },
+                BackgroundColor(crate::fantasy_ui::PANEL),
+            ))
+            .with_child((
+                JournalToggleLabel,
+                Text::new("Objectives   ·   Journal [J]"),
+                TextFont {
+                    font_size: FontSize::Px(18.),
+                    ..default()
+                },
+                TextColor(Color::srgb(0.95, 0.80, 0.50)),
+                Pickable::IGNORE,
+            ));
             root.spawn((StatusLabel, text("")));
-            root.spawn((Tracker, text("Waiting for your journal...")));
+            root.spawn((Tracker, text("Waiting for your journal...")))
+                .insert(TextFont {
+                    font_size: FontSize::Px(16.),
+                    ..default()
+                });
         });
     for pane in &panes {
         commands.entity(pane).with_children(|panel| {
@@ -169,12 +200,22 @@ fn setup(
         });
     }
 }
+fn journal_keys(keys: Res<ButtonInput<KeyCode>>, windows: Query<&Window>, mut ui: ResMut<Ui>) {
+    if keys.just_pressed(KeyCode::KeyJ) && windows.single().is_ok_and(|window| window.focused) {
+        ui.expanded = !ui.expanded;
+    }
+}
 fn activate(
     event: On<Activate>,
     buttons: Query<&ActionButton>,
+    toggles: Query<(), With<JournalToggle>>,
     mut ui: ResMut<Ui>,
     mut pending: ResMut<Pending>,
 ) {
+    if toggles.contains(event.entity) {
+        ui.expanded = !ui.expanded;
+        return;
+    }
     let Ok(button) = buttons.get(event.entity) else {
         return;
     };
@@ -241,7 +282,7 @@ fn action(profile: &Profile, state: &State, quest: &Definition, nonce: u64) -> O
         .guide
         .as_ref()
         .filter(|g| g.actor == view.actor && g.profile_hash == dialogue.profile_hash)?;
-    let guide = presence.guide.filter(|g| g.key == open.guide)?;
+    let guide = presence.find(open.guide)?;
     if !theia_network::dialogue::in_range(state.authority_focus()?, guide.position) {
         return None;
     }
@@ -251,6 +292,13 @@ fn action(profile: &Profile, state: &State, quest: &Definition, nonce: u64) -> O
         Some(Status::Ready) => Action::TurnIn,
         _ => return None,
     };
+    let contact = match action {
+        Action::Accept => quest.giver(),
+        Action::TurnIn => quest.turn_in(),
+    };
+    if !presence.contacts.is_empty() && presence.npc(open.guide) != Some(contact) {
+        return None;
+    }
     // Session actor incarnation plus monotonic UI intent number keeps identities
     // distinct. It is a receipt key, never permission or a reward amount.
     let mut bytes = b"theia-journal-ui-intent-v1\0".to_vec();
@@ -275,6 +323,9 @@ fn action(profile: &Profile, state: &State, quest: &Definition, nonce: u64) -> O
     })
 }
 fn journal_text(profile: &Profile, state: &State) -> String {
+    journal_content(profile, state, true)
+}
+fn journal_content(profile: &Profile, state: &State, expanded: bool) -> String {
     let Some(view) = state
         .quest_journal
         .as_ref()
@@ -296,12 +347,18 @@ fn journal_text(profile: &Profile, state: &State) -> String {
     // tracker. Preserve catalogue order within each group for stable scrolling.
     entries.sort_by_key(|(_, progress)| progress.status() == Status::Completed);
     for (quest, progress) in entries {
+        if !expanded && progress.status() == Status::Completed {
+            continue;
+        }
         let status = match progress.status() {
             Status::Active => "In progress",
-            Status::Ready => "Return to your contact",
+            Status::Ready => quest.ready_label().unwrap_or("Return to your contact"),
             Status::Completed => "Completed",
         };
-        lines.push(format!("{} - {status}", quest.title()));
+        lines.push(format!("{}\n{status}", quest.title()));
+        if expanded {
+            lines.push(quest.description().to_owned());
+        }
         if progress.status() == Status::Active
             && let Some(stage) = quest.stages().find(|s| s.id() == progress.stage())
         {
@@ -314,11 +371,8 @@ fn journal_text(profile: &Profile, state: &State) -> String {
                 ));
             }
         }
-        if progress.status() != Status::Completed {
-            lines.push(format!(
-                "Completion reward: {} XP (level cap applies)",
-                quest.experience()
-            ));
+        if expanded && progress.status() != Status::Completed {
+            lines.push(format!("Completion reward: {} XP", quest.experience()));
             if let Some(items) = reward_items(profile, quest) {
                 lines.push(format!("Items: {items}"));
             }
@@ -326,7 +380,16 @@ fn journal_text(profile: &Profile, state: &State) -> String {
         lines.push(String::new());
     }
     if lines.is_empty() {
-        "No accepted quests. Speak to a quest giver.".into()
+        if !expanded
+            && profile
+                .catalog()
+                .quests()
+                .any(|q| view.journal.progress(q.id()).is_some())
+        {
+            "No active quests. Open Journal to see completed quests.".into()
+        } else {
+            "No accepted quests. Speak to a quest giver.".into()
+        }
     } else {
         lines.join("\n")
     }
@@ -354,6 +417,16 @@ fn action_text(profile: &Profile, quest: &Definition, action: Action) -> String 
         Action::TurnIn => "Complete",
     };
     let mut label = format!("{verb}: {} ({} XP)", quest.title(), quest.experience());
+    if action == Action::Accept {
+        label.push_str(&format!("\n{}", quest.description()));
+        for objective in quest.stages().flat_map(|s| s.objectives()) {
+            label.push_str(&format!(
+                "\n- {} ({})",
+                objective.label(),
+                objective.required()
+            ));
+        }
+    }
     if let Some(items) = reward_items(profile, quest) {
         label.push_str(&format!("\nItems: {items}"));
     }
@@ -375,12 +448,18 @@ fn status_text(state: &State, pending: bool) -> &'static str {
         }
     }
 }
-type LabelFilter = Or<(With<ActionLabel>, With<Tracker>, With<StatusLabel>)>;
+type LabelFilter = Or<(
+    With<ActionLabel>,
+    With<Tracker>,
+    With<StatusLabel>,
+    With<JournalToggleLabel>,
+)>;
 type LabelView<'a> = (
     &'a mut Text,
     Option<&'a ActionLabel>,
     Has<Tracker>,
     Has<StatusLabel>,
+    Has<JournalToggleLabel>,
 );
 type ButtonView<'a> = (
     &'a ActionButton,
@@ -407,9 +486,20 @@ fn present(
             }
         }
     }
-    for (mut label, quest, tracker, status) in &mut labels {
+    for (mut label, quest, tracker, status, toggle) in &mut labels {
         let next = if tracker {
-            journal_text(profile, &state)
+            if ui.expanded {
+                journal_text(profile, &state)
+            } else {
+                journal_content(profile, &state, false)
+            }
+        } else if toggle {
+            if ui.expanded {
+                "Quest journal   ·   Close [J]"
+            } else {
+                "Objectives   ·   Journal [J]"
+            }
+            .into()
         } else if status {
             status_text(&state, ui.pending).into()
         } else if let Some(label) = quest {
@@ -446,12 +536,15 @@ type ScrollView<'a> = (
     &'a ComputedNode,
     &'a mut ScrollPosition,
     &'a mut Node,
+    Option<&'a mut GlobalZIndex>,
     Has<Offers>,
 );
 fn scroll(
     mut events: MessageReader<MouseWheel>,
     windows: Query<&Window>,
     ui: Res<Ui>,
+    scale: Res<bevy::ui::UiScale>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
     mut roots: Query<ScrollView<'_>, ScrollFilter>,
 ) {
     let delta: f32 = events
@@ -464,11 +557,40 @@ fn scroll(
             }
         })
         .sum();
-    let height = windows.single().map_or(720., |w| w.height());
-    // Keep the tracker above the existing lower-left target/status panels.
-    for (hovered, node, mut position, mut style, offers) in &mut roots {
+    let height = windows.single().map_or(720., |w| w.height()) / scale.0;
+    for (hovered, node, mut position, mut style, layer, offers) in &mut roots {
         if !offers {
-            style.max_height = px((height - 526.).max(80.).min(height * 0.38));
+            style.display = Display::Flex;
+            let top = if ui.expanded {
+                80.
+            } else if skin.is_some() {
+                252.
+            } else {
+                206.
+            };
+            style.max_height = px((height - top - 110.).max(80.));
+            style.top = px(top);
+            let width = px(if ui.expanded { 520. } else { 300. });
+            if style.width != width {
+                position.y = 0.;
+            }
+            style.width = width;
+            style.left = if ui.expanded {
+                percent(50)
+            } else if skin.is_some() {
+                Val::Auto
+            } else {
+                px(12)
+            };
+            style.margin.left = px(if ui.expanded { -260. } else { 0. });
+            style.right = if ui.expanded || skin.is_none() {
+                Val::Auto
+            } else {
+                px(12.)
+            };
+            if let Some(mut layer) = layer {
+                layer.0 = if ui.expanded { 30 } else { 10 };
+            }
         }
         let max = ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
         // Removing an accepted/completed offer must not leave the remaining
@@ -495,7 +617,7 @@ pub(crate) fn qualification(world: &mut World, state: &State) -> Option<serde_js
         .filter(|(_,node,_,_)|node.size().min_element()>0.)
         .map(|(button,node,t,pressed)|serde_json::json!({"pressed":pressed,"quest":button.0.as_str(),"point":(t.affine().translation*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),"size":(node.size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),"content_box_size":(node.content_box().size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array()})).collect();
     let quests:Vec<_>=definitions.catalog().quests().filter_map(|q|journal.journal.progress(q.id()).map(|p|serde_json::json!({"id":q.id().as_str(),"revision":p.revision(),"status":format!("{:?}",p.status()),"counts":q.stages().flat_map(|s|s.objectives()).map(|o|(o.id().as_str(),p.count(o.id()).unwrap_or(0))).collect::<BTreeMap<_,_>>()}))).collect();
-    let tracker=world.query_filtered::<(&Text,&ComputedNode,Option<&bevy::text::TextLayoutInfo>),With<Tracker>>().iter(world).next().map(|(text,node,glyphs)|serde_json::json!({"text":text.0,"size":(node.size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),"glyphs":glyphs.map_or(0,|g|g.glyphs.len())}));
+    let tracker=world.query_filtered::<(&Text,&ComputedNode,&bevy::ui::UiGlobalTransform,Option<&bevy::text::TextLayoutInfo>),With<Tracker>>().iter(world).next().map(|(text,node,t,glyphs)|serde_json::json!({"text":text.0,"point":(t.affine().translation*crate::fantasy_ui::window_factor(node,ui_scale)).to_array(),"size":(node.size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),"glyphs":glyphs.map_or(0,|g|g.glyphs.len())}));
     let action_labels: Vec<_> = world
         .query::<(
             &ActionLabel,

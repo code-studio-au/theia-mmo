@@ -7,6 +7,7 @@ owned services; a new invocation creates a fresh synthetic account/database.
 No movement, combat, character selection or editor input is automated.
 """
 import argparse
+from contextlib import ExitStack
 import hashlib
 import json
 import os
@@ -50,11 +51,27 @@ def prepare(args, root=ROOT):
     zone = json.loads(args.zone.read_text())
     if any(player.get('enabled') for player in zone.get('test_players', [])):
         raise ValueError('Manual account playtest requires a zone without enabled Test Players')
+    skin = getattr(args, 'fantasy_ui', None)
+    if skin is not None:
+        from play import fantasy_ui_options
+        fantasy_ui_options(skin, True, True)
+    radius = getattr(args, 'roam_radius', None)
+    if radius is not None and not 0 <= radius <= 16:
+        raise ValueError('Roaming radius must be 0..16 metres')
     output.mkdir(mode=0o700, parents=True)
+    print(f'Preparing editor session: {output}', flush=True)
+    print('Copying and checking the debug executables; this can take a minute.', flush=True)
     zone_path = output/'draft.zone.json'
-    zone_path.write_bytes(args.zone.read_bytes())
+    radius = getattr(args, 'roam_radius', None)
+    if radius is not None:
+        for group in zone.get('spawn_groups', []):
+            group['roam_radius_metres'] = radius
+        zone_path.write_text(json.dumps(zone, indent=2)+'\n')
+    else:
+        zone_path.write_bytes(args.zone.read_bytes())
     hashes = {}
-    for name, source in sources.items():
+    for index, (name, source) in enumerate(sources.items(), 1):
+        print(f'  [{index}/{len(sources)}] Preparing {name}...', flush=True)
         target = output/'binaries'/name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
@@ -112,13 +129,21 @@ def run(args):
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
     try:
-        with Identity(output/'provider', ROOT/'build/identity-sdk',
-                      token_seconds=args.session_seconds, interactive=True) as identity, \
-                Cluster(output/'cluster', ROOT/'build/postgres-sdk', isolate_process=True) as cluster:
+        with ExitStack() as services:
+            print('Starting local sign-in service...', flush=True)
+            identity = services.enter_context(Identity(
+                output/'provider', ROOT/'build/identity-sdk',
+                token_seconds=args.session_seconds, interactive=True))
+            print('Starting local account database...', flush=True)
+            cluster = services.enter_context(Cluster(
+                output/'cluster', ROOT/'build/postgres-sdk', isolate_process=True))
             try:
                 if stopped:
                     return
                 env = environment(os.environ, identity, cluster, output, args.session_seconds)
+                if getattr(args, 'fantasy_ui', None):
+                    env['THEIA_FANTASY_UI'] = str(args.fantasy_ui.resolve())
+                print('Opening the editor window...', flush=True)
                 with (output/'editor.log').open('w') as log:
                     editor = subprocess.Popen(command, cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
                                               stdout=log, stderr=subprocess.STDOUT,
@@ -166,6 +191,8 @@ def main():
                  'creature-asset', 'gameplay-template', 'output'):
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=ROOT/'target/debug')
+    parser.add_argument('--roam-radius', type=float, help='Set roaming radius on the private draft groups (0..16 m)')
+    parser.add_argument('--fantasy-ui', type=Path, help='Local Synty Fantasy Warrior HUD for account playtests')
     parser.add_argument('--access-path', type=int, help='Prefill the checked access-road ID')
     parser.add_argument('--session-seconds', type=int, default=3600)
     run(parser.parse_args())

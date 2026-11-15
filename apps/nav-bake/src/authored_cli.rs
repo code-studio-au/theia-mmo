@@ -193,7 +193,7 @@ pub(super) fn route(source: &Path, navigation: &Path, request_path: &Path) -> Re
     let store = Store::open(source)?;
     let nav = nav::Store::open(navigation, store.identity())?;
     nav.verify()?;
-    let (request, endpoints) = request(request_path)?;
+    let (request, _) = request(request_path)?;
     let tiles = nav
         .manifest()
         .tiles
@@ -201,7 +201,11 @@ pub(super) fn route(source: &Path, navigation: &Path, request_path: &Path) -> Re
         .map(|t| nav.tile(t.id))
         .collect::<Result<Vec<_>>>()?;
     let query = theia_nav_bake::Query::new(&tiles)?;
-    let points = routed_points(&store, &query, &endpoints)?;
+    let points: Vec<_> = nav::authored_checks::grounded_route(&store, &nav, &request.points)
+        .map_err(|error| format!("Route preparation: {error}"))?
+        .into_iter()
+        .map(|p| p.metres())
+        .collect();
     let mut grounding = Grounding::new(&store);
     let mut samples = 0;
     clearance(&query, &mut grounding, &points, &mut samples)?;

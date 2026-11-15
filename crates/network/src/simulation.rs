@@ -4,6 +4,7 @@ pub mod combat;
 pub mod creatures;
 pub mod dialogue;
 mod dodging;
+mod follow;
 pub mod population;
 pub mod progression;
 pub mod quest_journal;
@@ -33,6 +34,7 @@ pub struct World {
     targeting_enabled: bool,
     local_chat: Option<theia_core::chat::Area>,
     dialogue: Option<dialogue::Authority>,
+    follow: follow::Authority,
     vendor: Option<std::sync::Arc<crate::vendor_wire::Profile>>,
     combat: Option<combat::Authority>,
     patrol: Option<creatures::Patrol>,
@@ -100,6 +102,7 @@ impl Default for World {
             targeting_enabled: false,
             local_chat: None,
             dialogue: None,
+            follow: follow::Authority::default(),
             vendor: None,
             combat: None,
             patrol: None,
@@ -776,9 +779,10 @@ impl World {
             let identity = self.quest_journal.as_ref().map_or(identity, |p| {
                 crate::quest_journal::profile_identity(identity, p.hash())
             });
-            let identity = self.dialogue.as_ref().map_or(identity, |d| {
-                d.placement.identity(identity, d.profile.hash())
-            });
+            let identity = self
+                .dialogue
+                .as_ref()
+                .map_or(identity, |d| d.identity(identity));
             let identity = self.vendor.as_ref().map_or(identity, |v| {
                 crate::vendor_wire::profile_identity(identity, v.hash())
             });
@@ -920,6 +924,7 @@ impl World {
         }
         if !self.initialize_player_life(id) {
             self.players.remove(&id);
+            self.follow.leave(id);
             return None;
         }
         Some(id)
@@ -1048,6 +1053,7 @@ impl World {
         })
     }
     pub fn leave(&mut self, id: u64) {
+        self.follow.leave(id);
         self.players.remove(&id);
         if let Some(dialogue) = &mut self.dialogue {
             dialogue.leave(id);
@@ -1100,6 +1106,7 @@ impl World {
         self.sync_patrol_life();
         self.advance_combat_membership();
         self.advance_creature_credit();
+        self.advance_follow();
         self.advance_dialogue();
         if !self.targets.is_empty() {
             for actor in self.players.values_mut() {

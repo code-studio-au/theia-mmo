@@ -1272,6 +1272,7 @@ pub struct SceneState<'w> {
     frame: Res<'w, crate::floating_origin::Frame>,
     pipelines: Res<'w, crate::capture_ready::CaptureReady>,
     time: Res<'w, Time>,
+    real_time: Res<'w, Time<Real>>,
     references: Option<Res<'w, crate::reference_scene::Config>>,
     ready: Option<Res<'w, crate::reference_scene::Ready>>,
     terrain: Option<Res<'w, crate::terrain_scene::Config>>,
@@ -1300,6 +1301,7 @@ pub fn present(
         frame,
         pipelines,
         time,
+        real_time,
         references,
         ready,
         terrain,
@@ -1358,7 +1360,7 @@ pub fn present(
                     format!("THEIA\nPlayer {id} | connected\nLoading world and characters...")
                 }
             } else if fantasy_skin.is_some() {
-                "Connected".into()
+                String::new()
             } else {
                 let controls = if let Some(classic) = classic.as_ref() {
                     classic.hint()
@@ -1513,7 +1515,9 @@ pub fn present(
             &raw,
             current_intent,
             graybox.as_ref().and_then(|gray| gray.patch.as_deref()),
-            Instant::now(),
+            // Sample at Bevy's frame timestamp, not at a variable point in the
+            // Update schedule after asset/network work has consumed CPU time.
+            real_time.last_update().unwrap_or_else(Instant::now),
         ) {
             Ok(value) => value,
             Err(error) => {
@@ -1522,6 +1526,7 @@ pub fn present(
             }
         }
     });
+    let mut clock_sampled = false;
     if let Some(driven) = driven {
         if let Some(packet) = driven.packet
             && network
@@ -1536,7 +1541,36 @@ pub fn present(
         let mut p = driven.pose.feet.metres();
         p[1] += f64::from(theia_network::world::PAWN_Y);
         let global = GlobalPosition::new(p).unwrap();
-        if network.predicted_tick != driven.tick || driven.reset || network.local_track.is_none() {
+        if let Some((feet, fraction)) = driven.presentation {
+            // Use the same continuous clock as fixed prediction, including
+            // frames that cross zero or multiple simulation ticks. Restarting
+            // a one-tick tween each render frame produces a speed sawtooth.
+            let [from, to] = feet.map(|p| {
+                let mut p = p.metres();
+                p[1] += f64::from(theia_network::world::PAWN_Y);
+                GlobalPosition::new(p).unwrap()
+            });
+            let interval = 1. / network.tick_hz as f32;
+            network.local_track = Some(RemotePawn {
+                life_key: None,
+                heading: None,
+                id: state.id.unwrap_or(0),
+                from,
+                to,
+                elapsed: fraction as f32 * interval,
+                duration: interval,
+            });
+            network.predicted_tick = driven.tick;
+            clock_sampled = true;
+            if let Ok((_, _, mut motion)) = local.single_mut() {
+                let a = from.metres();
+                let b = to.metres();
+                motion.0 = ((b[0] - a[0]).hypot(b[2] - a[2]) / f64::from(interval)) as f32;
+            }
+        } else if network.predicted_tick != driven.tick
+            || driven.reset
+            || network.local_track.is_none()
+        {
             network.predicted_tick = driven.tick;
             let interval = 1. / network.tick_hz as f32;
             let speed = if let Some(track) = &mut network.local_track {
@@ -1559,7 +1593,9 @@ pub fn present(
         }
     }
     if let Some(track) = &mut network.local_track {
-        track.elapsed += time.delta_secs();
+        if !clock_sampled {
+            track.elapsed += time.delta_secs();
+        }
         if let Some(global) = track.global_in_frame(&frame, state.authority_focus()) {
             if let Ok((mut transform, _, _)) = local.single_mut() {
                 if let Some(classic) = classic.as_ref() {

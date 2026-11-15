@@ -65,7 +65,7 @@ fn catalogs_reject_unbounded_unknown_duplicate_or_client_like_reward_definitions
     assert_eq!(reward.grants()[0].count(), 1);
     let original: Value = serde_json::from_slice(DATA).unwrap();
     for (key, value) in [
-        ("schema", json!(5)),
+        ("schema", json!(6)),
         ("id", json!("../rewards")),
         ("item_catalog", json!("theia.other.items")),
         ("rewards", json!([])),

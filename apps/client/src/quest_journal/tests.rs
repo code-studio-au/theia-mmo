@@ -64,6 +64,7 @@ pub(crate) fn fixture() -> (State, Arc<Profile>) {
             guide: Some(theia_network::dialogue_wire::Presence {
                 actor,
                 profile_hash: [1; 32],
+                contacts: vec![],
                 guide: Some(guide),
             }),
             dialogue: Some(theia_network::dialogue::View {
@@ -301,7 +302,7 @@ fn fixed_items_are_named_on_offers_and_unfinished_journal_but_not_promised_again
         .journal;
     set_journal(&mut state, journal);
     let tracker = journal_text(&profile, &state);
-    assert!(tracker.contains("Completion reward: 25 XP (level cap applies)"));
+    assert!(tracker.contains("Completion reward: 25 XP"));
     assert!(tracker.contains("3 x Training Token") && tracker.contains("1 x Training Sword"));
     set_journal(&mut state, completed_introduction(&profile));
     let tracker = journal_text(&profile, &state);
@@ -315,10 +316,9 @@ fn fixed_items_are_named_on_offers_and_unfinished_journal_but_not_promised_again
         action_text(&profile, other, Action::Accept),
         action_text(&legacy, other, Action::Accept)
     );
-    assert_eq!(
-        action_text(&legacy, quest, Action::Accept),
-        "Accept: Meet the guide (25 XP)"
-    );
+    let label = action_text(&legacy, quest, Action::Accept);
+    assert!(label.starts_with("Accept: Meet the guide (25 XP)"));
+    assert!(label.contains(quest.description()));
 }
 
 #[test]
@@ -348,4 +348,100 @@ fn backpack_refusal_explains_retry_without_confusing_journal_capacity_or_pending
     assert!(!status_text(&state, false).contains("backpack"));
     state.quest_journal_reply.as_mut().unwrap().rejection = None;
     assert_eq!(status_text(&state, false), "");
+}
+
+#[test]
+fn compact_tracker_hides_history_and_reward_details_but_journal_retains_them() {
+    let (mut state, profile) = fixture();
+    set_journal(&mut state, completed_introduction(&profile));
+    assert!(!journal_content(&profile, &state, false).contains("Completed"));
+    assert!(journal_text(&profile, &state).contains("Completed"));
+    let quest = profile
+        .catalog()
+        .quest(&id("theia.dev.quest-introduction"))
+        .unwrap();
+    set_journal(
+        &mut state,
+        Journal::default()
+            .propose_accept(profile.catalog(), quest.id(), quest.giver())
+            .unwrap()
+            .journal,
+    );
+    let compact = journal_content(&profile, &state, false);
+    assert!(compact.contains("0/1"));
+    assert!(!compact.contains("Completion reward"));
+    assert!(journal_text(&profile, &state).contains(quest.description()));
+}
+
+#[test]
+fn overlapping_contacts_offer_only_their_own_acceptance_and_turn_in() {
+    let (mut state, old) = fixture();
+    let xp = theia_network::progression_wire::Profile::from_json(include_bytes!(
+        "../../../../content/gameplay/development-progression.json"
+    ))
+    .unwrap();
+    let mut data: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../content/quests/development-journal.json"
+    ))
+    .unwrap();
+    data["quests"][0]["turn_in"] = serde_json::json!("theia.dev.steward");
+    let profile = Profile::from_json(&serde_json::to_vec(&data).unwrap(), &xp).unwrap();
+    state.quest_journal.as_mut().unwrap().profile_hash = profile.hash();
+    let first = id("theia.dev.quest-introduction");
+    let quest = profile.catalog().quest(&first).unwrap();
+    let presence = state.guide.as_mut().unwrap();
+    let a = presence.guide.take().unwrap();
+    let mut b = a;
+    b.key.entity = EntityId::new(4).unwrap();
+    presence.contacts = vec![
+        theia_network::dialogue::ContactPresence {
+            npc: id("theia.dev.guide"),
+            guide: a,
+        },
+        theia_network::dialogue::ContactPresence {
+            npc: id("theia.dev.steward"),
+            guide: b,
+        },
+    ];
+    assert!(action(&profile, &state, quest, 1).is_some());
+    state
+        .dialogue
+        .as_mut()
+        .unwrap()
+        .open
+        .as_mut()
+        .unwrap()
+        .guide = b.key;
+    assert!(action(&profile, &state, quest, 1).is_none());
+    let mut journal = Journal::default()
+        .propose_accept(profile.catalog(), &first, &id("theia.dev.guide"))
+        .unwrap()
+        .journal;
+    for name in ["road", "supplies", "report"] {
+        journal = journal
+            .propose_trusted_event(
+                profile.catalog(),
+                &EventKey::NpcInteraction {
+                    npc: id("theia.dev.guide"),
+                    interaction: id(&format!("theia.dev.interaction.{name}")),
+                },
+            )
+            .unwrap()
+            .journal;
+    }
+    set_journal(&mut state, journal);
+    assert_eq!(
+        action(&profile, &state, quest, 2).unwrap().command.action,
+        Action::TurnIn
+    );
+    state
+        .dialogue
+        .as_mut()
+        .unwrap()
+        .open
+        .as_mut()
+        .unwrap()
+        .guide = a.key;
+    assert!(action(&profile, &state, quest, 2).is_none());
+    assert_ne!(profile.hash(), old.hash());
 }

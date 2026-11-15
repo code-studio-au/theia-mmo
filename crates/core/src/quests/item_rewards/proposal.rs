@@ -65,11 +65,12 @@ impl Catalog {
         };
         // Consumption and grants share one mutation of the original revision.
         // This local candidate is not published or accepted as saved inventory.
-        let candidate = Bag::from_parts(
+        let candidate = Bag::from_parts_with_copper(
             &self.items,
             bag.revision(),
             prepared.bag.slots().clone(),
             prepared.bag.main_hand().cloned(),
+            prepared.bag.copper(),
         )
         .map_err(|e| TurnInError::Inventory(rewards::Error::ItemState(e)))?;
         let next =

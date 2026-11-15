@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "theia.dev.valley-contact-rewards",
+  "revision": 1,
+  "quest_catalog": "theia.dev.quest-journal-items",
+  "item_catalog": "theia.dev.equipment-items",
+  "rewards": [
+    {
+      "quest": "theia.dev.quest-wolf-pelts",
+      "grants": [
+        {
+          "item": "theia.dev.training-token",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "quest": "theia.dev.quest-roadside-orders",
+      "grants": [
+        {
+          "item": "theia.dev.training-token",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "quest": "theia.dev.quest-steward-delivery",
+      "grants": [
+        {
+          "item": "theia.dev.training-token",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

@@ -20,6 +20,7 @@ use theia_core::{
 pub struct Binding {
     definition: super::creatures::Definition,
     respawn_ms: u32,
+    roaming: Vec<Vec<Vec<GlobalPosition>>>,
 }
 impl Binding {
     pub fn new(
@@ -36,6 +37,7 @@ impl Binding {
         Ok(Self {
             definition,
             respawn_ms: respawn_seconds * 1000,
+            roaming: Vec::new(),
         })
     }
     pub fn definition(&self) -> &super::creatures::Definition {
@@ -48,6 +50,24 @@ impl Binding {
         let mut bytes = b"theia-population-life-world-v1\0".to_vec();
         bytes.extend(self.definition.profile_identity(base));
         bytes.extend(self.respawn_ms.to_le_bytes());
+        if !self.roaming.is_empty() {
+            bytes.extend(b"roaming-v1");
+            bytes.extend(
+                serde_json::to_vec(
+                    &self
+                        .roaming
+                        .iter()
+                        .map(|routes| {
+                            routes
+                                .iter()
+                                .map(|route| route.iter().map(|p| p.metres()).collect::<Vec<_>>())
+                                .collect::<Vec<_>>()
+                        })
+                        .collect::<Vec<_>>(),
+                )
+                .expect("checked roaming positions"),
+            );
+        }
         crate::terrain::sha256(&bytes)
     }
 }
@@ -144,6 +164,7 @@ impl World {
                 key,
                 GlobalPosition::new(position).ok_or("Invalid population position")?,
                 patch,
+                binding.roaming.get(index).cloned().unwrap_or_default(),
             )?);
         }
         let keys = self.enable_prepared_population(prepared)?;
@@ -162,9 +183,22 @@ impl World {
         let directives = combat.advance_population_pursuit(self);
         self.combat = Some(combat);
         let mut actors = std::mem::take(&mut self.population_motion);
+        let neighbours: Vec<_> = actors
+            .iter()
+            .filter(|a| {
+                directives.iter().any(|(key, d)| {
+                    *key == a.key
+                        && matches!(
+                            d.mode,
+                            theia_core::pursuit::Mode::Chase | theia_core::pursuit::Mode::Attack
+                        )
+                })
+            })
+            .map(|a| (a.key, a.position()))
+            .collect();
         for actor in &mut actors {
             if let Some((_, directive)) = directives.iter().find(|(key, _)| *key == actor.key) {
-                actor.advance(self, *directive);
+                actor.advance(self, *directive, &neighbours);
             }
         }
         self.population_motion = actors;

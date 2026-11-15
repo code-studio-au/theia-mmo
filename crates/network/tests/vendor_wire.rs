@@ -115,3 +115,53 @@ fn exact_item_and_vendor_bytes_bind_canonical_offer_indices() {
         [1; 32]
     );
 }
+
+#[test]
+fn coin_balances_round_trip_privately_and_cannot_use_legacy_or_unbounded_frames() {
+    let items = Items::from_json(include_bytes!(
+        "../../../content/gameplay/development-coin-items.json"
+    ))
+    .unwrap();
+    let bag = Bag::from_parts_with_copper(
+        items.catalog(),
+        7,
+        std::array::from_fn(|_| None),
+        None,
+        Some(52550),
+    )
+    .unwrap();
+    let state = inventory_wire::State {
+        actor: request().actor,
+        catalog_hash: items.hash(),
+        bag,
+        reply: None,
+    };
+    let bytes = state.encode(items.catalog(), items.hash()).unwrap();
+    assert_eq!(bytes.len(), inventory_wire::COIN_STATE_BYTES);
+    assert_eq!(
+        inventory_wire::State::decode(&bytes, items.catalog(), items.hash()).unwrap(),
+        state
+    );
+    for end in 0..bytes.len() {
+        assert!(
+            inventory_wire::State::decode(&bytes[..end], items.catalog(), items.hash()).is_err()
+        );
+    }
+    let mut bad = bytes.clone();
+    bad[120..128].copy_from_slice(&u64::MAX.to_le_bytes());
+    assert!(inventory_wire::State::decode(&bad, items.catalog(), items.hash()).is_err());
+    let mut legacy = bytes.clone();
+    legacy[..4].copy_from_slice(inventory_wire::ITEM_STATE_TAG);
+    assert!(inventory_wire::State::decode(&legacy, items.catalog(), items.hash()).is_err());
+    let documents = theia_network::documents::Profile::from_json(
+        include_bytes!("../../../content/quests/development-documents.json"),
+        &items,
+    )
+    .unwrap();
+    let bytes = state.encode_with_documents(&documents).unwrap();
+    assert_eq!(bytes.len(), inventory_wire::COIN_STATE_BYTES + 32);
+    assert_eq!(
+        inventory_wire::State::decode_with_documents(&bytes, &documents).unwrap(),
+        state
+    );
+}

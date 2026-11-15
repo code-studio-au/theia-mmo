@@ -254,6 +254,7 @@ impl PreparedRouter {
             command_sequence: 0,
             pending: None,
             last_areas: None,
+            sent_follows: std::collections::BTreeSet::new(),
         }
     }
 }
@@ -267,6 +268,7 @@ pub struct Router {
     command_sequence: u64,
     pending: Option<Pending>,
     last_areas: Option<theia_core::quests::journal::ReachedAreas>,
+    sent_follows: std::collections::BTreeSet<theia_core::quests::catalog::EventKey>,
 }
 struct Pending {
     owner_sequence: u64,
@@ -293,6 +295,58 @@ impl Router {
     }
     fn ready(&self, world: &World, port: &Port) -> bool {
         self.bound(world, port) && port.state.borrow().journal.is_some()
+    }
+    /// Import committed acceptance and enqueue only server-observed arrivals.
+    /// Queue pressure leaves the arrival eligible for retry; never grant on input.
+    pub fn observe_follows(&mut self, world: &mut World, port: &Port) -> Result<usize> {
+        if !self.ready(world, port) {
+            return Ok(0);
+        }
+        {
+            let state = port.state.borrow();
+            let journal = &state
+                .journal
+                .as_ref()
+                .ok_or("Follow owner not ready")?
+                .journal;
+            world.sync_follow_journal(self.actor.entity.value(), journal)?;
+        }
+        let mut forwarded = 0;
+        for event in world.finished_follow_events(self.actor.entity.value()) {
+            if self.sent_follows.contains(&event) {
+                continue;
+            }
+            let Ok(permit) = port.input.try_reserve() else {
+                break;
+            };
+            let sequence = self
+                .sequence
+                .checked_add(1)
+                .ok_or("Follow sequence exhausted")?;
+            let mut bytes = b"theia-journal-follow-occurrence-v1\0".to_vec();
+            bytes.extend(world.identity());
+            bytes.extend(self.actor.epoch.value().to_le_bytes());
+            bytes.extend(self.actor.entity.value().to_le_bytes());
+            bytes.extend(sequence.to_le_bytes());
+            let hash = crate::terrain::sha256(&bytes);
+            let id = std::num::NonZeroU128::new(
+                u128::from_le_bytes(hash[..16].try_into().unwrap()).max(1),
+            )
+            .unwrap();
+            permit.send(Input::Journal(JournalInput {
+                actor: self.actor,
+                catalog: self.profile.hash,
+                sequence,
+                operation: JournalOperation::Event {
+                    id,
+                    event: event.clone(),
+                },
+            }));
+            self.sequence = sequence;
+            self.sent_follows.insert(event);
+            forwarded += 1;
+        }
+        Ok(forwarded)
     }
     /// Sample only after reserving bounded owner capacity. A full queue does
     /// not consume/cache the observation; retry while occupancy remains eligible.
@@ -390,6 +444,7 @@ impl Router {
         if request.encode(&self.profile).is_err()
             || request.actor != self.actor
             || !self.world.matches_world(world)
+            || world.contact_definition(request.npc) != Some(&request.command.npc)
             || !world.guide_interaction_eligible(
                 self.actor.entity.value(),
                 request.dialogue_revision,

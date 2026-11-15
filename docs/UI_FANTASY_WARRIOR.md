@@ -1,6 +1,79 @@
+15 November 2026 acceptance: native 3440x1440 bag hover/coin footer and vendor
+prices pass in build/quest-economy-native-20261115-v1/qualification.json, including
+exact buy/sell changes and PostgreSQL restart. The tooltip is beside the hovered
+slot, and the footer stays inside the frame. Screenshots bag-coins-and-tooltip.png
+and trade-3.png under fresh/ were visually reviewed on Linux RX 7900 XTX / RADV
+NAVI31 / Vulkan. No GPU diagnostics; no Windows-native claim.
+
+14 November 2026 — starter HUD continuation:
+The backpack footer shows committed gold/silver/copper, and each vendor offer
+shows its coin price. Hover descriptions anchor beside the actual bag slot and
+clamp to the viewport. Friendly contacts have green overhead names and roles.
+Enemy health bars appear for the selected target or observed attacks on the
+local player, with a three-second grace between swings. Tab/Shift+Tab cycling
+remains available with the bag/conversation open. The ordinary Connected label
+is hidden; connection failures and loading states remain visible.
+Interface [F10] toggles a small optional FPS, frame-time, window, server-rate,
+player/chunk and position panel. It starts hidden and uses existing preference
+persistence. Default test windows are 3440x1440 solo and 1920x1440 per player;
+two windows overlap if the display cannot fit both at their requested width.
+STATUS records native evidence separately from widget tests and earlier previews.
+
+14 November multiple-contact UI continuation:
+Dialogue titles and the selected friendly target use the actual NPC name. Quest
+accept/turn-in buttons, vendor offers and world/map quest markers are filtered by
+the exact contact. The standard UI supports up to sixteen catalogue contacts.
+The compact objective tracker hides during conversation; J still opens the full
+journal. Unit frame anchors avoid the open conversation/backpack footprints at
+supported logical widths, retaining their normal positions when panels close.
+The final native layout, names, multi-contact gameplay, fixed reward, vendor and
+restart pass in multi-contact-native-v2; see STATUS for exact evidence.
+The final 3440x1440 / scale 1.5 windowless GPU preview passes with zero GPU
+diagnostics on Linux RX 7900 XTX / RADV NAVI31 / Vulkan:
+`build/multi-contact-ui-wide/report.json`, with `hud.png` alongside. The preview
+uses real widgets and fixture values; the connected native flow ran at 1280x720.
+
+14 November panel-art follow-up: add the local 256-square
+`Sprites/HUD/SPR_HUD_FantasyWarrior_Frame_Box_Medium04.png` to dialogue/document,
+backpack and quest panels. Its nontransparent pixels are confined to the outer
+11 pixels; use an explicit Theia 12 px Bevy slice (including one transparent guard
+pixel), with unscaled corners. This does not reconstruct missing Unity metadata.
+An absolute, noninteractive child carries the sliced ImageNode at the outside
+of each panel; Bevy IgnoreScroll keeps the border fixed while content scrolls.
+Putting the image directly on a padded panel draws it inside the content box
+and overlaps text/slots, so the existing content layout is preserved separately.
+Ability tooltips follow the target
+frame outward on wide layouts and draw above open panes; item tooltips sit beside
+the upper backpack so they leave unit frames, casts and actions clear.
+The extra source is 2,369 encoded bytes,
+SHA-256 `298e53940fdc127784985a744c12e7bced77aef0cffc12b75d420612b256ece8`.
+The selected set is now ten PNGs / 957,207 encoded bytes / 18,612,224 RGBA8 base
+pixel bytes. These are source sizes, not GPU allocation or performance evidence.
+The earlier nine-image audit below remains historical. Final windowless native
+GPU previews pass at 1280x720 (scale 1) and
+3440x1440 (scale 1.5) on Linux, AMD RX 7900 XTX / RADV NAVI31 / Vulkan.
+Evidence: build/playtest-feedback-synty-border-720/report.json and
+build/playtest-feedback-synty-border-wide/report.json, with hud.png beside each.
+These exercise real widgets with fixture values, not connected gameplay.
+
+14 November 2026 playtest response (P2-13/14, P3-09/11): the manual valley
+launcher now forwards the local Synty Fantasy Warrior HUD through account
+population launches. The compact tracker shows unfinished objectives; its header
+or J opens a central journal with descriptions, rewards and completed history.
+Compact objectives move clear of an open backpack. NPC acceptance
+offers include descriptions and objective requirements. Scroll geometry uses UI
+logical pixels, including scaling. Bounded enemy nameplates spread apart and
+submit ordinary authoritative target selection on click. Eight unlit golden motes
+per private lootable corpse remain through partial pickup/refusal and are removed
+with the last committed claim, disconnect or chunk departure. Gameplay and loot
+rights are unchanged. Connected native acceptance passes in
+build/playtest-feedback-native-v9/qualification.json: all four quests, ordinary
+nameplate selection and corpse pickup, then exact journal/bag/loot-roll restoration
+after PostgreSQL restart. See STATUS for counts and device/coverage limits.
+
 Current work permission, updated 7 November 2026: continue implementation and
 local commits only; no push. The user restored mouse, keyboard and display access.
-Connected native checks of the new UI are in progress; earlier restrictions
+Connected native checks of this feedback slice passed on 14 November; earlier restrictions
 below describe their historical checkpoints.
 
 # General UI: Fantasy Warrior assets and Classic layout

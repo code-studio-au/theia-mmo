@@ -227,6 +227,7 @@ pub(super) fn respond<T>(
         Ok(_) => false,
         Err(Error::VendorCommand(
             theia_core::vendors::Error::InsufficientCost
+            | theia_core::vendors::Error::CurrencyOverflow
             | theia_core::vendors::Error::NoCapacity
             | theia_core::vendors::Error::UnknownOffer
             | theia_core::vendors::Error::StaleRevision

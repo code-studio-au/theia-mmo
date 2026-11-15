@@ -184,13 +184,9 @@ impl World {
             .as_ref()
             .ok_or("Reward quests require a guide")?
             .profile
-            .profile();
+            .as_ref();
         let aliases = |id: &theia_core::content::ContentId| {
-            id == dialogue.npc()
-                || self.has_creature_definition(id)
-                || dialogue
-                    .nodes()
-                    .any(|n| n.choices().iter().any(|c| c.id() == id))
+            dialogue.defines(id) || self.has_creature_definition(id)
         };
         if aliases(rewards.id())
             || rewards
@@ -261,13 +257,13 @@ impl World {
         }
         let event = match &request.action {
             Action::Choose(interaction) => {
+                let open = self
+                    .dialogue_view(actor)
+                    .and_then(|v| v.open)
+                    .ok_or(Rejection::InvalidAction)?;
                 let npc = self
-                    .dialogue
-                    .as_ref()
+                    .contact_definition(open.guide)
                     .ok_or(Rejection::Unavailable)?
-                    .profile
-                    .profile()
-                    .npc()
                     .clone();
                 let event = EventKey::NpcInteraction {
                     npc,
@@ -380,18 +376,17 @@ impl World {
             .as_ref()
             .filter(|d| d.available())
             .ok_or("Quest contacts require an installed available guide")?;
-        let dialogue = guide.profile.profile();
+        let dialogue = guide.profile.as_ref();
+        if let Some(contacts) = dialogue.catalog() {
+            contacts.validate_quest_contacts(catalog)?;
+        }
         if let Some(documents) = documents {
             documents.validate_quests(catalog)?;
             if let Some(areas) = areas {
                 documents.validate_areas(areas)?;
             }
             let aliases_world = |id: &theia_core::content::ContentId| {
-                id == dialogue.npc()
-                    || self.has_creature_definition(id)
-                    || dialogue
-                        .nodes()
-                        .any(|n| n.choices().iter().any(|c| c.id() == id))
+                dialogue.defines(id) || self.has_creature_definition(id)
             };
             if aliases_world(documents.id()) || documents.documents().any(|d| aliases_world(d.id()))
             {
@@ -400,23 +395,31 @@ impl World {
         }
         if let Some(areas) = areas {
             let aliases_world = |id: &theia_core::content::ContentId| {
-                id == dialogue.npc()
-                    || self.has_creature_definition(id)
-                    || dialogue
-                        .nodes()
-                        .any(|n| n.choices().iter().any(|c| c.id() == id))
+                dialogue.defines(id) || self.has_creature_definition(id)
             };
             if aliases_world(areas.id()) || areas.areas().any(|a| aliases_world(a.id())) {
                 return Err("Quest area definitions alias installed World content".into());
             }
         }
         for quest in catalog.quests() {
-            if quest.giver() != dialogue.npc() || quest.turn_in() != dialogue.npc() {
+            if dialogue.contact(quest.giver()).is_none()
+                || dialogue.contact(quest.turn_in()).is_none()
+            {
                 return Err("Quest contact is not installed in this World".into());
             }
             for stage in quest.stages() {
                 for objective in stage.objectives() {
                     match objective.event() {
+                        EventKey::FollowNpc(npc)
+                            if objective.follow().is_none_or(|policy| {
+                                !self.follow.prepared(quest.id(), npc, policy)
+                            }) =>
+                        {
+                            return Err(
+                                "Follow objective requires a prepared route for its exact contact"
+                                    .into(),
+                            );
+                        }
                         EventKey::ReadDocument(id)
                             if documents.is_none_or(|d| d.document(id).is_none()) =>
                         {
@@ -437,12 +440,13 @@ impl World {
                             return Err("Quest creature is not installed in this World".into());
                         }
                         EventKey::NpcInteraction { npc, interaction }
-                            if npc != dialogue.npc()
-                                || !dialogue.nodes().any(|node| {
+                            if dialogue.contact(npc).is_none_or(|p| {
+                                !p.nodes().any(|node| {
                                     node.choices()
                                         .iter()
                                         .any(|choice| choice.id() == interaction)
-                                }) =>
+                                })
+                            }) =>
                         {
                             return Err(
                                 "Quest semantic choice is not installed for this NPC".into()

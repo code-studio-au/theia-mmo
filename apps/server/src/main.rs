@@ -51,6 +51,8 @@ async fn main() -> Result<()> {
     let mut population_config = None;
     let mut respawn_ms = theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS;
     let mut navigation = None;
+    let mut follow_navigation = None;
+    let mut follow_destinations = Vec::new();
     let mut item_catalog = None;
     let mut reward_catalog = None;
     let mut creature_loot = false;
@@ -377,6 +379,8 @@ async fn main() -> Result<()> {
                     "Aggressive population requires player-life and retaliation profiles".into(),
                 );
             }
+            follow_destinations = loaded.destinations().to_vec();
+            follow_navigation = Some(loaded.navigation().clone());
             let pursuit_worker = loaded.pursuit_worker()?;
             respawn_ms = loaded.respawn_ms();
             population_bytes = Some(loaded.creature_bytes().to_vec());
@@ -413,6 +417,7 @@ async fn main() -> Result<()> {
                     &navigation.unwrap(),
                     source.identity(),
                 )?;
+                follow_navigation = Some(navigation.clone());
                 println!("development_creature profile={}", profile.id().as_str());
                 let target = world.enable_patrol(creatures::Prepared::load(
                     profile,
@@ -698,26 +703,29 @@ async fn main() -> Result<()> {
             use std::io::Read;
             let mut bytes = Vec::new();
             std::fs::File::open(path)?
-                .take(theia_core::dialogue::MAX_PROFILE_BYTES as u64 + 1)
+                .take(theia_core::dialogue::catalog::MAX_CATALOG_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
-            let profile = std::sync::Arc::new(theia_network::dialogue::Profile::from_json(&bytes)?);
-            let placement = theia_network::dialogue::Placement::resolve(
+            let profile =
+                std::sync::Arc::new(theia_network::dialogue::Profile::from_content(&bytes)?);
+            let placements = profile.placements(
                 &placement,
                 &world
                     .procedural()
                     .ok_or("Guide requires prepared world")?
                     .source,
-                &profile,
             )?;
-            let guide =
-                theia_server::development::prepare_placed_guide(&mut world, profile, placement)
+            let contacts =
+                theia_server::development::prepare_contacts(&mut world, profile, placements)
                     .await?;
-            println!(
-                "guide_ready epoch={} entity={} position={:?}",
-                guide.key.epoch.value(),
-                guide.key.entity.value(),
-                guide.position.metres()
-            );
+            for contact in contacts {
+                let guide = contact.guide;
+                println!(
+                    "guide_ready epoch={} entity={} position={:?}",
+                    guide.key.epoch.value(),
+                    guide.key.entity.value(),
+                    guide.position.metres()
+                );
+            }
         }
         (None, None) => {}
         _ => {
@@ -940,6 +948,18 @@ async fn main() -> Result<()> {
                         wire_items
                             .as_ref()
                             .ok_or("Fixed rewards require wire inventory")?,
+                    )?;
+                }
+                if wire.catalog().quests().any(|q| {
+                    q.stages()
+                        .any(|s| s.objectives().iter().any(|o| o.follow().is_some()))
+                }) {
+                    world.prepare_follow_quests(
+                        wire.catalog(),
+                        follow_navigation
+                            .as_ref()
+                            .ok_or("Follow quests require installed navigation")?,
+                        &follow_destinations,
                     )?;
                 }
                 let wire = std::sync::Arc::new(wire);

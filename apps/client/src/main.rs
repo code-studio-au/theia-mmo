@@ -106,7 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         args.remove(i)
     } else {
-        std::env::var("THEIA_WINDOW_SIZE").unwrap_or_else(|_| "1920x1200".into())
+        std::env::var("THEIA_WINDOW_SIZE").unwrap_or_else(|_| "3440x1440".into())
     };
     let (width, height) = window_size
         .split_once('x')
@@ -373,10 +373,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         let mut bytes = Vec::new();
         std::fs::File::open(args.remove(i))?
-            .take(theia_core::dialogue::MAX_PROFILE_BYTES as u64 + 1)
+            .take(theia_core::dialogue::catalog::MAX_CATALOG_BYTES as u64 + 1)
             .read_to_end(&mut bytes)?;
         let profile = std::sync::Arc::new(
-            theia_network::dialogue::Profile::from_json(&bytes).map_err(|e| e.to_string())?,
+            theia_network::dialogue::Profile::from_content(&bytes).map_err(|e| e.to_string())?,
         );
         let i = args
             .iter()
@@ -386,9 +386,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if i >= args.len() {
             return Err("Missing guide position".into());
         }
-        let placement =
-            theia_network::dialogue::Placement::resolve(&args.remove(i), &source, &profile)
-                .map_err(|error| error.to_string())?;
+        let placement = profile
+            .placements(&args.remove(i), &source)
+            .map_err(|error| error.to_string())?;
         Some((profile, placement))
     } else {
         if args.iter().any(|a| a == "--guide-position") {
@@ -892,10 +892,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok_or("Vendor requires items")?
             .with_vendor(&bytes)
             .map_err(|e| e.to_string())?;
-        if dialogue_profile
-            .as_ref()
-            .is_none_or(|(d, _)| d.profile().npc() != profile.vendor().unwrap().catalog().npc())
-        {
+        if dialogue_profile.as_ref().is_none_or(|(d, _)| {
+            d.contact(profile.vendor().unwrap().catalog().npc())
+                .is_none()
+        }) {
             return Err("Vendor NPC differs from dialogue guide".into());
         }
         inventory_profile = Some(profile);
@@ -1145,7 +1145,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let base = dialogue_profile
             .as_ref()
             .map_or(base, |(profile, placement)| {
-                placement.identity(base, profile.hash())
+                placement
+                    .iter()
+                    .fold(base, |base, (_, p)| p.identity(base, profile.hash()))
             });
         inventory_profile
             .as_ref()
@@ -1315,6 +1317,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "Theia MMO — movement sandbox"
             }
             .into(),
+            resize_constraints: bevy::window::WindowResizeConstraints {
+                min_width: width.min(1920) as f32,
+                ..default()
+            },
             resolution: WindowResolution::new(width, height).with_scale_factor_override(1.),
             mode: if fullscreen {
                 bevy::window::WindowMode::BorderlessFullscreen(

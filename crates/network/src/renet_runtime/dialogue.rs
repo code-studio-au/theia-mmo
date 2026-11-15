@@ -92,6 +92,11 @@ pub(super) fn publish(
         let presence = Presence {
             actor: view.actor,
             profile_hash: profile.hash(),
+            contacts: if profile.catalog().is_some() {
+                world.visible_contacts(peer.actor)
+            } else {
+                vec![]
+            },
             guide: world.visible_guide(peer.actor),
         };
         let next_view = if dialogue.view.as_ref() != Some(&view) {
@@ -117,15 +122,15 @@ pub(super) fn publish(
             continue;
         }
         // One ordered channel: publish the authoritative view before its reply.
-        if let Some(bytes) = next_view {
-            server.send_message(id, EVENT_CHANNEL, bytes);
-            dialogue.view = Some(view);
-            stats.dialogue_views_sent += 1;
-        }
         if let Some(bytes) = next_presence {
             server.send_message(id, EVENT_CHANNEL, bytes);
             dialogue.presence = Some(presence);
             stats.guide_presences_sent += 1;
+        }
+        if let Some(bytes) = next_view {
+            server.send_message(id, EVENT_CHANNEL, bytes);
+            dialogue.view = Some(view);
+            stats.dialogue_views_sent += 1;
         }
         if let Some(bytes) = next_reply {
             server.send_message(id, EVENT_CHANNEL, bytes);
@@ -151,15 +156,21 @@ pub(super) struct ClientState {
     view: Option<View>,
     presence: Option<Presence>,
     known_guide: Option<crate::dialogue::Guide>,
+    known_contacts: BTreeMap<theia_core::content::ContentId, crate::dialogue::Guide>,
     reply: Option<Reply>,
     sequence: u64,
     pending: Option<(u64, Instant)>,
     next_allowed: Instant,
 }
 pub(super) fn is_frame(bytes: &[u8]) -> bool {
-    [wire::VIEW_TAG, wire::GUIDE_TAG, wire::REPLY_TAG]
-        .into_iter()
-        .any(|tag| bytes.starts_with(tag))
+    [
+        wire::VIEW_TAG,
+        wire::GUIDE_TAG,
+        wire::CONTACTS_TAG,
+        wire::REPLY_TAG,
+    ]
+    .into_iter()
+    .any(|tag| bytes.starts_with(tag))
 }
 fn actor(welcome: &Welcome) -> Result<EntityKey> {
     Ok(EntityKey {
@@ -177,6 +188,7 @@ impl ClientState {
             view: None,
             presence: None,
             known_guide: None,
+            known_contacts: BTreeMap::new(),
             reply: None,
             sequence: 0,
             pending: None,
@@ -198,15 +210,46 @@ impl ClientState {
             {
                 return Err("Dialogue view changed guide incarnation".into());
             }
+            if let Some(open) = &view.open
+                && self.mode.profile.catalog().is_some()
+            {
+                let definition = self
+                    .mode
+                    .profile
+                    .node_contact(&open.node)
+                    .ok_or("Unknown open contact")?;
+                if self
+                    .known_contacts
+                    .get(definition.npc())
+                    .is_none_or(|g| g.key != open.guide)
+                {
+                    return Err("Dialogue view does not match known contact".into());
+                }
+            }
             self.view = Some(view);
             stats.dialogue_views_received += 1;
-        } else if bytes.starts_with(wire::GUIDE_TAG) {
+        } else if bytes.starts_with(wire::GUIDE_TAG) || bytes.starts_with(wire::CONTACTS_TAG) {
             let presence = wire::decode_presence(bytes, &self.mode.profile, actor)?;
             if let Some(guide) = presence.guide {
                 if self.known_guide.is_some_and(|old| old != guide) {
                     return Err("Guide changed position/incarnation within profile".into());
                 }
                 self.known_guide = Some(guide);
+            }
+            for contact in &presence.contacts {
+                if self
+                    .known_contacts
+                    .get(&contact.npc)
+                    .is_some_and(|g| g.key != contact.guide.key)
+                    || self
+                        .known_contacts
+                        .iter()
+                        .any(|(npc, g)| npc != &contact.npc && g.key == contact.guide.key)
+                {
+                    return Err("Contact changed identity or definition".into());
+                }
+                self.known_contacts
+                    .insert(contact.npc.clone(), contact.guide);
             }
             self.presence = Some(presence);
             stats.guide_presences_received += 1;
@@ -430,6 +473,7 @@ mod tests {
         let presence = Presence {
             actor,
             profile_hash: profile.hash(),
+            contacts: vec![],
             guide: None,
         };
         state

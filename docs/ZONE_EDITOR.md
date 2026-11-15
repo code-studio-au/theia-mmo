@@ -1,3 +1,34 @@
+Starter quest continuation (15 November 2026, P3-11/12/15 / P4-03 / P5-17):
+`bash tools/edit_quests.sh` opens the prepared five-contact starter economy scene
+through the disposable editor/account workflow. It preserves the earlier wrappers.
+Use Zone → Start population account playtest to export, create/select a character
+and play; Stop returns control to the editor without discarding that session's
+account progress. Closing the session shuts down its owned services.
+
+Ranger Elowen's quest uses the saved Quest marker 1202 near the eastern ancient
+tree; only home and destination are authored. Runtime startup derives grounded
+navmesh steering and validates clearance. The Northern Meadow compass test road
+1203 has two authored endpoints, separate from access road 1201. The compass itself
+is currently placed by the explicit ground-reward profile. Use Attributes to edit
+NPC/destination markers and ordinary guide tools for the collection test road.
+The quest inspector still shows read-only catalogue information. Editor export
+preflight for escort navigation and clearer travel binding details are the next
+integration slice; successful contact export alone does not establish that route.
+
+Two-contact continuation (14 November 2026, P3-11/12/15 / P5-17):
+`bash tools/edit_contacts.sh` opens the qualified local two-contact source in the
+same disposable manual editor/account workflow. It selects the opt-in contact
+manifest; the original `edit_valley.sh` keeps the previous package. Both wrappers
+require the prepared local assets/binaries described below.
+
+For schema-2 dialogue catalogues, bind exactly one NPC marker Catalog ID to each
+catalogue contact (1..16). Export validates IDs, duplicates, completeness, world
+bounds and exact vertical support, then writes anchor schema 3. All contacts enter
+the world/content identity. No partial export or nearest-NPC substitution occurs.
+Single-guide templates retain schema-2 anchors and the previous placement rules.
+Native export proof: build/multi-contact-editor-v1/qualification.json; source stays
+unchanged. NPC yaw/radius remain metadata; this does not introduce NPC animation.
+
 Manual editor/account session (14 November 2026, P5-17 / P3-03):
 `tools/edit_local.py` opens an editable copy of a prepared zone with isolated local
 OIDC/PostgreSQL services and copies of the editor/client/server/baker/validator
@@ -10,6 +41,19 @@ This is a disposable development session, not a persistent account installation.
 For the locally prepared populated valley:
 
 ```sh
+bash tools/edit_valley.sh
+```
+
+This convenience launcher selects the prepared local paths below and a new output
+directory automatically. It enables the local Synty HUD and sets 4 m roaming on
+the copied draft's spawn groups. Original source files are preserved. New groups
+also default to 4 m; edit **Roam radius (m; 0 = still)** in Attributes, or pass
+`--roam-radius 0` to the wrapper for stationary groups. Roaming stays inside the
+group boundary and uses checked home excursions; spawn spacing remains separate.
+It accepts additional `edit_local.py` options. The full
+equivalent command, for selecting different inputs, is:
+
+```sh
 python3 tools/edit_local.py \
   --zone build/starter-valley-population-editor-native-v2/source.zone.json \
   --scenery-library build/starter-valley-scenery-v2/catalog.json \
@@ -17,6 +61,7 @@ python3 tools/edit_local.py \
   --creature-definition content/gameplay/development-creature-pursuit.json \
   --creature-asset build/starter-valley-population-editor-native-v2/package/creature.glb \
   --gameplay-template content/development-gameplay-classic-quest-loot.json \
+  --fantasy-ui '/home/steven/Downloads/Synty Models/HUDs' --roam-radius 4 \
   --access-path 1201 --output build/my-manual-valley-session
 ```
 

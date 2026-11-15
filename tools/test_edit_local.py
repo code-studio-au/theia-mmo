@@ -43,6 +43,17 @@ class ManualEditorTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 play.prepare(args, root)
 
+    def test_roaming_override_changes_only_the_private_draft(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args = self.fixture(root)
+            args.zone.write_text('{"spawn_groups":[{"id":1}]}')
+            original = args.zone.read_bytes()
+            args.roam_radius = 4.
+            output, _ = play.prepare(args, root)
+            self.assertEqual(args.zone.read_bytes(), original)
+            self.assertEqual(json.loads((output/'draft.zone.json').read_text())['spawn_groups'][0]['roam_radius_metres'], 4.)
+
     def test_invalid_input_refuses_before_output_or_services(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

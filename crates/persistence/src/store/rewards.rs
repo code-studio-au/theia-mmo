@@ -113,7 +113,16 @@ impl Store {
                 "Repeatable loot requires a victim life and corpse position",
             ));
         }
-        self.offer_reward_source(binding, world, profile, reward, None, false, None)
+        let journal = if definition.ground().is_some() {
+            Some(
+                profile
+                    .quest_journal()
+                    .ok_or(Error::Invalid("Ground item requires bound journal"))?,
+            )
+        } else {
+            None
+        };
+        self.offer_reward_source(binding, world, profile, reward, None, false, journal)
             .await?
             .ok_or(Error::RewardData)
     }
@@ -249,6 +258,15 @@ impl Store {
             validate_items(&transaction, self.realm, binding, profile).await?;
             None
         };
+        if definition.ground().is_some()
+            && !snapshot.as_ref().is_some_and(|s| {
+                definition
+                    .quest_item()
+                    .is_some_and(|i| s.needed.contains(i))
+            })
+        {
+            return Err(Error::RewardNotNeeded);
+        }
         if roll {
             let source = corpse.ok_or(Error::RewardData)?;
             let definition = profile

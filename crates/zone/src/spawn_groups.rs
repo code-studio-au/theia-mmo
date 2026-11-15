@@ -22,6 +22,9 @@ pub struct SpawnGroup {
     pub volume: PolygonVolume,
     pub target_alive: u16,
     pub respawn_seconds: u32,
+    /// Zero preserves stationary legacy groups; independent of spawn spacing.
+    #[serde(default)]
+    pub roam_radius_metres: f64,
     pub seed: u64,
 }
 /// Exact global X/Z edits, also available through the structured editor API.
@@ -91,6 +94,10 @@ impl SpawnGroup {
             "Spawn count must be 1..64",
         )?;
         require(
+            self.roam_radius_metres.is_finite() && (0. ..=16.).contains(&self.roam_radius_metres),
+            "Roaming radius must be 0..16 metres",
+        )?;
+        require(
             (1..=86400).contains(&self.respawn_seconds),
             "Respawn delay must be 1..86400 seconds",
         )?;
@@ -123,6 +130,7 @@ mod tests {
             .unwrap(),
             target_alive: 5,
             respawn_seconds: 30,
+            roam_radius_metres: 0.,
             seed: 42,
         }
     }

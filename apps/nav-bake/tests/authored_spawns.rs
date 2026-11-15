@@ -116,6 +116,7 @@ fn authored_spawn_cli_is_repeatable_rejects_wrong_layers_and_preserves_packages(
             volume: request.volume.clone(),
             target_alive: request.count as u16,
             respawn_seconds: 30,
+            roam_radius_metres: 0.,
             seed: request.seed,
         });
     zone.validate().unwrap();

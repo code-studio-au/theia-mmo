@@ -63,6 +63,7 @@ pub struct Loaded {
     binding: Binding,
     creature_bytes: Vec<u8>,
     navigation: navigation::Store,
+    destinations: Vec<theia_zone::markers::Marker>,
 }
 impl Loaded {
     pub fn open(path: &Path, source: &procedural::Source) -> Result<Self> {
@@ -120,12 +121,33 @@ impl Loaded {
             document.minimum_spacing_metres,
             access,
         )?;
+        let extra_paths: Vec<_> = zone
+            .paths
+            .iter()
+            .filter(|p| Some(p.id) != document.access_path)
+            .collect();
+        let destinations: Vec<_> = zone
+            .markers
+            .iter()
+            .filter(|m| m.kind == theia_zone::markers::MarkerKind::Quest)
+            .cloned()
+            .collect();
+        let access_identity = if extra_paths.is_empty() && destinations.is_empty() {
+            access_identity
+        } else {
+            let mut bytes = b"theia-population-additional-paths-v1\0".to_vec();
+            bytes.extend(access_identity.unwrap_or([0; 32]));
+            bytes.extend(serde_json::to_vec(&extra_paths)?);
+            bytes.extend(serde_json::to_vec(&destinations)?);
+            Some(crate::terrain::sha256(&bytes))
+        };
         prepared.bind_access_identity(access_identity);
         Ok(Self {
             prepared,
             binding,
             creature_bytes,
             navigation: nav,
+            destinations,
         })
     }
     pub fn profile_identity(&self, base: [u8; 32]) -> [u8; 32] {
@@ -152,6 +174,12 @@ impl Loaded {
             .aggro()
             .map(|_| navigation::worker::Worker::load(&self.navigation))
             .transpose()
+    }
+    pub fn destinations(&self) -> &[theia_zone::markers::Marker] {
+        &self.destinations
+    }
+    pub fn navigation(&self) -> &navigation::Store {
+        &self.navigation
     }
     pub fn into_parts(self) -> (navigation::spawn_preparation::Prepared, Binding) {
         (self.prepared, self.binding)

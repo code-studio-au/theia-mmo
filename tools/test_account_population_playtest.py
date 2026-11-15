@@ -51,6 +51,16 @@ class AccountPopulation(unittest.TestCase):
                 (root/'content/gameplay'/path.name).write_bytes(b'changed source')
                 self.assertNotEqual(path.read_bytes(), b'changed source')
 
+    def test_explicit_synty_skin_reaches_normal_client_launch(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            args.fantasy_ui = root/'HUD'
+            args.fantasy_ui.mkdir()
+            command = launcher.prepare(args, root)
+            self.assertEqual(command[command.index('--fantasy-ui')+1], str(args.fantasy_ui))
+            self.assertNotIn('--test-route', command)
+
     def test_test_route_freezes_relative_navigation_and_remains_opt_in(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

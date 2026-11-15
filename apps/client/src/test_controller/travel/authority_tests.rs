@@ -24,8 +24,15 @@ fn actual_route_walks_out_and_back_through_authority_at_all_rates() {
         let (_, mut travel, _) = Travel::load(&path, &bytes, &source).unwrap();
         travel.return_trip = true;
         let start = travel.points[0].metres();
+        let procedural::Source::Authored(authored) = &source else {
+            unreachable!()
+        };
+        // A test route may begin at a quest giver rather than the saved spawn.
+        // Construct the world at its bound spawn, then restore the test actor
+        // at the checked route start through the normal admission path.
+        let spawn = authored.spawn(0).unwrap().metres();
         let mut world =
-            World::with_terrain_source([start[0], start[2]], 1., source.clone()).unwrap();
+            World::with_terrain_source([spawn[0], spawn[2]], 1., source.clone()).unwrap();
         assert!(world.set_tick_rate(rate));
         world.enable_prediction().unwrap();
         world.enable_classic().unwrap();

@@ -1,3 +1,136 @@
+## 14 November 2026 — escort navigation, ground collection and optional diagnostics
+
+P3-11/12/15 / P2-14 / P5-17. The user chose the escort as the destination-only
+navmesh experiment, and the collection quest as a separate authored test path.
+Use existing Landmass navigation and checked terrain/capsule grounding during
+startup. An escort authors its home NPC and one Quest destination marker; it does
+not author intermediate waypoints. Keep necessary terrain/corner steering points
+and the existing dense clearance checks. No path search or collision file loading
+enters the fixed simulation step.
+
+Each character has a private escort journey. Elowen travels at the Classic forward run speed, 7 m/s while the
+player remains within 10 m, pauses outside that radius, and becomes Ready at the
+ancient-tree destination. Only speaking to that exact NPC turns in the quest.
+Committed Ready/Completed journals restore the NPC at the destination; an
+interrupted Active journey restarts from home on rejoin. Cooperative shared
+escort groups and saving partial route progress remain outside this slice.
+
+The reported compass-test whole-character stutter was traced to a one-tick render
+tween restarted on each prediction update. At render rates below simulation rate,
+frames alternated between one and two ticks of movement. Render the last two
+reconciled positions using the continuous prediction-clock fraction instead;
+retain one tick of presentation delay and never extrapolate beyond collision.
+This is a presentation correction, not a change to authoritative movement or
+Classic speeds. Automatic escort qualification holds ordinary forward input
+continuously while following, with a small stop/resume distance band near the NPC.
+
+Ground rewards use schema 5: one named position/area, one consuming possession
+quest and one item. Existing async reward claims and bag/journal transactions own
+availability, pickup and consumption. The runtime checks life, current position
+and three-metre interaction range. The once-only delivery item cannot be destroyed
+through the client inventory endpoint. The authored collection path has two
+points; AI test travel derives grounded steering from those points.
+
+The user confirmed 3440x1440 solo and 1920x1440 per player for two-player tests.
+Preserve resolution when arranging multiple windows; overlap when needed rather
+than shrinking each window below 1920 wide. Explicit smaller diagnostic windows
+remain available for the existing responsive-layout qualifications.
+
+Use standard Bevy UI for NPC names/roles, bag/vendor coin rows and slot-anchored,
+viewport-clamped item tooltips. Tab and Shift+Tab remain usable while the backpack
+or conversation is open. Enemy health bars require explicit selection or observed
+attacks against the local player; a three-second simulation-time grace bridges
+swing cooldowns, and death/out-of-combat clears it. This is presentation policy,
+not an authoritative threat-table display.
+
+Debug statistics are hidden by default and toggled through Interface [F10]. Save
+the toggle alongside local UI preferences when a preference file is configured.
+Display measured FPS/average frame time, window dimensions and observed network/
+world stats. Hide the normal connected label; retain loading/disconnection text.
+
+## 14 November 2026 — starter coins, vendor recovery and fixed HUD
+
+User requests fixed visible minimap/objectives when the bag opens, automatic bag
+opening only at an NPC selling items, persistent gold/silver/copper, additional
+starter contacts, replacement sword/wand sales, player item sales and unlimited
+vendor stock/cash. They also request a second NPC introduction quest and smoother
+AI test travel. Work remains local.
+
+P2-14 / P3-05 / P3-11 / P3-12 / P4-03 / P5-17: keep map/tracker anchors fixed;
+place the bag in the adjacent column. Use a schema-3 item/bag copper ledger in the
+existing character backpack transaction, not three floating-point balances or a
+client-authoritative wallet. 100 copper = 1 silver, 100 silver = 1 gold. Initial
+52,550 copper (5g 25s 50c) is a once-only new-character seed in the opt-in starter
+profile. Existing persisted rows are never reseeded. These amounts/prices are
+Theia starter tuning, not claims of historical Classic prices or account-wide
+shared banking. Legacy item/bag schemas and barter content remain available.
+
+Schema-2 vendor recipes exchange coins for items or backpack items for coins.
+One click exchanges the displayed authored quantity. Equipped items must first
+be unequipped; destruction pays nothing. Vendor stock and funds are unlimited:
+only the player's balance, capacity, exact NPC/session and revision constrain a
+trade. Keep cost, output, money and receipt in one async durable commit before
+acknowledgement; retain exact-retry replay and stale/conflicting refusal.
+
+Keep dense navigation/grounding checks, simplify redundant steering points within
+3 cm in full 3D, then recheck every longer segment against the same navigation and
+capsule clearance. Retain the original route if that check fails. Never force five
+points through a bend, wall or floor change. Preparation remains outside fixed
+simulation. The diagnostic AI player still sends ordinary movement input.
+
+## 14 November 2026 — exact multiple-contact runtime and editor adoption
+
+Continue the authorized P3-11 / P3-12 / P3-15 / P5-17 slice through actual native
+play. Keep a separate opt-in valley manifest and retain the qualified single-guide
+path. Bind all schema-3 anchor bytes and sorted placements to world identity;
+validate the entire placement/catalogue bijection before allocating any entity.
+Schema 3 permits 1..16 contacts in 16 KiB; legacy schemas retain 4 KiB limits.
+
+DG02 carries at most sixteen 41-byte entries (catalogue index, incarnation, f64 XYZ),
+709 bytes total. Publish presence before an open view on the existing reliable
+channel. The client validates stable NPC/entity/position bindings, unique entities,
+sorted indices, actor/profile identity and the exact node owner. DG01 stays the
+single-profile compatibility path. This adds no simulation I/O or new transport.
+
+Quest request content NPC must equal the definition of the actual open entity;
+never infer it from proximity. Wrong contact/session/range/incarnation refuses
+before consuming command sequence or queue capacity. Vendor permission additionally
+checks its declared NPC. One contact's retirement closes only its own sessions.
+Keep the core catalogue loader and legacy profile loader separate; application
+entry points explicitly dispatch the validated content schema.
+
+Use the existing editor NPC Catalog ID field and checked export. Render bounded
+standard Bevy contact meshes and per-contact quest/map markers. The new report
+quest accepts at the guide, turns in at the steward and awards one token through
+the existing durable fixed-item transaction. Do not change combat profiles or
+starting inventory to manufacture that proof. Native completion, purchase and
+restart are recorded in STATUS. General NPC art/animation and moving contacts
+remain separate slices.
+
+## 14 November 2026 — playtest readability and idle population movement
+
+The user reports overlapping pursuing enemies, absent idle wandering, confusing
+quest UI and a flickering road, and asks for loot particles and use of the local
+Synty UI. They authorize continuing and native checks while away. Address these
+under P2-13/14, P3-07/09/11 and P5-17. Existing aggro/return and separate threat/
+first-tag ownership remain the baseline.
+
+Use soft authoritative NPC avoidance, never player/NPC physical collision. Keep
+spawn spacing separate from a per-group roaming radius. Legacy groups default to
+zero roaming; newly placed groups default to 4 m. The local valley launcher opts
+its private draft into 4 m roaming. Radius 0..16 m, 1.5 m/s walking, 2..6 s pauses,
+up to four checked excursions per home, 1.6 m preferred combat spacing and 1 m/s maximum
+avoidance are explicit Theia readability policies, not evidenced Classic formulas.
+Navigation/collision preparation stays outside the fixed step. An impossible
+roaming request refuses; combat interrupts travel and normal return restarts the
+checked excursion from home, without skipping its waypoints. Deliberate singleton patrol paths remain available; this
+does not implement individually authored patrol assignments for grouped enemies.
+
+Loot feedback follows local committed corpse availability, including partial
+pickup and refusal. Reference screenshots inform layout only; use the user's
+local licensed Synty icons/fonts and standard Bevy UI. Fix coplanar road rendering
+in shared editor/export geometry without changing saved heights or collision.
+
 ## 13 November 2026 — spawn groups share ordinary NPC gameplay
 
 The user clarifies that group spawning should only create independent enemies at

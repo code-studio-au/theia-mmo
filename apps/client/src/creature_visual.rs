@@ -327,7 +327,12 @@ pub(crate) fn install(app: &mut App, path: PathBuf) {
                 .after(crate::combat::Presentation)
                 .before(crate::targeting::Presentation),
         )
-        .add_systems(Update, update.after(crate::targeting::Presentation));
+        .add_systems(
+            Update,
+            (update, loot::animate)
+                .chain()
+                .after(crate::targeting::Presentation),
+        );
 }
 fn prepare(mut pending: ResMut<Pending>, network: Res<crate::network::Network>) {
     let state = network.state();
@@ -642,6 +647,10 @@ fn update(world: &mut World) {
             u64::from(clip == 3 && windup.is_some_and(|w| w.remote));
         pending.metrics.hit_frames += u64::from(clip == 4);
     }
+}
+
+pub(crate) fn loot_particle_count(world: &mut World) -> usize {
+    world.query::<&loot::Sparkle>().iter(world).count()
 }
 
 #[cfg(test)]

@@ -413,7 +413,7 @@ pub(crate) fn qualification(world: &mut World) -> serde_json::Value {
         let screen=point.and_then(|p|camera.world_to_viewport(transform,p).ok());
         serde_json::json!({"life":source.life.bytes(),"position":source.position.metres(),"screen":screen.map(|s|s.to_array())})
     }).collect());
-    serde_json::json!({"ui":value,"selected_life":selected_life,"layout":{"take":take,"all":all,"close":close},"corpses":corpses})
+    serde_json::json!({"ui":value,"selected_life":selected_life,"layout":{"take":take,"all":all,"close":close},"corpses":corpses,"particle_count":crate::creature_visual::loot_particle_count(world)})
 }
 
 #[cfg(test)]

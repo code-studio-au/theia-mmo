@@ -1,0 +1,125 @@
+{
+  "schema": 2,
+  "id": "theia.dev.starter-contacts",
+  "revision": 1,
+  "contacts": [
+    {
+      "schema": 1,
+      "id": "theia.dev.quest-guide-dialogue",
+      "npc": "theia.dev.guide",
+      "name": "Alden - Village guide",
+      "start": "theia.dev.quest-guide.welcome",
+      "nodes": [
+        {
+          "id": "theia.dev.quest-guide.welcome",
+          "text": "Which part of the development exercise shall we discuss?",
+          "choices": [
+            {
+              "id": "theia.dev.interaction.road",
+              "label": "Tell me about the road.",
+              "next": "theia.dev.quest-guide.goodbye"
+            },
+            {
+              "id": "theia.dev.interaction.supplies",
+              "label": "Review the supplies with me.",
+              "next": "theia.dev.quest-guide.goodbye"
+            },
+            {
+              "id": "theia.dev.interaction.report",
+              "label": "Here is my report.",
+              "next": "theia.dev.quest-guide.goodbye"
+            },
+            {
+              "id": "theia.dev.interaction.training",
+              "label": "Explain the training exercise.",
+              "next": "theia.dev.quest-guide.goodbye"
+            }
+          ]
+        },
+        {
+          "id": "theia.dev.quest-guide.goodbye",
+          "text": "Speak with me again when you are ready.",
+          "choices": []
+        }
+      ]
+    },
+    {
+      "schema": 1,
+      "id": "theia.dev.steward-dialogue",
+      "npc": "theia.dev.steward",
+      "name": "Bram - Village steward",
+      "start": "theia.dev.steward.welcome",
+      "nodes": [
+        {
+          "id": "theia.dev.steward.welcome",
+          "text": "The guide sent you? Tell me what you learned, and I will record your arrival.",
+          "choices": [
+            {
+              "id": "theia.dev.steward.report",
+              "label": "The guide asked me to report to you.",
+              "next": "theia.dev.steward.received"
+            }
+          ]
+        },
+        {
+          "id": "theia.dev.steward.received",
+          "text": "Welcome to the valley. Your report is received. You can complete the delivery with me now.",
+          "choices": []
+        }
+      ]
+    },
+    {
+      "schema": 1,
+      "id": "theia.dev.weapon-merchant-dialogue",
+      "npc": "theia.dev.weapon-merchant",
+      "name": "Mara - Weapons merchant",
+      "start": "theia.dev.weapon-merchant.welcome",
+      "nodes": [
+        {
+          "id": "theia.dev.weapon-merchant.welcome",
+          "text": "Swords and wands for every new adventurer. Browse my stock or sell spare items from your backpack.",
+          "choices": []
+        }
+      ]
+    },
+    {
+      "schema": 1,
+      "id": "theia.dev.ranger-dialogue",
+      "npc": "theia.dev.ranger",
+      "name": "Ranger Elowen - Ranger",
+      "start": "theia.dev.ranger.welcome",
+      "nodes": [
+        {
+          "id": "theia.dev.ranger.welcome",
+          "text": "Welcome to the valley. The steward said you would be coming. I can show you where to begin.",
+          "choices": [
+            {
+              "id": "theia.dev.ranger.greeting",
+              "label": "The steward asked me to introduce myself.",
+              "next": "theia.dev.ranger.received"
+            }
+          ]
+        },
+        {
+          "id": "theia.dev.ranger.received",
+          "text": "Good to meet you. You can complete your introduction with me now.",
+          "choices": []
+        }
+      ]
+    },
+    {
+      "schema": 1,
+      "id": "theia.dev.villager-dialogue",
+      "npc": "theia.dev.villager",
+      "name": "Rowan - Villager",
+      "start": "theia.dev.villager.welcome",
+      "nodes": [
+        {
+          "id": "theia.dev.villager.welcome",
+          "text": "The western grove can be dangerous. Visit Mara for weapons before you go.",
+          "choices": []
+        }
+      ]
+    }
+  ]
+}

@@ -330,6 +330,70 @@ fn profile_is_exact_and_activation_checks_dependencies_without_mutating_identity
     assert_eq!(world.identity(), selected);
 }
 #[test]
+fn fatal_competing_damage_never_publishes_an_earlier_attackers_pending_windup() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        for population in [false, true] {
+            let (mut world, npc) = fixture(rate, true);
+            if population {
+                let combat = world.combat.as_mut().unwrap();
+                let pve = combat.pve.take().unwrap();
+                combat.retaliators.push(pve);
+            }
+            let actor = join(&mut world, [8006., 8000.]);
+            hit(&mut world, actor, npc, 1);
+            for _ in 0..rate.hz() {
+                world.step();
+                if world.player_life_snapshot(actor).unwrap().windup.is_some() {
+                    break;
+                }
+            }
+            let alive = world.player_life_snapshot(actor).unwrap();
+            assert!(alive.health > 0);
+            assert_eq!(alive.windup.unwrap().creature, npc);
+            let profile = profile(true);
+            crate::player_life_wire::encode(&profile, rate, &alive).unwrap();
+
+            // Stage the exact ordering from a pack attack: this controller has
+            // already advanced, then another damage source kills its target.
+            let mut combat = world.combat.take().unwrap();
+            assert!(
+                combat
+                    .damage_player(&mut world, alive.key, alive.health)
+                    .unwrap()
+                    .unwrap()
+                    .died
+            );
+            assert!(
+                combat
+                    .pve
+                    .iter()
+                    .chain(&combat.retaliators)
+                    .any(|pve| pve.policy.windup_until().is_some())
+            );
+            world.combat = Some(combat);
+
+            let dead = world.player_life_snapshot(actor).unwrap();
+            assert_eq!(dead.health, 0);
+            assert!(dead.windup.is_none());
+            let bytes = crate::player_life_wire::encode(&profile, rate, &dead).unwrap();
+            let decoded =
+                crate::player_life_wire::decode(&profile, alive.key.actor, rate, &bytes).unwrap();
+            assert_eq!(decoded, dead);
+            world.step();
+            assert!(world.player_life_error().is_none());
+            let combat = world.combat.as_ref().unwrap();
+            assert!(
+                combat
+                    .pve
+                    .iter()
+                    .chain(&combat.retaliators)
+                    .all(|pve| pve.policy.windup_until().is_none())
+            );
+        }
+    }
+}
+
+#[test]
 fn actual_authority_retaliates_and_dead_input_casts_and_interactions_cannot_act() {
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let (mut world, npc) = fixture(rate, true);

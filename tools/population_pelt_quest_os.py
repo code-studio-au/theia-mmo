@@ -28,6 +28,8 @@ def flow(desktop, window, state, folder, quest, journal, feet, face, approach,
     def save():
         (folder/'population-pelt-progress.json').write_text(json.dumps(records, indent=2)+'\n')
     def pickup(corpse):
+        assert state()['loot']['particle_count'] == 8 * len(corpses()), 'Loot effect missing or duplicated'
+        particles_before = state()['loot']['particle_count']
         close_panels()
         approach(lambda: corpse['position'], tolerance=1.8)
         face(corpse['position'])
@@ -36,7 +38,7 @@ def flow(desktop, window, state, folder, quest, journal, feet, face, approach,
         selected = None
         for dx,dy in [(0,0),(0,8),(0,-8),(8,0),(-8,0),(16,0),(-16,0),(0,16),(0,-16)]:
             guard.check()
-            observed = wait(lambda: next((c for c in corpses() if c['life']==corpse['life'] and c['screen']), None))
+            observed = wait(lambda: next((c for c in guard.check()['loot']['corpses'] if c['life']==corpse['life'] and c['screen']), None))
             x,y = observed['screen']
             width,height,_ = state()['window']
             if not (0 < x+dx < width and 0 < y+dy < height):
@@ -51,14 +53,22 @@ def flow(desktop, window, state, folder, quest, journal, feet, face, approach,
         assert count()==before and progress()==before, 'Viewing a corpse granted quest credit'
         revision = state()['inventory_bag']['revision']
         submitted = loot_ui()['submitted']
-        desktop.click(window, wait(lambda: state()['loot']['layout']['all']), scale, 1)
-        wait(lambda: loot_ui()['submitted'] > submitted)
-        wait(lambda: state()['inventory_bag']['revision'] > revision and not loot_ui()['open'])
+        capture('loot-available.png')
+        guard.check()
+        desktop.click(window, wait(lambda: guard.check()['loot']['layout']['all']), scale, 1)
+        wait(lambda: guard.check()['loot']['ui']['submitted'] > submitted)
+        wait(lambda: guard.check()['inventory_bag']['revision'] > revision and not loot_ui()['open'])
         wait(lambda: progress()==count())
-        records.append(dict(pickup=selected, before=before, after=count(), bag_revision=state()['inventory_bag']['revision']))
+        wait(lambda: state()['loot']['particle_count'] == 8 * len(corpses()))
+        capture('loot-taken.png')
+        assert not any(c['life'] == selected for c in corpses()), 'Fully looted corpse still offers loot'
+        records.append(dict(pickup=selected, before=before, after=count(),
+                            particles_before=particles_before, particles_after=state()['loot']['particle_count'],
+                            bag_revision=state()['inventory_bag']['revision']))
         save()
         close_panels()
-        approach(lambda: anchor, tolerance=.4)
+        # Stay at the ordinary pickup location. Walking back into the centre of
+        # a living pack is unnecessary before selecting the next ranged target.
 
     assert quest(QUEST) is None and count()==0
     speak()

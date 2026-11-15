@@ -56,7 +56,15 @@ impl Publisher {
         reward: &ContentId,
     ) -> Result<RewardClaim> {
         valid_world(world)?;
-        profile.check_runtime_admission()?;
+        if !profile
+            .catalog()
+            .definition(reward)
+            .is_some_and(|d| d.ground().is_some())
+        {
+            profile.check_runtime_admission()?;
+        } else if profile.quest_journal().is_none() {
+            return Err(Error::Invalid("Ground item requires journal"));
+        }
         if profile.catalog().definition(reward).is_none() {
             return Err(Error::RewardMissing);
         }

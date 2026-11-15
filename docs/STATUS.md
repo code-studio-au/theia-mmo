@@ -1,3 +1,203 @@
+14 November 2026 — P3-11/12/15 / P2-14 / P5-17 starter quest/HUD continuation:
+Implemented locally in the explicit starter economy package: named contacts;
+coin bag footer/vendor prices; slot-anchored descriptions; Tab/Shift+Tab with open
+panels; selected/attacking-only enemy health bars; optional Interface [F10] debug
+statistics; hidden ordinary Connected label; 3440x1440 solo and 1920x1440 per-player
+windows. Explicit smaller diagnostic windows remain supported. Launch the latest
+editor/account slice with `bash tools/edit_quests.sh` (disposable local accounts).
+
+Rowan's compass is a private ground reward. The tracker changes from collecting
+in Northern Meadow to delivering to Rowan after authoritative pickup; turn-in
+consumes it. The separate AI test road has only two authored endpoints. Elowen's
+escort authors only its home and ancient-tree destination; existing navigation
+prepares 11 terrain/corner steering points with dense clearance checks outside
+simulation. She runs at 7 m/s while the player remains within 10 m, waits beyond
+the boundary, reaches Ready at the destination, and grants XP only on conversation
+turn-in. Journeys are private per character. Ready/Completed restore at destination;
+interrupted Active escorts restart at home. No shared-party escort claim.
+
+The reported whole-character compass stutter exposed render interpolation tied
+to one tick despite variable render cadence. Rendering now samples reconciled
+prediction endpoints with the continuous clock fraction, one simulation tick
+behind. It does not extrapolate, change authority or alter input. Frame-rate
+regression passes for 20/30/60 Hz simulation and 20/30/60/144 FPS plus uneven
+frames and stream reset. Classic motion diagnostics now use actual walk/run speed.
+Escort traversal no longer idles one tick at intermediate route points.
+
+Current checks: 274 client tests pass (four explicit skips), 521 network unit tests
+pass (17 explicit environment skips), 13 prediction-driver integration tests and
+four focused follow/ground catalogue tests pass. Seven-package all-target denied-
+warning Clippy, formatting and diff checks pass. Evidence: quest-smooth-client-tests-
+native.log, quest-network-lib-final.log, quest-movement-clock-tests.log,
+quest-core-focused-final.log and quest-smooth-clippy.log under build/.
+The SQL ground-reward contract passes in build/quest-ground-sql-v1/qualification.json:
+accepted-only claim, exact retry, atomic pickup/Ready, consumed delivery/25 XP and
+restart without duplicate reward. Authored route CLI validation passes with actual
+navigation, including wrong-floor refusal. The updated native export is
+build/quest-travel-package-v2; source remains unchanged during export.
+
+15 November 2026 continuation: final frame-clock native qualification passes in
+build/quest-travel-native-v7/qualification.json. Fresh and PostgreSQL-restarted
+sessions retain all three Completed quests, journal 9 / XP 75, consumed compass
+and Elowen at the destination. Ordinary Tab/Shift+Tab, debug toggle and range-based
+escort waiting/resume pass. Both owned sessions close cleanly without GPU
+validation diagnostics. Linux RX 7900 XTX / RADV NAVI31 / Vulkan, 3440x1440;
+no native Windows or capacity claim.
+
+Read-only measurements across the fresh run contain 1,642 steady movement samples,
+all in the 0.9–1.1 expected-speed band, no held frames and no large displacements.
+Maximum steady speed ratio is 1.010. Transition and screenshot/long-frame samples
+are counted separately. Final sampled mean frame time was 43.2 ms (~23 FPS), so
+this establishes consistent travel speed, not a 60 FPS performance qualification.
+See build/quest-travel-native-v7/movement-measurements.json. All 274 final client
+tests, 27 launcher tests and seven-package/all-target denied-warning Clippy pass.
+The final bag/vendor native qualification passes in
+build/quest-economy-native-20261115-v1/qualification.json: anchored hover text,
+visible coin footer/prices, stable minimap/tracker, non-vendor bag isolation,
+destroyed-weapon replacement, buying/selling, correct-NPC quest completion, and
+exact inventory/currency persistence after database restart (48,805 copper).
+Fresh and resumed sessions close cleanly with no GPU diagnostics on the same
+Linux device. Screenshots were visually inspected. Editor regressions pass 249 tests (12 explicit environment skips), including
+the encrypted two-client export test rerun with local sockets after the sandbox
+denied binding. Evidence: quest-editor-tests-resume.log and
+quest-editor-socket-test-resume.log.
+Next slice: reject invalid escort destinations/routes before editor package
+publication, then expose the travel bindings in the NPC quest inspector.
+Changes remain local; the user authorized local commits and continued implementation.
+
+14 November 2026 — P3-11 / P3-12 / P3-15 / P5-17 playable contact collection:
+The opt-in `content/development-gameplay-valley-contacts.json` now connects a
+schema-2 dialogue catalogue to schema-3 authored placements, distinct stationary
+nonblocking server entities, bounded DG02 presence, exact mesh selection and
+per-contact quest/vendor UI. One private conversation per actor retains the same
+rate, sequence, revision, life and 3D range checks. Giver/turn-in and semantic
+choices resolve against the exact session NPC; vendor admission additionally
+requires its own bound NPC. All support preparation stays outside the fixed step.
+Legacy single-contact loaders, placements, identities and DG01 bytes remain.
+
+The editor requires one supported marker per catalogue NPC; duplicate, missing,
+unknown and unsupported placements refuse before publication. The actual native
+editor exported two contacts and five roaming wolves with source bytes unchanged:
+`build/multi-contact-editor-v1/qualification.json`. Existing markers' Catalog ID
+field, Save and undo remain the authoring interface.
+
+Native OIDC/SQL proof `build/multi-contact-native-v2/qualification.json` passes
+(v1 also passes before the final layout/name refinement):
+accept Report to the steward at the guide, ordinary movement to the steward,
+semantic report, visit the wrong guide with no turn-in button, return and complete
+at the steward, then purchase stones at the guide. The quest grants 25 XP and one
+token via the existing fixed reward transaction. The normal development starting
+bag already contains tokens; this is not a claim of combat-earned purchasing.
+Journal revision 3, Completed status, exact bag, both quest-action receipts and
+latest purchase receipt survive PostgreSQL restart without another grant/purchase.
+Both owned sessions shut down cleanly, private services close, and GPU diagnostic
+checks pass. Linux RX 7900 XTX / RADV NAVI31 / Vulkan; no native Windows claim.
+
+The final native v2 rebuild also verifies selected-contact names, unit-frame
+clearance from open conversation/backpack panels and compact-tracker hiding during
+dialogue (J still opens the full journal). It checks the exact one-token bag delta
+at turn-in separately from the subsequent purchase cost/grant. Fresh and resumed
+launcher exits are zero; both runs contain zero GPU diagnostics.
+The final windowless HUD preview also passes at 3440x1440, UI scale 1.5,
+on the same Vulkan device, with zero GPU diagnostics:
+`build/multi-contact-ui-wide/report.json` and its `hud.png`. This checks real UI
+widgets with fixture values; connected multi-contact gameplay above ran at
+1280x720, so this is not an ultrawide multiplayer qualification.
+
+Checks: 271 client + 519 network + 249 editor + eight dialogue integration tests
+pass (1,047 total, 33 explicitly ignored environment-dependent tests); 72 Python
+bundle/launcher tests pass. A focused two-test anchor rerun additionally protects
+the retained legacy 4 KiB limit. Formatting and denied-warning workspace/all-target
+Clippy pass. Evidence: build/multi-contact-tests-final.log,
+multi-contact-python-tests.log, multi-contact-anchor-final.log and
+multi-contact-clippy-final.log. Actual two-peer encrypted presence, independent
+sessions, cross-contact refusal and switching pass in dialogue_renet. Headless
+exact-NPC/vendor/private-session/forged-command checks cover 20/30/60 Hz.
+Run `bash tools/edit_contacts.sh` for the new disposable editor/account session,
+or `bash tools/edit_valley.sh` for the retained previous four-quest valley.
+No NPC production art/animation, grouped authored patrol assignment, MMO capacity
+or persistence migration is implied. The cyan contact capsules remain fixtures.
+All changes remain local; no push.
+
+P2-13/14 / P3-07/09/11 / P5-17 playtest feedback, 14 November 2026:
+implemented local corpse loot motes, bounded nonblocking NPC separation, clickable
+separated enemy nameplates, compact objectives with a larger J-toggle journal,
+and Synty icons/fonts through the ordinary account population launcher. NPC offers
+include objectives and rewards before acceptance. Compact objectives move beside
+an open backpack; the expanded journal is a central panel. Road ribbons share bend
+vertices and have 3 cm render-only clearance; saved heights/collision stay unchanged.
+An unfinished zero/one-point editor road draft remains valid and draws no triangles.
+
+Spawn groups expose Roam radius (m; 0 = still), separate from spawn spacing.
+Legacy groups default to 0, new groups to 4 m; edit_valley.sh explicitly sets 4 m
+on its private draft. Authoritative idle walking uses up to four navigation- and
+collision-checked closed excursions per home, inside both the spawn polygon and
+0..16 m home radius. Walk 1.5 m/s with varied 2..6 s pauses. Combat interrupts;
+normal return restarts the checked excursion from home. Impossible routes refuse
+export/startup.
+All route preparation is outside the fixed step. These and 1.6 m preferred combat
+spacing/1 m/s avoidance are explicit Theia policies. Soft avoidance is not actor
+collision and does not guarantee a packed crowd can always maintain that distance.
+Grouped individually authored patrol assignments remain unimplemented.
+
+Loot motes use private committed availability, persist through partial/refused
+pickup, and disappear after the final claim or residency/connection loss. Existing
+sticky damage threat remains unchanged: a challenger must strictly exceed 110%
+in melee or 130% at range; stopping attacks alone does not erase threat. First-tag
+loot ownership is separate. Prior two-account native evidence remains in
+build/population-competing-accounts-native-v3/qualification.json.
+
+Checks passed: 269 client, 514 network, 75 zone and 248 editor tests,
+23 private launcher Python tests, final strict workspace/all-target Clippy, checked
+idle movement at 20/30/60 Hz for all five exported wolves, and native editor export.
+Evidence: build/playtest-feedback-final-tests.log, playtest-feedback-final-client-tests.log
+(the final 269-client rerun after the border correction),
+playtest-feedback-python-tests-final.log, playtest-feedback-final-clippy-v4.log,
+playtest-feedback-editor-roam-field.log (attribute save/undo and legacy loading),
+playtest-feedback-roaming.log and
+playtest-feedback-editor-v1/qualification.json. Native editor export preserves
+source bytes and validates the published gameplay snapshot. Earlier incomplete
+native attempts exposed observation timing and layout issues. The v8 run survived
+ten deaths without the server publication error and verified two pelt pickups
+(each 8 motes to 0), but its driver timed out when death occurred before a loot
+click submitted. The driver now guards that wait, pulls with ordinary input from
+spell range, and follows the checked waypoints back with ordinary keys when it
+interrupts the route follower. It does not alter combat, health or loot odds.
+Final connected acceptance passes in
+build/playtest-feedback-native-v9/qualification.json: Linux, Vulkan, AMD Radeon
+RX 7900 XTX (RADV NAVI31), Mesa 26.2.6. All five enemies moved before combat;
+normal nameplate clicks selected targets; J expanded/collapsed the journal;
+four moving road captures show continuous surfaces. Four quests completed through
+eight normal quest actions, nine creature kills and one player death. The pelt
+quest used six new kills and five corpse pickups (three pelts plus two token-only
+pickups); every pickup changed the corresponding eight-mote effect to zero.
+After consuming three pelts at turn-in, PostgreSQL restarted and the character
+rejoined with the same journal revision 25, XP 250, exact bag and saved loot rolls.
+Both owned account launchers shut down successfully and private services closed.
+The final visual border correction is included in both v9 client launches.
+
+Native Windows execution and MMO-scale load/performance are not qualified here.
+Moving screenshots do not establish frame-perfect temporal stability; human
+review of road motion and crowd/UI feel remains useful. All changes remain local.
+
+The extended native pack fight exposed a real server publication bug: a later
+attacker could kill a player while an earlier controller retained a pending
+windup in the same tick. The private life encoder correctly refused that invalid
+dead-player telegraph, but its error stopped the server. Snapshot publication now
+omits windups for dead lives, matching public attack projection. A staged competing
+damage regression exercises both singleton and population controllers at
+20/30/60 Hz, checks wire round-trip immediately after death and ordinary policy
+cancellation on the next tick. Evidence: playtest-feedback-life-regression.log.
+
+Final Synty frame artwork/tooltips pass actual windowless Vulkan previews at
+1280x720 / scale 1 and 3440x1440 / scale 1.5 on AMD Radeon RX 7900 XTX
+(RADV NAVI31). Evidence: build/playtest-feedback-synty-border-720 and
+playtest-feedback-synty-border-wide, each report.json plus hud.png. These are
+real rendered widgets with fixture values, separate from connected gameplay.
+The border is an absolute Pickable::IGNORE / IgnoreScroll child, so it stays
+outside the padded content and remains fixed while the panel scrolls. Ten focused
+Synty tests pass after that correction (playtest-feedback-frame-border-tests-v3.log).
+
 P3-11 / P3-12 / P3-15 multiple-contact content prerequisite, 14 November 2026:
 add an explicit pure schema-2 dialogue Catalog with 1..16 embedded, independently
 validated schema-1 contact profiles. Bound total input to 256 KiB, retain each

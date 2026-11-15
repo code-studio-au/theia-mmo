@@ -28,6 +28,7 @@ enum Control {
     Scale(u8),
     Exit,
     Abilities,
+    Debug,
 }
 fn label(value: &str) -> impl Bundle {
     (
@@ -92,10 +93,10 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let buttons:Vec<_>=world.query::<(&Control,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world)
         .filter(|(action,_,_)|open || matches!(action,Control::Toggle))
         .map(|(action,node,transform)|{
-            let name=match action {Control::Toggle=>"toggle".to_owned(),Control::Close=>"close".to_owned(),Control::Scale(value)=>format!("scale-{value}"),Control::Exit=>"exit".to_owned(),Control::Abilities=>"abilities".to_owned()};
+            let name=match action {Control::Toggle=>"toggle".to_owned(),Control::Close=>"close".to_owned(),Control::Scale(value)=>format!("scale-{value}"),Control::Exit=>"exit".to_owned(),Control::Abilities=>"abilities".to_owned(),Control::Debug=>"debug".to_owned()};
             serde_json::json!({"action":name,"point":(transform.affine().translation*super::window_factor(node,scale)).to_array()})
         }).collect();
-    serde_json::json!({"open":open,"preferred":preferred,"displayed":scale,"buttons":buttons,"persistence":persistence})
+    serde_json::json!({"open":open,"preferred":preferred,"displayed":scale,"buttons":buttons,"persistence":persistence,"debug_stats":world.get_resource::<super::debug::Enabled>().is_some_and(|v|v.0)})
 }
 fn setup(mut commands: Commands) {
     commands
@@ -124,6 +125,7 @@ fn setup(mut commands: Commands) {
             pane.spawn(label("The interface fits smaller windows and restores your preferred size when space returns."));
             pane.spawn((PersistenceHint, label("Applies to this session. The world continues running.")));
             pane.spawn(button(Control::Abilities,"Open ability book [P]")).with_child(label("Abilities [P]"));
+            pane.spawn(button(Control::Debug,"Toggle debug statistics")).with_child(label("Show / hide debug statistics"));
             pane.spawn(button(Control::Close,"Close interface settings")).with_child(label("Close [Esc]"));
             pane.spawn(button(Control::Exit,"Exit game")).with_child(label("Exit game"));
         });
@@ -147,11 +149,13 @@ pub(crate) fn keyboard(
         ui.open = !ui.open;
     }
 }
+#[allow(clippy::too_many_arguments)]
 fn activate(
     event: On<Activate>,
     controls: Query<&Control>,
     mut ui: ResMut<Ui>,
     mut preferred: ResMut<PreferredScale>,
+    debug: Option<ResMut<super::debug::Enabled>>,
     windows: Query<&Window>,
     (store, book): (
         Option<ResMut<super::preferences::Store>>,
@@ -166,6 +170,11 @@ fn activate(
         return;
     }
     match *control {
+        Control::Debug if ui.open => {
+            if let Some(mut debug) = debug {
+                debug.0 = !debug.0;
+            }
+        }
         Control::Toggle => ui.open = !ui.open,
         Control::Close if ui.open => {
             ui.open = false;
@@ -247,6 +256,33 @@ fn present(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn debug_stats_toggle_requires_the_open_focused_interface() {
+        let mut app = App::new();
+        app.init_resource::<Ui>()
+            .init_resource::<super::super::debug::Enabled>()
+            .insert_resource(PreferredScale(1.))
+            .add_observer(activate);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: true,
+                ..default()
+            })
+            .id();
+        let button = app.world_mut().spawn(Control::Debug).id();
+        app.world_mut().trigger(Activate { entity: button });
+        assert!(!app.world().resource::<super::super::debug::Enabled>().0);
+        app.world_mut().resource_mut::<Ui>().open = true;
+        app.world_mut().trigger(Activate { entity: button });
+        assert!(app.world().resource::<super::super::debug::Enabled>().0);
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+        app.world_mut().trigger(Activate { entity: button });
+        assert!(app.world().resource::<super::super::debug::Enabled>().0);
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        app.world_mut().trigger(Activate { entity: button });
+        assert!(!app.world().resource::<super::super::debug::Enabled>().0);
+    }
     #[test]
     fn local_presets_require_an_open_panel_and_leave_preferences_in_bounds() {
         let mut app = App::new();

@@ -27,7 +27,7 @@ THREAT_ROLES = JOURNAL_ROLES | {'creature_threat'}
 AREA_ROLES = THREAT_ROLES | {'quest_areas'}
 DOCUMENT_ROLES = AREA_ROLES | {'documents'}
 ITEM_REWARD_ROLES = DOCUMENT_ROLES | {'quest_item_rewards'}
-MAX_PROFILE_BYTES = 64 * 1024  # Outer copy bound; Rust enforces each smaller role budget.
+MAX_PROFILE_BYTES = 256 * 1024  # Outer copy bound; Rust enforces each smaller role budget.
 MAX_MANIFEST_BYTES = 8192
 MAX_REPORT_BYTES = 16384
 

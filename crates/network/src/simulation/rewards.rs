@@ -83,9 +83,19 @@ impl World {
         if profile
             .catalog()
             .definitions()
-            .any(|d| d.creature() != creature)
+            .any(|d| d.ground().is_none() && d.creature() != creature)
         {
             return Err("Reward definition does not match installed creature".into());
+        }
+        for ground in profile.catalog().definitions().filter_map(|d| d.ground()) {
+            let patch = self
+                .procedural
+                .as_ref()
+                .and_then(|r| r.patch(ground.position))
+                .ok_or("Ground item collision is not prepared")?;
+            if patch.try_spawn_near(ground.position).is_none() {
+                return Err("Ground item has no supported reachable placement".into());
+            }
         }
         self.rewards = Some(profile);
         Ok(())
@@ -114,6 +124,22 @@ impl World {
                 .is_some_and(|p| p.covers(actor.position, actor.ready.as_ref()))
             && crate::dialogue::in_range(actor.position, source.position)
     }
+    pub fn ground_pickup_eligible(
+        &self,
+        actor: u64,
+        position: theia_core::coordinates::GlobalPosition,
+    ) -> bool {
+        self.player_alive(actor)
+            && self
+                .global_position(actor)
+                .is_some_and(|p| crate::dialogue::in_range(p, position))
+            && self.players.get(&actor).is_some_and(|a| {
+                self.procedural
+                    .as_ref()
+                    .and_then(|r| r.patch(a.position))
+                    .is_some_and(|p| p.covers(a.position, a.ready.as_ref()))
+            })
+    }
     pub fn reward_profile(&self) -> Option<&Arc<Profile>> {
         self.rewards.as_ref()
     }
@@ -141,7 +167,7 @@ impl World {
             for definition in profile
                 .catalog()
                 .definitions()
-                .filter(|d| d.creature() == creature.id())
+                .filter(|d| d.ground().is_none() && d.creature() == creature.id())
             {
                 let opportunity = Opportunity {
                     actor,

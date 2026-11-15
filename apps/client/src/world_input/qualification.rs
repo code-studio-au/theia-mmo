@@ -186,6 +186,8 @@ fn inventory_layout(world: &mut World) -> serde_json::Value {
         .iter(world)
         .next()
         .map(|s| [s.x, s.y]);
+    let pane = world.query_filtered::<(&ComputedNode,&bevy::ui::UiGlobalTransform),With<crate::inventory::Pane>>()
+        .iter(world).next().map(|(node,t)|serde_json::json!({"point":(t.affine().translation*crate::fantasy_ui::window_factor(node,ui_scale)).to_array(),"size":(node.size()*crate::fantasy_ui::window_factor(node,ui_scale)).to_array()}));
     let tooltip = crate::inventory::skin::tooltip_state(world);
     let offers: Vec<_> = world
         .query::<(&crate::inventory::BuyButton, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
@@ -196,7 +198,7 @@ fn inventory_layout(world: &mut World) -> serde_json::Value {
             "point": (transform.affine().translation * crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
         }))
         .collect();
-    serde_json::json!({"slots":slots,"scroll":scroll,"tooltip":tooltip,"offers":offers,"split":inventory_widget::<crate::inventory::SplitButton>(world),
+    serde_json::json!({"slots":slots,"pane":pane,"scroll":scroll,"tooltip":tooltip,"offers":offers,"split":inventory_widget::<crate::inventory::SplitButton>(world),
         "claim":inventory_widget::<crate::inventory::ClaimButton>(world),
         "destroy":inventory_widget::<crate::inventory::DestroyButton>(world),"cancel":inventory_widget::<crate::inventory::CancelButton>(world)})
 }
@@ -206,6 +208,16 @@ fn os_trace(world: &mut World) {
     if run.written.elapsed() >= std::time::Duration::from_millis(100) {
         let state = world.resource::<crate::network::Network>().state();
         let guide = guide_screen(world);
+        let contact_points: Vec<_> = world
+            .query::<(&crate::dialogue::ContactKey, &GlobalTransform)>()
+            .iter(world)
+            .filter_map(|(key, transform)| Some((key.0?, transform.translation())))
+            .collect();
+        let contacts: Vec<_> = contact_points.into_iter().map(|(key, point)| serde_json::json!({
+            "npc":state.guide.as_ref().and_then(|p| p.npc(key)).map(|id| id.as_str()),
+            "entity":key.entity.value(), "screen":project(world,point).map(|p| p.to_array()),
+            "global":state.guide.as_ref().and_then(|p| p.find(key)).map(|g| g.position.metres()),
+        })).collect();
         let enemy = state
             .targeting
             .as_ref()
@@ -266,7 +278,7 @@ fn os_trace(world: &mut World) {
             .map(|p| serde_json::to_value(&p.metrics).unwrap());
         let journal = crate::quest_journal::qualification(world, &state);
         let selection = world.resource::<super::Selection>();
-        let mut data = serde_json::json!({"enemy_health":state.combat.as_ref().and_then(|c|c.targets.first()).map(|t|t.current),"quest_journal":journal,"quest_marker":world.get_resource::<crate::quest_marker::Metrics>(),"main_hand_item":state.inventory.as_ref().and_then(|i|i.bag.main_hand()).map(|stack|stack.item().as_str()),"wand_slot_screen":wand_slot.map(|p|p.to_array()),"ability_reply":state.combat.as_ref().and_then(|c|c.reply).map(|r|format!("{:?}",r.outcome)),"active_cast":state.combat.as_ref().and_then(|c|c.cast.as_ref()).map(|c|serde_json::json!({"started":c.started,"completes":c.completes,"ability":c.ability.as_str()})),"enemy_global":state.targeting.as_ref().and_then(|v|v.targets.first()).map(|t|t.position.metres()),"autoattack":autoattack,"combat":combat,"attack_animation":attack_animation,"melee_labels":melee_labels,"combat_ui":world.get_resource::<crate::combat::ui::Model>(),"combat_layout":world.get_resource::<crate::combat::ui::Metrics>(),"selected_hostile":state.targeting.as_ref().and_then(|v|v.selected).map(|id|id.value()),"classic_facing":state.correction.and_then(|c|c.state.pose.facing),"classic_enabled":world.contains_resource::<crate::classic_controls::Controller>(),"pawn_heading":pawn_heading,"sword_equipped":sword,"sword_slot_screen":sword_slot.map(|v|v.to_array()),"equip_screen":equip.map(|v|v.to_array()),"dodge_animation":dodge_animation,"grip":grip,"dodge":dodge,"rendered_body":rendered,"pid":std::process::id(),"connected":state.error.is_none()&&state.welcome.is_some(),"guide_screen":guide.map(|p|p.to_array()),"enemy_screen":enemy.map(|p|p.to_array()),"window":size,"camera_angles":angles.to_array(),"camera_mode":camera_mode,"cursor":cursor,"movement":movement,"inventory_open":inventory_open,"dialogue_open":state.dialogue.as_ref().is_some_and(|v|v.open.is_some()),"friendly_selected":selection.friendly.is_some(),"controls":selection,"adapter":adapter});
+        let mut data = serde_json::json!({"enemy_health":state.combat.as_ref().and_then(|c|c.targets.first()).map(|t|t.current),"quest_journal":journal,"quest_marker":world.get_resource::<crate::quest_marker::Metrics>(),"main_hand_item":state.inventory.as_ref().and_then(|i|i.bag.main_hand()).map(|stack|stack.item().as_str()),"wand_slot_screen":wand_slot.map(|p|p.to_array()),"ability_reply":state.combat.as_ref().and_then(|c|c.reply).map(|r|format!("{:?}",r.outcome)),"active_cast":state.combat.as_ref().and_then(|c|c.cast.as_ref()).map(|c|serde_json::json!({"started":c.started,"completes":c.completes,"ability":c.ability.as_str()})),"enemy_global":state.targeting.as_ref().and_then(|v|v.targets.first()).map(|t|t.position.metres()),"autoattack":autoattack,"combat":combat,"attack_animation":attack_animation,"melee_labels":melee_labels,"combat_ui":world.get_resource::<crate::combat::ui::Model>(),"combat_layout":world.get_resource::<crate::combat::ui::Metrics>(),"selected_hostile":state.targeting.as_ref().and_then(|v|v.selected).map(|id|id.value()),"classic_facing":state.correction.and_then(|c|c.state.pose.facing),"classic_enabled":world.contains_resource::<crate::classic_controls::Controller>(),"pawn_heading":pawn_heading,"sword_equipped":sword,"sword_slot_screen":sword_slot.map(|v|v.to_array()),"equip_screen":equip.map(|v|v.to_array()),"dodge_animation":dodge_animation,"grip":grip,"dodge":dodge,"rendered_body":rendered,"pid":std::process::id(),"connected":state.error.is_none()&&state.welcome.is_some(),"guide_screen":guide.map(|p|p.to_array()),"contacts":contacts,"enemy_screen":enemy.map(|p|p.to_array()),"window":size,"camera_angles":angles.to_array(),"camera_mode":camera_mode,"cursor":cursor,"movement":movement,"inventory_open":inventory_open,"dialogue_open":state.dialogue.as_ref().is_some_and(|v|v.open.is_some()),"friendly_selected":selection.friendly.is_some(),"controls":selection,"adapter":adapter});
         data["mouse_hover"] = world
             .get_resource::<bevy::picking::hover::HoverMap>()
             .and_then(|h| h.0.get(&bevy::picking::pointer::PointerId::Mouse))
@@ -355,6 +367,7 @@ fn os_trace(world: &mut World) {
                 .map_or(1., |scale| scale.0)
         );
         data["interface"] = crate::fantasy_ui::settings::snapshot(world);
+        data["ground_items"] = crate::inventory::ground::snapshot(world);
         data["ability_book"] = crate::combat::book::snapshot(world);
         data["action_bar"] = crate::combat::action_bar::snapshot(world);
         data["connection_hud"] = text_geometry::<crate::scene::NetworkHud>(world);
@@ -407,6 +420,7 @@ fn os_trace(world: &mut World) {
             serde_json::json!(world.get_resource::<crate::reference_scene::LifeAnimationMetrics>());
         data["minimap"] = serde_json::json!(world.get_resource::<crate::minimap::Metrics>());
         data["nameplates"] = serde_json::json!(world.get_resource::<crate::nameplates::Metrics>());
+        data["nameplate_buttons"] = crate::nameplates::qualification(world);
         data["player_locomotion"] = crate::reference_scene::locomotion::qualification(world);
         data["render_frame"] = serde_json::json!({
             "revision":world.resource::<crate::floating_origin::Frame>().revision,

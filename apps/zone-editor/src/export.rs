@@ -593,8 +593,12 @@ fn publish_combined(
         return Err("Export needs a valid capsule spawn".into());
     }
     let contact = gameplay.as_ref().and_then(|draft| draft.contact.clone());
+    let contacts = gameplay
+        .as_ref()
+        .map_or_else(Vec::new, |draft| draft.contacts.clone());
+    report["npc_contacts"] = serde_json::to_value(&contacts).map_err(|e| e.to_string())?;
     report["npc_contact"] = serde_json::to_value(&contact).map_err(|e| e.to_string())?;
-    if let Some(contact) = &contact {
+    for contact in contact.iter().chain(contacts.iter()) {
         contact
             .validate(
                 theia_core::coordinates::GlobalPosition::new(zone.origin)
@@ -670,10 +674,17 @@ fn publish_combined(
         fs::write(
             stage.join(theia_network::authored_world::ANCHOR_FILE),
             serde_json::to_vec_pretty(&theia_network::authored_world::Anchor {
-                schema: if contact.is_some() { 2 } else { 1 },
+                schema: if !contacts.is_empty() {
+                    3
+                } else if contact.is_some() {
+                    2
+                } else {
+                    1
+                },
                 origin: zone.origin,
                 world_identity: checked.identity(),
                 contact: contact.clone(),
+                contacts: contacts.clone(),
             })
             .map_err(|e| e.to_string())?,
         )
@@ -1746,6 +1757,77 @@ mod tests {
     }
 
     #[test]
+    fn contact_catalogue_export_requires_complete_unique_supported_markers() {
+        let root = Folder::new();
+        let template = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../content/development-gameplay-valley-contacts.json");
+        let mut zone: Zone = serde_json::from_slice(include_bytes!(
+            "../../../content/zones/quest-areas.zone.json"
+        ))
+        .unwrap();
+        for (index, npc) in ["theia.dev.guide", "theia.dev.steward"]
+            .into_iter()
+            .enumerate()
+        {
+            zone.markers.push(theia_zone::markers::Marker {
+                id: index as u64 + 2,
+                name: npc.into(),
+                kind: theia_zone::markers::MarkerKind::Npc,
+                position: [8002. + index as f64 * 2., 0.03, 8000.],
+                yaw_degrees: 0.,
+                radius_metres: 1.,
+                definition: Some(npc.into()),
+            });
+        }
+        let output = root.0.join("contacts");
+        let report =
+            publish_with_gameplay(&zone, &output, "theia.test.contacts", 1, Some(&template))
+                .unwrap();
+        assert!(report["npc_contact"].is_null());
+        assert_eq!(report["npc_contacts"].as_array().unwrap().len(), 2);
+        let store =
+            std::sync::Arc::new(theia_network::authored_world::Store::open(&output).unwrap());
+        let bundle = theia_network::gameplay_bundle::snapshot(
+            &output.join("gameplay/gameplay.manifest.json"),
+        )
+        .unwrap();
+        let profile =
+            theia_network::dialogue::Profile::from_content(bundle.profile("dialogue").unwrap())
+                .unwrap();
+        let placements = profile
+            .placements(
+                "authored",
+                &theia_network::procedural::Source::Authored(store),
+            )
+            .unwrap();
+        assert_eq!(placements.len(), 2);
+        assert_eq!(
+            Zone::load(&output.join("authoring.zone.json")).unwrap(),
+            zone
+        );
+        for mode in 0..4 {
+            let mut invalid = zone.clone();
+            match mode {
+                0 => {
+                    invalid.markers.pop();
+                }
+                1 => {
+                    invalid.markers[1].definition = invalid.markers[0].definition.clone();
+                }
+                2 => {
+                    invalid.markers[1].definition = Some("unknown.contact".into());
+                }
+                _ => invalid.markers[1].position[1] = 100.,
+            }
+            let output = root.0.join(format!("bad-contacts-{mode}"));
+            assert!(
+                publish_with_gameplay(&invalid, &output, "theia.test.contacts", 1, Some(&template))
+                    .is_err()
+            );
+            assert!(!output.exists());
+        }
+    }
+    #[test]
     fn bound_npc_exports_verified_position_and_profile_and_refuses_unusable_bindings() {
         use theia_network::{
             authored_world::Store,
@@ -1840,6 +1922,7 @@ mod tests {
                 .unwrap(),
                 target_alive: 3,
                 respawn_seconds: 30,
+                roam_radius_metres: 0.,
                 seed: 42,
             });
         zone.validate().unwrap();

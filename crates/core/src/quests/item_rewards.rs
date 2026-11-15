@@ -73,7 +73,8 @@ impl Catalog {
                     reserved.insert(o.id().clone());
                     match o.event() {
                         EventKey::PossessItem(_) => {}
-                        EventKey::Kill(id)
+                        EventKey::FollowNpc(id)
+                        | EventKey::Kill(id)
                         | EventKey::ReachArea(id)
                         | EventKey::ReadDocument(id) => {
                             reserved.insert(id.clone());

@@ -42,6 +42,47 @@ pub async fn prepare_placed_guide(
     world.spawn_placed_guide(profile, placement)
 }
 
+/// Prepare all contact support outside the fixed step, then install atomically.
+pub async fn prepare_contacts(
+    world: &mut World,
+    profile: Arc<Profile>,
+    placements: Vec<(theia_core::content::ContentId, Placement)>,
+) -> Result<Vec<theia_network::dialogue::ContactPresence>> {
+    if world.completed_tick() != 0 || world.procedural().is_none() {
+        return Err("Contacts require inactive prepared world".into());
+    }
+    let focuses = placements
+        .iter()
+        .map(|(_, p)| p.focus())
+        .collect::<Result<Vec<_>>>()?;
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+    loop {
+        world.poll_terrain_keeping(&focuses)?;
+        if focuses
+            .iter()
+            .all(|p| world.procedural().and_then(|r| r.patch(*p)).is_some())
+        {
+            break;
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err("Contact support preparation timed out".into());
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    if profile.catalog().is_some() {
+        world.spawn_placed_contacts(profile, placements)
+    } else {
+        if placements.len() != 1 || &placements[0].0 != profile.profile().npc() {
+            return Err("Invalid legacy placement".into());
+        }
+        let guide = world.spawn_placed_guide(profile, placements[0].1)?;
+        Ok(vec![theia_network::dialogue::ContactPresence {
+            npc: placements[0].0.clone(),
+            guide,
+        }])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -60,7 +60,7 @@ pub(crate) struct Surface;
 #[derive(Component)]
 struct Arrow;
 #[derive(Component)]
-struct Guide;
+struct Guide(usize);
 #[derive(Component)]
 enum MapCaption {
     Heading,
@@ -184,18 +184,20 @@ fn setup(
                     ImageNode::new(arrow),
                     Pickable::IGNORE,
                 ));
-                map.spawn((
-                    Guide,
-                    label("G", 18.),
-                    Node {
-                        position_type: PositionType::Absolute,
-                        width: px(18),
-                        height: px(22),
-                        display: Display::None,
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                ));
+                for index in 0..theia_core::dialogue::catalog::MAX_CONTACTS {
+                    map.spawn((
+                        Guide(index),
+                        label("G", 18.),
+                        Node {
+                            position_type: PositionType::Absolute,
+                            width: px(18),
+                            height: px(22),
+                            display: Display::None,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        },
+                    ));
+                }
             });
             root.spawn((MapCaption::Extent, label("256 m across", 12.)));
         });
@@ -207,7 +209,7 @@ pub(crate) fn install_preview(app: &mut App) {
         .add_systems(Startup, (setup, hints::setup))
         .add_systems(PostStartup, (seed_preview, seed_hover_preview).chain());
 }
-type PreviewNode<'a> = (&'a mut Node, Has<Root>, Has<Arrow>, Has<Guide>);
+type PreviewNode<'a> = (&'a mut Node, Has<Root>, Has<Arrow>, Option<&'a Guide>);
 fn seed_preview(
     map: Res<Map>,
     mut metrics: ResMut<Metrics>,
@@ -249,8 +251,12 @@ fn seed_preview(
         } else if arrow {
             node.left = px(DISPLAY * 0.5 - 9.);
             node.top = px(DISPLAY * 0.5 - 9.);
-        } else if guide {
-            node.display = Display::Flex;
+        } else if let Some(guide) = guide {
+            node.display = if guide.0 == 0 {
+                Display::Flex
+            } else {
+                Display::None
+            };
             node.left = px(DISPLAY * 0.75 - 9.);
             node.top = px(DISPLAY * 0.25 - 11.);
         }
@@ -388,10 +394,7 @@ fn present(world: &mut World) {
 }
 fn present_inner(world: &mut World) {
     let state = world.resource::<crate::network::Network>().state();
-    let hidden = world
-        .get_resource::<crate::inventory::Ui>()
-        .is_some_and(|ui| ui.open);
-    let position = (!hidden).then(|| owner_position(world, &state)).flatten();
+    let position = owner_position(world, &state);
     let visible = position.is_some();
     for mut node in world
         .query_filtered::<&mut Node, With<Root>>()
@@ -505,7 +508,7 @@ fn present_inner(world: &mut World) {
             transform.rotation = rotation;
         }
     }
-    let guide = crate::quest_marker::guide_observation(
+    let guides: Vec<_> = crate::quest_marker::guide_observations(
         &state,
         world
             .get_resource::<crate::quest_lifecycle::Definitions>()
@@ -514,15 +517,18 @@ fn present_inner(world: &mut World) {
             .get_resource::<crate::quest_journal::Definitions>()
             .map(|d| d.0.as_ref()),
     )
-    .and_then(|(phase, position, _)| Some((phase, view.project(position)?)))
+    .into_iter()
+    .filter_map(|(phase, position, _)| Some((phase, view.project(position)?)))
     .filter(|(_, point)| {
         !world.contains_resource::<crate::fantasy_ui::Skin>()
             || projection::circle_contains(*point, 15.)
-    });
-    for (mut node, mut text, mut color) in world
-        .query_filtered::<(&mut Node, &mut Text, &mut TextColor), With<Guide>>()
+    })
+    .collect();
+    for (index, mut node, mut text, mut color) in world
+        .query::<(&Guide, &mut Node, &mut Text, &mut TextColor)>()
         .iter_mut(world)
     {
+        let guide = guides.get(index.0).copied();
         let display = if guide.is_some() {
             Display::Flex
         } else {
@@ -555,6 +561,7 @@ fn present_inner(world: &mut World) {
             }
         }
     }
+    let guide = guides.first().copied();
     let mut metrics = world.resource_mut::<Metrics>();
     metrics.player_point = Some(player_point);
     metrics.heading_radians = heading;
@@ -597,7 +604,7 @@ fn observe(
         .flatten();
     metrics.guide_bounds = (metrics.visible && metrics.guide_point.is_some())
         .then(|| {
-            let (node, transform) = guides.single().ok()?;
+            let (node, transform) = guides.iter().next()?;
             Some(bounds(node, transform))
         })
         .flatten();

@@ -17,6 +17,8 @@ const LIMIT: u64 = 4096;
 struct File {
     schema: u8,
     ui_scale: f32,
+    #[serde(default)]
+    debug_stats: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     world_effects: Option<bool>,
 }
@@ -28,6 +30,7 @@ impl File {
 pub(crate) struct Config {
     path: PathBuf,
     pub scale: f32,
+    debug_stats: bool,
     pub world_effects: Option<bool>,
 }
 impl Config {
@@ -61,6 +64,7 @@ impl Config {
             } else {
                 saved.as_ref().map_or(scale, |file| file.ui_scale)
             },
+            debug_stats: saved.as_ref().is_some_and(|file| file.debug_stats),
             world_effects: saved.and_then(|file| file.world_effects),
         }))
     }
@@ -69,7 +73,9 @@ impl Config {
             .world()
             .get_resource::<crate::particle_world::VisibilityChoice>()
             .map(|choice| choice.0);
+        app.insert_resource(super::debug::Enabled(self.debug_stats));
         app.insert_resource(Store {
+            requested_debug: self.debug_stats,
             path: self.path,
             requested: self.scale,
             world_effects: self.world_effects,
@@ -108,12 +114,18 @@ fn read(path: &Path) -> Result<Option<f32>, Box<dyn std::error::Error>> {
 }
 #[cfg(test)]
 fn write(path: &Path, scale: f32) -> Result<(), String> {
-    write_preferences(path, scale, None)
+    write_preferences(path, scale, None, false)
 }
-fn write_preferences(path: &Path, scale: f32, world_effects: Option<bool>) -> Result<(), String> {
+fn write_preferences(
+    path: &Path,
+    scale: f32,
+    world_effects: Option<bool>,
+    debug_stats: bool,
+) -> Result<(), String> {
     let data = File {
         schema: 1,
         ui_scale: scale,
+        debug_stats,
         world_effects,
     };
     if !data.valid() {
@@ -159,6 +171,7 @@ enum Status {
 }
 #[derive(Resource)]
 pub(super) struct Store {
+    requested_debug: bool,
     path: PathBuf,
     requested: f32,
     world_effects: Option<bool>,
@@ -189,7 +202,9 @@ fn save(
     preferred: Res<PreferredScale>,
     effects: Option<Res<crate::particle_world::VisibilityChoice>>,
     mut store: ResMut<Store>,
+    debug: Option<Res<super::debug::Enabled>>,
 ) {
+    let debug_stats = debug.as_ref().is_some_and(|v| v.0);
     let current_effects = effects.as_ref().map(|choice| choice.0);
     let effects_changed = current_effects.is_some() && current_effects != store.observed_effects;
     if effects_changed {
@@ -210,16 +225,19 @@ fn save(
     if store.pending.is_none()
         && (store.requested != preferred.0
             || store.retry_requested
-            || store.requested_effects != store.world_effects)
+            || store.requested_effects != store.world_effects
+            || store.requested_debug != debug_stats)
     {
         store.retry_requested = false;
         store.requested = preferred.0;
+        store.requested_debug = debug_stats;
         store.requested_effects = store.world_effects;
         let scale = preferred.0;
         let path = store.path.clone();
         let world_effects = store.world_effects;
         store.pending = Some(
-            IoTaskPool::get().spawn(async move { write_preferences(&path, scale, world_effects) }),
+            IoTaskPool::get()
+                .spawn(async move { write_preferences(&path, scale, world_effects, debug_stats) }),
         );
         store.status = Status::Saving;
     }
@@ -417,6 +435,7 @@ mod tests {
         app.add_plugins(MinimalPlugins);
         super::super::install_scale(&mut app, 1.);
         Config {
+            debug_stats: false,
             path: path.clone(),
             scale: 1.,
             world_effects: None,
@@ -508,6 +527,7 @@ mod tests {
         app.add_plugins(MinimalPlugins)
             .insert_resource(PreferredScale(1.));
         Config {
+            debug_stats: false,
             path: path.clone(),
             scale: 1.,
             world_effects: None,
@@ -559,6 +579,7 @@ mod tests {
         app.add_plugins(MinimalPlugins)
             .insert_resource(PreferredScale(1.));
         Config {
+            debug_stats: false,
             path: path.clone(),
             scale: 1.,
             world_effects: None,
@@ -593,7 +614,7 @@ mod tests {
     fn world_effects_choice_persists_without_saving_a_startup_override() {
         let scratch = Scratch::new();
         let path = scratch.file();
-        write_preferences(&path, 1.25, Some(true)).unwrap();
+        write_preferences(&path, 1.25, Some(true), false).unwrap();
         let mut args = vec![
             "--ui-preferences".into(),
             path.to_string_lossy().into_owned(),

@@ -119,6 +119,18 @@ impl Registry {
         let schema = if closure.iter().any(|q| {
             self.quest(q)
                 .expect("Validated closure")
+                .ready_label()
+                .is_some()
+                || self
+                    .quest(q)
+                    .expect("Validated closure")
+                    .stages()
+                    .any(|s| s.objectives().iter().any(|o| o.follow().is_some()))
+        }) {
+            5
+        } else if closure.iter().any(|q| {
+            self.quest(q)
+                .expect("Validated closure")
                 .has_document_objectives()
         }) {
             4
@@ -163,6 +175,7 @@ fn definition(q: &Definition) -> RawQuest {
         version: q.version(),
         title: q.title().into(),
         description: q.description().into(),
+        ready_label: q.ready_label().map(str::to_owned),
         prerequisites: q
             .prerequisites()
             .iter()
@@ -193,6 +206,12 @@ fn definition(q: &Definition) -> RawQuest {
                         .objectives()
                         .iter()
                         .map(|o| match o.event() {
+                            EventKey::FollowNpc(npc) => RawObjective::FollowNpc {
+                                id: o.id().as_str().into(),
+                                label: o.label().into(),
+                                npc: npc.as_str().into(),
+                                travel: o.follow().expect("Validated follow objective").clone(),
+                            },
                             EventKey::ReadDocument(document) => RawObjective::ReadDocument {
                                 id: o.id().as_str().into(),
                                 label: o.label().into(),

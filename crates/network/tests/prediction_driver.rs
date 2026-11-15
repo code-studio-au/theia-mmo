@@ -49,6 +49,86 @@ fn state(patch: &Patch, now: Instant) -> State {
 }
 
 #[test]
+fn continuous_render_phase_keeps_speed_across_zero_one_and_multiple_tick_frames() {
+    let patch = Patch::build(ChunkId { x: 62, z: 62 });
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        for frame_times in [
+            vec![1. / 20.],
+            vec![1. / 30.],
+            vec![1. / 60.],
+            vec![1. / 144.],
+            vec![0.012, 0.047, 0.021, 0.061],
+        ] {
+            let now = Instant::now();
+            let mut state = state(&patch, now);
+            state.correction.as_mut().unwrap().state.rate = rate;
+            state
+                .correction
+                .as_mut()
+                .unwrap()
+                .state
+                .pose
+                .motion
+                .grounded = true;
+            let mut driver = Driver::default();
+            let intent = Intent {
+                axes: [1000, 0],
+                ..Default::default()
+            };
+            let mut elapsed = 0.;
+            let mut frame = 0;
+            let mut previous = None;
+            while elapsed < 0.45 {
+                let driven = driver
+                    .tick(
+                        &state,
+                        intent,
+                        Some(&patch),
+                        now + Duration::from_secs_f64(elapsed),
+                    )
+                    .unwrap()
+                    .unwrap();
+                let ([a, b], fraction) = driven.presentation.unwrap();
+                assert!((0. ..1.).contains(&fraction));
+                let x = a.metres()[0] + (b.metres()[0] - a.metres()[0]) * fraction;
+                assert!(x >= a.metres()[0] && x <= b.metres()[0]);
+                if let Some((last_time, last_x)) = previous
+                    && last_time > 0.12
+                {
+                    let speed: f64 = (x - last_x) / (elapsed - last_time);
+                    assert!(
+                        (speed - 5.).abs() < 0.02,
+                        "{rate:?}, {frame_times:?}: {speed}"
+                    );
+                }
+                previous = Some((elapsed, x));
+                elapsed += frame_times[frame % frame_times.len()];
+                frame += 1;
+            }
+            // A stream change must never blend from the preceding incarnation.
+            let correction = &mut state.correction.as_mut().unwrap().state;
+            correction.input.stream_epoch += 1;
+            correction.input.tick = 20;
+            correction.pose.feet = patch.spawn(8010., 8000.);
+            state.correction_received = Some(now + Duration::from_secs_f64(elapsed));
+            let driven = driver
+                .tick(
+                    &state,
+                    Intent::default(),
+                    Some(&patch),
+                    now + Duration::from_secs_f64(elapsed),
+                )
+                .unwrap()
+                .unwrap();
+            assert!(driven.reset);
+            let ([a, b], _) = driven.presentation.unwrap();
+            assert_eq!(a, b);
+            assert!((a.metres()[0] - 8010.).abs() < 0.001);
+        }
+    }
+}
+
+#[test]
 fn first_playable_terrain_acquires_latency_lead_before_sampling_new_commands() {
     let patch = Patch::build(ChunkId { x: 62, z: 62 });
     let now = Instant::now();

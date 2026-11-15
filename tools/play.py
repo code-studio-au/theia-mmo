@@ -81,7 +81,7 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     if document_catalog is not None and (not quest_journal or quest_catalog is None or item_catalog is None):
         raise ValueError('Documents require journal, quest and inventory catalogues')
     ui_options = fantasy_ui_options(fantasy_ui, classic, combat_catalog, ui_scale, ui_preferences)
-    window_size = window_size or os.environ.get('THEIA_WINDOW_SIZE', '1920x1200')
+    window_size = window_size or os.environ.get('THEIA_WINDOW_SIZE') or ('3440x1440' if clients == 1 else '1920x1440')
     match = re.fullmatch(r'(\d+)x(\d+)', window_size)
     if not match or not (640 <= int(match[1]) <= 7680 and 480 <= int(match[2]) <= 4320):
         raise ValueError('Expected --window-size WIDTHxHEIGHT within 640x480 to 7680x4320')
@@ -418,7 +418,7 @@ def main(argv=None):
     parser.add_argument('--gameplay-manifest', type=Path, help='Validated gameplay bundle; schema 2 includes explicit completion XP')
     parser.add_argument('--gameplay-validator', type=Path, help='Rust validate_gameplay executable; default <binaries>/validate_gameplay')
     parser.add_argument('--fullscreen', action='store_true', help='Borderless fullscreen on the current monitor; F11 toggles in game')
-    parser.add_argument('--window-size', help='Client window WIDTHxHEIGHT (default 1920x1200, or THEIA_WINDOW_SIZE)')
+    parser.add_argument('--window-size', help='Client window WIDTHxHEIGHT (default 3440x1440 solo, 1920x1440 per multiplayer client, or THEIA_WINDOW_SIZE)')
     parser.add_argument('--fantasy-ui', type=Path, help='Opt-in local Fantasy Warrior HUD directory; Classic combat only; presentation candidate')
     parser.add_argument('--ui-scale', type=float, help='Optional Bevy UI scale, 0.75 to 1.5; requires --fantasy-ui')
     parser.add_argument('--ui-preferences', type=Path, help='Optional local UI preference JSON; requires --fantasy-ui; explicit --ui-scale overrides on launch')
@@ -592,7 +592,7 @@ def main(argv=None):
         if args.items and not args.inventory:
             parser.error('--items requires --inventory')
         item_catalog = (args.items or Path('content/gameplay/development-equipment-items.json' if args.equipment else 'content/gameplay/development-items.json')).resolve() if args.inventory else None
-        if args.equipment and json.loads(item_catalog.read_text()).get('schema') != 2:
+        if args.equipment and json.loads(item_catalog.read_text()).get('schema') not in (2, 3):
             parser.error('--equipment requires an equipment-capable item catalog')
         if args.statuses and not args.status_effects:
             parser.error('--statuses requires --status-effects')

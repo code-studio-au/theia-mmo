@@ -12,6 +12,17 @@ pub const MAX_CATALOG_BYTES: usize = 32 * 1024;
 pub const MAX_BAG_BYTES: usize = 4096;
 /// Fits PostgreSQL BIGINT without lossy casts. Exhaustion must fail closed.
 pub const MAX_REVISION: u64 = i64::MAX as u64;
+/// Copper ledger, bounded to signed SQL integers. 100 copper = 1 silver;
+/// 100 silver = 1 gold. No floating point or separate denomination balances.
+pub const MAX_COPPER: u64 = i64::MAX as u64;
+pub fn format_coins(copper: u64) -> String {
+    format!(
+        "{}g {}s {}c",
+        copper / 10_000,
+        copper / 100 % 100,
+        copper % 100
+    )
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -31,6 +42,7 @@ struct RawDefinition {
 #[serde(deny_unknown_fields)]
 struct RawEquipmentCatalog {
     schema: u32,
+    starting_copper: Option<u64>,
     id: String,
     items: Vec<RawEquipmentDefinition>,
 }
@@ -68,6 +80,7 @@ pub struct Catalog {
     id: ContentId,
     items: BTreeMap<ContentId, Definition>,
     equipment_enabled: bool,
+    starting_copper: Option<u64>,
 }
 impl Catalog {
     pub fn from_json(bytes: &[u8]) -> Result<Self, &'static str> {
@@ -79,7 +92,7 @@ impl Catalog {
             schema: u32,
         }
         let version: Version = serde_json::from_slice(bytes).map_err(|_| "Invalid item catalog")?;
-        let (name, definitions, equipment_enabled) = match version.schema {
+        let (name, definitions, equipment_enabled, starting_copper) = match version.schema {
             1 => {
                 let raw: RawCatalog =
                     serde_json::from_slice(bytes).map_err(|_| "Invalid item catalog")?;
@@ -88,12 +101,18 @@ impl Catalog {
                     raw.id,
                     raw.items.into_iter().map(|d| (d, None)).collect::<Vec<_>>(),
                     false,
+                    None,
                 )
             }
-            2 => {
+            2 | 3 => {
                 let raw: RawEquipmentCatalog =
                     serde_json::from_slice(bytes).map_err(|_| "Invalid equipment item catalog")?;
-                debug_assert_eq!(raw.schema, 2);
+                if raw.schema != version.schema
+                    || (raw.schema == 3) != raw.starting_copper.is_some()
+                    || raw.starting_copper.is_some_and(|c| c > MAX_COPPER)
+                {
+                    return Err("Invalid coin-enabled item catalog");
+                }
                 (
                     raw.id,
                     raw.items
@@ -110,6 +129,7 @@ impl Catalog {
                         })
                         .collect(),
                     true,
+                    raw.starting_copper,
                 )
             }
             _ => return Err("Unsupported item catalog schema or count"),
@@ -155,6 +175,7 @@ impl Catalog {
             id,
             items,
             equipment_enabled,
+            starting_copper,
         })
     }
     pub fn id(&self) -> &ContentId {
@@ -165,6 +186,12 @@ impl Catalog {
     }
     pub fn definitions(&self) -> impl ExactSizeIterator<Item = &Definition> {
         self.items.values()
+    }
+    pub fn starting_copper(&self) -> Option<u64> {
+        self.starting_copper
+    }
+    pub fn currency_enabled(&self) -> bool {
+        self.starting_copper.is_some()
     }
     pub fn equipment_enabled(&self) -> bool {
         self.equipment_enabled
@@ -194,6 +221,7 @@ pub struct Bag {
     slots: [Option<Stack>; SLOT_COUNT],
     equipment_enabled: bool,
     main_hand: Option<Stack>,
+    copper: Option<u64>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -317,6 +345,8 @@ struct RawEquipmentBag {
     revision: u64,
     slots: [Option<RawStack>; SLOT_COUNT],
     main_hand: RawHand,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    copper: Option<u64>,
 }
 /// Required field, nullable value. An absent Option field would deserialize as
 /// None and could silently erase equipped contents from incomplete stored data.
@@ -334,6 +364,7 @@ impl Bag {
             slots: std::array::from_fn(|_| None),
             equipment_enabled: catalog.equipment_enabled,
             main_hand: None,
+            copper: catalog.currency_enabled().then_some(0),
         }
     }
     pub fn from_slots(
@@ -349,15 +380,35 @@ impl Bag {
         slots: [Option<Stack>; SLOT_COUNT],
         main_hand: Option<Stack>,
     ) -> Result<Self, Error> {
+        Self::from_parts_with_copper(
+            catalog,
+            revision,
+            slots,
+            main_hand,
+            catalog.currency_enabled().then_some(0),
+        )
+    }
+    /// Trusted proposal/restore boundary; callers must commit before publishing.
+    pub fn from_parts_with_copper(
+        catalog: &Catalog,
+        revision: u64,
+        slots: [Option<Stack>; SLOT_COUNT],
+        main_hand: Option<Stack>,
+        copper: Option<u64>,
+    ) -> Result<Self, Error> {
         let bag = Self {
             catalog: catalog.id.clone(),
             revision,
             slots,
             equipment_enabled: catalog.equipment_enabled,
             main_hand,
+            copper,
         };
         bag.validate(catalog)?;
         Ok(bag)
+    }
+    pub fn copper(&self) -> Option<u64> {
+        self.copper
     }
     pub fn revision(&self) -> u64 {
         self.revision
@@ -375,10 +426,14 @@ impl Bag {
         self.equipment_enabled
     }
     pub(crate) fn validate(&self, catalog: &Catalog) -> Result<(), Error> {
-        if self.catalog != catalog.id || self.equipment_enabled != catalog.equipment_enabled {
+        if self.catalog != catalog.id
+            || self.equipment_enabled != catalog.equipment_enabled
+            || self.copper.is_some() != catalog.currency_enabled()
+        {
             return Err(Error::CatalogMismatch);
         }
         if self.revision > MAX_REVISION
+            || self.copper.is_some_and(|c| c > MAX_COPPER)
             || self.slots.iter().flatten().any(|s| {
                 catalog
                     .definition(&s.item)
@@ -534,10 +589,12 @@ impl Bag {
         if bytes.len() > MAX_BAG_BYTES {
             return Err(Error::InvalidState);
         }
-        let (name, revision, raw_slots, raw_hand) = if catalog.equipment_enabled {
+        let (name, revision, raw_slots, raw_hand, copper) = if catalog.equipment_enabled {
             let raw: RawEquipmentBag =
                 serde_json::from_slice(bytes).map_err(|_| Error::InvalidState)?;
-            if raw.schema != 2 {
+            if raw.schema != if catalog.currency_enabled() { 3 } else { 2 }
+                || raw.copper.is_some() != catalog.currency_enabled()
+            {
                 return Err(Error::InvalidState);
             }
             (
@@ -548,13 +605,14 @@ impl Bag {
                     RawHand::Empty(()) => None,
                     RawHand::Item(item) => Some(item),
                 },
+                raw.copper,
             )
         } else {
             let raw: RawBag = serde_json::from_slice(bytes).map_err(|_| Error::InvalidState)?;
             if raw.schema != 1 {
                 return Err(Error::InvalidState);
             }
-            (raw.catalog, raw.revision, raw.slots, None)
+            (raw.catalog, raw.revision, raw.slots, None, None)
         };
         if name != catalog.id.as_str() {
             return Err(Error::CatalogMismatch);
@@ -576,14 +634,15 @@ impl Bag {
                     .ok_or(Error::InvalidState)
             })
             .transpose()?;
-        Self::from_parts(catalog, revision, slots, main_hand)
+        Self::from_parts_with_copper(catalog, revision, slots, main_hand, copper)
     }
     /// The persistence envelope must separately bind the checked catalog's byte
     /// digest. A logical catalog ID alone does not prove identical definitions.
     pub fn to_json(&self) -> Vec<u8> {
         if self.equipment_enabled {
             let raw = RawEquipmentBag {
-                schema: 2,
+                schema: if self.copper.is_some() { 3 } else { 2 },
+                copper: self.copper,
                 catalog: self.catalog.as_str().to_owned(),
                 revision: self.revision,
                 slots: std::array::from_fn(|i| {

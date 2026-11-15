@@ -80,11 +80,26 @@ struct RawDefinition {
     id: String,
     name: String,
     scope: Scope,
-    creature: String,
+    #[serde(default)]
+    creature: Option<String>,
+    ground: Option<RawGround>,
     grants: Vec<RawGrant>,
     chance_basis_points: Option<u16>,
     drop_group: Option<u8>,
     quest_required: Option<bool>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawGround {
+    position: [f64; 3],
+    quest: String,
+    area: String,
+}
+#[derive(Clone, Debug, PartialEq)]
+pub struct Ground {
+    pub position: crate::coordinates::GlobalPosition,
+    pub quest: ContentId,
+    pub area: String,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -109,7 +124,7 @@ impl Grant {
         self.count
     }
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Definition {
     id: ContentId,
     name: String,
@@ -121,8 +136,9 @@ pub struct Definition {
     drop_group: u8,
     roll_policy: bool,
     quest_required: bool,
+    ground: Option<Ground>,
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Catalog {
     id: ContentId,
     item_catalog: ContentId,
@@ -135,7 +151,7 @@ impl Catalog {
         }
         let raw: RawCatalog =
             serde_json::from_slice(bytes).map_err(|_| "Invalid reward catalog")?;
-        if !matches!(raw.schema, 1..=4) || !(1..=MAX_DEFINITIONS).contains(&raw.rewards.len()) {
+        if !matches!(raw.schema, 1..=5) || !(1..=MAX_DEFINITIONS).contains(&raw.rewards.len()) {
             return Err("Unsupported reward schema/count");
         }
         let id = ContentId::new(&raw.id).ok_or("Invalid reward catalog ID")?;
@@ -157,8 +173,44 @@ impl Catalog {
                 return Err("Quest-required metadata requires schema 4");
             }
             let quest_required = raw.quest_required.unwrap_or(false);
+            if raw.ground.is_some()
+                && (schema < 5
+                    || raw.creature.is_some()
+                    || raw.scope != Scope::OncePerCharacter
+                    || !quest_required
+                    || raw.grants.len() != 1
+                    || raw.grants[0].count != 1
+                    || raw.chance_basis_points.is_some()
+                    || raw.drop_group.is_some())
+            {
+                return Err(
+                    "Ground items require schema 5, one quest item and once-character scope",
+                );
+            }
+            let ground = raw
+                .ground
+                .map(|g| {
+                    let position = crate::coordinates::GlobalPosition::new(g.position)
+                        .ok_or("Invalid ground position")?;
+                    let quest = ContentId::new(&g.quest).ok_or("Invalid ground quest")?;
+                    if g.area.is_empty()
+                        || g.area.len() > 96
+                        || g.area.trim() != g.area
+                        || g.area.chars().any(char::is_control)
+                    {
+                        return Err("Invalid ground area");
+                    }
+                    Ok(Ground {
+                        position,
+                        quest,
+                        area: g.area,
+                    })
+                })
+                .transpose()?;
             if quest_required
-                && (raw.scope != Scope::PerCreatureLife || raw.grants.len() != 1 || drop_group != 0)
+                && ((raw.scope != Scope::PerCreatureLife && ground.is_none())
+                    || raw.grants.len() != 1
+                    || drop_group != 0)
             {
                 return Err("Quest-required loot requires one independent per-life item grant");
             }
@@ -169,7 +221,16 @@ impl Catalog {
                 return Err("Invalid per-life drop chance/scope");
             }
             let id = ContentId::new(&raw.id).ok_or("Invalid reward ID")?;
-            let creature = ContentId::new(&raw.creature).ok_or("Invalid qualifying creature ID")?;
+            let creature = if ground.is_some() {
+                id.clone()
+            } else {
+                ContentId::new(
+                    raw.creature
+                        .as_deref()
+                        .ok_or("Missing qualifying creature")?,
+                )
+                .ok_or("Invalid qualifying creature ID")?
+            };
             if !(1..=48).contains(&raw.name.len())
                 || raw.name.trim() != raw.name
                 || !raw
@@ -217,6 +278,7 @@ impl Catalog {
                 drop_group,
                 roll_policy: schema >= 3 && raw.scope == Scope::PerCreatureLife,
                 quest_required,
+                ground,
             };
             if rewards.insert(id, definition).is_some() {
                 return Err("Duplicate reward ID");
@@ -259,6 +321,23 @@ impl Catalog {
         &self,
         quests: &crate::quests::catalog::Catalog,
     ) -> Result<(), &'static str> {
+        for reward in self.definitions().filter(|d| d.ground.is_some()) {
+            let ground = reward.ground.as_ref().unwrap();
+            let item = reward.grants[0].item();
+            let owners: Vec<_> = quests
+                .quests()
+                .filter(|q| {
+                    q.stages().flat_map(|s| s.objectives()).any(|o| {
+                        o.event() == &crate::quests::catalog::EventKey::PossessItem(item.clone())
+                            && o.required() == 1
+                            && o.consume_on_turn_in()
+                    })
+                })
+                .collect();
+            if owners.len() != 1 || owners[0].id() != &ground.quest {
+                return Err("Ground pickup needs one exact item delivery quest");
+            }
+        }
         let required: BTreeSet<_> = quests
             .quests()
             .flat_map(|q| q.stages())
@@ -334,6 +413,9 @@ impl Definition {
     pub fn scope(&self) -> Scope {
         self.scope
     }
+    pub fn ground(&self) -> Option<&Ground> {
+        self.ground.as_ref()
+    }
     pub fn creature(&self) -> &ContentId {
         &self.creature
     }
@@ -344,7 +426,7 @@ impl Definition {
     /// caller must establish the fatal event and recipient before creating an
     /// offer; storage must bind that character and deduplicate this occurrence.
     pub fn occurrence(&self, event: &crate::progression::KillEvent) -> Result<Occurrence, Error> {
-        if event.creature != self.creature {
+        if self.ground.is_some() || event.creature != self.creature {
             return Err(Error::CreatureMismatch);
         }
         Ok(match self.scope {
@@ -420,5 +502,12 @@ pub(crate) fn propose_grants(
             return Err(Error::NoCapacity);
         }
     }
-    Bag::from_parts(items, revision, slots, bag.main_hand().cloned()).map_err(Error::ItemState)
+    Bag::from_parts_with_copper(
+        items,
+        revision,
+        slots,
+        bag.main_hand().cloned(),
+        bag.copper(),
+    )
+    .map_err(Error::ItemState)
 }

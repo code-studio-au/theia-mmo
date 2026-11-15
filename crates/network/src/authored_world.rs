@@ -11,6 +11,7 @@ use std::{path::Path, sync::Arc};
 use theia_core::coordinates::{ChunkId, GlobalPosition, LocalFrame};
 
 pub const ANCHOR_FILE: &str = "authored.world.json";
+pub const MAX_ANCHOR_BYTES: usize = 16 * 1024;
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Anchor {
@@ -19,8 +20,10 @@ pub struct Anchor {
     pub world_identity: [u8; 32],
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub contact: Option<Contact>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub contacts: Vec<Contact>,
 }
-/// One explicit dialogue contact, matching the current runtime contact budget.
+/// An explicit noncombat dialogue contact with checked global feet.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Contact {
@@ -50,6 +53,7 @@ pub struct Store {
     identity: [u8; 32],
     visual: Arc<Vec<u8>>,
     contact: Option<Contact>,
+    contacts: Vec<Contact>,
     particles: Option<(crate::particle_content::Catalog, std::path::PathBuf)>,
 }
 fn path(root: &Path, name: &str) -> Result<std::path::PathBuf> {
@@ -62,14 +66,27 @@ fn path(root: &Path, name: &str) -> Result<std::path::PathBuf> {
 impl Store {
     pub fn open(root: &Path) -> Result<Self> {
         let root = root.canonicalize()?;
-        let bytes = content::read_bounded(&path(&root, ANCHOR_FILE)?, 4096)?;
+        let bytes = content::read_bounded(&path(&root, ANCHOR_FILE)?, MAX_ANCHOR_BYTES as u64)?;
         let anchor: Anchor = serde_json::from_slice(&bytes)?;
         let origin = GlobalPosition::new(anchor.origin).ok_or("Invalid authored origin")?;
-        if !matches!(anchor.schema, 1 | 2)
-            || (anchor.schema == 2) != anchor.contact.is_some()
-            || anchor.origin[1] != 0.
-        {
-            return Err("Authored prediction requires schema 1, or schema 2 with a contact, and zero origin Y".into());
+        let valid_contacts = match anchor.schema {
+            1 => anchor.contact.is_none() && anchor.contacts.is_empty(),
+            2 => anchor.contact.is_some() && anchor.contacts.is_empty(),
+            3 => {
+                anchor.contact.is_none()
+                    && (1..=theia_core::dialogue::catalog::MAX_CONTACTS)
+                        .contains(&anchor.contacts.len())
+            }
+            _ => false,
+        };
+        if !valid_contacts || anchor.origin[1] != 0. || (anchor.schema < 3 && bytes.len() > 4096) {
+            return Err("Invalid authored anchor schema/contact collection or origin Y".into());
+        }
+        let mut ids = std::collections::BTreeSet::new();
+        for contact in &anchor.contacts {
+            if !ids.insert(&contact.npc) {
+                return Err("Duplicate authored NPC contact".into());
+            }
         }
         let terrain = Terrain::load(&path(&root, "terrain.json")?)?;
         let package = terrain
@@ -119,12 +136,16 @@ impl Store {
         if let Some(contact) = &anchor.contact {
             contact.validate(origin, &terrain.physics)?;
         }
+        for contact in &anchor.contacts {
+            contact.validate(origin, &terrain.physics)?;
+        }
         Ok(Self {
             terrain,
             origin,
             identity: sha256(&identity_bytes),
             visual: Arc::new(visual),
             contact: anchor.contact,
+            contacts: anchor.contacts,
             particles,
         })
     }
@@ -143,6 +164,9 @@ impl Store {
         &self,
         profile: &crate::dialogue::Profile,
     ) -> Result<crate::dialogue::Placement> {
+        if profile.catalog().is_some() {
+            return Err("Collection profile requires collection placements".into());
+        }
         let contact = self
             .contact
             .as_ref()
@@ -153,6 +177,32 @@ impl Store {
         Ok(crate::dialogue::Placement::Feet(
             GlobalPosition::new(contact.feet).ok_or("Invalid authored contact")?,
         ))
+    }
+    /// Resolve a complete schema-3 placement/catalogue pair before admission.
+    /// No missing or extra contact is silently replaced by the nearest marker.
+    pub fn contact_placements(
+        &self,
+        catalog: &theia_core::dialogue::catalog::Catalog,
+    ) -> Result<Vec<(theia_core::content::ContentId, crate::dialogue::Placement)>> {
+        if self.contacts.is_empty() || self.contacts.len() != catalog.contacts().count() {
+            return Err("Authored contact collection differs from dialogue catalogue".into());
+        }
+        let mut placements = Vec::with_capacity(self.contacts.len());
+        for contact in &self.contacts {
+            let npc = theia_core::content::ContentId::new(&contact.npc)
+                .ok_or("Invalid authored contact ID")?;
+            if catalog.contact(&npc).is_none() {
+                return Err("Authored contact has no dialogue definition".into());
+            }
+            placements.push((
+                npc,
+                crate::dialogue::Placement::Feet(
+                    GlobalPosition::new(contact.feet).ok_or("Invalid authored contact feet")?,
+                ),
+            ));
+        }
+        placements.sort_by(|a, b| a.0.cmp(&b.0));
+        Ok(placements)
     }
     /// Hash-bound capsule feet, including the authored vertical support layer.
     /// Multiple players may share an authored spawn; actors never block actors.
@@ -259,6 +309,7 @@ mod tests {
             origin,
             world_identity: identity,
             contact: None,
+            contacts: vec![],
         };
         for (name, bytes) in [
             ("terrain.json", profile),
@@ -305,9 +356,85 @@ mod tests {
         assert_eq!(store.spawn(0).unwrap(), spawn);
     }
     #[test]
+    fn contact_collection_requires_bijection_and_supported_distinct_versioned_placements() {
+        let (folder, mut anchor) = spawn_fixture([8192., 0., 8192.], true, false);
+        let profile = crate::dialogue::Profile::from_catalog_json(include_bytes!(
+            "../../../content/quests/development-valley-contacts.json"
+        ))
+        .unwrap();
+        anchor.schema = 3;
+        anchor.contacts = profile
+            .contacts()
+            .enumerate()
+            .map(|(i, p)| Contact {
+                npc: p.npc().as_str().into(),
+                feet: [8192. + i as f64, 0.03, 8192.],
+            })
+            .collect();
+        let publish = |a: &Anchor| {
+            std::fs::write(folder.0.join(ANCHOR_FILE), serde_json::to_vec(a).unwrap()).unwrap()
+        };
+        publish(&anchor);
+        let store = Store::open(&folder.0).unwrap();
+        let identity = store.identity();
+        assert_eq!(
+            store
+                .contact_placements(profile.catalog().unwrap())
+                .unwrap()
+                .len(),
+            2
+        );
+        assert!(store.contact_placement(&profile).is_err());
+        anchor.contacts[1].feet[0] += 1.;
+        publish(&anchor);
+        assert_ne!(Store::open(&folder.0).unwrap().identity(), identity);
+        let saved = anchor.contacts.clone();
+        anchor.contacts[1].npc = anchor.contacts[0].npc.clone();
+        publish(&anchor);
+        assert!(Store::open(&folder.0).is_err());
+        anchor.contacts = saved.clone();
+        anchor.contacts.pop();
+        publish(&anchor);
+        assert!(
+            Store::open(&folder.0)
+                .unwrap()
+                .contact_placements(profile.catalog().unwrap())
+                .is_err()
+        );
+        anchor.contacts = saved.clone();
+        anchor.contacts[1].npc = "unknown.contact".into();
+        publish(&anchor);
+        assert!(
+            Store::open(&folder.0)
+                .unwrap()
+                .contact_placements(profile.catalog().unwrap())
+                .is_err()
+        );
+        anchor.contacts = saved.clone();
+        anchor.contacts[1].feet[1] = 100.;
+        publish(&anchor);
+        assert!(Store::open(&folder.0).is_err());
+        anchor.contacts = saved;
+        anchor.schema = 2;
+        publish(&anchor);
+        assert!(Store::open(&folder.0).is_err());
+    }
+    #[test]
     fn contact_metadata_is_versioned_supported_profile_checked_and_identity_bound() {
         let (folder, mut anchor) = spawn_fixture([8192., 0., 8192.], true, false);
         let legacy = Store::open(&folder.0).unwrap().identity();
+        let mut oversized = serde_json::to_vec(&anchor).unwrap();
+        oversized.resize(4097, b' ');
+        std::fs::write(folder.0.join(ANCHOR_FILE), oversized).unwrap();
+        assert!(
+            Store::open(&folder.0).is_err(),
+            "Legacy anchor budget stays 4 KiB"
+        );
+        std::fs::write(
+            folder.0.join(ANCHOR_FILE),
+            serde_json::to_vec(&anchor).unwrap(),
+        )
+        .unwrap();
         let profile = crate::dialogue::Profile::from_json(include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../../content/gameplay/development-dialogue.json"

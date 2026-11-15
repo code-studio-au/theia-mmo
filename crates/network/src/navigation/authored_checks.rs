@@ -141,7 +141,66 @@ pub fn grounded_route(
         &points.iter().map(|p| p.metres()).collect::<Vec<_>>(),
         &mut 0,
     )?;
-    Ok(points)
+    // Dense points prove floor/clearance continuity; they need not all be
+    // steering destinations. Keep corners and terrain changes, then recheck
+    // every longer segment with the same nav/capsule tests. Never force a fixed
+    // point count or cut an unchecked corner to meet a visual target.
+    let steering = simplify_grounded(&points, 0.03);
+    if steering.len() < points.len()
+        && clearance(
+            &query,
+            &mut ground,
+            &steering.iter().map(|p| p.metres()).collect::<Vec<_>>(),
+            &mut 0,
+        )
+        .is_ok()
+    {
+        Ok(steering)
+    } else {
+        Ok(points)
+    }
+}
+
+/// Bounded Ramer-Douglas-Peucker in full 3D, preserving endpoints and heights.
+fn simplify_grounded(points: &[GlobalPosition], tolerance: f64) -> Vec<GlobalPosition> {
+    if points.len() <= 2 {
+        return points.to_vec();
+    }
+    let mut keep = vec![false; points.len()];
+    keep[0] = true;
+    keep[points.len() - 1] = true;
+    let mut pending = vec![(0, points.len() - 1)];
+    while let Some((first, last)) = pending.pop() {
+        let a = points[first].metres();
+        let b = points[last].metres();
+        let delta: [f64; 3] = std::array::from_fn(|i| b[i] - a[i]);
+        let length: f64 = delta.iter().map(|v| v * v).sum();
+        let mut split = None;
+        let mut largest = tolerance * tolerance;
+        for (index, point) in points.iter().enumerate().take(last).skip(first + 1) {
+            let p = point.metres();
+            let t = if length <= f64::EPSILON {
+                0.
+            } else {
+                ((0..3).map(|i| (p[i] - a[i]) * delta[i]).sum::<f64>() / length).clamp(0., 1.)
+            };
+            let distance: f64 = (0..3).map(|i| (p[i] - a[i] - t * delta[i]).powi(2)).sum();
+            if distance > largest {
+                largest = distance;
+                split = Some(index);
+            }
+        }
+        if let Some(index) = split {
+            keep[index] = true;
+            pending.push((first, index));
+            pending.push((index, last));
+        }
+    }
+    points
+        .iter()
+        .zip(keep)
+        .filter_map(|(p, k)| k.then_some(*p))
+        .collect()
 }
 
 /// Follow the same floor continuously, rather than interpolating a long segment's
@@ -200,4 +259,30 @@ fn route_distance(a: GlobalPosition, b: GlobalPosition) -> f64 {
         .map(|(a, b)| (a - b).powi(2))
         .sum::<f64>()
         .sqrt()
+}
+
+#[cfg(test)]
+mod simplification_tests {
+    use super::*;
+    fn p(x: f64, y: f64, z: f64) -> GlobalPosition {
+        GlobalPosition::new([8192. + x, y, 8192. + z]).unwrap()
+    }
+    #[test]
+    fn dense_straight_routes_keep_only_endpoints_but_preserve_bends_and_crests() {
+        let straight: Vec<_> = (0..101).map(|i| p(f64::from(i), 0., 0.)).collect();
+        assert_eq!(
+            simplify_grounded(&straight, 0.03),
+            vec![straight[0], straight[100]]
+        );
+        let mut bend: Vec<_> = (0..51).map(|i| p(f64::from(i), 0., 0.)).collect();
+        bend.extend((1..51).map(|i| p(50., 0., f64::from(i))));
+        assert_eq!(
+            simplify_grounded(&bend, 0.03),
+            vec![bend[0], bend[50], bend[100]]
+        );
+        let crest = vec![p(0., 0., 0.), p(1., 0.2, 0.), p(2., 0., 0.)];
+        assert_eq!(simplify_grounded(&crest, 0.03), crest);
+        let looped = vec![p(0., 0., 0.), p(1., 0., 0.), p(0., 0., 0.)];
+        assert_eq!(simplify_grounded(&looped, 0.03), looped);
+    }
 }

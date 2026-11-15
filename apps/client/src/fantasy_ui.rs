@@ -1,5 +1,6 @@
 //! Optional presentation-only skin from the user's local Fantasy Warrior HUD.
 //! PNGs load through a separate Bevy source; terrain/art roots stay unchanged.
+mod debug;
 pub(crate) mod preferences;
 pub(crate) mod preview;
 pub(crate) mod settings;
@@ -21,6 +22,7 @@ pub(crate) const ARCANE: &str =
     "Sprites/Icons_Elements/ICON_FantasyWarrior_Element_Air02_Clean.png";
 pub(crate) const FALLBACK: &str =
     "Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Spellbooks01_Clean.png";
+const PANEL_FRAME: &str = "Sprites/HUD/SPR_HUD_FantasyWarrior_Frame_Box_Medium04.png";
 const ITEM_ICONS: [&str; 6] = [
     "Sprites/Icons_Resources/ICON_SM_Item_Rock_01.png",
     "Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Currency01_Clean.png",
@@ -29,7 +31,7 @@ const ITEM_ICONS: [&str; 6] = [
     "Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Crafting01_Clean.png",
     "Sprites/Icons_Resources/ICON_SM_Item_Parchment_01.png",
 ];
-pub(crate) const FILES: [&str; 9] = [
+pub(crate) const FILES: [&str; 10] = [
     SWORD,
     ARCANE,
     FALLBACK,
@@ -39,6 +41,7 @@ pub(crate) const FILES: [&str; 9] = [
     ITEM_ICONS[3],
     ITEM_ICONS[4],
     ITEM_ICONS[5],
+    PANEL_FRAME,
 ];
 const IMAGE_DIMENSIONS: [(u32, u32); FILES.len()] = [
     (512, 256),
@@ -50,6 +53,7 @@ const IMAGE_DIMENSIONS: [(u32, u32); FILES.len()] = [
     (1024, 1024),
     (256, 256),
     (1024, 1024),
+    (256, 256),
 ];
 pub(crate) const TITLE_FONT: &str = "Fonts/Grenze/Grenze-SemiBold.ttf";
 pub(crate) const BODY_FONT: &str = "Fonts/Texturina/Texturina_18pt-SemiBold.ttf";
@@ -180,11 +184,24 @@ fn unit_margin(player: bool, logical_width: f32) -> f32 {
     };
     if player { -340. - extra } else { 120. + extra }
 }
+fn unobscured_unit_margin(player: bool, width: f32, dialogue: bool, bag: bool) -> f32 {
+    let normal = unit_margin(player, width);
+    // The standard skin fits its minimum logical viewport before this runs.
+    if width < 1200. || !width.is_finite() {
+        return normal;
+    }
+    let left = if dialogue { 444. } else { 12. };
+    let right = width - if bag { 352. } else { 12. };
+    (width * 0.5 + normal).clamp(left, right - 220.) - width * 0.5
+}
 fn responsive_units(
     windows: Query<&Window>,
     cameras: Query<&Camera>,
     scale: Res<bevy::ui::UiScale>,
+    dialogue: Option<Res<crate::dialogue::Ui>>,
+    bag: Option<Res<crate::inventory::Ui>>,
     mut frames: Query<(&UnitFrame, &mut Node)>,
+    mut tooltips: Query<(&crate::combat::ui::ActionLabel, &mut Node), Without<UnitFrame>>,
 ) {
     let viewport = windows
         .single()
@@ -197,11 +214,30 @@ fn responsive_units(
     if !scale.0.is_finite() || scale.0 <= 0. {
         return;
     }
+    let margin = |player| {
+        unobscured_unit_margin(
+            player,
+            viewport.x / scale.0,
+            dialogue.as_ref().is_some_and(|d| d.open),
+            bag.as_ref().is_some_and(|b| b.open),
+        )
+    };
     for (side, mut node) in &mut frames {
-        let margin = px(unit_margin(side.0, viewport.x / scale.0));
+        let margin = px(margin(side.0));
         if node.margin.left != margin {
             node.margin.left = margin;
         }
+        // The bag now occupies the column beside the fixed map/tracker.
+        // Keep unit information above that window while it is open.
+        let open = bag.as_ref().is_some_and(|b| b.open);
+        node.top = if open { px(12) } else { Val::Auto };
+        node.bottom = if open { Val::Auto } else { px(190) };
+    }
+    // Follow the target frame when ultrawide layout moves it outwards. Slot
+    // origins include the action dock's 8 px padding and 1 px border.
+    for (slot, mut node) in &mut tooltips {
+        node.left =
+            px(ACTION_WIDTH * 0.5 + margin(false) + 220. + 12. - 9. - slot.0 as f32 * (SLOT + 4.));
     }
 }
 #[derive(Component)]
@@ -286,6 +322,7 @@ pub(crate) struct Skin {
     item_icons: [Handle<Image>; 6],
     title_font: Handle<Font>,
     body_font: Handle<Font>,
+    panel_frame: Handle<Image>,
 }
 impl Skin {
     #[cfg(test)]
@@ -297,6 +334,7 @@ impl Skin {
             item_icons: default(),
             title_font: default(),
             body_font: default(),
+            panel_frame: default(),
         }
     }
     /// Presentation mapping only. Unknown authored items keep a generic icon.
@@ -384,6 +422,7 @@ pub(crate) fn install_scale(app: &mut App, preferred: f32) {
         .insert_resource(bevy::ui::UiScale(preferred))
         .add_systems(Update, fit_window);
     settings::install(app);
+    debug::install(app);
 }
 fn fit_window(
     preferred: Res<PreferredScale>,
@@ -452,6 +491,7 @@ pub(crate) fn load(app: &mut App) {
         item_icons: ITEM_ICONS.map(image),
         title_font: server.load(format!("fantasy-ui://{TITLE_FONT}")),
         body_font: server.load(format!("fantasy-ui://{BODY_FONT}")),
+        panel_frame: image(PANEL_FRAME),
     };
     app.insert_resource(skin);
     app.add_systems(PostStartup, style_panels)
@@ -503,22 +543,50 @@ fn style_text(
         }
     }
 }
-fn style_panels(
-    mut commands: Commands,
-    mut panels: Query<(
-        Entity,
-        &Panel,
-        &mut Node,
-        &mut BackgroundColor,
-        Option<&GlobalZIndex>,
-    )>,
-) {
-    for (entity, panel, mut node, mut background, layer) in &mut panels {
+type ThemePanel<'a> = (
+    Entity,
+    &'a Panel,
+    &'a mut Node,
+    &'a mut BackgroundColor,
+    Option<&'a GlobalZIndex>,
+    Has<crate::inventory::Pane>,
+);
+fn style_panels(mut commands: Commands, skin: Res<Skin>, mut panels: Query<ThemePanel>) {
+    for (entity, panel, mut node, mut background, layer, backpack) in &mut panels {
         background.0 = PANEL;
         // An outline decorates existing panes without shrinking scroll/map content.
         commands
             .entity(entity)
             .insert(Outline::new(px(1), px(-1), GOLD));
+        if backpack || matches!(panel, Panel::Paper | Panel::QuestTracker) {
+            // ImageNode on the padded panel itself would draw inside its
+            // content box, behind text and slots. An absolute, noninteractive
+            // child decorates the outside without affecting content layout.
+            commands.entity(entity).with_child((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(0),
+                    right: px(0),
+                    top: px(0),
+                    bottom: px(0),
+                    ..default()
+                },
+                Pickable::IGNORE,
+                bevy::ui::IgnoreScroll(BVec2::TRUE),
+                ImageNode {
+                    image: skin.panel_frame.clone(),
+                    color: Color::srgb(0.83, 0.65, 0.39),
+                    image_mode: NodeImageMode::Sliced(bevy::sprite::TextureSlicer {
+                        // Source alpha is confined to the outer 11 pixels. Keep
+                        // one transparent guard pixel; this is a Theia slice,
+                        // not a claim to recover absent Unity import metadata.
+                        border: bevy::sprite::BorderRect::all(12.),
+                        ..default()
+                    }),
+                    ..default()
+                },
+            ));
+        }
         match panel {
             Panel::Standard | Panel::Paper => {
                 if matches!(panel, Panel::Paper) {
@@ -727,6 +795,19 @@ mod tests {
         }
     }
     #[test]
+    fn conversation_and_backpack_leave_both_unit_frames_visible_at_supported_widths() {
+        for width in [1280., 1920., 3440. / 1.5, 3440.] {
+            let player = width * 0.5 + unobscured_unit_margin(true, width, true, true);
+            let target = width * 0.5 + unobscured_unit_margin(false, width, true, true);
+            assert!(player >= 444. && target >= player + 232.);
+            assert!(target + 220. <= width - 352.);
+        }
+        assert_eq!(
+            unobscured_unit_margin(true, 1280., false, false),
+            unit_margin(true, 1280.)
+        );
+    }
+    #[test]
     fn unit_frames_spread_on_ultrawide_and_restore_with_window_and_ui_scale() {
         let mut app = App::new();
         app.insert_resource(bevy::ui::UiScale(1.25));
@@ -868,6 +949,7 @@ mod tests {
     #[test]
     fn cosmetic_panel_skin_preserves_hidden_state_scroll_and_content_dimensions() {
         let mut app = App::new();
+        app.insert_resource(Skin::fixture());
         let node = Node {
             width: px(340),
             max_height: percent(75),
@@ -880,6 +962,7 @@ mod tests {
             .world_mut()
             .spawn((
                 Panel::Standard,
+                crate::inventory::Pane,
                 node.clone(),
                 ScrollPosition::from(Vec2::new(0., 51.)),
                 Visibility::Hidden,
@@ -903,6 +986,21 @@ mod tests {
         );
         assert_eq!(app.world().get::<ScrollPosition>(pane).unwrap().y, 51.);
         assert!(app.world().get::<Outline>(pane).is_some());
+        assert!(app.world().get::<ImageNode>(pane).is_none());
+        let frame = app.world().get::<Children>(pane).unwrap()[0];
+        assert!(matches!(
+            app.world().get::<ImageNode>(frame).unwrap().image_mode,
+            NodeImageMode::Sliced(_)
+        ));
+        assert_eq!(
+            app.world().get::<Node>(frame).unwrap().position_type,
+            PositionType::Absolute
+        );
+        assert_eq!(app.world().get::<Pickable>(frame), Some(&Pickable::IGNORE));
+        assert_eq!(
+            app.world().get::<bevy::ui::IgnoreScroll>(frame).unwrap().0,
+            BVec2::TRUE
+        );
         assert_eq!(
             app.world().get::<GlobalZIndex>(pane),
             Some(&GlobalZIndex(60)),

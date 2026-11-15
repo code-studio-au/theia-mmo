@@ -159,7 +159,8 @@ impl Catalog {
                             }
                             referenced = true;
                         }
-                        super::catalog::EventKey::Kill(id)
+                        super::catalog::EventKey::FollowNpc(id)
+                        | super::catalog::EventKey::Kill(id)
                         | super::catalog::EventKey::PossessItem(id)
                         | super::catalog::EventKey::ReadDocument(id) => {
                             namespace.insert(id.clone());

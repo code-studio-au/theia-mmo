@@ -117,13 +117,14 @@ def stop(process, server=False):
             process.wait(timeout=5)
 
 
-def run(scenario_path, world, players, binaries, output, *, duration=None, window_size='1280x720', stop_requested=lambda: False,
+def run(scenario_path, world, players, binaries, output, *, duration=None, window_size=None, stop_requested=lambda: False,
         population_config=None, combat_catalog=None, creature_asset=None, player_life=False):
     if stop_requested():
         return
     scenario = Scenario.load(scenario_path)
     if duration is not None and (not math.isfinite(duration) or not 0 < duration <= 3600):
         raise ValueError('Duration must be positive and at most one hour')
+    window_size = window_size or ('3440x1440' if len(scenario.players) == 1 else '1920x1440')
     size = re.fullmatch(r'(\d+)x(\d+)', window_size)
     if not size or not (640 <= int(size[1]) <= 7680 and 480 <= int(size[2]) <= 4320):
         raise ValueError('Window size must be within 640x480..7680x4320')
@@ -304,7 +305,7 @@ def main():
     parser.add_argument('--combat-catalog', type=Path)
     parser.add_argument('--creature-asset', type=Path)
     parser.add_argument('--player-life', action='store_true', help='Use frozen population player-life files beside the population configuration')
-    parser.add_argument('--window-size', default='1280x720')
+    parser.add_argument('--window-size')
     parser.add_argument('--stop-on-stdin-eof', action='store_true', help='Stop owned children when the launching editor closes its stdin pipe')
     args = parser.parse_args()
     def terminate(_signal, _frame):

@@ -1,0 +1,72 @@
+{
+  "schema": 2,
+  "id": "theia.dev.valley-contacts",
+  "revision": 1,
+  "contacts": [
+    {
+      "schema": 1,
+      "id": "theia.dev.quest-guide-dialogue",
+      "npc": "theia.dev.guide",
+      "name": "Village guide",
+      "start": "theia.dev.quest-guide.welcome",
+      "nodes": [
+        {
+          "id": "theia.dev.quest-guide.welcome",
+          "text": "Which part of the development exercise shall we discuss?",
+          "choices": [
+            {
+              "id": "theia.dev.interaction.road",
+              "label": "Tell me about the road.",
+              "next": "theia.dev.quest-guide.goodbye"
+            },
+            {
+              "id": "theia.dev.interaction.supplies",
+              "label": "Review the supplies with me.",
+              "next": "theia.dev.quest-guide.goodbye"
+            },
+            {
+              "id": "theia.dev.interaction.report",
+              "label": "Here is my report.",
+              "next": "theia.dev.quest-guide.goodbye"
+            },
+            {
+              "id": "theia.dev.interaction.training",
+              "label": "Explain the training exercise.",
+              "next": "theia.dev.quest-guide.goodbye"
+            }
+          ]
+        },
+        {
+          "id": "theia.dev.quest-guide.goodbye",
+          "text": "Speak with me again when you are ready.",
+          "choices": []
+        }
+      ]
+    },
+    {
+      "schema": 1,
+      "id": "theia.dev.steward-dialogue",
+      "npc": "theia.dev.steward",
+      "name": "Village steward",
+      "start": "theia.dev.steward.welcome",
+      "nodes": [
+        {
+          "id": "theia.dev.steward.welcome",
+          "text": "The guide sent you? Tell me what you learned, and I will record your arrival.",
+          "choices": [
+            {
+              "id": "theia.dev.steward.report",
+              "label": "The guide asked me to report to you.",
+              "next": "theia.dev.steward.received"
+            }
+          ]
+        },
+        {
+          "id": "theia.dev.steward.received",
+          "text": "Welcome to the valley. Your report is received. You can complete the delivery with me now.",
+          "choices": []
+        }
+      ]
+    }
+  ]
+}

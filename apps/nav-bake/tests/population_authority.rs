@@ -68,6 +68,7 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
             volume: request.volume.clone(),
             target_alive: request.count as u16,
             respawn_seconds: 30,
+            roam_radius_metres: 0.,
             seed: request.seed,
         });
     zone.validate().unwrap();

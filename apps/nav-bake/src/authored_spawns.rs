@@ -90,6 +90,7 @@ mod tests {
                 .unwrap(),
                 target_alive: 5,
                 respawn_seconds: 30,
+                roam_radius_metres: 0.,
                 seed: u64::MAX,
             }],
             ..Default::default()

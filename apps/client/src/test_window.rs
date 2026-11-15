@@ -98,42 +98,23 @@ fn arrange(
     );
 }
 
-/// Leave room for decorations/taskbars. Stack on tall displays; cascade only
-/// where two minimum-size clients cannot fit. Never reposition after the user moves it.
+/// Preserve requested test resolution, even when two clients must overlap.
+/// Position only once; window-manager/user movement remains authoritative later.
 fn layout(view: View, monitor: UVec2, origin: IVec2, preferred: UVec2) -> Option<(UVec2, IVec2)> {
-    const GAP: u32 = 32;
-    if monitor.x < 384 || monitor.y < 336 {
+    if monitor.min_element() == 0 {
         return None;
     }
-    let available = monitor - UVec2::new(GAP * 2, GAP * 3);
-    let (size, offset) = if view.count == 1 {
-        let size = preferred.min(available);
-        (size, (monitor - size) / 2)
-    } else if monitor.x >= 640 * 2 + GAP * 3 {
-        let size = preferred.min(UVec2::new((monitor.x - GAP * 3) / 2, available.y));
-        let start = (monitor.x - (size.x * 2 + GAP)) / 2;
-        (
-            size,
-            UVec2::new(
-                start + (view.index - 1) * (size.x + GAP),
-                (monitor.y - size.y) / 2,
-            ),
-        )
-    } else if monitor.y >= 480 * 2 + GAP * 5 {
-        let size = preferred.min(UVec2::new(available.x, (monitor.y - GAP * 5) / 2));
-        let start = (monitor.y - (size.y * 2 + GAP * 2)) / 2;
-        (
-            size,
-            UVec2::new(
-                (monitor.x - size.x) / 2,
-                start + (view.index - 1) * (size.y + GAP * 2),
-            ),
-        )
+    let size = UVec2::new(preferred.x.max(1920), preferred.y);
+    let spare = UVec2::new(
+        monitor.x.saturating_sub(size.x),
+        monitor.y.saturating_sub(size.y),
+    );
+    let offset = if view.count == 1 {
+        spare / 2
     } else {
-        let size = preferred.min(available - UVec2::splat(GAP));
-        (size, UVec2::splat(GAP * view.index))
+        UVec2::new((view.index - 1) * spare.x, spare.y / 2)
     };
-    Some((size, origin.checked_add(offset.as_ivec2())?))
+    Some((size, origin + offset.as_ivec2()))
 }
 
 #[cfg(test)]
@@ -157,49 +138,27 @@ mod tests {
         assert!(from_args(&mut vec!["--test-window".into()]).is_err());
     }
     #[test]
-    fn layouts_stay_on_the_selected_monitor_and_separate_when_space_allows() {
-        for monitor in [
-            UVec2::new(3440, 1440),
-            UVec2::new(1920, 1080),
-            UVec2::new(1080, 1920),
-            UVec2::new(1280, 720),
-        ] {
-            for origin in [IVec2::ZERO, IVec2::new(-3440, -500)] {
-                let a = layout(
-                    View { index: 1, count: 2 },
-                    monitor,
-                    origin,
-                    UVec2::new(1280, 720),
-                )
-                .unwrap();
-                let b = layout(
-                    View { index: 2, count: 2 },
-                    monitor,
-                    origin,
-                    UVec2::new(1280, 720),
-                )
-                .unwrap();
-                for (size, position) in [a, b] {
-                    assert!(position.cmpge(origin).all());
-                    assert!(
-                        (position + size.as_ivec2())
-                            .cmple(origin + monitor.as_ivec2())
-                            .all()
-                    );
-                }
-                if monitor != UVec2::new(1280, 720) {
-                    assert!(a.1.x + a.0.x as i32 <= b.1.x || a.1.y + a.0.y as i32 <= b.1.y);
-                }
-            }
+    fn layouts_preserve_resolution_and_overlap_when_needed() {
+        let monitor = UVec2::new(3440, 1440);
+        for origin in [IVec2::ZERO, IVec2::new(-3440, -500)] {
+            let size = UVec2::new(1920, 1440);
+            let a = layout(View { index: 1, count: 2 }, monitor, origin, size).unwrap();
+            let b = layout(View { index: 2, count: 2 }, monitor, origin, size).unwrap();
+            assert_eq!(a, (size, origin));
+            assert_eq!(b, (size, origin + IVec2::new(1520, 0)));
+            assert_eq!(
+                layout(View { index: 1, count: 1 }, monitor, origin, monitor),
+                Some((monitor, origin))
+            );
         }
-        assert!(
+        assert_eq!(
             layout(
                 View { index: 1, count: 1 },
                 UVec2::ZERO,
                 IVec2::ZERO,
-                UVec2::new(1280, 720)
-            )
-            .is_none()
+                monitor
+            ),
+            None
         );
     }
 }

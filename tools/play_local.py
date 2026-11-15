@@ -169,7 +169,7 @@ def main():
     parser.add_argument('--manifest', type=Path, default=ROOT/'content/development-gameplay-classic-item-rewards.json')
     parser.add_argument('--session-seconds', type=int, default=3600)
     parser.add_argument('--character', default='Arden')
-    parser.add_argument('--window-size', default='1920x1200')
+    parser.add_argument('--window-size', default='3440x1440')
     parser.add_argument('--ui-scale', type=float, help='Explicit launch override; default 1.25 without a preference file')
     parser.add_argument('--ui-preferences', type=Path, help='Local UI preference file shared across runs; requires a compatible current client')
     run(parser.parse_args())

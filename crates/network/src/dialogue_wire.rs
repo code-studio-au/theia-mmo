@@ -13,6 +13,8 @@ use theia_core::{
 pub const REQUEST_TAG: &[u8; 4] = b"DI01";
 pub const VIEW_TAG: &[u8; 4] = b"DV01";
 pub const GUIDE_TAG: &[u8; 4] = b"DG01";
+pub const CONTACTS_TAG: &[u8; 4] = b"DG02";
+pub const MAX_CONTACTS_BYTES: usize = 53 + 41 * theia_core::dialogue::catalog::MAX_CONTACTS;
 pub const REPLY_TAG: &[u8; 4] = b"DR01";
 pub const REPLY_BYTES: usize = 69;
 pub const MAX_REQUEST_BYTES: usize = 126;
@@ -99,7 +101,7 @@ pub fn encode_view(view: &View, profile: &Profile) -> Result<Vec<u8>> {
         if !same_world(view.actor, open.guide)
             || view.revision == 0
             || view.revision == u64::MAX
-            || profile.profile().node(&open.node).is_none()
+            || profile.node(&open.node).is_none()
         {
             return Err("Invalid open dialogue view".into());
         }
@@ -151,10 +153,33 @@ pub struct Presence {
     pub actor: EntityKey,
     pub profile_hash: [u8; 32],
     pub guide: Option<Guide>,
+    pub contacts: Vec<crate::dialogue::ContactPresence>,
+}
+impl Presence {
+    pub fn guides(&self) -> impl Iterator<Item = Guide> + '_ {
+        self.guide
+            .into_iter()
+            .chain(self.contacts.iter().map(|c| c.guide))
+    }
+    pub fn find(&self, key: EntityKey) -> Option<Guide> {
+        self.guides().find(|g| g.key == key)
+    }
+    pub fn npc(&self, key: EntityKey) -> Option<&ContentId> {
+        self.contacts
+            .iter()
+            .find(|c| c.guide.key == key)
+            .map(|c| &c.npc)
+    }
 }
 pub fn encode_presence(presence: &Presence, profile: &Profile) -> Result<Vec<u8>> {
     if presence.profile_hash != profile.hash() {
         return Err("Guide presence profile mismatch".into());
+    }
+    if profile.catalog().is_some() {
+        return encode_contacts(presence, profile);
+    }
+    if !presence.contacts.is_empty() {
+        return Err("Legacy presence cannot contain a collection".into());
     }
     let mut bytes = GUIDE_TAG.to_vec();
     push_key(&mut bytes, presence.actor);
@@ -174,6 +199,9 @@ pub fn encode_presence(presence: &Presence, profile: &Profile) -> Result<Vec<u8>
     Ok(bytes)
 }
 pub fn decode_presence(bytes: &[u8], profile: &Profile, actor: EntityKey) -> Result<Presence> {
+    if profile.catalog().is_some() {
+        return decode_contacts(bytes, profile, actor);
+    }
     if !(53..=MAX_GUIDE_BYTES).contains(&bytes.len()) || !bytes.starts_with(GUIDE_TAG) {
         return Err("Invalid guide presence frame".into());
     }
@@ -192,9 +220,79 @@ pub fn decode_presence(bytes: &[u8], profile: &Profile, actor: EntityKey) -> Res
         actor: key(bytes, 4)?,
         profile_hash: bytes[20..52].try_into().unwrap(),
         guide,
+        contacts: vec![],
     };
     if presence.actor != actor {
         return Err("Foreign private guide presence".into());
+    }
+    encode_presence(&presence, profile)?;
+    Ok(presence)
+}
+
+fn encode_contacts(presence: &Presence, profile: &Profile) -> Result<Vec<u8>> {
+    if presence.guide.is_some()
+        || presence.contacts.len() > theia_core::dialogue::catalog::MAX_CONTACTS
+    {
+        return Err("Invalid contact collection presence".into());
+    }
+    let mut bytes = CONTACTS_TAG.to_vec();
+    push_key(&mut bytes, presence.actor);
+    bytes.extend(presence.profile_hash);
+    bytes.push(presence.contacts.len() as u8);
+    let mut previous = None;
+    let mut entities = std::collections::BTreeSet::new();
+    for contact in &presence.contacts {
+        let index = profile
+            .contacts()
+            .position(|p| p.npc() == &contact.npc)
+            .ok_or("Unknown contact presence")?;
+        if previous.is_some_and(|old| old >= index)
+            || !same_world(presence.actor, contact.guide.key)
+            || !entities.insert(contact.guide.key.entity.value())
+        {
+            return Err("Unsorted, duplicate or foreign contact presence".into());
+        }
+        previous = Some(index);
+        bytes.push(index as u8);
+        push_key(&mut bytes, contact.guide.key);
+        for value in contact.guide.position.metres() {
+            bytes.extend(value.to_le_bytes());
+        }
+    }
+    Ok(bytes)
+}
+fn decode_contacts(bytes: &[u8], profile: &Profile, actor: EntityKey) -> Result<Presence> {
+    if !(53..=MAX_CONTACTS_BYTES).contains(&bytes.len())
+        || !bytes.starts_with(CONTACTS_TAG)
+        || bytes.len() != 53 + usize::from(bytes[52]) * 41
+    {
+        return Err("Invalid contact collection frame".into());
+    }
+    let mut contacts = Vec::new();
+    for offset in (53..bytes.len()).step_by(41) {
+        let npc = profile
+            .contacts()
+            .nth(usize::from(bytes[offset]))
+            .ok_or("Unknown contact index")?
+            .npc()
+            .clone();
+        let guide = Guide {
+            key: key(bytes, offset + 1)?,
+            position: GlobalPosition::new(std::array::from_fn(|i| {
+                f64::from_bits(word(bytes, offset + 17 + i * 8))
+            }))
+            .ok_or("Invalid contact position")?,
+        };
+        contacts.push(crate::dialogue::ContactPresence { npc, guide });
+    }
+    let presence = Presence {
+        actor: key(bytes, 4)?,
+        profile_hash: bytes[20..52].try_into().unwrap(),
+        guide: None,
+        contacts,
+    };
+    if presence.actor != actor {
+        return Err("Foreign private contacts".into());
     }
     encode_presence(&presence, profile)?;
     Ok(presence)

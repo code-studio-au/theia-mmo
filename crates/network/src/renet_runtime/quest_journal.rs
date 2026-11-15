@@ -51,7 +51,8 @@ impl Peer {
     ) -> Result<usize> {
         self.router.forward_kills(world, events, port)
     }
-    pub(super) fn areas(&mut self, world: &World, port: &Port) -> Result<bool> {
+    pub(super) fn areas(&mut self, world: &mut World, port: &Port) -> Result<bool> {
+        self.router.observe_follows(world, port)?;
         self.router.observe_areas(world, port)
     }
     pub(super) fn request(&mut self, world: &World, bytes: &[u8], port: &Port) -> Result<bool> {

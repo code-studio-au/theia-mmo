@@ -47,8 +47,8 @@ pub(super) fn spawn_tooltip(commands: &mut Commands) {
             GlobalZIndex(70),
             Node {
                 position_type: PositionType::Absolute,
-                right: px(364),
-                bottom: px(124),
+                left: px(0),
+                top: px(0),
                 width: px(260),
                 padding: UiRect::all(px(10)),
                 display: Display::None,
@@ -65,21 +65,43 @@ fn stack(ui: &Ui, slot: u8) -> Option<&theia_core::inventory::Stack> {
 fn description(config: &Config, ui: &Ui, slot: u8) -> Option<String> {
     let stack = stack(ui, slot)?;
     let definition = config.0.catalog().definition(stack.item())?;
-    Some(format!(
+    let mut value = format!(
         "{}\nCount: {}\nMaximum stack: {}",
         definition.name(),
         stack.count(),
         definition.maximum_stack()
-    ))
+    );
+    if let Some(offer) = config.0.vendor().and_then(|v| {
+        v.catalog()
+            .offers()
+            .find(|o| o.is_sale() && o.cost().item() == Some(stack.item()))
+    }) {
+        value.push_str(&format!(
+            "\nSell price: {} (per {} item)",
+            offer.grant().label(config.0.catalog()),
+            offer.cost().count()
+        ));
+    }
+    Some(value)
 }
-type SlotView<'a> = (Entity, &'a SlotButton, &'a Hovered, &'a AccessibleLabel);
+type SlotView<'a> = (
+    Entity,
+    &'a SlotButton,
+    &'a Hovered,
+    &'a AccessibleLabel,
+    &'a ComputedNode,
+    &'a bevy::ui::UiGlobalTransform,
+);
+type TooltipFilter = (With<Tooltip>, Without<Icon>);
 #[derive(bevy::ecs::system::SystemParam)]
 pub(super) struct Views<'w, 's> {
     icons:
         Query<'w, 's, (&'static Icon, &'static mut ImageNode, &'static mut Node), Without<Tooltip>>,
     counts: Query<'w, 's, (&'static Count, &'static mut Text), Without<TooltipText>>,
     slots: Query<'w, 's, SlotView<'static>>,
-    tooltip: Query<'w, 's, &'static mut Node, (With<Tooltip>, Without<Icon>)>,
+    tooltip: Query<'w, 's, (&'static mut Node, &'static ComputedNode), TooltipFilter>,
+    cameras: Query<'w, 's, &'static Camera, With<Camera3d>>,
+    scale: Res<'w, bevy::ui::UiScale>,
     tooltip_text: Query<'w, 's, &'static mut Text, (With<TooltipText>, Without<Count>)>,
 }
 // Clear both art and descriptions when the confirmed projection disappears.
@@ -118,7 +140,8 @@ pub(super) fn present(
         }
     }
     let mut hovered = None;
-    for (entity, slot, hover, label) in &views.slots {
+    let mut anchor = None;
+    for (entity, slot, hover, label, computed, transform) in &views.slots {
         let value = description(&config, &ui, slot.0).unwrap_or_else(|| {
             format!(
                 "Backpack slot {}: {}",
@@ -129,7 +152,10 @@ pub(super) fn present(
         if label.0 != value {
             commands.entity(entity).insert(AccessibleLabel::new(value));
         }
-        if ui.open && hover.0 {
+        if ui.open && (hover.0 || preview.as_ref().is_some_and(|p| p.0 == slot.0)) {
+            let centre = transform.affine().translation * computed.inverse_scale_factor();
+            let size = computed.size() * computed.inverse_scale_factor();
+            anchor = Some(Rect::from_center_size(centre, size));
             hovered = description(&config, &ui, slot.0);
         }
     }
@@ -143,7 +169,19 @@ pub(super) fn present(
     } else {
         Display::None
     };
-    for mut node in &mut views.tooltip {
+    let viewport = views
+        .cameras
+        .iter()
+        .find_map(|c| c.logical_viewport_size())
+        .map(|p| p / views.scale.0);
+    for (mut node, computed) in &mut views.tooltip {
+        if let (Some(slot), Some(viewport)) = (anchor, viewport) {
+            let size =
+                (computed.size() * computed.inverse_scale_factor()).max(Vec2::new(260., 96.));
+            let point = tooltip_position(slot, size, viewport);
+            node.left = px(point.x);
+            node.top = px(point.y);
+        }
         if node.display != display {
             node.display = display;
         }
@@ -154,6 +192,19 @@ pub(super) fn present(
             text.0 = value;
         }
     }
+}
+
+fn tooltip_position(slot: Rect, size: Vec2, viewport: Vec2) -> Vec2 {
+    let gap = 8.;
+    let x = if slot.min.x >= size.x + gap {
+        slot.min.x - size.x - gap
+    } else {
+        slot.max.x + gap
+    };
+    Vec2::new(
+        x.clamp(4., (viewport.x - size.x - 4.).max(4.)),
+        (slot.max.y - size.y).clamp(4., (viewport.y - size.y - 4.).max(4.)),
+    )
 }
 
 /// Read-only qualification observation; never participates in command admission.
@@ -167,12 +218,21 @@ pub(crate) fn tooltip_state(world: &mut World) -> serde_json::Value {
         .iter(world)
         .next()
         .map(|t| t.0.clone());
-    serde_json::json!({"visible":visible,"text":text})
+    let scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |s| s.0);
+    let bounds = world.query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Tooltip>>()
+        .iter(world).next().map(|(node, transform)| {
+            let factor = crate::fantasy_ui::window_factor(node, scale);
+            serde_json::json!({"point":(transform.affine().translation*factor).to_array(), "size":(node.size()*factor).to_array()})
+        });
+    serde_json::json!({"visible":visible,"text":text,"bounds":bounds})
 }
 
 /// Actual slot widgets and projector, with explicitly synthetic content. No
 /// network resource, inventory observer, or command producer is installed.
 pub(crate) fn install_preview(app: &mut App) {
+    app.init_resource::<bevy::ui::UiScale>();
     let profile = Profile::from_json(include_bytes!(
         "../../../../content/gameplay/development-document-items.json"
     ))
@@ -212,7 +272,7 @@ fn preview_setup(mut commands: Commands, config: Res<Config>) {
             crate::fantasy_ui::Panel::Standard,
             Node {
                 position_type: PositionType::Absolute,
-                right: px(12),
+                right: px(324),
                 bottom: px(52),
                 width: px(340),
                 padding: UiRect::all(px(12)),
@@ -245,6 +305,23 @@ fn preview_setup(mut commands: Commands, config: Res<Config>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn tooltip_stays_beside_the_slot_and_inside_scaled_viewports() {
+        for viewport in [
+            Vec2::new(3440., 1440.),
+            Vec2::new(1920., 1440.),
+            Vec2::new(1280., 960.),
+        ] {
+            let size = Vec2::new(260., 110.);
+            let slot = Rect::from_center_size(viewport - Vec2::new(42., 90.), Vec2::splat(36.));
+            let p = tooltip_position(slot, size, viewport);
+            assert!(p.x + size.x < slot.min.x);
+            assert!(p.cmpge(Vec2::splat(4.)).all());
+            assert!((p + size).cmple(viewport - Vec2::splat(4.)).all());
+            let edge = Rect::from_center_size(Vec2::new(22., 22.), Vec2::splat(36.));
+            assert!(tooltip_position(edge, size, viewport).x > edge.max.x);
+        }
+    }
     #[test]
     fn icons_counts_and_hover_follow_confirmed_projection_then_clear_on_loss() {
         let mut app = App::new();

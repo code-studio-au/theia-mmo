@@ -1,5 +1,4 @@
-//! Bounded, passive enemy health labels from existing authoritative observations.
-//! No targeting commands, damage prediction, terrain requests or gameplay rules.
+//! Bounded clickable enemy health labels from authoritative observations.
 use avian3d::prelude::SpatialQuery;
 use bevy::{picking::Pickable, prelude::*, text::FontSize};
 use theia_core::identity::EntityKey;
@@ -26,6 +25,7 @@ struct Fill(usize);
 #[derive(Component)]
 struct Bar(usize);
 struct Plate {
+    key: Option<EntityKey>,
     anchor: Vec2,
     name: &'static str,
     fraction: f32,
@@ -33,6 +33,49 @@ struct Plate {
 }
 #[derive(Resource, Default)]
 struct Model(Vec<Plate>);
+#[derive(Resource, Default)]
+struct Attackers(Vec<(EntityKey, u64)>);
+impl Attackers {
+    fn observe(&mut self, state: &State) {
+        let Some(life) = state.player_life.as_ref().and_then(|s| s.current()) else {
+            self.0.clear();
+            return;
+        };
+        if life.health == 0 || life.combat.is_some_and(|c| !c.in_combat()) {
+            self.0.clear();
+            return;
+        }
+        let owner = life.key.actor;
+        let mut retain = |observation: &theia_network::creature_attack_wire::Observation,
+                          hz: u32| {
+            if let Some(w) = observation.windup {
+                if w.target == owner {
+                    // Keep the bar across the ordinary swing cooldown, using
+                    // authoritative simulation time rather than render frames.
+                    self.0.retain(|(key, _)| *key != observation.creature);
+                    self.0
+                        .push((observation.creature, w.completes + u64::from(hz) * 3));
+                } else {
+                    self.0.retain(|(key, _)| *key != observation.creature);
+                }
+            }
+        };
+        if let Some(p) = &state.public_population_attack
+            && let Some(frame) = p.current()
+        {
+            for observation in &frame.actors {
+                retain(observation, p.rate().hz());
+            }
+        }
+        if let Some(p) = &state.public_creature_attack
+            && let Some(observation) = p.current()
+        {
+            retain(observation, p.rate().hz());
+        }
+        self.0
+            .retain(|(key, deadline)| *deadline >= life.tick && health(state, *key).is_some());
+    }
+}
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
     pub visible: usize,
@@ -55,6 +98,7 @@ pub(crate) fn install(app: &mut App) {
 pub(crate) fn install_preview(app: &mut App, anchor: Vec2) {
     widgets(app);
     app.insert_resource(Model(vec![Plate {
+        key: None,
         anchor,
         name: "Wolf (fixture)",
         fraction: 0.57,
@@ -64,7 +108,9 @@ pub(crate) fn install_preview(app: &mut App, anchor: Vec2) {
 }
 fn widgets(app: &mut App) {
     app.init_resource::<Model>()
+        .init_resource::<Attackers>()
         .init_resource::<Metrics>()
+        .add_observer(select)
         .add_systems(Startup, setup)
         .add_systems(Last, observe);
 }
@@ -73,6 +119,8 @@ fn setup(mut commands: Commands) {
         commands
             .spawn((
                 Root(slot),
+                PlateTarget(None),
+                bevy::ui_widgets::Button,
                 Node {
                     position_type: PositionType::Absolute,
                     width: px(WIDTH),
@@ -82,7 +130,7 @@ fn setup(mut commands: Commands) {
                     display: Display::None,
                     ..default()
                 },
-                Pickable::IGNORE,
+                GlobalZIndex(2),
             ))
             .with_children(|root| {
                 root.spawn((
@@ -152,6 +200,7 @@ fn health(state: &State, key: EntityKey) -> Option<&Health> {
             && h.respawn_at.is_none()
     })
 }
+#[allow(clippy::too_many_arguments)]
 fn present(
     network: Res<crate::network::Network>,
     scale: Res<bevy::ui::UiScale>,
@@ -160,12 +209,14 @@ fn present(
     spatial: SpatialQuery,
     creatures: Option<Res<crate::creature_visual::Pending>>,
     mut model: ResMut<Model>,
+    mut attackers: ResMut<Attackers>,
 ) {
     model.0.clear();
     if !network.connected() {
         return;
     }
     let state = network.state();
+    attackers.observe(&state);
     let Ok((camera, camera_transform)) = cameras.single() else {
         return;
     };
@@ -180,6 +231,13 @@ fn present(
             break;
         }
         if *visibility == Visibility::Hidden {
+            continue;
+        }
+        let selected = state
+            .targeting
+            .as_ref()
+            .is_some_and(|v| v.selected == Some(actor.key.entity));
+        if !selected && !attackers.0.iter().any(|(key, _)| *key == actor.key) {
             continue;
         }
         let Some(health) = health(&state, actor.key) else {
@@ -203,6 +261,7 @@ fn present(
             continue;
         }
         model.0.push(Plate {
+            key: Some(actor.key),
             anchor,
             name: if creatures.is_some() {
                 "Wolf"
@@ -216,10 +275,66 @@ fn present(
                 .is_some_and(|v| v.selected == Some(actor.key.entity)),
         });
     }
+    model.0.sort_by_key(|p| p.key.map(|k| k.entity.value()));
+    spread(&mut model.0, viewport);
+}
+
+fn spread(plates: &mut [Plate], viewport: Vec2) {
+    for i in 0..plates.len() {
+        let origin = plates[i].anchor;
+        let mut best = None;
+        for column in -4i32..=4 {
+            for row in -16i32..=16 {
+                let candidate =
+                    origin + Vec2::new(column as f32 * (WIDTH + 8.), row as f32 * (HEIGHT + 5.));
+                if candidate.x < WIDTH * 0.5
+                    || candidate.x > viewport.x - WIDTH * 0.5
+                    || candidate.y < HEIGHT
+                    || candidate.y > viewport.y
+                {
+                    continue;
+                }
+                if plates[..i].iter().any(|p| {
+                    (p.anchor.x - candidate.x).abs() < WIDTH + 4.
+                        && (p.anchor.y - candidate.y).abs() < HEIGHT + 4.
+                }) {
+                    continue;
+                }
+                let cost = candidate.distance_squared(origin);
+                if best.is_none_or(|(_, previous)| cost < previous) {
+                    best = Some((candidate, cost));
+                }
+            }
+        }
+        if let Some((anchor, _)) = best {
+            plates[i].anchor = anchor;
+        }
+    }
+}
+#[derive(Component)]
+struct PlateTarget(Option<EntityKey>);
+fn select(
+    event: On<bevy::ui_widgets::Activate>,
+    plates: Query<&PlateTarget>,
+    network: Res<crate::network::Network>,
+    windows: Query<&Window>,
+    mut selection: ResMut<crate::world_input::Selection>,
+) {
+    if !windows.single().is_ok_and(|w| w.focused) || !network.can_act() {
+        return;
+    }
+    let Ok(PlateTarget(Some(key))) = plates.get(event.entity) else {
+        return;
+    };
+    if health(&network.state(), *key).is_some() {
+        network.request_target(Some(key.entity));
+        selection.friendly = None;
+        selection.enemy_clicks += 1;
+    }
 }
 fn paint(
     model: Res<Model>,
-    mut roots: Query<(&Root, &mut Node), Without<Fill>>,
+    mut roots: Query<(&Root, &mut Node, &mut PlateTarget), Without<Fill>>,
     mut fills: Query<(&Fill, &mut Node), Without<Root>>,
     mut names: Query<(&Name, &mut Text)>,
     mut bars: Query<(&Bar, &mut BorderColor)>,
@@ -228,7 +343,8 @@ fn paint(
     metrics.visible = model.0.len();
     metrics.visible_frames += u64::from(!model.0.is_empty());
     metrics.selected_frames += u64::from(model.0.iter().any(|p| p.selected));
-    for (slot, mut node) in &mut roots {
+    for (slot, mut node, mut target) in &mut roots {
+        target.0 = model.0.get(slot.0).and_then(|p| p.key);
         let Some(plate) = model.0.get(slot.0) else {
             if node.display != Display::None {
                 node.display = Display::None;
@@ -282,6 +398,22 @@ fn observe(nodes: Query<(&Node, &ComputedNode), With<Root>>, mut metrics: ResMut
         .count() as u64;
 }
 
+/// Read-only painted targets for the owned native input qualification.
+pub(crate) fn qualification(world: &mut World) -> serde_json::Value {
+    let scale = world.resource::<bevy::ui::UiScale>().0;
+    let plates: Vec<_> = world.query::<(&PlateTarget, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
+        .iter(world)
+        .filter_map(|(target, node, transform)| {
+            let key = target.0?;
+            (node.size().min_element() > 0.).then(|| serde_json::json!({
+                "entity": key.entity.value(),
+                "point": (transform.affine().translation * crate::fantasy_ui::window_factor(node, scale)).to_array(),
+                "size": (node.size() * crate::fantasy_ui::window_factor(node, scale)).to_array()
+            }))
+        }).collect();
+    serde_json::json!(plates)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -290,6 +422,31 @@ mod tests {
         identity::{EntityId, WorldEpoch},
     };
     use theia_network::{combat_wire, targeting, targeting_wire, wire};
+    #[test]
+    fn crowded_nameplates_remain_separate_inside_small_and_ultrawide_views() {
+        for viewport in [Vec2::new(1280., 720.), Vec2::new(3440., 1440.)] {
+            let mut plates: Vec<_> = (0..MAX_TARGETS)
+                .map(|_| Plate {
+                    key: None,
+                    anchor: viewport * 0.5,
+                    name: "Wolf",
+                    fraction: 1.,
+                    selected: false,
+                })
+                .collect();
+            spread(&mut plates, viewport);
+            for (i, a) in plates.iter().enumerate() {
+                assert!(a.anchor.x >= WIDTH * 0.5 && a.anchor.x <= viewport.x - WIDTH * 0.5);
+                assert!(a.anchor.y >= HEIGHT && a.anchor.y <= viewport.y);
+                for b in &plates[..i] {
+                    assert!(
+                        (a.anchor.x - b.anchor.x).abs() >= WIDTH
+                            || (a.anchor.y - b.anchor.y).abs() >= HEIGHT
+                    );
+                }
+            }
+        }
+    }
     #[test]
     fn damage_text_lanes_stay_clear_of_the_nameplate_and_viewport_edges() {
         for centre in [70., 640., 1210.] {
@@ -389,6 +546,7 @@ mod tests {
         let mut app = App::new();
         widgets(&mut app);
         app.insert_resource(Model(vec![Plate {
+            key: None,
             anchor: Vec2::new(200., 200.),
             name: "Wolf",
             fraction: 0.57,

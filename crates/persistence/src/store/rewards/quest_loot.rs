@@ -11,7 +11,7 @@ fn receipt(
         .catalog()
         .definition(&claim.reward)
         .ok_or(Error::RewardData)?;
-    if definition.quest_item().is_none() {
+    if definition.quest_item().is_none() || definition.ground().is_some() {
         return Ok(());
     }
     let source = claim.corpse.ok_or(Error::RewardData)?;
@@ -59,7 +59,7 @@ pub(super) async fn check_generation(
         .catalog()
         .definition(&claim.reward)
         .ok_or(Error::RewardData)?;
-    if definition.quest_item().is_none() {
+    if definition.quest_item().is_none() || definition.ground().is_some() {
         return Ok(());
     }
     let source = claim.corpse.ok_or(Error::RewardData)?;
@@ -116,6 +116,17 @@ impl Store {
         for row in &rows {
             let (claim, _) = checked(row, world, profile)?;
             receipt(row, 11, world, profile, &claim)?;
+            if profile
+                .catalog()
+                .definition(&claim.reward)
+                .is_some_and(|d| {
+                    d.ground().is_some()
+                        && d.quest_item().is_some_and(|i| !snapshot.needed.contains(i))
+                })
+                && claim.consumed_revision.is_none()
+            {
+                continue;
+            }
             claims.push(claim);
         }
         claims.sort_by(|a, b| {

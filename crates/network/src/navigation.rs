@@ -359,6 +359,7 @@ fn read(path: &Path, limit: usize) -> Result<Vec<u8>> {
     }
     Ok(bytes)
 }
+#[derive(Clone)]
 pub struct Store {
     root: PathBuf,
     manifest: Manifest,

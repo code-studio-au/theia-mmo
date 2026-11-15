@@ -11,17 +11,94 @@ pub const REQUESTS_PER_SECOND: u8 = 8;
 #[derive(Clone, Debug)]
 pub struct Profile {
     profile: Arc<CoreProfile>,
+    catalog: Option<Arc<theia_core::dialogue::catalog::Catalog>>,
     hash: [u8; 32],
 }
 impl Profile {
+    /// Explicit application loader; legacy from_json remains schema-1 only.
+    pub fn from_content(bytes: &[u8]) -> crate::Result<Self> {
+        if bytes.len() > theia_core::dialogue::catalog::MAX_CATALOG_BYTES {
+            return Err("Dialogue content exceeds budget".into());
+        }
+        let value: serde_json::Value = serde_json::from_slice(bytes)?;
+        match value.get("schema").and_then(|v| v.as_u64()) {
+            Some(1) => Self::from_json(bytes),
+            Some(2) => Self::from_catalog_json(bytes),
+            _ => Err("Unsupported dialogue content schema".into()),
+        }
+    }
+    pub fn placements(
+        &self,
+        value: &str,
+        source: &crate::procedural::Source,
+    ) -> crate::Result<Vec<(ContentId, Placement)>> {
+        if let Some(catalog) = self.catalog() {
+            match (value, source) {
+                ("authored", crate::procedural::Source::Authored(store)) => {
+                    store.contact_placements(catalog)
+                }
+                _ => Err("Contact catalogue requires authored collection placements".into()),
+            }
+        } else {
+            Ok(vec![(
+                self.profile().npc().clone(),
+                Placement::resolve(value, source, self)?,
+            )])
+        }
+    }
     pub fn from_json(bytes: &[u8]) -> crate::Result<Self> {
         let profile = Arc::new(CoreProfile::from_json(bytes)?);
         let mut bound = theia_core::dialogue::PROFILE_DOMAIN.to_vec();
         bound.extend(bytes);
         Ok(Self {
             profile,
+            catalog: None,
             hash: crate::terrain::sha256(&bound),
         })
+    }
+    pub fn from_catalog_json(bytes: &[u8]) -> crate::Result<Self> {
+        let catalog = Arc::new(theia_core::dialogue::catalog::Catalog::from_json(bytes)?);
+        let profile = Arc::new(
+            catalog
+                .contacts()
+                .next()
+                .ok_or("Empty contact catalogue")?
+                .clone(),
+        );
+        let mut bound = theia_core::dialogue::catalog::CATALOG_DOMAIN.to_vec();
+        bound.extend(bytes);
+        Ok(Self {
+            profile,
+            catalog: Some(catalog),
+            hash: crate::terrain::sha256(&bound),
+        })
+    }
+    pub fn catalog(&self) -> Option<&theia_core::dialogue::catalog::Catalog> {
+        self.catalog.as_deref()
+    }
+    pub fn contacts(&self) -> impl Iterator<Item = &CoreProfile> {
+        self.catalog
+            .iter()
+            .flat_map(|c| c.contacts())
+            .chain(self.catalog.is_none().then_some(self.profile.as_ref()))
+    }
+    pub fn contact(&self, npc: &ContentId) -> Option<&CoreProfile> {
+        self.contacts().find(|profile| profile.npc() == npc)
+    }
+    pub fn node_contact(&self, node: &ContentId) -> Option<&CoreProfile> {
+        self.contacts().find(|profile| profile.node(node).is_some())
+    }
+    pub fn node(&self, node: &ContentId) -> Option<&theia_core::dialogue::Node> {
+        self.node_contact(node)?.node(node)
+    }
+    pub fn defines(&self, id: &ContentId) -> bool {
+        self.catalog.as_ref().is_some_and(|c| c.defines(id))
+            || self.contacts().any(|p| {
+                p.id() == id
+                    || p.npc() == id
+                    || p.nodes()
+                        .any(|n| n.id() == id || n.choices().iter().any(|c| c.id() == id))
+            })
     }
     pub fn profile(&self) -> &CoreProfile {
         &self.profile
@@ -54,6 +131,9 @@ impl Placement {
         source: &crate::procedural::Source,
         profile: &Profile,
     ) -> crate::Result<Self> {
+        if profile.catalog().is_some() {
+            return Err("Use collection placement for a contact catalogue".into());
+        }
         if value == "authored" {
             match source {
                 crate::procedural::Source::Authored(store) => store.contact_placement(profile),
@@ -104,6 +184,11 @@ impl Placement {
 pub struct Guide {
     pub key: EntityKey,
     pub position: GlobalPosition,
+}
+#[derive(Clone, Debug, PartialEq)]
+pub struct ContactPresence {
+    pub npc: ContentId,
+    pub guide: Guide,
 }
 pub fn in_range(actor: GlobalPosition, guide: GlobalPosition) -> bool {
     let a = actor.metres();

@@ -304,6 +304,10 @@ impl QuestJournalCatalog {
         let mut bytes = b"theia-quest-journal-event-v1\0".to_vec();
         bytes.extend(self.hash);
         match event {
+            EventKey::FollowNpc(npc) => {
+                bytes.extend(b"follow-npc\0");
+                bytes.extend(npc.as_str().as_bytes());
+            }
             EventKey::ReadDocument(document) => {
                 bytes.push(5);
                 push(&mut bytes, document);

@@ -63,7 +63,7 @@ fn schema_consume_flag_final_stage_and_all_completion_are_explicit() {
             .objectives()[0]
             .consume_on_turn_in()
     );
-    for schema in [1, 2, 5] {
+    for schema in [1, 2, 6] {
         let mut bad = v.clone();
         bad["schema"] = json!(schema);
         assert!(parse(&bad).is_err());

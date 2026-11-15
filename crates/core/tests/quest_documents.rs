@@ -60,7 +60,7 @@ fn explicit_read_kind_requires_schema_four_known_document_and_count_one() {
         1
     );
     documents.validate_quests(&catalog).unwrap();
-    for schema in [1, 2, 3, 5] {
+    for schema in [1, 2, 3, 6] {
         let mut bad = value.clone();
         bad["schema"] = json!(schema);
         assert!(Catalog::from_json(&serde_json::to_vec(&bad).unwrap()).is_err());

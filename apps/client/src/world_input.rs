@@ -33,8 +33,9 @@ pub(crate) struct Selection {
 #[derive(Clone, Copy)]
 enum Actor {
     Enemy(EntityKey),
-    Guide,
+    Guide(Option<EntityKey>),
     Corpse(theia_core::progression::KillId),
+    Ground(theia_core::rewards::ClaimId),
 }
 #[derive(Resource, Default)]
 struct Pending(Option<(Actor, PointerButton, Vec3)>);
@@ -79,12 +80,17 @@ type ActorNode<'a> = (
     Option<&'a ChildOf>,
     Has<Node>,
     Option<&'a crate::loot::CorpseVisual>,
+    Option<&'a crate::dialogue::ContactKey>,
+    Option<&'a crate::inventory::ground::Pickup>,
 );
 fn actor(mut entity: Entity, nodes: &Query<ActorNode<'_>>) -> Option<Actor> {
     for _ in 0..32 {
-        let (target, guide, parent, ui, corpse) = nodes.get(entity).ok()?;
+        let (target, guide, parent, ui, corpse, contact, ground) = nodes.get(entity).ok()?;
         if ui {
             return None;
+        }
+        if let Some(ground) = ground {
+            return Some(Actor::Ground(ground.0));
         }
         if let Some(corpse) = corpse {
             return Some(Actor::Corpse(corpse.0.life));
@@ -93,7 +99,7 @@ fn actor(mut entity: Entity, nodes: &Query<ActorNode<'_>>) -> Option<Actor> {
             return Some(Actor::Enemy(target.key));
         }
         if guide {
-            return Some(Actor::Guide);
+            return Some(Actor::Guide(contact.and_then(|k| k.0)));
         }
         entity = parent?.parent();
     }
@@ -203,7 +209,7 @@ fn reticle_click(
         && let Some(picked) = actor(*entity, &nodes)
     {
         // Friendly reticle clicks select only. F remains the interaction key.
-        let button = if matches!(picked, Actor::Guide) {
+        let button = if matches!(picked, Actor::Guide(_)) {
             PointerButton::Primary
         } else {
             button
@@ -255,7 +261,7 @@ fn consume(
     let guide = state
         .guide
         .as_ref()
-        .and_then(|p| p.guide)
+        .and_then(|p| selection.friendly.and_then(|key| p.find(key)).or(p.guide))
         .filter(|g| resident(g.position));
     if selection.friendly.is_some_and(|key| {
         if classic.is_some() {
@@ -266,7 +272,11 @@ fn consume(
                     .as_ref()
                     .map(|v| v.actor.epoch.value())
                     .or_else(|| state.targeting.as_ref().map(|v| v.epoch)),
-                state.guide.as_ref().and_then(|v| v.guide).map(|g| g.key),
+                state
+                    .guide
+                    .as_ref()
+                    .and_then(|v| v.find(key))
+                    .map(|g| g.key),
             )
         } else {
             guide.is_none_or(|g| g.key != key)
@@ -300,6 +310,16 @@ fn consume(
         return;
     }
     match picked {
+        Actor::Ground(claim) => {
+            if button == PointerButton::Secondary
+                && state
+                    .rewards
+                    .as_ref()
+                    .is_some_and(|r| r.available.iter().any(|r| r.claim == claim))
+            {
+                network.request_reward(claim);
+            }
+        }
         Actor::Corpse(life) => {
             if state.rewards.as_ref().is_some_and(|r| {
                 r.available.iter().any(|r| {
@@ -342,11 +362,20 @@ fn consume(
                 selection.basic_requests += u64::from(requested);
             }
         }
-        Actor::Guide => {
+        Actor::Guide(key) => {
             if let Some(ui) = loot.as_mut() {
                 ui.close();
             }
-            let Some(guide) = guide else {
+            let Some(guide) = state
+                .guide
+                .as_ref()
+                .and_then(|p| match key {
+                    Some(key) => p.find(key),
+                    None if p.contacts.is_empty() => p.guide,
+                    None => None,
+                })
+                .filter(|g| resident(g.position))
+            else {
                 return;
             };
             selection.friendly = Some(guide.key);
@@ -661,7 +690,7 @@ mod tests {
             .resource_mut::<Pending>()
             .take_focused(true)
             .unwrap();
-        assert!(matches!(choice.0, Actor::Guide));
+        assert!(matches!(choice.0, Actor::Guide(_)));
         assert_eq!(choice.1, PointerButton::Primary);
     }
     #[test]
@@ -695,7 +724,7 @@ mod tests {
         click(app.world_mut(), guide, PointerButton::Primary);
         assert!(matches!(
             app.world().resource::<Pending>().0.unwrap().0,
-            Actor::Guide
+            Actor::Guide(_)
         ));
         app.world_mut().resource_mut::<Pending>().0 = None;
         let ui = app

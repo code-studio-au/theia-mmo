@@ -1,6 +1,8 @@
 //! Standard Bevy backpack widgets. Contents and outcomes come from the authority;
 //! selecting slots never changes the displayed bag optimistically.
+pub(crate) mod ground;
 mod lifecycle_qualification;
+mod money;
 mod qualification;
 pub(crate) mod skin;
 mod vendor_qualification;
@@ -150,6 +152,7 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
         "Backpack requires Bevy UI picking"
     );
     crate::loot::install(app, profile.clone());
+    ground::install(app);
     if let Some(documents) = profile.documents() {
         crate::documents::install(app, documents.clone());
     }
@@ -164,7 +167,13 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
             Update,
             (
                 present.in_set(Phase::Present),
-                (paint, paint_buttons, skin::present)
+                (
+                    paint,
+                    paint_coins_and_offers,
+                    money::paint,
+                    paint_buttons,
+                    skin::present,
+                )
                     .chain()
                     .in_set(Phase::Paint),
                 scroll,
@@ -276,7 +285,7 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
             ScrollPosition::default(),
             Node {
                 position_type: PositionType::Absolute,
-                right: px(12),
+                right: px(324),
                 bottom: px(52),
                 width: px(340),
                 max_height: percent(75),
@@ -298,6 +307,7 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
                     "Close backpack",
                 );
             }
+
             if config.0.catalog().equipment_enabled() {
                 panel.spawn((EquipmentLabel, text("Main hand: loading...", 14.)));
             }
@@ -313,6 +323,14 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
                     spawn_slots(grid, &config.0, skin.is_some());
                 });
             spawn_actions(panel, &config.0, "Loading backpack...");
+            if config.0.catalog().currency_enabled() {
+                panel.spawn(Node {
+                    height: px(44),
+                    flex_shrink: 0.,
+                    ..default()
+                });
+                money::row(panel, None, true);
+            }
         });
 }
 fn spawn_actions(panel: &mut ChildSpawnerCommands, profile: &Profile, status: &str) {
@@ -392,15 +410,37 @@ fn spawn_actions(panel: &mut ChildSpawnerCommands, profile: &Profile, status: &s
                     BuyButton(index as u8),
                     button(
                         Widget::Buy(index as u8),
-                        &format!("Buy {}", offer.name()),
+                        &format!(
+                            "{} {}",
+                            if offer.is_sale() { "Sell" } else { "Buy" },
+                            offer.name()
+                        ),
                         316.,
                         58.,
                     ),
                 ))
-                .with_child((
-                    OfferLabel(index as u8),
-                    text("Talk to the guide to trade.", 13.),
-                ));
+                .insert(Node {
+                    width: percent(100),
+                    min_height: px(64),
+                    flex_shrink: 0.,
+                    flex_direction: FlexDirection::Column,
+                    padding: UiRect::all(px(6)),
+                    ..default()
+                })
+                .with_children(|button| {
+                    button.spawn((
+                        OfferLabel(index as u8),
+                        text("Talk to a vendor to trade.", 13.),
+                    ));
+                    let price = if offer.is_sale() {
+                        offer.grant()
+                    } else {
+                        offer.cost()
+                    };
+                    if let theia_core::vendors::Amount::Coins { copper } = price {
+                        money::row(button, Some(*copper), false);
+                    }
+                });
         }
     }
     if profile.rewards().is_some() {
@@ -499,8 +539,20 @@ fn present(
         ui.status = "Disconnected / loading".into();
         return;
     }
-    let trading =
-        config.0.vendor().is_some() && state.dialogue.as_ref().is_some_and(|v| v.open.is_some());
+    let trading = config.0.vendor().is_some_and(|vendor| {
+        vendor.catalog().offers().any(|o| !o.is_sale())
+            && state
+                .dialogue
+                .as_ref()
+                .and_then(|v| v.open.as_ref())
+                .is_some_and(|o| {
+                    state.guide.as_ref().is_some_and(|p| {
+                        p.find(o.guide).is_some()
+                            && (p.contacts.is_empty()
+                                || p.npc(o.guide) == Some(vendor.catalog().npc()))
+                    })
+                })
+    });
     if trading && !ui.vendor_open {
         ui.open = true;
     }
@@ -530,7 +582,7 @@ fn present(
                 if ui.document_pending {
                     "Document opened."
                 } else if ui.vendor_pending {
-                    "Purchase saved."
+                    "Trade saved."
                 } else if ui.reward_pending {
                     "Reward claimed."
                 } else {
@@ -543,7 +595,7 @@ fn present(
                 if ui.document_pending {
                     "Document opened."
                 } else if ui.vendor_pending {
-                    "Purchase saved."
+                    "Trade saved."
                 } else if ui.reward_pending {
                     "Reward claimed."
                 } else {
@@ -555,8 +607,8 @@ fn present(
                 ui.rejected += 1;
                 if ui.vendor_pending {
                     match why {
-                        Reason::EmptySource => "Not enough trade items.",
-                        Reason::Conflict => "Talk to the guide again and choose an offer.",
+                        Reason::EmptySource => "Not enough coins or items for this trade.",
+                        Reason::Conflict => "Talk to the vendor again and choose an offer.",
                         _ => reason(why),
                     }
                     .into()
@@ -645,7 +697,7 @@ fn present(
             ui.pending = true;
             ui.vendor_pending = true;
             ui.submitted += 1;
-            ui.status = "Saving purchase...".into();
+            ui.status = "Saving trade...".into();
         } else {
             ui.status = "Items changed or busy; choose the offer again.".into();
         }
@@ -653,11 +705,16 @@ fn present(
     }
     if input.claim {
         ui.reward_clicks += 1;
-        if let Some(reward) = state
-            .rewards
-            .as_ref()
-            .and_then(|s| s.available.iter().find(|r| r.corpse.is_none()))
-            && network.request_reward(reward.claim)
+        if let Some(reward) = state.rewards.as_ref().and_then(|s| {
+            s.available.iter().find(|r| {
+                r.corpse.is_none()
+                    && config
+                        .0
+                        .rewards()
+                        .and_then(|p| p.catalog().definition(&r.reward))
+                        .is_none_or(|d| d.ground().is_none())
+            })
+        }) && network.request_reward(reward.claim)
         {
             ui.pending = true;
             ui.reward_pending = true;
@@ -792,11 +849,10 @@ fn paint(
         && let (Some(vendor), Some(bag), Some(dialogue)) =
             (config.0.vendor(), ui.bag.as_ref(), state.dialogue.as_ref())
         && let Some(open) = &dialogue.open
-        && state
-            .guide
-            .as_ref()
-            .and_then(|g| g.guide)
-            .is_some_and(|g| g.key == open.guide)
+        && state.guide.as_ref().is_some_and(|g| {
+            g.find(open.guide).is_some()
+                && (g.contacts.is_empty() || g.npc(open.guide) == Some(vendor.catalog().npc()))
+        })
     {
         let revision = bag.revision();
         ui.offers = vendor
@@ -846,27 +902,26 @@ fn paint(
                 .and_then(|v| v.catalog().offers().nth(usize::from(index.0)))
                 .map_or(String::new(), |offer| {
                     if ui.vendor_pending {
-                        return "Saving purchase...".into();
+                        return "Saving trade...".into();
                     }
                     if ui.offers.get(usize::from(index.0)).is_none() {
-                        return "Talk to the guide to trade.".into();
+                        return "Talk to a vendor to trade.".into();
                     }
-                    let name = |id| {
-                        config
-                            .0
-                            .catalog()
-                            .definition(id)
-                            .expect("Checked offer item")
-                            .name()
-                    };
+                    if matches!(offer.cost(), theia_core::vendors::Amount::Coins { .. })
+                        || offer.is_sale()
+                    {
+                        return format!(
+                            "{} {}",
+                            if offer.is_sale() { "Sell" } else { "Buy" },
+                            offer.name()
+                        );
+                    }
                     format!(
-                        "{}
-{} {} for {} {}",
+                        "{} {}\n{} → {}",
+                        if offer.is_sale() { "Sell" } else { "Buy" },
                         offer.name(),
-                        offer.cost().count(),
-                        name(offer.cost().item()),
-                        offer.grant().count(),
-                        name(offer.grant().item())
+                        offer.cost().label(config.0.catalog()),
+                        offer.grant().label(config.0.catalog())
                     )
                 })
         } else if reward.is_some() {
@@ -879,7 +934,14 @@ fn paint(
                         state
                             .available
                             .iter()
-                            .find(|r| r.corpse.is_none())
+                            .find(|r| {
+                                r.corpse.is_none()
+                                    && config
+                                        .0
+                                        .rewards()
+                                        .and_then(|p| p.catalog().definition(&r.reward))
+                                        .is_none_or(|d| d.ground().is_none())
+                            })
                             .and_then(|r| config.0.rewards()?.catalog().definition(&r.reward))
                             .map_or_else(
                                 || "No rewards available".into(),
@@ -921,6 +983,16 @@ fn paint(
         if label.0 != value {
             label.0 = value;
         }
+    }
+}
+
+fn paint_coins_and_offers(ui: Res<Ui>, mut offers: Query<&mut Node, With<BuyButton>>) {
+    for mut node in &mut offers {
+        node.display = if ui.vendor_open {
+            Display::Flex
+        } else {
+            Display::None
+        };
     }
 }
 
@@ -975,7 +1047,9 @@ fn scroll(
     mut events: MessageReader<bevy::input::mouse::MouseWheel>,
     ui: Res<Ui>,
     documents: Option<Res<crate::documents::Ui>>,
-    mut panes: Query<(&Hovered, &mut ScrollPosition, &ComputedNode), With<Pane>>,
+    windows: Query<&Window>,
+    scale: Res<bevy::ui::UiScale>,
+    mut panes: Query<(&Hovered, &mut ScrollPosition, &ComputedNode, &mut Node), With<Pane>>,
 ) {
     let delta: f32 = events
         .read()
@@ -987,14 +1061,13 @@ fn scroll(
             }
         })
         .sum();
-    if ui.open && !documents.as_ref().is_some_and(|u| u.open) && delta != 0. {
-        for (hovered, mut position, node) in &mut panes {
-            if !hovered.0 {
-                continue;
-            }
+    let height = windows.single().map_or(720., |w| w.height()) / scale.0;
+    for (hovered, mut position, node, mut style) in &mut panes {
+        style.max_height = px((height - 212.).max(240.));
+        if ui.open && !documents.as_ref().is_some_and(|u| u.open) {
             let maximum =
                 ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
-            position.y = (position.y + delta).clamp(0., maximum);
+            position.y = (position.y + if hovered.0 { delta } else { 0. }).clamp(0., maximum);
         }
     }
 }

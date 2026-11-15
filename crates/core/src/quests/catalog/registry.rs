@@ -95,7 +95,9 @@ impl Registry {
                 check(quest.turn_in())?;
                 for objective in quest.stages().flat_map(|stage| stage.objectives()) {
                     match objective.event() {
-                        EventKey::Kill(creature) => check(creature)?,
+                        EventKey::Kill(creature) | EventKey::FollowNpc(creature) => {
+                            check(creature)?
+                        }
                         EventKey::ReachArea(area)
                         | EventKey::PossessItem(area)
                         | EventKey::ReadDocument(area) => check(area)?,

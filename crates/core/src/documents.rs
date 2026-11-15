@@ -192,7 +192,8 @@ impl Catalog {
                                 return Err("Unknown quest document reference");
                             }
                         }
-                        EventKey::Kill(id)
+                        EventKey::FollowNpc(id)
+                        | EventKey::Kill(id)
                         | EventKey::ReachArea(id)
                         | EventKey::PossessItem(id) => {
                             reserved.insert(id.clone());

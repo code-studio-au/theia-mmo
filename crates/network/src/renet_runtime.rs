@@ -809,7 +809,7 @@ fn forward_experience_opportunity(
     Ok(())
 }
 fn forward_experience_opportunities(
-    world: &World,
+    world: &mut World,
     peers: &mut BTreeMap<u64, Peer>,
     stats: &mut ServerStats,
     events: &[crate::simulation::combat::Event],
@@ -1298,7 +1298,7 @@ async fn run_server_inner(
                 if world.combat_enabled() {
                     let events = world.combat_events().to_vec();
                     forward_reward_opportunities(&world, &peers, &mut stats, &events)?;
-                    forward_experience_opportunities(&world, &mut peers, &mut stats, &events)?;
+                    forward_experience_opportunities(&mut world, &mut peers, &mut stats, &events)?;
                     publish_combat_events(&mut server, &mut peers, &mut world, &mut stats, &events)?;
                 }
                 if world.procedural().is_some() {
@@ -1618,7 +1618,7 @@ async fn run_server_inner(
                     retired_combat_peers.sort_unstable(); retired_combat_peers.dedup();
                     if !combat_events.is_empty() {
                     forward_reward_opportunities(&world,&peers,&mut stats,&combat_events)?;
-                    forward_experience_opportunities(&world,&mut peers,&mut stats,&combat_events)?;
+                    forward_experience_opportunities(&mut world,&mut peers,&mut stats,&combat_events)?;
                 }
                 retire_peers(&mut server,&mut peers,&mut world,&retired_combat_peers)?;
                     if world.combat_enabled() {publish_combat_events(&mut server,&mut peers,&mut world,&mut stats,&combat_events)?;}
@@ -2371,7 +2371,7 @@ async fn run_client_inner(
                             state.send_modify(|s|{s.appearance=mode.appearance.clone();s.transport=Some(stats.clone());});
                             continue;
                         }
-                        if bytes.starts_with(crate::inventory_wire::STATE_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_STATE_TAG) || bytes.starts_with(crate::inventory_wire::DOCUMENT_STATE_TAG) {
+                        if bytes.starts_with(crate::inventory_wire::STATE_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_STATE_TAG) || bytes.starts_with(crate::inventory_wire::COIN_STATE_TAG) || bytes.starts_with(crate::inventory_wire::DOCUMENT_STATE_TAG) {
                             let mode=inventory.as_mut().ok_or("Unexpected opt-in inventory state")?;
                             let welcome=admission.as_ref().unwrap();
                             let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};

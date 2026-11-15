@@ -523,7 +523,9 @@ fn report(
         if let Some(context) =
             network.movement_measurement_context(gray.patch.as_ref().map(|p| p.owner))
         {
-            let at = gray.started.elapsed().as_secs_f64();
+            // Compare positions on the frame clock, not the variable wall-clock
+            // time at which this diagnostic system happens to be scheduled.
+            let at = time.elapsed_secs_f64();
             gray.render_motion.observe(at, global, context);
         }
     }

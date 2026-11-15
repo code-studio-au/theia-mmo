@@ -756,7 +756,10 @@ impl World {
                 .pve
                 .iter()
                 .chain(&combat.retaliators)
-                .filter(|pve| pve.policy.target() == Some(key))
+                // Another attacker can kill this player later in the same tick,
+                // after an earlier controller has retained its pending windup.
+                // Never publish that stale telegraph on a dead life.
+                .filter(|pve| player.state.alive() && pve.policy.target() == Some(key))
                 .filter_map(|pve| {
                     pve.policy.windup_until().map(|completes| Windup {
                         creature: pve.npc,

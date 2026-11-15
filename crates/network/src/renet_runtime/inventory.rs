@@ -338,11 +338,9 @@ impl ClientState {
                 .profile
                 .rewards()
                 .ok_or("Pickup requires reward profile")?;
-            if !profile
-                .catalog()
-                .definitions()
-                .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
-            {
+            if !profile.catalog().definitions().any(|d| {
+                d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+            }) {
                 return Err("Pickup requires a per-life profile".into());
             }
             let sequence = self
@@ -550,11 +548,9 @@ impl Peer {
                 .rewards
                 .as_ref()
                 .ok_or("Pickup requires reward profile")?;
-            if !profile
-                .catalog()
-                .definitions()
-                .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
-            {
+            if !profile.catalog().definitions().any(|d| {
+                d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+            }) {
                 return Err("Pickup requires a per-life profile".into());
             }
             let pickup = crate::reward_wire::PickupRequest::decode(bytes)?;
@@ -609,10 +605,9 @@ impl Peer {
             let profile = self.port.rewards.as_ref().ok_or("Reward profile missing")?;
             let observation = self.port.state.borrow();
             if pickup_life.is_some()
-                || profile
-                    .catalog()
-                    .definitions()
-                    .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+                || profile.catalog().definitions().any(|d| {
+                    d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+                })
             {
                 observation.failed
                     || observation.closed
@@ -641,6 +636,11 @@ impl Peer {
                                         profile.catalog().definition(&row.reward).is_some_and(|d| {
                                             d.scope()
                                                 == theia_core::rewards::Scope::OncePerCharacter
+                                                && d.ground().is_none_or(|g| {
+                                                    world.is_some_and(|(w, id)| {
+                                                        w.ground_pickup_eligible(id, g.position)
+                                                    })
+                                                })
                                         })
                                     }
                                     _ => false,
@@ -653,7 +653,32 @@ impl Peer {
         } else {
             false
         };
+        // A once-only ground quest item must remain deliverable. Revision checks
+        // bind this source slot to the same committed bag used by the worker.
+        let protected_pickup = if let ItemCommand::Backpack(theia_core::inventory::Command {
+            operation: theia_core::inventory::Operation::Destroy { from, .. },
+            ..
+        }) = message.command
+        {
+            self.port
+                .state
+                .borrow()
+                .bag
+                .as_ref()
+                .and_then(|b| b.slots().get(usize::from(from)))
+                .and_then(|s| s.as_ref())
+                .is_some_and(|s| {
+                    self.port.rewards.as_ref().is_some_and(|p| {
+                        p.catalog().definitions().any(|d| {
+                            d.ground().is_some() && d.grants().iter().any(|g| g.item() == s.item())
+                        })
+                    })
+                })
+        } else {
+            false
+        };
         if reward_refused
+            || protected_pickup
             || matches!(message.command, ItemCommand::Vendor(command) if world.is_none_or(|(world, id)| !world.vendor_eligible(id, command)))
         {
             self.sequence = message.sequence;

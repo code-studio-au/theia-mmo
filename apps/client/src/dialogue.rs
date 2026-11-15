@@ -1,5 +1,6 @@
 //! Standard Bevy informational guide/panel. Every displayed node is observed;
 //! widget choice and movement never advance dialogue optimistically.
+mod names;
 mod qualification;
 use crate::{floating_origin::Frame, network::Network, scene::PawnAssets};
 use bevy::{
@@ -13,7 +14,7 @@ use bevy::{
 use std::sync::Arc;
 use theia_network::dialogue::{Action, Profile, Rejection};
 #[derive(Resource)]
-struct Config(Arc<Profile>);
+pub(crate) struct Config(pub(crate) Arc<Profile>);
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Ui {
     pub open: bool,
@@ -39,6 +40,10 @@ struct Pending {
 }
 #[derive(Component)]
 pub(super) struct GuideVisual;
+#[derive(Component)]
+pub(super) struct ContactDefinition(theia_core::content::ContentId);
+#[derive(Component, Default)]
+pub(super) struct ContactKey(pub Option<theia_core::identity::EntityKey>);
 #[derive(Component)]
 struct Panel;
 #[derive(Component)]
@@ -97,6 +102,7 @@ pub(crate) fn install(app: &mut App, profile: Arc<Profile>) {
                 .after(crate::network::present),
         );
     qualification::install(app);
+    names::install(app);
 }
 fn text(value: &str, size: f32) -> impl Bundle {
     (
@@ -138,13 +144,17 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
-    commands.spawn((
-        GuideVisual,
-        Mesh3d(pawns.mesh.clone()),
-        MeshMaterial3d(materials.add(Color::srgb(0.1, 0.65, 0.72))),
-        Transform::default(),
-        Visibility::Hidden,
-    ));
+    for contact in config.0.contacts() {
+        commands.spawn((
+            GuideVisual,
+            ContactDefinition(contact.npc().clone()),
+            ContactKey::default(),
+            Mesh3d(pawns.mesh.clone()),
+            MeshMaterial3d(materials.add(Color::srgb(0.1, 0.65, 0.72))),
+            Transform::default(),
+            Visibility::Hidden,
+        ));
+    }
     // The expanded journal supplies this context beside its committed progress;
     // retain the legacy fixed-position prompt only in the legacy presentation.
     if journal.is_none() {
@@ -255,6 +265,7 @@ fn controls(
     mut pending: ResMut<Pending>,
     mut ui: ResMut<Ui>,
     classic: Option<Res<crate::classic_controls::Controller>>,
+    selection: Option<Res<crate::world_input::Selection>>,
     loot: Option<Res<crate::loot::Ui>>,
     documents: Option<Res<crate::documents::Ui>>,
     (interface, book): (
@@ -314,7 +325,24 @@ fn controls(
             state
                 .guide
                 .as_ref()
-                .and_then(|p| p.guide)
+                .and_then(|p| {
+                    // Explicit friendly selection wins; never substitute another NPC.
+                    if let Some(key) = selection.as_ref().and_then(|s| s.friendly) {
+                        return p.find(key);
+                    }
+                    let focus = state.authority_focus()?.metres();
+                    p.guides().min_by(|a, b| {
+                        let d = |g: &theia_network::dialogue::Guide| {
+                            g.position
+                                .metres()
+                                .into_iter()
+                                .zip(focus)
+                                .map(|(a, b)| (a - b).powi(2))
+                                .sum::<f64>()
+                        };
+                        d(a).total_cmp(&d(b))
+                    })
+                })
                 .filter(|guide| {
                     state
                         .authority_focus()
@@ -360,6 +388,8 @@ type Visual<'a> = (
     Option<&'a GuideVisual>,
     Option<&'a Panel>,
     Option<&'a mut Transform>,
+    Option<&'a ContactDefinition>,
+    Option<&'a mut ContactKey>,
 );
 type VisualFilter = Or<(With<GuideVisual>, With<Panel>)>;
 type ButtonView<'a> = (
@@ -384,7 +414,7 @@ fn present(
     let state = network.state();
     let view = state.dialogue.as_ref().filter(|_| state.error.is_none());
     let open = view.and_then(|view| view.open.as_ref());
-    let dialogue_node = open.and_then(|open| config.0.profile().node(&open.node));
+    let dialogue_node = open.and_then(|open| config.0.node(&open.node));
     let node_id = dialogue_node.map(|node| node.id().as_str().to_owned());
     ui.displayed_revision = view.map(|view| view.revision);
     ui.choices = dialogue_node.map_or_else(Vec::new, |node| {
@@ -417,7 +447,7 @@ fn present(
                 .is_some_and(|report| report.chunks.contains(&[id.x, id.z]))
         })
     });
-    for (mut visibility, is_guide, is_panel, transform) in &mut visuals {
+    for (mut visibility, is_guide, is_panel, transform, definition, key) in &mut visuals {
         if is_panel.is_some() {
             *visibility = if ui.open {
                 Visibility::Inherited
@@ -426,7 +456,31 @@ fn present(
             };
         }
         if is_guide.is_some() {
-            if let Some(local) = guide.and_then(|guide| frame.render.to_local(guide.position)) {
+            let contact = state
+                .guide
+                .as_ref()
+                .and_then(|p| {
+                    if config.0.catalog().is_none() {
+                        return p.guide;
+                    }
+                    p.contacts
+                        .iter()
+                        .find(|c| definition.is_some_and(|d| d.0 == c.npc))
+                        .map(|c| c.guide)
+                })
+                .filter(|g| {
+                    state.error.is_none()
+                        && g.position.chunk(128).is_some_and(|id| {
+                            state
+                                .chunk_report
+                                .as_ref()
+                                .is_some_and(|r| r.chunks.contains(&[id.x, id.z]))
+                        })
+                });
+            if let Some(mut key) = key {
+                key.0 = contact.map(|c| c.key);
+            }
+            if let Some(local) = contact.and_then(|guide| frame.render.to_local(guide.position)) {
                 transform.unwrap().translation = Vec3::from_array(local.metres());
                 *visibility = Visibility::Inherited;
                 ui.visible_guide_frames += 1;
@@ -446,7 +500,9 @@ fn present(
     };
     for (mut label, title, body, is_status, prompt, choice) in &mut labels {
         let value = if title.is_some() {
-            config.0.profile().name().to_owned()
+            open.and_then(|o| config.0.node_contact(&o.node))
+                .map_or("Conversation", |p| p.name())
+                .to_owned()
         } else if body.is_some() {
             dialogue_node.map_or("", |node| node.text()).to_owned()
         } else if is_status.is_some() {

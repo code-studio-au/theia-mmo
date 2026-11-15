@@ -78,11 +78,13 @@ with (out / 'editor.log').open('w') as log:
             click(field['centre'])
             wait(lambda: any(f['index'] == index and f['focused'] for f in state()['export_dialog']['fields']))
             x.key_state('Control_L', True)
-            fresh()
-            x.key('a')
-            fresh()
-            x.key_state('Control_L', False)
-            fresh()
+            try:
+                wait(lambda: state()['control_down'])
+                x.key('a')
+                fresh()
+            finally:
+                x.key_state('Control_L', False)
+            wait(lambda: not state()['control_down'])
             names = {'/':'slash', '.':'period', '-':'minus', '_':'underscore', ':':'colon'}
             for char in str(value):
                 key = names.get(char, char)

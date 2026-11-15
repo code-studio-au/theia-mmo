@@ -234,6 +234,16 @@ impl History {
     pub fn pose(&self) -> Pose {
         self.pose
     }
+    /// Last two completed, reconciled positions for rendering one tick behind
+    /// the prediction clock. Never extrapolate beyond checked collision.
+    pub fn presentation_endpoints(&self) -> [GlobalPosition; 2] {
+        let previous = if self.steps.len() >= 2 {
+            self.steps[self.steps.len() - 2].pose.feet
+        } else {
+            self.anchor.pose.feet
+        };
+        [previous, self.pose.feet]
+    }
     pub fn input(&self) -> State {
         self.input.state()
     }

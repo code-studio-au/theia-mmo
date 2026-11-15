@@ -180,6 +180,7 @@ impl Target {
                 "Maximum Y (m)",
                 "Alive count",
                 "Respawn (s)",
+                "Roam radius (m; 0 = still)",
             ],
             Self::SpawnGroup(_, None) => &[
                 "Centre X (m)",
@@ -188,6 +189,7 @@ impl Target {
                 "Maximum Y (m)",
                 "Alive count",
                 "Respawn (s)",
+                "Roam radius (m; 0 = still)",
             ],
             Self::QuestArea(_) => &[
                 "Min X (m)",
@@ -254,6 +256,7 @@ impl Target {
                     group.volume.max_y(),
                     f64::from(group.target_alive),
                     f64::from(group.respawn_seconds),
+                    group.roam_radius_metres,
                 ]
                 .map(|v| v.to_string())
                 .to_vec()
@@ -355,6 +358,10 @@ impl Target {
                 group.volume = theia_core::spawn_volume::PolygonVolume::new(polygon, v[2], v[3])?;
                 group.target_alive = v[4] as u16;
                 group.respawn_seconds = v[5] as u32;
+                if !(0. ..=16.).contains(&v[6]) {
+                    return Err("Roaming radius must be 0..16 metres".into());
+                }
+                group.roam_radius_metres = v[6];
                 Ok((group != *original).then_some(Edit::PutSpawnGroup { group }))
             }
             Self::QuestArea(original) => {
@@ -1739,5 +1746,68 @@ mod test_player_attributes {
             bad[field] = value.into();
             assert!(target.edit(Some(1), &bad).is_err());
         }
+    }
+}
+
+#[cfg(test)]
+mod roaming_attributes {
+    use super::*;
+    #[test]
+    fn roaming_field_preserves_placement_and_round_trips_through_editor_history() {
+        let original = theia_zone::spawn_groups::SpawnGroup {
+            id: 1,
+            name: "Wolves".into(),
+            enabled: true,
+            creature: "theia.dev.training-creature".into(),
+            model: None,
+            volume: theia_core::spawn_volume::PolygonVolume::new(
+                vec![[-4., -4.], [4., -4.], [4., 4.], [-4., 4.]],
+                -2.,
+                8.,
+            )
+            .unwrap(),
+            target_alive: 5,
+            respawn_seconds: 30,
+            roam_radius_metres: 4.,
+            seed: 42,
+        };
+        for vertex in [None, Some(1)] {
+            let target = Target::SpawnGroup(original.clone(), vertex);
+            let mut values = target.values();
+            values[6] = "9.5".into();
+            let edit = target.edit(Some(1), &values).unwrap().unwrap();
+            let mut editor = theia_zone::Editor::new(theia_zone::Zone {
+                schema: 14,
+                spawn_groups: vec![original.clone()],
+                ..default()
+            })
+            .unwrap();
+            editor
+                .execute(theia_zone::Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![edit],
+                })
+                .unwrap();
+            let mut expected = original.clone();
+            expected.roam_radius_metres = 9.5;
+            assert_eq!(editor.zone().spawn_groups, [expected]);
+            let bytes = serde_json::to_vec(editor.zone()).unwrap();
+            assert_eq!(theia_zone::Zone::from_json(&bytes).unwrap(), *editor.zone());
+            editor
+                .execute(theia_zone::Command::Undo {
+                    expected_revision: 1,
+                })
+                .unwrap();
+            assert_eq!(editor.zone().spawn_groups, std::slice::from_ref(&original));
+            for invalid in ["-1", "16.1", "NaN"] {
+                values[6] = invalid.into();
+                assert!(target.edit(Some(1), &values).is_err());
+            }
+            assert!(target.edit(Some(1), &values[..6]).is_err());
+        }
+        let mut legacy = serde_json::to_value(&original).unwrap();
+        legacy.as_object_mut().unwrap().remove("roam_radius_metres");
+        let loaded: theia_zone::spawn_groups::SpawnGroup = serde_json::from_value(legacy).unwrap();
+        assert_eq!(loaded.roam_radius_metres, 0.);
     }
 }

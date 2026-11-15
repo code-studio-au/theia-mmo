@@ -53,14 +53,36 @@ pub(super) fn actions() -> [(Action, &'static str); 12] {
 pub(super) fn ribbon(zone: &Zone, path: &GuidePath) -> Mesh {
     let mut vertices = vec![];
     let mut indices = vec![];
-    for segment in path.points.windows(2) {
-        let a = Vec3::from_array(zone.local(segment[0]).expect("Validated guide point"));
-        let b = Vec3::from_array(zone.local(segment[1]).expect("Validated guide point"));
-        let delta = b - a;
-        let side = Vec3::new(delta.z, 0., -delta.x).normalize() * (path.width_metres as f32 / 2.);
-        let start = vertices.len() as u32;
-        vertices.extend([a - side, a + side, b - side, b + side].map(|v| v.to_array()));
-        indices.extend([start, start + 2, start + 1, start + 1, start + 2, start + 3]);
+    let points: Vec<Vec3> = path
+        .points
+        .iter()
+        .map(|p| Vec3::from_array(zone.local(*p).expect("Validated guide point")))
+        .collect();
+    let sides: Vec<Vec3> = points
+        .windows(2)
+        .map(|p| {
+            let delta = p[1] - p[0];
+            Vec3::new(delta.z, 0., -delta.x).normalize()
+        })
+        .collect();
+    // A live editor draft can have only its first point and no segment yet.
+    for (index, point) in points
+        .iter()
+        .take(if sides.is_empty() { 0 } else { points.len() })
+        .enumerate()
+    {
+        let before = sides[index.saturating_sub(1)];
+        let after = sides[index.min(sides.len() - 1)];
+        let miter = (before + after).try_normalize().unwrap_or(after);
+        let side = miter * (path.width_metres as f32 * 0.5 / miter.dot(after).abs().max(0.5));
+        // Render-only clearance: authored/navigation coordinates and collision
+        // stay exact. Shared cross-sections avoid coplanar overlap at bends.
+        let point = *point + Vec3::Y * 0.03;
+        vertices.extend([point - side, point + side].map(|v| v.to_array()));
+        if index > 0 {
+            let start = (index as u32 - 1) * 2;
+            indices.extend([start, start + 2, start + 1, start + 1, start + 2, start + 3]);
+        }
     }
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
@@ -678,5 +700,53 @@ pub(super) fn focus(session: &Session, view: &mut View) {
         view.target = (minimum + maximum) / 2.;
         view.distance = ((maximum - minimum).length() * 1.5 + path.width_metres as f32 * 2. + 8.)
             .clamp(8., selection::MAX_VIEW_DISTANCE);
+    }
+}
+
+#[cfg(test)]
+mod ribbon_tests {
+    use super::*;
+    #[test]
+    fn unfinished_road_draft_has_no_triangles() {
+        let mut path = GuidePath {
+            id: 1,
+            name: "Draft".into(),
+            kind: PathKind::Road,
+            width_metres: 2.,
+            points: Vec::new(),
+        };
+        for points in [vec![], vec![[0.; 3]]] {
+            path.points = points;
+            assert_eq!(ribbon(&Zone::default(), &path).indices().unwrap().len(), 0);
+        }
+    }
+    #[test]
+    fn road_has_shared_bend_vertices_and_clearance_without_changing_authoring() {
+        for origin in [[0.; 3], [1e9, 0., -1e9]] {
+            let zone = Zone {
+                origin,
+                ..Default::default()
+            };
+            let path = GuidePath {
+                id: 1,
+                name: "Road".into(),
+                kind: theia_zone::paths::PathKind::Road,
+                width_metres: 2.,
+                points: [[0., 0., 0.], [4., 0., 0.], [4., 0., 4.]]
+                    .map(|p| std::array::from_fn(|i| p[i] + origin[i]))
+                    .to_vec(),
+            };
+            let before = path.clone();
+            let mesh = ribbon(&zone, &path);
+            let Some(bevy::mesh::VertexAttributeValues::Float32x3(vertices)) =
+                mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+            else {
+                panic!("positions");
+            };
+            assert_eq!(vertices.len(), 6);
+            assert!(vertices.iter().all(|v| (v[1] - 0.03).abs() < 1e-6));
+            assert_eq!(mesh.indices().unwrap().len(), 12);
+            assert_eq!(path, before);
+        }
     }
 }

@@ -696,6 +696,17 @@ fn capture(
         tooltip_rect.intersect(cast).is_empty(),
         "Item tooltip must not cover cast feedback"
     );
+    for (_, node, transform) in &layout.units {
+        assert!(
+            tooltip_rect
+                .intersect(Rect::from_center_size(
+                    transform.affine().translation,
+                    node.size()
+                ))
+                .is_empty(),
+            "Item tooltip must not cover unit frames"
+        );
+    }
     for (_, node, transform) in &layout.buttons {
         assert!(
             tooltip_rect

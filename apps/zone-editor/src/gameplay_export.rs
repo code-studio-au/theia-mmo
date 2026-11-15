@@ -9,6 +9,7 @@ pub(super) struct Draft {
     areas: Vec<u8>,
     creature: Option<Vec<u8>>,
     pub(super) contact: Option<theia_network::authored_world::Contact>,
+    pub(super) contacts: Vec<theia_network::authored_world::Contact>,
 }
 
 impl Draft {
@@ -45,30 +46,37 @@ impl Draft {
                 marker.kind == theia_zone::markers::MarkerKind::Npc && marker.definition.is_some()
             })
             .collect();
-        if contacts.len() > 1 {
-            return Err("Current gameplay runtime supports one bound NPC contact".into());
+        let profile = theia_network::dialogue::Profile::from_content(
+            template
+                .profile("dialogue")
+                .ok_or("Gameplay template needs dialogue")?,
+        )
+        .map_err(|e| e.to_string())?;
+        let collection = profile.catalog().is_some();
+        if collection && contacts.len() != profile.contacts().count() {
+            return Err("Place exactly one NPC marker for every dialogue catalogue contact".into());
         }
-        let contact = if let Some(marker) = contacts.first() {
-            let profile = theia_network::dialogue::Profile::from_json(
-                template
-                    .profile("dialogue")
-                    .ok_or("Gameplay template needs dialogue")?,
-            )
-            .map_err(|e| e.to_string())?;
+        if !collection && contacts.len() > 1 {
+            return Err("Single-guide templates require at most one bound contact".into());
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        let mut placements = Vec::new();
+        for marker in contacts {
             let npc = marker.definition.as_ref().unwrap();
-            if npc != profile.profile().npc().as_str() {
-                return Err(format!(
-                    "NPC {} does not match the gameplay template contact {}",
-                    npc,
-                    profile.profile().npc().as_str()
-                ));
+            let id = theia_core::content::ContentId::new(npc).ok_or("Invalid NPC catalog ID")?;
+            if profile.contact(&id).is_none() || !seen.insert(id) {
+                return Err(format!("Unknown or duplicate NPC contact: {npc}"));
             }
-            Some(theia_network::authored_world::Contact {
+            placements.push(theia_network::authored_world::Contact {
                 npc: npc.clone(),
                 feet: marker.position,
-            })
+            });
+        }
+        placements.sort_by(|a, b| a.npc.cmp(&b.npc));
+        let (contact, contacts) = if collection {
+            (None, placements)
         } else {
-            None
+            (placements.pop(), vec![])
         };
         let routes: Vec<_> = zone
             .paths
@@ -105,6 +113,7 @@ impl Draft {
             areas,
             creature,
             contact,
+            contacts,
         })
     }
 
