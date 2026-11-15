@@ -36,6 +36,26 @@ These engineering choices are not claimed as verified Classic rules:
 
 ## Delivery and acceptance
 
+The bounded codec and encrypted worker integration now pass. Party mode binds an
+explicit compatibility suffix after Classic movement and optional chat. Requests
+contain no caller ID. Each private state includes the owner's membership/revision,
+last processed request outcome and a bounded roster of authenticated same-world
+display names, without account IDs, positions or stats. Membership and roster
+updates coalesce under reliable-channel pressure, reserving half its budget for
+gameplay. Invalid frames, foreign epochs, forged state uploads and invalid request
+sequences disconnect; ordinary policy refusals acknowledge without disconnect.
+The client retains the painted revision, allows one outstanding command, bounds
+initial state to eight seconds and request waits to five seconds, and discards
+queued clicks on timeout/admission. A late older acknowledgement cannot clear a
+newer pending command. The 60-second invitation expiry uses simulation ticks;
+client wait deadlines use elapsed wall time.
+
+Three actual encrypted Classic client workers verify private invitations,
+acceptance, non-leader refusal, promotion, disconnect succession and leave. The
+same flow passes with chat enabled. Admissions in this headless test use named
+trusted leases; this is not native OIDC-account/UI acceptance. Application launch
+and player-facing controls still need integration. Normal launches remain off.
+
 First implement and test the bounded pure authority and World lifecycle. Then
 bind authenticated names, encrypted request/state transport and standard Bevy UI.
 The unintegrated core is not a playable-party claim. Acceptance includes actual

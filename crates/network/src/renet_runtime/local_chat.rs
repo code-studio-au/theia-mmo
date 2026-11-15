@@ -196,8 +196,18 @@ pub(super) struct Driver {
     pending: Option<(u64, Instant)>,
 }
 impl Driver {
-    pub(super) fn new(client: crate::chat_client::Client, expected: [u8; 32]) -> Result<Self> {
-        if crate::chat::profile_identity(client.source_world, client.area) != expected {
+    pub(super) fn new(
+        client: crate::chat_client::Client,
+        expected: [u8; 32],
+        parties: bool,
+    ) -> Result<Self> {
+        let identity = crate::chat::profile_identity(client.source_world, client.area);
+        let identity = if parties {
+            crate::party_wire::profile_identity(identity)
+        } else {
+            identity
+        };
+        if identity != expected {
             return Err("Unbound chat transport profile".into());
         }
         Ok(Self {

@@ -546,6 +546,7 @@ async fn worker_fixture(classic: bool) {
             shutdown,
             identity,
             GameplayClient {
+                party: None,
                 chat: Some(crate::chat_client::Client::new(source, area, outgoing).unwrap()),
                 avatar_life: None,
                 public_attacks: None,

@@ -27,6 +27,8 @@ pub mod kinematic;
 pub mod material_profile;
 pub mod navigation;
 pub mod particle_content;
+pub mod party_client;
+pub mod party_wire;
 pub mod physics;
 pub mod player_identity_wire;
 pub mod player_life_wire;

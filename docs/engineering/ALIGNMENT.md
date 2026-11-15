@@ -1,3 +1,10 @@
+15 November party transport prerequisite acceptance:
+535 network tests pass (18 explicit skips), with actual three-worker encrypted
+Classic and chat flows, codec invalid inputs and timeout/backpressure checks.
+Format and strict all-target network/client/server Clippy pass. Continue to
+application opt-in, standard Bevy Party controls and native account acceptance.
+No OIDC, rendering or shared quest-credit claim for the headless tests.
+
 15 November party authority prerequisite acceptance:
 66 core and 525 network tests pass (18 explicit skips), including all-rate expiry,
 World death/respawn/retirement and bounded mixed commands. Format and strict

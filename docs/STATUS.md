@@ -1,3 +1,20 @@
+15 November 2026 — P4-11 encrypted party control prerequisite:
+Bounded request/private-state codecs validate identity, counts, roster names,
+invitation shape and monotonic revisions/acknowledgements. Authenticated named
+admissions opt into the World-owned authority; invalid uploads disconnect, normal
+policy refusals acknowledge, and latest private views coalesce under backpressure.
+The client worker retains painted revisions and bounds admission/request waits,
+discarding queued clicks on timeout. Late acknowledgements preserve newer pending
+commands. Three real encrypted Classic workers pass invite/accept, private state,
+non-leader refusal, promotion, disconnect succession and leave, also with chat
+enabled. These tests use trusted named admission leases, not OIDC or native UI.
+All 535 network library tests pass (18 explicit skips); format and denied-warning
+all-target Clippy pass for network/client/server. See build/party-{wire-tests,
+transport-tests,transport-network-tests,transport-fmt,transport-clippy,
+transport-app-clippy}.log. Headless Linux only; no rendering change. Application
+launch/UI adoption follows; normal launches and solo quest/reward behavior remain
+unchanged. Not yet a playable-party acceptance claim.
+
 15 November 2026 — P4-11 bounded party authority prerequisite:
 Pure five-member authority implements invitation/accept/decline/cancel, leave,
 leader removal/promotion, join-order succession, reserved slots, expiry, private

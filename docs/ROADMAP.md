@@ -1,3 +1,9 @@
+15 November 2026 — party encrypted transport prerequisite passes:
+Private state, named admission, bounded client waits and actual three-worker
+Classic/chat integration pass; see STATUS. Next: opt-in account launch integration,
+standard Party controls, UI ownership and real native two-account qualification.
+Shared escort/reward/quest behavior remains a later slice.
+
 15 November 2026 — party authority prerequisite passes:
 P4-11 bounded membership and World lifecycle pass core/network/format/strict Clippy
 checks; see STATUS. Continue with bounded encrypted party requests/private state,

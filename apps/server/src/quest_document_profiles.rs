@@ -306,6 +306,7 @@ async fn exact_metadata_does_not_admit_legacy_owner_world_or_gameplay_client() {
         stop,
         [1; 32],
         net::GameplayClient {
+            party: None,
             chat: None,
             avatar_life: None,
             public_attacks: None,

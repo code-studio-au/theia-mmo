@@ -268,6 +268,7 @@ impl Peer {
                 shutdown,
                 world,
                 net::GameplayClient {
+                    party: None,
                     chat: None,
                     avatar_life: public_mode,
                     public_attacks: None,

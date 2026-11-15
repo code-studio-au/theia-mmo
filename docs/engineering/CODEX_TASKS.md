@@ -2239,6 +2239,10 @@ For each task: inspect existing code first; write a short design and tests; impl
   pass 66 core/525 network tests (18 explicit skips), format and strict Clippy on
   15 November 2026. See ../PARTIES.md and ../STATUS.md. Transport and playable
   account/client integration remain required; no shared credit/escort claim.
+  Bounded encrypted request/private-state integration now passes 535 network
+  tests (18 explicit skips) and strict network/client/server Clippy. Three actual
+  Classic client workers exercise named leases and optional chat; OIDC/native UI
+  acceptance follows. See ../STATUS.md for exact evidence and limits.
 
 ### P4-12 — Chat/moderation
 - **Primary wave:** W7; work may begin earlier when prerequisites permit.

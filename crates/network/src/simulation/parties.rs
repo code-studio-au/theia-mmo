@@ -5,19 +5,7 @@ use theia_core::party::{self, Refusal, Request, View};
 const _: () = assert!(party::MAX_ACTORS == crate::wire::MAX_PLAYERS);
 
 pub(super) fn profile_identity(source: [u8; 32]) -> [u8; 32] {
-    let mut bytes = b"theia-session-party-foundation-v1\0".to_vec();
-    bytes.extend(source);
-    for value in [
-        party::MAX_ACTORS as u64,
-        party::MAX_MEMBERS as u64,
-        party::INVITATION_SECONDS,
-        party::REQUEST_BURST as u64,
-        party::REQUEST_WINDOW_SECONDS,
-        party::MAX_SEQUENCE_ADVANCE,
-    ] {
-        bytes.extend(value.to_le_bytes());
-    }
-    crate::terrain::sha256(&bytes)
+    crate::party_wire::profile_identity(source)
 }
 
 impl World {

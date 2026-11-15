@@ -15,7 +15,8 @@ fn worker_timeout_discards_queued_chat_without_disconnect_and_late_reply_preserv
     let area = Area::new(1).unwrap();
     let world = crate::chat::profile_identity([1; 32], area);
     let (send, receive) = mpsc::channel(4);
-    let mut driver = Driver::new(Client::new([1; 32], area, receive).unwrap(), world).unwrap();
+    let mut driver =
+        Driver::new(Client::new([1; 32], area, receive).unwrap(), world, false).unwrap();
     let welcome = Welcome {
         terrain_stream: true,
         id: 1,
@@ -111,7 +112,7 @@ fn worker_timeout_discards_queued_chat_without_disconnect_and_late_reply_preserv
     let (_, too_big) = mpsc::channel(5);
     assert!(Client::new([1; 32], area, too_big).is_err());
     let (_, wrong) = mpsc::channel(4);
-    assert!(Driver::new(Client::new([1; 32], area, wrong).unwrap(), [2; 32]).is_err());
+    assert!(Driver::new(Client::new([1; 32], area, wrong).unwrap(), [2; 32], false).is_err());
 }
 
 #[test]
@@ -120,7 +121,8 @@ fn client_queue_pressure_preserves_unsent_text_and_sequence_exhaustion_refuses_w
     let area = Area::new(1).unwrap();
     let world = crate::chat::profile_identity([1; 32], area);
     let (submit, outgoing) = mpsc::channel(4);
-    let mut driver = Driver::new(Client::new([1; 32], area, outgoing).unwrap(), world).unwrap();
+    let mut driver =
+        Driver::new(Client::new([1; 32], area, outgoing).unwrap(), world, false).unwrap();
     let welcome = Welcome {
         terrain_stream: true,
         id: 1,

@@ -48,6 +48,7 @@ fn mode(
     source: [u8; 32],
 ) -> GameplayClient {
     GameplayClient {
+        party: None,
         chat: None,
         avatar_life: None,
         public_attacks: None,

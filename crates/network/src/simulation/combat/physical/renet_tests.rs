@@ -281,6 +281,7 @@ impl Peer {
         });
         let client = tokio::spawn(async move {
             let result=net::run_client_gameplay(address,&token,inputs,publish.clone(),shutdown,session.identity,net::GameplayClient {
+                party: None,
                 chat: None,
                 avatar_life: None,
                 public_attacks: None,
