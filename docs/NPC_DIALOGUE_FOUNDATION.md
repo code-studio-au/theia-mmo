@@ -1,3 +1,10 @@
+15 November 2026 — editor travel inspection:
+Validated NPC quest cards now include escort marker/name/coordinates, run speed,
+wait range and Ready/conversation semantics. Collection cards resolve item names,
+area/position and delivery wording. Destination selection is read-only; changed
+catalogues invalidate old buttons and destination edits refresh details. Native
+starter content checks pass in editor-quest-travel-inspector-v2; see STATUS.
+
 14 November 2026 — starter escort and collection implementation:
 The explicit `development-gameplay-starter-economy.json` package adds named
 contacts, Rowan's ground compass collection/delivery, and Elowen's private escort

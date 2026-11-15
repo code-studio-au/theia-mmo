@@ -18,7 +18,12 @@ bindings and unsupported routes refuse with the quest/destination identified.
 The export report includes quest_travel entries with checked IDs and steering
 point counts. Native Delete/refusal/Undo/export proof passes in
 build/editor-escort-preflight-v1/qualification.json with original source bytes
-unchanged and no GPU diagnostics. Clearer inspector travel details are next.
+unchanged and no GPU diagnostics. Attributes → Quests now shows the escort's
+destination name/coordinates, speed, wait range and turn-in text. Expand the quest
+and use Select destination marker to select its Quest marker; use Frame to move
+the camera there. Collection cards show item, area, ground position and delivery
+wording. This does not change source/history or display a player's progress.
+Native proof: build/editor-quest-travel-inspector-v2/qualification.json.
 
 Two-contact continuation (14 November 2026, P3-11/12/15 / P5-17):
 `bash tools/edit_contacts.sh` opens the qualified local two-contact source in the

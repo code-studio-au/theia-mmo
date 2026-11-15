@@ -1,3 +1,15 @@
+15 November 2026 — P3-11/12 / P4-03 / P5-17 quest travel inspector:
+NPC quest cards now resolve escort destination names/coordinates, speed, follow
+range and conversation turn-in. Ground collection shows item, area, coordinates
+and delivery wording. Select destination marker uses ordinary editor selection;
+source/history remain unchanged. Stale context clicks refuse and destination edits
+refresh the cards. Native Linux RX 7900 XTX / RADV NAVI31 / Vulkan proof passes in
+build/editor-quest-travel-inspector-v2/qualification.json, with zero GPU diagnostics.
+Screenshots verify readable expanded escort/collection cards and destination
+selection. All 252 editor tests pass (13 environment skips), along with denied-warning
+Clippy and formatting; see quest-travel-inspector-editor-tests.log and
+quest-travel-inspector-clippy-final.log. This remains read-only content, not live quest progress.
+
 15 November 2026 — P4-03 / P3-11/12 / P5-17 escort export preflight:
 Editor and server now share supported-home, destination and grounded navmesh
 preparation. The editor rejects invalid NPC/destination bindings early and checks

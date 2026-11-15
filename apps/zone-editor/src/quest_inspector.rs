@@ -1,5 +1,5 @@
 //! Read-only NPC quest links from a validated gameplay snapshot, never player progress.
-use crate::{Session, particle_workspace::ZoneAppExt, theme, workspace};
+use crate::{EditorMode, Session, particle_workspace::ZoneAppExt, theme, workspace};
 use bevy::prelude::*;
 use bevy::{
     picking::hover::Hovered,
@@ -10,6 +10,7 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 use theia_core::{
+    content::ContentId,
     inventory,
     quests::{
         catalog::{Catalog, Completion},
@@ -17,13 +18,17 @@ use theia_core::{
     },
 };
 use theia_network::gameplay_bundle;
-use theia_zone::markers::{Marker, MarkerKind};
+use theia_zone::{
+    Zone,
+    markers::{Marker, MarkerKind},
+};
 
 pub(super) struct Context {
     pub path: PathBuf,
     generation: u64,
     catalog: Catalog,
     rewards: Option<item_rewards::Catalog>,
+    pickups: Vec<(ContentId, String)>,
     creature: theia_network::simulation::creatures::Definition,
 }
 impl Context {
@@ -44,6 +49,22 @@ impl Context {
                 item_rewards::Catalog::from_json(raw, &catalog, &items)
             })
             .transpose()?;
+        let pickups = if let Some(raw) = snapshot.profile("rewards") {
+            let items = inventory::Catalog::from_json(
+                snapshot.profile("items").ok_or("Missing item catalogue")?,
+            )?;
+            let rewards = theia_core::rewards::Catalog::from_json(raw, &items)?;
+            rewards.definitions().filter_map(|reward| {
+                let ground = reward.ground()?;
+                let names = reward.grants().iter().map(|grant| {
+                    format!("{} × {}", grant.count(), items.definition(grant.item()).expect("Validated item").name())
+                }).collect::<Vec<_>>().join(", ");
+                let [x,y,z] = ground.position.metres();
+                Some((ground.quest.clone(), format!("{names}\nArea: {}\nGround position: {x:.3}, {y:.3}, {z:.3} m\nAvailable after acceptance; collected through normal world interaction.", ground.area)))
+            }).collect()
+        } else {
+            Vec::new()
+        };
         static NEXT: AtomicU64 = AtomicU64::new(1);
         let creature = theia_network::simulation::creatures::Profile::from_json(
             snapshot
@@ -58,6 +79,7 @@ impl Context {
             generation: NEXT.fetch_add(1, Ordering::Relaxed),
             catalog,
             rewards,
+            pickups,
             creature,
         })
     }
@@ -132,9 +154,11 @@ impl Context {
                         rewards.push_str(&format!("\n{} × {name}", grant.count()));
                     }
                 }
-                Card {
+                let mut card = Card {
+                    quest: q.id().clone(),
                     title: q.title().into(),
                     role,
+                    destination: None,
                     details: vec![
                         ("Description".into(), q.description().into()),
                         ("Requirements".into(), requirements),
@@ -150,25 +174,95 @@ impl Context {
                             ),
                         ),
                     ],
+                };
+                if let Some(label) = q.ready_label() {
+                    card.details
+                        .insert(3, ("Ready to turn in".into(), label.into()));
                 }
+                let pickups = self
+                    .pickups
+                    .iter()
+                    .filter(|(quest, _)| quest == q.id())
+                    .map(|(_, text)| text.as_str())
+                    .collect::<Vec<_>>();
+                if !pickups.is_empty() {
+                    card.details
+                        .insert(3, ("Ground collection".into(), pickups.join("\n\n")));
+                }
+                card
             })
             .collect()
+    }
+
+    fn destination_markers(&self, npc: &str, zone: &Zone) -> Vec<Marker> {
+        let ids: Vec<_> = self
+            .catalog
+            .quests()
+            .filter(|q| q.giver().as_str() == npc || q.turn_in().as_str() == npc)
+            .flat_map(|q| q.stages().flat_map(|s| s.objectives()))
+            .filter_map(|o| o.follow().map(|p| p.destination))
+            .collect();
+        zone.markers
+            .iter()
+            .filter(|m| ids.contains(&m.id))
+            .cloned()
+            .collect()
+    }
+
+    fn cards_in(&self, npc: &str, zone: &Zone) -> Vec<Card> {
+        let mut cards = self.cards(npc);
+        for card in &mut cards {
+            let quest = self.catalog.quest(&card.quest).expect("Validated quest");
+            let Some(policy) = quest
+                .stages()
+                .flat_map(|s| s.objectives())
+                .find_map(|o| o.follow())
+            else {
+                continue;
+            };
+            let destination = zone
+                .markers
+                .iter()
+                .find(|m| m.id == policy.destination && m.kind == MarkerKind::Quest);
+            let endpoint = if let Some(marker) = destination {
+                let [x, y, z] = marker.position;
+                card.destination = Some(marker.id);
+                format!("{} (#{}): {x:.3}, {y:.3}, {z:.3} m", marker.name, marker.id)
+            } else {
+                format!(
+                    "Missing Quest marker #{} — export will be refused.",
+                    policy.destination
+                )
+            };
+            card.details.insert(3, ("Escort travel".into(), format!(
+                "Destination: {endpoint}\nSpeed: {:.1} m/s\nFollow range: {} m; waits outside range.\nNavmesh derives the route at export/startup; no intermediate guide points are required.\nArrival makes the quest ready; speak to the NPC to complete it.",
+                f64::from(policy.speed_millimetres_per_second)/1000., policy.max_distance_metres)));
+        }
+        cards
     }
 }
 #[derive(Debug, PartialEq)]
 struct Card {
+    quest: ContentId,
     title: String,
     role: String,
     details: Vec<(String, String)>,
+    destination: Option<u64>,
 }
 #[derive(Component, Default)]
 struct Root(Option<Key>);
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 struct Key {
     document: u64,
     marker: u64,
     npc: Option<String>,
     generation: u64,
+    destinations: Vec<Marker>,
+}
+#[derive(Component)]
+struct TravelLink {
+    key: Key,
+    destination: u64,
 }
 #[derive(Component)]
 struct Details;
@@ -196,7 +290,8 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
 pub(super) fn plugin(app: &mut App) {
     app.add_zone_systems(sync.after(crate::present))
         .add_observer(toggle)
-        .add_observer(choose);
+        .add_observer(choose)
+        .add_observer(select_destination);
 }
 fn selected(session: &Session) -> Option<&Marker> {
     if session.play.is_some() || session.palette.is_some() || session.path_draft.is_some() {
@@ -208,6 +303,21 @@ fn selected(session: &Session) -> Option<&Marker> {
         .markers
         .iter()
         .find(|m| Some(m.id) == session.marker_selected && m.kind == MarkerKind::Npc)
+}
+fn current_key(session: &Session) -> Option<Key> {
+    selected(session).map(|m| Key {
+        document: session.document_id,
+        marker: m.id,
+        npc: m.definition.clone(),
+        generation: session.quest_context.as_ref().map_or(0, |c| c.generation),
+        destinations: session
+            .quest_context
+            .as_ref()
+            .zip(m.definition.as_deref())
+            .map_or_else(Vec::new, |(c, npc)| {
+                c.destination_markers(npc, session.editor.zone())
+            }),
+    })
 }
 fn sync(
     mut commands: Commands,
@@ -221,16 +331,11 @@ fn sync(
         } else {
             Display::None
         };
-        let key = marker.map(|m| Key {
-            document: session.document_id,
-            marker: m.id,
-            npc: m.definition.clone(),
-            generation: session.quest_context.as_ref().map_or(0, |c| c.generation),
-        });
+        let key = current_key(&session);
         if root.0 == key {
             continue;
         }
-        root.0 = key;
+        root.0 = key.clone();
         commands.entity(entity).despawn_children();
         let Some(marker) = marker else {
             continue;
@@ -291,7 +396,7 @@ fn sync(
                 );
                 return;
             };
-            let cards = context.cards(npc);
+            let cards = context.cards_in(npc, session.editor.zone());
             if cards.is_empty() {
                 label(
                     root,
@@ -373,6 +478,24 @@ fn sync(
                             },
                         ))
                         .with_children(|body| {
+                            if let Some(destination) = card.destination {
+                                body.spawn((
+                                    TravelLink {
+                                        key: key.as_ref().expect("Selected NPC").clone(),
+                                        destination,
+                                    },
+                                    Button,
+                                    ActivateOnPress,
+                                    bevy::input_focus::tab_navigation::TabIndex(0),
+                                    Hovered::default(),
+                                    theme::button_node(),
+                                    BackgroundColor(theme::Variant::Default.background(false)),
+                                ))
+                                .with_child((
+                                    theme::label("Select destination marker", 12., theme::BODY),
+                                    Pickable::IGNORE,
+                                ));
+                            }
                             for (title, text) in &card.details {
                                 label(body, title, 11., theme::DISPLAY);
                                 label(body, text, 11., theme::BODY);
@@ -444,6 +567,32 @@ fn choose(
     }
 }
 
+fn select_destination(
+    event: On<Activate>,
+    buttons: Query<&TravelLink>,
+    mut session: ResMut<Session>,
+) {
+    let Ok(link) = buttons.get(event.entity) else {
+        return;
+    };
+    if workspace::busy(&session) || current_key(&session).as_ref() != Some(&link.key) {
+        return;
+    }
+    let Some(marker) = session
+        .editor
+        .zone()
+        .markers
+        .iter()
+        .find(|m| m.id == link.destination && m.kind == MarkerKind::Quest)
+    else {
+        return;
+    };
+    let name = marker.name.clone();
+    session.set_mode(EditorMode::Markers);
+    session.marker_selected = Some(link.destination);
+    session.status = format!("Selected quest destination: {name}");
+}
+
 #[derive(bevy::ecs::system::SystemParam)]
 #[allow(clippy::type_complexity)]
 pub(super) struct Report<'w, 's> {
@@ -453,10 +602,11 @@ pub(super) struct Report<'w, 's> {
         (
             Option<&'static Toggle>,
             Has<Choose>,
+            Option<&'static TravelLink>,
             &'static ComputedNode,
             &'static bevy::ui::UiGlobalTransform,
         ),
-        Or<(With<Toggle>, With<Choose>)>,
+        Or<(With<Toggle>, With<Choose>, With<TravelLink>)>,
     >,
     details: Query<'w, 's, &'static Node, With<Details>>,
 }
@@ -465,15 +615,17 @@ impl Report<'_, '_> {
         let Some(marker) = selected(session) else {
             return serde_json::Value::Null;
         };
-        let controls: Vec<_> = self.buttons.iter().map(|(toggle, choose, node, transform)| {
+        let controls: Vec<_> = self.buttons.iter().map(|(toggle, choose, travel, node, transform)| {
             let factor = node.inverse_scale_factor() * scale;
-            serde_json::json!({"action": if choose { "Choose gameplay" } else { "Toggle quest" },
+            serde_json::json!({"action": if choose { "Choose gameplay" } else if travel.is_some() { "Select destination" } else { "Toggle quest" },
+                "destination": travel.map(|t| t.destination),
                 "title": toggle.map(|t| &t.1),
                 "expanded": toggle.is_some_and(|t| self.details.get(t.0).is_ok_and(|n| n.display != Display::None)),
                 "centre":(transform.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()})
         }).collect();
         serde_json::json!({"marker": marker.id, "npc":marker.definition,
-            "template": session.quest_context.as_ref().map(|c| &c.path), "controls":controls})
+            "template": session.quest_context.as_ref().map(|c| &c.path), "controls":controls,
+            "cards":session.quest_context.as_ref().zip(marker.definition.as_deref()).map(|(c,npc)| c.cards_in(npc, session.editor.zone()).iter().map(|card| serde_json::json!({"title":card.title,"details":card.details,"destination":card.destination})).collect::<Vec<_>>())})
     }
 }
 
@@ -485,6 +637,155 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../content")
             .join(name)
+    }
+    fn travel_zone() -> Zone {
+        Zone {
+            schema: 4,
+            markers: vec![
+                Marker {
+                    id: 1004,
+                    name: "Elowen".into(),
+                    kind: MarkerKind::Npc,
+                    position: [2., 0.03, 0.],
+                    yaw_degrees: 0.,
+                    radius_metres: 1.,
+                    definition: Some("theia.dev.ranger".into()),
+                },
+                Marker {
+                    id: 1202,
+                    name: "Ancient tree".into(),
+                    kind: MarkerKind::Quest,
+                    position: [20., 0.03, 10.],
+                    yaw_degrees: 0.,
+                    radius_metres: 1.,
+                    definition: None,
+                },
+            ],
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn travel_cards_resolve_destination_speed_collection_and_delivery_without_mutation() {
+        let context =
+            Context::load(&template("development-gameplay-starter-economy.json")).unwrap();
+        let mut zone = travel_zone();
+        let original = zone.clone();
+        let cards = context.cards_in("theia.dev.ranger", &zone);
+        let follow = cards.iter().find(|c| c.destination == Some(1202)).unwrap();
+        let travel = &follow
+            .details
+            .iter()
+            .find(|(k, _)| k == "Escort travel")
+            .unwrap()
+            .1;
+        assert!(
+            travel.contains("Ancient tree")
+                && travel.contains("7.0 m/s")
+                && travel.contains("10 m")
+        );
+        assert!(
+            follow
+                .details
+                .iter()
+                .any(|(k, v)| k == "Ready to turn in" && v.contains("Ranger Elowen"))
+        );
+        let cards = context.cards_in("theia.dev.villager", &zone);
+        assert!(
+            cards
+                .iter()
+                .any(|c| c.details.iter().any(|(k, v)| k == "Ground collection"
+                    && v.contains("Lost Compass")
+                    && v.contains("Northern Meadow")))
+        );
+        assert!(cards.iter().any(|c| {
+            c.details
+                .iter()
+                .any(|(k, v)| k == "Ready to turn in" && v == "Deliver Lost Compass to Rowan")
+        }));
+        assert_eq!(zone, original);
+        zone.markers.pop();
+        let cards = context.cards_in("theia.dev.ranger", &zone);
+        let follow = cards
+            .iter()
+            .find(|c| c.quest.as_str() == "theia.dev.quest-follow-ranger")
+            .unwrap();
+        assert!(follow.destination.is_none());
+        assert!(
+            follow
+                .details
+                .iter()
+                .any(|(_, v)| v.contains("Missing Quest marker #1202"))
+        );
+    }
+
+    #[test]
+    fn destination_selection_guards_stale_context_and_preserves_zone_history() {
+        let mut app = fixture();
+        let zone = travel_zone();
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            "unused.zone.json".into(),
+            Some(zone.clone()),
+        );
+        session.marker_selected = Some(1004);
+        session.quest_context =
+            Some(Context::load(&template("development-gameplay-starter-economy.json")).unwrap());
+        app.insert_resource(session);
+        app.update();
+        let button = app
+            .world_mut()
+            .query_filtered::<Entity, With<TravelLink>>()
+            .single(app.world())
+            .unwrap();
+        // Changing the loaded catalogue invalidates old links even before sync.
+        app.world_mut().resource_mut::<Session>().quest_context =
+            Some(Context::load(&template("development-gameplay-starter-economy.json")).unwrap());
+        app.world_mut().trigger(Activate { entity: button });
+        assert_eq!(
+            app.world().resource::<Session>().marker_selected,
+            Some(1004)
+        );
+        app.update();
+        let button = app
+            .world_mut()
+            .query_filtered::<Entity, With<TravelLink>>()
+            .single(app.world())
+            .unwrap();
+        app.world_mut().trigger(Activate { entity: button });
+        let session = app.world().resource::<Session>();
+        assert_eq!(session.marker_selected, Some(1202));
+        assert!(session.marker_mode);
+        assert_eq!(session.editor.zone(), &zone);
+        assert_eq!(session.editor.history(), (0, 0));
+        assert_eq!(session.editor.revision(), 0);
+        // A destination edited while inspecting its NPC must invalidate the card,
+        // without requiring a selection change or catalogue reload.
+        {
+            let mut session = app.world_mut().resource_mut::<Session>();
+            session.marker_selected = Some(1004);
+        }
+        app.update();
+        {
+            let mut session = app.world_mut().resource_mut::<Session>();
+            let mut marker = session.editor.zone().markers[1].clone();
+            marker.name = "Moved destination".into();
+            marker.position[0] = 24.;
+            session
+                .editor
+                .execute(Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![Edit::PutMarker { marker }],
+                })
+                .unwrap();
+        }
+        app.update();
+        assert!(
+            app.world_mut()
+                .query::<&Text>()
+                .iter(app.world())
+                .any(|t| t.0.contains("Moved destination (#1202): 24.000"))
+        );
     }
     #[test]
     fn validated_catalogue_resolves_roles_requirements_stages_and_fixed_rewards() {
@@ -510,6 +811,7 @@ mod tests {
             creature: context.creature.clone(),
             catalog: Catalog::from_json(&serde_json::to_vec(&split).unwrap()).unwrap(),
             rewards: None,
+            pickups: Vec::new(),
             path: PathBuf::new(),
             generation: 1,
         };

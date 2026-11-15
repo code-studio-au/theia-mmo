@@ -1,3 +1,16 @@
+15 November 2026 quest travel inspector acceptance:
+Starter escort/collection cards and ordinary destination selection pass on the
+Linux RX 7900 XTX/Vulkan native editor. Zone bytes/history remain unchanged and
+GPU diagnostics are empty; see editor-quest-travel-inspector-v2 and STATUS.
+
+P3-11/12 / P4-03 / P5-17, 15 November 2026 — quest travel inspection:
+Prerequisites: validated gameplay snapshots, read-only NPC quest cards and checked
+escort exports. Show authored destinations, speed/range, collection locations and
+Ready wording; select the destination through an ordinary inspector button.
+Acceptance: correct starter content, stale context refusal, destination changes
+refresh cards, no source/history mutation and usable native scrolling/selection.
+This is content inspection, not quest editing or live character progress.
+
 P4-03 / P3-11/12 / P5-17, 15 November 2026 — escort export preflight:
 Prerequisites: qualified destination-only escort runtime, immutable authored world/
 navigation, contact catalogue bindings and atomic population export staging.

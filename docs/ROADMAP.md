@@ -1,3 +1,9 @@
+15 November 2026 — NPC travel inspection implemented:
+The inspector now exposes escort destination/speed/range, ground collection and
+Ready wording, with direct selection of the destination marker. Native input and
+source-preservation checks pass; see STATUS. Next: continue runtime/editor
+integration and examine moving NPC presentation against the smooth player clock.
+
 15 November 2026 — escort editor validation passes:
 Population export checks exact NPC/destination references and the same supported,
 collision-checked navmesh route as server startup before publication. Native
