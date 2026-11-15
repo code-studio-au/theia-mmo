@@ -1,3 +1,18 @@
+15 November 2026 — P4-03 / P5-17 named account AI road selection:
+The account export dialog has Previous road, Next road and Manual play controls,
+plus the authored road name. Cycling visits Road guides in stable ID order and
+includes the blank/manual choice; numeric entry remains available. Access-road
+selection is independent. New dialogs remain manual; busy, completed, stale and
+non-account drafts ignore these controls. All 259 editor tests pass (16 explicit
+skips); format and denied-warning Clippy pass in named-road-editor-tests.log and
+named-road-clippy.log. Native named selection, invalid ID refusal, account
+create/select, compass F7 out/return, all three quest completions, Stop and exact
+PostgreSQL restart retention pass in build/editor-named-road-account-v1/
+qualification.json. Both fresh and resumed clients actually render 3440x1440;
+source/frozen profiles remain unchanged, journal 9 / XP 75 / bag revision 2 retain,
+and owned services close. Linux RX 7900 XTX / RADV NAVI31 / Vulkan, zero GPU
+diagnostics; no Windows execution claim. The selected-road screenshot was inspected.
+
 15 November 2026 — P3-11/12 / P4-03 / P5-17 collection location guides:
 Inspecting an NPC now shows amber pickup references for its collection quests.
 The checked authored positions use one shared cube mesh/material and a fixed

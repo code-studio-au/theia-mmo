@@ -1,3 +1,8 @@
+Named account roads, 15 November 2026 (P4-03 / P5-17):
+Previous/next/manual road choices retain explicit manual startup and checked paused
+routes. Full native account quests/Stop/restart and exact viewport sizing pass.
+Next P3-07/P4-03 check: population roaming progress after combat interruption.
+
 Collection guides, 15 November 2026 (P3-11/12 / P4-03 / P5-17):
 Read-only, non-colliding/pickable authoring references now accompany collection
 camera focus; native and far-origin/asset-lifecycle checks pass. Next account

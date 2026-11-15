@@ -106,6 +106,9 @@ type DialogTexts<'w, 's> = Query<
 pub(super) enum Control {
     Export,
     Close,
+    PreviousTestRoad,
+    NextTestRoad,
+    ManualTestTravel,
 }
 
 pub(super) fn setup(mut commands: Commands) {
@@ -193,6 +196,40 @@ pub(super) fn setup(mut commands: Commands) {
                                     TextLayout::no_wrap(),
                                     theme::text_cursor(),
                                 ));
+                                if index == 12 {
+                                    row.spawn(Node {
+                                        flex_wrap: FlexWrap::Wrap,
+                                        column_gap: px(6),
+                                        row_gap: px(4),
+                                        margin: UiRect::top(px(4)),
+                                        ..default()
+                                    })
+                                    .with_children(
+                                        |choices| {
+                                            for (control, label) in [
+                                                (Control::PreviousTestRoad, "Previous road"),
+                                                (Control::NextTestRoad, "Next road"),
+                                                (Control::ManualTestTravel, "Manual play"),
+                                            ] {
+                                                choices
+                                                    .spawn((
+                                                        control,
+                                                        Button,
+                                                        Hovered::default(),
+                                                        theme::button_node(),
+                                                        BackgroundColor(
+                                                            theme::Variant::Default
+                                                                .background(false),
+                                                        ),
+                                                    ))
+                                                    .with_child((
+                                                        theme::label(label, 12., theme::BODY),
+                                                        Pickable::IGNORE,
+                                                    ));
+                                            }
+                                        },
+                                    );
+                                }
                             });
                         }
                         body.spawn((Message, theme::label("", 12., theme::MUTED)));
@@ -568,7 +605,7 @@ pub(super) fn finish(
     windows: Query<&Window>,
     mut session: ResMut<Session>,
     mut roots: Query<&mut Node, With<Root>>,
-    fields: Query<(Entity, &Field, &mut EditableText)>,
+    mut fields: Query<(Entity, &Field, &mut EditableText)>,
     mut texts: DialogTexts,
     mut rows: Query<(&FieldRow, &mut Node), Without<Root>>,
     mut focus: ResMut<InputFocus>,
@@ -678,6 +715,34 @@ pub(super) fn finish(
     }
     let focused = windows.single().is_ok_and(|window| window.focused);
     let action = draft.action.take();
+    if focused
+        && !draft.finished
+        && draft.task.is_none()
+        && draft.mode == Mode::AccountPopulationTest
+        && matches!(
+            action,
+            Some(Control::PreviousTestRoad | Control::NextTestRoad | Control::ManualTestTravel)
+        )
+    {
+        if session.editor.revision() != draft.revision {
+            draft.message = "Zone changed; close and reopen export.".into();
+        } else if let Some((entity, _, mut field)) = fields.iter_mut().find(|(_, f, _)| f.0 == 12) {
+            let choice = if matches!(action, Some(Control::ManualTestTravel)) {
+                None
+            } else {
+                account_test_route::cycle(
+                    session.editor.zone(),
+                    &field.value().to_string(),
+                    matches!(action, Some(Control::NextTestRoad)),
+                )
+            };
+            field
+                .editor_mut()
+                .set_text(&choice.map_or_else(String::new, |id| id.to_string()));
+            focus.set(entity, FocusCause::Navigated);
+            draft.message.clear();
+        }
+    }
     if focused
         && draft.task.is_none()
         && (matches!(action, Some(Control::Close)) || keys.just_pressed(KeyCode::Escape))
@@ -948,6 +1013,15 @@ pub(super) fn finish(
                 "Existing chunk world folder"
             }
             .into();
+        } else if caption.is_some_and(|caption| caption.0 == 12) {
+            let selected = fields
+                .iter()
+                .find(|(_, f, _)| f.0 == 12)
+                .map_or_else(String::new, |(_, _, text)| text.value().to_string());
+            **text = format!(
+                "AI test road (optional; starts paused, F7)\n{}",
+                account_test_route::choice_label(session.editor.zone(), &selected)
+            );
         }
     }
     session.export_dialog = Some(draft);
@@ -998,6 +1072,8 @@ impl Report<'_, '_> {
                 "centre":(transform.affine().translation * factor).to_array(),"size":(node.size()*factor).to_array()})
         }).collect();
         serde_json::json!({"fields":fields,"buttons":buttons,"message":draft.message,
+            "test_road":self.fields.iter().find(|(_, f, _, _, _)| f.0 == 12)
+                .map(|(_, _, text, _, _)| account_test_route::choice_label(session.editor.zone(), &text.value().to_string())),
             "busy":draft.task.is_some(),"finished":draft.finished})
     }
 }
@@ -1222,6 +1298,15 @@ mod tests {
             schema: 12,
             ..default()
         };
+        for (id, name) in [(1203, "Compass trail"), (1201, "Access road")] {
+            zone.paths.push(theia_zone::paths::GuidePath {
+                id,
+                name: name.into(),
+                kind: theia_zone::paths::PathKind::Road,
+                width_metres: 1.,
+                points: vec![[0.; 3], [8., 0., 0.]],
+            });
+        }
         zone.test_players
             .push(theia_zone::test_players::TestPlayer {
                 id: 1,
@@ -1293,6 +1378,68 @@ mod tests {
                 .resource_mut::<ButtonInput<KeyCode>>()
                 .reset_all();
         }
+        let road_value = |app: &mut App| {
+            app.world_mut()
+                .query::<(&Field, &EditableText)>()
+                .iter(app.world())
+                .find(|(f, _)| f.0 == 12)
+                .unwrap()
+                .1
+                .value()
+                .to_string()
+        };
+        assert_eq!(road_value(&mut app), "");
+        for (action, expected) in [
+            (Control::NextTestRoad, "1201"),
+            (Control::NextTestRoad, "1203"),
+            (Control::NextTestRoad, ""),
+            (Control::PreviousTestRoad, "1203"),
+            (Control::PreviousTestRoad, "1201"),
+            (Control::ManualTestTravel, ""),
+        ] {
+            app.world_mut()
+                .resource_mut::<Session>()
+                .export_dialog
+                .as_mut()
+                .unwrap()
+                .action = Some(action);
+            app.update();
+            assert_eq!(road_value(&mut app), expected);
+            assert!(
+                app.world_mut()
+                    .query::<(&Field, &EditableText)>()
+                    .iter(app.world())
+                    .any(|(f, t)| f.0 == 11 && t.value() == "1201")
+            );
+            assert!(
+                app.world_mut()
+                    .query::<(&FieldCaption, &Text)>()
+                    .iter(app.world())
+                    .any(|(f, t)| f.0 == 12
+                        && t.0
+                            .contains(&account_test_route::choice_label(&zone, expected)))
+            );
+        }
+        // Controls cannot change a completed, busy or stale export draft.
+        for guard in 0..3 {
+            {
+                let mut session = app.world_mut().resource_mut::<Session>();
+                let draft = session.export_dialog.as_mut().unwrap();
+                match guard {
+                    0 => draft.finished = true,
+                    1 => draft.task = Some(IoTaskPool::get().spawn(std::future::pending())),
+                    _ => draft.revision += 1,
+                }
+                draft.action = Some(Control::NextTestRoad);
+            }
+            app.update();
+            assert_eq!(road_value(&mut app), "");
+            let mut session = app.world_mut().resource_mut::<Session>();
+            let draft = session.export_dialog.as_mut().unwrap();
+            draft.finished = false;
+            draft.task = None;
+            draft.revision = 0;
+        }
         let mut fields = app.world_mut().query::<(&Field, &mut EditableText)>();
         for (field, mut text) in fields.iter_mut(app.world_mut()) {
             if field.0 == 10 {
@@ -1324,6 +1471,14 @@ mod tests {
             .resource_mut::<workspace::Requests>()
             .population_playtest = true;
         app.update();
+        app.world_mut()
+            .resource_mut::<Session>()
+            .export_dialog
+            .as_mut()
+            .unwrap()
+            .action = Some(Control::NextTestRoad);
+        app.update();
+        assert_eq!(road_value(&mut app), "");
         assert!(
             rows.iter(app.world())
                 .all(|(row, n)| (n.display == Display::Flex) == (row.0 <= 7 || row.0 == 11))

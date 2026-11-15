@@ -1,3 +1,9 @@
+15 November 2026 — named account AI roads pass:
+Manual/default, previous/next named road choices, export, full quest travel and
+PostgreSQL restart pass in the native editor/account workflow. Both client runs
+render at exactly 3440x1440. Next: verify interrupted population roaming resumes
+from the captured return anchor before expanding authored patrol assignments.
+
 15 November 2026 — collection location guides pass:
 The NPC inspector now frames and visibly marks authored collection locations using
 bounded shared standard meshes. Native deselection and source preservation pass.

@@ -15,6 +15,39 @@ pub(super) fn road(zone: &Zone, id: u64) -> Result<&GuidePath, String> {
     Ok(road)
 }
 
+/// The manual choice participates in cycling, but is never replaced on open.
+pub(super) fn cycle(zone: &Zone, current: &str, forward: bool) -> Option<u64> {
+    let mut ids: Vec<_> = zone
+        .paths
+        .iter()
+        .filter(|p| p.kind == PathKind::Road)
+        .map(|p| p.id)
+        .collect();
+    ids.sort_unstable();
+    ids.dedup();
+    let choices: Vec<_> = std::iter::once(None)
+        .chain(ids.into_iter().map(Some))
+        .collect();
+    let current = current.trim().parse().ok();
+    let index = choices.iter().position(|id| *id == current).unwrap_or(0);
+    choices[if forward {
+        (index + 1) % choices.len()
+    } else {
+        (index + choices.len() - 1) % choices.len()
+    }]
+}
+
+pub(super) fn choice_label(zone: &Zone, current: &str) -> String {
+    let value = current.trim();
+    if value.is_empty() {
+        return "Manual play".into();
+    }
+    match value.parse::<u64>().ok().and_then(|id| road(zone, id).ok()) {
+        Some(path) => format!("{} (#{})", path.name, path.id),
+        None => "No matching saved Road guide".into(),
+    }
+}
+
 pub(super) fn prepare(
     zone: &Zone,
     id: u64,
@@ -42,6 +75,43 @@ pub(super) fn prepare(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn named_choices_cycle_roads_in_id_order_with_explicit_manual_and_invalid_entry_recovery() {
+        let mut zone = Zone {
+            schema: 3,
+            ..Default::default()
+        };
+        for (id, kind) in [
+            (12, PathKind::Road),
+            (3, PathKind::Patrol),
+            (7, PathKind::Road),
+        ] {
+            zone.paths.push(GuidePath {
+                id,
+                name: format!("Guide {id}"),
+                kind,
+                width_metres: 1.,
+                points: vec![[0.; 3], [8., 0., 0.]],
+            });
+        }
+        let original = zone.clone();
+        assert_eq!(cycle(&zone, "", true), Some(7));
+        assert_eq!(cycle(&zone, "7", true), Some(12));
+        assert_eq!(cycle(&zone, "12", true), None);
+        assert_eq!(cycle(&zone, "", false), Some(12));
+        assert_eq!(cycle(&zone, "12", false), Some(7));
+        assert_eq!(cycle(&zone, "7", false), None);
+        for unknown in ["3", "999", "text", "0"] {
+            assert_eq!(cycle(&zone, unknown, true), Some(7));
+            assert_eq!(cycle(&zone, unknown, false), Some(12));
+            assert_eq!(choice_label(&zone, unknown), "No matching saved Road guide");
+        }
+        assert_eq!(choice_label(&zone, " 12 "), "Guide 12 (#12)");
+        assert_eq!(choice_label(&zone, ""), "Manual play");
+        assert_eq!(zone, original);
+        assert_eq!(cycle(&Zone::default(), "", true), None);
+        assert_eq!(cycle(&Zone::default(), "", false), None);
+    }
     #[test]
     fn test_travel_requires_an_explicit_unique_valid_road() {
         let mut zone = Zone {

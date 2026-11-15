@@ -1,3 +1,11 @@
+Named AI road choices (15 November 2026): the account playtest dialog now offers
+Previous road, Next road and Manual play alongside the numeric AI test road field.
+The selected authored name appears above the field. Choose “Rowan to northern
+meadow collection test” for compass testing; its ID remains 1203. Access road 1201
+is independent. Opening the dialog starts with Manual play, and choosing a road
+still exports a paused F7 route after the same navigation/collision preflight.
+Native full Start/play/Stop/restart evidence: editor-named-road-account-v1 in build/.
+
 Collection location guides (15 November 2026): selecting an NPC shows small amber
 cross/beacon references for its collection quests. Use View collection location
 in the expanded quest card to frame the point. Guides clear with selection,

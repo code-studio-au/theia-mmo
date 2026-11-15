@@ -154,7 +154,27 @@ def run(args):
                         click(next(b['centre'] for b in state()['export_dialog']['buttons'] if b['action']=='Export'))
                         wait(lambda: 'AI test road guide ID is absent' in state()['export_dialog']['message'])
                         assert not destination.exists() and not state()['network_playtest']['active']
-                        test_road(1203)
+                        def choose_road(action, expected):
+                            for _ in range(40):
+                                value = state()
+                                button = next(b for b in value['export_dialog']['buttons'] if b['action']==action)
+                                pane = next(p for p in value['scroll_panes'] if p['scope']=='Dialog' and min(p['size'])>0)
+                                top = pane['centre'][1]-pane['size'][1]/2
+                                bottom = pane['centre'][1]+pane['size'][1]/2
+                                if top+20 < button['centre'][1] < bottom-20:
+                                    click(button['centre']); break
+                                desktop.move(window, pane['centre'], 1); fresh()
+                                wheel = 5 if button['centre'][1] >= bottom-20 else 4
+                                desktop.button(wheel, True); desktop.button(wheel, False); fresh()
+                            else: raise AssertionError('Cannot reveal named road controls')
+                            wait(lambda: next(f['text'] for f in state()['export_dialog']['fields'] if f['index']==12)==expected)
+                        choose_road('ManualTestTravel', '')
+                        assert state()['export_dialog']['test_road']=='Manual play'
+                        choose_road('NextTestRoad', '1201')
+                        choose_road('NextTestRoad', '1203')
+                        choose_road('PreviousTestRoad', '1201')
+                        choose_road('NextTestRoad', '1203')
+                        assert 'Rowan to northern meadow' in state()['export_dialog']['test_road']
                         desktop.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')),30)
                         report.with_suffix('.png').rename(folder/'selected-ai-road.png')
                     click(next(b['centre'] for b in state()['export_dialog']['buttons'] if b['action']=='Export'))
@@ -193,6 +213,8 @@ def run(args):
                         targets_ready = (args.quest_travel and resumed) or len(value.get('combat_targets') or [])==5
                         return value if value.get('connected') and targets_ready and value.get('inventory_bag') and (value.get('minimap') or {}).get('known_pixels',0)>0 else None
                     observed = wait(initial_gameplay, 90)
+                    if args.quest_travel:
+                        assert observed['window'][:2] == [3440, 1440], observed['window']
                     warm = time.monotonic()
                     wait(lambda: gameplay() if time.monotonic()-warm>=10 else None, 20)
                     quest_id = 'theia.dev.quest-wolf-pelts'

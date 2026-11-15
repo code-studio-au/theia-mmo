@@ -1,3 +1,25 @@
+15 November named road acceptance:
+Native previous/next/manual selection passes through actual account export,
+quest travel and durable restart, with exact 3440x1440 client viewports. All 259
+editor tests and denied-warning Clippy pass; details and limits in STATUS.
+
+P3-07 / P4-03, 15 November 2026 — interrupted population roaming:
+The pursuit policy returns to its captured interruption anchor. Verify population
+roaming preserves its current excursion/waypoint through combat instead of
+restarting at home and cutting across unvalidated corners. Keep respawn at home,
+existing pause/speed rules and no navigation or I/O inside fixed ticks. Acceptance:
+reproduce the wrong post-return direction, then capture/return plus actual terrain
+movement at 20/30/60 Hz resumes the interrupted segment and respawn resets progress.
+
+P4-03 / P5-17, 15 November 2026 — named account test-road choices:
+Prerequisites: optional account road field, paused checked route export and normal
+Start/Stop. Add Previous/Next road and Manual controls with authored road names.
+Only Road guides participate; preserve numeric entry and independent access-road
+selection. Opening remains manual, and stale/busy/non-account drafts cannot change
+the route through these controls. Acceptance: bounded cycling and name feedback,
+no source/history mutation, hidden controls in other modes, native named selection
+through actual account Start/play/Stop/restart and exact client viewport sizing.
+
 15 November collection guide acceptance:
 Bounded assets/no collision, far coordinates and lifecycle regressions pass. Native
 compass focus displays the guide; selecting Elowen removes it without camera or
