@@ -21,6 +21,8 @@ def run(args):
         raise ValueError('Resource cast qualification requires player life and at least 25 seconds')
     if args.observe_idle_travel and (not args.player_life or args.seconds < 25 or args.route):
         raise ValueError('Idle travel requires player life, at least 25 seconds and a stationary player')
+    if args.smooth_idle_travel and not args.observe_idle_travel:
+        raise ValueError('Smooth idle travel requires --observe-idle-travel')
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     common = ['--authored-world', str(args.world.resolve()), '--prediction', '--classic',
@@ -129,6 +131,14 @@ def run(args):
                 moved.update(t['entity'] for t in sample if math.dist(t['position'], initial[t['entity']]) > 1.)
             assert len(moved) == 5, f'Only {len(moved)} creatures moved over one metre'
             idle_travel = dict(moved=sorted(moved), samples=len(idle_samples))
+            if args.smooth_idle_travel:
+                motion = report['target_motion']
+                assert motion['enabled'] and motion['authority_updates'] > 100, motion
+                assert motion['blended_frames'] > 100, motion
+                assert motion['max_authority_lag_m'] < 1., motion
+                assert motion['max_presented_speed_mps'] <= motion['catch_up_speed_mps'] + .01, motion
+                assert visuals['transitions'][2] == 0, 'Walking patrol must not repeatedly select the run clip'
+                idle_travel['interpolation'] = motion
         if args.route is not None:
             reports = [json.loads(line)['test_controller'] for line in (out/'client.log').read_text().splitlines()
                        if line.startswith('{"test_controller":')]
@@ -165,6 +175,7 @@ if __name__ == '__main__':
     parser.add_argument('--combat-catalog', type=Path, default=Path('content/gameplay/development-abilities.json'), help='Exact combat catalogue to qualify, including an editor-exported snapshot')
     parser.add_argument('--player-life', action='store_true', help='Qualify standalone population health and public life state')
     parser.add_argument('--observe-idle-travel', action='store_true', help='Observe every authoritative creature moving over one metre while the player remains idle')
+    parser.add_argument('--smooth-idle-travel', action='store_true', help='Require blended patrol presentation, bounded lag and no run-clip switches')
     parser.add_argument('--route', type=Path, help='Optional checked route controller; no OS movement input')
     parser.add_argument('--seconds', type=float, default=25, help='Bounded native observation duration (1..300 seconds)')
     parser.add_argument('--players', type=Path, default=default_player_assets())

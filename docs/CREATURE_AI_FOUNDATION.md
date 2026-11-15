@@ -319,3 +319,9 @@ cap, explicit one-group export and existing static collision/navigation scope
 remain. Export reports the chosen guide and each actor's derived route counts.
 This does not activate the older singleton patrol embedded in gameplay templates,
 provide passive wandering, or establish streamed navigation or MMO capacity.
+
+Population presentation now uses the existing target interpolation for pursuing
+definitions. Creature gait follows authoritative position/tick deltas, while
+rendered facing/placement follows the interpolated track. This prevents render
+catch-up from selecting a running animation during a walking patrol. Native and
+regression evidence, including frame-stall limitations, is recorded in STATUS.

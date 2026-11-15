@@ -1,3 +1,10 @@
+15 November 2026 — population movement presentation passes:
+Authored populations now use target interpolation and authoritative gait samples.
+Native walking has zero run switches versus 121 in the baseline; client regressions
+and GPU checks pass. Loading/frame stalls remain a measured limit. Next P4-03 /
+P5-17: select saved Patrol guides by name from spawn-group inspector controls,
+retain numeric entry and shared Undo, and frame the assigned guide for inspection.
+
 15 November 2026 — authored population patrols pass:
 Saved Patrol guide assignment, strict export/runtime preparation, real 20/30/60 Hz
 out-and-back movement and native editor/client integration pass; see STATUS.

@@ -1495,7 +1495,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &mut app,
             patrol_binding
                 .as_ref()
-                .map(|(profile, _, _)| profile.speed_metres_per_second()),
+                .map(|(profile, _, _)| profile.speed_metres_per_second())
+                .or_else(|| {
+                    population
+                        .as_ref()
+                        .and_then(|p| p.definition().aggro())
+                        .map(|settings| settings.chase_speed.max(settings.return_speed).max(1.5))
+                }),
         );
     }
     if let Some((_, catalog)) = status_catalog {

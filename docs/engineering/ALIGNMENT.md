@@ -1,3 +1,26 @@
+15 November population movement presentation acceptance:
+All 278 client tests and strict Clippy pass. Native five-actor patrol records
+3,279 blended frames and zero run switches, versus 121 before the fix; maximum
+observed lag 0.7254 m and zero GPU diagnostics. STATUS records frame-stall and
+stationary-camera limits. Next: named patrol selection and guide framing in the
+spawn-group inspector, using the existing validated edit/history path.
+
+P3-07 / P4-03, 15 November 2026 — population movement presentation:
+Prerequisites: authored population patrol integration d67ed812 and native evidence
+of 121 run-clip transitions during a walking patrol. Client startup currently
+supplies interpolation speed only for singleton profiles. Enable the existing
+TargetMotion/RemotePawn path for pursuing population definitions, using checked
+movement speeds. Keep authority, interaction ranges, targeting and protocol
+unchanged. Add render diagnostics and exercise discrete 20/30/60 Hz observations,
+frame rates, stationary settling and fresh lives. Native acceptance repeats the
+same encrypted five-actor patrol: interpolation active, blended motion, bounded
+lag/speed and stable walk animation without repeated run switches. Preserve
+singleton and passive behavior; no FPS or Windows claim.
+The first native comparison enabled interpolation and reduced run transitions
+from 121 to five, but render stalls still selected running during catch-up. Extend
+gait observation to authoritative position/tick deltas, with walking/stall,
+running, stop and discontinuity tests; keep the existing movement track unchanged.
+
 15 November authored population patrol acceptance:
 Strict zone/history and runtime preflight checks pass, as do all five actual
 collision-driven patrols at 20/30/60 Hz. Native assignment/Undo/Redo/export and

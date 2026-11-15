@@ -1,3 +1,25 @@
+15 November 2026 — P3-07 / P4-03 population movement presentation:
+Pursuing population definitions now enable the existing TargetMotion/RemotePawn
+interpolation, using their configured chase/return speeds and current idle speed.
+Creature gait uses successive authoritative position/tick deltas rather than
+render catch-up velocity; loading/screenshot stalls therefore do not turn walking
+into running. Facing/placement remain interpolated, attack/death priorities remain,
+and discontinuities/fresh timelines reset locomotion observation. Authority,
+interaction ranges and protocol are unchanged. Passive stationary setup is unchanged.
+All 278 client tests pass (four explicit skips), including 20/30/60 Hz across
+20–144 FPS, stop settling, fresh lives, delayed bursts and gait under render stalls.
+Client build, format and denied-warning all-target Clippy pass; see build/
+population-motion-{tests,gait-tests,client-tests,build,clippy,fmt}.log.
+Native encrypted patrol comparison passes in build/population-motion-client-native-
+v2/qualification.json: five stable moving actors, 144 pose samples, 3,279 blended
+frames, maximum observed authority lag 0.7254 m, zero run-clip transitions (baseline
+121). No network errors, deaths or GPU diagnostics. Linux RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6 at 1920x1440; no Windows or fixed-FPS claim. The stationary
+observer camera stays at the player spawn: gait/pose results are native runtime
+metrics, not a close-up visual inspection of every wolf. Loading/screenshot frame
+stalls still produce bounded catch-up (peak 4.904 m/s / 1.226 m displacement in a
+clamped 250 ms frame); this fixes interpolation admission and gait, not render stalls.
+
 15 November 2026 — P3-07 / P4-03 / P5-17 authored population patrols:
 Zone schema 15 supports a saved Patrol guide on a spawn group. Inspector assignment
 sets roaming to zero in one undoable edit; blank clears it. Legacy behavior,

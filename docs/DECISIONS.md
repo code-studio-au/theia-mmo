@@ -1,3 +1,18 @@
+15 November 2026 — interpolate authored population target presentation:
+P3-07 / P4-03. Startup must opt pursuing population definitions into the existing
+TargetMotion/RemotePawn presentation path, just as singleton patrols already do.
+Use the maximum configured chase/return speed and current 1.5 m/s idle travel as
+the nominal speed for the existing catch-up policy. Passive stationary definitions
+remain unchanged. Do not derive authority, hit range or selection eligibility
+from interpolated poses; no protocol or fixed simulation changes. Expose blended
+frame counts alongside existing lag/speed diagnostics to verify actual native
+presentation rather than inferring it from actor movement alone.
+Choose creature gait from successive authoritative positions and server tick
+intervals, retaining the existing brief stop grace. Render catch-up speed after
+loading or screenshot stalls must not select a running clip for a walking actor.
+Facing/placement still use the interpolated path; attacks/death retain priority.
+Discontinuous positions and restarted timelines reset locomotion observation.
+
 15 November 2026 — explicit bounded population patrol guides:
 P3-07 / P4-03 / P5-17. Zone schema 15 adds an optional spawn-group Patrol guide
 reference. Older groups remain stationary or keep their existing roaming radius.

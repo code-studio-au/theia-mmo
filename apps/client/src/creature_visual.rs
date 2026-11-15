@@ -223,8 +223,31 @@ impl Pending {
 struct Locomotion {
     last_moved: f64,
     speed: f32,
+    authority: Option<(GlobalPosition, u64)>,
 }
 impl Locomotion {
+    fn sample(&mut self, position: GlobalPosition, tick: u64, hz: u32, now: f64) -> f32 {
+        let mut measured = 0.;
+        if let Some((previous, previous_tick)) = self.authority {
+            let a = previous.metres();
+            let b = position.metres();
+            let distance = (a[0] - b[0]).hypot(a[2] - b[2]);
+            if tick < previous_tick || distance > 64. || (a[1] - b[1]).abs() > 32. {
+                // Match the remote track's discontinuity policy: relocation
+                // and a restarted timeline are not running locomotion.
+                self.speed = 0.;
+            } else if tick > previous_tick {
+                measured = (distance * f64::from(hz.max(1)) / (tick - previous_tick) as f64) as f32;
+            }
+        }
+        if self
+            .authority
+            .is_none_or(|(_, previous_tick)| tick != previous_tick)
+        {
+            self.authority = Some((position, tick));
+        }
+        self.observe(measured, now)
+    }
     fn observe(&mut self, measured: f32, now: f64) -> f32 {
         if measured > 0.05 {
             self.last_moved = now;
@@ -567,7 +590,6 @@ fn update(world: &mut World) {
         };
         let previous = world.get::<Visual>(root).unwrap().previous.metres();
         let p = position.metres();
-        let seconds = world.resource::<Time>().delta_secs().max(1e-6);
         // Prefer the interpolated target's actual position; global deltas avoid origin-rebase spikes.
         let presented = world
             .get::<crate::targeting::motion::TargetMotion>(owner)
@@ -579,7 +601,15 @@ fn update(world: &mut World) {
             .get_mut::<Visual>(root)
             .unwrap()
             .locomotion
-            .observe(movement.length() / seconds, now);
+            // Catch-up after a render stall must not turn a walking creature
+            // into a runner. Gait follows authority's distance/tick interval;
+            // facing and placement still follow the interpolated track.
+            .sample(
+                position,
+                state.targeting.as_ref().map_or(0, |s| s.tick),
+                state.snapshot.as_ref().map_or(30, |s| s.tick_hz),
+                now,
+            );
         let windup = attack_cue(&state, key);
         let (clip, serial, rate) = if dead {
             (5, cue.unwrap().serial, 1.)
@@ -785,6 +815,34 @@ mod tests {
             target: key(id),
             position: position(),
             respawn_at: 100,
+        }
+    }
+    #[test]
+    fn authoritative_gait_ignores_render_stalls_but_tracks_running_stops_and_relocations() {
+        for hz in [20, 30, 60] {
+            let pose = |x| GlobalPosition::new([8_000_000. + x, 1., 8_000_000.]).unwrap();
+            let mut gait = Locomotion::default();
+            assert_eq!(gait.sample(pose(0.), 0, hz, 0.), 0.);
+            let mut now = 0.;
+            let mut tick = 0;
+            let mut x = 0.;
+            for frame in 0..120 {
+                now += [1. / 144., 1. / 30., 0.25, 1. / 120.][frame % 4];
+                tick = (now * f64::from(hz)).floor() as u64;
+                x = tick as f64 / f64::from(hz) * 1.5;
+                let speed = gait.sample(pose(x), tick, hz, now);
+                assert!(speed <= 1.501, "hz={hz} frame={frame} speed={speed}");
+            }
+            tick += u64::from(hz);
+            now += 1.;
+            x += 5.;
+            assert!((gait.sample(pose(x), tick, hz, now) - 5.).abs() < 0.001);
+            assert_eq!(gait.sample(pose(x), tick + u64::from(hz), hz, now + 1.), 0.);
+            assert_eq!(
+                gait.sample(pose(x + 100.), tick + u64::from(hz) + 1, hz, now + 1.1),
+                0.
+            );
+            assert_eq!(gait.sample(pose(0.), 0, hz, now + 1.2), 0.);
         }
     }
     #[test]
