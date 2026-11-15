@@ -1,3 +1,17 @@
+15 November 2026 — P2-02 authored scene readiness recovery:
+The two-account quest run exposed a client exit after two minutes of successful
+play: a later readiness retraction still compared against the original startup
+time. The client now bounds each uninterrupted pending interval, clearing the
+clock on readiness while retaining the existing 120-second startup/recovery limit.
+Synthetic-time coverage includes hours of successful play, repeated recovery and
+permanently stalled preparation. All 279 client tests pass (four explicit skips),
+along with build, format and denied-warning all-target Clippy; see build/
+quest-readiness-{client-tests,build,fmt,clippy}.log. Native offscreen GPU readiness,
+mesh removal/re-preparation and origin shift pass with 116 authored meshes and
+zero diagnostics in build/quest-readiness-native-gpu.log: Linux RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6. No Windows execution. Full two-account quest
+travel/restart is being rerun; its acceptance is separate from this fix.
+
 15 November 2026 — P4-03 / P5-17 named population patrol controls:
 Spawn-group Attributes now has Previous patrol, Next patrol, Clear patrol and
 View patrol. Cycling includes unassigned and only visits saved Patrol guides in

@@ -1,3 +1,10 @@
+15 November 2026 — bound continuous scene readiness waits:
+P2-02. Authored scene readiness may retract after successful initial loading.
+Timeouts measure each uninterrupted pending interval, not total client uptime.
+Readiness clears that interval; a later retraction starts a new bounded wait.
+Keep the existing startup/recovery timeout and actual CPU/GPU readiness gates;
+do not allow movement through an unprepared world or bypass missing assets.
+
 15 November 2026 — interpolate authored population target presentation:
 P3-07 / P4-03. Startup must opt pursuing population definitions into the existing
 TargetMotion/RemotePawn presentation path, just as singleton patrols already do.

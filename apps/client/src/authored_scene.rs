@@ -21,7 +21,7 @@ pub(crate) struct Scene {
     root: Option<Entity>,
     cpu_ready: bool,
     gpu_clear_frames: u32,
-    started: Instant,
+    waiting_since: Option<Instant>,
 }
 impl Scene {
     pub(crate) fn map_contains(&self, point: theia_core::coordinates::GlobalPosition) -> bool {
@@ -50,7 +50,7 @@ pub(crate) fn install(app: &mut App, store: Arc<Store>) {
         root: None,
         cpu_ready: false,
         gpu_clear_frames: 0,
-        started: Instant::now(),
+        waiting_since: Some(Instant::now()),
     })
     .add_systems(
         Update,
@@ -82,9 +82,7 @@ fn prepare(world: &mut World, scene: &mut Scene) -> Result<(), String> {
     if let Some(LoadState::Failed(error)) = server.get_load_state(asset.id()) {
         return Err(error.to_string());
     }
-    if !scene.ready() && scene.started.elapsed().as_secs() > 120 {
-        return Err("Scene dependencies or GPU preparation timed out".into());
-    }
+    readiness_deadline(scene.ready(), &mut scene.waiting_since, Instant::now())?;
     if !server.is_loaded_with_dependencies(asset.id()) {
         scene.cpu_ready = false;
         return Ok(());
@@ -175,6 +173,25 @@ fn prepare(world: &mut World, scene: &mut Scene) -> Result<(), String> {
     Ok(())
 }
 
+// Readiness can retract after loading (for example while GPU assets prepare).
+// Bound each uninterrupted wait, not the total lifetime of a playable scene.
+fn readiness_deadline(
+    ready: bool,
+    waiting_since: &mut Option<Instant>,
+    now: Instant,
+) -> Result<(), String> {
+    if ready {
+        *waiting_since = None;
+    } else if now
+        .duration_since(*waiting_since.get_or_insert(now))
+        .as_secs()
+        > 120
+    {
+        return Err("Scene dependencies or GPU preparation timed out".into());
+    }
+    Ok(())
+}
+
 pub(crate) struct ReadinessPlugin;
 impl Plugin for ReadinessPlugin {
     fn build(&self, app: &mut App) {
@@ -234,6 +251,23 @@ fn observe(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn readiness_timeout_bounds_startup_and_recovery_instead_of_scene_age() {
+        use std::time::Duration;
+        let start = Instant::now();
+        let at = |seconds| start + Duration::from_secs(seconds);
+        let mut waiting = Some(start);
+        assert!(readiness_deadline(false, &mut waiting, at(121)).is_err());
+
+        // A scene that loaded successfully may need to prepare again hours later.
+        assert!(readiness_deadline(true, &mut waiting, at(122)).is_ok());
+        assert!(readiness_deadline(false, &mut waiting, at(7200)).is_ok());
+        assert!(readiness_deadline(false, &mut waiting, at(7319)).is_ok());
+        assert!(readiness_deadline(true, &mut waiting, at(7320)).is_ok());
+        assert!(readiness_deadline(false, &mut waiting, at(14400)).is_ok());
+        // Recovery is still bounded; repeated checks must not extend its deadline.
+        assert!(readiness_deadline(false, &mut waiting, at(14521)).is_err());
+    }
     #[test]
     #[ignore = "requires THEIA_AUTHORED_WORLD, offscreen Vulkan GPU and optional THEIA_AUTHORED_CAPTURE"]
     fn actual_authored_gpu_readiness_without_window() {
