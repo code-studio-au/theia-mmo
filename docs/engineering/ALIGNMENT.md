@@ -1,3 +1,17 @@
+15 November collection guide acceptance:
+Bounded assets/no collision, far coordinates and lifecycle regressions pass. Native
+compass focus displays the guide; selecting Elowen removes it without camera or
+source/history changes. See STATUS for screenshots, measurements and platform scope.
+
+P3-11/12 / P4-03 / P5-17, 15 November 2026 — collection location guides:
+Prerequisites: checked collection focus and immutable quest/reward context. Show
+small non-pickable, non-colliding standard mesh guides for the selected NPC's
+collection quests. Bound the pool by the validated reward catalogue; share meshes
+and materials. Hide on deselection, catalogue/document changes and offline play.
+Acceptance: checked large-coordinate conversion, constant assets/no colliders,
+selection/reload/play cleanup, native visible focus and unchanged source/history.
+Guides are authoring annotations, not spawned items or authoritative availability.
+
 15 November collection inspection acceptance:
 Native ordinary-input focus reaches the compass's exact checked local point and
 preserves Rowan selection, camera orientation and source/history. Seven inspector

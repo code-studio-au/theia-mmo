@@ -24,6 +24,8 @@ use theia_zone::{
     markers::{Marker, MarkerKind},
 };
 
+pub(super) mod locations;
+
 pub(super) struct Context {
     pub path: PathBuf,
     generation: u64,
@@ -672,6 +674,7 @@ fn view_collection(
 #[derive(bevy::ecs::system::SystemParam)]
 #[allow(clippy::type_complexity)]
 pub(super) struct Report<'w, 's> {
+    locations: Option<Res<'w, locations::Scene>>,
     buttons: Query<
         'w,
         's,
@@ -707,6 +710,7 @@ impl Report<'_, '_> {
                 "centre":(transform.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()})
         }).collect();
         serde_json::json!({"marker": marker.id, "npc":marker.definition,
+            "location_guides": self.locations.as_ref().map(|s| s.report()),
             "template": session.quest_context.as_ref().map(|c| &c.path), "controls":controls,
             "cards":session.quest_context.as_ref().zip(marker.definition.as_deref()).map(|(c,npc)| c.cards_in(npc, session.editor.zone()).iter().map(|card| serde_json::json!({"title":card.title,"details":card.details,"destination":card.destination})).collect::<Vec<_>>())})
     }

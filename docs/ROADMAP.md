@@ -1,3 +1,9 @@
+15 November 2026 — collection location guides pass:
+The NPC inspector now frames and visibly marks authored collection locations using
+bounded shared standard meshes. Native deselection and source preservation pass.
+Next: choose account AI test roads by their authored names in the export dialog,
+keeping blank/manual play the default and the existing export preflight.
+
 15 November 2026 — collection location navigation passes:
 NPC quest cards focus the camera directly on their checked ground reward positions,
 with stale/busy guards and unchanged source/history. Native and editor regression

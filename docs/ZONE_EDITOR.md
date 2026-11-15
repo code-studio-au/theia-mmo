@@ -1,3 +1,10 @@
+Collection location guides (15 November 2026): selecting an NPC shows small amber
+cross/beacon references for its collection quests. Use View collection location
+in the expanded quest card to frame the point. Guides clear with selection,
+catalogue changes or offline play. They are non-pickable authoring references;
+the ground-reward profile still owns placement and the server owns availability.
+Native evidence: build/editor-collection-guides-v1/qualification.json.
+
 Collection camera navigation (15 November 2026): select Rowan, open Attributes →
 Quests and expand Rowan's lost compass. View collection location: Northern Meadow
 focuses the camera on the authored pickup position. It retains the NPC selection,

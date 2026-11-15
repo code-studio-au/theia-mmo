@@ -1,3 +1,8 @@
+Collection guides, 15 November 2026 (P3-11/12 / P4-03 / P5-17):
+Read-only, non-colliding/pickable authoring references now accompany collection
+camera focus; native and far-origin/asset-lifecycle checks pass. Next account
+playtest usability slice: named road selection with explicit manual default.
+
 Collection inspection, 15 November 2026 (P3-11/12 / P4-03 / P5-17):
 Read-only quest cards now focus the camera on checked ground reward positions.
 Native collection/escort selection preserves source/history; all editor regressions

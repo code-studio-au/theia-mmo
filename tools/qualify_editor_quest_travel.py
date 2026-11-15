@@ -100,9 +100,18 @@ with (out/'editor.log').open('w') as log:
         wait(lambda: all(abs(a-b) < 0.00001 for a,b in zip(state()['view']['target'], local)))
         focused = state()
         assert focused['marker_selected'] == 1005 and focused['view']['distance'] == 18
+        guides = focused['npc_quests']['location_guides']
+        assert len(guides) == 1 and guides[0]['parts'] == 4
+        assert guides[0]['area'] == 'Northern Meadow'
+        assert all(abs(a-b) < 0.00001 for a,b in zip(guides[0]['local'], local))
         for key in ['yaw', 'pitch', 'preset']:
             assert focused['view'][key] == before_view[key]
         capture('collection-location.png')
+        select(1004)
+        wait(lambda: state()['npc_quests']['location_guides'] == [])
+        capture('collection-guide-cleared.png')
+        select(1005)
+        wait(lambda: len(state()['npc_quests']['location_guides']) == 1)
         final = state()
         assert final['document'] == initial['document']
         assert final['revision'] == initial['revision'] and final['history'] == initial['history']
@@ -119,4 +128,5 @@ assert check_gpu_diagnostics((out/'editor.log').read_text()) == 0
 (out/'qualification.json').write_text(json.dumps(dict(passed=True, gpu=gpu,
     escort=follow, collection=compass, native_destination_selection=True,
     native_collection_focus=focused['view'],
+    collection_location_guides=guides, guide_deselection_checked=True,
     source_history_preserved=True, scope='Read-only quest content, not live progress'), indent=2)+'\n')

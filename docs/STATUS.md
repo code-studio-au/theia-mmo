@@ -1,3 +1,18 @@
+15 November 2026 — P3-11/12 / P4-03 / P5-17 collection location guides:
+Inspecting an NPC now shows amber pickup references for its collection quests.
+The checked authored positions use one shared cube mesh/material and a fixed
+64-part pool (four parts per maximum 16 ground rewards). Guides have no colliders,
+shadows or picking and are not zone objects or live items. Selection, catalogue,
+document and offline-play transitions refresh/hide them; out-of-frame locations
+are omitted. Two lifecycle/large-origin regressions pass, including repeated
+selection without asset growth and ±128-billion-metre coordinates. Format and
+denied-warning editor Clippy pass (collection-guides-tests.log and
+collection-guides-clippy.log). Native focus/selection cleanup and unchanged source/
+history pass in build/editor-collection-guides-v1/qualification.json. Screenshots
+show the reference at the compass point and its removal; a viewport-only comparison
+finds 2,648 changed pixels in its 80x157 footprint. Linux 3440x1440 RX 7900 XTX /
+RADV NAVI31 / Vulkan, zero GPU diagnostics; no Windows or live-availability claim.
+
 15 November 2026 — P3-11/12 / P4-03 / P5-17 collection camera inspection:
 Expanded NPC quest cards now offer View collection location with the area name.
 The action focuses the checked zone-local point at an 18 m camera distance while
