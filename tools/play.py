@@ -383,7 +383,9 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
             while not stop_requested() and all(p.poll() is None for p in processes):
                 time.sleep(.2)
             if any(p.poll() not in (None, 0) for p in processes):
-                raise RuntimeError(f'A game process failed; inspect its output and {session / "server.log"}')
+                failed = ', '.join(f'{Path(p.args[0]).name} (pid {p.pid}, exit {p.returncode})'
+                    for p in processes if p.poll() not in (None, 0))
+                raise RuntimeError(f'A game process failed: {failed}; inspect its output and {session / "server.log"}')
     except KeyboardInterrupt:
         pass
     finally:

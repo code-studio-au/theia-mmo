@@ -1,3 +1,44 @@
+15 November running compass and two-account acceptance:
+Local running change 9ed4fb99 passes client/authority/native checks. The complete
+native two-account quest and PostgreSQL restart qualification passes in 293.96
+seconds (v11), with source preservation and zero GPU diagnostics. Short restored
+flows explicitly wait for 11 advancing background correction ticks. See STATUS.
+The user's Stop ended broad automatic continuation; subsequent work was limited
+to the requested running change and its integration checks. Shared party escorts
+are recorded for later and deliberately remain unimplemented.
+
+P4-03, 15 November 2026 — user-requested running compass AI travel:
+Use normal Classic run input for checked AI routes on both outward and return
+legs. Keep authored points, navigation/collision, corner-facing, corridor/start
+checks, manual takeover and endpoint release unchanged. Validate 20/30/60/144 FPS
+corner traversal and actual compass authority at 20/30/60 Hz, then rerun native
+two-account collection/escort/restart with the faster travel. No pose writes or
+new speed constants in gameplay authority. Broad automatic work remains stopped;
+this request authorizes the running change and its integration checks.
+
+15 November two-account integration finding, P2-02 / P3-11/12:
+The native run exposed authored-scene readiness using total startup age as its
+timeout after successful loading. A later GPU readiness retraction beyond two
+minutes closed the client. Bound each uninterrupted pending interval instead;
+retain startup and recovery failure bounds. Add a synthetic-time regression,
+run native GPU readiness and repeat two-account quest travel with normal VSync
+and background update policy. Background freshness uses movement correction ticks
+(avatar-life frames publish only on changes), never unchanged cached journal data.
+
+P3-11/12 / P4-03, 15 November 2026 — two-account quest travel isolation:
+Prerequisites: private per-character follow/collection authority, accepted native
+single-player travel, checked account package/paused compass route and existing
+two-account OIDC/PostgreSQL/native harness. Add a focused native qualification:
+two independently authenticated characters share one encrypted server, each client
+renders 1920x1440. Complete collection, introduction and escort normally for each
+player while checking the other player's journal/bag/XP and ranger position remain
+private. Stop/drain, restart PostgreSQL/server and rejoin both exact characters;
+require journal revision 9, XP 75, three completed quests and retained inventories.
+Use only ordinary UI/movement/quest requests and owned disposable services/windows;
+no pose writes, fixture progress grants, account secrets in Git or external services.
+This qualifies independent solo quests in multiplayer, not shared party credit or
+a new two-account editor launch mode. Fix concrete integration failures if found.
+
 15 November named patrol controls acceptance:
 All 261 editor tests, build/format and strict Clippy pass. Native cycling, clear,
 Undo/Redo, invalid ID refusal, checked guide framing and export pass with unchanged

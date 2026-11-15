@@ -1,3 +1,10 @@
+15 November 2026 — running compass and two-account travel accepted:
+Both directions use normal run input; actual native compass legs take about 14.2
+seconds. Two authenticated players complete independent travel quests and retain
+exact progress after database/server restart in 4m54s. See STATUS for evidence.
+No further automatic slice is started following the user's Stop. Shared escorts
+remain deferred until party implementation, with the rule recorded below.
+
 15 November 2026 — party escort follow-up deferred:
 After the party system is implemented, share the ranger journey among participating
 party members, with any member in range permitting travel. Keep private solo

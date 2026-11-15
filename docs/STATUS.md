@@ -1,3 +1,28 @@
+15 November 2026 — P3-11/12 / P4-03 two-account quest travel passes:
+Two independently authenticated native clients share one encrypted server at
+1920x1440 each. Both complete compass collection/delivery, ranger introduction and
+navmesh escort with normal UI/input and the checked compass follower. Each reaches
+journal revision 9, XP 75, three Completed quests and bag revision 2. While one
+progresses, the other retains its journal/XP/bag; the unaccepted ranger stays at
+home. Continuous observations include 304/323 distinct correction ticks. After
+clean server drain and PostgreSQL restart, both exact characters rejoin with the
+same progress/inventory and their completed ranger at the ancient tree; explicit
+background observation records 11 advancing ticks per client. SQL verifies both
+journals, transport reports two players and no attack backpressure disconnects,
+and checked source files are unchanged. This is private solo quest isolation,
+not party escort sharing. Party behavior remains explicitly deferred.
+Acceptance: build/quest-travel-two-players-native-v11/qualification.json, both
+phase database-proof.txt files and four native quest-travel-proof.json files.
+Total elapsed 293.96 seconds (4m54s); native compass legs 14.13–14.20 seconds.
+Normal VSync, existing AI-controller continuous update mode, Linux RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics; no Windows execution.
+All 34 account/launcher tests, Python compilation and diff checks pass; client
+checks are recorded below. Qualification now waits for rendered contact admission,
+reacquires only its owned window between travel/interactions and explicitly samples
+background updates during short rejoin flows. Launcher failures report process
+name/PID/exit code without command arguments. Earlier interrupted/failed runs are
+not acceptance evidence. Broad automatic work remains stopped at the user's request.
+
 15 November 2026 — P4-03 compass AI runs in both directions:
 Checked AI route followers now emit normal Classic run input instead of forced
 walk input on both outward and return legs. Authored points, derived navigation,

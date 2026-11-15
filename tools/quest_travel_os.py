@@ -16,7 +16,15 @@ def flow(desktop, window, state, folder, resumed=False):
     def journal(): return state()['quest_journal']
     def quest(q): return next((p for p in journal()['quests'] if p['id'] == q), None)
     def feet(): return state()['dodge']['authority_feet']
-    def contact(npc): return next(c for c in state()['contacts'] if c['npc'] == npc)
+    def contact(npc):
+        # Render entities can briefly refresh independently of the retained
+        # authority state. Wait for the requested contact, never substitute one.
+        return wait(lambda: next((c for c in state()['contacts'] if c['npc'] == npc), None), 5)
+    def focus():
+        desktop.focus(window)
+        w, h, _ = state()['window']
+        desktop.move(window, [w*.55, h*.42], scale)
+        wait(lambda: state()['cursor']['focused'])
     def capture(name):
         (folder/'capture.request').write_text(name+'\n')
         wait(lambda: capture_ready(folder/'input-os.png'))
@@ -53,6 +61,10 @@ def flow(desktop, window, state, folder, resumed=False):
             walk(contact(npc)['global']);time.sleep(.1)
         face(contact(npc)['global'])
     def speak(npc):
+        # A second native client may map/activate while the checked travel
+        # controller runs without OS input. Reacquire only our owned window
+        # before the next interaction; Desktop still guards every input event.
+        focus()
         approach(npc)
         desktop.click(window,wait(lambda: contact(npc)['screen']),scale,3)
         wait(lambda: state()['dialogue_open'] and not state()['dialogue_pending'])
@@ -67,6 +79,7 @@ def flow(desktop, window, state, folder, resumed=False):
         desktop.click(window,point,scale,1)
         wait(lambda: quest(q) and quest(q)['status']==expected and journal()['ui']['applied']==before+1 and not journal()['ui']['pending'])
     def travel(leg):
+        focus()
         close()
         # Dialogue range is wider than the checked follower's start tolerance.
         # Walk to the actual authored endpoint before handing over normal input.
@@ -89,8 +102,9 @@ def flow(desktop, window, state, folder, resumed=False):
             assert time.monotonic()<deadline,t
             time.sleep(.25)
         assert t['leg']==leg,t
+        focus()
         return t
-    desktop.focus(window);wait(lambda: state()['cursor']['focused'])
+    focus()
     if resumed:
         wait(lambda: all(quest(q) and quest(q)['status']=='Completed' for q in [INTRO,COLLECT,FOLLOW]))
         assert journal()['revision']==9 and journal()['xp']==75
@@ -140,8 +154,8 @@ def flow(desktop, window, state, folder, resumed=False):
         desktop.click(window,greeting,scale,1);wait(lambda: quest(INTRO)['status']=='Ready');action(INTRO,'Completed')
         speak(RANGER);home=contact(RANGER)['global'];action(FOLLOW,'Active');close()
         time.sleep(10)
-        paused=contact(RANGER)['global'];distance=math.dist(feet(),paused)
-        assert 9.<distance<=10.1,(feet(),paused,distance)
+        paused=contact(RANGER)['global'];waiting_distance=math.dist(feet(),paused)
+        assert 9.<waiting_distance<=10.1,(feet(),paused,waiting_distance)
         time.sleep(1)
         assert math.dist(paused,contact(RANGER)['global'])<.02
         assert math.dist(paused,contact(RANGER)['rendered_global'])<.02
@@ -171,6 +185,6 @@ def flow(desktop, window, state, folder, resumed=False):
         speak(RANGER);action(FOLLOW,'Completed')
         assert journal()['revision']==9 and journal()['xp']==75
         capture('ranger-completed.png')
-        result=dict(passed=True,resumed=False,revision=journal()['revision'],xp=journal()['xp'],outward=outward,returning=returning,home=home,paused=paused,waiting_distance=distance,follow_samples=samples,tab=[first,second,first])
+        result=dict(passed=True,resumed=False,revision=journal()['revision'],xp=journal()['xp'],outward=outward,returning=returning,home=home,paused=paused,waiting_distance=waiting_distance,follow_samples=samples,tab=[first,second,first])
     (folder/'quest-travel-proof.json').write_text(json.dumps(result,indent=2)+'\n')
     return result
