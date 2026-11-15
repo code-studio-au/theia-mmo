@@ -1,3 +1,10 @@
+15 November 2026 — explicit account AI road integration passes:
+The editor can export an optional checked Road as a paused F7 return-trip test.
+The compass remains two authored points; manual play is the default. Full native
+editor Start/play/Stop/PostgreSQL restart passes with all three starter travel
+quests retained. See STATUS. Next: make collection locations directly viewable
+from the read-only NPC quest inspector, alongside escort destination selection.
+
 15 November 2026 — moving contact and collection export checks:
 Contact presentation now interpolates authoritative NPC poses; actual escort
 wait/arrival/turn-in and PostgreSQL restart pass. Population export also rejects

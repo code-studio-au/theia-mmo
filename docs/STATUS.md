@@ -1,3 +1,26 @@
+15 November 2026 — P3-11/12 / P4-03 / P5-17 account AI road integration:
+The editor account export dialog exposes an optional AI test road ID, blank by
+default and hidden in other export modes. Export validates the selected Road
+against staged navigation/static collision and saves its original points to a
+paused return-trip descriptor. The account launcher freezes that descriptor using
+its existing checked follower path. Missing/wrong/duplicate/invalid roads refuse.
+All 253 editor tests pass (16 explicit skips); authored compass validation keeps
+two authored points, prepares six steering points and rejects a wrong floor.
+Denied-warning Clippy passes. Evidence: account-test-road-editor-tests.log,
+account-test-road-authored-test.log and account-test-road-clippy.log in build/.
+Native editor/account acceptance passes in build/editor-account-test-road-v4/
+qualification.json: invalid road refusal, explicit paused F7 travel, compass
+collection/delivery, ranger introduction/escort, normal conversation turn-in,
+clean Stop, PostgreSQL restart and existing-character selection. Both runs retain
+journal 9 / XP 75 and inventory revision 2, with unchanged source and frozen
+profiles. All 18 account launcher tests pass. Linux RX 7900 XTX / RADV NAVI31 /
+Vulkan; editor 3440x1440 and client actual viewport 3440x1368 after window-manager
+clamping of the requested 3440x1440. Zero GPU diagnostics, no Windows claim.
+Exact client sizing through editor launch is the next correction.
+The expanded test also handles interest-range changes, partial live-report reads
+and exact f32 terrain serialization. Earlier attempts stopped on those test
+assumptions; the final complete run above passes.
+
 15 November 2026 — P3-11/12 / P4-03 / P5-17 ground collection export preflight:
 Population export validates every ground collection position against staged static
 collision before publishing, reusing the server's nearby support/player-clearance

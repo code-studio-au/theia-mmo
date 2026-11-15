@@ -1,3 +1,15 @@
+Starter travel integration, 15 November 2026 (P3-11/12 / P4-03 / P5-17):
+The destination-only ranger escort and two-point compass collection road pass
+actual authoritative gameplay/restart checks. Local movement uses the continuous
+prediction clock, and moving contacts use the existing remote pose interpolator.
+Editor population export validates escort routes and ground collection support;
+NPC quest cards show the bindings and select the escort destination. An optional
+account AI test-road field now exports a checked paused return-trip descriptor;
+its full native editor/account Start/play/Stop/PostgreSQL restart check passes
+(editor-account-test-road-v4; see STATUS).
+This is static player travel plus normal quest input, not a general autonomous
+quest/combat planner. Moving-target/death orchestration remains separate work.
+
 Test-travel editor integration, 13 November 2026: assign authored patrol paths
 through Test Player property actions, then Start population playtest to export,
 preflight and run the checked per-player route. Native assignment/undo, two-client

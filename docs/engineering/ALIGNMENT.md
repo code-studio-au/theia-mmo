@@ -1,3 +1,18 @@
+15 November account AI road acceptance:
+Editor Start/create/play/Stop, PostgreSQL restart and existing-character selection
+pass in editor-account-test-road-v4. Invalid road refusal, manual startup, explicit
+F7 outward/return, all three quests and exact retained progression pass. Source
+and frozen profiles are preserved; no GPU diagnostics. See STATUS for Linux limits.
+
+P3-11/12 / P4-03 / P5-17, 15 November 2026 — explicit account AI test road:
+Prerequisites: checked client travel, authored road guides, atomic population
+export and editor account Start/Stop. Add an account-only optional road ID, blank
+by default. Validate/prepare its route in the export worker, freeze the original
+minimal points and pass it to the existing paused follower. No enabled Test Player
+or automatic control on login. Acceptance: invalid/missing/wrong-kind roads refuse;
+valid two-point compass road exports checked steering, F7 works through editor
+account launch, ordinary quest delivery/escort and Stop/restart preserve progress.
+
 15 November ground collection preflight acceptance:
 Actual starter-world support and atomic invalid/refused → restored/exported tests
 pass in ground-item-support-test.log and ground-item-atomic-export-test.log.

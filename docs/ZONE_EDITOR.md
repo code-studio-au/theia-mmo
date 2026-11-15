@@ -1,3 +1,14 @@
+Optional account AI travel (15 November 2026, native acceptance passed):
+Zone → Start account population playtest now has AI test road ID. Leave it blank
+for manual play. For the prepared starter compass scene, enter 1203; access road
+1201 remains separate. Export checks navigation and clearance, then freezes the
+road's original two points into a paused return-trip test route. Start near Rowan
+within 1 m of the first endpoint, then press F7. Arrival releases manual control;
+collect the compass and press F7 for the return trip. F7 also releases control
+while travelling; Shift+F7 restarts outward. This emits ordinary player input and
+does not move actors directly or enable Test Players. Native Start/play/Stop/restart acceptance passes in
+build/editor-account-test-road-v4/qualification.json; see STATUS.
+
 Ground collection export preflight (15 November 2026, actual export acceptance passed):
 Population exports now check every ground reward against staged static collision,
 using the same nearby support/player-clearance helper as server admission. Failures

@@ -36,6 +36,7 @@ pub(super) struct Settings<'a> {
     pub appearance: Option<&'a Path>,
     pub gameplay: Option<&'a Path>,
     pub access_path: Option<u64>,
+    pub test_path: Option<u64>,
 }
 
 pub(super) fn default_baker() -> Result<PathBuf, String> {
@@ -143,6 +144,12 @@ fn publish_mode(
 ) -> Result<serde_json::Value, String> {
     if output.exists() {
         return Err("Population export requires a new output directory".into());
+    }
+    if let Some(id) = settings.test_path {
+        if !account {
+            return Err("Paused AI test roads require an account playtest export".into());
+        }
+        crate::account_test_route::road(zone, id)?;
     }
     let mut creature = Vec::new();
     fs::File::open(settings.creature)
@@ -283,6 +290,15 @@ fn publish_mode(
         } else {
             (Vec::new(), Vec::new())
         };
+        let test_travel = settings
+            .test_path
+            .map(|id| {
+                let (bytes, report) =
+                    crate::account_test_route::prepare(zone, id, &store, loaded.navigation())?;
+                fs::write(stage.join("test-route.json"), bytes).map_err(|e| e.to_string())?;
+                Ok::<_, String>(report)
+            })
+            .transpose()?;
         let clients = if network {
             crate::network_test_export::write_scenario(zone, &store, &stage)?
         } else {
@@ -311,7 +327,7 @@ fn publish_mode(
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
-            "gameplay_manifest":gameplay_manifest,"access_path":settings.access_path,"quest_travel":quest_travel,"ground_items":ground_items,
+            "gameplay_manifest":gameplay_manifest,"access_path":settings.access_path,"quest_travel":quest_travel,"ground_items":ground_items,"test_travel":test_travel,
             "scope":"One checked population with configured creature behavior and matching static world/navigation; optional explicit quest/contact snapshot, no server launched; population definition controls NPC behavior, template patrol is not instantiated"}});
         fs::write(
             stage.join("population-export.json"),
@@ -321,6 +337,13 @@ fn publish_mode(
         // Reserve exclusively, and expose the runtime configuration last.
         fs::create_dir(output).map_err(|e| e.to_string())?;
         destination_created = true;
+        if test_travel.is_some() {
+            fs::rename(
+                stage.join("test-route.json"),
+                output.join("test-route.json"),
+            )
+            .map_err(|e| e.to_string())?;
+        }
         if live {
             for name in [
                 "scenario.json",
@@ -513,6 +536,7 @@ mod tests {
                     appearance: None,
                     gameplay: Some(&manifest),
                     access_path: Some(1201),
+                    test_path: None,
                 },
                 &library,
             )
@@ -576,6 +600,7 @@ mod tests {
                     appearance: None,
                     gameplay: Some(&quest_template()),
                     access_path: None,
+                    test_path: None,
                 },
                 &Default::default(),
             )
@@ -617,6 +642,7 @@ mod tests {
                 appearance: None,
                 gameplay: Some(&template),
                 access_path: None,
+                test_path: None,
             },
             &Default::default(),
         )
@@ -693,6 +719,7 @@ mod tests {
                 appearance: None,
                 gameplay: None,
                 access_path: None,
+                test_path: None,
             },
             &Default::default(),
         )
@@ -756,6 +783,7 @@ mod tests {
             appearance: None,
             gameplay: None,
             access_path: None,
+            test_path: None,
         };
         let bad_appearance = root.0.join("invalid.glb");
         fs::write(&bad_appearance, b"Not a GLB").unwrap();
@@ -850,6 +878,7 @@ mod tests {
             appearance: appearance.as_deref(),
             gameplay: None,
             access_path: None,
+            test_path: None,
         };
         assert!(
             publish(
@@ -983,6 +1012,7 @@ mod tests {
                 appearance: None,
                 gameplay: None,
                 access_path: None,
+                test_path: None,
             },
             &Default::default(),
         )
@@ -1045,6 +1075,7 @@ mod tests {
                 appearance: None,
                 gameplay: None,
                 access_path: None,
+                test_path: None,
             },
             &Default::default(),
         )
@@ -1130,6 +1161,7 @@ mod tests {
                 appearance: None,
                 gameplay: None,
                 access_path: None,
+                test_path: None,
             },
             &Default::default(),
         )

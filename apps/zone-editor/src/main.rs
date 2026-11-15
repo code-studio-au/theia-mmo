@@ -1,5 +1,6 @@
 //! P5-17/P3-15: standard Bevy greybox authoring; no trusted gameplay authority.
 mod account_picker;
+mod account_test_route;
 mod agent;
 mod asset_browser;
 mod asset_preview;
@@ -716,6 +717,7 @@ fn run() -> Result<(), String> {
                     appearance: options.creature_asset.as_deref(),
                     gameplay: options.gameplay_template.as_deref(),
                     access_path: options.population_access_path,
+                    test_path: None,
                 },
                 &scenery_library,
             )?

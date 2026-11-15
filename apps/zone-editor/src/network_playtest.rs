@@ -172,6 +172,10 @@ impl Manager {
         }
         if account {
             command.arg("--package").arg(&snapshot);
+            let test_route = snapshot.join("test-route.json");
+            if test_route.is_file() {
+                command.arg("--test-route").arg(test_route);
+            }
             match profiles {
                 Some(AccountProfiles::Catalogues(items, rewards)) => {
                     command

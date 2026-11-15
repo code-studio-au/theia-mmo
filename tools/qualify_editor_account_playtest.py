@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import signal
 import subprocess
+import struct
 import sys
 import time
 import urllib.parse
@@ -18,9 +19,11 @@ from account_population_playtest import profile_role
 
 
 def run(args):
+    if args.quest_travel and not args.gameplay_template:
+        raise ValueError('--quest-travel requires the starter gameplay template')
     args.creature_loot = args.creature_loot or bool(args.gameplay_template)
-    expected_revision = 5 if args.gameplay_template else (4 if args.creature_loot else 2)
-    expected_xp = 50 if args.gameplay_template else 25
+    expected_revision = 2 if args.quest_travel else (5 if args.gameplay_template else (4 if args.creature_loot else 2))
+    expected_xp = 75 if args.quest_travel else (50 if args.gameplay_template else 25)
     out = args.output.resolve()
     out.mkdir(mode=0o700, parents=True, exist_ok=False)
     incoming = args.zone.read_bytes()
@@ -54,7 +57,9 @@ def run(args):
                 BROWSER=f'{sys.executable} {Path("tools/qualify_account_launcher.py").resolve()} --owned-browser %s',
                 THEIA_PARTICLE_EDITOR_DATA_DIR=str(folder/'particle-data'),
                 THEIA_WORLD_INPUT_OS_QUALIFY=str(game))
-            if not resumed:
+            if args.fantasy_ui:
+                env['THEIA_FANTASY_UI'] = str(args.fantasy_ui.resolve())
+            if not resumed and not args.quest_travel:
                 env.update(THEIA_POPULATION_TYPED_QUALIFY=str(game), THEIA_POPULATION_KILL_QUALIFY='1',
                            THEIA_POPULATION_REWARD_QUALIFY='1')
                 if args.creature_loot:
@@ -64,14 +69,17 @@ def run(args):
                 editor = subprocess.Popen([str(args.binary.resolve()), '--zone', str(source), '--report', str(report),
                     '--player-assets', str(args.players.resolve()), '--creature-definition', str(args.creature.resolve()),
                     '--creature-asset', str(args.creature_asset.resolve()),
+                    *(['--scenery-library', str(args.scenery_library.resolve())] if args.scenery_library else []),
+                    *(['--population-access-path', '1201'] if args.quest_travel else []),
                     *(['--gameplay-template', str(args.gameplay_template.resolve())] if args.gameplay_template else [])], env=env, stdout=log, stderr=log)
                 try:
                     window = wait(lambda: owned_window(editor.pid), 60)
                     desktop = Desktop()
+                    if args.quest_travel: desktop.prepare_wheel()
                     desktop.focus(window)
                     def state():
                         assert editor.poll() is None, 'Owned editor exited unexpectedly'
-                        return json.loads(report.read_text())
+                        return wait(lambda: json.loads(report.read_text()), 2)
                     wait(lambda: state().get('menus'), 60)
                     previous, settled = None, time.monotonic()
                     def stable_geometry():
@@ -129,6 +137,26 @@ def run(args):
                             field = next(f for f in state()['export_dialog']['fields'] if f['index']==index)
                             type_text(field['centre'], path)
                             assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index']==index)==path
+                    if args.quest_travel:
+                        assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index']==12)==''
+                        def test_road(value):
+                            # Tab reveal reaches fields even when the dialog body scrolls.
+                            for _ in range(14):
+                                field = next(f for f in state()['export_dialog']['fields'] if f['index']==12)
+                                if field['focused']: break
+                                desktop.key('Tab'); fresh()
+                            assert field['focused']
+                            fresh(); fresh()
+                            field = next(f for f in state()['export_dialog']['fields'] if f['index']==12)
+                            type_text(field['centre'], value)
+                            assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index']==12)==str(value)
+                        test_road(999999)
+                        click(next(b['centre'] for b in state()['export_dialog']['buttons'] if b['action']=='Export'))
+                        wait(lambda: 'AI test road guide ID is absent' in state()['export_dialog']['message'])
+                        assert not destination.exists() and not state()['network_playtest']['active']
+                        test_road(1203)
+                        desktop.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')),30)
+                        report.with_suffix('.png').rename(folder/'selected-ai-road.png')
                     click(next(b['centre'] for b in state()['export_dialog']['buttons'] if b['action']=='Export'))
                     wait(lambda: state()['network_playtest']['active'], 90)
                     owned = wait(lambda: next((p for p in (destination/'runs').glob('session-*') if p.is_dir()),None), 45)
@@ -157,9 +185,14 @@ def run(args):
                         click(picker_action('Create')['centre'])
                     wait(lambda: state().get('account_picker') is None, 15)
                     def gameplay():
+                        value = wait(lambda: json.loads((game/'input-os.json').read_text()), 2)
+                        assert value.get('connected'), 'Owned client disconnected'
+                        return value
+                    def initial_gameplay():
                         value = json.loads((game/'input-os.json').read_text())
-                        return value if value.get('connected') and len(value.get('combat_targets') or [])==5 and value.get('inventory_bag') and (value.get('minimap') or {}).get('known_pixels',0)>0 else None
-                    observed = wait(gameplay, 90)
+                        targets_ready = (args.quest_travel and resumed) or len(value.get('combat_targets') or [])==5
+                        return value if value.get('connected') and targets_ready and value.get('inventory_bag') and (value.get('minimap') or {}).get('known_pixels',0)>0 else None
+                    observed = wait(initial_gameplay, 90)
                     warm = time.monotonic()
                     wait(lambda: gameplay() if time.monotonic()-warm>=10 else None, 20)
                     quest_id = 'theia.dev.quest-wolf-pelts'
@@ -181,10 +214,16 @@ def run(args):
                         if gameplay()['inventory_open']:
                             desktop.key('i')
                             wait(lambda: not gameplay()['inventory_open'])
-                    if args.gameplay_template and not resumed:
+                    if args.quest_travel:
+                        from quest_travel_os import flow
+                        game_window = wait(lambda: owned_window(gameplay()['pid']))
+                        assert not gameplay()['test_controller']['active']
+                        assert gameplay()['test_controller']['travel']['elapsed_seconds']==0
+                        flow(desktop, game_window, gameplay, game, resumed=resumed)
+                    if args.gameplay_template and not args.quest_travel and not resumed:
                         quest_action('Active')
                         wait(lambda: gameplay()['minimap']['objective_regions']==1)
-                    if not resumed:
+                    if not resumed and not args.quest_travel:
                         (game/'combat.start').write_text('start\n')
                         def killed():
                             proof = json.loads((game/'typed-combat.json').read_text())
@@ -200,7 +239,7 @@ def run(args):
                         value = gameplay()
                         return value if value and value.get('committed_progression')==expected_xp and value.get('available_rewards')==0 and value['inventory_bag']['revision']==expected_revision else None
                     observed = wait(committed, 20)
-                    if args.gameplay_template:
+                    if args.gameplay_template and not args.quest_travel:
                         assert quest()['status']=='Completed' and all(count==1 for count in quest()['counts'].values())
                         assert not any(slot and slot['item']=='theia.dev.wolf-pelt' for slot in observed['inventory_bag']['slots'])
                     if resumed:
@@ -216,14 +255,27 @@ def run(args):
                     wait(lambda: not state()['network_playtest']['active'], 45)
                     assert 'failed' not in state()['status'].lower(),state()['status']
                     assert source.read_bytes()==source_bytes
-                    assert json.loads((destination/'zone.json').read_text())==state()['document']
+                    exported_zone=json.loads((destination/'zone.json').read_text())
+                    editor_zone=state()['document']
+                    # Zone files serialize f32 heights with short decimals;
+                    # report Values widen them to f64. Compare their exact f32 bits.
+                    for zone in [exported_zone,editor_zone]:
+                        if zone.get('terrain'):
+                            zone['terrain']['heights']=[struct.pack('<f',h) for h in zone['terrain']['heights']]
+                    assert exported_zone==editor_zone
                     exported=json.loads((destination/'population-export.json').read_text())['population_export']
                     assert exported['account_playtest'] and exported['clients']==1 and exported['count']==5
                     if args.gameplay_template:
                         manifest = destination/exported['gameplay_manifest']
                         roles = json.loads(manifest.read_text())
                         frozen = json.loads((owned/'launch.json').read_text())
-                        assert len(frozen['profiles'])==22 and frozen['gameplay_snapshot']['manifest_schema']==19
+                        assert len(frozen['profiles'])==(24 if args.quest_travel else 22)
+                        assert frozen['gameplay_snapshot']['manifest_schema']==(21 if args.quest_travel else 19)
+                        if args.quest_travel:
+                            assert exported['test_travel']['road']==1203 and exported['test_travel']['authored_points']==2
+                            route=json.loads((destination/'test-route.json').read_text())
+                            assert route['start_paused'] and route['return_trip'] and len(route['waypoints'])==2
+                            assert frozen['test_route']
                         assert frozen['guide_position']=='authored'
                         for profile in frozen['profiles']:
                             data = (owned/profile['file']).read_bytes()
@@ -236,8 +288,12 @@ def run(args):
                     assert account['verified_logins']==1 and account['created_characters']==(0 if resumed else 1)
                     saved=next(json.loads(line.removeprefix('account_persistence_summary ')) for line in server.splitlines() if line.startswith('account_persistence_summary '))
                     assert not saved['failed'] and saved['worker']['incompatible_gameplay_profiles']==0
-                    sql=cluster.query('SELECT experience FROM theia.progression; SELECT consumed_revision FROM theia.reward_claims ORDER BY consumed_revision;')
-                    assert sql.returncode==0 and sql.stdout.splitlines()==([str(expected_xp),'2','3','4'] if args.creature_loot else [str(expected_xp),'2'])
+                    if args.quest_travel:
+                        sql=cluster.query('SELECT h.revision,p.experience,(SELECT count(*) FROM theia.quest_journal_entries q WHERE q.realm_id=h.realm_id AND q.character_id=h.character_id AND q.status=2) FROM theia.quest_journal_heads h JOIN theia.progression p USING(realm_id,character_id);')
+                        assert sql.returncode==0 and sql.stdout.strip()=='9|75|3'
+                    else:
+                        sql=cluster.query('SELECT experience FROM theia.progression; SELECT consumed_revision FROM theia.reward_claims ORDER BY consumed_revision;')
+                        assert sql.returncode==0 and sql.stdout.splitlines()==([str(expected_xp),'2','3','4'] if args.creature_loot else [str(expected_xp),'2'])
                     (folder/'database-proof.txt').write_text(sql.stdout)
                     desktop.key('F12')
                     wait(lambda: capture_ready(report.with_suffix('.png')),30)
@@ -249,6 +305,7 @@ def run(args):
                     results.append(dict(resumed=resumed, editor_start=True, picker='select' if resumed else 'create',
                                         editor_stop=True, experience=expected_xp, inventory_revision=expected_revision, source_unchanged=True,
                                         authored_quest_completed=bool(args.gameplay_template),
+                                        paused_test_road=1203 if args.quest_travel else None,
                                         invalid_name_refused=not resumed))
                 finally:
                     if desktop:
@@ -263,7 +320,7 @@ def run(args):
     assert args.zone.read_bytes()==incoming
     assert not any((out/'cluster'/name).exists() for name in ['password','pgpass'])
     result=dict(passed=True,runs=results,database_restart=True,owned_services_closed=True,
-                scope='Actual native editor menu, export, character creation/selection, gameplay and Stop; optional authored quest acceptance/turn-in; OS input restricted to owned editor and quest UI, no gameplay movement/camera automation')
+                scope=('Actual editor export/create/select/Stop, explicit paused compass AI road and ordinary escort/quest input, durable restart' if args.quest_travel else 'Actual native editor menu, export, character creation/selection, gameplay and Stop; optional authored quest acceptance/turn-in; OS input restricted to owned editor and quest UI, no gameplay movement/camera automation'))
     (out/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
@@ -272,6 +329,9 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--creature-loot', action='store_true', help='Select ordinary loot catalogues in the editor dialog')
     parser.add_argument('--gameplay-template', type=Path, help='Select the explicit one-kill/one-pelt schema-19 template and complete its authored quest')
+    parser.add_argument('--quest-travel', action='store_true', help='Use the starter template and explicit paused road 1203; complete compass/escort and restart')
+    parser.add_argument('--scenery-library', type=Path)
+    parser.add_argument('--fantasy-ui', type=Path)
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--zone',type=Path,required=True)
     parser.add_argument('--creature',type=Path,default=Path('content/gameplay/development-creature-passive.json'))

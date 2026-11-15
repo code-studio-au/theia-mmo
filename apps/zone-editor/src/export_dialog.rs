@@ -62,13 +62,13 @@ impl Mode {
             Self::NetworkTest => &[0, 3, 4],
             Self::Population => &[0, 1, 2, 3, 4, 5, 7, 10, 11],
             Self::PopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7, 11],
-            Self::AccountPopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            Self::AccountPopulationTest => &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             _ => &[0, 1],
         }
     }
     fn visible_fields(self, template: bool) -> &'static [usize] {
         if self == Self::AccountPopulationTest && template {
-            &[0, 1, 2, 3, 4, 5, 6, 7, 10, 11]
+            &[0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12]
         } else {
             self.fields()
         }
@@ -154,6 +154,7 @@ pub(super) fn setup(mut commands: Commands) {
                             "Reward / corpse-loot catalogue",
                             "Gameplay template (optional)",
                             "Access road guide ID (optional)",
+                            "AI test road ID (optional; starts paused, F7)",
                         ]
                         .into_iter()
                         .enumerate()
@@ -289,7 +290,7 @@ pub(super) fn open(
         Mode::World
     };
     let values = if mode.population() {
-        [
+        vec![
             if mode.network() {
                 format!(
                     "build/{slug}-population-{}",
@@ -333,9 +334,10 @@ pub(super) fn open(
                 .as_ref()
                 .and_then(|m| m.access_path)
                 .map_or_else(String::new, |id| id.to_string()),
+            String::new(),
         ]
     } else if mode.world() {
-        [
+        vec![
             if network {
                 format!(
                     "build/{slug}-network-{}",
@@ -367,7 +369,7 @@ pub(super) fn open(
             String::new(),
         ]
     } else {
-        [
+        vec![
             format!("build/{slug}-particles"),
             String::new(),
             String::new(),
@@ -384,7 +386,8 @@ pub(super) fn open(
     };
     for (entity, field, mut text) in &mut fields {
         text.clear();
-        text.editor_mut().set_text(&values[field.0]);
+        text.editor_mut()
+            .set_text(values.get(field.0).map_or("", String::as_str));
         if field.0 == 0 {
             text.queue_edit(TextEdit::SelectAll);
             focus.set(entity, FocusCause::Navigated);
@@ -489,10 +492,12 @@ struct PopulationInput {
     appearance: Option<PathBuf>,
     gameplay: Option<PathBuf>,
     access_path: Option<u64>,
+    test_path: Option<u64>,
 }
 fn population_values(
     fields: &Query<(Entity, &Field, &mut EditableText)>,
     allow_gameplay: bool,
+    allow_test_travel: bool,
 ) -> Result<PopulationInput, String> {
     let value = |index| {
         fields
@@ -545,6 +550,15 @@ fn population_values(
         appearance,
         gameplay: (!gameplay.is_empty()).then(|| PathBuf::from(gameplay)),
         access_path,
+        test_path: if allow_test_travel && !value(12).is_empty() {
+            Some(
+                value(12).parse::<u64>().ok().filter(|id| *id > 0).ok_or(
+                    "AI test road ID must be a positive integer, or blank for manual play",
+                )?,
+            )
+        } else {
+            None
+        },
     })
 }
 
@@ -738,7 +752,17 @@ pub(super) fn finish(
                 }
             };
             let population_settings = if draft.mode.population() {
-                population_values(&fields, draft.mode != Mode::PopulationTest).map(Some)
+                population_values(
+                    &fields,
+                    draft.mode != Mode::PopulationTest,
+                    draft.mode == Mode::AccountPopulationTest,
+                )
+                .and_then(|settings| {
+                    if let Some(id) = settings.test_path {
+                        crate::account_test_route::road(session.editor.zone(), id)?;
+                    }
+                    Ok(Some(settings))
+                })
             } else {
                 Ok(None)
             };
@@ -820,6 +844,7 @@ pub(super) fn finish(
                                         appearance: population.appearance.as_deref(),
                                         gameplay: population.gameplay.as_deref(),
                                         access_path: population.access_path,
+                                        test_path: population.test_path,
                                     },
                                     &scenery,
                                 )
@@ -895,7 +920,7 @@ pub(super) fn finish(
         } else if description {
             **text = match draft.mode {
                 Mode::NetworkTest => "Starts one server and a client per enabled Test Player from this zone snapshot. Stop from the Zone menu. Zone files change only with Save.",
-                Mode::AccountPopulationTest => "Sign in and choose a persistent character. Select a gameplay template to include authored quests and the guide, or leave it empty to use the item and reward catalogues. Requires configured account services.",
+                Mode::AccountPopulationTest => "Sign in and choose a persistent character. Select a gameplay template for authored quests. Leave AI test road blank for manual play; an optional saved Road starts paused and uses F7 to travel out and back. Requires configured account services.",
                 Mode::PopulationTest => "Starts a checked population with one client per enabled Test Player. Stop through the Zone menu. Choose the matching creature profile and player assets.",
                 Mode::Population => "Exports one enabled spawn group, its static world and checked navigation. Select a gameplay template to include authored quests and the guide. Does not start a server.",
                 Mode::World => "Exports the current zone. Use a matching gameplay template for quest areas and NPC references. Save particle edits first.",
@@ -1257,7 +1282,7 @@ mod tests {
         for (row, node) in rows.iter(app.world()) {
             assert_eq!(node.display == Display::Flex, ![8, 9].contains(&row.0));
         }
-        for expected in [1, 2, 3, 4, 5, 6, 7, 10, 11, 0] {
+        for expected in [1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 0] {
             app.world_mut()
                 .resource_mut::<ButtonInput<KeyCode>>()
                 .press(KeyCode::Tab);
