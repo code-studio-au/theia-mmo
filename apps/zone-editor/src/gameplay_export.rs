@@ -20,6 +20,12 @@ impl Draft {
         revision: u32,
     ) -> Result<Self, String> {
         let template = gameplay_bundle::snapshot(template).map_err(|e| e.to_string())?;
+        crate::quest_travel_export::validate_bindings(
+            zone,
+            template
+                .profile("quest")
+                .ok_or("Gameplay template needs quests")?,
+        )?;
         if template.report().manifest_schema < 16 {
             return Err("Gameplay template must support quest areas (schema 16 or newer)".into());
         }

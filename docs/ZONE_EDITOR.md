@@ -11,9 +11,14 @@ navmesh steering and validates clearance. The Northern Meadow compass test road
 1203 has two authored endpoints, separate from access road 1201. The compass itself
 is currently placed by the explicit ground-reward profile. Use Attributes to edit
 NPC/destination markers and ordinary guide tools for the collection test road.
-The quest inspector still shows read-only catalogue information. Editor export
-preflight for escort navigation and clearer travel binding details are the next
-integration slice; successful contact export alone does not establish that route.
+The quest inspector still shows read-only catalogue information. Population export
+now checks escort bindings before geometry work and all grounded routes before
+publication, using the same helper as server startup. Missing/wrong/duplicate/far
+bindings and unsupported routes refuse with the quest/destination identified.
+The export report includes quest_travel entries with checked IDs and steering
+point counts. Native Delete/refusal/Undo/export proof passes in
+build/editor-escort-preflight-v1/qualification.json with original source bytes
+unchanged and no GPU diagnostics. Clearer inspector travel details are next.
 
 Two-contact continuation (14 November 2026, P3-11/12/15 / P5-17):
 `bash tools/edit_contacts.sh` opens the qualified local two-contact source in the

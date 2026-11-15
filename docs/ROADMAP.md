@@ -1,3 +1,10 @@
+15 November 2026 — escort editor validation passes:
+Population export checks exact NPC/destination references and the same supported,
+collision-checked navmesh route as server startup before publication. Native
+Delete → refusal → Undo → successful export preserves source and reports the
+11-point ancient-tree route. See STATUS for checks and Linux limits. Next: expose
+travel bindings and destination selection in the NPC quest inspector.
+
 14 November 2026 — starter quest/HUD continuation:
 The opt-in starter economy slice now implements named contacts, coin presentation,
 slot-anchored item descriptions, target cycling/conditional enemy bars and optional

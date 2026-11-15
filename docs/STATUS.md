@@ -1,3 +1,21 @@
+15 November 2026 — P4-03 / P3-11/12 / P5-17 escort export preflight:
+Editor and server now share supported-home, destination and grounded navmesh
+preparation. The editor rejects invalid NPC/destination bindings early and checks
+all escort routes against the staged world/navigation before publishing a population
+package. The report lists checked quest/NPC/destination IDs and steering counts.
+The marker binding and shared authority regressions pass; actual authored preflight
+accepts the 11-point route and rejects a wrong-floor destination. All 250 editor
+tests pass (13 explicit environment skips), along with denied-warning Clippy for
+network/server/editor and format checks. Native deletion/refusal/Undo/export proof
+passes in build/editor-escort-preflight-v1/qualification.json: missing marker 1202
+refuses without publication, Undo restores it, and the valid package records 11
+steering points. Source bytes and final clean editor state are preserved. Linux
+RX 7900 XTX / RADV NAVI31 / Vulkan, zero GPU validation diagnostics. Supporting
+logs: escort-export-authored-tests.log, escort-shared-tests.log,
+escort-export-editor-tests.log and escort-export-clippy.log. No Windows claim.
+The preceding starter gameplay slice is local commit 5ca72a6a. Next: readable travel
+bindings and navigation from the NPC quest inspector to its destination marker.
+
 14 November 2026 — P3-11/12/15 / P2-14 / P5-17 starter quest/HUD continuation:
 Implemented locally in the explicit starter economy package: named contacts;
 coin bag footer/vendor prices; slot-anchored descriptions; Tab/Shift+Tab with open

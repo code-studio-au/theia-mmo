@@ -1,3 +1,16 @@
+P4-03 / P3-11/12 / P5-17, 15 November 2026 — escort export preflight:
+Prerequisites: qualified destination-only escort runtime, immutable authored world/
+navigation, contact catalogue bindings and atomic population export staging.
+Share destination lookup, 512 m metric bound, supported NPC start and grounded
+route preparation between server startup and the editor worker. Reject invalid
+references before geometry/nav work and invalid routes before package publication.
+Acceptance: missing/wrong/duplicate/far destinations and NPC bindings refuse;
+actual authored route passes while wrong-floor endpoint fails; native Delete →
+failed export → Undo → valid export preserves source and produces route evidence.
+No runtime path search or quest semantics change; counts are not capacity claims.
+Acceptance passes in editor-escort-preflight-v1 with source preservation and zero
+GPU diagnostics; all 250 editor tests and shared/actual-route tests pass. See STATUS.
+
 P3-11/12/15 / P2-14 / P4-03 / P5-17, 15 November 2026 acceptance:
 The native quest/restart flow passes with the final continuous-frame movement
 sample (quest-travel-native-v7). The coin bag/vendor/tooltip and exact durable

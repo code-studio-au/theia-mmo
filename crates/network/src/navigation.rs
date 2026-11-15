@@ -1,6 +1,7 @@
 //! Bounded offline navigation artifacts. File I/O is for loading/bake workers,
 //! never the fixed step. Query/worker adapters do not move actors.
 pub mod authored_checks;
+pub mod escort;
 pub mod query;
 pub mod scheduler;
 pub mod spawn_candidates;

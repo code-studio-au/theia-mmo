@@ -48,6 +48,7 @@ mod quest_area_authoring;
 mod quest_area_export;
 mod quest_area_preview;
 mod quest_inspector;
+mod quest_travel_export;
 mod scenery_collision;
 mod scenery_export;
 mod scenery_glb;

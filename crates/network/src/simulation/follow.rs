@@ -97,23 +97,13 @@ impl World {
                     .ok_or("Follow contact is not installed")?;
                 let mut home = guide.position.metres();
                 home[1] -= f64::from(crate::world::PAWN_Y);
-                let destination = markers
-                    .iter()
-                    .find(|m| {
-                        m.id == policy.destination
-                            && m.kind == theia_zone::markers::MarkerKind::Quest
-                    })
-                    .ok_or("Follow destination marker is absent")?;
-                let end = GlobalPosition::new(destination.position)
-                    .ok_or("Invalid follow destination")?;
-                if distance(guide.position, end) > 512. {
-                    return Err("Follow destination exceeds 512 metre budget".into());
-                }
                 // Two endpoints only: navmesh chooses all intervening corners.
-                let route = navigation::authored_checks::grounded_route(
+                let route = navigation::escort::prepare(
                     store,
                     nav,
-                    &[home, destination.position],
+                    GlobalPosition::new(home).ok_or("Invalid follow home")?,
+                    policy,
+                    markers,
                 )?;
                 let mut patches = BTreeMap::new();
                 // Include all sampled cells, including long simplified segments.

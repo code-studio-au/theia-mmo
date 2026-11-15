@@ -1,3 +1,19 @@
+## 15 November 2026 — shared escort export preflight
+
+P4-03 / P3-11/12 / P5-17. An editor export must not appear playable merely because
+its contact catalogue and population spawn points validate. Resolve each escort's
+exact NPC marker and unique Quest destination before geometry publication; reject
+missing/wrong/duplicate references and destinations beyond the 512 m preparation
+budget. Use the same supported-home and grounded navigation/clearance helper in
+the editor worker and authoritative server startup. Distances use capsule feet
+consistently. The server still revalidates its startup content independently.
+
+Prepare routes against the exact staged world/navigation before exposing a
+population package. Failure removes staging and leaves source, prior exports and
+Undo history intact. Record checked quest/NPC/destination IDs and derived steering
+point counts in the export report. This is validation evidence, not player progress
+or a route cache trusted by the runtime. No search or file I/O enters fixed ticks.
+
 ## 14 November 2026 — escort navigation, ground collection and optional diagnostics
 
 P3-11/12/15 / P2-14 / P5-17. The user chose the escort as the destination-only

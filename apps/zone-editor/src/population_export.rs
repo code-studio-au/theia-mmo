@@ -265,6 +265,20 @@ fn publish_mode(
             &procedural::Source::Authored(store.clone()),
         )
         .map_err(|e| format!("Population placement: {e}"))?;
+        let quest_travel = if let Some(manifest) = gameplay_manifest {
+            let snapshot = theia_network::gameplay_bundle::snapshot(&stage.join(manifest))
+                .map_err(|e| e.to_string())?;
+            crate::quest_travel_export::prepare(
+                zone,
+                snapshot
+                    .profile("quest")
+                    .ok_or("Gameplay snapshot needs quests")?,
+                &store,
+                loaded.navigation(),
+            )?
+        } else {
+            Vec::new()
+        };
         let clients = if network {
             crate::network_test_export::write_scenario(zone, &store, &stage)?
         } else {
@@ -293,7 +307,7 @@ fn publish_mode(
             "count":loaded.count(),"clients":clients,"respawn_ms":loaded.respawn_ms(),"world":world_report,
             "population_identity":loaded.profile_identity(theia_network::targeting::profile_identity(store.identity())),
             "world_directory":output.join("world"),"configuration":output.join("population.json"),
-            "gameplay_manifest":gameplay_manifest,"access_path":settings.access_path,
+            "gameplay_manifest":gameplay_manifest,"access_path":settings.access_path,"quest_travel":quest_travel,
             "scope":"One checked population with configured creature behavior and matching static world/navigation; optional explicit quest/contact snapshot, no server launched; population definition controls NPC behavior, template patrol is not instantiated"}});
         fs::write(
             stage.join("population-export.json"),

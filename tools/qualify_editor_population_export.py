@@ -20,8 +20,11 @@ parser.add_argument('--scenery-library', type=Path)
 parser.add_argument('--gameplay-template', type=Path)
 parser.add_argument('--creature-asset', type=Path)
 parser.add_argument('--access-path', type=int, help='Explicit saved road guide for checked population access')
+parser.add_argument('--escort-destination', type=int, help='Delete/undo this destination and verify escort export rejection and route preparation')
 parser.add_argument('--load-creature-context', action='store_true', help='Load the standalone definition through File, assign/undo it, and verify export defaults')
 args = parser.parse_args()
+if args.escort_destination is not None and (not args.gameplay_template or args.escort_destination <= 0):
+    parser.error('--escort-destination requires a positive marker ID and gameplay template')
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
 original = args.zone.read_bytes()
@@ -136,6 +139,14 @@ with (out / 'editor.log').open('w') as log:
             x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             report.with_suffix('.png').rename(out / 'creature-assigned.png')
 
+        if args.escort_destination is not None:
+            click(next(m['centre'] for m in state()['menus'] if m['name'] == 'Content filter' and m['role'] == 'button' and min(m['size']) > 0))
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target'] == 'Filter(Markers)' and min(c['size']) > 0), None))['centre'])
+            click(wait(lambda: next((c for c in state()['content_list']['controls'] if c['target'] == f'Marker({args.escort_destination})' and min(c['size']) > 0), None))['centre'])
+            wait(lambda: state()['marker_selected'] == args.escort_destination)
+            x.key('Delete')
+            wait(lambda: not any(m['id'] == args.escort_destination for m in state()['document']['markers']))
+
         click(next(m['centre'] for m in state()['menus']
             if m['name'] == 'File' and m['role'] == 'button' and min(m['size']) > 0))
         control = wait(lambda: next((c for c in state()['workspace_controls']
@@ -163,6 +174,26 @@ with (out / 'editor.log').open('w') as log:
             fill(11, args.access_path)
         if args.gameplay_template:
             assert next(f['text'] for f in state()['export_dialog']['fields'] if f['index'] == 10) == str(args.gameplay_template.resolve())
+        if args.escort_destination is not None:
+            submit()
+            wait(lambda: 'Escort' in state()['export_dialog']['message'] and 'destination' in state()['export_dialog']['message'], 60)
+            assert not destination.exists(), 'Invalid escort must never publish a package'
+            x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
+            report.with_suffix('.png').rename(out / 'missing-escort-destination.png')
+            click(next(b['centre'] for b in state()['export_dialog']['buttons'] if b['action'] == 'Close'))
+            wait(lambda: state()['export_dialog'] is None)
+            x.key_state('Control_L', True)
+            try:
+                wait(lambda: state()['control_down'])
+                x.key('z'); fresh()
+            finally:
+                x.key_state('Control_L', False)
+            wait(lambda: any(m['id'] == args.escort_destination for m in state()['document']['markers']))
+            click(next(m['centre'] for m in state()['menus'] if m['name'] == 'File' and m['role'] == 'button' and min(m['size']) > 0))
+            click(wait(lambda: next((c for c in state()['workspace_controls'] if c['target'] == 'ExportPopulation' and c['menu_item'] and min(c['size']) > 0), None))['centre'])
+            wait(lambda: state()['export_dialog'])
+            fill(0, destination); fill(3, args.creature.resolve()); fill(5, '3')
+            if args.access_path is not None: fill(11, args.access_path)
         x.key('F12'); wait(lambda: capture_ready(report.with_suffix('.png')), 30)
         report.with_suffix('.png').rename(out / 'dialog.png')
         submit()
@@ -171,6 +202,8 @@ with (out / 'editor.log').open('w') as log:
         assert result['passed'] and result['count'] == 5, result
         assert result['access_path'] == args.access_path
         assert bool(result['gameplay_manifest']) == bool(args.gameplay_template)
+        if args.escort_destination is not None:
+            assert any(q['destination'] == args.escort_destination and q['steering_points'] >= 2 for q in result['quest_travel'])
         assert source.read_bytes() == seeded and args.zone.read_bytes() == original
         assert args.creature.read_bytes() == creature_original
         exported = json.loads((destination / 'zone.json').read_text())
@@ -187,6 +220,8 @@ with (out / 'editor.log').open('w') as log:
             invalid_spacing_refused=True, invalid_access_id_refused=args.access_path is not None,
             access_path=args.access_path, gameplay_snapshot=bool(args.gameplay_template),
             count=result['count'], source_unchanged=True,
+            invalid_escort_refused=args.escort_destination is not None,
+            quest_travel=result.get('quest_travel', []),
             direct_creature_load=args.load_creature_context, assignment_undo=args.load_creature_context,
             package=str(destination)), indent=2))
     finally:
