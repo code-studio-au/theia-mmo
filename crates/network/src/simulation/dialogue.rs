@@ -410,6 +410,7 @@ impl World {
                 state.close();
             }
         }
+        self.retire_invalid_marks();
         true
     }
     pub(super) fn advance_dialogue(&mut self) {

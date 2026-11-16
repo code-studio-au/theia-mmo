@@ -152,6 +152,7 @@ fn model(state: &State, enabled: bool, timed_out: bool) -> Model {
             Some(Refusal::Stale) => "The party changed. Try again.",
             Some(Refusal::RateLimited) => "Please wait a moment before trying again.",
             Some(Refusal::MissingPlayer) => "That player is no longer here.",
+            Some(Refusal::MissingTarget) => "That unit is no longer available.",
             Some(Refusal::SelfTarget) => "Choose another player.",
             Some(Refusal::AlreadyGrouped) => "That player is already in a party.",
             Some(Refusal::InvitationPending) => "That player already has an invitation.",
@@ -506,7 +507,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
                 Control::Manage => ("manage", None), Control::MenuClose => ("menu-close", None),
                 Control::Command(intent) | Control::Invitation(intent) | Control::Member(intent) => match intent.action {
                     Action::Invite(k) => ("invite", Some(k.entity.value())), Action::Kick(k) => ("remove", Some(k.entity.value())), Action::Promote(k) => ("promote", Some(k.entity.value())),
-                    Action::Accept(id) => ("accept", Some(id)), Action::Decline(id) => ("decline", Some(id)), Action::Cancel(id) => ("cancel", Some(id)), Action::Leave => ("leave", None),
+                    Action::Accept(id) => ("accept", Some(id)), Action::Decline(id) => ("decline", Some(id)), Action::Cancel(id) => ("cancel", Some(id)), Action::Leave => ("leave", None), Action::Mark { target, .. } => ("mark", Some(target.entity.value())), Action::ClearMarks => ("clear-marks", None),
                 },
             };
             serde_json::json!({"action":action,"target":target,"source":if matches!(control, Control::Member(_) | Control::Manage | Control::MenuClose) {"member"} else {"party"},"label":label.0,"point":(transform.affine().translation * crate::fantasy_ui::window_factor(node, scale)).to_array()})

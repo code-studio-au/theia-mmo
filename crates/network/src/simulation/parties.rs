@@ -38,14 +38,50 @@ impl World {
                 .collect()
         }))
     }
+    pub(super) fn retire_invalid_marks(&mut self) {
+        let Some(mut parties) = self.parties.take() else {
+            return;
+        };
+        parties
+            .retain_mark_targets(|key| {
+                self.entity_key(key.entity.value()) == Some(key)
+                    || self
+                        .targets
+                        .get(&key.entity.value())
+                        .is_some_and(|t| t.key == key)
+                    || self.contact_definition(key).is_some()
+            })
+            .expect("Bounded party marker revision");
+        self.parties = Some(parties);
+    }
     /// The caller ID must be resolved from the admitted transport session.
     /// Death never prevents membership management; departure is explicit.
     pub fn party_request(&mut self, actor: u64, request: Request) -> Result<(), Refusal> {
         let key = self.entity_key(actor).ok_or(Refusal::Context)?;
+        let valid_target = match request.action {
+            party::Action::Mark { target, .. } => self
+                .party_view(actor)
+                .and_then(|v| v.membership.party)
+                .is_some_and(|p| {
+                    (p.members.contains(&target)
+                        && self.entity_key(target.entity.value()) == Some(target))
+                        || self.targets.get(&target.entity.value()).is_some_and(|t| {
+                            t.key == target
+                                && self
+                                    .global_position(actor)
+                                    .is_some_and(|p| crate::targeting::relevant(p, t.position))
+                        })
+                        || self
+                            .visible_contacts(actor)
+                            .iter()
+                            .any(|c| c.guide.key == target)
+                }),
+            _ => false,
+        };
         self.parties
             .as_mut()
             .ok_or(Refusal::Context)?
-            .request(key, request)?;
+            .request_with_targets(key, request, |_| valid_target)?;
         self.retire_invalid_selections();
         Ok(())
     }
@@ -173,3 +209,6 @@ mod tests {
 
 #[cfg(test)]
 pub(super) mod targeting_tests;
+
+#[cfg(test)]
+mod marks_tests;

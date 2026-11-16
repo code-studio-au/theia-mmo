@@ -1,3 +1,19 @@
+16 November 2026 — P4-11 shared unit-mark policy:
+The eight reference symbols are Skull, Cross, Square, Moon, Triangle, Diamond,
+Circle and Star. Assignments belong to the party, not the target's global state;
+the same unit may have different symbols in different parties. The current
+leader alone assigns or clears them. One unit has at most one symbol per party,
+and each symbol identifies at most one unit. Reassignment replaces both conflicts.
+These permissions and ranges are explicit Theia policies, not claimed verified
+Classic formulas. Reuse the existing 1024-metre XZ relevance bound for requests
+to hostile units/NPCs; current party members may be marked anywhere in the bounded
+world, including self and dead members. No marker request grants extra positions,
+changes selection/facing/movement, or starts an attack. Retain existing marks
+through loss of interest and promotion; remove dead/retired creature IDs, retired
+NPCs, departing members and dissolved parties. Creature respawn uses fresh IDs,
+so marks do not transfer to a new creature life. Ground markers remain separate.
+Implementation and acceptance evidence belong in STATUS/PARTIES, not this policy.
+
 16 November 2026 — P4-11 friendly member selection:
 Select current other party members throughout the current bounded world, matching
 the party-wide vitals policy. This is an explicit Theia extension; no Classic

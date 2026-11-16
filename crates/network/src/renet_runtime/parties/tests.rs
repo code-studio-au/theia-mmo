@@ -268,6 +268,26 @@ async fn until(peers: &[ClientPeer], condition: impl Fn() -> bool) {
     .expect("Party worker condition timed out");
 }
 
+async fn paced_request(peers: &[ClientPeer], index: usize, action: Action) -> Option<Refusal> {
+    tokio::time::sleep(Duration::from_millis(600)).await;
+    let sequence = peers[index].view().state.view.sequence;
+    peers[index].send(action);
+    until(peers, || {
+        peers[index].view().state.view.sequence > sequence && !peers[index].view().pending
+    })
+    .await;
+    peers[index].view().state.refusal
+}
+fn marks(peer: &ClientPeer) -> Vec<theia_core::party::marks::Mark> {
+    peer.view()
+        .state
+        .view
+        .membership
+        .party
+        .as_ref()
+        .map_or_else(Vec::new, |p| p.marks.clone())
+}
+
 async fn select_member(
     peers: &[ClientPeer],
     index: usize,
@@ -537,6 +557,88 @@ async fn worker_flow(with_chat: bool) {
             );
         }
     }
+    use theia_core::party::marks::{Mark, Symbol};
+    let assign = |target, symbol| Action::Mark {
+        target,
+        symbol: Some(symbol),
+    };
+    tokio::time::sleep(Duration::from_millis(600)).await;
+    let initial_poses: Vec<_> = peers
+        .iter()
+        .map(|p| p.state.borrow().correction.unwrap().state.pose)
+        .collect();
+    assert_eq!(
+        paced_request(&peers, 0, assign(keys[1], Symbol::Skull)).await,
+        None
+    );
+    until(&peers, || {
+        marks(&peers[1])
+            == vec![Mark {
+                target: keys[1],
+                symbol: Symbol::Skull,
+            }]
+    })
+    .await;
+    assert!(marks(&peers[2]).is_empty());
+    assert_eq!(
+        paced_request(&peers, 1, assign(keys[0], Symbol::Star)).await,
+        Some(Refusal::NotLeader)
+    );
+    assert_eq!(
+        paced_request(&peers, 2, assign(keys[1], Symbol::Star)).await,
+        Some(Refusal::NotMember)
+    );
+    assert_eq!(
+        paced_request(&peers, 0, assign(keys[0], Symbol::Skull)).await,
+        None
+    );
+    until(&peers, || {
+        marks(&peers[1])
+            == vec![Mark {
+                target: keys[0],
+                symbol: Symbol::Skull,
+            }]
+    })
+    .await;
+    assert_eq!(
+        paced_request(&peers, 0, assign(keys[1], Symbol::Star)).await,
+        None
+    );
+    assert_eq!(
+        paced_request(
+            &peers,
+            0,
+            Action::Mark {
+                target: keys[0],
+                symbol: None
+            }
+        )
+        .await,
+        None
+    );
+    until(&peers, || {
+        marks(&peers[1])
+            == vec![Mark {
+                target: keys[1],
+                symbol: Symbol::Star,
+            }]
+    })
+    .await;
+    assert_eq!(paced_request(&peers, 0, Action::ClearMarks).await, None);
+    until(&peers, || marks(&peers[1]).is_empty()).await;
+    assert_eq!(
+        paced_request(&peers, 0, assign(keys[1], Symbol::Star)).await,
+        None
+    );
+    until(&peers, || marks(&peers[0]) == marks(&peers[1])).await;
+    assert_eq!(
+        peers
+            .iter()
+            .map(|p| p.state.borrow().correction.unwrap().state.pose)
+            .collect::<Vec<_>>(),
+        initial_poses
+    );
+    assert!(marks(&peers[2]).is_empty());
     if with_chat {
         until(&peers, || {
             peers.iter().all(|p| p.state.borrow().targeting.is_some())
@@ -578,6 +680,39 @@ async fn worker_flow(with_chat: bool) {
         let refused = select_member(&peers, 2, Some(keys[1]), false).await;
         assert!(refused.selected.is_none() && refused.selected_member.is_none());
         let enemy = friendly.targets[0].key;
+        assert_eq!(
+            paced_request(&peers, 0, assign(enemy, Symbol::Skull)).await,
+            None
+        );
+        until(&peers, || {
+            marks(&peers[1])
+                .iter()
+                .any(|m| m.target == enemy && m.symbol == Symbol::Skull)
+        })
+        .await;
+        assert!(marks(&peers[2]).is_empty());
+        assert_eq!(
+            peers[0]
+                .state
+                .borrow()
+                .targeting
+                .as_ref()
+                .unwrap()
+                .selected_member,
+            Some(keys[1].entity)
+        );
+        assert_eq!(
+            paced_request(
+                &peers,
+                0,
+                Action::Mark {
+                    target: enemy,
+                    symbol: None
+                }
+            )
+            .await,
+            None
+        );
         let hostile = select_member(&peers, 0, Some(enemy), true).await;
         assert_eq!(hostile.selected, Some(enemy.entity));
         assert!(hostile.selected_member.is_none());
@@ -684,13 +819,17 @@ async fn worker_flow(with_chat: bool) {
                 < 100
         );
     }
+    let submitted = peers[1].view().submitted;
     peers[1].send(Action::Invite(keys[2]));
     until(&peers, || {
-        peers[1].view().submitted == 2 && !peers[1].view().pending
+        peers[1].view().submitted > submitted && !peers[1].view().pending
     })
     .await;
     assert_eq!(peers[1].view().state.refusal, Some(Refusal::NotLeader));
-    peers[0].send(Action::Invite(keys[2]));
+    assert_eq!(
+        paced_request(&peers, 0, Action::Invite(keys[2])).await,
+        None
+    );
     until(&peers, || {
         peers[2].view().state.view.membership.incoming.is_some()
     })
@@ -717,7 +856,10 @@ async fn worker_flow(with_chat: bool) {
         })
     })
     .await;
-    peers[0].send(Action::Promote(keys[1]));
+    assert_eq!(
+        paced_request(&peers, 0, Action::Promote(keys[1])).await,
+        None
+    );
     until(&peers, || {
         peers.iter().all(|p| {
             p.view()
@@ -751,6 +893,11 @@ async fn worker_flow(with_chat: bool) {
         })
         .await;
     }
+    assert!(peers.iter().all(|p| marks(p)
+        == vec![Mark {
+            target: keys[1],
+            symbol: Symbol::Star
+        }]));
     let departed = peers.remove(1);
     departed.stop.0.send_replace(true);
     departed.task.await.unwrap().unwrap();
@@ -768,6 +915,7 @@ async fn worker_flow(with_chat: bool) {
     })
     .await;
     for peer in &peers {
+        assert!(marks(peer).is_empty(), "Departed member kept a mark");
         assert_eq!(
             peer.view()
                 .state
@@ -797,7 +945,7 @@ async fn worker_flow(with_chat: bool) {
             Some(keys[2].entity)
         );
     }
-    peers[0].send(Action::Leave);
+    assert_eq!(paced_request(&peers, 0, Action::Leave).await, None);
     until(&peers, || {
         peers
             .iter()
@@ -849,8 +997,8 @@ async fn worker_flow(with_chat: bool) {
     }
     server_stop.0.send_replace(true);
     let stats = server.await.unwrap().unwrap();
-    assert_eq!(stats.party.accepted, 6);
-    assert_eq!(stats.party.refused, 1);
+    assert_eq!(stats.party.accepted, if with_chat { 14 } else { 12 });
+    assert_eq!(stats.party.refused, 3);
     assert_eq!(stats.party.invalid_uploads, 0);
     assert_eq!(stats.max_players, 3);
 }

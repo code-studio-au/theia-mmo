@@ -1080,6 +1080,11 @@ impl World {
             return false;
         }
         self.targets.remove(&key.entity.value());
+        if let Some(parties) = &mut self.parties {
+            parties
+                .retain_mark_targets(|target| target != key)
+                .expect("Bounded party marker retirement");
+        }
         for actor in self.players.values_mut() {
             if actor.selected_target == Some(key) {
                 actor.selected_target = None;
@@ -1178,6 +1183,7 @@ impl World {
         self.advance_follow();
         self.advance_dialogue();
         self.retire_invalid_selections();
+        self.retire_invalid_marks();
         snapshot
     }
     fn step_movement(&mut self) -> Snapshot {

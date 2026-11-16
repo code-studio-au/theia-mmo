@@ -1566,9 +1566,37 @@ fn selected_party_member_survives_actual_death_and_respawn_without_becoming_host
         let key = world.entity_key(member).unwrap();
         crate::simulation::parties::targeting_tests::group(&mut world, owner, key);
         assert!(world.select_target(owner, Some(key)));
+        let view = world.party_view(owner).unwrap();
+        let mark = theia_core::party::marks::Mark {
+            target: key,
+            symbol: theia_core::party::marks::Symbol::Star,
+        };
+        world
+            .party_request(
+                owner,
+                theia_core::party::Request {
+                    sequence: view.sequence + 1,
+                    revision: view.revision,
+                    action: theia_core::party::Action::Mark {
+                        target: key,
+                        symbol: Some(mark.symbol),
+                    },
+                },
+            )
+            .unwrap();
         hit(&mut world, member, npc, 1);
         dead(&mut world, member);
         assert_eq!(world.player_life_snapshot(member).unwrap().health, 0);
+        assert_eq!(
+            world
+                .party_view(owner)
+                .unwrap()
+                .membership
+                .party
+                .unwrap()
+                .marks,
+            vec![mark]
+        );
         assert_eq!(
             world.targeting_snapshot(owner).unwrap().selected_member,
             Some(key)
@@ -1577,6 +1605,16 @@ fn selected_party_member_survives_actual_death_and_respawn_without_becoming_host
             world.step();
         }
         assert!(world.player_alive(member));
+        assert_eq!(
+            world
+                .party_view(owner)
+                .unwrap()
+                .membership
+                .party
+                .unwrap()
+                .marks,
+            vec![mark]
+        );
         let view = world.targeting_snapshot(owner).unwrap();
         assert_eq!(view.selected_member, Some(key));
         assert!(view.selected.is_none() && view.targets.iter().all(|t| t.key != key));

@@ -1,3 +1,29 @@
+# Current checkpoint — 16 November 2026: shared unit-mark authority accepted
+
+16 November 2026 — P4-11 shared unit-mark authority accepted:
+Party profile v5 / PQ02 / PS03 carries eight bounded, party-private symbols.
+Leaders can assign, clear a unit or clear all; reassignment preserves one symbol
+per unit and one unit per symbol. Requests validate exact current members or
+relevant living enemies/available NPCs, with existing revision, rate and replay
+guards. Marking changes no selection, movement, facing or attack. Marks survive
+interest loss, promotion and member death/respawn; creature death, NPC retirement,
+member departure and party dissolution clear the affected marks. Creature respawn
+uses a fresh identity. Leader-only permissions and range policy are explicit
+Theia decisions, not claimed Classic rules. No extra positions or stats replicate.
+407 core, 905 network (36 skips) and 292 client tests (four skips) pass. Actual
+three-peer encrypted flows prove sharing, outsider isolation, permissions,
+reassignment/clear and unchanged poses/selection. World tests cover lifecycle at
+20/30/60 Hz. Strict all-target core/network/client/server/editor Clippy, fmt and
+matching client/server/editor builds pass: build/party-marks-checks.json and
+party-marks-*-tests.log. The inventory admission test now stops its synthetic
+owners after the server, fixing a fixture-only shutdown race exposed by the suite.
+This is the protocol prerequisite; no palette or rendered symbols yet, and no new
+native GPU or Windows claim. Next: marker controls, overhead and target-frame
+symbols, with native two-account checks at both tile heights. Editor playtests
+inherit the matched protocol. Continue locally until Stop; no push.
+
+---
+
 # Current checkpoint — 16 November 2026: member selection UI accepted
 
 16 November 2026 — P4-11 selected-member presentation accepted:

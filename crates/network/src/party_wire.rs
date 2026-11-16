@@ -8,8 +8,8 @@ use theia_core::{
     resources::Vitals,
 };
 
-pub const REQUEST_TAG: &[u8; 4] = b"PQ01";
-pub const STATE_TAG: &[u8; 4] = b"PS02";
+pub const REQUEST_TAG: &[u8; 4] = b"PQ02";
+pub const STATE_TAG: &[u8; 4] = b"PS03";
 pub const REQUEST_BYTES: usize = 37;
 pub const MAX_STATE_BYTES: usize = 80
     + 16
@@ -17,11 +17,13 @@ pub const MAX_STATE_BYTES: usize = 80
     + 40 * party::MAX_MEMBERS
     + party::MAX_ACTORS * (9 + theia_core::character_name::MAX_BYTES)
     + 1
-    + party::MAX_MEMBERS * (8 + 1 + 16);
+    + party::MAX_MEMBERS * (8 + 1 + 16)
+    + 1
+    + 9 * party::marks::Symbol::ALL.len();
 
 pub fn profile_identity(source: [u8; 32]) -> [u8; 32] {
-    // v4 adds private party-member vitals to the shared-escort profile.
-    let mut bytes = b"theia-session-party-v4\0".to_vec();
+    // v5 adds bounded shared unit marks to the private party profile.
+    let mut bytes = b"theia-session-party-v5\0".to_vec();
     bytes.extend(source);
     for value in [
         party::MAX_ACTORS as u64,
@@ -33,6 +35,7 @@ pub fn profile_identity(source: [u8; 32]) -> [u8; 32] {
     ] {
         bytes.extend(value.to_le_bytes());
     }
+    bytes.extend(party::marks::Symbol::ALL.map(|symbol| symbol as u8));
     bytes.extend(REQUEST_TAG);
     bytes.extend(STATE_TAG);
     crate::terrain::sha256(&bytes)
@@ -61,8 +64,18 @@ impl Request {
             Action::Decline(id) => (3, id),
             Action::Cancel(id) => (4, id),
             Action::Leave => (5, 0),
+            Action::ClearMarks => (17, 0),
+            Action::Mark { target, symbol } => {
+                if target.epoch != self.epoch {
+                    return Err("Foreign marker target epoch".into());
+                }
+                (8 + symbol.map_or(0, |s| s as u8), target.entity.value())
+            }
         };
-        if self.intent.sequence == 0 || self.intent.revision == 0 || (kind != 5 && value == 0) {
+        if self.intent.sequence == 0
+            || self.intent.revision == 0
+            || (!matches!(kind, 5 | 17) && value == 0)
+        {
             return Err("Invalid party request identifiers".into());
         }
         let mut bytes = Vec::with_capacity(REQUEST_BYTES);
@@ -100,6 +113,14 @@ impl Request {
             3 => Action::Decline(value),
             4 => Action::Cancel(value),
             5 if value == 0 => Action::Leave,
+            17 if value == 0 => Action::ClearMarks,
+            8..=16 => Action::Mark {
+                target: EntityKey {
+                    epoch,
+                    entity: EntityId::new(value).ok_or("Invalid marker target")?,
+                },
+                symbol: party::marks::Symbol::from_byte(kind - 8),
+            },
             _ => return Err("Invalid party action".into()),
         };
         let request = Self {
@@ -190,6 +211,17 @@ impl State {
                     .any(|(i, key)| !known(*key) || group.members[..i].contains(key)))
         {
             return Err("Invalid party member list".into());
+        }
+        if let Some(group) = &membership.party
+            && (group.marks.len() > party::marks::Symbol::ALL.len()
+                || group.marks.iter().enumerate().any(|(i, mark)| {
+                    mark.target.epoch != owner.epoch
+                        || (i > 0 && group.marks[i - 1].symbol >= mark.symbol)
+                        || group.marks[..i].iter().any(|m| m.target == mark.target)
+                        || (known(mark.target) && !group.members.contains(&mark.target))
+                }))
+        {
+            return Err("Invalid private party marks".into());
         }
         let valid_invitation = |invitation: &Invitation| {
             invitation.id != 0
@@ -289,6 +321,11 @@ impl State {
             for member in &party.members {
                 bytes.extend(member.entity.value().to_le_bytes());
             }
+            bytes.push(party.marks.len() as u8);
+            for mark in &party.marks {
+                bytes.push(mark.symbol as u8);
+                bytes.extend(mark.target.entity.value().to_le_bytes());
+            }
         } else {
             bytes.push(0);
         }
@@ -348,10 +385,22 @@ impl State {
             for _ in 0..count {
                 members.push(r.key(epoch)?);
             }
+            let count = usize::from(r.byte()?);
+            if count > party::marks::Symbol::ALL.len() {
+                return Err("Too many party marks".into());
+            }
+            let mut marks = Vec::with_capacity(count);
+            for _ in 0..count {
+                let symbol =
+                    party::marks::Symbol::from_byte(r.byte()?).ok_or("Invalid party symbol")?;
+                let target = r.key(epoch)?;
+                marks.push(party::marks::Mark { symbol, target });
+            }
             Some(Party {
                 id,
                 leader,
                 members,
+                marks,
             })
         };
         let incoming = match r.byte()? {
@@ -489,6 +538,7 @@ fn refusal_byte(refusal: Option<Refusal>) -> u8 {
         Some(Refusal::MissingInvitation) => 11,
         Some(Refusal::NotMember) => 12,
         Some(Refusal::Exhausted) => 13,
+        Some(Refusal::MissingTarget) => 14,
     }
 }
 fn decode_refusal(value: u8) -> Result<Option<Refusal>> {
@@ -507,6 +557,7 @@ fn decode_refusal(value: u8) -> Result<Option<Refusal>> {
         11 => Some(Refusal::MissingInvitation),
         12 => Some(Refusal::NotMember),
         13 => Some(Refusal::Exhausted),
+        14 => Some(Refusal::MissingTarget),
         _ => return Err("Invalid party refusal".into()),
     })
 }

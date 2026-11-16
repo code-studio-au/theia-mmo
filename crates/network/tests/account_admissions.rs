@@ -461,11 +461,12 @@ async fn encrypted_item_ports(coalesced: bool) {
     let identity = world.identity();
     let patch = Patch::build(ChunkId { x: 120, z: 100 });
     let (stop, shutdown) = watch::channel(false);
+    let (owner_stop, owner_shutdown) = watch::channel(false);
     let (release_a, waiting) = watch::channel(false);
     let (_release_b, ready) = watch::channel(true);
     let (items_a, task_a, received_a) =
-        synthetic_items_with_options(13, waiting, shutdown.clone(), false, coalesced);
-    let (items_b, task_b, _) = synthetic_items(7, ready, shutdown.clone());
+        synthetic_items_with_options(13, waiting, owner_shutdown.clone(), false, coalesced);
+    let (items_b, task_b, _) = synthetic_items(7, ready, owner_shutdown);
     let policies: [Arc<Policy>; 2] = std::array::from_fn(|i| {
         let policy = Arc::new(Policy::default());
         policy.live.store(true, Ordering::SeqCst);
@@ -639,6 +640,8 @@ async fn encrypted_item_ports(coalesced: bool) {
     assert!(stats.inventory_states_sent >= 5);
     assert!(stats.queued_commands > 0);
     assert!(stats.max_control_batch <= 8 && stats.max_event_queue_bytes <= 8192);
+    // Inventory owners must outlive the server consuming their streams.
+    owner_stop.send_replace(true);
     task_a.await.unwrap();
     task_b.await.unwrap();
 }

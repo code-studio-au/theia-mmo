@@ -6,6 +6,8 @@ use crate::{
 };
 use std::collections::BTreeMap;
 
+pub mod marks;
+
 pub const MAX_ACTORS: usize = 8;
 pub const MAX_MEMBERS: usize = 5;
 pub const INVITATION_SECONDS: u64 = 60;
@@ -22,6 +24,11 @@ pub enum Action {
     Leave,
     Kick(EntityKey),
     Promote(EntityKey),
+    Mark {
+        target: EntityKey,
+        symbol: Option<marks::Symbol>,
+    },
+    ClearMarks,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Request {
@@ -44,6 +51,7 @@ pub enum Refusal {
     MissingInvitation,
     NotMember,
     Exhausted,
+    MissingTarget,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Party {
@@ -51,6 +59,8 @@ pub struct Party {
     pub leader: EntityKey,
     /// Stable join order, unaffected by leadership changes.
     pub members: Vec<EntityKey>,
+    /// Canonical symbol order; one symbol per unit and one unit per symbol.
+    pub marks: Vec<marks::Mark>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Invitation {
@@ -164,6 +174,16 @@ impl Authority {
     /// Caller comes from the admitted connection, never a field in a request.
     /// Valid sequences are consumed even on stale/rate/policy refusal.
     pub fn request(&mut self, caller: EntityKey, request: Request) -> Result<(), Refusal> {
+        self.request_with_targets(caller, request, |_| false)
+    }
+    /// Trusted world adapter validates the existence/relevance of marker targets.
+    /// Ordinary membership callers cannot authorize arbitrary world identities.
+    pub fn request_with_targets(
+        &mut self,
+        caller: EntityKey,
+        request: Request,
+        valid_target: impl FnOnce(EntityKey) -> bool,
+    ) -> Result<(), Refusal> {
         self.reserve_change()?;
         let actor = self.actor(caller).ok_or(Refusal::Context)?;
         if request.sequence <= actor.sequence
@@ -184,7 +204,29 @@ impl Authority {
             return Err(Refusal::Stale);
         }
         let before = self.capture();
-        self.apply(caller, request.action)?;
+        self.apply(caller, request.action, valid_target)?;
+        self.publish(before);
+        Ok(())
+    }
+    /// Retire world targets without consuming a player's command sequence.
+    pub fn retain_mark_targets(
+        &mut self,
+        mut valid: impl FnMut(EntityKey) -> bool,
+    ) -> Result<(), Refusal> {
+        let retired: Vec<_> = self
+            .parties
+            .values()
+            .flat_map(|p| p.marks.iter())
+            .filter_map(|m| (!valid(m.target)).then_some(m.target))
+            .collect();
+        if retired.is_empty() {
+            return Ok(());
+        }
+        self.reserve_change()?;
+        let before = self.capture();
+        for party in self.parties.values_mut() {
+            party.marks.retain(|m| !retired.contains(&m.target));
+        }
         self.publish(before);
         Ok(())
     }
@@ -246,8 +288,39 @@ impl Authority {
             }
         }
     }
-    fn apply(&mut self, caller: EntityKey, action: Action) -> Result<(), Refusal> {
+    fn apply(
+        &mut self,
+        caller: EntityKey,
+        action: Action,
+        valid_target: impl FnOnce(EntityKey) -> bool,
+    ) -> Result<(), Refusal> {
         match action {
+            Action::Mark { target, symbol } => {
+                let party = self.group(caller).ok_or(Refusal::NotMember)?;
+                if party.leader != caller {
+                    return Err(Refusal::NotLeader);
+                }
+                if target.epoch != self.epoch || !valid_target(target) {
+                    return Err(Refusal::MissingTarget);
+                }
+                let id = party.id;
+                let marks = &mut self.parties.get_mut(&id).unwrap().marks;
+                marks.retain(|mark| mark.target != target && Some(mark.symbol) != symbol);
+                if let Some(symbol) = symbol {
+                    marks.push(marks::Mark { target, symbol });
+                }
+                marks.sort_by_key(|m| m.symbol);
+                Ok(())
+            }
+            Action::ClearMarks => {
+                let party = self.group(caller).ok_or(Refusal::NotMember)?;
+                if party.leader != caller {
+                    return Err(Refusal::NotLeader);
+                }
+                let id = party.id;
+                self.parties.get_mut(&id).unwrap().marks.clear();
+                Ok(())
+            }
             Action::Invite(target) => self.invite(caller, target),
             Action::Accept(id) => self.accept(caller, id),
             Action::Decline(id) | Action::Cancel(id) => {
@@ -373,6 +446,7 @@ impl Authority {
                 id: group_id,
                 leader: invitation.inviter,
                 members: vec![invitation.inviter],
+                marks: vec![],
             })
             .members
             .push(caller);
@@ -395,6 +469,7 @@ impl Authority {
         self.cancel_outgoing(caller);
         let party = self.parties.get_mut(&id).unwrap();
         party.members.retain(|&member| member != caller);
+        party.marks.retain(|mark| mark.target != caller);
         if party.members.len() < 2 {
             self.parties.remove(&id);
             self.invitations.retain(|_, i| i.party != Some(id));

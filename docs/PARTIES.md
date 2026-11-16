@@ -7,7 +7,7 @@ explicitly extend the requested direction to invitations, member stats and
 party targeting/marking. Originals use the same Pictures path below with date
 2026-11-16. The invitation prompt and compact name/health/mana frames are qualified in STATUS;
 member selection and real target-frame resources are adopted below; portraits,
-level/status icons and shared marks remain planned:
+level/status icons and shared-marker controls/rendering remain planned:
 
 - Incoming invite: compact top-centre prompt naming the inviter, with Accept
   and Decline side by side while the world stays visible. Reuse the existing
@@ -27,8 +27,8 @@ level/status icons and shared marks remain planned:
 Acceptance for the remaining UI includes readable layouts at 1720x1400 paired
 and 1720x700 four-player tiles, invite expiry/decline, stale member guards,
 cross-client mark agreement and party isolation. The current membership slice
-now replicates and displays authoritative health/mana. Level/status replication,
-shared marks remain a later slice.
+now replicates and displays authoritative health/mana. Level/status replication and shared-marker presentation remain later slices;
+the shared-marker authority prerequisite is accepted below.
 Title/selection/loading references are in [CHARACTER_LAUNCHER_MENU.md](CHARACTER_LAUNCHER_MENU.md).
 
 The user supplied three WoW screenshots captured on 15 November at 21:14:46,
@@ -349,3 +349,25 @@ covered by the target HUD. The final harness chooses a visible unobscured NPC.
 Editor account playtests inherit these controls without additional options.
 Next: party-scoped authoritative shared unit marks, then the adopted title,
 character-selection and loading flow. Continue locally until Stop; no push.
+
+16 November 2026 — P4-11 shared unit-mark authority accepted:
+Party profile v5 / PQ02 / PS03 carries eight bounded, party-private symbols.
+Leaders can assign, clear a unit or clear all; reassignment preserves one symbol
+per unit and one unit per symbol. Requests validate exact current members or
+relevant living enemies/available NPCs, with existing revision, rate and replay
+guards. Marking changes no selection, movement, facing or attack. Marks survive
+interest loss, promotion and member death/respawn; creature death, NPC retirement,
+member departure and party dissolution clear the affected marks. Creature respawn
+uses a fresh identity. Leader-only permissions and range policy are explicit
+Theia decisions, not claimed Classic rules. No extra positions or stats replicate.
+407 core, 905 network (36 skips) and 292 client tests (four skips) pass. Actual
+three-peer encrypted flows prove sharing, outsider isolation, permissions,
+reassignment/clear and unchanged poses/selection. World tests cover lifecycle at
+20/30/60 Hz. Strict all-target core/network/client/server/editor Clippy, fmt and
+matching client/server/editor builds pass: build/party-marks-checks.json and
+party-marks-*-tests.log. The inventory admission test now stops its synthetic
+owners after the server, fixing a fixture-only shutdown race exposed by the suite.
+This is the protocol prerequisite; no palette or rendered symbols yet, and no new
+native GPU or Windows claim. Next: marker controls, overhead and target-frame
+symbols, with native two-account checks at both tile heights. Editor playtests
+inherit the matched protocol. Continue locally until Stop; no push.

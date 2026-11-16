@@ -97,6 +97,14 @@ fn real_authority_states_round_trip_for_solo_invitation_and_full_party() {
     for member in &mut longest.member_vitals {
         member.vitals = Vitals::new(0, 1_000_000, 1_000_000, 1_000_000);
     }
+    longest.view.membership.party.as_mut().unwrap().marks = party::marks::Symbol::ALL
+        .into_iter()
+        .enumerate()
+        .map(|(i, symbol)| party::marks::Mark {
+            target: key(100 + i as u64),
+            symbol,
+        })
+        .collect();
     round_trip(longest);
 }
 
@@ -110,7 +118,21 @@ fn all_actions_are_canonical_and_invalid_discriminants_lengths_and_ids_refuse() 
         Action::Leave,
         Action::Kick(key(2)),
         Action::Promote(key(2)),
-    ] {
+        Action::ClearMarks,
+        Action::Mark {
+            target: key(2),
+            symbol: None,
+        },
+    ]
+    .into_iter()
+    .chain(
+        party::marks::Symbol::ALL
+            .into_iter()
+            .map(|symbol| Action::Mark {
+                target: key(2),
+                symbol: Some(symbol),
+            }),
+    ) {
         let frame = Request {
             epoch: key(1).epoch,
             intent: party::Request {
@@ -130,7 +152,7 @@ fn all_actions_are_canonical_and_invalid_discriminants_lengths_and_ids_refuse() 
             invalid[at..at + 8].fill(0);
             assert!(Request::decode(&invalid).is_err());
         }
-        for kind in [0, 8, 255] {
+        for kind in [0, 18, 255] {
             let mut invalid = bytes.clone();
             invalid[28] = kind;
             assert!(Request::decode(&invalid).is_err());
@@ -139,7 +161,7 @@ fn all_actions_are_canonical_and_invalid_discriminants_lengths_and_ids_refuse() 
         invalid.push(0);
         assert!(Request::decode(&invalid).is_err());
         let mut invalid = bytes;
-        if action == Action::Leave {
+        if matches!(action, Action::Leave | Action::ClearMarks) {
             invalid[29] = 1;
         } else {
             invalid[29..].fill(0);
@@ -359,4 +381,57 @@ fn vitals_are_checked_private_membership_observations_not_membership_revisions()
     let mut legacy = bytes;
     legacy[..4].copy_from_slice(b"PS01");
     assert!(State::decode(&legacy).is_err());
+}
+
+#[test]
+fn private_marks_reject_duplicate_targets_symbols_order_foreign_epochs_and_legacy_frames() {
+    use party::marks::{Mark, Symbol};
+    let mut a = authority();
+    request(&mut a, 1, Action::Invite(key(2)));
+    let id = a.view(key(2)).unwrap().membership.incoming.unwrap().id;
+    request(&mut a, 2, Action::Accept(id));
+    let mut valid = state(&a, 1, None);
+    valid.view.membership.party.as_mut().unwrap().marks = Symbol::ALL
+        .into_iter()
+        .enumerate()
+        .map(|(i, symbol)| Mark {
+            target: key(100 + i as u64),
+            symbol,
+        })
+        .collect();
+    round_trip(valid.clone());
+    let bytes = valid.encode().unwrap();
+    let mut legacy = bytes.clone();
+    legacy[..4].copy_from_slice(b"PS02");
+    assert!(State::decode(&legacy).is_err());
+    for case in 0..6 {
+        let mut invalid = valid.clone();
+        let marks = &mut invalid.view.membership.party.as_mut().unwrap().marks;
+        match case {
+            0 => marks[1].target = marks[0].target,
+            1 => marks[1].symbol = marks[0].symbol,
+            2 => marks.swap(0, 1),
+            3 => marks[0].target.epoch = WorldEpoch::new(99).unwrap(),
+            4 => marks[0].target = key(3), // Named admission outside this party.
+            5 => marks.push(marks[0]),
+            _ => unreachable!(),
+        }
+        assert!(invalid.encode().is_err(), "case {case}");
+    }
+    let mut invalid = bytes.clone();
+    // Header + member count + party identity/leader + two members.
+    invalid[110] = 9;
+    assert!(State::decode(&invalid).is_err());
+    let frame = Request {
+        epoch: key(1).epoch,
+        intent: party::Request {
+            sequence: 1,
+            revision: 1,
+            action: Action::ClearMarks,
+        },
+    };
+    let mut bytes = frame.encode().unwrap();
+    bytes[..4].copy_from_slice(b"PQ01");
+    assert!(Request::decode(&bytes).is_err());
+    assert!(state(&a, 3, None).view.membership.party.is_none());
 }
