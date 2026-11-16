@@ -10,7 +10,9 @@ pub struct Target {
 }
 #[derive(Clone, Debug)]
 pub struct Snapshot {
+    /// Selected hostile; members never enter the hostile candidate list.
     pub selected: Option<EntityKey>,
+    pub selected_member: Option<EntityKey>,
     pub targets: Vec<Target>,
 }
 /// Superseding local choice. None in the watch mailbox means no request yet;
@@ -29,7 +31,7 @@ pub(crate) fn relevant(from: GlobalPosition, to: GlobalPosition) -> bool {
 
 /// Bind this opt-in protocol profile independently of immutable terrain identity.
 pub fn profile_identity(terrain: [u8; 32]) -> [u8; 32] {
-    let mut bytes = b"theia-targeting-profile-v1\0".to_vec();
+    let mut bytes = b"theia-targeting-profile-v2\0".to_vec();
     bytes.extend(terrain);
     crate::terrain::sha256(&bytes)
 }

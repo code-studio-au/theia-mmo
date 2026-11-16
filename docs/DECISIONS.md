@@ -1,3 +1,16 @@
+16 November 2026 — P4-11 friendly member selection:
+Select current other party members throughout the current bounded world, matching
+the party-wide vitals policy. This is an explicit Theia extension; no Classic
+range equivalence is claimed. Selection carries identity only, with exact world/
+actor incarnation and membership checks; it does not grant additional position
+visibility or combat eligibility. Keep a separate mutually exclusive friendly
+identity in TG02 so existing hostile lists, Tab search, visuals and damaging
+abilities cannot treat members as creatures. Selection stops prior autoattack
+without turning or moving. Death/respawn and leadership changes retain the member;
+leave/removal/dissolution/disconnect clear it. Profile v2 requires matching rebuilt
+clients/server/editor. The authority prerequisite passes; member-frame selection
+and target-frame presentation remain the next playable UI slice. See STATUS.
+
 16 November 2026 — P4-11 compact invitation prompt:
 Reuse the existing authenticated party invitation/revision/expiry and one-command
 pending guard. When Party management is closed, show the trusted inviter name and

@@ -596,3 +596,42 @@ fn full_event_budget_pauses_without_damage_or_dropped_events_and_resumes_once() 
 
 #[path = "ability_rules_tests.rs"]
 mod ability_rules;
+
+#[test]
+fn selecting_party_member_stops_enemy_swings_without_turning_or_enabling_friendly_attack() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, enemy) = inactive(rate);
+        world.enable_autoattack(WEAPONS, ITEMS).unwrap();
+        world.enable_parties().unwrap();
+        let owner = world.join().unwrap();
+        let member = world.join().unwrap();
+        let key = world.entity_key(member).unwrap();
+        ready(&mut world, owner, 1);
+        gear(&mut world, owner, 1, Some("theia.dev.training-sword"));
+        crate::simulation::parties::targeting_tests::group(&mut world, owner, key);
+        assert_eq!(
+            request(&mut world, owner, 1, Some(enemy)).outcome,
+            Outcome::Engaged
+        );
+        world.step();
+        let remaining = health(&world, enemy);
+        assert_eq!(remaining, 85);
+        let pose = world.correction(owner).unwrap().state.pose;
+        assert!(world.select_target(owner, Some(key)));
+        assert_eq!(world.correction(owner).unwrap().state.pose, pose);
+        assert_eq!(world.autoattack_snapshot(owner).unwrap().phase, Phase::Idle);
+        assert_eq!(world.autoattack_snapshot(owner).unwrap().target, None);
+        assert_eq!(
+            request(&mut world, owner, 2, Some(key)).outcome,
+            Outcome::Rejected(Pause::InvalidTarget)
+        );
+        for _ in 0..rate.hz() * 4 {
+            world.step();
+        }
+        assert_eq!(health(&world, enemy), remaining);
+        assert_eq!(
+            world.targeting_snapshot(owner).unwrap().selected_member,
+            Some(key)
+        );
+    }
+}

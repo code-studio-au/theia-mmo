@@ -1010,23 +1010,54 @@ impl World {
     }
     /// The caller binds actor_id from its admitted session, never from payload data.
     pub fn select_target(&mut self, actor_id: u64, target: Option<EntityKey>) -> bool {
-        let Some(actor) = self.players.get_mut(&actor_id) else {
+        if !self.players.contains_key(&actor_id)
+            || target.is_some_and(|key| !self.valid_selection(actor_id, key, true))
+        {
             return false;
-        };
-        if let Some(key) = target {
-            let Some(entity) = self.targets.get(&key.entity.value()) else {
-                return false;
-            };
-            if key != entity.key || !crate::targeting::relevant(actor.position, entity.position) {
-                return false;
-            }
         }
+        let actor = self.players.get_mut(&actor_id).unwrap();
         let changed = actor.selected_target != target;
         actor.selected_target = target;
         if changed && let Some(combat) = &mut self.combat {
             combat.stop_autoattack(actor_id, self.tick);
         }
         true
+    }
+    /// Party-wide friendly selection is independent of spatial interest. This
+    /// grants no combat eligibility, positions or authority over another actor.
+    fn is_member_target(&self, actor: u64, key: EntityKey) -> bool {
+        self.entity_key(key.entity.value()) == Some(key)
+            && self.entity_key(actor) != Some(key)
+            && self.party_view(actor).is_some_and(|view| {
+                view.membership
+                    .party
+                    .is_some_and(|p| p.members.contains(&key))
+            })
+    }
+    fn valid_selection(&self, actor: u64, key: EntityKey, requested: bool) -> bool {
+        self.is_member_target(actor, key)
+            || self.targets.get(&key.entity.value()).is_some_and(|target| {
+                target.key == key
+                    && ((!requested && self.classic)
+                        || self.players.get(&actor).is_some_and(|owner| {
+                            crate::targeting::relevant(owner.position, target.position)
+                        }))
+            })
+    }
+    fn retire_invalid_selections(&mut self) {
+        let retired: Vec<_> = self
+            .players
+            .iter()
+            .filter_map(|(&id, actor)| {
+                actor
+                    .selected_target
+                    .filter(|key| !self.valid_selection(id, *key, false))
+                    .map(|_| id)
+            })
+            .collect();
+        for id in retired {
+            self.select_target(id, None);
+        }
     }
     pub fn remove_development_target(&mut self, key: EntityKey) -> bool {
         let patrol = self.patrol.as_ref().is_some_and(|p| p.key == key);
@@ -1060,7 +1091,12 @@ impl World {
     pub fn targeting_snapshot(&self, actor_id: u64) -> Option<crate::targeting::Snapshot> {
         let actor = self.players.get(&actor_id)?;
         Some(crate::targeting::Snapshot {
-            selected: actor.selected_target,
+            selected: actor
+                .selected_target
+                .filter(|key| !self.is_member_target(actor_id, *key)),
+            selected_member: actor
+                .selected_target
+                .filter(|key| self.is_member_target(actor_id, *key)),
             targets: self
                 .targets
                 .values()
@@ -1088,6 +1124,7 @@ impl World {
         if let Some(combat) = &mut self.combat {
             combat.leave(id, self.rate);
         }
+        self.retire_invalid_selections();
     }
     pub fn input(&mut self, id: u64, input: Input) -> bool {
         if !self.player_alive(id) {
@@ -1140,19 +1177,7 @@ impl World {
         self.advance_creature_credit();
         self.advance_follow();
         self.advance_dialogue();
-        if !self.targets.is_empty() {
-            for actor in self.players.values_mut() {
-                if actor.selected_target.is_some_and(|key| {
-                    self.targets.get(&key.entity.value()).is_none_or(|target| {
-                        target.key != key
-                            || (!self.classic
-                                && !crate::targeting::relevant(actor.position, target.position))
-                    })
-                }) {
-                    actor.selected_target = None;
-                }
-            }
-        }
+        self.retire_invalid_selections();
         snapshot
     }
     fn step_movement(&mut self) -> Snapshot {

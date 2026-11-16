@@ -1555,3 +1555,30 @@ fn private_party_vitals_follow_damage_mana_death_respawn_and_departure() {
         assert!(world.party_member_vitals(replacement).unwrap().is_empty());
     }
 }
+
+#[test]
+fn selected_party_member_survives_actual_death_and_respawn_without_becoming_hostile() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, npc) = fixture(rate, true);
+        world.enable_parties().unwrap();
+        let owner = join(&mut world, [8000., 8000.]);
+        let member = join(&mut world, [8006., 8000.]);
+        let key = world.entity_key(member).unwrap();
+        crate::simulation::parties::targeting_tests::group(&mut world, owner, key);
+        assert!(world.select_target(owner, Some(key)));
+        hit(&mut world, member, npc, 1);
+        dead(&mut world, member);
+        assert_eq!(world.player_life_snapshot(member).unwrap().health, 0);
+        assert_eq!(
+            world.targeting_snapshot(owner).unwrap().selected_member,
+            Some(key)
+        );
+        for _ in 0..rate.hz() * 2 {
+            world.step();
+        }
+        assert!(world.player_alive(member));
+        let view = world.targeting_snapshot(owner).unwrap();
+        assert_eq!(view.selected_member, Some(key));
+        assert!(view.selected.is_none() && view.targets.iter().all(|t| t.key != key));
+    }
+}

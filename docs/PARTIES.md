@@ -294,3 +294,27 @@ Next P4-11 prerequisite: distinguish authoritative friendly party selection from
 hostile targets before enabling frame selection and shared unit marks. The
 adopted title/selection/loading flow remains subsequent work. Continue locally;
 no push authorized.
+
+## Friendly party selection authority — accepted 16 November 2026
+
+Targeting profile v2 / TG02 separates selected-member identity from selected
+hostile identity and its candidate list. Exact current other party members can
+be selected throughout the bounded world, without publishing extra positions or
+stats. This party-wide range policy is a Theia extension, not a verified Classic
+range rule. No player enters hostile search/mesh/combat lists. Selection changes
+stop previous autoattack without changing pose/facing; spell/melee authority still
+rejects player targets. Death/respawn and leadership changes retain selection;
+leave, kick, dissolution and disconnect clear it, and old incarnations cannot be
+selected. Legacy TG01 and ambiguous friendly/hostile frames are rejected.
+The complete network suite passes 903 tests (36 skips), including 544
+library tests, actual encrypted three-peer selection/switch/clear/outsider refusal,
+private views, no-cost hostile-spell refusal, disconnect/leave cleanup, bounded
+codec checks, and 20/30/60 Hz real death/respawn and autoattack cancellation.
+The strengthened distant-request/kick lifecycle test also passes separately.
+289 client tests pass (four skips); matching client/server/editor build, fmt and
+strict all-target network/client/server/editor Clippy pass. See
+build/party-selection-checks.json, party-selection-*-tests.log and
+party-selection-distance-test.log. No rendering change or new native GPU/Windows
+claim in this prerequisite. Frame selection/target presentation follows next;
+shared marks and the adopted title/selection/loading flow remain later work.
+Continue locally under the user's until-Stop authorization. No push authorized.

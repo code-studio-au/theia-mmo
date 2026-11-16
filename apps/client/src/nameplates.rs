@@ -475,6 +475,7 @@ mod tests {
                     request_sequence: 0,
                     accepted: true,
                     selected: Some(key.entity),
+                    selected_member: None,
                     targets: vec![targeting::Target {
                         key,
                         position: GlobalPosition::new([4., 0.9, 4.]).unwrap(),

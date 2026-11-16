@@ -222,6 +222,7 @@ struct ClientPeer {
     actions: mpsc::Sender<crate::party_client::Intent>,
     chat: mpsc::Sender<crate::chat_client::Compose>,
     casts: mpsc::Sender<CastChoice>,
+    selection: watch::Sender<Option<crate::targeting::Choice>>,
     stop: Stop,
     task: tokio::task::JoinHandle<Result<()>>,
     _input: watch::Sender<crate::wire::Intent>,
@@ -265,6 +266,38 @@ async fn until(peers: &[ClientPeer], condition: impl Fn() -> bool) {
     })
     .await
     .expect("Party worker condition timed out");
+}
+
+async fn select_member(
+    peers: &[ClientPeer],
+    index: usize,
+    target: Option<EntityKey>,
+    accepted: bool,
+) -> crate::targeting_wire::State {
+    let sequence = peers[index]
+        .state
+        .borrow()
+        .targeting
+        .as_ref()
+        .unwrap()
+        .request_sequence;
+    peers[index]
+        .selection
+        .send_replace(Some(crate::targeting::Choice {
+            target: target.map(|key| key.entity),
+        }));
+    until(peers, || {
+        peers[index]
+            .state
+            .borrow()
+            .targeting
+            .as_ref()
+            .is_some_and(|v| v.request_sequence > sequence)
+    })
+    .await;
+    let result = peers[index].state.borrow().targeting.clone().unwrap();
+    assert_eq!(result.accepted, accepted);
+    result
 }
 
 async fn worker_flow(with_chat: bool) {
@@ -337,9 +370,9 @@ async fn worker_flow(with_chat: bool) {
         let (chat, chats) = mpsc::channel(4);
         let (stop, shutdown) = watch::channel(false);
         let (cast_sender, casts) = mpsc::channel(4);
+        let (selection, choices) = watch::channel(None);
         let task = tokio::spawn(async move {
             let (events, _events) = mpsc::channel(8);
-            let (_selection, choices) = watch::channel(None);
             let combat = with_chat.then(|| CombatActions {
                 melee: None,
                 catalog: Arc::new(theia_core::abilities::Catalog::from_json(abilities).unwrap()),
@@ -385,6 +418,7 @@ async fn worker_flow(with_chat: bool) {
             actions,
             chat,
             casts: cast_sender,
+            selection,
             stop: Stop(stop),
             task,
             _input: input,
@@ -504,6 +538,110 @@ async fn worker_flow(with_chat: bool) {
         }
     }
     if with_chat {
+        until(&peers, || {
+            peers.iter().all(|p| p.state.borrow().targeting.is_some())
+        })
+        .await;
+        let facing = peers[0]
+            .state
+            .borrow()
+            .correction
+            .unwrap()
+            .state
+            .pose
+            .facing;
+        let friendly = select_member(&peers, 0, Some(keys[1]), true).await;
+        assert_eq!(friendly.selected_member, Some(keys[1].entity));
+        assert!(friendly.selected.is_none());
+        assert!(friendly.targets.iter().all(|t| !keys.contains(&t.key)));
+        assert_eq!(
+            peers[0]
+                .state
+                .borrow()
+                .correction
+                .unwrap()
+                .state
+                .pose
+                .facing,
+            facing
+        );
+        assert!(
+            peers[1]
+                .state
+                .borrow()
+                .targeting
+                .as_ref()
+                .unwrap()
+                .selected_member
+                .is_none()
+        );
+        let refused = select_member(&peers, 2, Some(keys[1]), false).await;
+        assert!(refused.selected.is_none() && refused.selected_member.is_none());
+        let enemy = friendly.targets[0].key;
+        let hostile = select_member(&peers, 0, Some(enemy), true).await;
+        assert_eq!(hostile.selected, Some(enemy.entity));
+        assert!(hostile.selected_member.is_none());
+        let cleared = select_member(&peers, 0, None, true).await;
+        assert!(cleared.selected.is_none() && cleared.selected_member.is_none());
+        assert_eq!(
+            select_member(&peers, 0, Some(keys[1]), true)
+                .await
+                .selected_member,
+            Some(keys[1].entity)
+        );
+        // A malicious hostile spell against the friendly selection remains a
+        // server refusal, without resource cost or damage to the party member.
+        peers[0]
+            .casts
+            .try_send(CastChoice {
+                ability: theia_core::content::ContentId::new("theia.dev.arcane-bolt").unwrap(),
+                target: keys[1].entity,
+            })
+            .unwrap();
+        until(&peers, || {
+            peers[0]
+                .state
+                .borrow()
+                .combat
+                .as_ref()
+                .unwrap()
+                .reply
+                .is_some()
+        })
+        .await;
+        assert_eq!(
+            peers[0]
+                .state
+                .borrow()
+                .combat
+                .as_ref()
+                .unwrap()
+                .reply
+                .unwrap()
+                .outcome,
+            crate::simulation::combat::Outcome::Rejected(
+                crate::simulation::combat::Reason::UnknownTarget
+            )
+        );
+        assert_eq!(
+            peers[0]
+                .state
+                .borrow()
+                .combat
+                .as_ref()
+                .unwrap()
+                .vitals
+                .unwrap()
+                .mana(),
+            100
+        );
+        assert_eq!(
+            peers[1].view().state.member_vitals[1]
+                .vitals
+                .unwrap()
+                .health(),
+            100
+        );
         let revision = peers[1].view().state.view.revision;
         let target = peers[0].state.borrow().combat.as_ref().unwrap().targets[0].entity;
         peers[0]
@@ -640,6 +778,25 @@ async fn worker_flow(with_chat: bool) {
             vec![keys[0], keys[2]]
         );
     }
+    if with_chat {
+        until(&peers, || {
+            peers[0]
+                .state
+                .borrow()
+                .targeting
+                .as_ref()
+                .unwrap()
+                .selected_member
+                .is_none()
+        })
+        .await;
+        assert_eq!(
+            select_member(&peers, 0, Some(keys[2]), true)
+                .await
+                .selected_member,
+            Some(keys[2].entity)
+        );
+    }
     peers[0].send(Action::Leave);
     until(&peers, || {
         peers
@@ -652,6 +809,25 @@ async fn worker_flow(with_chat: bool) {
             .iter()
             .all(|p| p.view().state.member_vitals.is_empty())
     );
+    if with_chat {
+        until(&peers, || {
+            peers[0]
+                .state
+                .borrow()
+                .targeting
+                .as_ref()
+                .unwrap()
+                .selected_member
+                .is_none()
+        })
+        .await;
+        assert!(
+            select_member(&peers, 0, Some(keys[2]), false)
+                .await
+                .selected_member
+                .is_none()
+        );
+    }
     let before = peers[0].state.borrow().snapshot.as_ref().unwrap().tick;
     until(&peers, || {
         peers[0].state.borrow().snapshot.as_ref().unwrap().tick > before + 2

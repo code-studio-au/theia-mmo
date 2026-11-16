@@ -1,3 +1,37 @@
+# Current checkpoint — 16 November 2026: friendly selection authority accepted
+
+P4-11 targeting profile v2 / TG02 adds `selected_member` separately from hostile
+`selected`/`targets`. The server accepts only exact current other party members,
+across the bounded world, without new position/stat disclosure. Selection stops
+prior autoattack and leaves pose/facing unchanged. Existing cast/melee validation
+rejects member targets. Death/respawn/promotion preserve selection; leave/kick/
+dissolution/disconnect clear it. See STATUS/PARTIES/DECISIONS for explicit policy.
+903 network tests pass (36 skips, including 544 library passes), 289 client tests
+pass (four skips). Strict network/client/server/editor all-target Clippy, fmt and
+matching builds pass. `build/party-selection-checks.json` and associated logs are
+complete; the strengthened distant-request/kick lifecycle test passed separately
+in `build/party-selection-distance-test.log`. No rendering changes or new GPU/
+Windows evidence in this protocol prerequisite. Supervisor completed. Use
+`git log -1` for this local commit; nothing pushed.
+
+Continue until Stop. Next: left-click a compact member frame to submit the
+existing target-choice command with its exact current member identity; consume
+`targeting.selected_member` only with matching current party membership/epoch.
+Show trusted name and actual private health/mana in the selected target frame;
+keep hostile ability controls/Tab lists distinct. Use `world_input::Selection`
+carefully: its current `friendly` is NPC-only and local, while this new member
+selection is server-confirmed. Enemy/NPC selection, Escape/Backspace and departure
+must cleanly replace/clear it. Preserve mouse drag ownership and manual facing;
+never submit a damaging ability to the previous hostile while selecting a friend.
+Inspect `targeting.rs`, `combat.rs`, `combat/ui.rs` and `world_input.rs` before
+adoption. TargetVitals and the current target HUD assume hostile health or an NPC
+name; do not fabricate member level/status/portraits. Qualify actual two-account
+click/clear/switch/lifecycle, rendered real bars and no steering/attack at both
+1720x1400 and 1720x700, then local commit. Shared marks and title/selection/loading
+remain following work. Mouse/display and recommended decisions are authorized.
+
+---
+
 # Current checkpoint — 16 November 2026: member context menus accepted
 
 P4-11 right-click member menus now expose trusted name/role, leader-only

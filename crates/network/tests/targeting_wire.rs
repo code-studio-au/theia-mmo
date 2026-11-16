@@ -23,6 +23,7 @@ fn state() -> State {
         true,
         Snapshot {
             selected: Some(key(3)),
+            selected_member: None,
             targets: vec![Target {
                 key: key(3),
                 position: GlobalPosition::new([1e9 + 0.01, 12., -1e9 + 0.02]).unwrap(),
@@ -114,7 +115,7 @@ fn membership_identity_count_boolean_and_nonfinite_coordinate_faults_fail_closed
     assert!(State::decode(&bad).is_err());
     for coordinate in [f64::NAN, f64::INFINITY, 1e20] {
         let mut bad = bytes.clone();
-        bad[46..54].copy_from_slice(&coordinate.to_le_bytes());
+        bad[54..62].copy_from_slice(&coordinate.to_le_bytes());
         assert!(State::decode(&bad).is_err());
     }
     let mut bad = value.clone();
@@ -138,7 +139,7 @@ fn membership_identity_count_boolean_and_nonfinite_coordinate_faults_fail_closed
         })
         .collect();
     let bytes = full.encode().unwrap();
-    assert_eq!(bytes.len(), 550);
+    assert_eq!(bytes.len(), 558);
     assert!(bytes.len() < MAX_BYTES);
     assert_eq!(State::decode(&bytes).unwrap(), full);
     full.targets.push(Target {
@@ -147,7 +148,7 @@ fn membership_identity_count_boolean_and_nonfinite_coordinate_faults_fail_closed
     });
     assert!(full.encode().is_err());
     let mut bad = bytes;
-    bad[37] = (MAX_TARGETS + 1) as u8;
+    bad[45] = (MAX_TARGETS + 1) as u8;
     assert!(State::decode(&bad).is_err());
 }
 #[test]
@@ -167,4 +168,36 @@ fn profile_binding_rejects_baseline_world_identity_and_survives_target_removal()
         "Removing the last NPC must not change session profile"
     );
     assert!(world.targeting_enabled());
+}
+
+#[test]
+fn friendly_selection_is_exclusive_has_no_position_and_rejects_legacy_state() {
+    let mut value = state();
+    value.selected = None;
+    value.selected_member = Some(key(8).entity);
+    let bytes = value.encode().unwrap();
+    assert_eq!(State::decode(&bytes).unwrap(), value);
+    let mut other = value.clone();
+    other.selected_member = Some(key(9).entity);
+    assert!(!value.same_view(&other));
+    other.selected = Some(key(3).entity);
+    assert!(other.encode().is_err());
+    let mut bad = bytes.clone();
+    bad[29..37].copy_from_slice(&3u64.to_le_bytes());
+    assert!(State::decode(&bad).is_err());
+    let mut bad = bytes.clone();
+    bad[37..45].copy_from_slice(&3u64.to_le_bytes());
+    assert!(State::decode(&bad).is_err());
+    let mut old = bytes;
+    old[..4].copy_from_slice(b"TG01");
+    assert!(State::decode(&old).is_err());
+    value.targets.clear();
+    assert_eq!(value.encode().unwrap().len(), 46);
+    assert_eq!(State::decode(&value.encode().unwrap()).unwrap(), value);
+    let mut old_identity = b"theia-targeting-profile-v1\0".to_vec();
+    old_identity.extend(procedural::IDENTITY);
+    assert_ne!(
+        targeting::profile_identity(procedural::IDENTITY),
+        theia_network::terrain::sha256(&old_identity)
+    );
 }

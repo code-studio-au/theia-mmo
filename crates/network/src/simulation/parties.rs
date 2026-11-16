@@ -45,7 +45,9 @@ impl World {
         self.parties
             .as_mut()
             .ok_or(Refusal::Context)?
-            .request(key, request)
+            .request(key, request)?;
+        self.retire_invalid_selections();
+        Ok(())
     }
 }
 
@@ -168,3 +170,6 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+pub(super) mod targeting_tests;
