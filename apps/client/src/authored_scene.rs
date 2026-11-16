@@ -22,8 +22,22 @@ pub(crate) struct Scene {
     cpu_ready: bool,
     gpu_clear_frames: u32,
     waiting_since: Option<Instant>,
+    diagnostics: Diagnostics,
+}
+#[derive(Default, serde::Serialize)]
+pub(crate) struct Diagnostics {
+    ready: bool,
+    retractions: u64,
+    cpu_ready: bool,
+    meshes: usize,
+    assets_ready: bool,
+    pipelines: usize,
+    pipelines_ready: bool,
 }
 impl Scene {
+    pub(crate) fn diagnostics(&self) -> &Diagnostics {
+        &self.diagnostics
+    }
     pub(crate) fn map_contains(&self, point: theia_core::coordinates::GlobalPosition) -> bool {
         self.ready() && self.store.map_contains(point)
     }
@@ -36,6 +50,10 @@ impl Scene {
 }
 #[derive(Component)]
 struct AuthoredMesh;
+// Temporarily make every mesh eligible for standard Bevy specialization. A
+// camera-facing subset is not sufficient to qualify a whole authored world.
+#[derive(Component)]
+struct PreparingPipeline;
 
 pub(crate) fn install(app: &mut App, store: Arc<Store>) {
     let root = Dir::default();
@@ -51,6 +69,7 @@ pub(crate) fn install(app: &mut App, store: Arc<Store>) {
         cpu_ready: false,
         gpu_clear_frames: 0,
         waiting_since: Some(Instant::now()),
+        diagnostics: Diagnostics::default(),
     })
     .add_systems(
         Update,
@@ -166,6 +185,22 @@ fn prepare(world: &mut World, scene: &mut Scene) -> Result<(), String> {
                 crate::terrain_scene::CameraScenery,
                 bevy::picking::mesh_picking::ray_cast::RayCastBackfaces,
             ));
+            if scene.ready() {
+                if world.get::<PreparingPipeline>(entity).is_some() {
+                    world.entity_mut(entity).remove::<(
+                        PreparingPipeline,
+                        bevy::camera::visibility::NoFrustumCulling,
+                    )>();
+                }
+            } else if world
+                .get::<bevy::camera::visibility::NoFrustumCulling>(entity)
+                .is_none()
+            {
+                world.entity_mut(entity).insert((
+                    PreparingPipeline,
+                    bevy::camera::visibility::NoFrustumCulling,
+                ));
+            }
             count += 1;
         }
     }
@@ -236,7 +271,10 @@ fn observe(
                 .filter_map(move |(entity, _, _)| view.get(entity))
         })
         .collect();
-    let pipelines_ready = !world_pipelines.is_empty()
+    let pipelines_ready = !entries.is_empty()
+        && entries
+            .iter()
+            .all(|(entity, _, _)| specialized.values().any(|view| view.contains_key(entity)))
         && world_pipelines
             .iter()
             .all(|id| pipelines.get_render_pipeline(**id).is_some());
@@ -246,6 +284,23 @@ fn observe(
     } else {
         0
     };
+    let ready = scene.ready();
+    let retracted = scene.diagnostics.ready && !ready;
+    scene.diagnostics = Diagnostics {
+        ready,
+        retractions: scene.diagnostics.retractions + u64::from(retracted),
+        cpu_ready,
+        meshes: entries.len(),
+        assets_ready,
+        pipelines: world_pipelines.len(),
+        pipelines_ready,
+    };
+    if retracted {
+        info!(
+            "authored_readiness {}",
+            serde_json::to_string(&scene.diagnostics).unwrap()
+        );
+    }
 }
 
 #[cfg(test)]
@@ -354,6 +409,35 @@ mod tests {
             .iter(app.world())
             .count();
         assert!(meshes >= 8);
+        assert!(app.world().resource::<Scene>().diagnostics.pipelines >= meshes);
+        // Startup must prepare offscreen geometry too. Looking at a previously
+        // unseen part of the same retained scene must not revoke chunk readiness
+        // and make every contact disappear. Ordinary culling resumes afterwards.
+        app.update();
+        assert_eq!(
+            app.world_mut()
+                .query_filtered::<Entity, With<PreparingPipeline>>()
+                .iter(app.world())
+                .count(),
+            0
+        );
+        let initial_camera = *app.world().get::<Transform>(camera).unwrap();
+        for quadrant in 0..4 {
+            let yaw = quadrant as f32 * std::f32::consts::FRAC_PI_2;
+            let eye = Vec3::new(f32::cos(yaw) * 30., 3., f32::sin(yaw) * 30.);
+            *app.world_mut().get_mut::<Transform>(camera).unwrap() =
+                Transform::from_translation(eye).looking_at(Vec3::Y, Vec3::Y);
+            for _ in 0..8 {
+                app.update();
+                assert!(
+                    app.world().resource::<Scene>().ready(),
+                    "Turning toward prepared world geometry retracted readiness"
+                );
+                std::thread::sleep(std::time::Duration::from_millis(16));
+            }
+        }
+        *app.world_mut().get_mut::<Transform>(camera).unwrap() = initial_camera;
+        assert_eq!(app.world().resource::<Scene>().diagnostics.retractions, 0);
         println!(
             "{}",
             serde_json::json!({"adapter":adapter,"authored_meshes":meshes,"movement_ready":true,"seconds":start.elapsed().as_secs_f64(),"scope":"Actual offscreen GPU scene/assets/pipeline readiness; no window, OS input or connected gameplay"})

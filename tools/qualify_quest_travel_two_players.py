@@ -104,7 +104,12 @@ def run(args):
                     def state(directory, alive):
                         def sample():
                             assert alive(), 'Owned client exited'
-                            return json.loads((directory/'input-os.json').read_text())
+                            value = json.loads((directory/'input-os.json').read_text())
+                            scene = value['authored_scene']
+                            assert scene['retractions'] == 0, ('Loaded world lost readiness', directory.name, scene)
+                            if scene['ready']:
+                                assert scene['pipelines'] >= scene['meshes'] > 0, scene
+                            return value
                         return wait(sample, 3)
                     def report_ready(directory, alive):
                         assert alive(), 'Owned process exited before its client report; inspect its log'
@@ -223,6 +228,7 @@ def run(args):
                             isolation_samples=isolation_samples, retained=completed,
                             distinct_background_ticks=[len(ticks) for ticks in peer_ticks],
                             proofs=[proof_a, proof_b]))
+                    runs[-1]['scene_readiness'] = [s()['authored_scene'] for s in [state_a, state_b]]
             finally:
                 if desktop: desktop.close()
                 stop(second)

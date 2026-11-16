@@ -1,3 +1,14 @@
+16 November — P2-02 / P2-08 scene readiness continuity accepted:
+The reported NPC reload was global chunk-readiness withdrawal while newly visible
+world pipelines compiled. Standard Bevy temporary culling overrides now prepare
+every bounded authored-world mesh before movement. Initial complete coverage,
+normal-culling restoration, camera sweep, genuine asset loss/recovery and rebase
+pass on native Vulkan. Full two-account quests, shared escort and database/server
+restart pass with 116 prepared pipelines and zero retractions in both clients and
+both phases (283.92 seconds). 281 client tests, explicit GPU test, build, fmt and
+strict Clippy pass. See ../STATUS.md. No startup loading screen is implemented;
+user-reported issues take priority over the party UI layout reference.
+
 16 November shared escort acceptance:
 Native v2 passes in 295.44 seconds, including actual background rendered movement
 in both clients, individual rewards and PostgreSQL/server restart. 538 network

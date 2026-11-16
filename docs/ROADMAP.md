@@ -1,3 +1,10 @@
+16 November 2026 — authored-world preparation correction accepted:
+P2-02 / P2-08 now prepares all 116 world-mesh pipelines before movement, retaining
+normal culling and genuine missing-asset safety. Native two-account first-quest
+approaches, shared escort handoff and restart pass with zero readiness retractions;
+see STATUS. A startup loading screen was discussed but remains unimplemented.
+Continue with user-reported issues before the previously recorded party UI pass.
+
 16 November 2026 — shared active party escorts accepted:
 P4-11 / P4-03 passes the native two-account range handoff, everyone-away wait,
 background rendered movement, individual arrival/turn-in and durable restart.

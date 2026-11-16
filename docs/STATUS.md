@@ -1,3 +1,31 @@
+16 November 2026 — P2-02 / P2-08 initial-movement NPC disappearance fixed:
+The user observed contacts vanish shortly after either player starts toward the
+first quest giver, and again around the ranger handoff. Native video and the
+instrumented approach show five contacts → zero → five for 0.505 seconds: the
+old readiness gate accepted five camera-visible pipelines out of 116 world meshes,
+then revoked all nine ready chunks when new pipelines compiled. CPU/GPU world
+assets remained loaded. Evidence: build/party-popout-baseline-v1.webm and
+build/scene-pipeline-reproduction.json. These diagnostic runs did not complete
+the full harness (manual-takeover and later Tab assertions); they are reproduction
+evidence only, not acceptance.
+The bounded authored scene now temporarily uses standard Bevy NoFrustumCulling
+to prepare every mesh pipeline before movement, then removes its own overrides.
+Normal culling, real missing-asset rejection and recovery remain. Read-only
+readiness counters expose future drops, and the native quest qualifier rejects
+any retraction after startup. No loading screen or gameplay-authority change.
+All 281 client tests pass (four explicit skips), plus the explicit native offscreen
+GPU regression: 116 pipelines, camera sweep without retraction, restored culling,
+actual mesh removal/recovery and rebase. Build, fmt, denied-warning all-target
+client Clippy and Python compilation pass; build/scene-pipeline-{tests,gpu,build,
+clippy,fmt}.log. Native build/scene-pipeline-native-v1/qualification.json passes
+both first-quest approaches, shared ranger range handoff/wait, individual turn-in
+and PostgreSQL/server restart in 283.92 seconds. Both clients report 116/116
+prepared pipelines and ZERO lifetime readiness retractions in both phases;
+each restores revision 9 / XP 75 / bag revision 2, with source hashes and SQL
+unchanged. Ranger Ready capture visually inspected. Linux 1920x1440 each,
+RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU diagnostics; no Windows
+execution. Earlier completed-quest evidence did not establish visual continuity.
+
 16 November 2026 — P4-11 / P4-03 shared party escorts accepted:
 The remaining native rerun passes in build/party-escort-native-v2/qualification.json
 (295.44 seconds). Two real OIDC clients share the Active ranger, hand off range,

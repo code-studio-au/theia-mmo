@@ -171,3 +171,12 @@ inconclusive late stationary render sample from v1. Fresh 538 network tests pass
 Clippy and Python compilation pass. Logs: `build/party-escort-resume-*.log`.
 The earlier `party-escort-build.log` and `party-escort-death-tests.log` remain
 applicable; no Rust implementation changed during the 16 November rerun.
+
+
+16 November presentation continuity correction: earlier quest-completion evidence
+missed brief NPC disappearance while new world shaders prepared. Complete authored
+scene pipeline preparation now passes `build/scene-pipeline-native-v1/qualification.json`
+(283.92 seconds): both first-quest approaches, ranger handoff and durable restart,
+116 prepared pipelines and zero readiness retractions for both clients in both
+phases. Party authority is unchanged. See STATUS for reproduction, GPU evidence
+and limits; a startup loading screen is not implemented.

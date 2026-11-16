@@ -1,3 +1,21 @@
+16 November 2026 — prepare every bounded authored-world mesh before movement:
+P2-02 / P2-08. A few camera-visible compiled pipelines do not establish readiness
+for an entire retained authored scene. Native capture and diagnostics reproduced
+all friendly contacts disappearing for roughly half a second during the first
+quest approach: a newly visible world pipeline was still compiling, which revoked
+all reported chunks despite all 116 CPU/GPU meshes remaining loaded. This can
+occur in either client and was missed by the earlier stationary captures.
+Use standard Bevy NoFrustumCulling temporarily on authored meshes needing pipeline
+preparation, require a specialized compiled pipeline for every mesh, then remove
+only the temporary overrides and resume ordinary culling. This is bounded scene
+startup/recovery, not a general streaming prewarm or custom renderer. Preserve
+CPU/GPU asset checks, genuine readiness retraction and authoritative movement
+blocking when an asset is absent; do not keep stale readiness through asset loss.
+Expose readiness/retraction counters and require zero retractions during the native
+quest/escort run. Camera sweep, restoration and rebase checks cover the lifecycle.
+A startup loading screen was discussed as presentation polish; none is added by
+this correction. Final acceptance is recorded separately in STATUS.
+
 15 November 2026 — party escort participation and lifecycle:
 Following the user's any-participating-member-in-range rule, participants are
 current party members whose committed journal has the same Active escort.

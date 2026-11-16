@@ -1,3 +1,11 @@
+P2-02 / P2-08 scene preparation continuity, 16 November 2026:
+Prepare all bounded authored-world mesh pipelines before movement; remove temporary
+standard Bevy culling overrides afterwards. Native camera sweep, actual missing
+mesh/recovery/rebase and two-account quest/escort/restart pass with zero readiness
+retractions and 116/116 prepared meshes in both phases. All 281 client tests,
+explicit GPU regression, build/fmt/strict Clippy pass; see ../STATUS.md. This fixes
+the observed mid-approach NPC disappearance without weakening movement safety.
+
 Population roaming resume, 15 November 2026 (P3-07 / P4-03):
 Preserve excursion progress through combat's captured-anchor return; respawn still
 resets home. The previously failing actual-motion regression passes at 20/30/60 Hz,

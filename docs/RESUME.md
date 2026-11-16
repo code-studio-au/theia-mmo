@@ -1,4 +1,32 @@
-# Resume checkpoint — 16 November 2026
+# Current checkpoint — 16 November 2026
+
+The reported NPC disappearance during the first quest approach and ranger handoff
+is fixed. Startup had accepted only camera-visible world pipelines; new shader
+preparation then revoked all ready chunks and hid contacts. The bounded authored
+scene now prepares every mesh using temporary standard Bevy culling overrides,
+restores ordinary culling, and retains genuine missing-asset safety.
+
+Acceptance: `build/scene-pipeline-native-v1/qualification.json`, 283.92 seconds,
+both native accounts through all quests/shared escort and PostgreSQL/server
+restart. Both clients have 116 prepared pipelines and zero readiness retractions
+in fresh and resumed phases. Revision 9 / XP 75 / bag revision 2 restore exactly.
+All 281 client tests pass (four skips); explicit native Vulkan camera-sweep,
+culling-restoration, mesh-loss/recovery and rebase test passes. Build, strict
+all-target client Clippy, fmt and Python compilation pass. Logs:
+`build/scene-pipeline-{tests,gpu,build,clippy,fmt}.log`. Linux RX 7900 XTX / RADV
+NAVI31 / Vulkan / Mesa 26.2.6; no Windows execution. No push authorized.
+
+The short diagnostic reproductions are NOT full-flow acceptance. The baseline
+video shows the disappearance; `build/scene-pipeline-reproduction.json` records
+the 0.505-second contact/readiness withdrawal with all CPU/GPU assets retained.
+The user asked whether a loading screen would help; answered yes for initial
+startup, but none was requested for implementation or added. Continue taking the
+user's issues before the recorded party UI layout pass. Use `git log -1` for the
+local fix commit; earlier handoff context follows.
+
+---
+
+# Earlier shared-escort checkpoint — 16 November 2026
 
 The 15 November remaining shared-escort rerun is complete. Native
 `build/party-escort-native-v2/qualification.json` passes in 295.44 seconds,
