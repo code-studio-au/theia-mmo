@@ -32,12 +32,13 @@ def form(desktop, windows, states):
 
 
 def flow(desktop, windows, states, folder):
-    before = [dict(journal=s()['quest_journal'], bag=s()['inventory_bag']) for s in states]
+    initial_progress = [dict(journal=s()['quest_journal'], bag=s()['inventory_bag']) for s in states]
     keys = [s()['actor'] for s in states]
     last = [0., 0.]
     steps = []
     movement = []
     member_proofs = []
+    menu_proofs = []
     def view(index):
         return states[index]()['party']['state']
     def focus(index):
@@ -45,14 +46,14 @@ def flow(desktop, windows, states, folder):
         w, h, scale = states[index]()['window']
         desktop.move(windows[index], [w*.55, h*.42], scale)
         wait(lambda: states[index]()['cursor']['focused'])
-    def click(index, action, target=None):
+    def click(index, action, target=None, source=None):
         focus(index)
         delay = .6 - (time.monotonic()-last[index])
         if delay > 0: time.sleep(delay)
         def button():
             p = states[index]()['party']
             if p['state']['pending']: return None
-            return next((b for b in p['buttons'] if b['action'] == action and (target is None or b['target'] == target)), None)
+            return next((b for b in p['buttons'] if b['action'] == action and (target is None or b['target'] == target) and (source is None or b['source'] == source)), None)
         b = wait(button, 5)
         sequence = view(index)['sequence']
         desktop.click(windows[index], b['point'], states[index]()['window'][2], 1)
@@ -62,7 +63,7 @@ def flow(desktop, windows, states, folder):
         steps.append(dict(player=index+1, action=action, sequence=view(index)['sequence']))
         for i, state in enumerate(states):
             current = state()
-            assert dict(journal=current['quest_journal'], bag=current['inventory_bag']) == before[i]
+            assert dict(journal=current['quest_journal'], bag=current['inventory_bag']) == initial_progress[i]
     def capture(index, name):
         focus(index)
         path = folder/('owner' if index == 0 else 'guest')
@@ -107,6 +108,26 @@ def flow(desktop, windows, states, folder):
                 assert frame['name'] == other['combat_ui']['player_name']
                 return frames
             member_proofs.append(dict(player=i+1, frames=wait(painted, 8)))
+    def open_member(index):
+        focus(index)
+        frame = wait(lambda: states[index]()['party']['member_frames']['frames'][0])
+        x,y,w,h = frame['bounds']
+        before = states[index]()
+        desktop.click(windows[index], [x+w/2,y+h/2], before['window'][2], 3)
+        menu = wait(lambda: value if (value := states[index]()['party']['member_menu'])['visible'] and value['bounds'] else None, 5)
+        assert menu['name'] == states[1-index]()['combat_ui']['player_name']
+        x,y,w,h = menu['bounds']
+        assert 0 <= x and 0 <= y and x+w <= before['window'][0] and y+h <= before['window'][1]
+        controls = [b['action'] for b in states[index]()['party']['buttons'] if b['source']=='member']
+        leader = view(index)['party']['leader'] == keys[index]
+        assert ('promote' in controls) == leader and ('remove' in controls) == leader
+        assert 'manage' in controls and 'menu-close' in controls
+        after = states[index]()
+        assert after['camera_angles'] == before['camera_angles'] and after['classic_facing'] == before['classic_facing']
+        for key in ['enemy_clicks','friendly_clicks','basic_requests','interaction_requests']:
+            assert after['controls'][key] == before['controls'][key], key
+        menu_proofs.append(dict(player=index+1,menu=menu,actions=controls))
+        return menu
     for i in [0, 1]:
         wait(lambda: states[i]().get('party', {}).get('state') is not None, 20)
         assert view(i)['party'] is None and view(i)['incoming'] is None
@@ -149,6 +170,7 @@ def flow(desktop, windows, states, folder):
     before_frame_drag = states[0]()
     desktop.drag(windows[0], [x+w/2, y+h/2], before_frame_drag['window'][2])
     after_frame_drag = states[0]()
+    assert not after_frame_drag['party']['member_menu']['visible'], 'Frame drag opened a context menu'
     assert after_frame_drag['camera_angles'] == before_frame_drag['camera_angles']
     assert after_frame_drag['classic_facing'] == before_frame_drag['classic_facing']
     for key in ['enemy_clicks','friendly_clicks','basic_requests','interaction_requests']:
@@ -159,10 +181,42 @@ def flow(desktop, windows, states, folder):
     capture(0, 'party-members.png')
     wait(lambda: not states[1]()['party']['invitation']['visible'])
     focus(1); desktop.key('o'); wait(lambda: states[1]()['party']['open'])
-    click(0, 'promote', keys[1])
+    for i in [0,1]:
+        menu = open_member(i)
+        if i == 0: capture(i, 'party-member-menu.png')
+        desktop.key('Escape')
+        wait(lambda: not states[i]()['party']['member_menu']['visible'])
+        assert states[i]()['party']['open'], 'Context Escape also closed Party'
+        open_member(i)
+        before = states[i]()
+        desktop.click(windows[i], [before['window'][0]*.8, before['window'][1]*.5], before['window'][2], 1)
+        wait(lambda: not states[i]()['party']['member_menu']['visible'])
+        after = states[i]()
+        assert after['camera_angles'] == before['camera_angles'] and after['classic_facing'] == before['classic_facing']
+        for key in ['enemy_clicks','friendly_clicks','basic_requests','interaction_requests']:
+            assert after['controls'][key] == before['controls'][key], key
+    # The member shortcut opens management even when it was closed.
+    focus(1); desktop.key('o'); wait(lambda: not states[1]()['party']['open'])
+    open_member(1)
+    manage = wait(lambda: next((b for b in states[1]()['party']['buttons'] if b['source']=='member' and b['action']=='manage'), None))
+    desktop.click(windows[1], manage['point'], states[1]()['window'][2], 1)
+    wait(lambda: states[1]()['party']['open'] and not states[1]()['party']['member_menu']['visible'])
+    open_member(0)
+    close = wait(lambda: next((b for b in states[0]()['party']['buttons'] if b['source']=='member' and b['action']=='menu-close'), None))
+    desktop.click(windows[0], close['point'], states[0]()['window'][2], 1)
+    wait(lambda: not states[0]()['party']['member_menu']['visible'])
+    assert states[0]()['party']['open']
+    open_member(0)
+    focus(1)
+    wait(lambda: not states[0]()['party']['member_menu']['visible'])
+    open_member(0)
+    click(0, 'promote', keys[1], source='member')
+    wait(lambda: not states[0]()['party']['member_menu']['visible'])
     wait(lambda: all(view(i)['party']['leader'] == keys[1] for i in [0,1]), 5)
     member_frames()
-    click(1, 'remove', keys[0]); solo()
+    open_member(1)
+    click(1, 'remove', keys[0], source='member'); solo()
+    wait(lambda: all(not s()['party']['member_menu']['visible'] for s in states))
     join(); click(0, 'leave'); solo()
     join()
     focus(0); desktop.key('F10')
@@ -178,6 +232,7 @@ def flow(desktop, windows, states, folder):
     result = dict(passed=True, steps=steps, movement_metres=movement, final=[view(i) for i in [0,1]], progress_unchanged=True,
                   interface_then_party_escape=True, invitation_without_panel=True,
                   invitation_bounds=prompt['bounds'], invitation_drag_does_not_steer_or_interact=True, member_frames=member_proofs,
-                  member_frame_drag_does_not_steer_or_interact=True, member_manage_shortcut=True)
+                  member_frame_drag_does_not_steer_or_interact=True, member_manage_shortcut=True, member_menus=menu_proofs,
+                  member_menu_escape_outside_and_focus_dismissal=True, member_menu_actions=True)
     (folder/'party-proof.json').write_text(json.dumps(result, indent=2)+'\n')
     return result

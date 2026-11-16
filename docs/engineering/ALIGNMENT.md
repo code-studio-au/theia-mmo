@@ -1,3 +1,40 @@
+16 November 2026 — P4-11 member context menus accepted:
+Right-click a compact member frame for its trusted name, role, Manage and Close.
+Only the current leader sees Promote/Remove; these reuse existing server commands,
+painted owner/revision/member guards and the shared pending reservation. Resource
+updates keep the menu; membership/revision changes, disconnection and focus loss
+retire it. Escape closes context before Party. Outside dismissal and frame drags
+retain UI ownership without steering, facing changes or world actions.
+289 client tests pass (four skips), including authority-derived stale/role guards,
+keyboard ordering and both viewport clamps. Build, fmt, denied-warning all-target
+client Clippy and Python compilation pass; build/party-menu-checks.json.
+Native two-account controls at 1720x1400 and 1720x700 pass all 13 membership actions
+through fresh and PostgreSQL/server-restored accounts, with actual context-menu
+promotion/removal, nonleader permissions, Manage/Close, Escape/outside/focus
+dismissal, unchanged progression and zero readiness retractions/GPU diagnostics.
+Evidence: build/party-menu-paired-v2/qualification.json (160.22 seconds) and
+build/party-menu-quadrants-v2/qualification.json (156.95 seconds).
+Both menu captures were visually inspected. Linux RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6; no Windows run. Quadrant checks use two accounts in the
+first two tiles, not four-account gameplay. V1 stopped at a test-harness variable
+collision after promotion; v2 fixes the harness and is the acceptance run.
+Editor account playtests inherit the client controls with no extra options.
+Next P4-11 prerequisite: distinguish authoritative friendly party selection from
+hostile targets before enabling frame selection and shared unit marks. The
+adopted title/selection/loading flow remains subsequent work. Continue locally;
+no push authorized.
+
+16 November 2026 — current P4-11 member context-menu slice:
+Prerequisites: 2401c48f private vitals, de9cf9e1 native compact frames. Right-click
+an exact current member frame to open a bounded menu beside it. Promote/Remove
+reuse the existing leader-only authority, shared pending reservation and painted
+owner/revision/member guards. Resource updates keep the menu; membership changes,
+connection loss and focus loss retire it. Manage opens existing Party controls.
+A transparent context backdrop consumes outside dismissal without world action;
+Escape closes context before Party, and drags must not open a menu or steer.
+No player targeting, combat or server-protocol change. Require authority/model
+and native paired/quadrant action/gesture/lifecycle checks before acceptance.
+
 16 November 2026 — P4-11 compact party member frames accepted:
 Upper-left frames show other members' trusted names, leader labels and actual
 health/mana, with initial badges until remote portraits are available. The header

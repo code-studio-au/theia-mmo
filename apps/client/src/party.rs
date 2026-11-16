@@ -1,5 +1,6 @@
 //! Standard Bevy controls for the admitted, private server-owned party view.
 mod invitation;
+mod member_menu;
 mod members;
 use bevy::{
     picking::{Pickable, hover::Hovered},
@@ -34,12 +35,14 @@ pub(crate) fn world_identity(source: [u8; 32], enabled: bool) -> [u8; 32] {
 pub(crate) struct Ui {
     pub open: bool,
     pub closed_this_frame: bool,
+    menu: Option<member_menu::Selection>,
+    menu_dragged: bool,
     waiting: Option<u64>,
     rendered: Option<Model>,
     actions: u64,
 }
 pub(crate) fn owns_escape(ui: Option<&Ui>) -> bool {
-    ui.is_some_and(|u| u.open || u.closed_this_frame)
+    ui.is_some_and(|u| u.open || u.menu.is_some() || u.closed_this_frame)
 }
 #[derive(Component)]
 struct Pane;
@@ -51,6 +54,9 @@ enum Control {
     Close,
     Command(Intent),
     Invitation(Intent),
+    Member(Intent),
+    Manage,
+    MenuClose,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Choice {
@@ -204,6 +210,7 @@ fn button(control: Control, title: &str, enabled: bool) -> impl Bundle {
 pub(crate) fn install(app: &mut App) {
     invitation::install(app);
     members::install(app);
+    member_menu::install(app);
     app.init_resource::<Ui>()
         .add_observer(activate)
         .add_systems(Startup, setup)
@@ -222,6 +229,7 @@ pub(crate) fn install(app: &mut App) {
                 invitation::present,
                 members::present,
                 members::paint,
+                member_menu::present,
             )
                 .chain()
                 .after(crate::network::present),
@@ -274,16 +282,20 @@ pub(crate) fn keyboard(
 ) {
     ui.closed_this_frame = false;
     if !windows.single().is_ok_and(|w| w.focused) {
+        ui.menu = None;
         return;
     }
     if keys.just_pressed(KeyCode::KeyO) {
+        ui.menu = None;
         ui.open = !ui.open;
         ui.closed_this_frame = !ui.open;
     } else if keys.just_pressed(KeyCode::Escape)
-        && ui.open
+        && (ui.open || ui.menu.is_some())
         && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
     {
-        ui.open = false;
+        if ui.menu.take().is_none() {
+            ui.open = false;
+        }
         ui.closed_this_frame = true;
     }
 }
@@ -302,16 +314,28 @@ fn activate(
     };
     match control {
         Control::Toggle => {
+            ui.menu = None;
             ui.open = !ui.open;
             ui.closed_this_frame = !ui.open;
+        }
+        Control::Manage => {
+            ui.menu = None;
+            ui.open = true;
+        }
+        Control::MenuClose => {
+            ui.menu = None;
+            ui.closed_this_frame = true;
         }
         Control::Close if ui.open => {
             ui.open = false;
             ui.closed_this_frame = true;
         }
-        Control::Command(intent) | Control::Invitation(intent) if ui.waiting.is_none() => {
+        Control::Command(intent) | Control::Invitation(intent) | Control::Member(intent)
+            if ui.waiting.is_none() =>
+        {
             let prompt = matches!(control, Control::Invitation(_));
-            if prompt == ui.open {
+            let menu = matches!(control, Control::Member(_));
+            if !menu && prompt == ui.open {
                 return;
             }
             let state = network.state();
@@ -321,12 +345,21 @@ fn activate(
             let Some(view) = state.party else {
                 return;
             };
-            if view.pending || (prompt && !invitation::current(&view.state, intent)) {
+            if view.pending
+                || (prompt && !invitation::current(&view.state, intent))
+                || (menu
+                    && !ui.menu.as_ref().is_some_and(|selected| {
+                        member_menu::current(&view.state, selected, intent)
+                    }))
+            {
                 return;
             }
             if network.party_action(intent.clone()) {
                 ui.waiting = Some(view.submitted);
                 ui.actions += 1;
+                if menu {
+                    ui.menu = None;
+                }
             }
         }
         _ => {}
@@ -450,29 +483,33 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let actions = ui.actions;
     let invitation = invitation::snapshot(world);
     let member_frames = members::snapshot(world);
+    let member_menu = member_menu::snapshot(world);
+    let menu_visible = member_menu["visible"].as_bool().unwrap_or(false);
     let invitation_visible = invitation["visible"].as_bool().unwrap_or(false);
     let scale = world.resource::<bevy::ui::UiScale>().0;
     let buttons: Vec<_> = world.query::<(&Control, &AccessibleLabel, &ComputedNode, &bevy::ui::UiGlobalTransform)>().iter(world)
         .filter(|(control, _, node, _)| match control {
             Control::Toggle => true,
             Control::Invitation(_) => invitation_visible,
+            Control::Member(_) | Control::Manage | Control::MenuClose => menu_visible,
             _ => open,
         } && node.size().min_element() > 0.)
         .map(|(control, label, node, transform)| {
             let (action, target) = match control {
                 Control::Toggle => ("toggle", None), Control::Close => ("close", None),
-                Control::Command(intent) | Control::Invitation(intent) => match intent.action {
+                Control::Manage => ("manage", None), Control::MenuClose => ("menu-close", None),
+                Control::Command(intent) | Control::Invitation(intent) | Control::Member(intent) => match intent.action {
                     Action::Invite(k) => ("invite", Some(k.entity.value())), Action::Kick(k) => ("remove", Some(k.entity.value())), Action::Promote(k) => ("promote", Some(k.entity.value())),
                     Action::Accept(id) => ("accept", Some(id)), Action::Decline(id) => ("decline", Some(id)), Action::Cancel(id) => ("cancel", Some(id)), Action::Leave => ("leave", None),
                 },
             };
-            serde_json::json!({"action":action,"target":target,"label":label.0,"point":(transform.affine().translation * crate::fantasy_ui::window_factor(node, scale)).to_array()})
+            serde_json::json!({"action":action,"target":target,"source":if matches!(control, Control::Member(_) | Control::Manage | Control::MenuClose) {"member"} else {"party"},"label":label.0,"point":(transform.affine().translation * crate::fantasy_ui::window_factor(node, scale)).to_array()})
         }).collect();
     let state = world
         .get_resource::<crate::network::Network>()
         .map(|n| n.state());
     let party = state.as_ref().and_then(|s| s.party.as_ref());
-    serde_json::json!({"open":open,"invitation":invitation,"member_frames":member_frames,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
+    serde_json::json!({"open":open,"invitation":invitation,"member_frames":member_frames,"member_menu":member_menu,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
         "owner":v.state.view.owner.entity.value(),"revision":v.state.view.revision,"sequence":v.state.view.sequence,
         "pending":v.pending,"timed_out":v.timed_out,"refusal":v.state.refusal.map(|r|format!("{r:?}")),
         "party":v.state.view.membership.party.as_ref().map(|p|serde_json::json!({"id":p.id,"leader":p.leader.entity.value(),"members":p.members.iter().map(|k|k.entity.value()).collect::<Vec<_>>()})),
@@ -490,13 +527,13 @@ mod tests {
         party,
         time::TickRate,
     };
-    fn key(id: u64) -> EntityKey {
+    pub(super) fn key(id: u64) -> EntityKey {
         EntityKey {
             epoch: WorldEpoch::new(1).unwrap(),
             entity: EntityId::new(id).unwrap(),
         }
     }
-    fn state(authority: &party::Authority, id: u64) -> State {
+    pub(super) fn state(authority: &party::Authority, id: u64) -> State {
         State {
             world: [1; 32],
             tick: 1,

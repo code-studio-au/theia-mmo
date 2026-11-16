@@ -41,8 +41,8 @@ under the character name, including Promote to Leader and Uninvite.
 
 Use this as the next presentation direction with Theia's existing Bevy UI and
 licensed UI assets. The current Party [O] panel remains the qualified implementation;
-compact member frames are adopted below; member context menus are next. Initial menu
-actions can reuse existing invitation, promotion, removal and leave authority.
+compact member frames and member context menus are adopted below. Context-menu
+promotion/removal reuse the existing authority.
 Preserve painted revisions, pending-command reservation, stale-member guards,
 Escape handling and pointer ownership; right-clicking a member frame must not
 also steer the character. Persistent member bars require matching authoritative
@@ -242,7 +242,8 @@ until remote appearance data is available. The header opens the existing Party
 management panel. Frames move beside open dialogue, retain mouse ownership, and
 disappear on membership/connection loss. Resource updates repaint existing widgets;
 identity/name/leader changes rebuild their bounded layout. Zero and unavailable
-resources remain distinct. Frames do not yet select a player or open a context menu.
+resources remain distinct. This initial frame slice did not yet select a player
+or open a context menu; the latter is qualified below.
 
 286 client tests pass (four skips), including five-member formation/promotion/
 removal/dissolution and partial, zero and unavailable bar updates without widget
@@ -265,3 +266,31 @@ Python compilation pass (`build/party-frames-checks.json`). The editor's existin
 account launch path inherits these frames; no extra editor options are needed.
 The v1 visual run exposed a collapsed name column and is not acceptance; explicit
 text-column widths and rendered-name/height checks fixed it before the v2 reruns.
+
+
+## Member context menus — accepted 16 November 2026
+
+Right-click a compact member frame for its trusted name, role, Manage and Close.
+Only the current leader sees Promote/Remove; these reuse existing server commands,
+painted owner/revision/member guards and the shared pending reservation. Resource
+updates keep the menu; membership/revision changes, disconnection and focus loss
+retire it. Escape closes context before Party. Outside dismissal and frame drags
+retain UI ownership without steering, facing changes or world actions.
+289 client tests pass (four skips), including authority-derived stale/role guards,
+keyboard ordering and both viewport clamps. Build, fmt, denied-warning all-target
+client Clippy and Python compilation pass; build/party-menu-checks.json.
+Native two-account controls at 1720x1400 and 1720x700 pass all 13 membership actions
+through fresh and PostgreSQL/server-restored accounts, with actual context-menu
+promotion/removal, nonleader permissions, Manage/Close, Escape/outside/focus
+dismissal, unchanged progression and zero readiness retractions/GPU diagnostics.
+Evidence: build/party-menu-paired-v2/qualification.json (160.22 seconds) and
+build/party-menu-quadrants-v2/qualification.json (156.95 seconds).
+Both menu captures were visually inspected. Linux RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6; no Windows run. Quadrant checks use two accounts in the
+first two tiles, not four-account gameplay. V1 stopped at a test-harness variable
+collision after promotion; v2 fixes the harness and is the acceptance run.
+Editor account playtests inherit the client controls with no extra options.
+Next P4-11 prerequisite: distinguish authoritative friendly party selection from
+hostile targets before enabling frame selection and shared unit marks. The
+adopted title/selection/loading flow remains subsequent work. Continue locally;
+no push authorized.

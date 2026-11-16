@@ -41,7 +41,7 @@ pub(super) struct Presentation {
 #[derive(Component)]
 pub(super) struct Root;
 #[derive(Component)]
-struct Frame(EntityKey);
+pub(super) struct Frame(pub(super) EntityKey);
 #[derive(Component)]
 struct IdentityLabel(EntityKey);
 #[derive(Clone, Copy)]

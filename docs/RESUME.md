@@ -1,3 +1,32 @@
+# Current checkpoint — 16 November 2026: member context menus accepted
+
+P4-11 right-click member menus now expose trusted name/role, leader-only
+Promote/Remove and Manage/Close. Shared server command/pending/revision guards
+apply. Escape/outside/focus dismissal and frame drag ownership are qualified.
+289 client tests / four skips, strict Clippy, fmt, build and Python compilation
+pass. Actual native two-account controls and PostgreSQL/server restart pass at
+both tile heights: `build/party-menu-{paired,quadrants}-v2/qualification.json`,
+160.22 / 156.95 seconds, zero GPU diagnostics/readiness retractions. Both menu
+captures were visually inspected. V1 failed in the harness after a variable
+collision; v2 is acceptance. Use `git log -1` for this local commit; nothing pushed.
+All owned native supervisors completed and cleaned up.
+
+Continue the user's until-Stop implementation/editor-integration authorization.
+Next P4-11 slice: authoritative friendly party-member selection, distinct from
+hostile target search/rendering/combat. Existing `targeting::Target` is hostile
+only; do not insert players into it without classification. The current TG01
+codec requires selected identity in the hostile list. Review a bounded selected
+member field/profile update without leaking remote positions; preserve exact
+incarnations, manual facing, no implicit attack, departure cleanup and explicit
+out-of-interest policy. Existing autoattack only accepts live creatures; spell
+validation and every client target consumer need review. Require actual encrypted
+selection/lifecycle/isolation plus existing hostile regressions before UI adoption.
+Then qualify frame selection with real private stats, shared unit marks, and the
+adopted title/selection/loading flow. Recommended choices and mouse/display are
+authorized; commit qualified slices locally and continue. Do not push.
+
+---
+
 # Current checkpoint — 16 November 2026: compact member frames accepted
 
 P4-11 member frames now display trusted names, leader labels and authoritative
