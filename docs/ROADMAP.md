@@ -1,3 +1,13 @@
+16 November 2026 — P4-11 shared-marker presentation accepted:
+The Unit marks palette, eight shared overhead symbols and selected-target icons
+now use the private authoritative protocol from cda0608a. Exact selection/revision
+and leader/pending guards apply. All 295 client tests (four skips), strict client
+Clippy, fmt and build pass. Native two-account paired and quadrant v4 checks pass
+fresh/restart: 27 actions each, no player-frame overlap, no scene-readiness drops
+or GPU diagnostics. See PARTIES.md and build/party-marks-ui-*-v4/qualification.json.
+Next: genuine loading/readiness presentation, then title/character-selection UI.
+Continue locally until Stop; no push or four-account/native Windows claim.
+
 16 November 2026 — P4-11 shared unit-mark authority accepted:
 Party profile v5 / PQ02 / PS03 carries eight bounded, party-private symbols.
 Leaders can assign, clear a unit or clear all; reassignment preserves one symbol

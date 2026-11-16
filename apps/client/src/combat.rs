@@ -205,6 +205,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
         ))
         .with_children(|panel| {
             crate::party::selection::widgets(panel);
+            crate::party::marks::target_widget(panel);
             panel
                 .spawn((
                     TargetVitals,

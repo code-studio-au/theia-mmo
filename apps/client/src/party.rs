@@ -1,5 +1,6 @@
 //! Standard Bevy controls for the admitted, private server-owned party view.
 mod invitation;
+pub(crate) mod marks;
 mod member_menu;
 mod members;
 pub(crate) mod selection;
@@ -36,6 +37,7 @@ pub(crate) fn world_identity(source: [u8; 32], enabled: bool) -> [u8; 32] {
 pub(crate) struct Ui {
     pub open: bool,
     pub closed_this_frame: bool,
+    marks_open: bool,
     menu: Option<member_menu::Selection>,
     menu_dragged: bool,
     waiting: Option<u64>,
@@ -43,7 +45,7 @@ pub(crate) struct Ui {
     actions: u64,
 }
 pub(crate) fn owns_escape(ui: Option<&Ui>) -> bool {
-    ui.is_some_and(|u| u.open || u.menu.is_some() || u.closed_this_frame)
+    ui.is_some_and(|u| u.open || u.marks_open || u.menu.is_some() || u.closed_this_frame)
 }
 #[derive(Component)]
 struct Pane;
@@ -58,6 +60,8 @@ enum Control {
     Member(Intent),
     Manage,
     MenuClose,
+    MarksToggle,
+    Mark(Intent),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Choice {
@@ -213,6 +217,7 @@ pub(crate) fn install(app: &mut App) {
     invitation::install(app);
     members::install(app);
     member_menu::install(app);
+    marks::install(app);
     app.init_resource::<Ui>()
         .init_resource::<selection::Presentation>()
         .add_observer(activate)
@@ -235,6 +240,7 @@ pub(crate) fn install(app: &mut App) {
                 member_menu::present,
                 selection::present,
                 selection::paint,
+                marks::present,
             )
                 .chain()
                 .after(crate::network::present)
@@ -289,17 +295,19 @@ pub(crate) fn keyboard(
     ui.closed_this_frame = false;
     if !windows.single().is_ok_and(|w| w.focused) {
         ui.menu = None;
+        ui.marks_open = false;
         return;
     }
     if keys.just_pressed(KeyCode::KeyO) {
         ui.menu = None;
+        ui.marks_open = false;
         ui.open = !ui.open;
         ui.closed_this_frame = !ui.open;
     } else if keys.just_pressed(KeyCode::Escape)
-        && (ui.open || ui.menu.is_some())
+        && (ui.open || ui.marks_open || ui.menu.is_some())
         && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
     {
-        if ui.menu.take().is_none() {
+        if ui.menu.take().is_none() && !std::mem::take(&mut ui.marks_open) {
             ui.open = false;
         }
         ui.closed_this_frame = true;
@@ -311,6 +319,7 @@ fn activate(
     windows: Query<&Window>,
     mut ui: ResMut<Ui>,
     network: Res<crate::network::Network>,
+    selection: Option<Res<crate::world_input::Selection>>,
 ) {
     if !windows.single().is_ok_and(|w| w.focused) {
         return;
@@ -321,37 +330,56 @@ fn activate(
     match control {
         Control::Toggle => {
             ui.menu = None;
+            ui.marks_open = false;
             ui.open = !ui.open;
             ui.closed_this_frame = !ui.open;
         }
         Control::Manage => {
             ui.menu = None;
+            ui.marks_open = false;
             ui.open = true;
         }
         Control::MenuClose => {
             ui.menu = None;
             ui.closed_this_frame = true;
         }
+        Control::MarksToggle => {
+            ui.menu = None;
+            ui.marks_open = !ui.marks_open;
+        }
         Control::Close if ui.open => {
             ui.open = false;
             ui.closed_this_frame = true;
         }
-        Control::Command(intent) | Control::Invitation(intent) | Control::Member(intent)
+        Control::Command(intent)
+        | Control::Invitation(intent)
+        | Control::Member(intent)
+        | Control::Mark(intent)
             if ui.waiting.is_none() =>
         {
             let prompt = matches!(control, Control::Invitation(_));
             let menu = matches!(control, Control::Member(_));
-            if !menu && prompt == ui.open {
+            let mark = matches!(control, Control::Mark(_));
+            if !menu && !mark && prompt == ui.open {
                 return;
             }
             let state = network.state();
             if state.error.is_some() {
                 return;
             }
-            let Some(view) = state.party else {
+            let Some(view) = state.party.as_ref() else {
                 return;
             };
             if view.pending
+                || (mark
+                    && (!ui.marks_open
+                        || ui.menu_dragged
+                        || !marks::current(
+                            &state,
+                            selection.as_ref().and_then(|s| s.friendly),
+                            &network,
+                            intent,
+                        )))
                 || (prompt && !invitation::current(&view.state, intent))
                 || (menu
                     && !ui.menu.as_ref().is_some_and(|selected| {
@@ -491,12 +519,16 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let member_frames = members::snapshot(world);
     let member_menu = member_menu::snapshot(world);
     let selected_member = selection::snapshot(world);
+    let marks = marks::snapshot(world);
+    let marks_visible = marks["open"].as_bool().unwrap_or(false);
     let menu_visible = member_menu["visible"].as_bool().unwrap_or(false);
     let invitation_visible = invitation["visible"].as_bool().unwrap_or(false);
     let scale = world.resource::<bevy::ui::UiScale>().0;
     let buttons: Vec<_> = world.query::<(&Control, &AccessibleLabel, &ComputedNode, &bevy::ui::UiGlobalTransform)>().iter(world)
         .filter(|(control, _, node, _)| match control {
             Control::Toggle => true,
+            Control::MarksToggle => true,
+            Control::Mark(_) => marks_visible,
             Control::Invitation(_) => invitation_visible,
             Control::Member(_) | Control::Manage | Control::MenuClose => menu_visible,
             _ => open,
@@ -504,8 +536,9 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
         .map(|(control, label, node, transform)| {
             let (action, target) = match control {
                 Control::Toggle => ("toggle", None), Control::Close => ("close", None),
+                Control::MarksToggle => ("marks-toggle", None),
                 Control::Manage => ("manage", None), Control::MenuClose => ("menu-close", None),
-                Control::Command(intent) | Control::Invitation(intent) | Control::Member(intent) => match intent.action {
+                Control::Command(intent) | Control::Invitation(intent) | Control::Member(intent) | Control::Mark(intent) => match intent.action {
                     Action::Invite(k) => ("invite", Some(k.entity.value())), Action::Kick(k) => ("remove", Some(k.entity.value())), Action::Promote(k) => ("promote", Some(k.entity.value())),
                     Action::Accept(id) => ("accept", Some(id)), Action::Decline(id) => ("decline", Some(id)), Action::Cancel(id) => ("cancel", Some(id)), Action::Leave => ("leave", None), Action::Mark { target, .. } => ("mark", Some(target.entity.value())), Action::ClearMarks => ("clear-marks", None),
                 },
@@ -516,10 +549,10 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
         .get_resource::<crate::network::Network>()
         .map(|n| n.state());
     let party = state.as_ref().and_then(|s| s.party.as_ref());
-    serde_json::json!({"open":open,"invitation":invitation,"member_frames":member_frames,"member_menu":member_menu,"selected_member":selected_member,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
+    serde_json::json!({"open":open,"marks":marks,"invitation":invitation,"member_frames":member_frames,"member_menu":member_menu,"selected_member":selected_member,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
         "owner":v.state.view.owner.entity.value(),"revision":v.state.view.revision,"sequence":v.state.view.sequence,
         "pending":v.pending,"timed_out":v.timed_out,"refusal":v.state.refusal.map(|r|format!("{r:?}")),
-        "party":v.state.view.membership.party.as_ref().map(|p|serde_json::json!({"id":p.id,"leader":p.leader.entity.value(),"members":p.members.iter().map(|k|k.entity.value()).collect::<Vec<_>>()})),
+        "party":v.state.view.membership.party.as_ref().map(|p|serde_json::json!({"id":p.id,"leader":p.leader.entity.value(),"members":p.members.iter().map(|k|k.entity.value()).collect::<Vec<_>>(),"marks":p.marks.iter().map(|m|serde_json::json!({"target":m.target.entity.value(),"symbol":m.symbol.name()})).collect::<Vec<_>>()})),
         "incoming":v.state.view.membership.incoming.as_ref().map(|i|serde_json::json!({"id":i.id,"inviter":i.inviter.entity.value()})),
         "outgoing":v.state.view.membership.outgoing.iter().map(|i|serde_json::json!({"id":i.id,"recipient":i.recipient.entity.value()})).collect::<Vec<_>>(),
         "roster":v.state.roster.iter().map(|a|serde_json::json!({"actor":a.key.entity.value(),"name":a.name.as_str()})).collect::<Vec<_>>()

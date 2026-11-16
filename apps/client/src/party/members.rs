@@ -124,6 +124,8 @@ fn children(root: &mut ChildSpawnerCommands, members: &[Member]) {
             ));
             header.spawn(text("Manage [O]", 12., Color::WHITE));
         });
+    root.spawn(button(Control::MarksToggle, "Unit marks", true))
+        .with_child(text("Unit marks", 13., crate::fantasy_ui::GOLD));
     for member in members {
         root.spawn((
             Frame(member.key),

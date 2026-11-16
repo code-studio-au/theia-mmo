@@ -1,3 +1,53 @@
+# Current checkpoint — 16 November 2026: shared-marker UI accepted
+
+16 November 2026 — P4-11 shared-marker presentation accepted:
+A compact Unit marks palette beside the member frames assigns the eight original
+symbols through cda0608a's authoritative private-party protocol. Leaders can mark
+the selected member, NPC or enemy, clear that unit or clear all. Nonleaders see
+read-only controls. Exact painted owner/revision/selection, pending requests and
+latest target intent protect actions; no optimistic assignment or implicit
+selection, movement, facing or attack. Escape closes the palette before clearing
+the target; focus loss closes it. Names come from admitted/authored content.
+Ordinary Bevy ImageNode widgets display marks above current visible units and on
+the selected target frame. Original code-defined symbols avoid font-glyph or
+external-art dependencies. Overhead rendering requires current loaded identity,
+visible rendered transforms, static-world line of sight, a 60-metre camera range
+and viewport bounds; it publishes no extra positions. Distant member marks still
+appear in the selected-target frame. Promotion preserves marks; departure and
+party dissolution remove them through the accepted authority lifecycle.
+295 client tests pass (four skips), including stale identity/selection/leader,
+loaded-observation and distinct symbol-image checks. Strict all-target client
+Clippy, fmt, client build and Python compilation pass:
+build/party-marks-ui-checks.json. Server/editor compatibility is unchanged from
+the matched cda0608a builds and protocol acceptance.
+Actual two-account native mouse/keyboard runs pass at 1720x1400 and 1720x700,
+fresh and after PostgreSQL/server restart. Each flow covers 27 actions (14 mark
+commands plus 13 membership actions), all eight shared NPC symbols, member marks,
+reassignment, clear-unit/all, disabled nonleader commands, target-frame symbols,
+unchanged movement/facing/combat/quests/bags, promotion retention and removal.
+The final 244px palette is measured not to overlap the player frame. Evidence:
+build/party-marks-ui-paired-v4/qualification.json (213.31 seconds) and
+build/party-marks-ui-quadrants-v4/qualification.json (205.28 seconds).
+Final palette captures at both heights were visually inspected. Linux RX 7900
+XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; zero GPU diagnostics and scene-readiness
+retractions. The quadrant run uses two accounts in two quarter-screen tiles;
+no four-account gameplay or native Windows claim. Early quadrant attempts picked
+an offscreen marker anchor or had incorrect wrapper fixture paths. The first
+passing UI exposed an eight-pixel player-frame overlap; narrowed layout v4 is the
+acceptance run. Editor account playtests inherit the controls; native evidence
+uses an editor-exported package. Next: the adopted loading/title/character-
+selection flow, starting with genuine world readiness. Continue locally until
+Stop; no push.
+
+Next recommended slice: P2-02/P2-08 client loading overlay tied to actual world
+and pipeline readiness before the larger P3-01/P3-03 title/character-selection
+flow. Read docs/CHARACTER_LAUNCHER_MENU.md. Existing sources include
+apps/client/src/capture_ready.rs, authored_scene.rs and network.rs SceneState.
+Do not mask recurring mid-play readiness loss or invent percentage progress.
+No native processes remain from this qualification. The until-Stop goal is active.
+
+---
+
 # Current checkpoint — 16 November 2026: shared unit-mark authority accepted
 
 16 November 2026 — P4-11 shared unit-mark authority accepted:

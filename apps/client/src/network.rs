@@ -403,6 +403,12 @@ impl Network {
         let desired = self.target_choice.as_ref().and_then(|s| *s.borrow());
         target_choice_matches(selected, desired).then_some(selected)
     }
+    pub(crate) fn target_intent_matches(&self, selected: theia_core::identity::EntityId) -> bool {
+        target_choice_matches(
+            selected,
+            self.target_choice.as_ref().and_then(|s| *s.borrow()),
+        )
+    }
     pub(crate) fn current_intent(&self) -> Intent {
         *self.input.borrow()
     }

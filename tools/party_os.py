@@ -40,6 +40,7 @@ def flow(desktop, windows, states, folder):
     member_proofs = []
     menu_proofs = []
     selection_proofs = []
+    mark_proofs = []
     def view(index):
         return states[index]()['party']['state']
     def focus(index):
@@ -47,14 +48,14 @@ def flow(desktop, windows, states, folder):
         w, h, scale = states[index]()['window']
         desktop.move(windows[index], [w*.55, h*.42], scale)
         wait(lambda: states[index]()['cursor']['focused'])
-    def click(index, action, target=None, source=None):
+    def click(index, action, target=None, source=None, label=None):
         focus(index)
         delay = .6 - (time.monotonic()-last[index])
         if delay > 0: time.sleep(delay)
         def button():
             p = states[index]()['party']
             if p['state']['pending']: return None
-            return next((b for b in p['buttons'] if b['action'] == action and (target is None or b['target'] == target) and (source is None or b['source'] == source)), None)
+            return next((b for b in p['buttons'] if b['action'] == action and (target is None or b['target'] == target) and (source is None or b['source'] == source) and (label is None or b['label'] == label)), None)
         b = wait(button, 5)
         sequence = view(index)['sequence']
         desktop.click(windows[index], b['point'], states[index]()['window'][2], 1)
@@ -230,6 +231,74 @@ def flow(desktop, windows, states, folder):
         select_member(i)
         assert not states[i]()['friendly_selected'], 'Member and NPC selection overlapped'
 
+    def palette(index):
+        focus(index)
+        if not states[index]()['party']['marks']['open']:
+            b = wait(lambda: next(b for b in states[index]()['party']['buttons'] if b['label'] == 'Unit marks'))
+            desktop.click(windows[index], b['point'], states[index]()['window'][2], 1)
+        m = wait(lambda: v if (v := states[index]()['party']['marks'])['open'] and v['bounds'] else None)
+        x,y,w,h = m['bounds']
+        assert x >= 0 and y >= 64 and x+w <= states[index]()['window'][0] and y+h <= states[index]()['window'][1]
+        # The small viewport brings the player frame up beside the palette.
+        px,py,pw,ph = states[index]()['party']['marks']['player_bounds']
+        assert x+w <= px or y+h <= py or y >= py+ph, 'Palette covers the player frame'
+        return m
+    def shared_marks(expected):
+        wait(lambda: all(view(i)['party']['marks'] == expected for i in [0,1]), 5)
+    def mark(label, expected, target_symbol):
+        palette(0)
+        before = states[0]()
+        click(0, 'clear-marks' if label == 'Clear all marks' else 'mark', label=label)
+        shared_marks(expected)
+        wait(lambda: states[0]()['party']['marks']['target_symbol'] == target_symbol)
+        if target_symbol:
+            wait(lambda: states[0]()['party']['marks']['target_rendered'])
+        after = states[0]()
+        assert after['camera_angles'] == before['camera_angles'] and after['classic_facing'] == before['classic_facing']
+        assert math.dist(after['dodge']['authority_feet'], before['dodge']['authority_feet']) < .03
+        for key in ['enemy_clicks','friendly_clicks','basic_requests','interaction_requests']:
+            assert after['controls'][key] == before['controls'][key], key
+        assert after['ability_reply'] == before['ability_reply'] and after['active_cast'] == before['active_cast']
+        assert after['autoattack']['swings'] == before['autoattack']['swings']
+        mark_proofs.append(dict(label=label, shared=expected, target_symbol=target_symbol))
+    mark('Mark Skull', [dict(target=keys[1],symbol='Skull')], 'Skull')
+    palette(1)
+    before = view(1)
+    denied = next(b for b in states[1]()['party']['buttons'] if b['label'] == 'Mark Star')
+    desktop.click(windows[1], denied['point'], states[1]()['window'][2], 1)
+    time.sleep(.3)
+    assert view(1)['sequence'] == before['sequence'], 'Disabled nonleader control submitted a request'
+    shared_marks([dict(target=keys[1],symbol='Skull')])
+    desktop.key('Escape')
+    wait(lambda: not states[1]()['party']['marks']['open'])
+    assert selected_member(1), 'Palette Escape also cleared target'
+    palette(0)
+    sample = states[0]()
+    x,y,w,h = sample['party']['selected_member']['bounds']
+    # Choose the lowest unobscured unit so its overhead anchor also fits in a 700px tile.
+    contact = max((c for c in sample['contacts'] if c['screen']
+                  and sample['window'][0]*.35 < c['screen'][0] < sample['window'][0]*.75
+                  and 120 < c['screen'][1] < sample['window'][1]-190
+                  and not (x <= c['screen'][0] <= x+w and y <= c['screen'][1] <= y+h)), key=lambda c: c['screen'][1])
+    desktop.click(windows[0], contact['screen'], sample['window'][2], 1)
+    wait(lambda: states[0]()['friendly_selected'])
+    npc = contact['entity']
+    for symbol in ['Skull','Cross','Square','Moon','Triangle','Diamond','Circle','Star']:
+        mark('Mark '+symbol, [dict(target=npc,symbol=symbol)], symbol)
+        for i in [0,1]:
+            wait(lambda: any(m['symbol']==symbol for m in states[i]()['party']['marks']['overhead']), 5)
+    capture(0, 'party-mark-palette.png')
+    capture(1, 'party-shared-mark.png')
+    mark('Clear unit mark', [], None)
+    mark('Mark Circle', [dict(target=npc,symbol='Circle')], 'Circle')
+    select_member(0)
+    mark('Mark Star', [dict(target=npc,symbol='Circle'),dict(target=keys[1],symbol='Star')], 'Star')
+    mark('Clear all marks', [], None)
+    mark('Mark Star', [dict(target=keys[1],symbol='Star')], 'Star')
+    focus(0); desktop.key('Escape')
+    wait(lambda: not states[0]()['party']['marks']['open'])
+    assert selected_member(0)
+
     focus(0)
     frame = states[0]()['party']['member_frames']['frames'][0]
     x,y,w,h = frame['bounds']
@@ -280,6 +349,7 @@ def flow(desktop, windows, states, folder):
     wait(lambda: not states[0]()['party']['member_menu']['visible'])
     wait(lambda: all(view(i)['party']['leader'] == keys[1] for i in [0,1]), 5)
     member_frames()
+    shared_marks([dict(target=keys[1],symbol='Star')])
     assert all(selected_member(i) for i in [0,1]), 'Promotion lost friendly selection'
     open_member(1)
     click(1, 'remove', keys[0], source='member'); solo()
@@ -300,7 +370,8 @@ def flow(desktop, windows, states, folder):
                   interface_then_party_escape=True, invitation_without_panel=True,
                   invitation_bounds=prompt['bounds'], invitation_drag_does_not_steer_or_interact=True, member_frames=member_proofs,
                   member_frame_drag_does_not_steer_or_interact=True, member_manage_shortcut=True, member_menus=menu_proofs,
-                  member_menu_escape_outside_and_focus_dismissal=True, member_menu_actions=True, selected_members=selection_proofs,
+                  member_menu_escape_outside_and_focus_dismissal=True, member_menu_actions=True, selected_members=selection_proofs, shared_unit_marks=mark_proofs,
+                  marker_nonleader_disabled=True, marker_promotion_retained=True,
                   friendly_selection_does_not_move_turn_or_cast=True, friendly_selection_clear_and_membership_cleanup=True)
     (folder/'party-proof.json').write_text(json.dumps(result, indent=2)+'\n')
     return result

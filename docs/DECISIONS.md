@@ -14,6 +14,15 @@ NPCs, departing members and dissolved parties. Creature respawn uses fresh IDs,
 so marks do not transfer to a new creature life. Ground markers remain separate.
 Implementation and acceptance evidence belong in STATUS/PARTIES, not this policy.
 
+16 November 2026 — P4-11 marker presentation policy:
+Use original geometric symbols in ordinary Bevy ImageNode widgets. Above-unit
+marks require an observed current identity in a loaded chunk, a visible rendered
+transform, static-world line of sight, a camera distance of at most 60 metres and
+an on-screen anchor. This presentation distance is separate from server request
+relevance and does not erase retained marks. The selected-target icon uses the
+private party state even when a member is outside spatial interest. The palette
+binds the painted selected identity/revision; it neither selects nor attacks.
+
 16 November 2026 — P4-11 friendly member selection:
 Select current other party members throughout the current bounded world, matching
 the party-wide vitals policy. This is an explicit Theia extension; no Classic
