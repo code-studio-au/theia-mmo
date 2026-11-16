@@ -277,7 +277,14 @@ mod tests {
     #[test]
     fn enabled_pawns_export_exact_checked_world_and_immutable_controller_snapshot() {
         let folder = Folder::new();
-        let zone = fixture();
+        let mut zone = fixture();
+        for client_id in [3, 4] {
+            let mut player = zone.test_players[0].clone();
+            player.id = u64::from(client_id);
+            player.client_id = client_id;
+            player.position[0] += f64::from(client_id - 1) * 2.;
+            zone.test_players.push(player);
+        }
         let original = serde_json::to_vec(&zone).unwrap();
         let path = folder.0.join("test");
         let report = publish(
@@ -289,7 +296,7 @@ mod tests {
             &scenery_library::Library::default(),
         )
         .unwrap();
-        assert_eq!(report["clients"], 2);
+        assert_eq!(report["clients"], 4);
         let scenario: serde_json::Value =
             serde_json::from_slice(&fs::read(path.join("scenario.json")).unwrap()).unwrap();
         let world = Store::open(&path.join("world")).unwrap();
@@ -323,7 +330,7 @@ mod tests {
             .is_err()
         );
         assert_eq!(fs::read(path.join(WALK_TURN_PATH)).unwrap(), WALK_TURN);
-        let mut zone = zone;
+        zone.test_players.truncate(2);
         zone.test_players[0].enabled = false;
         zone.test_players[0].controller = Some("test.not-installed".into());
         let second = folder.0.join("only-second");

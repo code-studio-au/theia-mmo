@@ -93,9 +93,9 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, new_id: u64, offset: [f64; 3]) -> 
         copy.position = shift(copy.position);
         zone.scenery.push(copy);
     } else if let Some(source) = zone.test_players.iter().find(|p| p.id == id) {
-        let slot = (1..=2)
+        let slot = (1..=crate::test_players::MAX_TEST_PLAYERS as u8)
             .find(|slot| zone.test_players.iter().all(|p| p.client_id != *slot))
-            .ok_or("Both test player slots are occupied")?;
+            .ok_or("All four test player slots are occupied")?;
         let mut copy = source.clone();
         copy.id = new_id;
         copy.client_id = slot;

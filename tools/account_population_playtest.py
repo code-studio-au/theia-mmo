@@ -203,6 +203,8 @@ def prepare_profiles(args, repository, bundle=None):
         command.extend(['--test-route', str(output/'test-route.json')])
     if (package/'creature.glb').is_file():
         command.extend(['--creature-asset', str(package/'creature.glb')])
+    if getattr(args, 'test_window', None):
+        command += ['--test-window', args.test_window]
     records = []
     for flag, name, data in profiles:
         (frozen/name).write_bytes(data)
@@ -223,6 +225,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--fantasy-ui', type=Path, default=os.environ.get('THEIA_FANTASY_UI'), help='Local Synty Fantasy Warrior HUD')
     parser.add_argument('--parties', action='store_true', help='Enable party membership controls in this account test')
+    parser.add_argument('--test-window', help='Monitor tile INDEX/COUNT for this account client')
     parser.add_argument('--window-size', default='3440x1440')
     parser.add_argument('--test-route', type=Path, help='Explicit paused test travel; frozen locally and checked by normal client preflight')
     parser.add_argument('--items', type=Path, help='Explicit item catalogue, paired with --reward-catalog')

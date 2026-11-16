@@ -130,8 +130,8 @@ async fn authored_valley_exported_contact_binds_profile_and_placement_for_two_en
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD local valley with clear village spawns"]
-async fn authored_test_players_keep_client_spawns_in_reverse_arrival_and_refuse_unconfigured_peer()
-{
+async fn authored_test_players_keep_four_client_spawns_in_reverse_arrival_and_refuse_unconfigured_peer()
+ {
     run_authored(false, false, false, true).await;
 }
 
@@ -207,7 +207,8 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool, test_pla
     let prepared = if test_players {
         let bytes = serde_json::to_vec_pretty(
             &serde_json::json!({"schema":1,"world_identity":source,"players":[
-                {"client_id":1,"feet":[x,y,z]}, {"client_id":2,"feet":[x-2.,y,z]}
+                {"client_id":1,"feet":[x,y,z]}, {"client_id":2,"feet":[x-2.,y,z]},
+                {"client_id":3,"feet":[x-4.,y,z]}, {"client_id":4,"feet":[x-6.,y,z]}
             ]}),
         )
         .unwrap();
@@ -245,7 +246,11 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool, test_pla
         }
     });
     let mut peers = Vec::new();
-    for i in if test_players { [2, 1] } else { [1, 2] } {
+    for i in if test_players {
+        vec![4, 3, 2, 1]
+    } else {
+        vec![1, 2]
+    } {
         let client_store = Arc::new(Store::open(&root).unwrap());
         assert_eq!(client_store.identity(), source);
         let terrain = Runtime::with_source(spawn, 1., Source::Authored(client_store)).unwrap();
@@ -301,7 +306,15 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool, test_pla
         .expect("Authored admission timeout");
         let initial = state.borrow().correction.unwrap().state.pose.feet.metres();
         assert!(
-            (initial[0] - (spawn[0] - if test_players && i == 2 { 2. } else { 0. })).abs() < 0.001
+            (initial[0]
+                - (spawn[0]
+                    - if test_players {
+                        f64::from(i - 1) * 2.
+                    } else {
+                        0.
+                    }))
+            .abs()
+                < 0.001
         );
         assert!((initial[2] - spawn[1]).abs() < 0.001);
         peers.push(Peer {
@@ -360,7 +373,10 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool, test_pla
         assert_eq!(correction.ready_sequence, 0);
         let p = correction.pose.feet.metres();
         assert!((p[0] - peer.initial[0]).abs() < 0.01 && (p[2] - peer.initial[2]).abs() < 0.01);
-        assert_eq!(state.snapshot.as_ref().unwrap().players.len(), 2);
+        assert_eq!(
+            state.snapshot.as_ref().unwrap().players.len(),
+            if test_players { 4 } else { 2 }
+        );
         // Headless harness publishes collision readiness explicitly. The real
         // client uses its separate scene/material/GPU readiness gate.
         let patch = peer.terrain.patch(correction.pose.feet).unwrap();
@@ -375,7 +391,10 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool, test_pla
         assert!(correction.pose.feet.metres()[2] > peer.initial[2] + 1.);
         assert!((correction.pose.feet.metres()[0] - peer.initial[0]).abs() < 0.02);
         assert!(peer.driver.stats.predicted_steps > 0 && peer.driver.stats.corrections > 0);
-        assert_eq!(state.snapshot.as_ref().unwrap().players.len(), 2);
+        assert_eq!(
+            state.snapshot.as_ref().unwrap().players.len(),
+            if test_players { 4 } else { 2 }
+        );
         if with_guide {
             assert!(
                 state.dialogue.as_ref().unwrap().open.is_none(),
@@ -399,7 +418,12 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool, test_pla
             );
         }
     }
-    let ticket = std::fs::read(cleanup.tickets.join("client-3.token")).unwrap();
+    let ticket = std::fs::read(cleanup.tickets.join(if test_players {
+        "client-5.token"
+    } else {
+        "client-3.token"
+    }))
+    .unwrap();
     let (_input, input) = watch::channel(Intent::default());
     let (states, rejected_state) = watch::channel(State::default());
     let (_ready, ready) = watch::channel(None);
@@ -434,7 +458,7 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool, test_pla
     }
     let stats = server.await.unwrap().unwrap();
     if test_players {
-        assert_eq!(stats.test_player_admissions, 2);
+        assert_eq!(stats.test_player_admissions, 4);
         assert_eq!(stats.test_player_refusals, 1);
         assert_eq!(stats.persistent_spawn_admissions, 0);
         assert_eq!(stats.rejected_inputs, 0);

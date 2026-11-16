@@ -71,7 +71,7 @@ pub(super) struct Scene {
     entities: BTreeMap<u64, Entity>,
 }
 pub(super) fn add(session: &mut Session) {
-    let Some(slot) = (1..=2).find(|slot| {
+    let Some(slot) = (1..=theia_zone::test_players::MAX_TEST_PLAYERS as u8).find(|slot| {
         session
             .editor
             .zone()
@@ -79,7 +79,7 @@ pub(super) fn add(session: &mut Session) {
             .iter()
             .all(|p| p.client_id != *slot)
     }) else {
-        session.status = "Both test player slots are occupied".into();
+        session.status = "All four test player slots are occupied".into();
         return;
     };
     let id = session.next_id;
@@ -273,10 +273,24 @@ mod tests {
             assert_ne!(copy, id);
             assert_eq!(session.editor.zone().test_players[1].client_id, 2);
             assert_eq!(session.selected, None);
+            assert!(workspace::Control::Command(Action::AddTestPlayer).enabled(&session));
+            add(&mut session);
+            add(&mut session);
+            assert_eq!(
+                session
+                    .editor
+                    .zone()
+                    .test_players
+                    .iter()
+                    .map(|p| p.client_id)
+                    .collect::<Vec<_>>(),
+                vec![1, 2, 3, 4]
+            );
             assert!(!workspace::Control::Command(Action::AddTestPlayer).enabled(&session));
             let before = session.editor.zone().clone();
             add(&mut session);
             assert_eq!(session.editor.zone(), &before);
+            session.test_player_selected = Some(copy);
             session.edit(vec![Edit::DeleteTestPlayer { id: copy }]);
             assert_eq!(session.test_player_selected, None);
             session.execute(Command::Undo {

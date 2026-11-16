@@ -594,7 +594,7 @@ mod tests {
         world.enable_prediction().unwrap();
         world.enable_classic().unwrap();
         let original_identity = world.identity();
-        for client_id in [0, 3, u64::MAX] {
+        for client_id in [0, 5, u64::MAX] {
             let mut invalid = document.clone();
             // Every syntactic invalidity is refused before there can be admission.
             invalid["players"][0]["client_id"] = json!(client_id);
@@ -614,6 +614,19 @@ mod tests {
         duplicate["players"][0]["client_id"] = json!(1);
         assert!(Plan::from_json(&serde_json::to_vec(&duplicate).unwrap(), &world).is_err());
         assert!(Plan::from_json(&vec![b' '; MAX_BYTES + 1], &world).is_err());
+        let mut four = document.clone();
+        for client_id in [3, 4] {
+            four["players"].as_array_mut().unwrap().push(json!({
+                "client_id": client_id, "feet": [8190., 0.1, 8192.]
+            }));
+        }
+        let plan = Plan::from_json(&serde_json::to_vec(&four).unwrap(), &world).unwrap();
+        assert_eq!(plan.positions().len(), 4);
+        assert!(plan.prepare(&world).is_ok());
+        four["players"].as_array_mut().unwrap().push(json!({
+            "client_id": 5, "feet": [8190., 0.1, 8192.]
+        }));
+        assert!(Plan::from_json(&serde_json::to_vec(&four).unwrap(), &world).is_err());
         for feet in [
             [8192., 100., 8192.],
             [8192., 4., 8192.],

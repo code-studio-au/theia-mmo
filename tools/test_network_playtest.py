@@ -39,6 +39,14 @@ class ScenarioTests(unittest.TestCase):
         self.assertEqual(scenario.server_profile()['players'], [dict(client_id=2, feet=(8190., .01, 8192.))])
         self.assertNotIn('network', scenario.server_profile()['players'][0])
 
+    def test_four_slots_and_fifth_rejection(self):
+        data = document()
+        data['players'] += [dict(client_id=i, feet=[8192.+i, .01, 8192.]) for i in (3, 4)]
+        self.assertEqual([p.client_id for p in self.load(data).players], [1, 2, 3, 4])
+        data['players'].append(dict(client_id=5, feet=[8198., .01, 8192.]))
+        with self.assertRaises(ValueError):
+            self.load(data)
+
     def test_relative_controller_is_resolved_and_not_sent_to_server(self):
         controller = self.path.parent / 'walk.json'
         controller.write_text('{"schema":1,"name":"Walk","steps":[{"duration_ms":100,"forward":1000}]}')
@@ -117,7 +125,7 @@ class LifecycleTests(unittest.TestCase):
                 if is_server:
                     kwargs['stdout'].write('listening=127.0.0.1:1234 local_tickets=fixture\n')
                     kwargs['stdout'].flush()
-                if stop_startup or len(owner.processes) == 3:
+                if stop_startup or len(owner.processes) == 1 + len(play.Scenario.load(owner.path).players):
                     (owner.output / 'stop').touch()
             def poll(self): return self.returncode
             def terminate(self): self.returncode = 0
@@ -252,6 +260,19 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(process.arguments[slot + 1], f'{index}/2')
         self.assertFalse(list(self.output.glob('tickets-*')))
         self.assertEqual(json.loads((self.output / 'session.json').read_text())['reason'], 'stop requested')
+
+    def test_four_clients_receive_distinct_tiles_and_cleanup(self):
+        data = document()
+        data['players'] += [dict(client_id=i, feet=[8192.+i, .01, 8192.]) for i in (3, 4)]
+        self.path.write_text(json.dumps(data))
+        self.execute()
+        self.assertEqual(len(self.processes), 5)
+        for index, process in enumerate(self.processes[1:], 1):
+            args = process.arguments
+            self.assertEqual(args[args.index('--test-window')+1], f'{index}/4')
+            self.assertEqual(args[args.index('--window-size')+1], '1720x720')
+        self.assertTrue(all(p.returncode == 0 for p in self.processes))
+        self.assertTrue(all(r.closed for r in self.relays))
 
     def test_only_second_player_uses_one_view_without_changing_its_identity(self):
         data = document()

@@ -3,6 +3,7 @@ use crate::{Result, procedural::Source, simulation::World};
 use serde::Deserialize;
 use theia_core::coordinates::GlobalPosition;
 
+pub const MAX_PLAYERS: usize = 4;
 pub const MAX_BYTES: usize = 16 * 1024;
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -20,12 +21,12 @@ struct Player {
 /// Parsed plan; no position is admitted until `prepare` checks actual collision.
 pub struct Plan {
     identity: [u8; 32],
-    centres: [Option<GlobalPosition>; 2],
+    centres: [Option<GlobalPosition>; MAX_PLAYERS],
 }
 /// All configured positions were checked against this exact source.
 pub struct Prepared {
     identity: [u8; 32],
-    centres: [Option<GlobalPosition>; 2],
+    centres: [Option<GlobalPosition>; MAX_PLAYERS],
 }
 fn identity(world: &World) -> Result<[u8; 32]> {
     let runtime = world
@@ -50,15 +51,15 @@ impl Plan {
         }
         let document: Document = serde_json::from_slice(bytes)?;
         if document.schema != 1
-            || !(1..=2).contains(&document.players.len())
+            || !(1..=MAX_PLAYERS).contains(&document.players.len())
             || document.world_identity != identity(world)?
         {
             return Err("Invalid test player schema, count or authored world identity".into());
         }
-        let mut centres = [None; 2];
+        let mut centres = [None; MAX_PLAYERS];
         for player in document.players {
-            if !(1..=2).contains(&player.client_id) {
-                return Err("Test player client ID must be 1 or 2".into());
+            if !(1..=MAX_PLAYERS as u64).contains(&player.client_id) {
+                return Err("Test player client ID must be from 1 to 4".into());
             }
             let mut centre = player.feet;
             let feet = GlobalPosition::new(centre).ok_or("Invalid test player feet")?;

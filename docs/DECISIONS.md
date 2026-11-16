@@ -1,3 +1,23 @@
+16 November 2026 — monitor-tiled local playtests (P1-06 / P5-17):
+The user replaces the earlier 1920-wide overlapping test windows with two equal
+halves of the 3440-wide display, and four equal quadrants for four players.
+The user chose to retain the desktop panel and fit above it. On this 3440x1440
+display with a 40-pixel bottom panel, use 1720x1400 left/right or 1720x700 in
+row-major 2x2 order. Query the available desktop work area and intersect it with
+Bevy monitor bounds/origin; keep standard borderless windowed Bevy positioning.
+Bevy 0.20 has no work-area query: the launcher supplies a bounded hint from Linux
+X11 wmctrl or Windows work-area APIs. Native Linux proved monitor-only bounds
+produce a 40-pixel overlap; no custom renderer or desktop preference changes.
+Await native resize acknowledgement before positioning against the new size,
+otherwise the desktop can clamp the lower row using its old height.
+Three clients use the first three quadrants. Placement happens once;
+subsequent user movement is retained. These remain independent clients, not
+multiple local players sharing one camera/input session. Extend the existing
+bounded editor test-pawn/admission path to four without changing gameplay authority.
+Reference UI must also be designed for the smaller tiles. Title/character/loading
+and party invitation/stats/marking screenshots are planned direction recorded in
+CHARACTER_LAUNCHER_MENU and PARTIES; incidental pictured features are not adopted.
+
 16 November 2026 — prepare every bounded authored-world mesh before movement:
 P2-02 / P2-08. A few camera-visible compiled pipelines do not establish readiness
 for an entire retained authored scene. Native capture and diagnostics reproduced

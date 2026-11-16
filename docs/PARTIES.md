@@ -2,6 +2,32 @@
 
 ## UI layout reference — 16 November 2026
 
+Additional screenshots on 16 November at 15:38:52, 15:38:58 and 15:39:21
+explicitly extend the requested direction to invitations, member stats and
+party targeting/marking. Originals use the same Pictures path below with date
+2026-11-16. These are planned presentation/features, not delivered behavior:
+
+- Incoming invite: compact top-centre prompt naming the inviter, with Accept
+  and Decline side by side while the world stays visible. Reuse the existing
+  invitation identity, expiry and pending-action guards.
+- Member frames: portrait, name, health/resource bars and leader crown;
+  selecting a member shows their target frame, level and available status icons.
+  Display server-observed values with explicit unavailable/out-of-range states.
+- Shared unit marks: a compact palette and clear action; show the assigned
+  symbol above the unit and on its target frame. Skull, cross, square, moon,
+  triangle, diamond, circle and star are visual references. Mark assignment
+  needs party-scoped authoritative state, permissions, epoch-qualified targets
+  and leave/despawn cleanup before it can be presented as working. Selecting
+  or marking must preserve manual facing and must not itself start an attack.
+- The pictured Ground tab is a separate ground-marker idea; it does not make
+  ground placement, pings or ready checks part of the unit-marker implementation.
+
+Acceptance for this planned UI includes readable layouts at 1720x1400 paired
+and 1720x700 four-player tiles, invite expiry/decline, stale member guards,
+cross-client mark agreement and party isolation. The current membership slice
+does not yet replicate the persistent member stats or shared marks above.
+Title/selection/loading references are in [CHARACTER_LAUNCHER_MENU.md](CHARACTER_LAUNCHER_MENU.md).
+
 The user supplied three WoW screenshots captured on 15 November at 21:14:46,
 21:15:01 and 21:15:09 as party UI/menu layout references. Local originals are
 `/home/steven/Pictures/Screenshot from 2026-11-15 <time>.png` (hyphenated times).

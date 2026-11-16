@@ -26,6 +26,14 @@ class AccountPopulation(unittest.TestCase):
         return argparse.Namespace(package=root/'package', players=root/'players', binaries=root/'bin',
                                   output=root/'session', window_size='1280x720', character_id=None)
 
+    def test_account_client_retains_explicit_monitor_tile(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            args.test_window = '4/4'
+            command = launcher.prepare(args, root)
+            self.assertEqual(command[command.index('--test-window')+1], '4/4')
+
     def test_profiles_are_frozen_and_exact_paths_drive_the_owned_account_launcher(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

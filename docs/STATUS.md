@@ -1,3 +1,35 @@
+16 November 2026 — P1-06 / P5-17 panel-preserving playtest tiles accepted:
+Two independent clients use 1720x1400 left/right; four use 1720x700 quadrants on
+this 3440x1440 desktop, retaining its 40-pixel bottom panel. Standard Bevy windows
+intersect monitor bounds with a bounded launcher work-area hint and wait for a
+native resize acknowledgement before initial placement. Later user movement is
+retained. Linux X11 and Windows query paths exist; only Linux has native evidence.
+The editor now supports four test pawns, including duplication, undo/redo, export
+and checked per-slot server admission. Development tickets remain local-only.
+Actual native geometry and rendered extents pass in build/tiled-windows-native-v5/
+qualification.json. Four simultaneous encrypted clients and exact quadrants pass
+in build/tiled-windows-four-native-v3/qualification.json; its screenshot was
+inspected. This is admission/window evidence, not four-account combat or performance
+qualification. Reverse-arrival four-peer movement/replication and fifth-slot refusal
+pass in build/tiled-windows-four-peers.log; server CLI checks also pass.
+Two actual OIDC accounts complete collection, shared escort handoff/wait, individual
+turn-in and PostgreSQL/server restart at 1720x1400 in 282.58 seconds:
+build/tiled-windows-party-v2/qualification.json. Both retain journal revision 9,
+XP 75 and bag revision 2, with 116 prepared pipelines and zero readiness retractions
+in fresh/resumed phases. The Ready capture was inspected. The keyboard helper now
+holds Shift until the client observes its reverse-Tab result, preserving the same
+assertion through startup rendering stalls. Earlier failed diagnostic runs are not
+acceptance. Native GPU: Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6,
+zero GPU diagnostics; no Windows execution claim.
+283 client tests pass (four skips), 76 zone, 263 editor (16 skips), 538 network
+(18 skips), focused four-pawn export and 62 final Python launcher tests (one skip).
+Build, cargo fmt --check and denied-warning all-target client/editor/network/zone/
+server Clippy pass. Logs: build/tiled-windows-final-* plus tiled-windows-{zone,
+editor,network,export}-tests.log. Screenshot UI directions are recorded in PARTIES
+and CHARACTER_LAUNCHER_MENU; those new screens remain subsequent work.
+The user authorized continued implementation/editor integration, recommended
+choices, native input/display and local commits until Stop. No push authorized.
+
 16 November 2026 — P2-02 / P2-08 initial-movement NPC disappearance fixed:
 The user observed contacts vanish shortly after either player starts toward the
 first quest giver, and again around the ranger handoff. Native video and the

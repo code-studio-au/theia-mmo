@@ -1167,11 +1167,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             |chunks| chunks.data.identity(),
         )
     };
-    if (test_controller.is_some() || test_view.is_some())
+    if test_controller.is_some()
         && !configuration_report
         && args.first().is_none_or(|a| a != "--renet-connect")
     {
-        return Err("Test controllers/windows require a connected local client".into());
+        return Err("Test controllers require a connected local client".into());
     }
     if configuration_report {
         if connected || !args.is_empty() || !graybox || !prediction || !classic {
@@ -1324,11 +1324,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "Theia MMO — movement sandbox"
             }
             .into(),
+            decorations: test_view.is_none(),
             resize_constraints: bevy::window::WindowResizeConstraints {
-                min_width: width.min(1920) as f32,
+                min_width: if test_view.is_some() {
+                    1.
+                } else {
+                    width.min(1920) as f32
+                },
                 // Window managers can otherwise subtract their panels/title bar
                 // from a desktop-height request during initial placement.
-                min_height: height.min(1440) as f32,
+                min_height: if test_view.is_some() {
+                    1.
+                } else {
+                    height.min(1440) as f32
+                },
                 ..default()
             },
             resolution: WindowResolution::new(width, height).with_scale_factor_override(1.),

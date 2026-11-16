@@ -1,3 +1,24 @@
+16 November 2026 — tiled playtests accepted; continue P4-11 invitation UI:
+Two panel-preserving 1720x1400 views and four 1720x700 quadrants pass actual
+native geometry, four encrypted admissions and two-account shared-escort/restart
+at the new size. Four editor slots/export and server spawn ownership pass; see
+STATUS for exact evidence and Linux-only native scope. Next: top-centre incoming
+invite with Accept/Decline while Party is closed, reusing existing authoritative
+identity/expiry/revision/pending guards. Prerequisites are the qualified party
+transport and standard Bevy UI input ownership. Acceptance: native decline,
+cancel, accept and no world-click leakage at both tile heights, stale/expired
+invitations, unchanged progression, format/strict Clippy and relevant tests.
+Continue recommended implementation/editor slices with local commits until Stop;
+no push authorized. Title/selection/loading/member stats/marks remain later slices.
+
+16 November 2026 — P1-06 / P5-17 local view arrangement:
+Adopt usable desktop halves for two clients and quadrants for four, preserving
+the desktop panel as explicitly selected by the user. Standard Bevy borderless
+windows take a launcher-provided desktop work-area hint; no custom renderer or
+shared-input split-screen architecture. Four editor test slots retain checked
+spawn binding and local-ticket scope. Exact acceptance is recorded in STATUS.
+New front-end/party UI screenshot references remain planned presentation.
+
 16 November — P2-02 / P2-08 scene readiness continuity accepted:
 The reported NPC reload was global chunk-readiness withdrawal while newly visible
 world pipelines compiled. Standard Bevy temporary culling overrides now prepare

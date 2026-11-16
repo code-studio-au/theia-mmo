@@ -16,6 +16,7 @@ import tempfile
 import time
 
 from launch_environment import client_environment
+from playtest_windows import work_area_options
 from launcher_owner import watch_owner
 from network_profile import Profile
 from udp_impairment import Relay
@@ -52,16 +53,16 @@ class Scenario:
                 or any(type(b) is not int or not 0 <= b <= 255 for b in identity)):
             raise ValueError('Expected 32-byte authored world identity')
         entries = document['players']
-        if not isinstance(entries, list) or not 1 <= len(entries) <= 2:
-            raise ValueError('A test scenario supports one or two players')
+        if not isinstance(entries, list) or not 1 <= len(entries) <= 4:
+            raise ValueError('A test scenario supports one to four players')
         players, ids = [], set()
         for entry in entries:
             if (not isinstance(entry, dict) or set(entry) - {'client_id', 'feet', 'enabled', 'network', 'controller', 'route'}
                     or not {'client_id', 'feet'} <= set(entry)):
                 raise ValueError('Unsupported test player fields')
             client_id, feet = entry['client_id'], entry['feet']
-            if type(client_id) is not int or client_id not in (1, 2) or client_id in ids:
-                raise ValueError('Test player IDs must be distinct 1 or 2')
+            if type(client_id) is not int or client_id not in (1, 2, 3, 4) or client_id in ids:
+                raise ValueError('Test player IDs must be distinct IDs from 1 to 4')
             ids.add(client_id)
             if (not isinstance(feet, list) or len(feet) != 3
                     or any(type(v) not in (int, float) or (type(v) is float and not math.isfinite(v)) for v in feet)
@@ -124,7 +125,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
     scenario = Scenario.load(scenario_path)
     if duration is not None and (not math.isfinite(duration) or not 0 < duration <= 3600):
         raise ValueError('Duration must be positive and at most one hour')
-    window_size = window_size or ('3440x1440' if len(scenario.players) == 1 else '1920x1440')
+    window_size = window_size or ('3440x1440' if len(scenario.players) == 1 else ('1720x1440' if len(scenario.players) == 2 else '1720x720'))
     size = re.fullmatch(r'(\d+)x(\d+)', window_size)
     if not size or not (640 <= int(size[1]) <= 7680 and 480 <= int(size[2]) <= 4320):
         raise ValueError('Window size must be within 640x480..7680x4320')
@@ -242,13 +243,14 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
                 if time.monotonic() >= deadline:
                     raise TimeoutError('Test server startup timed out')
                 time.sleep(.02)
+            window_area = work_area_options()
             for view_index, (player, relay) in enumerate(zip(scenario.players, relays), 1):
                 if stop_file.exists() or stop_requested():
                     reason = "stop requested during client startup"
                     return
                 relay.start(backend)
                 processes.append(subprocess.Popen([str(client_binary), *scene, '--window-size', window_size,
-                    '--test-window', f'{view_index}/{len(scenario.players)}',
+                    '--test-window', f'{view_index}/{len(scenario.players)}', *window_area,
                     '--player-assets', str(players), *(['--creature-asset', str(creature_asset)] if creature_asset else []), *(['--test-controller', str(player.controller)] if player.controller else []), *(['--test-route', str(player.route)] if player.route else []), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
                     str(Path(tickets) / f'client-{player.client_id}.token')], env=environment,
                     stdout=files.enter_context((output / f'client-{player.client_id}.log').open('w')), stderr=subprocess.STDOUT))

@@ -1,3 +1,26 @@
+# Current checkpoint — 16 November 2026: tiled playtests accepted
+
+Two 1720x1400 clients or four 1720x700 quadrants fit above the desktop panel.
+Four editor slots, checked admission and native resize-before-placement now pass.
+Evidence: `build/tiled-windows-native-v5/qualification.json`,
+`build/tiled-windows-four-native-v3/qualification.json`,
+`build/tiled-windows-party-v2/qualification.json` (282.58 seconds, actual OIDC
+shared escort and durable restart, zero scene-readiness drops). See STATUS for
+all tests/platform limits. Native harnesses completed and cleaned up.
+
+The user explicitly authorized continuing implementation and editor integration,
+using recommended choices and the mouse/display, making local commits after each
+passing slice and continuing until they say Stop. Do not push. This supersedes
+the historical paused instructions below. Next P4-11 slice: compact top-centre
+incoming-party invitation with Accept/Decline while the Party panel is closed,
+using the existing invitation identity/expiry/revision/pending guards. Native
+checks must cover decline/cancel/accept, panel ownership and both tile heights.
+Then continue the adopted party/front-end references in small qualified slices.
+Use `git log -1` for the local tiling commit; no new title/loading/member-stat/
+marking implementation is claimed yet.
+
+---
+
 # Current checkpoint — 16 November 2026
 
 The reported NPC disappearance during the first quest approach and ranger handoff

@@ -58,6 +58,21 @@ class PopulationLauncher(unittest.TestCase):
         self.assertIsNone(args['navigation'])
         self.assertIsNone(args['character_stats'])
 
+    def test_explicit_tile_is_forwarded_and_conflicts_fail_before_launch(self):
+        with patch.object(play, 'play') as launch:
+            play.main(['--test-window', '4/4'])
+        self.assertEqual(PLAY_SIGNATURE.bind(*launch.call_args.args).arguments['test_window'], '4/4')
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.fixture(Path(directory))
+            for tile, clients, fullscreen in [('0/2', 1, False), ('5/4', 1, False),
+                                              ('1/2', 2, False), ('1/2', 1, True)]:
+                with self.subTest(tile=tile, clients=clients, fullscreen=fullscreen), \
+                        patch.object(play.subprocess, 'Popen') as child:
+                    args.update(test_window=tile, clients=clients, fullscreen=fullscreen)
+                    with self.assertRaises(ValueError):
+                        play.play(**args)
+                    child.assert_not_called()
+
     def test_explicit_character_selection_is_forwarded_without_implying_account_login(self):
         selected = '12345678-1234-1234-1234-123456789abc'
         with patch.object(play, 'play') as launch:

@@ -644,7 +644,10 @@ impl Control {
                 | Action::TestPlayerController(_)
                 | Action::TestPlayerRoute(_),
             ) => session.test_player_selected.is_some(),
-            Self::Command(Action::AddTestPlayer) => session.editor.zone().test_players.len() < 2,
+            Self::Command(Action::AddTestPlayer) => {
+                session.editor.zone().test_players.len()
+                    < theia_zone::test_players::MAX_TEST_PLAYERS
+            }
             Self::NetworkPlaytest | Self::PopulationPlaytest => {
                 !session.network_active
                     && session.editor.zone().test_players.iter().any(|p| p.enabled)

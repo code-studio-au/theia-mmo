@@ -4,7 +4,7 @@ use theia_core::content::ContentId;
 
 use crate::{Result, Zone, label, require};
 
-pub const MAX_TEST_PLAYERS: usize = 2;
+pub const MAX_TEST_PLAYERS: usize = 4;
 
 /// Artificial per-connection conditions, applied by the local UDP relay.
 /// Delay applies in each direction; measured RTT is a separate runtime value.
@@ -73,8 +73,8 @@ impl TestPlayer {
             "Invalid test player ID/name",
         )?;
         require(
-            (1..=2).contains(&self.client_id),
-            "Test player slot must be 1 or 2",
+            (1..=MAX_TEST_PLAYERS as u8).contains(&self.client_id),
+            "Test player slot must be from 1 to 4",
         )?;
         require(
             self.controller
@@ -183,17 +183,37 @@ mod tests {
                 Zone::from_json(&serde_json::to_vec(&saved).unwrap()).unwrap(),
                 saved
             );
+            for new_id in [12, 13] {
+                apply(
+                    &mut editor,
+                    vec![Edit::Duplicate {
+                        id: 10,
+                        new_id,
+                        offset: [1., 0., 0.],
+                    }],
+                )
+                .unwrap();
+            }
+            let full = editor.zone().clone();
             assert!(
                 apply(
                     &mut editor,
                     vec![Edit::Duplicate {
                         id: 10,
-                        new_id: 12,
+                        new_id: 14,
                         offset: [1., 0., 0.]
                     }]
                 )
                 .is_err()
             );
+            assert_eq!(editor.zone(), &full);
+            for _ in 0..2 {
+                editor
+                    .execute(Command::Undo {
+                        expected_revision: editor.revision(),
+                    })
+                    .unwrap();
+            }
             assert_eq!(editor.zone(), &saved);
             apply(
                 &mut editor,
@@ -247,7 +267,7 @@ mod tests {
                 ..player([0.; 3])
             },
             TestPlayer {
-                client_id: 3,
+                client_id: 5,
                 ..player([0.; 3])
             },
             TestPlayer {

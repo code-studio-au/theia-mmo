@@ -1,3 +1,24 @@
+16 November 2026 — tiled playtests accepted; continue P4-11 invitation UI:
+Two panel-preserving 1720x1400 views and four 1720x700 quadrants pass actual
+native geometry, four encrypted admissions and two-account shared-escort/restart
+at the new size. Four editor slots/export and server spawn ownership pass; see
+STATUS for exact evidence and Linux-only native scope. Next: top-centre incoming
+invite with Accept/Decline while Party is closed, reusing existing authoritative
+identity/expiry/revision/pending guards. Prerequisites are the qualified party
+transport and standard Bevy UI input ownership. Acceptance: native decline,
+cancel, accept and no world-click leakage at both tile heights, stale/expired
+invitations, unchanged progression, format/strict Clippy and relevant tests.
+Continue recommended implementation/editor slices with local commits until Stop;
+no push authorized. Title/selection/loading/member stats/marks remain later slices.
+
+16 November 2026 — active local window-layout slice (P1-06 / P5-17):
+Implement two half-monitor views and four quarter-monitor views with no overlap,
+including four editor test slots and checked per-slot server admission. Acceptance:
+actual native sizes/positions, four encrypted peers with distinct spawns and
+cleanup, plus the existing two-account quest/escort flow at 1720x1400.
+Title/character/loading and party invite/stats/marking references are recorded in
+CHARACTER_LAUNCHER_MENU and PARTIES as planned work, not implemented screens.
+
 16 November 2026 — authored-world preparation correction accepted:
 P2-02 / P2-08 now prepares all 116 world-mesh pipelines before movement, retaining
 normal culling and genuine missing-asset safety. Native two-account first-quest

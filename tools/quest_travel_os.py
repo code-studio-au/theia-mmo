@@ -168,9 +168,12 @@ def flow(desktop, window, state, folder, resumed=False, check_banner=False, prep
         desktop.key('Tab');first=wait(lambda: state()['selected_hostile'])
         desktop.key('Tab');second=wait(lambda: state()['selected_hostile'] if state()['selected_hostile']!=first else None)
         desktop.key_state('Shift_L',True)
-        try: desktop.key('Tab')
+        try:
+            desktop.key('Tab')
+            # Keep the modifier held until the native client has processed the
+            # chord. Startup rendering can take longer than the X11 key pulse.
+            wait(lambda: state()['selected_hostile']==first)
         finally: desktop.key_state('Shift_L',False)
-        wait(lambda: state()['selected_hostile']==first)
         ui.close()
         desktop.key('BackSpace');wait(lambda: state()['selected_hostile'] is None)
         # Hidden by default, controlled through the ordinary Interface menu.
