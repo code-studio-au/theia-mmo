@@ -1,5 +1,6 @@
 //! Standard Bevy controls for the admitted, private server-owned party view.
 mod invitation;
+mod members;
 use bevy::{
     picking::{Pickable, hover::Hovered},
     prelude::*,
@@ -202,6 +203,7 @@ fn button(control: Control, title: &str, enabled: bool) -> impl Bundle {
 }
 pub(crate) fn install(app: &mut App) {
     invitation::install(app);
+    members::install(app);
     app.init_resource::<Ui>()
         .add_observer(activate)
         .add_systems(Startup, setup)
@@ -215,7 +217,12 @@ pub(crate) fn install(app: &mut App) {
         )
         .add_systems(
             Update,
-            (present, invitation::present)
+            (
+                present,
+                invitation::present,
+                members::present,
+                members::paint,
+            )
                 .chain()
                 .after(crate::network::present),
         );
@@ -442,6 +449,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let open = ui.open;
     let actions = ui.actions;
     let invitation = invitation::snapshot(world);
+    let member_frames = members::snapshot(world);
     let invitation_visible = invitation["visible"].as_bool().unwrap_or(false);
     let scale = world.resource::<bevy::ui::UiScale>().0;
     let buttons: Vec<_> = world.query::<(&Control, &AccessibleLabel, &ComputedNode, &bevy::ui::UiGlobalTransform)>().iter(world)
@@ -464,7 +472,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
         .get_resource::<crate::network::Network>()
         .map(|n| n.state());
     let party = state.as_ref().and_then(|s| s.party.as_ref());
-    serde_json::json!({"open":open,"invitation":invitation,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
+    serde_json::json!({"open":open,"invitation":invitation,"member_frames":member_frames,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
         "owner":v.state.view.owner.entity.value(),"revision":v.state.view.revision,"sequence":v.state.view.sequence,
         "pending":v.pending,"timed_out":v.timed_out,"refusal":v.state.refusal.map(|r|format!("{r:?}")),
         "party":v.state.view.membership.party.as_ref().map(|p|serde_json::json!({"id":p.id,"leader":p.leader.entity.value(),"members":p.members.iter().map(|k|k.entity.value()).collect::<Vec<_>>()})),

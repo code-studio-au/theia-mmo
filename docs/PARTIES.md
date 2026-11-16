@@ -5,8 +5,8 @@
 Additional screenshots on 16 November at 15:38:52, 15:38:58 and 15:39:21
 explicitly extend the requested direction to invitations, member stats and
 party targeting/marking. Originals use the same Pictures path below with date
-2026-11-16. The invitation prompt below is implemented and qualified as recorded in STATUS;
-member frames/stats and shared marks remain planned:
+2026-11-16. The invitation prompt and compact name/health/mana frames are qualified in STATUS;
+portraits, member targeting, level/status icons and shared marks remain planned:
 
 - Incoming invite: compact top-centre prompt naming the inviter, with Accept
   and Decline side by side while the world stays visible. Reuse the existing
@@ -26,8 +26,8 @@ member frames/stats and shared marks remain planned:
 Acceptance for the remaining UI includes readable layouts at 1720x1400 paired
 and 1720x700 four-player tiles, invite expiry/decline, stale member guards,
 cross-client mark agreement and party isolation. The current membership slice
-now replicates authoritative health/mana, but visible member frames, level/status
-replication and shared marks remain later slices.
+now replicates and displays authoritative health/mana. Level/status replication,
+member targeting and shared marks remain later slices.
 Title/selection/loading references are in [CHARACTER_LAUNCHER_MENU.md](CHARACTER_LAUNCHER_MENU.md).
 
 The user supplied three WoW screenshots captured on 15 November at 21:14:46,
@@ -41,7 +41,7 @@ under the character name, including Promote to Leader and Uninvite.
 
 Use this as the next presentation direction with Theia's existing Bevy UI and
 licensed UI assets. The current Party [O] panel remains the qualified implementation;
-the reference layout is not implemented by the shared-escort slice. Initial menu
+compact member frames are adopted below; member context menus are next. Initial menu
 actions can reuse existing invitation, promotion, removal and leave authority.
 Preserve painted revisions, pending-command reservation, stale-member guards,
 Escape handling and pointer ownership; right-clicking a member frame must not
@@ -232,3 +232,36 @@ suite: 284 pass / four skips. Exact logs are `build/party-vitals-*.log` and
 `build/party-vitals-checks.json`. No rendering changes in this prerequisite; the
 next slice will qualify actual frames at both tile heights. Existing editor
 account playtests adopt the new protocol through matching rebuilt binaries.
+
+
+## Compact member frames — accepted 16 November 2026
+
+Up to four other members appear at the upper left with their trusted names,
+leader label and numeric health/mana bars. Initial badges stand in for portraits
+until remote appearance data is available. The header opens the existing Party
+management panel. Frames move beside open dialogue, retain mouse ownership, and
+disappear on membership/connection loss. Resource updates repaint existing widgets;
+identity/name/leader changes rebuild their bounded layout. Zero and unavailable
+resources remain distinct. Frames do not yet select a player or open a context menu.
+
+286 client tests pass (four skips), including five-member formation/promotion/
+removal/dissolution and partial, zero and unavailable bar updates without widget
+replacement. Native two-account checks at 1720x1400 and 1720x700 pass all thirteen
+membership actions, rendered name/leader glyphs, rendered bar widths against the
+other client's HUD, frame removal, Manage shortcut, drag ownership, unchanged
+quest/bag/XP state and server/PostgreSQL restart. Evidence:
+`build/party-frames-paired-v2/qualification.json` (147.80 seconds) and
+`build/party-frames-quadrants-v2/qualification.json` (149.06 seconds). Captures were
+visually inspected. Paired frames measure 268x73; quadrant frames 260x72 after
+interface scaling. No scene-readiness retractions or GPU diagnostics.
+
+Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; no Windows execution.
+The smaller-window native run uses two accounts in the first two quadrants,
+not four-account gameplay. Partial/zero/unavailable painting and maximum member
+count have headless coverage; native resource checks here use full starting pools.
+The prior encrypted network slice separately proves spell-cost delivery and
+life transitions. Matching client build, fmt, strict all-target client Clippy and
+Python compilation pass (`build/party-frames-checks.json`). The editor's existing
+account launch path inherits these frames; no extra editor options are needed.
+The v1 visual run exposed a collapsed name column and is not acceptance; explicit
+text-column widths and rendered-name/height checks fixed it before the v2 reruns.

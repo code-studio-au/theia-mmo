@@ -1,3 +1,40 @@
+16 November 2026 — P4-11 compact party member frames accepted:
+Upper-left frames show other members' trusted names, leader labels and actual
+health/mana, with initial badges until remote portraits are available. The header
+opens existing Party controls. Resource changes repaint in place; leave/removal/
+connection loss retires frames. No player targeting or context menu yet.
+286 client tests pass (four skips), including five-member lifecycle and partial/
+zero/unavailable repainting. Native two-account membership controls, rendered
+names/leader labels/bar widths, frame retirement, Manage shortcut, drag ownership,
+unchanged progression and PostgreSQL/server restart pass at both tile heights:
+build/party-frames-paired-v2/qualification.json (147.80 seconds) and
+build/party-frames-quadrants-v2/qualification.json (149.06 seconds).
+Captures inspected; frames are 268x73 paired, 260x72 with quadrant UI scaling.
+Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; zero GPU diagnostics and
+scene-readiness retractions, no Windows run. Native checks use two accounts and
+full starting pools; maximum membership and partial/unavailable values are covered
+headlessly, with changing spell costs also proven by the preceding encrypted
+network slice. The v1 collapsed-name layout was fixed before acceptance.
+Build, fmt, strict all-target client Clippy and Python compilation pass; see
+build/party-frames-checks.json. Editor account playtests inherit the client UI.
+Next slice: member context menus using existing promotion/removal authority,
+painted revision/identity guards and native mouse/Escape checks. Continue locally;
+no push authorized.
+
+16 November 2026 — current P4-11 compact member-frame slice:
+Prerequisite 2401c48f supplies private authoritative health/mana. Use standard Bevy
+UI to show up to four other members at the upper left, with trusted names, leader
+labels and numeric health/mana bars. Initial badges are deliberate placeholders
+until authoritative remote appearance can supply a correct portrait. Unavailable
+resources show empty bars and explicit text; never fabricate full bars. Keep
+resource painting separate from membership/name/leader layout reconstruction.
+The header opens the existing qualified Party management controls. Frames do not
+select/attack/face a player; friendly targeting and member context actions are a
+subsequent slice. Retire frames with membership/connection loss and preserve
+pointer ownership. Require headless five-member/lifecycle/value checks and native
+paired/quadrant rendered bars, labels, pointer ownership and restart evidence
+before acceptance. Editor account playtests inherit the matching client binary.
+
 16 November 2026 — P4-11 private party vitals foundation accepted:
 Party profile v4 / PS02 now carries checked authoritative health/mana for exact
 current party membership. Names remain same-world, stats remain party-private;

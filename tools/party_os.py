@@ -37,6 +37,7 @@ def flow(desktop, windows, states, folder):
     last = [0., 0.]
     steps = []
     movement = []
+    member_proofs = []
     def view(index):
         return states[index]()['party']['state']
     def focus(index):
@@ -78,6 +79,34 @@ def flow(desktop, windows, states, folder):
         assert view(0)['party'] == view(1)['party']
     def solo():
         wait(lambda: all(view(i)['party'] is None and view(i)['incoming'] is None and not view(i)['outgoing'] for i in [0,1]), 5)
+        wait(lambda: all(not s()['party']['member_frames']['visible'] and not s()['party']['member_frames']['frames'] for s in states))
+    def member_frames():
+        for i in [0, 1]:
+            def painted():
+                sample = states[i]()
+                frames = sample['party']['member_frames']
+                other = states[1-i]()
+                if not frames['visible'] or len(frames['frames']) != 1: return None
+                frame = frames['frames'][0]
+                if frame['actor'] != keys[1-i]: return None
+                if len(frames['labels']) != 2 or not all(v['rendered'] for v in frames['labels']): return None
+                expected = [other['combat_ui']['player_health_text'], other['combat_ui']['mana_text']]
+                if sorted(v['text'] for v in frames['labels']) != sorted(expected): return None
+                if frame['leader'] != (view(i)['party']['leader'] == keys[1-i]): return None
+                identities = frames['identities']
+                expected_names = [frame['name']] + (['Leader'] if frame['leader'] else [])
+                if sorted(v['text'] for v in identities) != sorted(expected_names): return None
+                if not all(v['rendered'] for v in identities): return None
+                if len(frames['bars']) != 2: return None
+                for bar in frames['bars']:
+                    current, maximum = frame[bar['pool']]
+                    if abs(bar['width'] - bar['maximum_width'] * current / maximum) > 1.5: return None
+                x,y,w,h = frame['bounds']
+                assert 0 <= x and 64 <= y and w > 200 and 40 < h < 110
+                assert x+w < sample['window'][0] and y+h < sample['window'][1]-190
+                assert frame['name'] == other['combat_ui']['player_name']
+                return frames
+            member_proofs.append(dict(player=i+1, frames=wait(painted, 8)))
     for i in [0, 1]:
         wait(lambda: states[i]().get('party', {}).get('state') is not None, 20)
         assert view(i)['party'] is None and view(i)['incoming'] is None
@@ -111,11 +140,28 @@ def flow(desktop, windows, states, folder):
     wait(lambda: not states[1]()['party']['invitation']['visible'])
     invite(); click(0, 'cancel'); solo()
     wait(lambda: not states[1]()['party']['invitation']['visible'])
-    join(); capture(0, 'party-members.png')
+    join()
+    member_frames()
+    focus(0); desktop.key('o'); wait(lambda: not states[0]()['party']['open'])
+    capture(0, 'party-member-frames.png')
+    frame = states[0]()['party']['member_frames']['frames'][0]
+    x,y,w,h = frame['bounds']
+    before_frame_drag = states[0]()
+    desktop.drag(windows[0], [x+w/2, y+h/2], before_frame_drag['window'][2])
+    after_frame_drag = states[0]()
+    assert after_frame_drag['camera_angles'] == before_frame_drag['camera_angles']
+    assert after_frame_drag['classic_facing'] == before_frame_drag['classic_facing']
+    for key in ['enemy_clicks','friendly_clicks','basic_requests','interaction_requests']:
+        assert after_frame_drag['controls'][key] == before_frame_drag['controls'][key], key
+    manage = wait(lambda: next((b for b in states[0]()['party']['buttons'] if b['label'] == 'Manage party'), None))
+    desktop.click(windows[0], manage['point'], states[0]()['window'][2], 1)
+    wait(lambda: states[0]()['party']['open'])
+    capture(0, 'party-members.png')
     wait(lambda: not states[1]()['party']['invitation']['visible'])
     focus(1); desktop.key('o'); wait(lambda: states[1]()['party']['open'])
     click(0, 'promote', keys[1])
     wait(lambda: all(view(i)['party']['leader'] == keys[1] for i in [0,1]), 5)
+    member_frames()
     click(1, 'remove', keys[0]); solo()
     join(); click(0, 'leave'); solo()
     join()
@@ -131,6 +177,7 @@ def flow(desktop, windows, states, folder):
     capture(0, 'party-final.png')
     result = dict(passed=True, steps=steps, movement_metres=movement, final=[view(i) for i in [0,1]], progress_unchanged=True,
                   interface_then_party_escape=True, invitation_without_panel=True,
-                  invitation_bounds=prompt['bounds'], invitation_drag_does_not_steer_or_interact=True)
+                  invitation_bounds=prompt['bounds'], invitation_drag_does_not_steer_or_interact=True, member_frames=member_proofs,
+                  member_frame_drag_does_not_steer_or_interact=True, member_manage_shortcut=True)
     (folder/'party-proof.json').write_text(json.dumps(result, indent=2)+'\n')
     return result

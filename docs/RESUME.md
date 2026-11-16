@@ -1,3 +1,25 @@
+# Current checkpoint — 16 November 2026: compact member frames accepted
+
+P4-11 member frames now display trusted names, leader labels and authoritative
+health/mana. Local prerequisite commit is `2401c48f`; use `git log -1` for this
+frame commit. 286 client tests / four skips, fmt, strict Clippy and build pass.
+Native two-account paired and quadrant-sized controls and database restart pass:
+`build/party-frames-{paired,quadrants}-v2/qualification.json`, 147.80 / 149.06
+seconds, zero GPU diagnostics/readiness retractions. Captures visually inspected.
+V1 exposed a collapsed name column; explicit column widths plus actual glyph and
+height checks fix it. V1 is not acceptance. See STATUS/PARTIES for proof limits.
+All owned native supervisors have completed and cleaned up. Nothing pushed.
+
+Continue the user's until-Stop implementation/editor-integration authorization.
+Next P4-11 slice: member context menu from right-click on a compact frame, with
+trusted name, existing leader Promote/Remove actions, shared pending reservation,
+painted owner/revision/member guards, Escape/dismissal and pointer ownership.
+Qualify both tile heights and membership changes before the next local commit.
+Then continue member targeting/marks and the adopted title/selection/loading
+references. Use recommended decisions and mouse/display without reasking.
+
+---
+
 # Current checkpoint — 16 November 2026: private member vitals foundation
 
 P4-11 party profile v4 / PS02 adds authoritative private member health/mana.
