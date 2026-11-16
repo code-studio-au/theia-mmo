@@ -1,4 +1,5 @@
 //! Standard Bevy controls for the admitted, private server-owned party view.
+mod invitation;
 use bevy::{
     picking::{Pickable, hover::Hovered},
     prelude::*,
@@ -48,6 +49,7 @@ enum Control {
     Toggle,
     Close,
     Command(Intent),
+    Invitation(Intent),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Choice {
@@ -199,6 +201,7 @@ fn button(control: Control, title: &str, enabled: bool) -> impl Bundle {
     )
 }
 pub(crate) fn install(app: &mut App) {
+    invitation::install(app);
     app.init_resource::<Ui>()
         .add_observer(activate)
         .add_systems(Startup, setup)
@@ -210,7 +213,12 @@ pub(crate) fn install(app: &mut App) {
                 .before(crate::combat::book::keyboard)
                 .before(crate::input),
         )
-        .add_systems(Update, present.after(crate::network::present));
+        .add_systems(
+            Update,
+            (present, invitation::present)
+                .chain()
+                .after(crate::network::present),
+        );
 }
 fn setup(mut commands: Commands) {
     commands
@@ -294,7 +302,11 @@ fn activate(
             ui.open = false;
             ui.closed_this_frame = true;
         }
-        Control::Command(intent) if ui.open && ui.waiting.is_none() => {
+        Control::Command(intent) | Control::Invitation(intent) if ui.waiting.is_none() => {
+            let prompt = matches!(control, Control::Invitation(_));
+            if prompt == ui.open {
+                return;
+            }
             let state = network.state();
             if state.error.is_some() {
                 return;
@@ -302,7 +314,7 @@ fn activate(
             let Some(view) = state.party else {
                 return;
             };
-            if view.pending {
+            if view.pending || (prompt && !invitation::current(&view.state, intent)) {
                 return;
             }
             if network.party_action(intent.clone()) {
@@ -429,13 +441,19 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     };
     let open = ui.open;
     let actions = ui.actions;
+    let invitation = invitation::snapshot(world);
+    let invitation_visible = invitation["visible"].as_bool().unwrap_or(false);
     let scale = world.resource::<bevy::ui::UiScale>().0;
     let buttons: Vec<_> = world.query::<(&Control, &AccessibleLabel, &ComputedNode, &bevy::ui::UiGlobalTransform)>().iter(world)
-        .filter(|(control, _, node, _)| (open || matches!(control, Control::Toggle)) && node.size().min_element() > 0.)
+        .filter(|(control, _, node, _)| match control {
+            Control::Toggle => true,
+            Control::Invitation(_) => invitation_visible,
+            _ => open,
+        } && node.size().min_element() > 0.)
         .map(|(control, label, node, transform)| {
             let (action, target) = match control {
                 Control::Toggle => ("toggle", None), Control::Close => ("close", None),
-                Control::Command(intent) => match intent.action {
+                Control::Command(intent) | Control::Invitation(intent) => match intent.action {
                     Action::Invite(k) => ("invite", Some(k.entity.value())), Action::Kick(k) => ("remove", Some(k.entity.value())), Action::Promote(k) => ("promote", Some(k.entity.value())),
                     Action::Accept(id) => ("accept", Some(id)), Action::Decline(id) => ("decline", Some(id)), Action::Cancel(id) => ("cancel", Some(id)), Action::Leave => ("leave", None),
                 },
@@ -446,7 +464,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
         .get_resource::<crate::network::Network>()
         .map(|n| n.state());
     let party = state.as_ref().and_then(|s| s.party.as_ref());
-    serde_json::json!({"open":open,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
+    serde_json::json!({"open":open,"invitation":invitation,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
         "owner":v.state.view.owner.entity.value(),"revision":v.state.view.revision,"sequence":v.state.view.sequence,
         "pending":v.pending,"timed_out":v.timed_out,"refusal":v.state.refusal.map(|r|format!("{r:?}")),
         "party":v.state.view.membership.party.as_ref().map(|p|serde_json::json!({"id":p.id,"leader":p.leader.entity.value(),"members":p.members.iter().map(|k|k.entity.value()).collect::<Vec<_>>()})),

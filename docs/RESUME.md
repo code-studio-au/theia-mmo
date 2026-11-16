@@ -1,3 +1,20 @@
+# Current checkpoint — 16 November 2026: invitation prompt accepted
+
+The compact incoming invitation is implemented and inherited by editor account
+playtests. Native two-account controls/restart pass at both tile heights; all 284
+client tests (four skips), build/fmt/strict Clippy and Python compilation pass.
+See STATUS and `build/party-prompt-{paired,quadrants}-v1/qualification.json`.
+The native supervisor exited cleanly. Use `git log -1` for this local commit.
+Earlier tiling/editor support is local commit `fab0db0b`.
+
+Continue under the user's explicit until-Stop authorization. Next P4-11 slice is
+bounded private party-member health/mana replication as a prerequisite for real
+member bars; reuse authoritative combat vitals, qualify lifecycle/isolation/codec
+and encrypted delivery, then adopt compact member frames. Recommended decisions,
+mouse/display use and local commits are authorized; pushing is not.
+
+---
+
 # Current checkpoint — 16 November 2026: tiled playtests accepted
 
 Two 1720x1400 clients or four 1720x700 quadrants fit above the desktop panel.

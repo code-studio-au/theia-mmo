@@ -5,7 +5,8 @@
 Additional screenshots on 16 November at 15:38:52, 15:38:58 and 15:39:21
 explicitly extend the requested direction to invitations, member stats and
 party targeting/marking. Originals use the same Pictures path below with date
-2026-11-16. These are planned presentation/features, not delivered behavior:
+2026-11-16. The invitation prompt below is implemented and qualified as recorded in STATUS;
+member frames/stats and shared marks remain planned:
 
 - Incoming invite: compact top-centre prompt naming the inviter, with Accept
   and Decline side by side while the world stays visible. Reuse the existing
@@ -22,7 +23,7 @@ party targeting/marking. Originals use the same Pictures path below with date
 - The pictured Ground tab is a separate ground-marker idea; it does not make
   ground placement, pings or ready checks part of the unit-marker implementation.
 
-Acceptance for this planned UI includes readable layouts at 1720x1400 paired
+Acceptance for the remaining UI includes readable layouts at 1720x1400 paired
 and 1720x700 four-player tiles, invite expiry/decline, stale member guards,
 cross-client mark agreement and party isolation. The current membership slice
 does not yet replicate the persistent member stats or shared marks above.

@@ -1,3 +1,28 @@
+16 November 2026 — P4-11 compact party invitation accepted:
+Incoming invitations now show the trusted inviter with Accept/Decline in a
+nonmodal top-centre prompt while Party management is closed. Opening Party hides
+the duplicate prompt; closing it restores a still-current invitation. Pending
+requests disable submission through the shared reservation. Cancelled, replaced,
+expired, foreign-owner and stale-revision commands cannot act on a new invitation.
+No new server protocol; the editor's account playtests inherit this presentation
+through their existing party mode. Member stats, markers and title/loading remain
+later slices.
+Actual two-account native controls pass at 1720x1400 and 1720x700, including
+accept/decline/inviter cancel without opening Party, management toggle, right-drag
+without camera/facing/world-action leakage, all 13 membership actions, unchanged
+quests/bags/XP and solo rejoin after PostgreSQL/server restart:
+build/party-prompt-paired-v1/qualification.json (142.18 seconds) and
+build/party-prompt-quadrants-v1/qualification.json (139.64 seconds).
+Both invitation captures were visually inspected; bounds fit below the route
+banner. The quadrant run uses two authenticated clients in the first two tiles,
+not four-account party qualification. Linux RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, zero GPU diagnostics and scene-readiness retractions; no Windows run.
+284 client tests pass (four skips), including invitation lifetime guards and the
+actual encrypted action-bar regression. Build, cargo fmt --check, denied-warning
+all-target client Clippy and Python compilation pass; build/party-prompt-*.log.
+Native expiry presentation is covered by authority/model tests, not a 60-second
+OS wait. No harness remains running. Continue local implementation; no push.
+
 16 November 2026 — P1-06 / P5-17 panel-preserving playtest tiles accepted:
 Two independent clients use 1720x1400 left/right; four use 1720x700 quadrants on
 this 3440x1440 desktop, retaining its 40-pixel bottom panel. Standard Bevy windows

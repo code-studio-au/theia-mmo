@@ -1,3 +1,16 @@
+16 November 2026 — P4-11 compact invitation prompt:
+Reuse the existing authenticated party invitation/revision/expiry and one-command
+pending guard. When Party management is closed, show the trusted inviter name and
+Accept/Decline in a top-centre nonmodal prompt below the test-route banner. Opening
+Party hides the duplicate prompt; closing Party restores an unexpired invitation.
+Do not dismiss it silently with Escape or steal gameplay keyboard focus. Native
+UI picking owns mouse gestures beginning on the prompt. Cancel, expiry, replacement
+and connection loss remove obsolete presentation; painted stale commands cannot
+bind to a replacement invitation. This presentation is automatically available in
+the editor's already-qualified account playtests because they enable party mode.
+No new server protocol or gameplay formulas are introduced. Acceptance is tracked
+in STATUS; member stats/marks and the title/loading flow remain separate slices.
+
 16 November 2026 — monitor-tiled local playtests (P1-06 / P5-17):
 The user replaces the earlier 1920-wide overlapping test windows with two equal
 halves of the 3440-wide display, and four equal quadrants for four players.

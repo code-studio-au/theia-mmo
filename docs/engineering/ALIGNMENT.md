@@ -1,3 +1,28 @@
+16 November 2026 — invitation prompt accepted; next P4-11 member vitals:
+Top-centre Accept/Decline passes actual two-account controls and restart at both
+1720x1400 and 1720x700. See STATUS for evidence; expiry/stale guards also pass.
+Next prerequisite for compact member frames: bounded authoritative health/mana
+observations for current party members, with explicit unavailable values, private
+party scope, membership/disconnect cleanup and versioned protocol binding. Reuse
+existing combat vitals rather than deriving or predicting bars in the client.
+Require codec rejection/coalescing, real encrypted party isolation and resource/
+life changes before adopting the data in visible frames. Level/status icons,
+member targeting and shared marks remain separate where data is not yet available.
+Continue local commits and editor integration; no push authorized.
+
+16 November 2026 — P4-11 compact invitation prompt:
+Reuse the existing authenticated party invitation/revision/expiry and one-command
+pending guard. When Party management is closed, show the trusted inviter name and
+Accept/Decline in a top-centre nonmodal prompt below the test-route banner. Opening
+Party hides the duplicate prompt; closing Party restores an unexpired invitation.
+Do not dismiss it silently with Escape or steal gameplay keyboard focus. Native
+UI picking owns mouse gestures beginning on the prompt. Cancel, expiry, replacement
+and connection loss remove obsolete presentation; painted stale commands cannot
+bind to a replacement invitation. This presentation is automatically available in
+the editor's already-qualified account playtests because they enable party mode.
+No new server protocol or gameplay formulas are introduced. Acceptance is tracked
+in STATUS; member stats/marks and the title/loading flow remain separate slices.
+
 16 November 2026 — tiled playtests accepted; continue P4-11 invitation UI:
 Two panel-preserving 1720x1400 views and four 1720x700 quadrants pass actual
 native geometry, four encrypted admissions and two-account shared-escort/restart

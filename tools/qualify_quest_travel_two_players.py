@@ -44,6 +44,8 @@ def observe_background(observer, ticks):
 
 def run(args):
     started = time.monotonic()
+    view_count = 4 if args.quadrants else 2
+    window_size = [1720, 700 if args.quadrants else 1400]
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False, mode=0o700)
     package, binaries = args.package.resolve(), args.binaries.resolve()
@@ -86,7 +88,7 @@ def run(args):
                         '--package', str(package), '--players', str(args.players.resolve()),
                         '--binaries', str(binaries), '--output', str(owner/'owned'),
                         '--gameplay-manifest', str(manifest), '--test-route', str(route),
-                        '--fantasy-ui', str(args.fantasy_ui.resolve()), '--window-size', '1720x1400', '--test-window', '1/2',
+                        '--fantasy-ui', str(args.fantasy_ui.resolve()), '--window-size', f'{window_size[0]}x{window_size[1]}', '--test-window', f'1/{view_count}',
                         *(['--parties'] if args.party_only or args.party_escort else [])],
                         env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT)
                     def choices_ready():
@@ -133,7 +135,7 @@ def run(args):
                     client_args = [part.decode() for part in Path(f'/proc/{a["pid"]}/cmdline').read_bytes().split(b'\0') if part]
                     index = client_args.index('--renet-connect')
                     client_args[index+1:index+3] = [address, str(ticket)]
-                    client_args[client_args.index('--test-window')+1] = '2/2'
+                    client_args[client_args.index('--test-window')+1] = f'2/{view_count}'
                     second_env = client_environment({k: v for k, v in env.items() if not k.startswith('THEIA_')})
                     second_env['THEIA_WORLD_INPUT_OS_QUALIFY'] = str(guest)
                     second = subprocess.Popen(client_args, env=second_env, stdout=guest_log, stderr=guest_log)
@@ -147,8 +149,8 @@ def run(args):
                     assert a['actor'] != b['actor']
                     windows = [wait(lambda: owned_window(a['pid']), 30), wait(lambda: owned_window(b['pid']), 30)]
                     for value in [state_a(), state_b()]:
-                        assert value['window'][:2] == [1720., 1400.], value['window']
-                    print('Both authenticated clients ready at 1720x1400', flush=True)
+                        assert value['window'][:2] == window_size, value['window']
+                    print(f'Both authenticated clients ready at {window_size[0]}x{window_size[1]}', flush=True)
                     desktop = Desktop()
                     if args.party_only:
                         from party_os import flow as party_flow
@@ -157,7 +159,7 @@ def run(args):
                         previous = completed
                         proof = party_flow(desktop, windows, [state_a, state_b], folder)
                         assert [retained(state_a()), retained(state_b())] == completed
-                        runs.append(dict(resumed=resumed, window_sizes=[[1720,1400],[1720,1400]],
+                        runs.append(dict(resumed=resumed, window_sizes=[window_size, window_size],
                             retained=completed, party=proof))
                     elif args.party_escort:
                         if resumed:
@@ -225,7 +227,7 @@ def run(args):
                         else:
                             previous = completed
                         assert all(len(ticks) > 10 for ticks in peer_ticks), 'Background observation did not advance'
-                        runs.append(dict(resumed=resumed, window_sizes=[[1720,1400],[1720,1400]],
+                        runs.append(dict(resumed=resumed, window_sizes=[window_size, window_size],
                             isolation_samples=isolation_samples, retained=completed,
                             distinct_background_ticks=[len(ticks) for ticks in peer_ticks],
                             proofs=[proof_a, proof_b]))
@@ -295,6 +297,7 @@ if __name__ == '__main__':
     parser.add_argument('--fantasy-ui', type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--quadrants', action='store_true', help='Use the first two quarter-screen tiles to check the shorter four-player UI layout')
     party = parser.add_mutually_exclusive_group()
     party.add_argument('--party-only', action='store_true', help='Qualify party controls and solo rejoin, leaving all quest progress unchanged')
     party.add_argument('--party-escort', action='store_true', help='Qualify shared escort visibility, range handoff and individual durable turn-in')

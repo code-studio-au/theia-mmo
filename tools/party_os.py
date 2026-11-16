@@ -87,10 +87,33 @@ def flow(desktop, windows, states, folder):
         desktop.hold_key('w', .35)
         distance = wait(lambda: value if (value := math.dist(start, states[i]()['dodge']['authority_feet'])) > .4 else None, 5)
         movement.append(distance)
-    invite(); capture(1, 'party-invitation.png')
+    # Incoming invitations must be actionable without opening party management.
+    focus(1); desktop.key('o')
+    wait(lambda: not states[1]()['party']['open'])
+    invite()
+    prompt = wait(lambda: states[1]()['party']['invitation']
+                  if states[1]()['party']['invitation']['visible'] and states[1]()['party']['invitation']['bounds'] else None)
+    x, y, width, height = prompt['bounds']
+    viewport = states[1]()['window']
+    assert abs(x+width/2-viewport[0]/2)<2 and 64<=y and y+height<viewport[1]/2, prompt
+    capture(1, 'party-invitation.png')
+    before_drag = states[1]()
+    desktop.drag(windows[1], [x+width/2, y+height/2], viewport[2])
+    after_drag = states[1]()
+    assert after_drag['camera_angles']==before_drag['camera_angles']
+    assert after_drag['classic_facing']==before_drag['classic_facing']
+    for key in ['enemy_clicks','friendly_clicks','basic_requests','interaction_requests']:
+        assert after_drag['controls'][key]==before_drag['controls'][key], key
+    desktop.key('o'); wait(lambda: states[1]()['party']['open'])
+    wait(lambda: not states[1]()['party']['invitation']['visible'])
+    desktop.key('o'); wait(lambda: states[1]()['party']['invitation']['visible'])
     click(1, 'decline'); solo()
+    wait(lambda: not states[1]()['party']['invitation']['visible'])
     invite(); click(0, 'cancel'); solo()
+    wait(lambda: not states[1]()['party']['invitation']['visible'])
     join(); capture(0, 'party-members.png')
+    wait(lambda: not states[1]()['party']['invitation']['visible'])
+    focus(1); desktop.key('o'); wait(lambda: states[1]()['party']['open'])
     click(0, 'promote', keys[1])
     wait(lambda: all(view(i)['party']['leader'] == keys[1] for i in [0,1]), 5)
     click(1, 'remove', keys[0]); solo()
@@ -107,6 +130,7 @@ def flow(desktop, windows, states, folder):
     wait(lambda: states[0]()['party']['open'], 5)
     capture(0, 'party-final.png')
     result = dict(passed=True, steps=steps, movement_metres=movement, final=[view(i) for i in [0,1]], progress_unchanged=True,
-                  interface_then_party_escape=True)
+                  interface_then_party_escape=True, invitation_without_panel=True,
+                  invitation_bounds=prompt['bounds'], invitation_drag_does_not_steer_or_interact=True)
     (folder/'party-proof.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
