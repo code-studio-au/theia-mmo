@@ -2977,3 +2977,20 @@ Keep two-metre spacing for patches up to 256 m; reject oversized resampling with
 source/history intact. Preserve the smaller existing scenes and explicit Save.
 Actual quest contacts, wolf patrols, navigation residency and authored spawn
 selection need their own runtime slices before this becomes a connected zone.
+
+
+## 16 November 2026 — private party resource observations
+
+P4-11 member frames consume existing authoritative health/mana pools. The bounded
+session party shares these values with its current members across the current
+world, independently of spatial interest. This is an explicit Theia presentation
+policy, not a newly evidenced Classic range rule. No positions, account IDs or
+outsider stats accompany the same-world name roster. Missing resource profiles
+produce an explicit unavailable value; membership does not imply full bars.
+
+Party state PS02 / compatibility profile v4 binds this addition. Observations
+follow exact epoch-qualified membership and join order, coalesce under the
+existing reliable-channel budget, and can change without consuming membership
+revisions or command acknowledgements. Death retains membership; leave, removal,
+disconnect and dissolution remove its resource observations. No new formulas,
+level replication, status effects, friendly targeting or marks are included.

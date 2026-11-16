@@ -21,6 +21,17 @@ fn state(authority: &party::Authority, id: u64, refusal: Option<Refusal>) -> Sta
         tick: 1,
         view: authority.view(key(id)).unwrap(),
         refusal,
+        member_vitals: authority
+            .view(key(id))
+            .unwrap()
+            .membership
+            .party
+            .map_or_else(Vec::new, |p| {
+                p.members
+                    .into_iter()
+                    .map(|key| MemberVitals { key, vitals: None })
+                    .collect()
+            }),
         roster: (1..=8)
             .map(|id| NamedActor {
                 key: key(id),
@@ -82,6 +93,9 @@ fn real_authority_states_round_trip_for_solo_invitation_and_full_party() {
     let mut longest = state(&a, 1, None);
     for name in &mut longest.roster {
         name.name = CharacterName::parse("Abcdefghijklmnopqrst").unwrap();
+    }
+    for member in &mut longest.member_vitals {
+        member.vitals = Vitals::new(0, 1_000_000, 1_000_000, 1_000_000);
     }
     round_trip(longest);
 }
@@ -298,4 +312,51 @@ fn bounded_arbitrary_input_never_panics_and_valid_decodes_are_canonical() {
             }
         }
     }
+}
+
+#[test]
+fn vitals_are_checked_private_membership_observations_not_membership_revisions() {
+    let mut a = authority();
+    request(&mut a, 1, Action::Invite(key(2)));
+    let invite = a.view(key(2)).unwrap().membership.incoming.unwrap().id;
+    request(&mut a, 2, Action::Accept(invite));
+    let old = state(&a, 1, None);
+    let mut next = old.clone();
+    next.tick += 1;
+    next.member_vitals[0].vitals = Vitals::new(72, 100, 24, 100);
+    next.member_vitals[1].vitals = Vitals::new(0, 100, 0, 100);
+    assert!(!next.same_view(&old));
+    assert_eq!(next.view, old.view);
+    next.validate_successor(old.view.owner, old.world, Some(&old))
+        .unwrap();
+    round_trip(next.clone());
+    for kind in 0..5 {
+        let mut invalid = next.clone();
+        match kind {
+            0 => {
+                invalid.member_vitals.pop();
+            }
+            1 => invalid.member_vitals.swap(0, 1),
+            2 => invalid.member_vitals[1].key = key(3),
+            3 => invalid.member_vitals[1].key.epoch = WorldEpoch::new(22).unwrap(),
+            _ => invalid.member_vitals.push(invalid.member_vitals[0]),
+        }
+        assert!(invalid.encode().is_err());
+    }
+    let mut solo = state(&a, 3, None);
+    solo.member_vitals = next.member_vitals.clone();
+    assert!(solo.encode().is_err());
+    let bytes = next.encode().unwrap();
+    let offset = bytes.len() - 16;
+    for (at, value) in [(0, 101u32), (4, 0), (4, 1_000_001), (8, 101), (12, 0)] {
+        let mut invalid = bytes.clone();
+        invalid[offset + at..offset + at + 4].copy_from_slice(&value.to_le_bytes());
+        assert!(State::decode(&invalid).is_err());
+    }
+    let mut invalid = bytes.clone();
+    invalid[offset - 1] = 2;
+    assert!(State::decode(&invalid).is_err());
+    let mut legacy = bytes;
+    legacy[..4].copy_from_slice(b"PS01");
+    assert!(State::decode(&legacy).is_err());
 }

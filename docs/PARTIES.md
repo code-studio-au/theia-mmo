@@ -26,7 +26,8 @@ member frames/stats and shared marks remain planned:
 Acceptance for the remaining UI includes readable layouts at 1720x1400 paired
 and 1720x700 four-player tiles, invite expiry/decline, stale member guards,
 cross-client mark agreement and party isolation. The current membership slice
-does not yet replicate the persistent member stats or shared marks above.
+now replicates authoritative health/mana, but visible member frames, level/status
+replication and shared marks remain later slices.
 Title/selection/loading references are in [CHARACTER_LAUNCHER_MENU.md](CHARACTER_LAUNCHER_MENU.md).
 
 The user supplied three WoW screenshots captured on 15 November at 21:14:46,
@@ -92,7 +93,10 @@ The bounded codec and encrypted worker integration now pass. Party mode binds an
 explicit compatibility suffix after Classic movement and optional chat. Requests
 contain no caller ID. Each private state includes the owner's membership/revision,
 last processed request outcome and a bounded roster of authenticated same-world
-display names, without account IDs, positions or stats. Membership and roster
+display names, without account IDs or positions. The name roster carries no
+stats; PS02 separately includes exact current party members and their optional
+authoritative health/mana pools in join order. Unavailable profiles remain
+unavailable, and solo recipients receive no member stats. Membership, vitals and roster
 updates coalesce under reliable-channel pressure, reserving half its budget for
 gameplay. Invalid frames, foreign epochs, forged state uploads and invalid request
 sequences disconnect; ordinary policy refusals acknowledge without disconnect.
@@ -207,3 +211,24 @@ scene pipeline preparation now passes `build/scene-pipeline-native-v1/qualificat
 116 prepared pipelines and zero readiness retractions for both clients in both
 phases. Party authority is unchanged. See STATUS for reproduction, GPU evidence
 and limits; a startup loading screen is not implemented.
+
+
+## Private member vitals — 16 November 2026
+
+P4-11 prerequisite for member frames: party profile v4 / PS02 carries current
+health, maximum health, mana and maximum mana from the same authoritative pools
+used by private combat observations. Resource changes do not change membership
+revisions or consume request acknowledgements. Exact membership/order and checked
+resource bounds reject extra, missing, foreign, malformed and legacy entries.
+Death retains zero health in the party; respawn updates the same member; departure
+and dissolution remove observations. Stats span the current bounded world even
+outside spatial interest; this is explicit Theia policy, not a Classic range rule.
+
+541 network tests pass (18 skips), including real encrypted three-peer delivery
+of a spell's mana cost, outsider isolation, leave/disconnect cleanup, full codec
+round trips/rejections, bounded-channel coalescing, and damage/mana/death/respawn
+at 20/30/60 Hz. The unavailable-resource encrypted fixture still passes. Client
+suite: 284 pass / four skips. Exact logs are `build/party-vitals-*.log` and
+`build/party-vitals-checks.json`. No rendering changes in this prerequisite; the
+next slice will qualify actual frames at both tile heights. Existing editor
+account playtests adopt the new protocol through matching rebuilt binaries.

@@ -221,6 +221,7 @@ struct ClientPeer {
     state: watch::Receiver<State>,
     actions: mpsc::Sender<crate::party_client::Intent>,
     chat: mpsc::Sender<crate::chat_client::Compose>,
+    casts: mpsc::Sender<CastChoice>,
     stop: Stop,
     task: tokio::task::JoinHandle<Result<()>>,
     _input: watch::Sender<crate::wire::Intent>,
@@ -269,6 +270,20 @@ async fn until(peers: &[ClientPeer], condition: impl Fn() -> bool) {
 async fn worker_flow(with_chat: bool) {
     let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
     world.enable_prediction().unwrap();
+    // The combined chat fixture also carries real authoritative resource pools.
+    let abilities =
+        include_bytes!("../../../../../content/gameplay/development-resource-abilities.json");
+    if with_chat {
+        world.spawn_development_target([8072., 8000.]).unwrap();
+        world
+            .enable_resource_combat(
+                abilities,
+                100,
+                5000,
+                include_bytes!("../../../../../content/gameplay/development-character-stats.json"),
+            )
+            .unwrap();
+    }
     let classic_source = world.identity();
     world.enable_classic().unwrap();
     let chat_source = world.identity();
@@ -321,8 +336,17 @@ async fn worker_flow(with_chat: bool) {
         let (actions, outgoing) = mpsc::channel(4);
         let (chat, chats) = mpsc::channel(4);
         let (stop, shutdown) = watch::channel(false);
+        let (cast_sender, casts) = mpsc::channel(4);
         let task = tokio::spawn(async move {
-            run_client_gameplay(
+            let (events, _events) = mpsc::channel(8);
+            let (_selection, choices) = watch::channel(None);
+            let combat = with_chat.then(|| CombatActions {
+                melee: None,
+                catalog: Arc::new(theia_core::abilities::Catalog::from_json(abilities).unwrap()),
+                casts,
+                events,
+            });
+            let result = run_client_gameplay(
                 address,
                 &ticket,
                 inputs,
@@ -344,20 +368,23 @@ async fn worker_flow(with_chat: bool) {
                     dialogue: None,
                     ready: readiness,
                     commands: Some(command_queue),
-                    choices: None,
-                    combat: None,
+                    choices: with_chat.then_some(choices),
+                    combat,
                     quest: None,
                     progression: None,
                     inventory: None,
                     statuses: None,
                 },
             )
-            .await
+            .await;
+            assert!(result.is_ok(), "{result:?}");
+            result
         });
         peers.push(ClientPeer {
             state,
             actions,
             chat,
+            casts: cast_sender,
             stop: Stop(stop),
             task,
             _input: input,
@@ -465,6 +492,60 @@ async fn worker_flow(with_chat: bool) {
     })
     .await;
     assert!(peers[2].view().state.view.membership.party.is_none());
+    assert!(peers[2].view().state.member_vitals.is_empty());
+    for peer in &peers[..2] {
+        let values = peer.view().state.member_vitals.clone();
+        assert_eq!(values.iter().map(|v| v.key).collect::<Vec<_>>(), keys[..2]);
+        for value in values {
+            assert_eq!(
+                value.vitals,
+                with_chat.then(|| theia_core::resources::Vitals::new(100, 100, 100, 100).unwrap())
+            );
+        }
+    }
+    if with_chat {
+        let revision = peers[1].view().state.view.revision;
+        let target = peers[0].state.borrow().combat.as_ref().unwrap().targets[0].entity;
+        peers[0]
+            .casts
+            .try_send(CastChoice {
+                ability: theia_core::content::ContentId::new("theia.dev.arcane-bolt").unwrap(),
+                target,
+            })
+            .unwrap();
+        until(&peers, || {
+            peers[1].view().state.member_vitals[0]
+                .vitals
+                .unwrap()
+                .mana()
+                < 100
+                && peers[0]
+                    .state
+                    .borrow()
+                    .combat
+                    .as_ref()
+                    .unwrap()
+                    .vitals
+                    .unwrap()
+                    .mana()
+                    < 100
+        })
+        .await;
+        assert_eq!(peers[1].view().state.view.revision, revision);
+        assert!(peers[2].view().state.member_vitals.is_empty());
+        assert!(
+            peers[0]
+                .state
+                .borrow()
+                .combat
+                .as_ref()
+                .unwrap()
+                .vitals
+                .unwrap()
+                .mana()
+                < 100
+        );
+    }
     peers[1].send(Action::Invite(keys[2]));
     until(&peers, || {
         peers[1].view().submitted == 2 && !peers[1].view().pending
@@ -548,6 +629,17 @@ async fn worker_flow(with_chat: bool) {
         })
     })
     .await;
+    for peer in &peers {
+        assert_eq!(
+            peer.view()
+                .state
+                .member_vitals
+                .iter()
+                .map(|v| v.key)
+                .collect::<Vec<_>>(),
+            vec![keys[0], keys[2]]
+        );
+    }
     peers[0].send(Action::Leave);
     until(&peers, || {
         peers
@@ -555,6 +647,11 @@ async fn worker_flow(with_chat: bool) {
             .all(|p| p.view().state.view.membership.party.is_none())
     })
     .await;
+    assert!(
+        peers
+            .iter()
+            .all(|p| p.view().state.member_vitals.is_empty())
+    );
     let before = peers[0].state.borrow().snapshot.as_ref().unwrap().tick;
     until(&peers, || {
         peers[0].state.borrow().snapshot.as_ref().unwrap().tick > before + 2
@@ -602,6 +699,7 @@ fn worker_bounds_admission_wait_timeout_queued_clicks_and_late_acknowledgements(
     let source = [4; 32];
     let expected = party_wire::profile_identity(source);
     let initial = party_wire::State {
+        member_vitals: Vec::new(),
         world: expected,
         tick: world.completed_tick(),
         view: world.party_view(peer.actor).unwrap(),
@@ -721,4 +819,90 @@ fn worker_bounds_admission_wait_timeout_queued_clicks_and_late_acknowledgements(
         )
         .is_err()
     );
+}
+
+#[test]
+fn changed_vitals_coalesce_under_backpressure_without_membership_revision_changes() {
+    let mut world = world();
+    world.spawn_development_target([8065., 8000.]).unwrap();
+    world
+        .enable_resource_combat(
+            include_bytes!("../../../../../content/gameplay/development-resource-abilities.json"),
+            100,
+            5000,
+            include_bytes!("../../../../../content/gameplay/development-character-stats.json"),
+        )
+        .unwrap();
+    let mut server = RenetServer::new(connection_config());
+    let one = admit(&mut world, &mut server, 1);
+    let two = admit(&mut world, &mut server, 2);
+    let actor = one.actor;
+    let recipient = two.actor;
+    let target = world.entity_key(recipient).unwrap();
+    let mut peers = BTreeMap::from([(1, one), (2, two)]);
+    let mut stats = Stats::default();
+    let invite = bytes(&world, actor, Action::Invite(target));
+    request(peers.get_mut(&1).unwrap(), &mut world, &invite, &mut stats).unwrap();
+    let id = world
+        .party_view(recipient)
+        .unwrap()
+        .membership
+        .incoming
+        .unwrap()
+        .id;
+    let accept = bytes(&world, recipient, Action::Accept(id));
+    request(peers.get_mut(&2).unwrap(), &mut world, &accept, &mut stats).unwrap();
+    world.step();
+    publish(&mut server, &mut peers, &world, &mut stats).unwrap();
+    let prior = peers[&2].party.sent.clone().unwrap();
+    let patch = world
+        .procedural()
+        .unwrap()
+        .patch(world.global_position(actor).unwrap())
+        .unwrap();
+    assert!(world.client_ready(
+        actor,
+        &crate::wire::ChunkReady {
+            version: crate::wire::VERSION,
+            epoch: world.epoch(),
+            sequence: 1,
+            chunks: patch.ids.iter().map(|id| [id.x, id.z]).collect(),
+        }
+    ));
+    let creature = world.combat_snapshot(actor).unwrap().targets[0].key;
+    let result = world.cast(
+        actor,
+        crate::simulation::combat::Request {
+            epoch: world.epoch(),
+            sequence: 1,
+            ability: theia_core::content::ContentId::new("theia.dev.arcane-bolt").unwrap(),
+            target: creature,
+        },
+    );
+    assert!(matches!(
+        result.reply.outcome,
+        crate::simulation::combat::Outcome::Started { .. }
+    ));
+    for id in [1, 2] {
+        while server.can_send_message(id, EVENT_CHANNEL, 1024) {
+            server.send_message(id, EVENT_CHANNEL, vec![0; 1024]);
+        }
+    }
+    for _ in 0..30 {
+        world.step();
+        publish(&mut server, &mut peers, &world, &mut stats).unwrap();
+    }
+    assert_eq!(peers[&2].party.sent.as_ref().unwrap(), &prior);
+    assert!(stats.deferred > 0);
+    let mut drained = RenetServer::new(connection_config());
+    drained.add_connection(1);
+    drained.add_connection(2);
+    publish(&mut drained, &mut peers, &world, &mut stats).unwrap();
+    let latest = peers[&2].party.sent.as_ref().unwrap();
+    assert_eq!(latest.view, prior.view);
+    assert_eq!(latest.member_vitals[0].vitals, world.combat_vitals(actor));
+    assert!(latest.member_vitals[0].vitals.unwrap().mana() < 100);
+    let sent = stats.states_sent;
+    publish(&mut drained, &mut peers, &world, &mut stats).unwrap();
+    assert_eq!(stats.states_sent, sent);
 }

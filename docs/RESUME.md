@@ -1,3 +1,20 @@
+# Current checkpoint — 16 November 2026: private member vitals foundation
+
+P4-11 party profile v4 / PS02 adds authoritative private member health/mana.
+541 network tests (18 skips), 284 client tests (four skips), matching client/server/
+zone-editor build, fmt and denied-warning Clippy pass. See STATUS and
+`build/party-vitals-checks.json`. No rendering changes in this prerequisite.
+Use `git log -1` for its local commit; nothing pushed.
+
+Next: compact upper-left other-member frames with real name/leader/health/mana,
+explicit unavailable state and lifecycle cleanup, preserving the existing Party
+management controls. Qualify readable native 1720x1400 and 1720x700 presentation
+and pointer ownership before committing; then continue targeting/marks and the
+adopted front-end references. Until-Stop authorization remains active, including
+recommended choices, editor integration, mouse/display and local commits.
+
+---
+
 # Current checkpoint — 16 November 2026: invitation prompt accepted
 
 The compact incoming invitation is implemented and inherited by editor account

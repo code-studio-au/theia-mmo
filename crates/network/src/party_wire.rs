@@ -5,20 +5,23 @@ use theia_core::{
     character_name::CharacterName,
     identity::{EntityId, EntityKey, WorldEpoch},
     party::{self, Action, Invitation, Membership, Party, Refusal, View},
+    resources::Vitals,
 };
 
 pub const REQUEST_TAG: &[u8; 4] = b"PQ01";
-pub const STATE_TAG: &[u8; 4] = b"PS01";
+pub const STATE_TAG: &[u8; 4] = b"PS02";
 pub const REQUEST_BYTES: usize = 37;
 pub const MAX_STATE_BYTES: usize = 80
     + 16
     + 8 * party::MAX_MEMBERS
     + 40 * party::MAX_MEMBERS
-    + party::MAX_ACTORS * (9 + theia_core::character_name::MAX_BYTES);
+    + party::MAX_ACTORS * (9 + theia_core::character_name::MAX_BYTES)
+    + 1
+    + party::MAX_MEMBERS * (8 + 1 + 16);
 
 pub fn profile_identity(source: [u8; 32]) -> [u8; 32] {
-    // v3 binds shared active escort journeys and individual arrival/turn-in.
-    let mut bytes = b"theia-session-party-v3\0".to_vec();
+    // v4 adds private party-member vitals to the shared-escort profile.
+    let mut bytes = b"theia-session-party-v4\0".to_vec();
     bytes.extend(source);
     for value in [
         party::MAX_ACTORS as u64,
@@ -117,6 +120,13 @@ pub struct NamedActor {
     pub key: EntityKey,
     pub name: CharacterName,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MemberVitals {
+    pub key: EntityKey,
+    /// None means the authoritative resource profile is unavailable. Never
+    /// infer full health/mana from membership or a missing observation.
+    pub vitals: Option<Vitals>,
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct State {
     pub world: [u8; 32],
@@ -127,6 +137,9 @@ pub struct State {
     /// Bounded same-world named admissions, ordered by incarnation ID. No
     /// account IDs, credentials, positions or stats are exposed here.
     pub roster: Vec<NamedActor>,
+    /// Exact current party membership in join order; empty for solo players.
+    /// Unlike the same-world name roster, these values are private to the party.
+    pub member_vitals: Vec<MemberVitals>,
 }
 impl State {
     pub fn validate(&self) -> Result<()> {
@@ -152,6 +165,19 @@ impl State {
             return Err("Party roster omits owner".into());
         }
         let membership = &self.view.membership;
+        let members = membership
+            .party
+            .as_ref()
+            .map_or(&[][..], |p| p.members.as_slice());
+        if self.member_vitals.len() != members.len()
+            || self
+                .member_vitals
+                .iter()
+                .zip(members)
+                .any(|(value, key)| value.key != *key)
+        {
+            return Err("Party vitals must match current private membership".into());
+        }
         if let Some(group) = &membership.party
             && (group.id == 0
                 || !(2..=party::MAX_MEMBERS).contains(&group.members.len())
@@ -213,6 +239,7 @@ impl State {
             && self.view == old.view
             && self.refusal == old.refusal
             && self.roster == old.roster
+            && self.member_vitals == old.member_vitals
     }
     pub fn validate_successor(
         &self,
@@ -279,6 +306,21 @@ impl State {
             bytes.push(actor.name.as_str().len() as u8);
             bytes.extend(actor.name.as_str().as_bytes());
         }
+        bytes.push(self.member_vitals.len() as u8);
+        for member in &self.member_vitals {
+            bytes.extend(member.key.entity.value().to_le_bytes());
+            bytes.push(u8::from(member.vitals.is_some()));
+            if let Some(vitals) = member.vitals {
+                for value in [
+                    vitals.health(),
+                    vitals.maximum_health(),
+                    vitals.mana(),
+                    vitals.maximum_mana(),
+                ] {
+                    bytes.extend(value.to_le_bytes());
+                }
+            }
+        }
         Ok(bytes)
     }
     pub fn decode(bytes: &[u8]) -> Result<Self> {
@@ -339,6 +381,23 @@ impl State {
             let name = CharacterName::parse(std::str::from_utf8(r.take(length)?)?)?;
             roster.push(NamedActor { key, name });
         }
+        let count = usize::from(r.byte()?);
+        if count > party::MAX_MEMBERS {
+            return Err("Party vitals exceed member bound".into());
+        }
+        let mut member_vitals = Vec::with_capacity(count);
+        for _ in 0..count {
+            let key = r.key(epoch)?;
+            let vitals = match r.byte()? {
+                0 => None,
+                1 => Some(
+                    Vitals::new(r.u32()?, r.u32()?, r.u32()?, r.u32()?)
+                        .ok_or("Invalid party member vitals")?,
+                ),
+                _ => return Err("Invalid party vitals availability flag".into()),
+            };
+            member_vitals.push(MemberVitals { key, vitals });
+        }
         if !r.0.is_empty() {
             return Err("Trailing party state bytes".into());
         }
@@ -357,6 +416,7 @@ impl State {
             },
             refusal,
             roster,
+            member_vitals,
         };
         state.validate()?;
         Ok(state)
@@ -388,6 +448,9 @@ impl<'a> Reader<'a> {
     }
     fn u64(&mut self) -> Result<u64> {
         Ok(u64::from_le_bytes(self.take(8)?.try_into()?))
+    }
+    fn u32(&mut self) -> Result<u32> {
+        Ok(u32::from_le_bytes(self.take(4)?.try_into()?))
     }
     fn key(&mut self, epoch: WorldEpoch) -> Result<EntityKey> {
         Ok(EntityKey {

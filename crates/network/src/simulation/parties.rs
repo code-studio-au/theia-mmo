@@ -25,6 +25,19 @@ impl World {
     pub fn party_view(&self, actor: u64) -> Option<View> {
         self.parties.as_ref()?.view(self.entity_key(actor)?)
     }
+    pub fn party_member_vitals(&self, actor: u64) -> Option<Vec<crate::party_wire::MemberVitals>> {
+        let view = self.party_view(actor)?;
+        Some(view.membership.party.map_or_else(Vec::new, |party| {
+            party
+                .members
+                .into_iter()
+                .map(|key| crate::party_wire::MemberVitals {
+                    key,
+                    vitals: self.combat_vitals(key.entity.value()),
+                })
+                .collect()
+        }))
+    }
     /// The caller ID must be resolved from the admitted transport session.
     /// Death never prevents membership management; departure is explicit.
     pub fn party_request(&mut self, actor: u64, request: Request) -> Result<(), Refusal> {

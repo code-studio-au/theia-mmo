@@ -1,3 +1,17 @@
+16 November 2026 — P4-11 private party vitals foundation accepted:
+Party profile v4 / PS02 now carries checked authoritative health/mana for exact
+current party membership. Names remain same-world, stats remain party-private;
+missing resource profiles are explicit unavailable values. Updates coalesce under
+the existing bounded channel reserve without changing membership revisions.
+541 network tests pass (18 skips): actual encrypted spell-cost delivery to a party
+member, outsider isolation, departure cleanup, codec rejection, queue pressure,
+and damage/death/respawn at 20/30/60 Hz. 284 client tests pass (four skips).
+Matching client/server/editor build, fmt and denied-warning all-target Clippy pass;
+see build/party-vitals-checks.json and logs. No rendering change or new native GPU
+claim in this prerequisite. Continue with compact member frames and their native
+paired/quadrant layout checks. No level/status icons or targeting/marks yet.
+No push authorized.
+
 16 November 2026 — P4-11 compact party invitation accepted:
 Incoming invitations now show the trusted inviter with Accept/Decline in a
 nonmodal top-centre prompt while Party management is closed. Opening Party hides

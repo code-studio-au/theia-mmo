@@ -1354,6 +1354,28 @@ impl World {
     pub fn combat_events(&self) -> &[Event] {
         self.combat.as_ref().map_or(&[], |c| &c.events)
     }
+    /// Read only the admitted actor's authoritative resources, without cloning
+    /// creature targets, casts or cooldowns for party presentation.
+    pub fn combat_vitals(&self, actor: u64) -> Option<Vitals> {
+        self.players.get(&actor)?;
+        let authority = self.combat.as_ref()?;
+        let profile = authority.resources.as_ref()?;
+        let state = authority.actors.get(&actor);
+        Vitals::new(
+            if authority.lives.is_some() {
+                state
+                    .and_then(|a| a.life.as_ref())
+                    .map_or(0, |p| p.state.health())
+            } else {
+                profile.maximum_health()
+            },
+            profile.maximum_health(),
+            state
+                .and_then(|a| a.mana)
+                .map_or(profile.maximum_mana(), |m| m.current()),
+            profile.maximum_mana(),
+        )
+    }
     pub fn combat_snapshot(&self, actor: u64) -> Option<Snapshot> {
         let focus = self.players.get(&actor)?.position;
         let authority = self.combat.as_ref()?;
@@ -1366,23 +1388,7 @@ impl World {
             .collect();
         targets.sort_by_key(|c| c.key.entity);
         Some(Snapshot {
-            vitals: authority.resources.as_ref().map(|p| {
-                Vitals::new(
-                    if authority.lives.is_some() {
-                        state
-                            .and_then(|a| a.life.as_ref())
-                            .map_or(0, |p| p.state.health())
-                    } else {
-                        p.maximum_health()
-                    },
-                    p.maximum_health(),
-                    state
-                        .and_then(|a| a.mana)
-                        .map_or(p.maximum_mana(), |m| m.current()),
-                    p.maximum_mana(),
-                )
-                .unwrap()
-            }),
+            vitals: self.combat_vitals(actor),
             tick: self.tick,
             reply: state.and_then(|a| a.reply),
             cast: state.and_then(|a| a.cast.clone()),

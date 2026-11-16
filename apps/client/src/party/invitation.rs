@@ -183,6 +183,17 @@ mod tests {
             tick: 1,
             view: authority.view(key(id)).unwrap(),
             refusal: None,
+            member_vitals: authority
+                .view(key(id))
+                .unwrap()
+                .membership
+                .party
+                .map_or_else(Vec::new, |p| {
+                    p.members
+                        .into_iter()
+                        .map(|key| theia_network::party_wire::MemberVitals { key, vitals: None })
+                        .collect()
+                }),
             roster: vec![theia_network::party_wire::NamedActor {
                 key: key(1),
                 name: theia_core::character_name::CharacterName::parse("Arden").unwrap(),

@@ -91,6 +91,9 @@ pub(super) fn publish(
             view: world.party_view(peer.actor).ok_or("Party owner missing")?,
             refusal: peer.party.refusal,
             roster: roster.clone(),
+            member_vitals: world
+                .party_member_vitals(peer.actor)
+                .ok_or("Party owner missing")?,
         };
         if peer
             .party

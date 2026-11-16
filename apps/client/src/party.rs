@@ -494,6 +494,17 @@ mod tests {
             tick: 1,
             view: authority.view(key(id)).unwrap(),
             refusal: None,
+            member_vitals: authority
+                .view(key(id))
+                .unwrap()
+                .membership
+                .party
+                .map_or_else(Vec::new, |p| {
+                    p.members
+                        .into_iter()
+                        .map(|key| theia_network::party_wire::MemberVitals { key, vitals: None })
+                        .collect()
+                }),
             roster: (1..=3)
                 .map(|id| theia_network::party_wire::NamedActor {
                     key: key(id),

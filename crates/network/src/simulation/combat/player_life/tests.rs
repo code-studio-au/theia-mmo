@@ -1490,3 +1490,68 @@ fn dead_player_cannot_supply_new_area_observations_but_original_live_batch_remai
         1
     );
 }
+
+#[test]
+fn private_party_vitals_follow_damage_mana_death_respawn_and_departure() {
+    use theia_core::party::{Action, Request};
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, _) = fixture(rate, true);
+        world.enable_parties().unwrap();
+        let a = join(&mut world, [8006., 8000.]);
+        let b = join(&mut world, [8062., 7950.]);
+        let outsider = join(&mut world, [8009., 8000.]);
+        crate::simulation::follow::tests::invite(&mut world, a, b);
+        let membership = world.party_view(a).unwrap();
+        assert!(world.party_member_vitals(outsider).unwrap().is_empty());
+        world
+            .combat
+            .as_mut()
+            .unwrap()
+            .actors
+            .get_mut(&b)
+            .unwrap()
+            .mana = Pool::new(24, 100);
+        let life = world.player_life_snapshot(b).unwrap().key;
+        for damage in [28, 72] {
+            let mut combat = world.combat.take().unwrap();
+            combat
+                .damage_player(&mut world, life, damage)
+                .unwrap()
+                .unwrap();
+            world.combat = Some(combat);
+            let values = world.party_member_vitals(a).unwrap();
+            assert_eq!(values, world.party_member_vitals(b).unwrap());
+            let value = values[1].vitals.unwrap();
+            assert_eq!(value, world.combat_snapshot(b).unwrap().vitals.unwrap());
+            assert_eq!(value.health(), if damage == 28 { 72 } else { 0 });
+            assert_eq!(value.mana(), 24);
+            assert_eq!(world.party_view(a).unwrap(), membership);
+            assert!(world.party_member_vitals(outsider).unwrap().is_empty());
+        }
+        for _ in 0..rate.hz() {
+            world.step();
+        }
+        let restored = world.party_member_vitals(a).unwrap()[1].vitals.unwrap();
+        assert_eq!(restored.health(), restored.maximum_health());
+        assert_eq!(restored, world.combat_vitals(b).unwrap());
+        let view = world.party_view(b).unwrap();
+        world
+            .party_request(
+                b,
+                Request {
+                    sequence: view.sequence + 1,
+                    revision: view.revision,
+                    action: Action::Leave,
+                },
+            )
+            .unwrap();
+        assert!(world.party_member_vitals(a).unwrap().is_empty());
+        assert!(world.party_member_vitals(b).unwrap().is_empty());
+        world.leave(b);
+        assert!(world.party_member_vitals(b).is_none());
+        assert!(world.combat_vitals(b).is_none());
+        let replacement = join(&mut world, [8062., 7950.]);
+        assert_ne!(replacement, b);
+        assert!(world.party_member_vitals(replacement).unwrap().is_empty());
+    }
+}
