@@ -60,6 +60,13 @@ pub struct Network {
     melee: Option<watch::Sender<Option<theia_network::renet_runtime::MeleeChoice>>>,
     combat_events: Option<tokio::sync::mpsc::Receiver<theia_network::combat_wire::Batch>>,
 }
+fn target_choice_matches(
+    selected: theia_core::identity::EntityId,
+    desired: Option<theia_network::targeting::Choice>,
+) -> bool {
+    desired.is_none_or(|choice| choice.target == Some(selected))
+}
+
 pub struct Smoke {
     output: PathBuf,
     direction: [i16; 2],
@@ -385,6 +392,16 @@ impl Network {
         if let Some(choices) = &self.target_choice {
             choices.send_replace(Some(theia_network::targeting::Choice { target }));
         }
+    }
+    /// Suppress the old hostile immediately when a newer choice is waiting for
+    /// acknowledgement. The mailbox retains the latest intent across old replies.
+    pub(crate) fn confirmed_hostile_target(
+        &self,
+        state: &State,
+    ) -> Option<theia_core::identity::EntityId> {
+        let selected = state.targeting.as_ref()?.selected?;
+        let desired = self.target_choice.as_ref().and_then(|s| *s.borrow());
+        target_choice_matches(selected, desired).then_some(selected)
     }
     pub(crate) fn current_intent(&self) -> Intent {
         *self.input.borrow()
@@ -2156,5 +2173,36 @@ mod item_reservation_tests {
         assert!(reserve_item_slot(&reservation, false, 8));
         assert!(!reserve_item_slot(&reservation, false, 8));
         assert!(!reserve_item_slot(&reservation, false, u64::MAX));
+    }
+    #[test]
+    fn newer_friendly_or_clear_choice_blocks_old_hostile_observations_until_matching_choice() {
+        use super::target_choice_matches;
+        use theia_core::identity::EntityId;
+        use theia_network::targeting::Choice;
+        let enemy = EntityId::new(1).unwrap();
+        let friend = EntityId::new(2).unwrap();
+        assert!(target_choice_matches(enemy, None));
+        assert!(target_choice_matches(
+            enemy,
+            Some(Choice {
+                target: Some(enemy)
+            })
+        ));
+        assert!(!target_choice_matches(
+            enemy,
+            Some(Choice {
+                target: Some(friend)
+            })
+        ));
+        assert!(!target_choice_matches(enemy, Some(Choice { target: None })));
+        // Older or repeated enemy observations cannot consume the latest intent.
+        for _ in 0..3 {
+            assert!(!target_choice_matches(
+                enemy,
+                Some(Choice {
+                    target: Some(friend)
+                })
+            ));
+        }
     }
 }

@@ -325,30 +325,35 @@ fn present(
     } else {
         "Tab"
     };
-    if skin.is_some() {
-        let friendly = selection.friendly.is_some() && state.error.is_none();
-        let hostile = view.is_some_and(|v| v.selected.is_some()) && !friendly;
-        for (frame, vitals, mut node) in &mut context_nodes {
-            let visible = if let Some(frame) = frame {
-                if frame.0 {
-                    continue;
-                }
-                friendly || hostile
-            } else {
-                vitals && hostile
-            };
-            let display = if visible {
-                Display::Flex
-            } else {
-                Display::None
-            };
-            if node.display != display {
-                node.display = display;
+    let member = selection
+        .friendly
+        .is_none()
+        .then(|| crate::party::selection::selected(&state))
+        .flatten();
+    let friendly = selection.friendly.is_some() && state.error.is_none();
+    let hostile = view.is_some_and(|v| v.selected.is_some()) && !friendly;
+    for (frame, vitals, mut node) in &mut context_nodes {
+        let visible = if let Some(frame) = frame {
+            if frame.0 || skin.is_none() {
+                continue;
             }
+            friendly || hostile || member.is_some()
+        } else {
+            vitals && member.is_none() && (skin.is_none() || hostile)
+        };
+        let display = if visible {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        if node.display != display {
+            node.display = display;
         }
     }
     if let Ok(mut text) = hud.single_mut() {
-        let value = if selection.friendly.is_some() && state.error.is_none() {
+        let value = if let Some(member) = &member {
+            format!("Target: {}", member.name)
+        } else if selection.friendly.is_some() && state.error.is_none() {
             let name = dialogue
                 .as_ref()
                 .and_then(|d| {

@@ -2,6 +2,7 @@
 mod invitation;
 mod member_menu;
 mod members;
+pub(crate) mod selection;
 use bevy::{
     picking::{Pickable, hover::Hovered},
     prelude::*,
@@ -212,6 +213,7 @@ pub(crate) fn install(app: &mut App) {
     members::install(app);
     member_menu::install(app);
     app.init_resource::<Ui>()
+        .init_resource::<selection::Presentation>()
         .add_observer(activate)
         .add_systems(Startup, setup)
         .add_systems(
@@ -230,9 +232,12 @@ pub(crate) fn install(app: &mut App) {
                 members::present,
                 members::paint,
                 member_menu::present,
+                selection::present,
+                selection::paint,
             )
                 .chain()
-                .after(crate::network::present),
+                .after(crate::network::present)
+                .after(crate::world_input::Interactions),
         );
 }
 fn setup(mut commands: Commands) {
@@ -484,6 +489,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let invitation = invitation::snapshot(world);
     let member_frames = members::snapshot(world);
     let member_menu = member_menu::snapshot(world);
+    let selected_member = selection::snapshot(world);
     let menu_visible = member_menu["visible"].as_bool().unwrap_or(false);
     let invitation_visible = invitation["visible"].as_bool().unwrap_or(false);
     let scale = world.resource::<bevy::ui::UiScale>().0;
@@ -509,7 +515,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
         .get_resource::<crate::network::Network>()
         .map(|n| n.state());
     let party = state.as_ref().and_then(|s| s.party.as_ref());
-    serde_json::json!({"open":open,"invitation":invitation,"member_frames":member_frames,"member_menu":member_menu,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
+    serde_json::json!({"open":open,"invitation":invitation,"member_frames":member_frames,"member_menu":member_menu,"selected_member":selected_member,"actions":actions,"buttons":buttons,"state":party.map(|v| serde_json::json!({
         "owner":v.state.view.owner.entity.value(),"revision":v.state.view.revision,"sequence":v.state.view.sequence,
         "pending":v.pending,"timed_out":v.timed_out,"refusal":v.state.refusal.map(|r|format!("{r:?}")),
         "party":v.state.view.membership.party.as_ref().map(|p|serde_json::json!({"id":p.id,"leader":p.leader.entity.value(),"members":p.members.iter().map(|k|k.entity.value()).collect::<Vec<_>>()})),

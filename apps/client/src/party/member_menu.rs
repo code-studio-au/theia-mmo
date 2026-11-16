@@ -143,6 +143,7 @@ fn clicked(
     windows: Query<&Window>,
     network: Res<crate::network::Network>,
     mut ui: ResMut<Ui>,
+    mut selection: Option<ResMut<crate::world_input::Selection>>,
 ) {
     if event.pointer.id != PointerId::Mouse || !windows.single().is_ok_and(|w| w.focused) {
         return;
@@ -154,7 +155,11 @@ fn clicked(
         event.propagate(false);
         return;
     }
-    if event.button != PointerButton::Secondary || ui.menu_dragged {
+    if !matches!(
+        event.button,
+        PointerButton::Primary | PointerButton::Secondary
+    ) || ui.menu_dragged
+    {
         return;
     }
     let Ok((frame, node, transform)) = frames.get(target) else {
@@ -164,6 +169,16 @@ fn clicked(
     let state = network.state();
     if state.error.is_some() {
         ui.menu = None;
+        return;
+    }
+    if event.button == PointerButton::Primary {
+        if super::selection::member(&state, frame.0).is_some()
+            && let Some(selection) = selection.as_mut()
+        {
+            network.request_target(Some(frame.0.entity));
+            selection.friendly = None;
+            ui.menu = None;
+        }
         return;
     }
     let anchor = (transform.affine().translation

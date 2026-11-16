@@ -6,7 +6,8 @@ Additional screenshots on 16 November at 15:38:52, 15:38:58 and 15:39:21
 explicitly extend the requested direction to invitations, member stats and
 party targeting/marking. Originals use the same Pictures path below with date
 2026-11-16. The invitation prompt and compact name/health/mana frames are qualified in STATUS;
-portraits, member targeting, level/status icons and shared marks remain planned:
+member selection and real target-frame resources are adopted below; portraits,
+level/status icons and shared marks remain planned:
 
 - Incoming invite: compact top-centre prompt naming the inviter, with Accept
   and Decline side by side while the world stays visible. Reuse the existing
@@ -27,7 +28,7 @@ Acceptance for the remaining UI includes readable layouts at 1720x1400 paired
 and 1720x700 four-player tiles, invite expiry/decline, stale member guards,
 cross-client mark agreement and party isolation. The current membership slice
 now replicates and displays authoritative health/mana. Level/status replication,
-member targeting and shared marks remain later slices.
+shared marks remain a later slice.
 Title/selection/loading references are in [CHARACTER_LAUNCHER_MENU.md](CHARACTER_LAUNCHER_MENU.md).
 
 The user supplied three WoW screenshots captured on 15 November at 21:14:46,
@@ -318,3 +319,33 @@ party-selection-distance-test.log. No rendering change or new native GPU/Windows
 claim in this prerequisite. Frame selection/target presentation follows next;
 shared marks and the adopted title/selection/loading flow remain later work.
 Continue locally under the user's until-Stop authorization. No push authorized.
+
+16 November 2026 — P4-11 selected-member presentation accepted:
+Left-click an exact current member frame to select that member through TG02.
+The selected frame shows the trusted name and authoritative health/mana, and the
+compact frame gains a white selection border. Member widgets stay separate from
+hostile ability eligibility and enemy health; NPC selection replaces the member
+presentation. Latest requested target identity blocks an old hostile observation
+from receiving an action-bar spell while a newer selection/clear is in flight.
+Right-click menus and UI drag ownership remain intact. Promotion retains the
+selection; Escape/Backspace and membership departure clear it. No invented member
+portrait, level or status, no remote-player mesh-click targeting, no shared marks.
+292 client tests pass (four skips), including epoch/membership/identity guards,
+partial/zero/unavailable resource repaint and the old-hostile intent race. Strict
+all-target client Clippy, fmt, matching build and Python compilation pass:
+build/party-target-ui-checks.json. Network authority remains qualified by 77052381.
+Native two-account mouse/keyboard controls pass at 1720x1400 and 1720x700, both
+fresh and after PostgreSQL/server restart: eight member selections and all 13
+membership actions per flow, real rendered names/bars, NPC replacement without
+dialogue, no implicit movement/facing/cast, clear/promotion/removal lifecycle,
+unchanged quests/bags and zero scene-readiness retractions/GPU diagnostics.
+Evidence: build/party-target-ui-paired-v3/qualification.json (178.84s),
+build/party-target-ui-quadrants-v4/qualification.json (171.95s).
+Both accepted selected-member captures were visually inspected. Linux RX 7900
+XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; no native Windows run. Quadrant evidence
+uses two accounts in two quarter-screen tiles, not four-account gameplay.
+Earlier attempts stopped at harness focus/fixture/output mistakes or an NPC click
+covered by the target HUD. The final harness chooses a visible unobscured NPC.
+Editor account playtests inherit these controls without additional options.
+Next: party-scoped authoritative shared unit marks, then the adopted title,
+character-selection and loading flow. Continue locally until Stop; no push.

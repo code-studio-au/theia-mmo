@@ -39,6 +39,7 @@ def flow(desktop, windows, states, folder):
     movement = []
     member_proofs = []
     menu_proofs = []
+    selection_proofs = []
     def view(index):
         return states[index]()['party']['state']
     def focus(index):
@@ -81,6 +82,38 @@ def flow(desktop, windows, states, folder):
     def solo():
         wait(lambda: all(view(i)['party'] is None and view(i)['incoming'] is None and not view(i)['outgoing'] for i in [0,1]), 5)
         wait(lambda: all(not s()['party']['member_frames']['visible'] and not s()['party']['member_frames']['frames'] for s in states))
+        wait(lambda: all(s()['party']['selected_member']['actor'] is None for s in states))
+    def selected_member(index):
+        sample = states[index]()
+        selected = sample['party']['selected_member']
+        if selected['actor'] != keys[1-index] or not selected['bounds']: return None
+        other = states[1-index]()
+        if selected['name'] != other['combat_ui']['player_name']: return None
+        expected = [other['combat_ui']['player_health_text'], other['combat_ui']['mana_text']]
+        if sorted(v['text'] for v in selected['labels']) != sorted(expected): return None
+        if not all(v['rendered'] for v in selected['labels']): return None
+        if not any(v['rendered'] and v['text'] == selected['name'] for v in selected['headings']): return None
+        if selected['highlighted'] != [keys[1-index]] or len(selected['bars']) != 2: return None
+        for bar in selected['bars']:
+            current, maximum = selected[bar['pool']]
+            if abs(bar['width'] - bar['maximum_width'] * current / maximum) > 1.5: return None
+        x,y,w,h = selected['bounds']
+        assert 0 <= x and 0 <= y and x+w <= sample['window'][0] and y+h <= sample['window'][1]
+        assert sample['selected_hostile'] is None and not sample['combat_ui']['has_target']
+        return selected
+    def select_member(index):
+        focus(index)
+        frame = states[index]()['party']['member_frames']['frames'][0]
+        x,y,w,h = frame['bounds']
+        before = states[index]()
+        desktop.click(windows[index], [x+w/2,y+h/2], before['window'][2], 1)
+        selected = wait(lambda: selected_member(index), 8)
+        after = states[index]()
+        assert after['camera_angles'] == before['camera_angles'] and after['classic_facing'] == before['classic_facing']
+        assert math.dist(after['dodge']['authority_feet'], before['dodge']['authority_feet']) < .01
+        for key in ['enemy_clicks','friendly_clicks','basic_requests','interaction_requests']:
+            assert after['controls'][key] == before['controls'][key], key
+        selection_proofs.append(dict(player=index+1, selected=selected))
     def member_frames():
         for i in [0, 1]:
             def painted():
@@ -165,6 +198,39 @@ def flow(desktop, windows, states, folder):
     member_frames()
     focus(0); desktop.key('o'); wait(lambda: not states[0]()['party']['open'])
     capture(0, 'party-member-frames.png')
+    for i in [0,1]:
+        select_member(i)
+        before = states[i]()
+        desktop.key('1')
+        time.sleep(.5)
+        after = states[i]()
+        assert selected_member(i)
+        for key in ['ability_reply', 'active_cast']:
+            assert after[key] == before[key], key
+        assert after['combat_ui']['mana_text'] == before['combat_ui']['mana_text']
+        assert after['autoattack']['swings'] == before['autoattack']['swings']
+        capture(i, 'party-selected-member.png')
+        desktop.key('Escape')
+        wait(lambda: states[i]()['party']['selected_member']['actor'] is None)
+        select_member(i)
+        desktop.key('BackSpace')
+        wait(lambda: states[i]()['party']['selected_member']['actor'] is None)
+        select_member(i)
+        # In a 700px tile the target frame covers the nearest guide's centre.
+        # Pick another visible NPC rather than clicking through the HUD.
+        sample = states[i]()
+        x,y,w,h = sample['party']['selected_member']['bounds']
+        point = next(c['screen'] for c in sample['contacts'] if c['screen']
+                     and sample['window'][0]*.35 < c['screen'][0] < sample['window'][0]*.75
+                     and 64 < c['screen'][1] < sample['window'][1]-190
+                     and not (x <= c['screen'][0] <= x+w and y <= c['screen'][1] <= y+h))
+        desktop.click(windows[i], point, sample['window'][2], 1)
+        wait(lambda: states[i]()['friendly_selected'] and states[i]()['party']['selected_member']['actor'] is None)
+        assert not states[i]()['dialogue_open'], 'Selecting an NPC opened dialogue'
+        select_member(i)
+        assert not states[i]()['friendly_selected'], 'Member and NPC selection overlapped'
+
+    focus(0)
     frame = states[0]()['party']['member_frames']['frames'][0]
     x,y,w,h = frame['bounds']
     before_frame_drag = states[0]()
@@ -214,6 +280,7 @@ def flow(desktop, windows, states, folder):
     wait(lambda: not states[0]()['party']['member_menu']['visible'])
     wait(lambda: all(view(i)['party']['leader'] == keys[1] for i in [0,1]), 5)
     member_frames()
+    assert all(selected_member(i) for i in [0,1]), 'Promotion lost friendly selection'
     open_member(1)
     click(1, 'remove', keys[0], source='member'); solo()
     wait(lambda: all(not s()['party']['member_menu']['visible'] for s in states))
@@ -233,6 +300,7 @@ def flow(desktop, windows, states, folder):
                   interface_then_party_escape=True, invitation_without_panel=True,
                   invitation_bounds=prompt['bounds'], invitation_drag_does_not_steer_or_interact=True, member_frames=member_proofs,
                   member_frame_drag_does_not_steer_or_interact=True, member_manage_shortcut=True, member_menus=menu_proofs,
-                  member_menu_escape_outside_and_focus_dismissal=True, member_menu_actions=True)
+                  member_menu_escape_outside_and_focus_dismissal=True, member_menu_actions=True, selected_members=selection_proofs,
+                  friendly_selection_does_not_move_turn_or_cast=True, friendly_selection_clear_and_membership_cleanup=True)
     (folder/'party-proof.json').write_text(json.dumps(result, indent=2)+'\n')
     return result

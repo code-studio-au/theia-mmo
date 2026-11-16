@@ -1,3 +1,48 @@
+# Current checkpoint — 16 November 2026: member selection UI accepted
+
+16 November 2026 — P4-11 selected-member presentation accepted:
+Left-click an exact current member frame to select that member through TG02.
+The selected frame shows the trusted name and authoritative health/mana, and the
+compact frame gains a white selection border. Member widgets stay separate from
+hostile ability eligibility and enemy health; NPC selection replaces the member
+presentation. Latest requested target identity blocks an old hostile observation
+from receiving an action-bar spell while a newer selection/clear is in flight.
+Right-click menus and UI drag ownership remain intact. Promotion retains the
+selection; Escape/Backspace and membership departure clear it. No invented member
+portrait, level or status, no remote-player mesh-click targeting, no shared marks.
+292 client tests pass (four skips), including epoch/membership/identity guards,
+partial/zero/unavailable resource repaint and the old-hostile intent race. Strict
+all-target client Clippy, fmt, matching build and Python compilation pass:
+build/party-target-ui-checks.json. Network authority remains qualified by 77052381.
+Native two-account mouse/keyboard controls pass at 1720x1400 and 1720x700, both
+fresh and after PostgreSQL/server restart: eight member selections and all 13
+membership actions per flow, real rendered names/bars, NPC replacement without
+dialogue, no implicit movement/facing/cast, clear/promotion/removal lifecycle,
+unchanged quests/bags and zero scene-readiness retractions/GPU diagnostics.
+Evidence: build/party-target-ui-paired-v3/qualification.json (178.84s),
+build/party-target-ui-quadrants-v4/qualification.json (171.95s).
+Both accepted selected-member captures were visually inspected. Linux RX 7900
+XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; no native Windows run. Quadrant evidence
+uses two accounts in two quarter-screen tiles, not four-account gameplay.
+Earlier attempts stopped at harness focus/fixture/output mistakes or an NPC click
+covered by the target HUD. The final harness chooses a visible unobscured NPC.
+Editor account playtests inherit these controls without additional options.
+Next: party-scoped authoritative shared unit marks, then the adopted title,
+character-selection and loading flow. Continue locally until Stop; no push.
+
+All validation/native supervisors completed and cleaned up. Use `git log -1`
+for this local commit; nothing pushed. Continue the user's until-Stop instruction.
+For shared marks, read the current PARTIES reference and engineering records;
+identify explicit Theia permissions, bounded party-private state, exact target
+incarnations, unique marker reassignment, clear/despawn/departure/dissolution
+cleanup and actual encrypted party/outsider isolation before adding the palette.
+Keep marker requests separate from selecting or attacking. Avoid exposing extra
+positions or silently making players valid hostile targets. Qualify the protocol
+and actual two-client rendering/controls before claiming shared markers work.
+The title/character-selection/loading flow remains requested following work.
+
+---
+
 # Current checkpoint — 16 November 2026: friendly selection authority accepted
 
 P4-11 targeting profile v2 / TG02 adds `selected_member` separately from hostile

@@ -204,6 +204,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
             TextColor(Color::WHITE),
         ))
         .with_children(|panel| {
+            crate::party::selection::widgets(panel);
             panel
                 .spawn((
                     TargetVitals,
@@ -588,7 +589,7 @@ fn present(
         let selected = if selection.as_ref().is_some_and(|s| s.friendly.is_some()) {
             None
         } else {
-            state.targeting.as_ref().and_then(|v| v.selected)
+            network.confirmed_hostile_target(&state)
         };
         if let Some((slot, source)) = input.0
             && network.connected()
