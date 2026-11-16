@@ -87,7 +87,7 @@ def run(args):
                         '--binaries', str(binaries), '--output', str(owner/'owned'),
                         '--gameplay-manifest', str(manifest), '--test-route', str(route),
                         '--fantasy-ui', str(args.fantasy_ui.resolve()), '--window-size', '1920x1440',
-                        *(['--parties'] if args.party_only else [])],
+                        *(['--parties'] if args.party_only or args.party_escort else [])],
                         env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT)
                     def choices_ready():
                         assert launcher.poll() is None, 'Owned account launcher exited'
@@ -153,6 +153,29 @@ def run(args):
                         assert [retained(state_a()), retained(state_b())] == completed
                         runs.append(dict(resumed=resumed, window_sizes=[[1920,1440],[1920,1440]],
                             retained=completed, party=proof))
+                    elif args.party_escort:
+                        if resumed:
+                            assert all(s()['party']['state']['party'] is None for s in [state_a, state_b])
+                            proofs = [flow(desktop, windows[i], s, folder/('owner' if i == 0 else 'guest'), resumed=True)
+                                      for i, s in enumerate([state_a, state_b])]
+                            proof = dict(passed=True, restored=proofs)
+                        else:
+                            untouched = retained(state_b())
+                            flow(desktop, windows[0], state_a, owner, prepare_party=True)
+                            assert retained(state_b()) == untouched
+                            completed_a = retained(state_a())
+                            flow(desktop, windows[1], state_b, guest, prepare_party=True)
+                            assert retained(state_a()) == completed_a
+                            from party_escort_os import flow as escort_flow
+                            proof = escort_flow(desktop, windows, [state_a, state_b], folder)
+                        completed = [retained(state_a()), retained(state_b())]
+                        for value in completed:
+                            assert value['revision'] == 9 and value['xp'] == 75
+                            assert len(value['quests']) == 3 and all(q['status'] == 'Completed' for q in value['quests'])
+                            assert value['bag']['revision'] == 2
+                        if resumed: assert completed == previous
+                        previous = completed
+                        runs.append(dict(resumed=resumed, retained=completed, party_escort=proof))
                     else:
                         untouched = retained(state_b())
                         def peer_ranger():
@@ -237,6 +260,9 @@ def run(args):
             assert rows.returncode == 0 and rows.stdout.splitlines() == expected, rows.stdout
             if args.party_only:
                 assert transport['party']['accepted'] >= 12 and transport['party']['refused'] == 0 and transport['party']['invalid_uploads'] == 0
+            if args.party_escort:
+                assert transport['party']['accepted'] == (0 if resumed else 2)
+                assert transport['party']['refused'] == 0 and transport['party']['invalid_uploads'] == 0
             (folder/'database-proof.txt').write_text(rows.stdout)
             print('Both character journals and XP verified in PostgreSQL', flush=True)
             for log in [owner/'launcher.log', guest/'client.log']:
@@ -249,7 +275,7 @@ def run(args):
     assert not any((out/'cluster'/name).exists() for name in ['password','pgpass'])
     result = dict(passed=True, elapsed_seconds=time.monotonic()-started,
         authenticated_native_clients=2, database_restart=True,
-        source_unchanged=True, runs=runs, scope=('Native two-account party controls and solo rejoin after server/database restart; quests and bags unchanged' if args.party_only else __doc__))
+        source_unchanged=True, runs=runs, scope=('Native two-account shared escort, individual arrival/turn-in and durable restart' if args.party_escort else 'Native two-account party controls and solo rejoin after server/database restart; quests and bags unchanged' if args.party_only else __doc__))
     (out/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     print('Two-account ' + ('party controls' if args.party_only else 'quest travel') + ' and database restart passed', flush=True)
     return result
@@ -262,6 +288,8 @@ if __name__ == '__main__':
     parser.add_argument('--fantasy-ui', type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--party-only', action='store_true', help='Qualify party controls and solo rejoin, leaving all quest progress unchanged')
+    party = parser.add_mutually_exclusive_group()
+    party.add_argument('--party-only', action='store_true', help='Qualify party controls and solo rejoin, leaving all quest progress unchanged')
+    party.add_argument('--party-escort', action='store_true', help='Qualify shared escort visibility, range handoff and individual durable turn-in')
     parser.add_argument('--route-banner', action='store_true', help='Check dialogue clearance at both playtest sizes and activate outward travel with the banner')
     run(parser.parse_args())

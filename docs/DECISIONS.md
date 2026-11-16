@@ -1,3 +1,22 @@
+15 November 2026 — party escort participation and lifecycle:
+Following the user's any-participating-member-in-range rule, participants are
+current party members whose committed journal has the same Active escort.
+Unaccepted, Ready and Completed contacts remain private so other quests stay
+available. Living participants may keep the shared ranger within her existing
+10-metre bound; dead participants observe but cannot drive or receive arrival.
+A late accepted participant or merged party adopts the furthest existing checked
+route progress. Leaving or dissolution forks the current position without rewind;
+disconnect removes that incarnation. These merge/eligibility choices are explicit
+Theia policies, not claimed Classic rules. No search, database work or transport
+await enters fixed ticks. The party v3 profile binds this behavior.
+Arrival facts remain character-specific and require that living character inside
+the destination range. Durable Ready state and speaking to the ranger remain
+required for each player's own reward. A distant member gets no automatic credit.
+Session restart still resets Active travel to home, while saved Ready/Completed
+journeys restore at the destination. Shared XP/loot/general quest credit are
+outside this slice. Headless implementation and native acceptance are recorded
+separately in STATUS/PARTIES.
+
 15 November 2026 — bounded party membership slice:
 P4-11 follows authenticated actor admission and existing encrypted control/UI
 integration. Adopt the five-member/leader model evidenced by the original 2004

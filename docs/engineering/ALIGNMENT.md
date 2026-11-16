@@ -1,9 +1,16 @@
+16 November shared escort acceptance:
+Native v2 passes in 295.44 seconds, including actual background rendered movement
+in both clients, individual rewards and PostgreSQL/server restart. 538 network
+tests (18 skips), fmt and strict all-target network/client/server/editor Clippy
+pass. See STATUS/PARTIES. UI screenshots supplied today establish the next layout
+reference; no new UI implementation or shared XP/loot/general credit is claimed.
+
 15 November editor party account adoption acceptance:
 Owned account Start enables parties; native export/create/select, Party [O], all
 three travel quests, Stop and PostgreSQL restart pass. All 263 editor tests,
 format/build/strict Clippy pass. See STATUS. Continue the shared-escort slice below.
 
-P4-11 / P4-03, 15 November 2026 — next shared escort slice (planned):
+P4-11 / P4-03, 16 November 2026 — shared escort slice accepted:
 Prerequisites: qualified authenticated party membership, private committed escort
 journals, prepared navmesh routes and ordinary contact replication. Participants
 are current party members with the same committed Active escort. Advance one
@@ -18,7 +25,8 @@ and rewards it. No shared XP/loot/general quest credit. Bind the behavior in the
 party profile identity. Acceptance: 20/30/60-Hz range handoff, everyone-away stop,
 nonparticipant/solo isolation, late join, departure, disconnect and arrival
 eligibility; encrypted and native two-account contact observations with individual
-turn-in, restart and standard format/Clippy/tests. This is not implemented yet.
+turn-in, restart and standard format/Clippy/tests. These checks now pass; see
+../STATUS.md and ../PARTIES.md for native v2 and fresh headless evidence.
 
 15 November party movement regression acceptance:
 The stationary v1 UI test missed an incompatible local prediction binding. The

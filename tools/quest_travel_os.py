@@ -3,6 +3,7 @@ import json
 import math
 import subprocess
 import time
+from types import SimpleNamespace
 from qualify_world_input_os import wait, capture_ready
 
 COLLECT = 'theia.dev.quest-lost-compass'
@@ -12,7 +13,7 @@ ROWAN = 'theia.dev.villager'
 RANGER = 'theia.dev.ranger'
 
 
-def flow(desktop, window, state, folder, resumed=False, check_banner=False):
+def controls(desktop, window, state, folder, check_banner=False):
     scale = state()['window'][2]
     banner_layouts = []
     def journal(): return state()['quest_journal']
@@ -48,7 +49,7 @@ def flow(desktop, window, state, folder, resumed=False, check_banner=False):
     def close():
         for _ in range(4):
             s=state()
-            if not (s['dialogue_open'] or s['inventory_open'] or s['interface']['open']): return
+            if not (s['dialogue_open'] or s['inventory_open'] or s['interface']['open'] or s.get('party', {}).get('open')): return
             desktop.key('Escape')
             time.sleep(.25)
         assert not state()['dialogue_open'] and not state()['inventory_open']
@@ -142,17 +143,25 @@ def flow(desktop, window, state, folder, resumed=False, check_banner=False):
         assert t['leg']==leg,t
         focus()
         return t
-    focus()
+    return SimpleNamespace(
+        journal=journal, quest=quest, feet=feet, contact=contact, focus=focus, capture=capture, close=close, face=face, walk=walk, approach=approach, speak=speak, action=action, travel=travel,
+        banner_layouts=banner_layouts)
+
+
+def flow(desktop, window, state, folder, resumed=False, check_banner=False, prepare_party=False):
+    scale = state()['window'][2]
+    ui = controls(desktop, window, state, folder, check_banner)
+    ui.focus()
     if resumed:
-        wait(lambda: all(quest(q) and quest(q)['status']=='Completed' for q in [INTRO,COLLECT,FOLLOW]))
-        assert journal()['revision']==9 and journal()['xp']==75
-        assert journal()['ui']['submitted']==0
-        assert math.dist(contact(RANGER)['global'],[8276,2.7,8128])<2
+        wait(lambda: all(ui.quest(q) and ui.quest(q)['status']=='Completed' for q in [INTRO,COLLECT,FOLLOW]))
+        assert ui.journal()['revision']==9 and ui.journal()['xp']==75
+        assert ui.journal()['ui']['submitted']==0
+        assert math.dist(ui.contact(RANGER)['global'],[8276,2.7,8128])<2
         assert not any(i['available'] for i in state()['ground_items'])
-        speak(RANGER)
-        assert all(b['quest']!=FOLLOW for b in journal()['buttons'])
-        capture('travel-restored.png')
-        result=dict(passed=True,resumed=True,revision=journal()['revision'],xp=journal()['xp'])
+        ui.speak(RANGER)
+        assert all(b['quest']!=FOLLOW for b in ui.journal()['buttons'])
+        ui.capture('travel-restored.png')
+        result=dict(passed=True,resumed=True,revision=ui.journal()['revision'],xp=ui.journal()['xp'])
     else:
         # Prove Tab works even with the bag open; Shift+Tab traverses backwards.
         desktop.key('i');wait(lambda: state()['inventory_open'])
@@ -162,52 +171,58 @@ def flow(desktop, window, state, folder, resumed=False, check_banner=False):
         try: desktop.key('Tab')
         finally: desktop.key_state('Shift_L',False)
         wait(lambda: state()['selected_hostile']==first)
-        close()
+        ui.close()
         desktop.key('BackSpace');wait(lambda: state()['selected_hostile'] is None)
         # Hidden by default, controlled through the ordinary Interface menu.
         assert not state()['interface']['debug_stats']
         desktop.key('F10');wait(lambda: state()['interface']['open'])
         point=next(b['point'] for b in state()['interface']['buttons'] if b['action']=='debug')
-        desktop.click(window,point,scale,1);wait(lambda: state()['interface']['debug_stats']);close();capture('debug-stats.png')
+        desktop.click(window,point,scale,1);wait(lambda: state()['interface']['debug_stats']);ui.close();ui.capture('debug-stats.png')
         desktop.key('F10');wait(lambda: state()['interface']['open'])
         desktop.click(window,next(b['point'] for b in state()['interface']['buttons'] if b['action']=='debug'),scale,1)
-        wait(lambda: not state()['interface']['debug_stats']);close()
-        speak(ROWAN);action(COLLECT,'Active');close()
+        wait(lambda: not state()['interface']['debug_stats']);ui.close()
+        ui.speak(ROWAN);ui.action(COLLECT,'Active');ui.close()
         wait(lambda: any(i['available'] for i in state()['ground_items']))
-        capture('collect-from-meadow.png')
-        outward=travel('outward')
-        face([8194,0.634,8260])
+        ui.capture('collect-from-meadow.png')
+        outward=ui.travel('outward')
+        ui.face([8194,0.634,8260])
         item=wait(lambda: next((i for i in state()['ground_items'] if i['available'] and i['visible'] and i['screen']),None))
         desktop.click(window,item['screen'],scale,3)
-        wait(lambda: quest(COLLECT)['status']=='Ready')
-        assert journal()['xp']==0
-        capture('deliver-to-rowan.png')
-        returning=travel('return')
-        speak(ROWAN);action(COLLECT,'Completed')
-        assert journal()['xp']==25
+        wait(lambda: ui.quest(COLLECT)['status']=='Ready')
+        assert ui.journal()['xp']==0
+        ui.capture('deliver-to-rowan.png')
+        returning=ui.travel('return')
+        ui.speak(ROWAN);ui.action(COLLECT,'Completed')
+        assert ui.journal()['xp']==25
         assert not any(s and s['item']=='theia.dev.lost-compass' for s in state()['inventory_bag']['slots'])
-        speak('theia.dev.steward');action(INTRO,'Active')
-        speak(RANGER)
-        greeting=wait(lambda: next((c['point'] for c in journal()['choices'] if c['choice']=='theia.dev.ranger.greeting'),None))
-        desktop.click(window,greeting,scale,1);wait(lambda: quest(INTRO)['status']=='Ready');action(INTRO,'Completed')
-        speak(RANGER);home=contact(RANGER)['global'];action(FOLLOW,'Active');close()
+        ui.speak('theia.dev.steward');ui.action(INTRO,'Active')
+        ui.speak(RANGER)
+        greeting=wait(lambda: next((c['point'] for c in ui.journal()['choices'] if c['choice']=='theia.dev.ranger.greeting'),None))
+        desktop.click(window,greeting,scale,1);wait(lambda: ui.quest(INTRO)['status']=='Ready');ui.action(INTRO,'Completed')
+        if prepare_party:
+            ui.close()
+            result = dict(passed=True, prepared_party=True, revision=ui.journal()['revision'], xp=ui.journal()['xp'], outward=outward, returning=returning)
+            assert result['revision'] == 6 and result['xp'] == 50
+            (folder/'quest-travel-prepared.json').write_text(json.dumps(result, indent=2)+'\n')
+            return result
+        ui.speak(RANGER);home=ui.contact(RANGER)['global'];ui.action(FOLLOW,'Active');ui.close()
         time.sleep(10)
-        paused=contact(RANGER)['global'];waiting_distance=math.dist(feet(),paused)
-        assert 9.<waiting_distance<=10.1,(feet(),paused,waiting_distance)
+        paused=ui.contact(RANGER)['global'];waiting_distance=math.dist(ui.feet(),paused)
+        assert 9.<waiting_distance<=10.1,(ui.feet(),paused,waiting_distance)
         time.sleep(1)
-        assert math.dist(paused,contact(RANGER)['global'])<.02
-        assert math.dist(paused,contact(RANGER)['rendered_global'])<.02
-        assert quest(FOLLOW)['status']=='Active' and journal()['xp']==50
-        capture('ranger-waits.png')
+        assert math.dist(paused,ui.contact(RANGER)['global'])<.02
+        assert math.dist(paused,ui.contact(RANGER)['rendered_global'])<.02
+        assert ui.quest(FOLLOW)['status']=='Active' and ui.journal()['xp']==50
+        ui.capture('ranger-waits.png')
         samples=[];deadline=time.monotonic()+180
         moving=False
         try:
-            while quest(FOLLOW)['status']=='Active':
-                ranger=contact(RANGER);target=ranger['global']
-                samples.append(dict(npc=target,rendered=ranger['rendered_global'],player=feet()))
+            while ui.quest(FOLLOW)['status']=='Active':
+                ranger=ui.contact(RANGER);target=ranger['global']
+                samples.append(dict(npc=target,rendered=ranger['rendered_global'],player=ui.feet()))
                 assert time.monotonic()<deadline, 'NPC did not arrive'
-                distance=math.dist(feet(),target)
-                face(target)
+                distance=math.dist(ui.feet(),target)
+                ui.face(target)
                 if not moving and distance>6.:
                     desktop.key_state('w',True);moving=True
                 elif moving and distance<3.:
@@ -215,16 +230,16 @@ def flow(desktop, window, state, folder, resumed=False, check_banner=False):
                 time.sleep(.1)
         finally:
             if moving: desktop.key_state('w',False)
-        assert quest(FOLLOW)['status']=='Ready' and journal()['xp']==50
+        assert ui.quest(FOLLOW)['status']=='Ready' and ui.journal()['xp']==50
         assert any(math.dist(s['npc'],s['rendered'])>.01 for s in samples), 'No interpolated contact samples'
         assert max(math.dist(s['npc'],s['rendered']) for s in samples)<3., 'Contact presentation lag exceeded budget'
-        wait(lambda: math.dist(contact(RANGER)['global'],contact(RANGER)['rendered_global'])<.02)
-        capture('ranger-at-tree-ready.png')
-        speak(RANGER);action(FOLLOW,'Completed')
-        assert journal()['revision']==9 and journal()['xp']==75
-        capture('ranger-completed.png')
-        result=dict(passed=True,resumed=False,revision=journal()['revision'],xp=journal()['xp'],outward=outward,returning=returning,home=home,paused=paused,waiting_distance=waiting_distance,follow_samples=samples,tab=[first,second,first])
+        wait(lambda: math.dist(ui.contact(RANGER)['global'],ui.contact(RANGER)['rendered_global'])<.02)
+        ui.capture('ranger-at-tree-ready.png')
+        ui.speak(RANGER);ui.action(FOLLOW,'Completed')
+        assert ui.journal()['revision']==9 and ui.journal()['xp']==75
+        ui.capture('ranger-completed.png')
+        result=dict(passed=True,resumed=False,revision=ui.journal()['revision'],xp=ui.journal()['xp'],outward=outward,returning=returning,home=home,paused=paused,waiting_distance=waiting_distance,follow_samples=samples,tab=[first,second,first])
     if check_banner:
-        result.update(route_banner_layouts=banner_layouts, route_banner_clicked_outward=True)
+        result.update(route_banner_layouts=ui.banner_layouts, route_banner_clicked_outward=True)
     (folder/'quest-travel-proof.json').write_text(json.dumps(result,indent=2)+'\n')
     return result

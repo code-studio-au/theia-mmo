@@ -1,3 +1,27 @@
+16 November 2026 — P4-11 / P4-03 shared party escorts accepted:
+The remaining native rerun passes in build/party-escort-native-v2/qualification.json
+(295.44 seconds). Two real OIDC clients share the Active ranger, hand off range,
+wait when everyone is away, and arrive/turn in individually. All 135 movement
+samples include both actual rendered positions; background clients show 23/57
+distinct positions across the two driving legs (28.00/53.40 m displacement).
+Maximum sampled inter-client authority separation is 1.172 m and render lag
+0.749 m. Waiting and Ready screenshots were inspected; motion evidence is the
+sampled presentation data, not a stationary screenshot. Each character restores
+journal revision 9, XP 75 and bag revision 2 after PostgreSQL/server restart;
+source hashes, SQL, two accepted party actions and zero invalid/refused actions pass.
+Linux 1920x1440 each, RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU
+or prediction-binding diagnostics; no Windows execution. Fresh 538 network tests
+pass (18 explicit skips), plus fmt, denied-warning all-target network/client/server/
+editor Clippy and Python compilation. Logs: build/party-escort-resume-{network-tests,
+fmt,clippy}.log; prior build and death/all-rate evidence remains in RESUME/PARTIES.
+No implementation fix was needed after resuming. Shared XP/loot/general quest
+credit remain separate. User-supplied party frames/panel/context-menu references
+are recorded in PARTIES; that presentation change is not implemented.
+
+15 November 2026 — paused for logout: current saved work, test evidence and
+remaining native checks are recorded in [RESUME.md](RESUME.md). Shared escort
+changes are uncommitted; no test process or unattended implementation is running.
+
 15 November 2026 — P4-11 / P5-17 editor party account launch accepted:
 The editor's owned account Start path now enables --parties; development Test
 Players retain their existing mode. Native build/party-editor-native-v2/

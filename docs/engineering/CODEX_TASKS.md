@@ -2248,8 +2248,13 @@ For each task: inspect existing code first; write a short design and tests; impl
   281 client tests and strict checks. Movement binding is corrected and native
   two-account movement/restart passes in v3 (144.14 seconds). Editor account
   launch, all three travel quests and durable restart pass in party-editor-native-v2,
-  with 263 editor tests and strict checks. Shared escort integration is next;
-  shared XP/loot/general quest credit remain separate unimplemented consumers.
+  with 263 editor tests and strict checks. Shared Active escorts now pass all-rate
+  authority/lifecycle/death regressions and native two-account range handoff,
+  waiting, actual background presentation, individual turn-in and database/server
+  restart in party-escort-native-v2 (295.44 seconds, 16 November). Fresh 538 network
+  tests (18 skips), fmt and strict checks pass. See ../PARTIES.md. Shared XP/loot/
+  general quest credit remain unimplemented. The supplied member-frame/panel/menu
+  references are recorded for a subsequent UI slice.
 
 ### P4-12 — Chat/moderation
 - **Primary wave:** W7; work may begin earlier when prerequisites permit.

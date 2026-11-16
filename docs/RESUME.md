@@ -1,0 +1,128 @@
+# Resume checkpoint — 16 November 2026
+
+The 15 November remaining shared-escort rerun is complete. Native
+`build/party-escort-native-v2/qualification.json` passes in 295.44 seconds,
+including both clients' actual background rendered movement, range handoff,
+all-away waiting, individual arrival/turn-in and server/PostgreSQL restart.
+Both characters restore journal revision 9, XP 75 and bag revision 2. There are
+135 motion samples, with 23/57 distinct background rendered positions across
+the two driving legs. Waiting/Ready captures were inspected. Linux RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU or prediction-binding diagnostics;
+no Windows execution.
+
+Fresh 538 network library tests pass (18 explicit skips), format and denied-warning
+all-target network/client/server/editor Clippy pass, and all four changed Python
+helpers compile. Logs: `build/party-escort-resume-{network-tests,fmt,clippy}.log`.
+The earlier build and all-rate/death evidence below remain applicable; no Rust
+implementation fix was needed during this resume. The first foreground test
+rerun was interrupted; the tracked detached rerun completed with exit 0.
+Both tracked supervisors (62609 native, 64965 network) have exited. No harness
+is left running. All build artifacts stay ignored and no push is authorized.
+
+STATUS, ROADMAP, ALIGNMENT, CODEX_TASKS and PARTIES record final acceptance.
+This checkpoint accompanies the local shared-escort commit; use `git log -1`
+for its hash. Previous committed work and original implementation notes follow.
+
+The user supplied three party UI/menu screenshots and then said there are issues
+to detail. Ready to receive those issues; hold further feature work for that input.
+The screenshots' compact upper-left member frames, collapsible group panel and
+member context menu are recorded in PARTIES as reference, not implemented UI.
+
+---
+
+# Historical handoff — 15 November 2026
+
+Work stopped at the user's request. No push occurred. All changes below are saved
+on disk. Owned native test harnesses exited. Resume implementation only when the
+user asks; logging off does not authorize unattended work.
+
+## Last committed work
+
+Branch: `dev/quest-inventory-integration`.
+
+- `96d0f9cf`: playable Party [O] controls and authenticated party membership.
+- `1b840e53`: fix movement prediction to bind the complete Classic / optional
+  chat / party identity. Earlier stationary party tests missed this bug.
+- `3d2461bc`: enable parties in the editor's owned account playtests. Native
+  export/create/select, all three travel quests, Stop and durable restart passed
+  in `build/party-editor-native-v2/qualification.json`.
+
+## Saved but uncommitted
+
+Shared active party escorts: same party + same committed Active quest shares one
+ranger position. Any living participant within the authored range keeps her
+moving; none in range stops her. Each character must arrive and speak to her for
+their own durable completion/reward. Unaccepted/Ready/Completed contacts remain
+private. Late acceptance/merging adopts furthest checked route progress;
+leave/dissolution forks in place; disconnect removes the incarnation. Dead
+members observe but cannot drive or receive arrival credit. Party profile v3
+binds this behavior. Policy is recorded in DECISIONS/PARTIES; shared XP/loot and
+general quest credit are not implemented by this slice.
+
+Changed files: `crates/network/src/party_wire.rs`,
+`crates/network/src/simulation/follow.rs`,
+`crates/network/src/simulation/combat/player_life/tests.rs`,
+`docs/DECISIONS.md`, `docs/PARTIES.md`, `tools/party_os.py`,
+`tools/qualify_quest_travel_two_players.py`, `tools/quest_travel_os.py`;
+new `tools/party_escort_os.py`. Preserve these changes.
+
+## Evidence and exact remaining check
+
+- 538 network library tests pass, 18 explicit skips:
+  `build/party-escort-network-tests.log`.
+- Shared movement/range/arrival/lifecycle tests pass at 20/30/60 Hz; actual
+  player-death authority test passes (`party-escort-death-tests.log`).
+- Build, formatting and denied-warning all-target network/client/server/editor
+  Clippy pass: `build/party-escort-{build,fmt,clippy}.log`.
+- Native two-account shared escort, range handoff, everyone-away waiting,
+  independent arrival/turn-in and PostgreSQL/server restart pass:
+  `build/party-escort-native-v1/qualification.json`, 313.57 seconds.
+  Both characters restore journal revision 9, XP 75, bag revision 2.
+  Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, 1920x1440 each;
+  no Windows execution claim.
+- AFTER that native run loaded its helpers, the helpers were refined to record
+  actual rendered ranger positions in both clients and assert background render
+  movement. Shared-escort setup now uses just invite/accept (two actions), rather
+  than repeating all 13 membership-control actions. Python compilation passes,
+  but these latest helper refinements HAVE NOT been run natively.
+- `fresh/party-rendered-observations.json` was sampled too late, after the ranger
+  stopped at the destination. It does NOT prove moving presentation.
+
+Next: rerun the native qualifier with `--party-escort` into a fresh v2 output
+folder, inspect captures and rendered-motion samples, fix any failures, update
+STATUS/ROADMAP/ALIGNMENT/CODEX_TASKS/PARTIES with final acceptance, then make a
+local commit. Do not claim the latest helper assertions have already passed.
+
+## Commands / environment
+
+Use `cargo ... --offline -j 2`; network tests must use `--lib` to avoid linking
+all examples. Native build environment:
+
+```sh
+export PKG_CONFIG_PATH="$PWD/build/native-sdk/usr/lib/x86_64-linux-gnu/pkgconfig"
+export PKG_CONFIG_SYSROOT_DIR="$PWD/build/native-sdk"
+export LD_LIBRARY_PATH="$PWD/build/native-sdk/usr/lib/x86_64-linux-gnu"
+```
+
+Native rerun:
+
+```sh
+python3 tools/qualify_quest_travel_two_players.py \
+  --package build/editor-named-road-account-v1/fresh/package \
+  --players build/classic-directional-client-qualified-v1-20261103/art/player \
+  --fantasy-ui '/home/steven/Downloads/Synty Models/HUDs' \
+  --output build/party-escort-native-v2 --party-escort
+```
+
+Use escalated native desktop/owned loopback execution. Launch long qualifiers via
+tracked detached Popen with start_new_session=True, stdin DEVNULL and external
+log/PID files; foreground exec may be killed around 300 seconds. Do NOT precreate
+the output directory: the qualifier owns its creation. Run only one native UI
+harness at a time. Diagnostics JSON is written nonatomically; retry partial reads.
+Never weaken Desktop focus/pointer ownership checks. Sandbox /proc may not expose
+escalated processes; use an escalated read to check tracked PIDs. Stop only owned
+processes. All referenced artifacts are local ignored build outputs.
+
+Keep changes local. Git metadata writes require escalation. Do not indiscriminately
+clean build outputs (approximately 38 GB free at stop). Read AGENTS and required
+architecture/status/alignment documents before resuming feature edits.

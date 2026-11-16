@@ -5,6 +5,32 @@ import time
 from qualify_world_input_os import wait, capture_ready
 
 
+def form(desktop, windows, states):
+    """Invite and accept for consumers; the full control matrix is in flow()."""
+    def focus(index):
+        desktop.focus(windows[index])
+        w, h, scale = states[index]()['window']
+        desktop.move(windows[index], [w*.55, h*.42], scale)
+        wait(lambda: states[index]()['cursor']['focused'])
+        if not states[index]()['party']['open']:
+            desktop.key('o')
+            wait(lambda: states[index]()['party']['open'])
+    def click(index, action, target=None):
+        focus(index)
+        button = wait(lambda: next((b for b in states[index]()['party']['buttons']
+                                  if b['action'] == action and (target is None or b['target'] == target)), None))
+        desktop.click(windows[index], button['point'], states[index]()['window'][2], 1)
+    assert all(s()['party']['state']['party'] is None for s in states)
+    click(0, 'invite', states[1]()['actor'])
+    wait(lambda: states[1]()['party']['state']['incoming'] is not None, 5)
+    click(1, 'accept')
+    wait(lambda: all(s()['party']['state']['party'] and not s()['party']['state']['pending'] for s in states), 5)
+    views = [s()['party']['state'] for s in states]
+    assert views[0]['party'] == views[1]['party'] and len(views[0]['party']['members']) == 2
+    assert all(v['refusal'] is None for v in views)
+    return dict(passed=True, party=views[0]['party'], actions=2)
+
+
 def flow(desktop, windows, states, folder):
     before = [dict(journal=s()['quest_journal'], bag=s()['inventory_bag']) for s in states]
     keys = [s()['actor'] for s in states]

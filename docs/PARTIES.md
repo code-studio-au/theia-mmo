@@ -1,5 +1,30 @@
 # Party membership — P4-11
 
+## UI layout reference — 16 November 2026
+
+The user supplied three WoW screenshots captured on 15 November at 21:14:46,
+21:15:01 and 21:15:09 as party UI/menu layout references. Local originals are
+`/home/steven/Pictures/Screenshot from 2026-11-15 <time>.png` (hyphenated times).
+They show compact member portrait/name/health/resource frames near the upper
+left, a collapsible group-management panel beside those frames, and a member
+context menu anchored beside the selected frame. The panel has a group heading,
+member count and a prominent Leave Party action. The menu groups member actions
+under the character name, including Promote to Leader and Uninvite.
+
+Use this as the next presentation direction with Theia's existing Bevy UI and
+licensed UI assets. The current Party [O] panel remains the qualified implementation;
+the reference layout is not implemented by the shared-escort slice. Initial menu
+actions can reuse existing invitation, promotion, removal and leave authority.
+Preserve painted revisions, pending-command reservation, stale-member guards,
+Escape handling and pointer ownership; right-clicking a member frame must not
+also steer the character. Persistent member bars require matching authoritative
+member data, including an explicit unavailable state when data is absent.
+
+The screenshots also show markers, pings, ready checks, roles, whisper, inspect,
+trade, follow and other features. Their presence is reference material, not
+evidence of implemented Theia functionality or a decision to add every pictured
+system in this UI pass. Do not present inert controls as working actions.
+
 ## Reference and scope
 
 The original Blizzard World of Warcraft manual (copyright 2004, layout dated
@@ -84,10 +109,9 @@ still fail. Encrypted worker regressions exercise real predicted facing/movement
 with parties and parties plus chat, and reject the old binding. Native qualifiers
 now require actual movement and reject prediction-binding warnings.
 
-Shared XP, loot, tags, quest credit and escort journeys remain separate slices.
-The user's later party-escort rule is any participating member in range keeps
-the shared ranger moving. Existing private solo quests remain unchanged until
-membership is integrated and that explicit eligibility/credit slice passes.
+Shared XP, loot, tags and general quest credit remain separate slices. The
+shared-escort implementation and its acceptance are described below; earlier
+private-solo acceptance is retained as regression evidence.
 
 Movement regression acceptance: `build/party-ui-native-v3/qualification.json`
 passes both real accounts before and after database/server restart in 144.14
@@ -104,3 +128,46 @@ journal revision 9, XP 75 and bag revision 2. Source bytes remain unchanged,
 owned services close and GPU/prediction-binding diagnostics are zero. The party
 screenshot was visually inspected. Same Linux GPU as above; no Windows run.
 All 263 editor tests (16 skips), build, format and strict Clippy pass; see STATUS.
+
+## Shared active escorts — accepted 16 November 2026
+
+The authoritative fixed tick now groups committed Active escort journeys by
+party and NPC, advances one checked copy, then publishes that position through
+each participant's existing contact view. Any living participant within the
+existing 10-metre range permits travel at the authored 7 m/s; none in range stops
+it. Prepared navmesh corners and ordinary terrain collision remain unchanged.
+Unaccepted/Ready/Completed characters keep their private contact state. Pending
+acceptance does not start or join travel. Every character still requires a local
+arrival fact, durable Ready journal and their own conversation to complete.
+
+Late acceptance or merging ongoing journeys adopts the furthest checked progress
+on that route. Leaving/dissolution forks at the current position without rewind;
+disconnect removes its journey. Death preserves the observed shared position but
+cannot drive movement or receive arrival credit. Restart retains the existing
+Active-at-home and Ready/Completed-at-destination policy. These explicit Theia
+rules are bound in the party v3 compatibility identity; no shared XP or general
+quest-credit policy is inferred.
+
+Authority regressions at 20/30/60 Hz cover solo/unaccepted isolation, range handoff,
+all-away waiting, late acceptance, leave/merge, disconnect and independent arrival.
+An actual life-authority death proves a dead member cannot drive or receive the
+arrival fact while the living partner can.
+
+Native `build/party-escort-native-v2/qualification.json` passes two actual OIDC
+accounts at 1920x1440, sharing the Active escort with range handoff, all-away wait,
+unaccepted contact isolation, individual arrival/turn-in and PostgreSQL/server
+restart. Both restore journal revision 9, XP 75 and bag revision 2. Source hashes
+and SQL pass; the fresh phase accepts exactly invite/accept and the resumed phase
+rejoins solo. Zero refusals, invalid uploads, prediction-binding or GPU diagnostics;
+295.44 seconds total. Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6;
+no Windows execution. Waiting and Ready captures were visually inspected.
+
+The 135 movement samples contain actual rendered ranger positions in both clients.
+Across the two driving legs, the background client records 23/57 distinct rendered
+positions and 28.00/53.40 m displacement. Maximum sampled authority separation
+between clients is 1.172 m; maximum presentation lag is 0.749 m. This replaces the
+inconclusive late stationary render sample from v1. Fresh 538 network tests pass
+(18 explicit skips), fmt, denied-warning all-target network/client/server/editor
+Clippy and Python compilation pass. Logs: `build/party-escort-resume-*.log`.
+The earlier `party-escort-build.log` and `party-escort-death-tests.log` remain
+applicable; no Rust implementation changed during the 16 November rerun.

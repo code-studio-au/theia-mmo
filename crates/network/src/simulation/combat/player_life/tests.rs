@@ -69,6 +69,56 @@ fn fixture(rate: TickRate, enable: bool) -> (World, EntityKey) {
 }
 
 #[test]
+fn dead_escort_member_observes_but_cannot_drive_or_receive_arrival() {
+    use theia_core::quests::{catalog::EventKey, journal::Journal};
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (world, _) = fixture(rate, true);
+        let (mut world, profile, quest, npc) = crate::simulation::follow::tests::setup_in(world);
+        world.enable_parties().unwrap();
+        let a = join(&mut world, [8062., 8000.]);
+        let b = join(&mut world, [8062., 7950.]);
+        crate::simulation::follow::tests::invite(&mut world, a, b);
+        let active = Journal::default()
+            .propose_accept(profile.catalog(), &quest, &npc)
+            .unwrap()
+            .journal;
+        world.sync_follow_journal(a, &active).unwrap();
+        world.sync_follow_journal(b, &active).unwrap();
+        let fallback = world.global_position(a).unwrap();
+        let home = world.follow.position(a, &npc, fallback);
+        let life = world.player_life_snapshot(a).unwrap().key;
+        let mut combat = world.combat.take().unwrap();
+        assert!(
+            combat
+                .damage_player(&mut world, life, 100)
+                .unwrap()
+                .unwrap()
+                .died
+        );
+        world.combat = Some(combat);
+        assert!(!world.player_alive(a));
+        // No World clock advancement here: retain the real dead life instead
+        // of allowing this fixture's deliberately short respawn timer to fire.
+        for _ in 0..rate.hz() {
+            world.advance_follow();
+        }
+        assert_eq!(world.follow.position(a, &npc, fallback), home);
+        for _ in 0..rate.hz() * 4 {
+            world.players.get_mut(&b).unwrap().position = world.follow.position(b, &npc, fallback);
+            world.advance_follow();
+        }
+        let arrived = world.follow.position(b, &npc, fallback);
+        assert_eq!(world.follow.position(a, &npc, fallback), arrived);
+        world.players.get_mut(&a).unwrap().position = arrived;
+        assert!(world.finished_follow_events(a).is_empty());
+        assert_eq!(
+            world.finished_follow_events(b),
+            vec![EventKey::FollowNpc(npc)]
+        );
+    }
+}
+
+#[test]
 fn party_membership_survives_authoritative_death_and_fresh_life() {
     use theia_core::party::{Action, Request as PartyRequest};
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {

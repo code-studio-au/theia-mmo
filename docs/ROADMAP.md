@@ -1,3 +1,11 @@
+16 November 2026 — shared active party escorts accepted:
+P4-11 / P4-03 passes the native two-account range handoff, everyone-away wait,
+background rendered movement, individual arrival/turn-in and durable restart.
+Fresh network/fmt/strict Clippy checks pass; see STATUS/PARTIES for scope and
+exact evidence. Shared XP/loot/general quest credit remain open. The user's
+party frames, collapsible group panel and member context-menu screenshots are
+recorded as presentation reference in PARTIES; implementation remains pending.
+
 15 November 2026 — editor party launch accepted:
 Owned account Start now enables parties. Native export/create/select, movement,
 all three travel quests, Stop and durable restart pass; see STATUS/PARTIES.

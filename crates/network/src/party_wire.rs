@@ -17,7 +17,8 @@ pub const MAX_STATE_BYTES: usize = 80
     + party::MAX_ACTORS * (9 + theia_core::character_name::MAX_BYTES);
 
 pub fn profile_identity(source: [u8; 32]) -> [u8; 32] {
-    let mut bytes = b"theia-session-party-v2\0".to_vec();
+    // v3 binds shared active escort journeys and individual arrival/turn-in.
+    let mut bytes = b"theia-session-party-v3\0".to_vec();
     bytes.extend(source);
     for value in [
         party::MAX_ACTORS as u64,
