@@ -54,18 +54,18 @@ Main quests AE1-12 through AE1-18. Keep the residential branch inside the revise
 
 ### Terrain and settlement
 
-The postwar Aelari woodland capital. Keep the lower work yards, canopy walks, market, nurseries and court distinguishable in the city plan.
+Sylvaren is the postwar Aelari woodland capital. Freight and timber crews work below the canopy, while elevated walks connect parts of the city. The market and artisan lanes serve daily trade. The clinic, nurseries, outer watch and court each have a different civic role. Beyond the yards, the outer orchards meet the woodland crossing and the homes below it.
 
 ### Connections and field routes
 
-The hauling road reaches the outer watch post and timber yards. A lower route links the work shelter and market gate, with separate foot and cart lanes. The outer orchard leads to the old crossing, with homes on the lower branch. Retain the permitted Tidehold woodland approach.
+The hauling road reaches Edrin’s outer post and continues to the timber yards. A lower route runs from the work shelter to the market gate, with pedestrians and carts using separate lanes once the detour is resolved. From the outer orchards, the old crossing leads into the woods and a lower branch reaches occupied homes. Retain the permitted woodland approach from the Tidehold network.
 
 ### Daily life and player services
 
-Timber and walkway work below the canopy support transport and repairs. A market and artisan area serve trade and crafting. The clinic and nurseries provide healing and cultivation, while the watch and Queen Seralyth’s court have separate civic roles.
+Sireth works in the timber yards. Ilyen’s crews maintain the walkways and help reopen the delivery road. Lethiel’s clinic and the lower treatment station serve workers, and nursery staff tend cultivation and irrigation. Edrin and Rennel handle watch business apart from Queen Seralyth’s court. Trade, crafting and storage targets are recorded in the settlement register. Lethiel and Rennel remain working names.
 
 ### Quest points of interest
 
-Trace the covered wagon through the yards, survey the residential branch and reunite the cubs at the crossing. The meal closes the main chain. The clinic, delivery road and nursery water-gate quests give the city independent play.
+Trace the covered wagon from the watch post to the enclosed yard, recover the last cub and walk the residential branch with Avariel before moving the ward. The old crossing hosts the reunion and the city hall hosts the meal. Patients below the walks, freight at the market gate and nursery irrigation each support a separate city quest.
 
 [Settlement and service register](../../../THEIA_AELARI_HOMELAND_SETTLEMENT_REGISTER.md)

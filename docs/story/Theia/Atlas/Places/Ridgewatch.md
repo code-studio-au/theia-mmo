@@ -26,18 +26,18 @@ Main quests AE1-07 through AE1-11. The second cub stays with Thaelis. The cage l
 
 ### Terrain and settlement
 
-A trail town below wooded slopes and rock shelves. The game hall, infirmary, inn and outfitter support dispersed homesteads, guides, gatherers and quarry workers.
+Ridgewatch sits where the wooded slopes open beneath a series of rock shelves. The game hall is the town’s gathering point, with an infirmary, inn and outfitter serving the homesteads and work sites scattered along the trails. The upper and lower paths give the player two distinct ways to leave town and return.
 
 ### Connections and field routes
 
-The upper trail reaches the ledge over the wolf den. The lower cottages and Saela’s patrol lead to the wrecked camp. The hauling junctions and Veyrien’s post point toward Sylvaren. The slate shelf and marked spur are separate field destinations.
+From the hall, the upper trail climbs to a lookout above the wolf den. The lower path follows Saela’s patrol past occupied cottages and down to the wrecked camp. The hauling road runs onward to Sylvaren through the junction Veyrien watches. The marked spur and the slate shelf give gatherers and quarry workers their own routes.
 
 ### Daily life and player services
 
-Rhael and Veyrien support travel and tracking. Thaelis anchors the infirmary, and the game hall houses displaced families. The inn, supply and repair counters and intermediate gathering instruction support players on regional routes.
+Rhael knows the hunting trails, and Veyrien maintains the routes used by packers and carters. Thaelis treats people at the infirmary, while the game hall gives displaced families somewhere to stay. The inn and outfitter anchor the town’s basic supplies and repairs. Gathering instruction belongs near the routes where players can use it. Exact service placements remain open.
 
 ### Quest points of interest
 
-Rescue the second cub, reconstruct Saela’s patrol and follow the cage evidence to Sylvaren. The game hall, quarry rescue, healer’s round, watch loop, herbalist and trail posts give the town regular work.
+Rescue the cub above the den, hear Saela’s account at the infirmary, then retrace her patrol to find the cage latch and wagon ruts. Outside the hunt, the player can find beds at the hall, take a night watch, help on Thaelis’s round, gather with a novice, remark the spur or rescue quarry workers at the slate shelf.
 
 [Settlement and service register](../../../THEIA_AELARI_HOMELAND_SETTLEMENT_REGISTER.md)

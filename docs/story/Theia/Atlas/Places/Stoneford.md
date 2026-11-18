@@ -38,18 +38,18 @@ Text references from this account; these links do not establish additional relat
 
 ### Terrain and settlement
 
-A river market town whose crossing brings caravans, millwork and warehouse traffic into the same place. The surrounding woodland and river support local threats and exploration.
+Stoneford grew around a crossing used by farm carts and regional caravans. The river is part of the town’s working landscape: mills draw on it and the bridge brings traffic to the warehouses and market. Woodland and river routes lead out to areas with local predators, salvage and work sites.
 
 ### Connections and field routes
 
-The Millhaven road feeds the caravan and warehouse stops. The regional road continues toward Valecrown, and a separate work track reaches [Greyfall Quarry](Greyfall%20Quarry.md). Keep the quarry approach separate from routine warehouse access.
+The road from Millhaven approaches the crossing and caravan stop, then leads into the warehouse district. A regional road continues toward Valecrown. The marked work track to [Greyfall Quarry](Greyfall%20Quarry.md) branches away from everyday freight traffic. The bridge and warehouse perimeter each have their own patrol or service route.
 
 ### Daily life and player services
 
-Brenna’s caravan business gives the player a familiar face among warehouse staff, regional administrators and craft suppliers. Market goods, repairs, an inn and profession services support the regional stop. Mail and storage remain subject to the settlement framework.
+Brenna’s trading business links the village and town. Warehouse staff, couriers, craft suppliers and the reeve serve the larger trade district. The market, inn, specialist repairs and intermediate profession services give players a regional resupply point. Exact mail, storage and transport services remain working details.
 
 ### Quest points of interest
 
-Meet the caravan at the crossing, compare stock, courier and warehouse records, and follow Elara’s introduction to Mara in Valecrown. Bridge repair, warehouse patrol and the Greyfall rescue give the region work beyond the cargo case.
+Meet the caravan at the crossing, compare the stock book, courier docket and warehouse tally, then follow Elara’s introduction to Mara in Valecrown. Local work includes restoring the bridge, keeping watch at the warehouse and following Joss’s quarry rescue. The quarry has its own entrance and story beat off the trade road.
 
 [Settlement and service register](../../../THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md)
