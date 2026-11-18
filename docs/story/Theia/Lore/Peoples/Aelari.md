@@ -34,4 +34,6 @@ This scoped decision supersedes conflicting older *working* descriptions; other 
 
 ## Homeland campaign
 
+[First Hunt character roster](../../Characters/Characters.md#aelari-homeland-cast--the-first-hunt)
+
 [The First Hunt — levels 1–20 quest and dialogue scripts](../../Campaigns/Aelari_1_20_NPC_Dialogue_Scripts.md) records the approved campaign outline and the dialogue review draft. Exact geography, XP and rewards remain open.

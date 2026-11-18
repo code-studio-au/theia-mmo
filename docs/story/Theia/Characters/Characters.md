@@ -96,3 +96,31 @@ See [The Seven Gods](../Lore/The%20Seven%20Gods.md) and [Current Human Campaign]
 - [Nhal](Divine/Nhal.md)
 
 The obsolete Obsidian Story Browser character embed and mirrored source links are retired; this index is navigation, not independent canon.
+
+## Aelari homeland cast — The First Hunt
+
+Roles follow the [levels 1–20 campaign draft](../Campaigns/Aelari_1_20_NPC_Dialogue_Scripts.md). Lethiel and Rennel are working names.
+
+### Boughstead
+
+- [Talan](Campaign%20Cast/Talan.md) — Hunting mentor and Saela’s father. Teaches the apprentice to read the trail, then calls the hunters back at the reunion.
+- [Maerin](Campaign%20Cast/Maerin.md) — Orchard cultivator who approved the ward extension. Gives up the outer rows to reopen the crossing.
+- [Neris](Campaign%20Cast/Neris.md) — Ward-tender who repairs the storehouse boundary and helps set the revised line near Sylvaren.
+- [Nivelle](Campaign%20Cast/Nivelle.md) — Village healer who cares for the first cub and runs the west-glade medicine errand.
+- [Faerun](Campaign%20Cast/Faerun.md) — Displaced Lower Cottages resident who witnesses the mother’s search and shelters with family in Ridgewatch.
+
+### Ridgewatch
+
+- [Rhael](Campaign%20Cast/Rhael.md) — Local tracker who guides the ledge rescue, follows Saela’s route and reads the wrecked camp.
+- [Saela](Campaign%20Cast/Saela.md) — Injured watchkeeper and Talan’s daughter. Her testimony redirects the hunt. She helps survey the crossing and speaks at the meal.
+- [Thaelis](Campaign%20Cast/Thaelis.md) — Healer who takes in the second cub, introduces the player to Saela and sends the player on a village round.
+- [Veyrien](Campaign%20Cast/Veyrien.md) — Trail keeper who recalls directing the covered wagon toward Sylvaren and checks the spur trail.
+
+### Sylvaren
+
+- [Captain Edrin](Campaign%20Cast/Captain%20Edrin.md) — Watch commander who coordinates the timber-yard intervention, trappers’ custody and cub transfers.
+- [Sireth](Campaign%20Cast/Sireth.md) — Timber-yard worker who heard the cub and identifies the enclosed yard.
+- [Avariel](Campaign%20Cast/Avariel.md) — Resident below the crossing who identifies the path to the homes and proposes moving the opening uphill.
+- [Ilyen](Campaign%20Cast/Ilyen.md) — Walkway foreperson who finds a clinic alcove and clears the delivery-road barriers. Appears in both city side chains.
+- [Lethiel](Campaign%20Cast/Lethiel.md) — City healer who cares for the third cub and sets up the treatment station below the walks.
+- [Rennel](Campaign%20Cast/Rennel.md) — Junior watchkeeper who traces the cart detour and reopens the proper delivery road.

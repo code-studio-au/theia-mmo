@@ -365,3 +365,7 @@ owns current quest placement and the complete finale sequence. The earlier
 post-launch placement, Act-IV/V bands and unresolved-outcome warnings are not
 independent current constraints. Original wording remains in the pinned arc
 record linked above; no unique character history or personality has been removed.
+
+## Aelari homeland cast
+
+See the [First Hunt character roster](Theia/Characters/Characters.md#aelari-homeland-cast--the-first-hunt) for levels 1–20 roles and quest appearances.
