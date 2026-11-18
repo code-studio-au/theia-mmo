@@ -26,18 +26,18 @@ Main quests AE1-01 through AE1-06. The first cub goes into Nivelle’s care. Mar
 
 ### Terrain and settlement
 
-A small orchard village among cultivated glades. Put the press, dry storage bays and repair work within a short walk of the orchard, with the lower cottages down their own lane.
+Boughstead sits among cultivated glades at the edge of the Aelari woods. Orchard rows, the fruit press, dry storage and the cooper’s yard define the working village. The wardstones mark where cultivated ground meets the forest. The lower cottages sit down their own lane, where households rely on the same paths used by growers and stock keepers.
 
 ### Connections and field routes
 
-The orchard fence and woodland edge form the first tracking circuit. The east footpath offers a village route when the lower lane is blocked. The glade road carries Faerun’s family to Ridgewatch.
+Use the orchard yard as the point of orientation. A short circuit follows the damaged fence to the woodland edge and back past the storehouse ward. The lower lane reaches the cottages, and the east footpath provides a way back to the village when that lane is blocked. The glade road continues to Ridgewatch. A separate path into the west glade reaches a household on Nivelle’s round.
 
 ### Daily life and player services
 
-Fruit growing, pressing, storage and ward maintenance support the village. Maerin, Neris and Nivelle anchor those activities. General supplies, food, basic repairs and introductory training belong at the village hub as service targets.
+Talan meets apprentices near the woods. Maerin handles the orchard harvest, press and storage disputes. Neris tends the ward markers, and Nivelle provides care and takes in the first cub. Faerun represents the Lower Cottages households. Keep basic provisions, food, repairs and introductory training accessible from the village hub. Exact service operators and placements remain open.
 
 ### Quest points of interest
 
-The woodland patrol and storehouse rescue lead to the cottages and the Ridgewatch handoff. The press frame, storage dispute, healer’s path, loose flock and old ward markers give independent reasons to explore.
+At the woodland edge, follow the scattered boar and identify bear tracks. At the ward and storehouse, trace the smaller prints and bring the cub into Nivelle’s care. At the Lower Cottages, clear the cart lane and help Faerun’s family reach the Ridgewatch road. Away from the hunt, repair the press frame, settle the storage dispute, clear Nivelle’s path, recover the shepherd’s flock or trace the old ward line. Faerun’s family reappears in Ridgewatch and at the Sylvaren meal.
 
 [Settlement and service register](../../../THEIA_AELARI_HOMELAND_SETTLEMENT_REGISTER.md)

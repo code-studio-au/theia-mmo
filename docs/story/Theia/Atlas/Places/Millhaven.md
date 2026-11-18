@@ -36,18 +36,18 @@ Text references from this account; these links do not establish additional relat
 
 ### Terrain and settlement
 
-A working farm village on the Lower Heartlands roads. Grazing land, pasture fencing, the mill and the healing house give the player different reasons to leave the village green.
+Millhaven stands on the farm roads of the Lower Heartlands. The village green is the meeting point for the market, the militia and the healing house. Beyond it, pasture fences divide the grazing land from the roads used by workers and wagons. The mill and smithy make the village a place where farms can process what they grow and repair what they use.
 
 ### Connections and field routes
 
-The farm roads lead to Stoneford. The western bend, roadside store and abandoned wagon are investigative stops. Keep the mill and pasture on everyday routes so the player can revisit them after the caravan case.
+Use the green as the point of orientation. The everyday routes take players to the mill and pasture. The western road bends toward a roadside store and the site of the abandoned wagon, then continues through the inhabited district toward Stoneford. Keep the pasture route usable independently of the caravan investigation.
 
 ### Daily life and player services
 
-Farming and milling support the basic market. Elara and Darian cover the road watch, Brenna handles supplies and caravans, Anwen runs the healing house, and Tomas handles civic matters. Heddan is the repair and introductory craft contact.
+Elara and Darian are the road-watch contacts. Brenna handles provisions and caravan work, Anwen runs the healing house, Tomas hears civic concerns, and Heddan handles repairs and introductory smithing. The village service plan includes basic equipment, food, an inn and introductory training, with exact placements open.
 
 ### Quest points of interest
 
-Check predator signs, recover Anwen’s medical parcel and trace the missing wagon before following the cargo to Stoneford. Seed reserves and wheel repairs show how the village can be explored beyond the investigation. The campaign returns here after Cassian’s arrest.
+At the pasture fence, investigate predator signs and make the route safe. At the roadside store, recover the delayed medical parcel. At the abandoned wagon, search for cargo clues and find the surviving teamster. Tomas’s seed-reserve work and Heddan’s wheel repair give the mill and farm roads uses outside the case. After Cassian’s arrest, return recovered supplies and see how the village has resumed its ordinary work.
 
 [Settlement and service register](../../../THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md)
