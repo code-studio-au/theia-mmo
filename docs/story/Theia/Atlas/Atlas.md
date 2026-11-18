@@ -21,6 +21,8 @@ These links consolidate the former historical directory's navigation; each note 
 - [Soru'vaeth](Enclaves/Soru'vaeth.md)
 - [Thuma'rei](Enclaves/Thuma'rei.md)
 - [Veyr'athun](Enclaves/Veyr'athun.md)
+- [Boughstead](Places/Boughstead.md)
+- [Ridgewatch](Places/Ridgewatch.md)
 - [Chainworks](Places/Chainworks.md)
 - [Drom Kar](Places/Drom%20Kar.md)
 - [Elderwood](Places/Elderwood.md)
