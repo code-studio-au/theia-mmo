@@ -47,3 +47,25 @@ Main quests AE1-12 through AE1-18. Keep the residential branch inside the revise
 [Boughstead](Boughstead.md) · [Ridgewatch](Ridgewatch.md)
 
 [First Hunt quest and dialogue scripts](../../Campaigns/Aelari_1_20_NPC_Dialogue_Scripts.md)
+
+## Level 1–20 zone brief
+
+**Placement status:** Campaign routes and named quest sites follow the relevant campaign. New spatial arrangements and service locations are working proposals.
+
+### Terrain and settlement
+
+The postwar Aelari woodland capital. Keep the lower work yards, canopy walks, market, nurseries and court distinguishable in the city plan.
+
+### Connections and field routes
+
+The hauling road reaches the outer watch post and timber yards. A lower route links the work shelter and market gate, with separate foot and cart lanes. The outer orchard leads to the old crossing, with homes on the lower branch. Retain the permitted Tidehold woodland approach.
+
+### Daily life and player services
+
+Timber and walkway work below the canopy support transport and repairs. A market and artisan area serve trade and crafting. The clinic and nurseries provide healing and cultivation, while the watch and Queen Seralyth’s court have separate civic roles.
+
+### Quest points of interest
+
+Trace the covered wagon through the yards, survey the residential branch and reunite the cubs at the crossing. The meal closes the main chain. The clinic, delivery road and nursery water-gate quests give the city independent play.
+
+[Settlement and service register](../../../THEIA_AELARI_HOMELAND_SETTLEMENT_REGISTER.md)

@@ -31,3 +31,25 @@ Historical source: [Geography and travel](https://github.com/code-studio-au/thei
 Text references from this account; these links do not establish additional relationships.
 
 [Valecrown](Valecrown.md)
+
+## Level 1–20 zone brief
+
+**Placement status:** Campaign routes and named quest sites follow the relevant campaign. New spatial arrangements and service locations are working proposals.
+
+### Terrain and settlement
+
+A river market town whose crossing brings caravans, millwork and warehouse traffic into the same place. The surrounding woodland and river support local threats and exploration.
+
+### Connections and field routes
+
+The Millhaven road feeds the caravan and warehouse stops. The regional road continues toward Valecrown, and a separate work track reaches [Greyfall Quarry](Greyfall%20Quarry.md). Keep the quarry approach separate from routine warehouse access.
+
+### Daily life and player services
+
+Brenna’s caravan business gives the player a familiar face among warehouse staff, regional administrators and craft suppliers. Market goods, repairs, an inn and profession services support the regional stop. Mail and storage remain subject to the settlement framework.
+
+### Quest points of interest
+
+Meet the caravan at the crossing, compare stock, courier and warehouse records, and follow Elara’s introduction to Mara in Valecrown. Bridge repair, warehouse patrol and the Greyfall rescue give the region work beyond the cargo case.
+
+[Settlement and service register](../../../THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md)

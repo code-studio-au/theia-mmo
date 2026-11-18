@@ -29,3 +29,25 @@ Historical source: [Geography and travel](https://github.com/code-studio-au/thei
 Text references from this account; these links do not establish additional relationships.
 
 [Stoneford](Stoneford.md)
+
+## Level 1–20 zone brief
+
+**Placement status:** Campaign routes and named quest sites follow the relevant campaign. New spatial arrangements and service locations are working proposals.
+
+### Terrain and settlement
+
+A disused quarry on the Stoneford routes, with working terrain details still under review.
+
+### Connections and field routes
+
+The marked work track branches from Stoneford. Keep the quarry entrance easy to recognise from the track and distinguish it from the everyday caravan route.
+
+### Daily life and player services
+
+The former work site supports a local rescue and salvage story. Joss is the quarry contact. Cave predators are a local hazard.
+
+### Quest points of interest
+
+The Quarry Bell sends the player to locate missing workers, deal with predators and return the shift tally. The quarry remains a separate regional point of interest.
+
+[Settlement and service register](../../../THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md)
