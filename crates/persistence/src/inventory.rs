@@ -24,6 +24,8 @@ impl InventoryCatalog {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InventoryApplied {
+    /// Reconciled journal from the same commit, only for bound item quests.
+    pub journal: Option<Box<crate::QuestJournalApplied>>,
     pub bag: Bag,
     pub replayed: bool,
 }
@@ -33,6 +35,10 @@ pub(crate) fn command_hash(command: Command) -> [u8; 32] {
     let mut bytes = b"theia-backpack-command-v1\0".to_vec();
     bytes.extend(command.expected_revision.to_le_bytes());
     match command.operation {
+        Operation::Destroy { from, amount } => {
+            bytes.extend([4, from, 0]);
+            bytes.extend(amount.to_le_bytes());
+        }
         Operation::Move { from, to } => bytes.extend([0, from, to]),
         Operation::Split { from, to, amount } => {
             bytes.extend([1, from, to]);

@@ -209,9 +209,12 @@ impl ClientState {
             if matches!(
                 state.reply.unwrap().outcome,
                 Outcome::Applied | Outcome::Replayed
-            ) && command.expected_revision().checked_add(1) != Some(state.bag.revision())
+            ) && command
+                .expected_revision()
+                .checked_add(1)
+                .is_none_or(|minimum| state.bag.revision() < minimum)
             {
-                return Err("Inventory success revision did not match intent".into());
+                return Err("Inventory success precedes its required committed revision".into());
             }
             self.pending = None;
         }
@@ -1184,18 +1187,9 @@ mod tests {
         client.receive(&encode(&client, &initial), actor()).unwrap();
         sender.try_send(intent().into()).unwrap();
         client.next(actor(), tokio::time::Instant::now()).unwrap();
-        let mut false_success = success.clone();
-        false_success.bag = Bag::from_slots(
-            client.config.profile.catalog(),
-            5,
-            success.bag.slots().clone(),
-        )
-        .unwrap();
-        assert!(
-            client
-                .receive(&encode(&client, &false_success), actor())
-                .is_err()
-        );
+        let mut false_success = encode(&client, &success);
+        false_success[52..60].fill(0);
+        assert!(client.receive(&false_success, actor()).is_err());
         assert!(
             client.pending(),
             "Invalid acknowledgement cannot clear pending work"
@@ -1218,6 +1212,135 @@ mod tests {
         let mut wrong_catalog = encode(&client, &success);
         wrong_catalog[20] ^= 1;
         assert!(client.receive(&wrong_catalog, actor()).is_err());
+    }
+    #[tokio::test]
+    async fn coalesced_current_bag_acknowledges_original_intent_without_restoring_consumed_items() {
+        for background_first in [false, true] {
+            let (mut client, sender, initial) = fixture();
+            client.receive(&encode(&client, &initial), actor()).unwrap();
+            sender.try_send(intent().into()).unwrap();
+            client
+                .next(actor(), tokio::time::Instant::now())
+                .unwrap()
+                .unwrap();
+            let committed = applied(&client, &initial);
+            let after = committed
+                .bag
+                .propose(
+                    client.config.profile.catalog(),
+                    Command {
+                        expected_revision: 1,
+                        operation: Operation::Destroy { from: 1, amount: 3 },
+                    },
+                )
+                .unwrap();
+            let mut coalesced = State {
+                bag: after.clone(),
+                reply: None,
+                ..initial.clone()
+            };
+            if background_first {
+                client
+                    .receive(&encode(&client, &coalesced), actor())
+                    .unwrap();
+                assert!(
+                    client.pending(),
+                    "Unsolicited newer bag is not a command acknowledgement"
+                );
+            }
+            coalesced.reply = committed.reply;
+            client
+                .receive(&encode(&client, &coalesced), actor())
+                .unwrap();
+            assert!(!client.pending());
+            assert_eq!(client.view.as_ref().unwrap().bag, after);
+            assert_eq!(
+                client.view.as_ref().unwrap().bag.slots()[1]
+                    .as_ref()
+                    .unwrap()
+                    .count(),
+                10
+            );
+            assert!(
+                client
+                    .receive(&encode(&client, &committed), actor())
+                    .is_err(),
+                "Delayed older bag cannot restore removed items"
+            );
+        }
+    }
+    #[tokio::test]
+    async fn queued_destruction_keeps_explicit_confirmed_revision_when_a_newer_view_arrives() {
+        let profile = Profile::from_json(include_bytes!(
+            "../../../../content/gameplay/development-equipment-items.json"
+        ))
+        .unwrap();
+        let (sender, commands) = mpsc::channel(1);
+        let mut client = ClientState::new(Client { profile, commands }).unwrap();
+        let mut slots = std::array::from_fn(|_| None);
+        slots[0] = Stack::new(
+            client.config.profile.catalog(),
+            ContentId::new("theia.dev.training-stone").unwrap(),
+            3,
+        );
+        let initial = State {
+            actor: actor(),
+            catalog_hash: client.config.profile.hash(),
+            bag: Bag::from_slots(client.config.profile.catalog(), 0, slots.clone()).unwrap(),
+            reply: None,
+        };
+        client.receive(&encode(&client, &initial), actor()).unwrap();
+        let command = Command {
+            expected_revision: 0,
+            operation: Operation::Destroy { from: 0, amount: 3 },
+        };
+        sender.try_send(command.into()).unwrap();
+        let newer = State {
+            bag: Bag::from_slots(client.config.profile.catalog(), 1, slots).unwrap(),
+            ..initial
+        };
+        client.receive(&encode(&client, &newer), actor()).unwrap();
+        let frame = client
+            .next(actor(), tokio::time::Instant::now())
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            crate::inventory_wire::ItemRequest::decode(&frame)
+                .unwrap()
+                .command,
+            command.into(),
+            "A stale confirmed command must reach authority as stale, never silently retarget a newer stack"
+        );
+    }
+    #[tokio::test]
+    async fn matching_success_without_the_required_next_commit_cannot_clear_pending_work() {
+        let (mut client, sender, mut initial) = fixture();
+        initial.bag = Bag::from_slots(
+            client.config.profile.catalog(),
+            5,
+            initial.bag.slots().clone(),
+        )
+        .unwrap();
+        client.receive(&encode(&client, &initial), actor()).unwrap();
+        sender
+            .try_send(
+                Command {
+                    expected_revision: 5,
+                    operation: Operation::Move { from: 0, to: 1 },
+                }
+                .into(),
+            )
+            .unwrap();
+        client
+            .next(actor(), tokio::time::Instant::now())
+            .unwrap()
+            .unwrap();
+        initial.reply = Some(Reply {
+            sequence: 1,
+            outcome: Outcome::Applied,
+        });
+        assert!(client.receive(&encode(&client, &initial), actor()).is_err());
+        assert!(client.pending());
     }
     #[tokio::test]
     async fn peer_port_only_routes_its_actor_once_and_waits_until_an_observation_is_queued() {

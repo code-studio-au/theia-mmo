@@ -222,6 +222,12 @@ async fn local_ticket_validation_permissions_and_exclusive_creation() {
     trailing.push(0);
     assert!(runtime::read_ticket(&trailing, server.address).is_err());
     let mut token = runtime::read_ticket(&bytes, server.address).unwrap();
+    let current_protocol = token.protocol_id;
+    token.protocol_id = 0x5448_4549_4100_0000 | u64::from(theia_network::wire::VERSION);
+    let mut old_transport = Vec::new();
+    token.write(&mut old_transport).unwrap();
+    assert!(runtime::read_ticket(&old_transport, server.address).is_err());
+    token.protocol_id = current_protocol;
     token.expire_timestamp = 0;
     let mut expired = Vec::new();
     token.write(&mut expired).unwrap();
@@ -315,11 +321,14 @@ async fn wrong_epoch_does_not_poison_current_sequence_in_executable_runtime() {
     )
     .unwrap();
     let mut client = renet::RenetClient::new(transport::connection_config());
+    let mut connection_confirmed = false;
     let mut welcome = None;
     for _ in 0..200 {
         client.update(Duration::from_millis(10));
         socket
             .update(Duration::from_millis(10), &mut client)
+            .unwrap();
+        theia_network::renet_transport::confirm_connection(&mut client, &mut connection_confirmed)
             .unwrap();
         socket.send_packets(&mut client).unwrap();
         if let Some(bytes) = client.receive_message(transport::EVENT_CHANNEL) {
@@ -344,6 +353,8 @@ async fn wrong_epoch_does_not_poison_current_sequence_in_executable_runtime() {
             .unwrap(),
         );
     }
+    theia_network::renet_transport::confirm_connection(&mut client, &mut connection_confirmed)
+        .unwrap();
     socket.send_packets(&mut client).unwrap();
     observer
         .until(|s| {
@@ -808,11 +819,14 @@ async fn readiness_replay_unknown_ids_and_malformed_actor_addressing_are_rejecte
     )
     .unwrap();
     let mut client = renet::RenetClient::new(transport::connection_config());
+    let mut connection_confirmed = false;
     let mut welcome = None;
     for _ in 0..200 {
         client.update(Duration::from_millis(10));
         socket
             .update(Duration::from_millis(10), &mut client)
+            .unwrap();
+        theia_network::renet_transport::confirm_connection(&mut client, &mut connection_confirmed)
             .unwrap();
         socket.send_packets(&mut client).unwrap();
         if let Some(bytes) = client.receive_message(transport::EVENT_CHANNEL) {
@@ -864,6 +878,8 @@ async fn readiness_replay_unknown_ids_and_malformed_actor_addressing_are_rejecte
         })
         .unwrap(),
     );
+    theia_network::renet_transport::confirm_connection(&mut client, &mut connection_confirmed)
+        .unwrap();
     socket.send_packets(&mut client).unwrap();
     observer
         .until(|s| {
@@ -879,6 +895,8 @@ async fn readiness_replay_unknown_ids_and_malformed_actor_addressing_are_rejecte
         client.update(Duration::from_millis(10));
         socket
             .update(Duration::from_millis(10), &mut client)
+            .unwrap();
+        theia_network::renet_transport::confirm_connection(&mut client, &mut connection_confirmed)
             .unwrap();
         socket.send_packets(&mut client).unwrap();
         while let Some(bytes) = client.receive_message(transport::EVENT_CHANNEL) {
@@ -917,6 +935,8 @@ async fn readiness_replay_unknown_ids_and_malformed_actor_addressing_are_rejecte
     for _ in 0..50 {
         client.update(Duration::from_millis(10));
         let _ = socket.update(Duration::from_millis(10), &mut client);
+        theia_network::renet_transport::confirm_connection(&mut client, &mut connection_confirmed)
+            .unwrap();
         let _ = socket.send_packets(&mut client);
         if observer
             .state

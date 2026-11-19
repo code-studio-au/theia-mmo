@@ -11,6 +11,65 @@ use std::{path::PathBuf, time::Instant};
 use theia_core::{coordinates::GlobalPosition, identity::EntityKey};
 use theia_network::simulation::combat::Event;
 
+#[derive(Clone, Copy)]
+struct AttackCue {
+    serial: u64,
+    remaining: f32,
+    target: Option<GlobalPosition>,
+    remote: bool,
+}
+/// Public timing takes precedence, including authoritative cancellation. An old
+/// owner-private frame cannot restore an attack after the public stream clears it.
+fn attack_cue(state: &theia_network::client::State, creature: EntityKey) -> Option<AttackCue> {
+    if let Some(public) = &state.public_creature_attack {
+        let observation = public.current()?;
+        if observation.creature != creature {
+            return None;
+        }
+        let tick = observation
+            .tick
+            .max(state.snapshot.as_ref().map_or(0, |s| s.tick))
+            .max(state.correction.map_or(0, |c| c.state.input.tick));
+        let pending = public.active_at(tick)?;
+        let own = state.id == Some(pending.target.entity.value())
+            && state
+                .welcome
+                .as_ref()
+                .is_some_and(|w| w.epoch == pending.target.epoch.value());
+        let target = if own {
+            state.authority_focus()
+        } else {
+            state
+                .snapshot
+                .as_ref()
+                .filter(|s| s.epoch == pending.target.epoch.value())
+                .and_then(|s| {
+                    s.players
+                        .iter()
+                        .find(|p| p.id == pending.target.entity.value())
+                        .and_then(|p| s.global_position(p))
+                })
+        };
+        return Some(AttackCue {
+            serial: pending.completes,
+            remaining: (pending.completes - tick) as f32 / public.rate().hz() as f32,
+            target,
+            remote: !own,
+        });
+    }
+    let private = state.player_life.as_ref()?;
+    let observation = private.current()?;
+    let pending = observation
+        .windup
+        .filter(|w| w.creature == creature && w.completes > observation.tick)?;
+    Some(AttackCue {
+        serial: pending.completes,
+        remaining: (pending.completes - observation.tick) as f32 / private.rate().hz() as f32,
+        target: state.authority_focus(),
+        remote: false,
+    })
+}
+
 const NAMES: [&str; 6] = ["Idle", "Walk", "Run", "Attack", "Hit", "Death"];
 const LIMIT: usize = theia_network::targeting::MAX_TARGETS;
 const CORPSE_SECONDS: f64 = 15.;
@@ -50,6 +109,8 @@ pub(crate) struct Metrics {
     pub moving_frames: u64,
     pub dead_frames: u64,
     pub attack_frames: u64,
+    pub public_attack_frames: u64,
+    pub remote_victim_frames: u64,
     pub hit_frames: u64,
     pub dropped_cues: u64,
     pub max_cues: usize,
@@ -441,7 +502,6 @@ fn update(world: &mut World) {
         };
         let previous = world.get::<Visual>(root).unwrap().previous.metres();
         let p = position.metres();
-        let delta = Vec2::new((p[0] - previous[0]) as f32, (p[2] - previous[2]) as f32);
         let seconds = world.resource::<Time>().delta_secs().max(1e-6);
         // Prefer the interpolated target's actual position; global deltas avoid origin-rebase spikes.
         let presented = world
@@ -455,25 +515,14 @@ fn update(world: &mut World) {
             .unwrap()
             .locomotion
             .observe(movement.length() / seconds, now);
-        let windup = state.player_life.as_ref().and_then(|s| {
-            s.current().and_then(|o| {
-                o.windup
-                    .filter(|w| w.creature == key && w.completes > o.tick)
-                    .map(|w| {
-                        (
-                            w.completes,
-                            (w.completes - o.tick) as f32 / s.rate().hz() as f32,
-                        )
-                    })
-            })
-        });
+        let windup = attack_cue(&state, key);
         let (clip, serial, rate) = if dead {
             (5, cue.unwrap().serial, 1.)
-        } else if let Some((serial, remaining)) = windup {
+        } else if let Some(attack) = windup {
             (
                 3,
-                serial,
-                world.resource::<Catalog>().durations[3] / remaining,
+                attack.serial,
+                world.resource::<Catalog>().durations[3] / attack.remaining,
             )
         } else if let Some(cue) = cue {
             (4, cue.serial, 1.)
@@ -485,13 +534,13 @@ fn update(world: &mut World) {
             (0, 0, 1.)
         };
         let facing = if windup.is_some() && !dead {
-            state
-                .authority_focus()
+            windup
+                .and_then(|attack| attack.target)
                 .map(|focus| {
                     let f = focus.metres();
                     Vec2::new((f[0] - p[0]) as f32, (f[2] - p[2]) as f32)
                 })
-                .unwrap_or(delta)
+                .unwrap_or(Vec2::ZERO)
         } else {
             movement
         };
@@ -518,6 +567,10 @@ fn update(world: &mut World) {
         pending.metrics.moving_frames += u64::from(clip == 1 || clip == 2);
         pending.metrics.dead_frames += u64::from(clip == 5);
         pending.metrics.attack_frames += u64::from(clip == 3);
+        pending.metrics.public_attack_frames +=
+            u64::from(clip == 3 && state.public_creature_attack.is_some());
+        pending.metrics.remote_victim_frames +=
+            u64::from(clip == 3 && windup.is_some_and(|w| w.remote));
         pending.metrics.hit_frames += u64::from(clip == 4);
     }
 }
@@ -529,6 +582,106 @@ mod tests {
         content::ContentId,
         identity::{EntityId, WorldEpoch},
     };
+    #[test]
+    fn public_windup_faces_actual_remote_victim_and_expires_without_private_life_all_rates() {
+        use std::sync::Arc;
+        use theia_core::time::TickRate;
+        use theia_network::{
+            client::State,
+            creature_attack_wire::{self as wire, ClientState, Observation, Profile, Windup},
+            player_life_wire,
+            wire::{Player, Snapshot, VERSION, Welcome},
+        };
+        let profile = Arc::new(Profile::new(Arc::new(
+            player_life_wire::Profile::from_json(
+                include_bytes!("../../../content/gameplay/development-character-stats.json"),
+                include_bytes!(
+                    "../../../content/gameplay/development-creature-deflect-pursuit.json"
+                ),
+                include_bytes!("../../../content/gameplay/development-creature-retaliation.json"),
+                include_bytes!("../../../content/gameplay/development-player-respawn.json"),
+            )
+            .unwrap(),
+        )));
+        for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+            let mut observation = Observation {
+                profile: profile.hash(),
+                creature: key(1),
+                tick: 100,
+                windup: Some(Windup {
+                    target: key(2),
+                    starts: 100,
+                    completes: 100 + profile.windup_ticks(rate).unwrap(),
+                }),
+            };
+            let mut public =
+                ClientState::new(profile.clone(), key(1).epoch, rate, [7; 32]).unwrap();
+            public
+                .apply(&wire::encode(&profile, rate, &observation).unwrap())
+                .unwrap();
+            let mut state = State {
+                id: Some(3),
+                welcome: Some(Welcome {
+                    id: 3,
+                    epoch: 1,
+                    world: [7; 32],
+                    origin: [8000., 0., 8000.],
+                    terrain_stream: true,
+                }),
+                public_creature_attack: Some(public),
+                snapshot: Some(Snapshot {
+                    version: VERSION,
+                    epoch: 1,
+                    origin: [8000., 0., 8000.],
+                    tick: 100,
+                    tick_hz: rate.hz(),
+                    players: vec![
+                        Player {
+                            id: 2,
+                            xz: [5., 9.],
+                            y: 1.,
+                            applied_sequence: 0,
+                            facing: None,
+                        },
+                        Player {
+                            id: 3,
+                            xz: [9., 5.],
+                            y: 1.,
+                            applied_sequence: 0,
+                            facing: None,
+                        },
+                    ],
+                }),
+                ..Default::default()
+            };
+            assert!(state.player_life.is_none());
+            let attack = attack_cue(&state, key(1)).unwrap();
+            assert!(attack.remote);
+            assert_eq!(attack.target.unwrap().metres(), [8005., 1., 8009.]);
+            assert_eq!(attack.serial, observation.windup.unwrap().completes);
+            assert!(attack.remaining > 0.);
+            assert!(attack_cue(&state, key(99)).is_none());
+            state.snapshot.as_mut().unwrap().players.remove(0);
+            assert!(
+                attack_cue(&state, key(1)).unwrap().target.is_none(),
+                "Missing remote victim must not face the local observer"
+            );
+            state.snapshot.as_mut().unwrap().tick = attack.serial;
+            assert!(
+                attack_cue(&state, key(1)).is_none(),
+                "Late public frames must not restart expired attacks"
+            );
+            observation.tick = attack.serial;
+            observation.windup = None;
+            state
+                .public_creature_attack
+                .as_mut()
+                .unwrap()
+                .apply(&wire::encode(&profile, rate, &observation).unwrap())
+                .unwrap();
+            assert!(attack_cue(&state, key(1)).is_none());
+        }
+    }
     fn key(id: u64) -> EntityKey {
         EntityKey {
             epoch: WorldEpoch::new(1).unwrap(),

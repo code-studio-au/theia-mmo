@@ -1,3 +1,426 @@
+Stopped safely at user request, 4 November 2026:
+Qualified retained inventory/quest owner work is preserved at
+`build/quest-item-owner-qualified-v1-20261104`: 1,271 workspace/all-target tests,
+59 service skips and two actual OIDC/encrypted-ticket/PostgreSQL owner scenarios.
+Subsequent work adds a confirmed destruction UI, exact confirmed-revision command,
+and support for matching inventory acknowledgements carrying newer committed bags.
+Eleven inventory bridge tests, seven encrypted account tests, 144 client tests,
+formatting, strict all-target Clippy and optimized builds pass for those changes.
+The first 1920x1200 native run stopped at an inventory Escape-close check before
+testing destruction. It has zero GPU diagnostics on RX 7900 XTX / RADV Vulkan /
+Mesa 26.2.6. Additional close-pending diagnostics and a settled-close wait are
+built but not rerun. The destruction UI is work in progress, not native-qualified.
+Preserve current source/build at `build/quest-item-ui-wip-stopped-v1-20261104`.
+[Exact scope and resume work](../QUEST_ITEM_OBJECTIVES.md).
+Reading/viewing notes is planned separately from possession. Live item-quest
+admission stays closed; repeatable loot and full native item flow remain pending.
+All owned services and desktop input stopped. Nothing committed or pushed.
+
+Item-quest retained owner prerequisite qualified locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: inventory initializes before item-bound journal
+admission; all supported owner bag mutations select compound transactions.
+Generation-bound publication preserves newer committed bag/journal/XP projections
+and command replies when responses arrive late. Actual owned OIDC/encrypted-ticket/
+PostgreSQL lease checks cover split/destroy/reacquire, refused missing-item turn-in,
+retained turn-in after logout, rejoin and replay without duplicate consumption/XP.
+The earlier historical journal owner also passes its actual service regression.
+All 1,271 workspace/all-target tests (59 service skips), formatting and strict
+workspace/all-target Clippy pass. Preserve
+`build/quest-item-owner-qualified-v1-20261104`.
+[Exact evidence and remaining native work](../QUEST_ITEM_OBJECTIVES.md).
+NPC/event entitlement in owner checks is synthetic; separate channels may render
+on separate frames. Live World/manifest item admission stays closed. Confirmed
+UI, repeatable loot and normal encrypted/native item flow remain pending. Reading
+notes is recorded as a distinct planned objective. Changes stay local.
+
+Stopped safely at user request, 3 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: item-quest storage checkpoint is preserved, plus
+checked quantity destruction in core, canonical IR02-only destruction requests
+and compound SQL destruction/readiness reconciliation. A real split-one then
+destroy-one SQL command changes Ready 3/3 to Active 2/3; retries never remove twice.
+All 347 selected core/persistence/server tests, 14 inventory/journal codec checks,
+19 actual owned PostgreSQL journal contracts, formatting and strict workspace/
+all-target Clippy pass. Preserve
+`build/quest-item-destruction-storage-qualified-v1-20261103`.
+[Behavior, limits and resume work](../QUEST_ITEM_OBJECTIVES.md).
+Unfinished destruction UI is set aside as an ignored patch; the client UI is
+restored to the prior qualified source. Item-quest live admission remains closed.
+Resume with retained owner initialization/coherent publication, confirmed UI,
+per-victim-life repeatable loot and normal encrypted/native item flow. Latest
+native playable remains the area checkpoint. All local; nothing committed/pushed.
+
+Item-quest durable storage prerequisite qualified locally, 3 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: exact item-profile binding, locked current-bag
+reconciliation and atomic item consumption/completion/XP/action receipts. Optional
+compound move/split/equipment, vendor and reward-claim APIs reconcile all active
+item quests before the same COMMIT. Accepted compound jobs drain after response
+loss. Existing unbound historical quest profiles retain their hashes and paths.
+All 345 selected core/persistence/server tests (48 service skips), 18 actual owned
+PostgreSQL journal contracts, formatting and strict workspace/all-target Clippy
+pass; durable bag/journal/XP/receipt hashes match after database restart.
+Preserve `build/quest-item-storage-qualified-v1-20261103`.
+[Exact evidence and pending live work](../QUEST_ITEM_OBJECTIVES.md).
+SQL authorization/removal fixtures are synthetic. Live World/manifest item
+admission remains closed; owner publication, destruction, repeatable loot and
+normal encrypted/native item flows are pending. Latest playable remains the area
+client. No save migration or new full-workspace/GPU/Windows claim. Local only.
+
+Reversible item-quest core/codec prerequisite qualified locally, 3 November 2026:
+P3-05 / P3-11 / P3-15: quest schema 3 adds explicit possession requirements and
+consume-on-turn-in flags in an all-required final stage. Current holdings can
+change Ready back to Active while permanent facts remain. Pure turn-in rechecks
+current bags, prepares consumption/completion and recalculates other quests
+sharing the materials. Completed quests stay completed.
+All 335 core tests, nine codec checks, 72 authoring-tool checks, formatting and
+strict workspace/all-target Clippy pass. Preserve
+`build/quest-item-journal-qualified-v1-20261103`.
+[Behavior, evidence and pending live work](../QUEST_ITEM_OBJECTIVES.md).
+Normal World/manifest admission still refuses unbound item quests. No new item
+SQL transaction, deletion UI, repeatable loot, encrypted/native item quest,
+save migration or full-workspace claim. Area client remains the latest playable.
+Changes stay local; storage/ownership integration is next.
+
+Quest-item possession/consumption prerequisite qualified locally, 3 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: checked backpack requirements count all stacks,
+preserve totals across split/merge, distinguish kept from consumed requirements
+and prepare all-or-nothing consumption against the supplied current bag.
+All 327 core tests, seven new requirement cases, formatting and denied-warning
+workspace/all-target Clippy pass. Preserve
+`build/quest-item-possession-qualified-v1-20261103`.
+[User semantics, pinned Classic-emulator evidence and remaining work](../QUEST_ITEM_OBJECTIVES.md).
+This pure helper is not live quest progress, item deletion, repeatable loot or
+a SQL reward transaction. The area client remains the latest native playable.
+Reversible item objectives, synchronized storage/owner publication and real
+wolf-pelt loot/split/delete/reloot/turn-in are pending. Changes stay local.
+
+Reach-area quest normal client qualified locally, 3 November 2026:
+P3-02 / P3-11 / P3-12 / P3-15 / initial P3-16: opt-in manifest 16 binds static
+metric volumes to exact quest/XP content. Current alive authoritative feet
+produce bounded stage-scoped batches; the retained owner commits all changed
+quests and replay receipts before private publication. Overlapping multi-goal
+batches now preserve monotonic journal heads above every contained revision.
+All 1,169 workspace tests / 54 service skips, 51 manifest / 36 launcher checks,
+14 actual PostgreSQL journal contracts, formatting and strict all-target Clippy
+pass. Normal unmodified data/native OS controls complete the original two quests
+plus the overlook (about 134 m west), return and turn in: head 16 / 150 XP.
+Database restart/rejoin preserves all three completions, six actions and ten
+event receipts. Two native starts have zero GPU diagnostics on Linux RX 7900 XTX
+/ RADV Vulkan / Mesa 26.2.6. Preserve
+`build/quest-reach-client-qualified-v1-20261103`.
+[Exact semantics, proof and limits](../QUEST_REACH_AREAS.md).
+Earlier schema-15 content/playables remain; no save migration, runtime packs,
+native Windows, FPS benchmark or MMO-capacity claim. All changes local.
+Next: user-requested possession-based item quests; splitting remains allowed.
+
+Reach-area queue/encrypted prerequisite qualified locally, 3 November 2026:
+P3-11 / P3-15 / initial P3-16: fixed-step authority reserves one bounded owner
+slot before sampling a typed stage-bound area batch. Full queues preserve retry;
+unchanged batches do not repeat while commit is pending. The retained server
+owner uses the qualified storage helper and publishes only committed views.
+All 354 network-library tests, formatting and strict workspace/all-target Clippy
+pass. New encrypted two-client delay/loss/duplicate cases at 20/30/60 Hz advance
+one batch per stage, keep the other journal private and award XP only at turn-in.
+Those encrypted cases use an explicit in-memory commit fixture; PostgreSQL was
+qualified separately. The combined native/SQL path is still pending.
+Preserve `build/quest-reach-owner-qualified-v1-20261103`.
+[Evidence and remaining normal-launch/native work](../QUEST_REACH_AREAS.md).
+No normal manifest area role, native area quest, save migration or new full
+workspace/GPU/Windows/capacity claim. Changes remain local.
+
+Reach-area storage/worker prerequisite qualified locally, 3 November 2026:
+P3-02 / P3-11 / P3-15 / initial P3-16: area-aware persistence binds exact profile
+bytes, stage-scoped observations and domain-separated replay receipts. All
+affected quests and their receipt commit atomically; accepted jobs survive a
+dropped response and worker shutdown. Area evidence grants no XP; normal turn-in
+remains the reward transaction. Thirteen actual owned PostgreSQL journal
+contracts pass, including three new area cases, plus four non-SQL checks,
+formatting and strict workspace/all-target Clippy. Durable table hashes match
+across an actual database restart with fsync/synchronous_commit/full_page_writes.
+Preserve `build/quest-reach-store-qualified-v1-20261103`.
+[Exact proof and pending owner/native integration](../QUEST_REACH_AREAS.md).
+Trusted SQL observations are synthetic; no encrypted/native area credit,
+manifest installation, save migration or new full-workspace/GPU claim. Local only.
+
+Reach-area World adapter qualified locally, 3 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: opt-in exact-area-byte quest profiles
+validate selectors, installed namespaces and continental bounds. Samples use
+current alive authoritative capsule feet, current World/actor binding and ready
+collision coverage, with no client position argument or simulation I/O.
+All 319 core / 352 network-library tests, 67 authoring-tool checks, formatting and
+strict workspace/all-target Clippy pass; five new authority cases include
+20/30/60-Hz predicate fixtures and dead-life exclusion. Preserve
+`build/quest-reach-world-qualified-v1-20261103`.
+[Evidence and remaining durable/live work](../QUEST_REACH_AREAS.md).
+The immediately preceding full workspace passed 1,160 tests / 50 service skips;
+this checkpoint does not claim a new full-workspace or GPU/native run.
+Normal manifests still refuse area content; no durable area credit, save
+migration or new Windows/capacity claim. Changes remain local.
+
+Reach-area pure proposal prerequisite qualified locally, 3 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: schema 2 adds count-one area selectors;
+stage-scoped batches cannot credit later stages or later acceptances. Overlap,
+quorums, delayed same-stage credit, 128-goal bounds and saved-count round trips
+pass. Compiler selects the minimum schema; review detects selector changes.
+All 1,160 workspace tests / 50 skips, 319 core tests, 66 authoring-tool checks,
+formatting and strict workspace/all-target Clippy pass. Preserve
+`build/quest-reach-stage-qualified-v1-20261103`.
+[Semantics and pending live integration](../QUEST_REACH_AREAS.md).
+Normal World/manifest admission explicitly refuses unsupported area objectives.
+No live area credit, runtime pack loading, migration, new GPU or Windows claim.
+Normal playable remains directional v1; all changes remain local.
+
+Reach-area geometry prerequisite qualified locally, 3 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: strict finite XYZ volumes use checked
+global metres, inclusive faces and bounded inputs; no renderer/physics/streaming
+is created. All 310 core tests, six actual CLI cases, formatting and strict
+workspace/all-target Clippy pass. Preserve
+`build/quest-reach-area-geometry-qualified-v1-20261103`.
+[Exact semantics, evidence and pending stage-bound/live work](../QUEST_REACH_AREAS.md).
+This is geometry only: quest schema 1 and its budgets remain, with no World area
+credit, runtime packs, save migration or new GPU/Windows/capacity claim.
+The qualified directional playable remains available; story IDs are untouched.
+
+Classic directional locomotion runtime qualified locally, 3 November 2026:
+P2-09 / P3-08 / P2-05: optional eight-way walking/running uses displayed manual
+heading and checked global motion; backward run selects RunBack. Phase continuity,
+standard Bevy finger/strike masks and death/jump priorities pass local/remote
+native source-pose checks. All 1,145 workspace tests / 50 skips, 144 client tests,
+formatting and strict all-target Clippy pass. Seven final native client starts
+pass: two-account animation/life fixture, new-art ultrawide controls, and normal
+unmodified quests/database restart/rejoin with both new art (1920) and old-art
+fallback (720p). Normal new-art W traversal covers 207.9 m, streamed retirement
+and an origin change. Zero GPU diagnostics on Linux RX 7900 XTX / RADV.
+Preserve `build/classic-directional-client-qualified-v1-20261103`.
+[Exact art/mapping/fixture scope, proof and remaining work](../CLASSIC_DIRECTIONAL_LOCOMOTION.md).
+Crossfades/stride tuning and the existing skin-preview limitation remain.
+Earlier checkpoints unchanged; local only, no native Windows/MMO-capacity claim.
+
+Directional locomotion asset prerequisite qualified, 3 November 2026:
+P2-09 / P3-08 / P2-05: separate 22-clip POLYGON asset retains all eight original
+clips, skin, weights, binds, palette and sword sockets. Independent 702-frame
+source comparison and 640 retained pose samples per artifact pass, with zero
+retained matrix difference. Thirteen Python checks and standard glTF validation
+pass. Fourteen native clip inspections have active Khronos validation and zero
+GPU diagnostics on Linux RX 7900 XTX / RADV. The existing 8.8 mm four-weight
+preview limitation remains; no production-fidelity claim.
+Preserve `build/classic-directional-art-qualified-v1-20261103`.
+[Asset proof and pending runtime adoption](../CLASSIC_DIRECTIONAL_LOCOMOTION.md).
+Rust is unchanged from ground-v3; live directional selection is next. Local only.
+
+Classic ground movement v3 qualified locally, 3 November 2026:
+P2-04 / P2-05 / P2-07 / P2-09 / P2-11: shared authority/prediction uses
+data-bound 7 m/s run, 4.5 m/s backward run and 2.5 m/s walk; schema-2 controls
+default to run with NumpadDivide walk/run toggle, removing Classic Shift boost.
+All 1,139 workspace tests / 50 skips, 138 client tests, 35 launcher/bundle checks,
+formatting and strict all-target Clippy pass. Three native resolutions pass all
+27 measured speed checks; a separate normal unmodified wolf/quest run and
+database-restart rejoin preserve head 13 / 125 XP, followed by 207.7 m of normal
+W traversal through streamed chunks and an origin change. Five final native
+starts have zero GPU diagnostics on Linux RX 7900 XTX / RADV. Preserve
+`build/classic-ground-client-qualified-v1-20261103`.
+[Exact mapping, source uncertainty, compatibility and evidence](../CLASSIC_GROUND_MOVEMENT.md).
+Earlier checkpoints unchanged; local only, no native Windows/MMO-capacity claim.
+
+Local minimap traversal follow-up qualified, 3 November 2026:
+P2-14 / P3-13: retained no-facing arrow now reads displayed character rotation;
+Classic controls and gameplay remain unchanged. Actual normal W movement walks
+208.3 m through three chunk owners and a render-origin change after OIDC/
+PostgreSQL restart/rejoin, preserving head 13 / 125 XP. A separate explicit 32x
+development-ticket run crosses the 16-km extent: 125 total origin changes,
+62 independently sampled origins, bounded terrain retirement and correct dark
+world edge. All 1,134 workspace tests (50 skips), 136 client / two checker tests,
+formatting and strict all-target Clippy pass. Five final native starts have zero
+GPU diagnostics on Linux RX 7900 XTX / RADV; normal UI checks retain all three
+supported resolutions. Preserve
+`build/minimap-traversal-client-qualified-v1-20261103`.
+[Exact normal/accelerated scopes and measurement corrections](../MINIMAP.md).
+Earlier checkpoints remain unchanged; local only, no native Windows/MMO-capacity claim.
+
+Initial local minimap qualified, 3 November 2026:
+P2-14 / P3-13: standard Bevy north-up local map, resident-mesh height sampling,
+checked global projection, manual player heading and committed guide/quest icons.
+Two fixed images use 17 KiB; no new camera, terrain read or residency request.
+Health/mana and backpack layout remain usable at all three supported sizes.
+All 1,133 workspace tests (50 skips), 135 client tests, fmt and all-target
+denied-warning Clippy pass. Normal OIDC/PostgreSQL/native two-quest completion
+and database-restart rejoin pass at 1280x720, 1920x1200 and 3440x1440 fullscreen:
+four starts, zero GPU diagnostics. Visible map refresh leaves terrain reads and
+residency unchanged; maximum raster 0.329 ms, active presentation mean
+25.64–26.74 us on Linux RX 7900 XTX / RADV Vulkan. Preserve
+`build/minimap-client-qualified-v1-20261103`.
+[Exact Classic scope, measurements and remaining work](../MINIMAP.md). Local only;
+no new native Windows/continent-crossing/population-capacity claim.
+
+Renet lost-initial-acknowledgement fix qualified, 3 November 2026:
+P1-06 / P1-08 / P3-04 / P3-16: bounded encrypted NC01 confirmation precedes
+World/account admission; Renet transport revision 1 leaves movement wire/Quinn
+12 and library pins unchanged. Full workspace: 1,128 passes / 50 explicit skips;
+two focused loss-policy checks, formatting and all-target denied-warning Clippy
+pass. Final baseline/seeded-loss comparison passes 48 cases at 20/30/60 Hz,
+including 24 reused endpoints, 60 dropped initial KeepAlives and 3,607 old-packet
+replays. Retain the separate periodic-loss result: 46/48, with snapshot erasure
+after successful Welcome. Normal OIDC/PostgreSQL/native quests and database
+restart/rejoin pass (head 13 / 125 XP); two 1920x1200 starts have zero GPU
+diagnostics on Linux RX 7900 XTX / RADV Vulkan. Preserve
+`build/connection-confirmation-client-qualified-v1-20261103`.
+[Implementation, exact evidence and loss limitations](../RENET_CONNECTION_CONFIRMATION.md).
+No native Windows/population/universal-loss-recovery claim. Local only.
+
+Read-only quest update review qualified, 3 November 2026:
+P3-11 / P3-15: compare two validated closed executable catalogues by stable IDs,
+versions, exact hashes and review-only gameplay fingerprints. Distinguish rule,
+presentation/layout and version changes; report missing bumps/regressions without
+copying narrative text. Inputs are never rewritten; no save compatibility,
+World-reference admission or automatic migration claim. Seven review checks and
+all 65 authoring-example checks pass, along with formatting/all-target Clippy.
+Actual built CLI proves deterministic hashes/output, input preservation and
+unsupported/oversized refusal. Preserve
+`build/quest-update-review-qualified-v1-20261103`. Normal schema-15 playable is
+unchanged; its earlier 1,123-test/native qualification remains the runtime
+baseline. [Workflow and limits](../QUEST_PACK_AUTHORING.md). Local only.
+
+Normal public player death/fresh-life presentation qualified, 3 November 2026:
+P3-04 / P3-14 / P3-16: schema-15 matched normal CLI/bundle, public visual life
+roster and standard Bevy remote Death/fresh-life reset, with life-aware pose
+reset and owner-private controls/vitals retained. Actual two-account native
+observer sees a finished corpse in view (52 changing Death bones), then fresh
+generation/pose; it stays at 100 HP with no private incoming windup/target. Owner
+live casting is verified, then dead movement/new casts are blocked. Unmodified
+quest completion and PostgreSQL restart/rejoin pass: two quests, three kills,
+head 13 / 125 XP, no duplicate rewards. All 1,123 workspace tests (50 skips),
+131 client / 47 validator / 35 Python checks, formatting and all-target Clippy
+pass. Three final native runs at 1920x1200 have zero GPU diagnostics on Linux
+RX 7900 XTX / RADV Vulkan. Preserve `build/avatar-life-client-qualified-v1-20261103`.
+Older bundles remain unchanged. [Exact scope and endpoint limitation](../PUBLIC_AVATAR_LIFE.md).
+Synthetic PID-bound X11 input; no native Windows/population/Classic corpse-run
+claim. All changes remain local.
+
+Public avatar lifecycle transport qualified, 3 November 2026:
+P3-04 / P3-14 / P3-16: shared bounded priority reliable channel, readiness gate,
+full roster/changed-lifecycle publication, private-vitals separation and explicit
+queue/upload/profile refusal. Actual encrypted observer sees death/respawn,
+leave and fresh-endpoint rejoin under impairment at 20/30/60 Hz; old encrypted
+traffic cannot restore the former life. Separate two-peer NPC/AV coexistence
+passes at all three rates. All 670 network tests (ten skips), formatting and
+workspace/all-target denied-warning Clippy pass. Preserve
+`build/avatar-life-runtime-qualified-v1-20261103`. Normal CLI/bundle/remote Bevy
+adoption remains next; normal schema-14 public-NPC playable is unchanged.
+[Scope, replay proof and same-endpoint limitation](../PUBLIC_AVATAR_LIFE.md).
+Trusted development profiles/synthetic ports; no new native/SQL/OIDC/Windows or
+population-capacity claim. All changes remain local.
+
+Public avatar life observation/codec prerequisite qualified, 3 November 2026:
+P3-04 / P3-14 / P3-16: explicit pre-admission World/profile and bounded AV01
+actor/life/alive-dead roster; no health, damage or respawn-control fields. Nine
+focused wire/World checks cover actual death/respawn at 20/30/60 Hz, the bounded
+connected set, stale/invalid data and unavailable authority. All 664 network
+tests (ten skips), formatting and workspace/all-target denied-warning Clippy
+pass. Preserve `build/avatar-life-codec-qualified-v1-20261103`. Public transport,
+normal version and remote Bevy adoption remain next. Latest normal playable is
+public-NPC schema 14, unchanged. [Scope](../PUBLIC_AVATAR_LIFE.md). Local only; no
+new native/SQL/OIDC/Windows/population claim.
+
+Normal public NPC attack presentation qualified, 3 November 2026:
+P3-07 / P3-14 / P4-08: schema-14 exact-byte bundle and matching normal CLI identities
+adopt the priority public timing stream with standard Bevy wolf clips and actual
+victim facing. Native two-account observer stays at 100 HP, receives no private
+incoming windup, keeps no target selected and renders remote-victim attacks.
+Unmodified-wolf normal quest completion and database-restart rejoin also pass:
+two quests, three kills, head 13 and 125 XP, no duplicate rewards. All 1,106
+workspace tests (50 skips), 129 client / 46 validator / 34 Python checks,
+formatting and all-target denied-warning Clippy pass. Three successful native
+runs at 1920x1200 have zero GPU diagnostics on Linux RX 7900 XTX / RADV Vulkan.
+Preserve `build/creature-attack-client-qualified-v1-20261103`; older bundles remain
+unchanged. [Exact scope and evidence](../PUBLIC_CREATURE_ATTACKS.md). Synthetic
+PID-bound X11 input; no native Windows or population-capacity claim. Local only.
+
+Public NPC attack transport qualified, 3 November 2026:
+P3-07 / P3-14 / P4-08: optional 8-KiB reliable priority channel, accepted-readiness
+publication gate, exact profile/rate checks and bounded 16-event presentation
+handoff. Actual encrypted victim/observer peers agree on windup/cancel/transfer
+at 20/30/60 Hz under loss, jitter, duplication and reordering; incoming strikes
+and vitals remain private. Four additional boundary checks cover full queues,
+readiness and forged uploads on both channels. All 655 network tests (ten skips),
+formatting and workspace/all-target denied-warning Clippy pass. Preserve
+`build/creature-attack-runtime-qualified-v1-20261103`. Normal CLI/bundle/Bevy
+adoption remains next; threat v2 playable is unchanged. [Scope](../PUBLIC_CREATURE_ATTACKS.md).
+Synthetic admission/inventory ports; no native/SQL/OIDC/Windows/capacity claim.
+All changes remain local.
+
+Public NPC timing observation/codec prerequisite qualified, 3 November 2026:
+P3-07 / P3-14 / P4-08: explicit pre-admission World profile/hash, read-only NPC
+windup observation and strict 62/86-byte NA01 contract. No health/damage/outcome
+or private player-life generation fields. Ten focused cases cover owner/observer,
+transfer/cancel/death/respawn, malformed/stale/expired frames and 20/30/60 Hz.
+All 650 network tests (ten skips), formatting and all-target Clippy pass. Preserve
+`build/creature-attack-codec-qualified-v1-20261103`. Actual reliable public
+replication, optional normal adoption and Bevy bystander animation remain next;
+normal threat v2 playable is unchanged. [Scope](../PUBLIC_CREATURE_ATTACKS.md).
+Local only; no new native/Windows/population claim.
+
+Closed quest-subset authoring handoff qualified, 3 November 2026:
+P3-11 / P3-15: deterministic compiler includes every transitive prerequisite,
+preserves definition IDs/versions/behavior and revalidates the closed runtime
+catalogue. Refuses 32-quest/512-objective/64-KiB overflow rather than truncating.
+Explicit `--compile-selection` emits catalogue bytes plus source/selection/output
+hashes; inputs stay unchanged. Actual compiled output passes normal schema-13
+manifest validation, while an uninstalled guide correctly refuses admission.
+All 1,089 workspace tests (50 skips), 304 core, 45 gameplay-validator and 11
+authoring-tool checks, formatting and all-target Clippy pass. Preserve
+`build/quest-compile-qualified-v1-20261103`. [Workflow](../QUEST_PACK_AUTHORING.md).
+No runtime pack loader, history expansion, automatic migration or normal content
+replacement. Latest normal playable remains threat v2; changes stay local.
+
+Offline quest pack/index workflow qualified, 3 November 2026:
+P3-11 / P3-15: strict contained JSON index, bounded regular-file reads, global
+IDs/prerequisites and exact hash report. Typed diagnostics identify files/IDs;
+no narrative dump or source mutation. Seven core registry / seven file checks,
+all 297 core and 44 existing gameplay-validator checks, formatting and Clippy
+pass. Actual compiled CLI success/refusal and read-only hashes pass. Both example
+validators are configured in Linux/Windows CI; only local Linux execution is
+claimed. [Authoring workflow](../QUEST_PACK_AUTHORING.md). Preserve
+`build/quest-registry-cli-qualified-v1-20261103`. Runtime pack loading, history/
+migration and world-reference admission are separate; normal playable unchanged.
+Local only; next is a bounded reviewed subset handoff to the closed catalogue.
+
+Offline quest pack-registry prerequisite qualified, 3 November 2026:
+P3-11 / P3-15: bounded pure Registry validates global definition IDs, cross-pack
+prerequisites/cycles and target aliases across up to 32 executable packs (2 MiB,
+1,024 quests under current development bounds). Six new checks include a full
+padded chain; all 296 core tests, formatting and all-target denied-warning Clippy
+pass. Live `Catalog::from_json` stays closed/local; Registry exposes no Catalog
+for journal loading. No runtime, save-history or migration change. Preserve
+`build/quest-registry-core-qualified-v1-20261103`; normal playable remains the
+schema-13 threat v2 checkpoint. Offline file/index validation is next. Local only.
+
+Unmodified wolf/threat regression qualified, 3 November 2026:
+P3-07 / P4-08: actual normal schema-13 OIDC/PostgreSQL/native flow also passes
+with unchanged wolf perception, speed and retaliation profiles. Two quests,
+three kills, head 13 and 125 XP survive a database process restart/rejoin; no
+player death, zero GPU diagnostics. Fresh threat counters show 22 resolved facts,
+300 actual HP lost and three clears; rejoin records none. A new actual World
+passive body-pull case passes at 20/30/60 Hz: zero damage threat, no tag claim and
+real retaliation. All 66 affected authority tests, formatting and all-target
+Clippy pass; the 1,074-test workspace baseline is inherited with only test-helper
+changes plus this case. Preserve `build/creature-threat-client-qualified-v2-20261103`.
+Linux RX 7900 XTX / RADV Vulkan; native 1920x1200, synthetic OS input. Services
+stopped; no Windows or population-capacity claim. All changes remain local.
+
+Normal damage-threat playable qualified, 3 November 2026:
+P3-07 / P4-08: schema-13 canonical journal/threat bundle, exact-byte launcher
+snapshot and explicit server/client identity wiring pass normal OIDC/PostgreSQL
+native completion and database-restart rejoin at 1920x1200. Fresh state has two
+completed quests, head 13 and 125 XP; three kills commit 300 actual HP lost and
+clear threat three times. Rejoin adds no progress/reward/damage. Both runs have
+zero GPU diagnostics on Linux RX 7900 XTX / RADV Vulkan / Mesa 26.2.6 (fresh-run
+adapter capture). The private combat fixture remains explicit; two-peer victim
+transfer has separate impaired 20/30/60 Hz proof. Final workspace 1,074 tests pass
+(50 ignored), plus 44 validator / 127 client / 33 Python checks, formatting and
+all-target denied-warning Clippy. Preserve
+`build/creature-threat-client-qualified-v1-20261103` and prior playables. Older
+bundles/bare launcher stay unchanged. General/group/healing threat, streamed NPC
+navigation, production capacity and Windows remain open. All changes stay local.
+
 Ability-damage prerequisites, 2 November 2026:
 [Special outcomes, impact and exact profile binding](../CLASSIC_ABILITY_DAMAGE.md)
 pass 241 core and 231 network library tests, formatting and workspace Clippy.
@@ -897,16 +1320,16 @@ and loot P3-09. Do not invent scope for P3-17/18.
 | P3-04 | Stats and resources | Initial resources and opt-in transient player life qualified; broader scope open | [Resource foundation](../STATS_RESOURCES.md) plus [private player life](../PLAYER_LIFE_NATIVE.md): checked health/mana, cast costs/regen, player damage/death, prepared streamed home respawn and fresh movement streams with standard Bevy UI. Two-account native gameplay/rejoin/restart/backend-loss passes at three sizes; full workspace 525 passes / 40 explicit skips. Persistent vitals, production combat logout policy and class/gear attributes remain open. |
 | P3-05 | Inventory and items | Initial durable/native backpack qualified; broader scope open | [Actual SQL/verified-admission/native restart/widget proof](../INVENTORY_FOUNDATION.md). Equipment, instances, use/destruction, currency, trade and reward systems remain separate. |
 | P3-06 | Abilities and status effects | Initial status, equipment-gated melee and player hit outcomes qualified | [Sword Slash, schema-4 requirements and native proof](../PLAYER_MELEE.md). [Server-owned hit/miss/deflect and actual native labels](../HIT_OUTCOMES.md). [Authority, encrypted replication, native indicators/feedback and limits](../STATUS_EFFECTS_FOUNDATION.md). Healing/dispels/CC/class scaling/durable combat remain open. |
-| P3-07 | Creature AI | Initial patrol/perception/chase/melee/leash/return qualified; broader scope open | [Playable evidence](../CREATURE_PURSUIT_NATIVE.md): one NPC, bounded navigation worker, exact target life, finite reach/LOS, return to captured patrol anchor and restored route/wait. Actual encrypted peers, OIDC/PostgreSQL/native wolf, legacy/restart/backend-loss and 3440 fullscreen cleanup pass; final workspace 557 passes / 40 explicit skips. General threat/bosses, public NPC attack timing, streamed navigation and population capacity remain open. |
+| P3-07 | Creature AI | Initial single-NPC patrol/pursuit/reset and damage threat qualified; broader scope open | [Pursuit](../CREATURE_PURSUIT_NATIVE.md), [return reset](../CREATURE_RETURN_RESET.md), [damage threat](../CREATURE_THREAT.md): metric current-reach 110%/130% transfer, prepared windup/path invalidation, exact-life retirement, retained membership and separate tag credit. Actual impaired encrypted two-peer transfer at 20/30/60 Hz; schema-13 unmodified native three-kill/quest/restart regression passes; passive zero-threat body pulls also pass at 20/30/60 Hz. Final workspace 1,074 tests pass (50 ignored); preserve `build/creature-threat-client-qualified-v2-20261103` (66 affected authority tests plus inherited full regression). Normal public NPC attack timing/facing is now [qualified](../PUBLIC_CREATURE_ATTACKS.md) through schema 14 and actual native victim/observer views. Multi-NPC/bosses, social/healing/taunt rules, streamed navigation and population capacity remain open. |
 | P3-08 | Equipment and appearance | Initial main-hand slice qualified | [Exact behavior/source/evidence](../EQUIPMENT_FOUNDATION.md): shared durable item revision, conserved transfers, encrypted private/public state, standard Bevy props/widgets and actual two-account native rejoin/restart. 367 workspace tests/18 skips; eight SQL contracts separately pass. Mixed/legacy launchers and combat-widget regression pass. Authored sockets, public sword stance and closed local/remote moving grip also pass [current native checks](../EQUIPPED_PLAYER_STANCE.md). General slots/stats/instances/art/Windows remain open. |
 | P3-09 | Loot and rewards | Initial personal claim slice qualified | [Exact source/evidence/limits](../LOOT_REWARDS_FOUNDATION.md): authoritative kill/Scorch credit, durable offer and atomic ordered pickup, real two-account Bevy widget/rejoin/database restart, accepted-work retirement and CLI cleanup pass. 379 workspace tests/21 skips; all eleven SQL contracts separately execute. Full-bag retry, rollback, replay and backend loss pass. General/repeatable/group/corpse loot and instances remain open. |
 | P3-10 | Experience and leveling | Initial earned and optional completion XP qualified; broader leveling open | [Completion XP](../QUEST_TURN_IN_XP.md): three normal kills reach 75 XP, atomic once-only turn-in reaches 100 / level 2; retained earned-XP behavior remains. Actual two-account native completion/rejoin/restart passes at 1280×720, 1920×1200 and 3440×1440 fullscreen. Class/stat scaling, groups and production balance remain open. |
-| P3-11 | Quest objectives | Initial explicit journal with optional XP reward qualified; broader quests open | [Explicit lifecycle](../QUEST_LIFECYCLE.md), [optional completion XP](../QUEST_TURN_IN_XP.md): guide acceptance, three counted kills, durable turn-in and 25 XP through one retained FIFO and atomic SQL receipt. Actual two-account native checks at three sizes, current journal-only regression and eleven-profile launcher cleanup pass. Final workspace 475/37; 27 SQL contracts separately pass. Source/binaries/proof: `build/quest-turn-in-xp-qualified-v1-20261031`. Item grants, abandonment/repeatables and groups remain open. |
-| P3-12 | NPC dialogue and vendors | Initial live dialogue and fixed barter qualified | [Dialogue](../NPC_DIALOGUE_FOUNDATION.md): actual OIDC/native branches/closure/restart at 1280×720, 1920×1200 and 3440×1440; 418 prior workspace passes/27 skips. [Barter](../VENDOR_BARTER_FOUNDATION.md): eight pure tests/36 core regressions and twenty actual SQL contracts/twenty-six commands pass; atomic cost/output/latest receipt and critical-worker failure paths qualified. Current vendor/guide/range checks, retained queued/executing work, encrypted item stream and Bevy shop pass actual native/SQL checks at three sizes; final unchanged-source workspace passes 433 tests/30 skips. Exact checkpoint: build/vendor-qualified-v1-20261030. Production currency/selling/stock/buyback and broader NPC/player lifecycle remain open. |
+| P3-11 | Quest objectives | Initial expanded persistent multi-quest journal qualified; broader quests open | [Current engine and authoring agreement](../QUEST_ENGINE.md): immutable definitions, prerequisites, ordered all/any/at-least stages, kill and semantic NPC objectives, committed private state/actions, aggregate markers and atomic idempotent kill/completion XP.40 owned SQL contracts and normal OIDC/native two-quest completion plus database-restart rejoin pass; repeated preaccept conversations grant no credit. Current fixture reaches 125 XP/head 13. Abandonment, repeatables, item/currency grants, groups, production registry/history scaling and explicit content migrations remain open. |
+| P3-12 | NPC dialogue and vendors | Initial live semantic dialogue and fixed barter qualified; broader scope open | [Dialogue](../NPC_DIALOGUE_FOUNDATION.md), [barter](../VENDOR_BARTER_FOUNDATION.md) and [expanded quest integration](../QUEST_ENGINE.md): standard release-click choices, exact NPC/choice authority and committed objective events. Repeated choices before acceptance and later valid progress pass normal native/SQL/restart checks. Prior atomic barter/equipment/owner-retirement proof remains inherited. Production currency/selling/stock/buyback and broader NPC lifecycle remain open. |
 | P3-13 | Terrain streaming and initial LOD | Partial | Generated and saved 16 km graybox terrain have bounded streaming, distance LOD, geometric seam validation, independent physics/render origins and actual retirement. Full native saved crossing and two-client impaired-network checks pass. Hierarchical screen-error LOD, long vistas/flying, objects/materials and production budgets remain. [Evidence](../SAVED_TERRAIN.md). |
-| P3-14 | Animation, VFX and audio expansion | Partial | Opt-in wolf and authored-socket player death/fresh-life presentation pass actual two-account gameplay and fullscreen launching; public sword stance and closed moving grip also pass; see [latest evidence](../EQUIPPED_PLAYER_STANCE.md). Standard upper-body SwordAttack now passes local/remote standing, walking and running [native/source-curve checks](../PLAYER_MELEE.md). Public remote-player death, full equipped locomotion/blending, public NPC attack timing and broader VFX/audio remain. |
-| P3-15 | Content authoring and validation | Initial offline validation and launch-time bundle adoption qualified | [Offline validator](../GAMEPLAY_CONTENT_VALIDATION.md): ten-profile schema/reference checks, bounded paths/reads and exact hashes. [Launch-time adoption](../GAMEPLAY_MANIFEST_LAUNCH.md) passes actual authenticated native cleanup and exact ten-profile handoff in automatic and explicit quest modes, including credential-setting isolation and snapshot cleanup. Direct runtime manifest parsing, nav/terrain/assets and general authoring UI remain open. |
-| P3-16 | One complete persistent zone and login/logout proof | Initial rewarded persistent training integration qualified; authored zone open | Two actual OIDC accounts/native clients complete private accept/three-kill/25-XP-turn-in, loot, barter and equipment flows at three sizes. Reconnect and SQL/server restart preserve exact state/receipts; normal eleven-profile launch cleanup and legacy journal mode pass. [Scope and evidence](../QUEST_TURN_IN_XP.md). Item turn-in grants, general quests and a complete authored production zone remain open. |
+| P3-14 | Animation, VFX and audio expansion | Partial | Opt-in wolf and authored-socket player death/fresh-life presentation pass actual two-account gameplay and fullscreen launching; public sword stance and closed moving grip also pass; see [latest evidence](../EQUIPPED_PLAYER_STANCE.md). Standard upper-body SwordAttack now passes local/remote standing, walking and running [native/source-curve checks](../PLAYER_MELEE.md). Public NPC timing has an opt-in World/NA01 contract and bounded reliable priority transport: actual encrypted victim/observer transfer at 20/30/60 Hz plus queue/upload refusal checks; 655 network tests pass. [Normal schema-14 CLI/Bevy adoption](../PUBLIC_CREATURE_ATTACKS.md) passes actual two-account native victim/observer views and normal unmodified-wolf quest/restart regression, plus 1,106 workspace tests. Public remote-player death/fresh life now passes [normal schema-15/Bevy native acceptance](../PUBLIC_AVATAR_LIFE.md): actual finished corpse in view, 52 changing Death bones, fresh generation/pose reset, private owner dead-input barrier and healthy observer. Normal quest/database-restart regression plus 1,123 workspace tests pass. Impaired three-rate transport remains separately qualified; immediate same-backend-endpoint reconnect remains unqualified. Full equipped locomotion/blending and broader VFX/audio remain. |
+| P3-15 | Content authoring and validation | Initial bounded runtime catalogues and exact-byte launch bundles qualified | [Validator](../GAMEPLAY_CONTENT_VALIDATION.md), [launch adoption](../GAMEPLAY_MANIFEST_LAUNCH.md), [quest limits/authoring agreement](../QUEST_ENGINE.md): schema12 canonical nested quest files; schema13 journal plus explicit threat policy; schema14 derived public NPC timing; schema15 public visual avatar life. 47 validator and 35 actual Rust-to-Python handoff checks pass with exclusive roles, references, budgets, paths and exact hashes; normal native snapshot cleanup passes. Bounded registry, index validator and closed-subset compiler pass 304 core / 45 gameplay / 11 file/compiler checks and full 1,089-test regression. Actual compiled output passes normal manifest admission; see [pack authoring](../QUEST_PACK_AUTHORING.md). Read-only closed-catalogue update review now adds exact hashes, presentation/gameplay classification and version advisories; all 65 authoring-example checks pass. Runtime pack loading/history scaling, saved-version migrations, nav/terrain/assets and general authoring UI remain open. |
+| P3-16 | One complete persistent zone and login/logout proof | Initial expanded rewarded training integration qualified; authored zone open | [Expanded quest proof](../QUEST_ENGINE.md): actual OIDC/SQL/native semantic conversations, two quests, three kills, four durable actions and 125 XP; database process restart/rejoin preserves exact head/history with no extra reward. Existing loot/barter/equipment and earlier multi-account proofs remain inherited. Current schema15 regression uses an unmodified wolf, actual normal quest completion/restart and separate two-account public NPC/remote death/fresh-life native views. Two-peer threat transfer has separate impaired encrypted runtime proof. A complete authored production zone remains open. |
 | P3-17 | UNSPECIFIED in original transcript: needs reconciliation | Blocked: scope unknown | Obtain missing scope from the owner; do not block unrelated defined tasks. |
 | P3-18 | UNSPECIFIED in original transcript: needs reconciliation | Blocked: scope unknown | Obtain missing scope from the owner; do not block unrelated defined tasks. |
 
@@ -921,7 +1344,7 @@ and loot P3-09. Do not invent scope for P3-17/18.
 | P4-05 | Adaptive replication | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-06 | Cross-region handoff | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-07 | Population and overload management | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P4-08 | Advanced combat interrupts/CC/AoE/healing/threat | Initial player direct-damage outcomes qualified | [Hit/miss/deflect authority, encrypted/native evidence and limits](../HIT_OUTCOMES.md). General interrupts/CC/AoE/healing/threat remain open. |
+| P4-08 | Advanced combat interrupts/CC/AoE/healing/threat | Initial damage outcomes and damage-only creature threat qualified; broader scope open | [Outcomes](../HIT_OUTCOMES.md), [damage threat](../CREATURE_THREAT.md): authoritative actual-health-loss arithmetic and prepared victim transfer, independent of tag/reward credit. Metric reach and exact lifetimes; impaired encrypted two-peer and normal native regression evidence are separate. General interrupts/CC/AoE/healing, stance modifiers, taunts, social assistance and group threat remain open. |
 | P4-09 | Classes and specializations | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-10 | Group encounters | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-11 | Parties and group rules | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |

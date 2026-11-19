@@ -1,3 +1,8 @@
+Latest: [Classic directional locomotion](CLASSIC_DIRECTIONAL_LOCOMOTION.md)
+qualifies the optional 22-clip player, local/remote closed grip and directional
+lower-body strikes. Earlier dated asset/animation checkpoints below remain
+preserved; the existing four-weight preview limitation is unchanged.
+
 Development adoption update, 2026-10-22: the user's [graybox-world slice](GRAYBOX_WORLD.md)
 now selects the converted POLYGON character as development art and uses the four
 standard clips. This supersedes the earlier preview-only selection below. The

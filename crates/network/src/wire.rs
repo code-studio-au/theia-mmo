@@ -22,6 +22,7 @@ pub struct Intent {
     #[serde(default)]
     pub jump: bool,
     pub axes: [i16; 2],
+    /// Legacy boost; bound Classic ground-v3 uses true=run / false=walk.
     pub sprint: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dodge: Option<crate::dodging::Request>,

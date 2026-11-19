@@ -32,6 +32,9 @@ fn mode(
     dodge: Option<DodgeClient>,
 ) -> GameplayClient {
     GameplayClient {
+        avatar_life: None,
+        public_attacks: None,
+        journal: None,
         classic_source: None,
         dodge,
         player_life: None,

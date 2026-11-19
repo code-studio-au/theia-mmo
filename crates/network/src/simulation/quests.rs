@@ -6,6 +6,7 @@ impl World {
     pub fn enable_quest(&mut self, profile: Arc<Profile>) -> Result<()> {
         if self.tick != 0
             || !self.players.is_empty()
+            || self.quest_journal.is_some()
             || self.quest.is_some()
             || self.quest_lifecycle.is_some()
         {
@@ -40,6 +41,7 @@ impl World {
     ) -> Result<()> {
         if self.tick != 0
             || !self.players.is_empty()
+            || self.quest_journal.is_some()
             || self.quest.is_some()
             || self.quest_lifecycle.is_some()
             || self.dialogue.is_none()

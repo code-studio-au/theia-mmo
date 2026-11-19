@@ -114,6 +114,30 @@ impl Store {
         profile: &InventoryCatalog,
         command: ItemIntent,
     ) -> Result<InventoryApplied> {
+        self.mutate_items_inner(binding, world, profile, command, None)
+            .await
+    }
+    /// Commit the item mutation and all resulting possession projections together.
+    pub async fn mutate_items_with_quest_journal(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &InventoryCatalog,
+        command: ItemIntent,
+        journal: &crate::QuestJournalCatalog,
+    ) -> Result<InventoryApplied> {
+        self.mutate_items_inner(binding, world, profile, command, Some(journal))
+            .await
+    }
+    #[allow(clippy::too_many_arguments)]
+    async fn mutate_items_inner(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &InventoryCatalog,
+        command: ItemIntent,
+        journal: Option<&crate::QuestJournalCatalog>,
+    ) -> Result<InventoryApplied> {
         let transaction = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&transaction, self.realm, binding, world).await?;
         let row = bounded(transaction.query_opt(
@@ -127,9 +151,21 @@ impl Store {
             if receipt.as_deref() != Some(hash.as_slice()) {
                 return Err(Error::InventoryConflict);
             }
+            let journal = super::quest_journal::reconcile_inventory(
+                &transaction,
+                self.realm,
+                binding,
+                world,
+                journal,
+                profile,
+                &bag,
+                true,
+            )
+            .await?;
             bounded(transaction.commit()).await?;
             return Ok(InventoryApplied {
                 bag,
+                journal,
                 replayed: true,
             });
         }
@@ -147,9 +183,21 @@ impl Store {
         if count != 1 {
             return Err(Error::InventoryData);
         }
+        let journal = super::quest_journal::reconcile_inventory(
+            &transaction,
+            self.realm,
+            binding,
+            world,
+            journal,
+            profile,
+            &next,
+            false,
+        )
+        .await?;
         bounded(transaction.commit()).await?;
         Ok(InventoryApplied {
             bag: next,
+            journal,
             replayed: false,
         })
     }

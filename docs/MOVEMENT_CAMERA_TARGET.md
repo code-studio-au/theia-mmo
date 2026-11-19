@@ -15,7 +15,7 @@ The table below describes the remaining normal-player experience.
 
 | Area | Existing implementation / evidence | Required migration |
 | --- | --- | --- |
-| Movement | Qualified character-relative W/S, A/D turn and Q/E strafe in `--classic`; configurable A/D strafe | Directional locomotion animation and movement-speed/feel calibration |
+| Movement | Qualified character-relative W/S, A/D turn and Q/E strafe in `--classic`; configurable A/D strafe | [Ground movement v3 qualified](CLASSIC_GROUND_MOVEMENT.md): 7/4.5/2.5 m/s run/backward/walk and toggle; [optional eight-way locomotion qualified](CLASSIC_DIRECTIONAL_LOCOMOTION.md); crossfades/stride tuning and subjective feel remain |
 | Camera | Qualified independent LMB orbit, stationary RMB steering, both-button forward, static collision/zoom and UI ownership in `--classic` | Broader feel tuning; action camera remains disabled in classic |
 | Facing | Independent authoritative heading, correction replay, render-rate local input and interpolated remote yaw | Native independent remote-turn evidence and ability/autoattack-facing validation |
 | Selection | Qualified persistent hostile/friendly selection, character-front-biased Tab and Shift+Tab; explicit clear/removal | Immediate local pending-selection feedback and general dynamic friendly-removal observations |

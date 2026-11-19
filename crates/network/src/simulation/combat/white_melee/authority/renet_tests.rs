@@ -290,6 +290,9 @@ impl Peer {
         });
         let client = tokio::spawn(async move {
             let result=net::run_client_gameplay(address,&token,inputs,publish.clone(),shutdown,session.identity,net::GameplayClient {
+                avatar_life: None,
+                public_attacks: None,
+    journal: None,
     classic_source:Some(session.source),dodge:None,player_life:Some(net::player_life::Client{profile:session.life,membership:None,events:life_events}),lifecycle:None,dialogue:None,ready:readiness,commands:Some(command_rx),choices:Some(choice_rx),
     combat:Some(net::CombatActions{melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(session.physical),white:Some(session.white),ability:None,choices:melee_rx}),catalog:session.abilities,casts:cast_rx,events}),quest:None,progression:None,inventory:Some(net::inventory::Client{profile:session.items,commands:item_rx}),statuses:Some(Arc::new(theia_core::statuses::Catalog::from_json(STATUSES).unwrap())),
    }).await;
@@ -615,6 +618,9 @@ async fn unbound_ordinary_context_or_weapon_catalog_is_refused_before_network_io
             shutdown,
             f.session.identity,
             net::GameplayClient {
+                avatar_life: None,
+                public_attacks: None,
+                journal: None,
                 classic_source: Some(f.session.source),
                 dodge: None,
                 player_life: None,

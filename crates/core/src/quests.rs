@@ -2,6 +2,7 @@
 //! credit, receipt deduplication, character ownership nor durable completion.
 use crate::content::ContentId;
 use serde::{Deserialize, Serialize};
+pub mod areas;
 pub mod catalog;
 pub mod journal;
 pub mod lifecycle;

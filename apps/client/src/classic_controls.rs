@@ -22,7 +22,7 @@ struct RawBindings {
     strafe_left: String,
     strafe_right: String,
     jump: String,
-    run_modifier: String,
+    walk_run_toggle: String,
 }
 struct Bindings {
     forward: KeyCode,
@@ -32,7 +32,7 @@ struct Bindings {
     strafe_left: KeyCode,
     strafe_right: KeyCode,
     jump: KeyCode,
-    run_modifier: KeyCode,
+    walk_run_toggle: KeyCode,
 }
 fn key(name: &str) -> Result<KeyCode, String> {
     use KeyCode::*;
@@ -68,6 +68,7 @@ fn key(name: &str) -> Result<KeyCode, String> {
         "ArrowLeft" => ArrowLeft,
         "ArrowRight" => ArrowRight,
         "Space" => Space,
+        "NumpadDivide" => NumpadDivide,
         "ShiftLeft" => ShiftLeft,
         "ShiftRight" => ShiftRight,
         "ControlLeft" => ControlLeft,
@@ -82,6 +83,7 @@ pub struct Controller {
     targeting: theia_core::target_search::Settings,
     turn_radians_per_second: f64,
     yaw: f64,
+    running: bool,
     context: Option<(EntityKey, u64)>,
 }
 pub struct Sample {
@@ -97,7 +99,7 @@ impl Controller {
         }
         let raw: Raw = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
         if !raw.targeting.valid()
-            || raw.schema != 1
+            || raw.schema != 2
             || !raw.turn_degrees_per_second.is_finite()
             || !(1. ..=720.).contains(&raw.turn_degrees_per_second)
         {
@@ -112,7 +114,7 @@ impl Controller {
             strafe_left: key(&b.strafe_left)?,
             strafe_right: key(&b.strafe_right)?,
             jump: key(&b.jump)?,
-            run_modifier: key(&b.run_modifier)?,
+            walk_run_toggle: key(&b.walk_run_toggle)?,
         };
         let values = [
             Some(bindings.forward),
@@ -122,7 +124,7 @@ impl Controller {
             Some(bindings.strafe_left),
             Some(bindings.strafe_right),
             Some(bindings.jump),
-            Some(bindings.run_modifier),
+            Some(bindings.walk_run_toggle),
         ];
         let mut unique = std::collections::HashSet::new();
         if values
@@ -144,6 +146,7 @@ impl Controller {
             targeting: raw.targeting,
             turn_radians_per_second: raw.turn_degrees_per_second.to_radians(),
             yaw: 0.,
+            running: true,
             context: None,
         })
     }
@@ -206,6 +209,9 @@ impl Controller {
             return sample;
         }
         let b = &self.bindings;
+        if keys.just_pressed(b.walk_run_toggle) {
+            self.running = !self.running;
+        }
         let held = |key| f64::from(u8::from(keys.pressed(key)));
         let turn = b.turn_left.map_or(0., held) - b.turn_right.map_or(0., held);
         if steering && camera_yaw.is_finite() {
@@ -228,7 +234,7 @@ impl Controller {
             .world_axes([(x.clamp(-1., 1.) * 1000.) as i16, (z * 1000.) as i16])
             .unwrap();
         sample.jump = keys.pressed(b.jump);
-        sample.sprint = keys.pressed(b.run_modifier);
+        sample.sprint = self.running;
         sample
     }
     pub fn hint(&self) -> String {
@@ -236,7 +242,7 @@ impl Controller {
         let label = |k: KeyCode| format!("{k:?}").replace("Key", "");
         let optional = |k: Option<KeyCode>| k.map_or("unbound".into(), label);
         format!(
-            "{}/{}: move | {}/{}: turn | {}/{}: strafe\nLMB: orbit | RMB: steer | Both: forward | Wheel: zoom\n{}: jump | {}: run | Esc: close / clear target",
+            "{}/{}: move | {}/{}: turn | {}/{}: strafe\nLMB: orbit | RMB: steer | Both: forward | Wheel: zoom\n{}: jump | {}: walk/run | Esc: close / clear target",
             label(b.forward),
             label(b.backward),
             optional(b.turn_left),
@@ -244,7 +250,7 @@ impl Controller {
             label(b.strafe_left),
             label(b.strafe_right),
             label(b.jump),
-            label(b.run_modifier)
+            label(b.walk_run_toggle)
         )
     }
 }
@@ -252,6 +258,38 @@ impl Controller {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn run_defaults_on_toggle_latches_shift_does_not_boost_and_ui_cannot_toggle() {
+        let mut c = controller();
+        let mut keys = ButtonInput::default();
+        keys.press(KeyCode::KeyW);
+        assert!(c.sample(&keys, 0., 0., false, false, true).sprint);
+        keys.press(KeyCode::ShiftLeft);
+        assert!(c.sample(&keys, 0., 0., false, false, true).sprint);
+        keys.press(KeyCode::NumpadDivide);
+        assert!(!c.sample(&keys, 0., 0., false, false, true).sprint);
+        keys.clear();
+        assert!(!c.sample(&keys, 0., 0., false, false, true).sprint);
+        keys.release(KeyCode::NumpadDivide);
+        keys.clear();
+        keys.press(KeyCode::NumpadDivide);
+        c.sample(&keys, 0., 0., false, false, false);
+        keys.clear();
+        assert!(!c.sample(&keys, 0., 0., false, false, true).sprint);
+        keys.release(KeyCode::NumpadDivide);
+        keys.clear();
+        keys.press(KeyCode::NumpadDivide);
+        assert!(c.sample(&keys, 0., 0., false, false, true).sprint);
+    }
+    #[test]
+    fn old_shift_boost_configuration_is_rejected_explicitly() {
+        let mut raw: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../content/input/classic-controls.json"
+        ))
+        .unwrap();
+        raw["schema"] = serde_json::json!(1);
+        assert!(Controller::parse(&serde_json::to_vec(&raw).unwrap()).is_err());
+    }
     fn controller() -> Controller {
         Controller::parse(include_bytes!(
             "../../../content/input/classic-controls.json"

@@ -32,10 +32,29 @@ pub fn terrain_step(
     rate: TickRate,
     speed: f32,
 ) -> Result<Option<Pose>, &'static str> {
+    terrain_step_kind(patch, ready, pose, intent, rate, Some(speed))
+}
+pub(crate) fn terrain_step_classic(
+    patch: &crate::procedural::Patch,
+    ready: &std::collections::BTreeSet<theia_core::coordinates::ChunkId>,
+    pose: Pose,
+    intent: Intent,
+    rate: TickRate,
+) -> Result<Option<Pose>, &'static str> {
+    terrain_step_kind(patch, ready, pose, intent, rate, None)
+}
+fn terrain_step_kind(
+    patch: &crate::procedural::Patch,
+    ready: &std::collections::BTreeSet<theia_core::coordinates::ChunkId>,
+    pose: Pose,
+    intent: Intent,
+    rate: TickRate,
+    development_speed: Option<f32>,
+) -> Result<Option<Pose>, &'static str> {
     if pose.dodge.is_some()
         || intent.dodge.is_some()
         || pose.facing.is_some()
-        || intent.facing.is_some()
+        || intent.facing.is_some() != development_speed.is_none()
     {
         return Err("Dodge requires its bound movement profile");
     }
@@ -51,15 +70,26 @@ pub fn terrain_step(
     )
     .map_err(|_| "Invalid prepared terrain coverage")?;
     let mut motion = crate::kinematic::Motion::restore(pose.motion)?;
-    let feet = crate::kinematic::advance_development(
-        &patch.scene,
-        &mut motion,
-        start,
-        intent,
-        rate,
-        Some(&coverage),
-        speed,
-    )?;
+    let feet = if let Some(speed) = development_speed {
+        crate::kinematic::advance_development(
+            &patch.scene,
+            &mut motion,
+            start,
+            intent,
+            rate,
+            Some(&coverage),
+            speed,
+        )?
+    } else {
+        crate::kinematic::advance_classic(
+            &patch.scene,
+            &mut motion,
+            start,
+            intent,
+            rate,
+            Some(&coverage),
+        )?
+    };
     let feet = patch
         .frame
         .to_global(feet)

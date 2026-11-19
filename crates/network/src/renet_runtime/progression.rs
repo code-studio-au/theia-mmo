@@ -22,6 +22,13 @@ pub struct JournalInput {
 }
 #[derive(Clone, Debug)]
 pub enum JournalOperation {
+    /// Original authority victim life, committed with optional XP in one transaction.
+    Kill(KillEvent),
+    /// Already-authorized occupancy sealed to original eligible quest stages.
+    Areas {
+        id: std::num::NonZeroU128,
+        observation: theia_core::quests::journal::ReachedAreas,
+    },
     Command(theia_core::quests::journal::Command),
     Event {
         id: std::num::NonZeroU128,
@@ -64,6 +71,7 @@ pub struct Observation {
 }
 #[derive(Clone)]
 pub struct Port {
+    pub journal: Option<[u8; 32]>,
     pub lifecycle: Option<Arc<crate::quest_lifecycle_wire::Profile>>,
     pub quest: Option<Arc<crate::quest_wire::Profile>>,
     pub profile: Arc<crate::progression_wire::Profile>,
@@ -72,6 +80,7 @@ pub struct Port {
     pub state: watch::Receiver<Observation>,
 }
 pub(super) struct Peer {
+    pub journal: Option<super::quest_journal::Peer>,
     pub lifecycle: Option<super::quest_lifecycle::Peer>,
     pub port: Port,
     pub sent: Option<State>,
@@ -79,6 +88,11 @@ pub(super) struct Peer {
 }
 impl Peer {
     pub fn new(port: Port) -> crate::Result<Self> {
+        if port.journal.is_some_and(|hash| hash == [0; 32])
+            || (port.journal.is_some() && (port.quest.is_some() || port.lifecycle.is_some()))
+        {
+            return Err("Invalid or conflicting expanded journal port".into());
+        }
         if port.input.max_capacity() != CAPACITY {
             return Err("Invalid XP fact queue capacity".into());
         }
@@ -104,6 +118,7 @@ impl Peer {
             profile.check_progression(&port.profile)?;
         }
         Ok(Self {
+            journal: None,
             lifecycle: port
                 .lifecycle
                 .as_ref()

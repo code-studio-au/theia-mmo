@@ -218,6 +218,7 @@ async fn main() -> theia_network::Result<()> {
         config,
         shutdown,
         authenticated::GameplayProfiles {
+            quest_journal: None,
             quest_lifecycle,
             vendor,
             inventory,

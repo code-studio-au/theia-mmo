@@ -8,7 +8,7 @@ use bevy::{
     prelude::*,
     text::{FontSize, LineBreak},
     ui::Pressed,
-    ui_widgets::{Activate, ActivateOnPress, Button},
+    ui_widgets::{Activate, Button},
 };
 use std::sync::Arc;
 use theia_network::dialogue::{Action, Profile, Rejection};
@@ -113,7 +113,6 @@ fn button(widget: Widget) -> impl Bundle {
     (
         widget,
         Button,
-        ActivateOnPress,
         Hovered::default(),
         Node {
             width: percent(100),
@@ -130,6 +129,7 @@ fn setup(
     mut commands: Commands,
     pawns: Res<PawnAssets>,
     config: Res<Config>,
+    journal: Option<Res<crate::quest_journal::Definitions>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn((
@@ -139,20 +139,24 @@ fn setup(
         Transform::default(),
         Visibility::Hidden,
     ));
-    commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                left: px(12),
-                top: px(268),
-                width: px(340),
-                padding: UiRect::all(px(10)),
-                ..default()
-            },
-            BackgroundColor(Color::srgba(0.02, 0.04, 0.07, 0.9)),
-            Pickable::IGNORE,
-        ))
-        .with_child((Prompt, text("Guide: waiting for server", 14.)));
+    // The expanded journal supplies this context beside its committed progress;
+    // retain the legacy fixed-position prompt only in the legacy presentation.
+    if journal.is_none() {
+        commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(12),
+                    top: px(268),
+                    width: px(340),
+                    padding: UiRect::all(px(10)),
+                    ..default()
+                },
+                BackgroundColor(Color::srgba(0.02, 0.04, 0.07, 0.9)),
+                Pickable::IGNORE,
+            ))
+            .with_child((Prompt, text("Guide: waiting for server", 14.)));
+    }
     commands
         .spawn((
             Panel,
@@ -458,6 +462,24 @@ fn scroll(
             position.y = (position.y + delta).clamp(0., maximum);
         }
     }
+}
+
+/// Current painted choice locations for explicit read-only OS qualification.
+pub(crate) fn qualification_choices(world: &mut World) -> Vec<serde_json::Value> {
+    let Some(ui) = world.get_resource::<Ui>() else {
+        return Vec::new();
+    };
+    if !ui.open {
+        return Vec::new();
+    }
+    let choices = ui.choices.clone();
+    world.query::<(&Widget,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world)
+        .filter_map(|(widget,node,t)| {
+            let Widget::Choice(index)=widget else {return None};
+            if node.size().min_element()<=0. {return None;}
+            let (_,id)=choices.get(*index)?;
+            Some(serde_json::json!({"choice":id.as_str(),"point":(t.affine().translation*node.inverse_scale_factor()).to_array()}))
+        }).collect()
 }
 
 #[cfg(test)]

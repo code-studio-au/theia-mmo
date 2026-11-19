@@ -18,6 +18,10 @@ pub(crate) struct Config(
 );
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
+    pub public_life_rosters: u64,
+    pub public_attack_events: u64,
+    pub public_attack_windups: u64,
+    pub public_attack_idle: u64,
     pub life_events: u64,
     pub membership_events: u64,
     pub in_combat: Option<bool>,
@@ -131,7 +135,8 @@ pub fn install(
     app.insert_resource(Config(catalog, profile, player_life))
         .init_resource::<crate::reference_scene::attack::Cues>()
         .insert_resource(crate::reference_scene::attack::Metrics {
-            capture: std::env::var_os("THEIA_PLAYER_MELEE_QUALIFY").is_some(),
+            capture: std::env::var_os("THEIA_PLAYER_MELEE_QUALIFY").is_some()
+                || std::env::var_os("THEIA_DIRECTIONAL_LOCOMOTION_QUALIFY").is_some(),
             ..default()
         })
         .init_resource::<Metrics>()
@@ -268,6 +273,20 @@ fn present(
     *panel = ui::Model::default();
     panel.connected = network.connected();
     panel.status = "Waiting for server".into();
+    for _ in 0..theia_network::renet_runtime::avatar_life::PRESENTATION_CAPACITY {
+        if network.next_avatar_life_event().is_none() {
+            break;
+        }
+        metrics.public_life_rosters += 1;
+    }
+    for _ in 0..theia_network::renet_runtime::creature_attacks::PRESENTATION_CAPACITY {
+        let Some(event) = network.next_public_attack_event() else {
+            break;
+        };
+        metrics.public_attack_events += 1;
+        metrics.public_attack_windups += u64::from(event.windup.is_some());
+        metrics.public_attack_idle += u64::from(event.windup.is_none());
+    }
     for _ in 0..theia_network::renet_runtime::player_life::PRESENTATION_CAPACITY {
         let Some(event) = network.next_life_event() else {
             break;

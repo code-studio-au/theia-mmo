@@ -61,12 +61,14 @@ fn fixed_step_authority_and_prepared_prediction_agree_on_independent_facing_all_
         let mut pose = w.correction(id).unwrap().state.pose;
         let initial = pose.feet;
         for n in 1..=rate.hz() * 4 {
-            let intent = match n / rate.hz() {
+            let mut intent = match n / rate.hz() {
                 0 => input(16384, [0, 0]),    // Turn in place without travel.
                 1 => input(16384, [1000, 0]), // Strafe while looking left.
                 2 => input(16384, [0, 1000]), // Backpedal, preserve facing.
                 _ => input(32768, [0, -1000]),
             };
+            // Exercise both v3 walk and run through actual World/prediction.
+            intent.sprint = n % rate.hz() >= rate.hz() / 2;
             let p = packet(&w, id, u64::from(n), intent);
             assert_eq!(w.command(id, &p), 1);
             w.step();

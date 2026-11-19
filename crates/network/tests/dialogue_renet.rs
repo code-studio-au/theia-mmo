@@ -69,6 +69,9 @@ impl Peer {
                 shutdown,
                 identity,
                 net::GameplayClient {
+                    avatar_life: None,
+                    public_attacks: None,
+                    journal: None,
                     classic_source: None,
                     dodge: None,
                     player_life: None,
@@ -317,6 +320,7 @@ async fn malformed_and_oversized_interaction_frames_disconnect_actual_encrypted_
         )
         .unwrap();
         let mut client = renet::RenetClient::new(renet_transport::connection_config());
+        let mut connection_confirmed = false;
         let mut last = std::time::Instant::now();
         let mut admitted = false;
         let mut sent = false;
@@ -351,6 +355,11 @@ async fn malformed_and_oversized_interaction_frames_disconnect_actual_encrypted_
                     client.send_message(renet_transport::EVENT_CHANNEL, payload.clone());
                     sent = true;
                 }
+                theia_network::renet_transport::confirm_connection(
+                    &mut client,
+                    &mut connection_confirmed,
+                )
+                .unwrap();
                 if transport.send_packets(&mut client).is_err() {
                     assert!(
                         admitted && sent,

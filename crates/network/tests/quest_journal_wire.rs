@@ -303,3 +303,249 @@ fn ready_and_completed_quests_cannot_gain_partial_counts_after_they_freeze() {
         );
     }
 }
+
+fn action_request(
+    p: &Profile,
+    action: theia_core::quests::journal::Action,
+) -> theia_network::quest_journal_wire::Request {
+    use theia_core::quests::journal::{Action, Command};
+    theia_network::quest_journal_wire::Request {
+        actor: actor(),
+        profile_hash: p.hash(),
+        sequence: 1,
+        npc: EntityKey {
+            epoch: actor().epoch,
+            entity: EntityId::new(8).unwrap(),
+        },
+        dialogue_revision: 1,
+        command: Command {
+            request_id: std::num::NonZeroU128::new(55).unwrap(),
+            quest: id("theia.dev.quest-introduction"),
+            npc: id("theia.dev.guide"),
+            expected_revision: if action == Action::Accept { 0 } else { 4 },
+            action,
+        },
+    }
+}
+#[test]
+fn accept_turn_in_and_bound_refusals_round_trip_without_credit_uploads() {
+    use theia_core::quests::journal::Action;
+    use theia_network::quest_journal_wire::{
+        REPLY_BYTES, REQUEST_BYTES, Rejection, Reply, Request,
+    };
+    let p = profile();
+    for action in [Action::Accept, Action::TurnIn] {
+        let request = action_request(&p, action);
+        let encoded = request.encode(&p).unwrap();
+        assert_eq!(encoded.len(), REQUEST_BYTES);
+        assert_eq!(Request::decode(&encoded, &p).unwrap(), request);
+        let reply = Reply {
+            actor: actor(),
+            profile_hash: p.hash(),
+            sequence: request.sequence,
+            request_id: request.command.request_id,
+            revision: request.command.expected_revision + 1,
+            quest: request.command.quest.clone(),
+            quest_revision: request.command.expected_revision + 1,
+            rejection: None,
+        };
+        assert_eq!(reply.encode(&p).unwrap().len(), REPLY_BYTES);
+        assert_eq!(
+            Reply::decode(&reply.encode(&p).unwrap(), &p).unwrap(),
+            reply
+        );
+        reply.validate_request(&p, &request).unwrap();
+        let mut wrong = reply.clone();
+        wrong.request_id = std::num::NonZeroU128::new(56).unwrap();
+        assert!(wrong.validate_request(&p, &request).is_err());
+        for rejection in [
+            Rejection::Busy,
+            Rejection::NotEntitled,
+            Rejection::StaleSequence,
+            Rejection::NotAvailable,
+            Rejection::StaleRevision,
+            Rejection::NotReady,
+            Rejection::Capacity,
+            Rejection::Conflict,
+            Rejection::Exhausted,
+        ] {
+            let refused = Reply {
+                revision: 0,
+                quest_revision: 0,
+                rejection: Some(rejection),
+                ..reply.clone()
+            };
+            assert_eq!(
+                Reply::decode(&refused.encode(&p).unwrap(), &p).unwrap(),
+                refused
+            );
+            refused.validate_request(&p, &request).unwrap();
+        }
+    }
+}
+#[test]
+fn malformed_actions_cannot_inject_counts_other_profiles_or_unknown_operations() {
+    use theia_network::quest_journal_wire::Request;
+    let p = profile();
+    let encoded = action_request(&p, theia_core::quests::journal::Action::Accept)
+        .encode(&p)
+        .unwrap();
+    for n in 0..encoded.len() {
+        assert!(Request::decode(&encoded[..n], &p).is_err());
+    }
+    let mut appended = encoded.clone();
+    appended.extend(100u32.to_le_bytes());
+    assert!(Request::decode(&appended, &p).is_err());
+    for (at, value) in [(0, b'X'), (100, 255), (109, 3)] {
+        let mut bad = encoded.clone();
+        bad[at] = value;
+        assert!(Request::decode(&bad, &p).is_err());
+    }
+    for range in [4..12, 12..20, 20..52, 52..60, 60..68, 68..76, 84..100] {
+        let mut bad = encoded.clone();
+        bad[range].fill(0);
+        assert!(Request::decode(&bad, &p).is_err());
+    }
+    let mut bad = encoded.clone();
+    bad[60..68].copy_from_slice(&92u64.to_le_bytes());
+    assert!(Request::decode(&bad, &p).is_err());
+    let mut bad = encoded;
+    bad[101..109].fill(255);
+    assert!(Request::decode(&bad, &p).is_err());
+}
+#[test]
+fn malformed_replies_cannot_acknowledge_uncommitted_or_different_intents() {
+    use theia_network::quest_journal_wire::{REPLY_BYTES, Reply};
+    let p = profile();
+    let request = action_request(&p, theia_core::quests::journal::Action::Accept);
+    let reply = Reply {
+        actor: actor(),
+        profile_hash: p.hash(),
+        sequence: 1,
+        request_id: request.command.request_id,
+        revision: 1,
+        quest: request.command.quest.clone(),
+        quest_revision: 1,
+        rejection: None,
+    };
+    let encoded = reply.encode(&p).unwrap();
+    assert_eq!(encoded.len(), REPLY_BYTES);
+    for n in 0..encoded.len() {
+        assert!(Reply::decode(&encoded[..n], &p).is_err());
+    }
+    for (at, value) in [(0, b'X'), (84, 255), (93, 255)] {
+        let mut bad = encoded.clone();
+        bad[at] = value;
+        assert!(Reply::decode(&bad, &p).is_err());
+    }
+    for range in [4..12, 12..20, 20..52, 52..60, 60..76, 76..84, 85..93] {
+        let mut bad = encoded.clone();
+        bad[range].fill(0);
+        assert!(Reply::decode(&bad, &p).is_err());
+    }
+    let mut bad = reply;
+    bad.sequence = 2;
+    assert!(bad.validate_request(&p, &request).is_err());
+}
+#[test]
+fn possession_readiness_can_reverse_with_new_versions_but_permanent_facts_and_completion_cannot() {
+    use theia_core::inventory::{Bag, Catalog as Items, Stack};
+    let raw = json!({"schema":3,"id":"test.quest-items","revision":1,"quests":[{
+        "id":"delivery","version":1,"title":"Bring","description":"Test","prerequisites":[],
+        "giver":"guide","turn_in":"guide","repeat_policy":"once","credit_scope":"character","experience":25,
+        "start_stage":"stage","stages":[{"id":"stage","next":null,"completion":{"kind":"all"},"objectives":[
+            {"kind":"kill","id":"k","label":"Kill","creature":"wolf","required":2},
+            {"kind":"possess_item","id":"i","label":"Bring","item":"theia.dev.training-stone","required":3,"consume_on_turn_in":true}]}]}]});
+    let p = Profile::from_json(
+        &serde_json::to_vec(&raw).unwrap(),
+        &theia_network::progression_wire::Profile::from_json(XP).unwrap(),
+    )
+    .unwrap();
+    let items = Items::from_json(include_bytes!(
+        "../../../content/gameplay/development-equipment-items.json"
+    ))
+    .unwrap();
+    let bag = |n| {
+        let mut slots = std::array::from_fn(|_| None);
+        slots[0] = Stack::new(&items, id("theia.dev.training-stone"), n);
+        Bag::from_slots(&items, 0, slots).unwrap()
+    };
+    let mut j = Journal::default()
+        .propose_accept(p.catalog(), &id("delivery"), &id("guide"))
+        .unwrap()
+        .journal;
+    for _ in 0..2 {
+        j = j
+            .propose_trusted_event(p.catalog(), &EventKey::Kill(id("wolf")))
+            .unwrap()
+            .journal;
+    }
+    let j = j
+        .propose_inventory(p.catalog(), &items, &bag(3))
+        .unwrap()
+        .journal;
+    let ready = state(&p, 4, j.clone());
+    let reduced = j
+        .propose_inventory(p.catalog(), &items, &bag(2))
+        .unwrap()
+        .journal;
+    let active = state(&p, 5, reduced.clone());
+    active
+        .validate_successor(&p, actor(), Some(&ready))
+        .unwrap();
+    let bytes = active.encode(&p).unwrap();
+    assert_eq!(State::decode(&bytes, &p).unwrap(), active);
+    let restored = reduced
+        .propose_inventory(p.catalog(), &items, &bag(3))
+        .unwrap()
+        .journal;
+    let back = state(&p, 6, restored.clone());
+    back.validate_successor(&p, actor(), Some(&active)).unwrap();
+    // A coalesced remove/reacquire is valid without replaying intermediate views.
+    back.validate_successor(&p, actor(), Some(&ready)).unwrap();
+    let def = p.catalog().quest(&id("delivery")).unwrap();
+    let forged = Progress::from_parts(
+        def,
+        6,
+        Status::Active,
+        id("stage"),
+        vec![(id("k"), 1), (id("i"), 2)],
+    )
+    .unwrap();
+    let forged = state(
+        &p,
+        7,
+        Journal::from_progress(p.catalog(), vec![(id("delivery"), forged)]).unwrap(),
+    );
+    assert!(
+        forged
+            .validate_successor(&p, actor(), Some(&ready))
+            .is_err()
+    );
+    let mut same_head = active.clone();
+    same_head.revision = ready.revision;
+    assert!(
+        same_head
+            .validate_successor(&p, actor(), Some(&ready))
+            .is_err()
+    );
+    let done = restored
+        .propose_possession_turn_in(
+            p.catalog(),
+            &items,
+            &bag(3),
+            &id("delivery"),
+            &id("guide"),
+            6,
+        )
+        .unwrap();
+    let done = state(&p, 7, done.quest.journal);
+    done.validate_successor(&p, actor(), Some(&back)).unwrap();
+    let mut reversal = active;
+    reversal.revision = 8;
+    assert!(
+        reversal
+            .validate_successor(&p, actor(), Some(&done))
+            .is_err()
+    );
+}

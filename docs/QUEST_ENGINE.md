@@ -1,4 +1,180 @@
-# Quest engine expansion — 2 November 2026
+Stopped safely at user request, 4 November 2026:
+Qualified retained inventory/quest owner work is preserved at
+`build/quest-item-owner-qualified-v1-20261104`: 1,271 workspace/all-target tests,
+59 service skips and two actual OIDC/encrypted-ticket/PostgreSQL owner scenarios.
+Subsequent work adds a confirmed destruction UI, exact confirmed-revision command,
+and support for matching inventory acknowledgements carrying newer committed bags.
+Eleven inventory bridge tests, seven encrypted account tests, 144 client tests,
+formatting, strict all-target Clippy and optimized builds pass for those changes.
+The first 1920x1200 native run stopped at an inventory Escape-close check before
+testing destruction. It has zero GPU diagnostics on RX 7900 XTX / RADV Vulkan /
+Mesa 26.2.6. Additional close-pending diagnostics and a settled-close wait are
+built but not rerun. The destruction UI is work in progress, not native-qualified.
+Preserve current source/build at `build/quest-item-ui-wip-stopped-v1-20261104`.
+[Exact scope and resume work](QUEST_ITEM_OBJECTIVES.md).
+Reading/viewing notes is planned separately from possession. Live item-quest
+admission stays closed; repeatable loot and full native item flow remain pending.
+All owned services and desktop input stopped. Nothing committed or pushed.
+
+Item-quest retained owner prerequisite qualified locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: inventory initializes before item-bound journal
+admission; all supported owner bag mutations select compound transactions.
+Generation-bound publication preserves newer committed bag/journal/XP projections
+and command replies when responses arrive late. Actual owned OIDC/encrypted-ticket/
+PostgreSQL lease checks cover split/destroy/reacquire, refused missing-item turn-in,
+retained turn-in after logout, rejoin and replay without duplicate consumption/XP.
+The earlier historical journal owner also passes its actual service regression.
+All 1,271 workspace/all-target tests (59 service skips), formatting and strict
+workspace/all-target Clippy pass. Preserve
+`build/quest-item-owner-qualified-v1-20261104`.
+[Exact evidence and remaining native work](QUEST_ITEM_OBJECTIVES.md).
+NPC/event entitlement in owner checks is synthetic; separate channels may render
+on separate frames. Live World/manifest item admission stays closed. Confirmed
+UI, repeatable loot and normal encrypted/native item flow remain pending. Reading
+notes is recorded as a distinct planned objective. Changes stay local.
+
+Stopped safely at user request, 3 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: item-quest storage checkpoint is preserved, plus
+checked quantity destruction in core, canonical IR02-only destruction requests
+and compound SQL destruction/readiness reconciliation. A real split-one then
+destroy-one SQL command changes Ready 3/3 to Active 2/3; retries never remove twice.
+All 347 selected core/persistence/server tests, 14 inventory/journal codec checks,
+19 actual owned PostgreSQL journal contracts, formatting and strict workspace/
+all-target Clippy pass. Preserve
+`build/quest-item-destruction-storage-qualified-v1-20261103`.
+[Behavior, limits and resume work](QUEST_ITEM_OBJECTIVES.md).
+Unfinished destruction UI is set aside as an ignored patch; the client UI is
+restored to the prior qualified source. Item-quest live admission remains closed.
+Resume with retained owner initialization/coherent publication, confirmed UI,
+per-victim-life repeatable loot and normal encrypted/native item flow. Latest
+native playable remains the area checkpoint. All local; nothing committed/pushed.
+
+Item-quest durable storage prerequisite qualified locally, 3 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: exact item-profile binding, locked current-bag
+reconciliation and atomic item consumption/completion/XP/action receipts. Optional
+compound move/split/equipment, vendor and reward-claim APIs reconcile all active
+item quests before the same COMMIT. Accepted compound jobs drain after response
+loss. Existing unbound historical quest profiles retain their hashes and paths.
+All 345 selected core/persistence/server tests (48 service skips), 18 actual owned
+PostgreSQL journal contracts, formatting and strict workspace/all-target Clippy
+pass; durable bag/journal/XP/receipt hashes match after database restart.
+Preserve `build/quest-item-storage-qualified-v1-20261103`.
+[Exact evidence and pending live work](QUEST_ITEM_OBJECTIVES.md).
+SQL authorization/removal fixtures are synthetic. Live World/manifest item
+admission remains closed; owner publication, destruction, repeatable loot and
+normal encrypted/native item flows are pending. Latest playable remains the area
+client. No save migration or new full-workspace/GPU/Windows claim. Local only.
+
+Reversible item-quest core/codec prerequisite qualified locally, 3 November 2026:
+P3-05 / P3-11 / P3-15: quest schema 3 adds explicit possession requirements and
+consume-on-turn-in flags in an all-required final stage. Current holdings can
+change Ready back to Active while permanent facts remain. Pure turn-in rechecks
+current bags, prepares consumption/completion and recalculates other quests
+sharing the materials. Completed quests stay completed.
+All 335 core tests, nine codec checks, 72 authoring-tool checks, formatting and
+strict workspace/all-target Clippy pass. Preserve
+`build/quest-item-journal-qualified-v1-20261103`.
+[Behavior, evidence and pending live work](QUEST_ITEM_OBJECTIVES.md).
+Normal World/manifest admission still refuses unbound item quests. No new item
+SQL transaction, deletion UI, repeatable loot, encrypted/native item quest,
+save migration or full-workspace claim. Area client remains the latest playable.
+Changes stay local; storage/ownership integration is next.
+
+Quest-item possession/consumption prerequisite qualified locally, 3 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: checked backpack requirements count all stacks,
+preserve totals across split/merge, distinguish kept from consumed requirements
+and prepare all-or-nothing consumption against the supplied current bag.
+All 327 core tests, seven new requirement cases, formatting and denied-warning
+workspace/all-target Clippy pass. Preserve
+`build/quest-item-possession-qualified-v1-20261103`.
+[User semantics, pinned Classic-emulator evidence and remaining work](QUEST_ITEM_OBJECTIVES.md).
+This pure helper is not live quest progress, item deletion, repeatable loot or
+a SQL reward transaction. The area client remains the latest native playable.
+Reversible item objectives, synchronized storage/owner publication and real
+wolf-pelt loot/split/delete/reloot/turn-in are pending. Changes stay local.
+
+Reach-area quest normal client qualified locally, 3 November 2026:
+P3-02 / P3-11 / P3-12 / P3-15 / initial P3-16: opt-in manifest 16 binds static
+metric volumes to exact quest/XP content. Current alive authoritative feet
+produce bounded stage-scoped batches; the retained owner commits all changed
+quests and replay receipts before private publication. Overlapping multi-goal
+batches now preserve monotonic journal heads above every contained revision.
+All 1,169 workspace tests / 54 service skips, 51 manifest / 36 launcher checks,
+14 actual PostgreSQL journal contracts, formatting and strict all-target Clippy
+pass. Normal unmodified data/native OS controls complete the original two quests
+plus the overlook (about 134 m west), return and turn in: head 16 / 150 XP.
+Database restart/rejoin preserves all three completions, six actions and ten
+event receipts. Two native starts have zero GPU diagnostics on Linux RX 7900 XTX
+/ RADV Vulkan / Mesa 26.2.6. Preserve
+`build/quest-reach-client-qualified-v1-20261103`.
+[Exact semantics, proof and limits](QUEST_REACH_AREAS.md).
+Earlier schema-15 content/playables remain; no save migration, runtime packs,
+native Windows, FPS benchmark or MMO-capacity claim. All changes local.
+Next: user-requested possession-based item quests; splitting remains allowed.
+
+Reach-area queue/encrypted prerequisite qualified locally, 3 November 2026:
+P3-11 / P3-15 / initial P3-16: fixed-step authority reserves one bounded owner
+slot before sampling a typed stage-bound area batch. Full queues preserve retry;
+unchanged batches do not repeat while commit is pending. The retained server
+owner uses the qualified storage helper and publishes only committed views.
+All 354 network-library tests, formatting and strict workspace/all-target Clippy
+pass. New encrypted two-client delay/loss/duplicate cases at 20/30/60 Hz advance
+one batch per stage, keep the other journal private and award XP only at turn-in.
+Those encrypted cases use an explicit in-memory commit fixture; PostgreSQL was
+qualified separately. The combined native/SQL path is still pending.
+Preserve `build/quest-reach-owner-qualified-v1-20261103`.
+[Evidence and remaining normal-launch/native work](QUEST_REACH_AREAS.md).
+No normal manifest area role, native area quest, save migration or new full
+workspace/GPU/Windows/capacity claim. Changes remain local.
+
+Reach-area storage/worker prerequisite qualified locally, 3 November 2026:
+P3-02 / P3-11 / P3-15 / initial P3-16: area-aware persistence binds exact profile
+bytes, stage-scoped observations and domain-separated replay receipts. All
+affected quests and their receipt commit atomically; accepted jobs survive a
+dropped response and worker shutdown. Area evidence grants no XP; normal turn-in
+remains the reward transaction. Thirteen actual owned PostgreSQL journal
+contracts pass, including three new area cases, plus four non-SQL checks,
+formatting and strict workspace/all-target Clippy. Durable table hashes match
+across an actual database restart with fsync/synchronous_commit/full_page_writes.
+Preserve `build/quest-reach-store-qualified-v1-20261103`.
+[Exact proof and pending owner/native integration](QUEST_REACH_AREAS.md).
+Trusted SQL observations are synthetic; no encrypted/native area credit,
+manifest installation, save migration or new full-workspace/GPU claim. Local only.
+
+Reach-area World adapter qualified locally, 3 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: opt-in exact-area-byte quest profiles
+validate selectors, installed namespaces and continental bounds. Samples use
+current alive authoritative capsule feet, current World/actor binding and ready
+collision coverage, with no client position argument or simulation I/O.
+All 319 core / 352 network-library tests, 67 authoring-tool checks, formatting and
+strict workspace/all-target Clippy pass; five new authority cases include
+20/30/60-Hz predicate fixtures and dead-life exclusion. Preserve
+`build/quest-reach-world-qualified-v1-20261103`.
+[Evidence and remaining durable/live work](QUEST_REACH_AREAS.md).
+The immediately preceding full workspace passed 1,160 tests / 50 service skips;
+this checkpoint does not claim a new full-workspace or GPU/native run.
+Normal manifests still refuse area content; no durable area credit, save
+migration or new Windows/capacity claim. Changes remain local.
+
+Reach-area pure proposal prerequisite qualified locally, 3 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: schema 2 adds count-one area selectors;
+stage-scoped batches cannot credit later stages or later acceptances. Overlap,
+quorums, delayed same-stage credit, 128-goal bounds and saved-count round trips
+pass. Compiler selects the minimum schema; review detects selector changes.
+All 1,160 workspace tests / 50 skips, 319 core tests, 66 authoring-tool checks,
+formatting and strict workspace/all-target Clippy pass. Preserve
+`build/quest-reach-stage-qualified-v1-20261103`.
+[Semantics and pending live integration](QUEST_REACH_AREAS.md).
+Normal World/manifest admission explicitly refuses unsupported area objectives.
+No live area credit, runtime pack loading, migration, new GPU or Windows claim.
+Normal playable remains directional v1; all changes remain local.
+
+Reach-area expansion, 3 November 2026: the
+[finite metric geometry prerequisite](QUEST_REACH_AREAS.md) is qualified.
+Quest catalogue/schema/stage-sealed evidence and live credit remain pending;
+the current runtime still supports kill and semantic NPC objectives only.
+
+# Quest engine expansion — 3 November 2026
 
 P3-11 / P3-12 / P3-15 / initial P3-16. The user reviewed a broader Rust quest
 design and authorized implementation. Keep rules in the Bevy-independent
@@ -6,15 +182,20 @@ design and authorized implementation. Keep rules in the Bevy-independent
 server and standard Bevy presentation on the client. No new service, ECS,
 scripting dependency or crate split is needed for the first expansion.
 
-The current single three-kill quest, PostgreSQL receipts, XP-only atomic turn-in,
-private journal and guide markers remain the qualified live flow. Do not replace
-them until the expanded persistence/authority/transport/native slice passes.
-The archived threat World draft remains separate; this continuation prioritizes
-the user's quest-design alignment. P3-17/18 remain unspecified.
+The current explicit development flow uses the expanded multi-quest journal,
+semantic NPC choices, prerequisite/stage objectives and atomic kill/completion XP.
+Schema-12 normal OIDC/PostgreSQL/native completion and database-restart rejoin
+are qualified; schema-13 adds separately qualified [damage threat](CREATURE_THREAT.md)
+and passes final regression and native completion/rejoin. Separate schema-14
+[public NPC timing](PUBLIC_CREATURE_ATTACKS.md) and schema-15
+[public visual player life](PUBLIC_AVATAR_LIFE.md) retain these quest rules and
+pass normal completion/restart regression. The previous single-quest mode and playable checkpoints
+remain available. Later sections record the successive qualification boundaries;
+earlier "next" steps there are historical. P3-17/18 remain unspecified.
 
 ## Catalogue prerequisite
 
-The initial `quests::catalog` catalogue is opt-in pure/offline code. It supports
+The immutable `quests::catalog` catalogue supports
 stable catalogue/quest/stage/objective IDs, catalogue revision, per-quest version,
 all-completed quest prerequisites, giver/turn-in NPC IDs, XP recipes, ordered
 stages and multiple objectives per stage. Completion supports `all`, `any`, or
@@ -58,9 +239,10 @@ ID namespace and cross-pack prerequisites through a registry, and load only
 validated executable content. A regional boundary must not break a quest chain
 or erase a character's completed prerequisite history.
 
-This registry and cross-pack validation are planned, not implemented. Today's
-single catalogue validator requires prerequisite references within that catalogue;
-simply splitting the JSON does not introduce cross-pack support. Today's journal
+A bounded offline core registry and [file-index checker](QUEST_PACK_AUTHORING.md)
+now validate the combined namespace and cross-pack prerequisite graph. The live
+single-catalogue validator still requires prerequisite references within that
+catalogue; simply splitting JSON does not introduce runtime pack loading. Today's journal
 also binds exact catalogue bytes and retains at most 32 quest records. Campaign
 scale therefore requires both content loading changes and a bounded active
 journal with separately retained completed-quest history. Measure costs before
@@ -400,3 +582,388 @@ remain separate acceptance. Its small catalogue indices are specific to this
 bounded development version; production registry/history scaling may require a
 new wire version. It does not make 32 quests a permanent campaign limit. No new
 native GPU, Windows, Internet or MMO-capacity claim is made.
+
+
+## Action/reply codec and shared producer prerequisite qualified
+
+QK01 actions are exactly 110 bytes: current actor and NPC incarnations, exact
+profile digest, client sequence, dialogue revision, original nonzero request ID,
+quest index, painted quest revision and Accept/TurnIn. Logical contact IDs come
+from the validated definition. No objective counts, arbitrary events or reward
+amounts can be uploaded through this frame. QP01 replies are 94 bytes and bind
+actor/profile, client sequence, original request ID, quest, durable journal and
+quest revisions, plus a bounded refusal code. Reply validation rejects a different
+pending intent or success without progress beyond the proposed quest revision.
+
+The explicit Router checks current World/content, actor, own guide session and
+range before queueing a command. It allows one pending command and shares its
+internal producer sequence with semantic/kill events. Queue acceptance gives no
+success reply; `take_reply` maps only the matching committed owner response back
+to the original client intent. Later event updates may advance the returned view
+while retaining that command acknowledgement. Caller retains a taken reply until
+publication succeeds. Normal refusals remain typed; unexpected owner failures
+fail closed. This still is not wired into normal UDP or the playable UI.
+
+Eight codec checks and eight focused reference/World/router checks pass, with
+formatting and workspace/all-target denied-warning Clippy. The new channel test
+uses an explicit synthetic initialized/committed owner view to prove shared
+sequence, pending exclusion, no early success, later-event coalescing and mapped
+rule refusals. Actual SQL/OIDC retirement remains separately qualified in the
+snapshot checkpoint. Source/proof:
+`build/quest-journal-actions-qualified-v1-20261102`. No new native or combined
+World+SQL claim.
+
+Before normal adoption, preserve the legacy atomic configured-kill XP/objective
+contract for the expanded journal. The independent normalized event API must
+continue supporting quest-only creatures; that does not require weakening a
+configured XP-plus-quest award into two independent commits. Add an optional-XP
+kill transaction and original receipt checks, then connect normal runtime/private
+journal/client dispatch and qualify real encrypted/durable/native flows.
+
+
+## Optional-XP kill Store prerequisite qualified; stopped safely
+
+`Store::award_progression_and_quest_journal` now authorizes one original victim
+life and commits configured XP plus all matching journal progress and receipts
+in one transaction. It locks XP before the journal. A creature with no XP recipe
+still receives quest-only processing without requiring an XP row. Existing
+migrations/tables remain unchanged; the generic normalized event path shares the
+same transaction helper. The victim-life occurrence domain matches the explicit
+World adapter and is centralized in pure core.
+
+Paired kill receipts use a distinct versioned hash from independent events.
+Replays grant no extra XP or quest progress; pre-accept no-ops cannot later count.
+An existing XP-only receipt cannot silently become new quest credit, and an
+independent quest-event receipt cannot silently become a paired award. The XP cap
+still permits journal progress and retains the event disposition. XP policy is
+exactly bound; changing it remains an explicit migration, not a replay loophole.
+
+Three new owned contracts pass with all 36 prior contracts (39 total): positive
+and capped XP with pre-accept/replay/completion, quest-only recipients without XP
+state, operation conflicts, injected rollback after XP update and a held XP-lock
+acknowledgement barrier. The owned runner also repeats its prior journal/process
+restart checks; it does not fingerprint the new Atomic-prefixed fixtures across
+restart. All 290 core, eight codec, eight focused World/router and the competing-
+player credit/routing check pass, plus formatting and workspace/all-target
+denied-warning Clippy. Proof: `build/quest-journal-atomic-postgres-v2-20261102` and
+`build/quest-journal-atomic-qualified-v1-20261102`. The first run exposed a fixture
+attempt to create two owners for one realm; the corrected fixture retains the
+single owner and observes its blocked transaction through the owned connection.
+
+The user requested a stop. Current source is qualified; services are shut down.
+The new Store method is not yet called by the bounded worker/router. Resume by
+carrying the original victim life through those adapters, preserving command
+acknowledgements and routing one combined award. Then qualify normal encrypted
+request/state dispatch, client UI and native gameplay before replacing the legacy
+launch. Additional restart fingerprints for the new combined fixtures remain a
+specific acceptance check. Commit `4ceff46` contains the earlier snapshot/owner/
+World groundwork and is pushed; later action/atomic changes remain local.
+
+
+## Original kill facts through retained owners — 3 November 2026
+
+P3-02 / P3-10 / P3-11 / P3-12: explicit World kill routing now preserves the
+original typed victim-life `KillEvent`, rather than converting it into an
+independent quest-only event. It retains installed solo tag ownership, batch
+bounds, all-or-none queue reservation and the shared producer sequence. Kills
+without matching objectives are retained too, so a conversation-only catalogue
+cannot suppress configured kill XP. The competing-hitter fixture checks this at
+20/30/60 Hz, including a full queue and retry with the same victim life.
+
+`JournalOperation::Kill` reaches the character's retained owner and shared
+critical persistence FIFO. The worker calls the single optional-XP Store
+transaction. Dropping a response does not cancel accepted work; graceful shutdown
+drains it. Journal owners refuse legacy XP-only input and generic Kill events,
+which would bypass the combined original-life transaction. Semantic interactions
+remain independent events. Kill updates preserve the latest command reply.
+
+All 40 owned PostgreSQL contracts pass, including a new held-lock/17-job worker
+case: no early acknowledgement, a full 16-slot FIFO, cancelled answers, original
+kill replay, XP cap, continued quest progress and drain before shutdown. The
+runner now fingerprints the complete journal heads, entries, action/event and XP
+receipt rows for the Atomic-prefixed fixtures before and after a real database
+process restart. Quest-only cases retain the absence of an XP row. The first
+runner invocation used an incorrect expected fixture total (25 instead of the
+fixture's deliberately established 50); the corrected runner passes.
+
+Actual OIDC/encrypted-ticket/SQL owner qualification queues three kills, a replay
+and a no-XP occurrence after the final command, revokes login, blocks reconnect
+until retirement and then replays after reconnect. Completion XP is 25, kill XP
+is 75; total stays 100 through replay, the follow-up is Ready and the command
+acknowledgement survives. These are trusted synthetic owner inputs; actual World
+recipient routing has separate headless evidence. This does not yet establish a
+combined World/SQL/UDP/native quest flow or normal client adoption.
+
+Proof: `build/quest-journal-kill-postgres-v2-20261103` and
+`build/quest-journal-kill-owner-v2-20261103`. Owned services stop and password files
+are removed. Formatting and workspace/all-target denied-warning Clippy pass;
+all 1,050 workspace tests pass (50 ignored; the 40 SQL contracts were executed explicitly). Next: installed World/profile binding
+and private reliable state/action dispatch, then client journal UI and native
+acceptance. The prior schema-11 playable stays available; changes remain local.
+
+
+## Installed expanded-journal transport qualified — 3 November 2026
+
+P1-06 / P1-08 / P3-02 / P3-10 / P3-11 / P3-12: the explicit runtime mode binds
+an exact catalogue and XP policy into the World identity. Installation validates
+local quest contacts, semantic choices and creature selectors before admission,
+refuses legacy quest modes and refuses replacing a different installed XP policy.
+The journal installation can supply its XP policy directly: a creature without
+an XP recipe and a conversation-only catalogue remain valid. Legacy XP-only
+installation retains its stricter installed-creature checks. No new production
+content registry or cross-pack reference validation is claimed.
+
+Character ports now carry immutable journal identity before asynchronous saved
+state initialization. Admission checks it against the World. Trusted kills can
+queue before the first journal observation, retaining pre-accept disposition;
+player commands and dialogue mutations still wait for initialized state. The
+normal runtime routes semantic choices and original kill lives through the same
+producer. Instant ability results are routed after the bounded peer input batch,
+so recipient lookup uses the actual credit owner rather than assuming the final
+caster owns XP/rewards. Critical work remains outside simulation/SQL awaits.
+
+The existing 8-KiB reliable channel carries owner-private QJ01 snapshots and
+QP01 replies, with state sent before acknowledgement. Replies taken from the
+retained owner survive a failed publication attempt. The normal slow-peer policy
+then disconnects the slow connection and retains accepted work through character
+retirement. One original command is in flight on the opt-in client transport;
+matching actor/profile/request ID/quest, committed revisions and the actual action
+state are required before clearing it. Replayed identical replies are harmless;
+a snapshot by itself cannot acknowledge an intent. Four queued UI intents and
+150-ms send pacing stay bounded. The client bridge exposes private journal,
+reply and pending state, without introducing a normal Bevy journal panel yet.
+
+Fifteen focused checks pass. Actual encrypted two-peer runtime cases at 20/30/60 Hz
+use 20-ms delay, up to 30-ms jitter, every-eleventh-packet loss and
+every-seventeenth-packet duplication. Relay counters confirm drops, duplication,
+reordering and no overflow. They exercise pre-accept kills, prerequisite refusal,
+ordered semantic stages, three kills, both turn-ins, private progress and replies,
+and retained command acknowledgement through later progress. A fourth 30-Hz case
+has no matching local XP recipe: all kill objectives still advance and both
+completion rewards commit in the explicit in-memory owner. These cases use a
+synthetic admission/commit adapter, not OIDC or PostgreSQL. Real OIDC/SQL retained
+ownership and atomic durability have separate evidence above.
+
+Current focused proof: `build/quest-journal-runtime-tests-v5-20261103.log`.
+Formatting, denied-warning all-target Clippy, all 1,057 workspace tests (50
+ignored) and the updated actual OIDC/SQL owner regression pass against final
+source. The 40 SQL contracts and restart checks are inherited unchanged from the
+kill checkpoint. Source/proof: `build/quest-journal-runtime-qualified-v1-20261103`.
+The owned identity/database services are stopped. Normal launch
+manifest/CLI, authenticated World wiring, standard Bevy journal/NPC actions and
+markers, and combined native/durable acceptance remain open. The schema-11
+playable and original-kill checkpoint remain preserved; changes stay local.
+
+
+## Normal journal launcher/UI candidate — 3 November 2026
+
+P2-14 / P3-02 / P3-11 / P3-12 / P3-15: schema 12 uses 21 exact-byte roles,
+retaining the reset/combat bundle and replacing the legacy quest/extra completion
+recipe interpretation with the expanded catalogue's embedded completion rewards.
+The content-root manifest `content/development-gameplay-classic-journal.json`
+references the canonical `content/quests/` definitions and semantic guide. It
+never copies campaign planning content into executable definitions. Offline checks
+resolve contacts, choices and creatures and refuse legacy/new role mixing.
+
+The explicit `--quest-journal` CLI mode and authenticated service now supply the
+same catalogue to World and retained persistence owners. The launcher selects it
+from schema 12; earlier manifests retain their modes. The Bevy client presents
+committed per-quest stages/counts/completion, guide acceptance/turn-in buttons,
+retained painted intent identities and bounded pending feedback. A scrollable
+tracker and aggregated guide marker prioritize Ready, then available offers,
+then active work; completed quests disappear from offered actions. This marker
+priority is an explicit Theia presentation policy, not an exact Classic claim.
+
+All 127 client tests, 41 validator tests and 31 Python bundle/handoff tests pass,
+plus formatting and workspace/all-target denied-warning Clippy. These include
+original-intent widget behavior, missing prerequisites/current guide context,
+completed prerequisite offers, committed marker aggregation, canonical nested
+content snapshots and exclusive launcher mode. Proof logs use
+`build/quest-journal-launch-*-v4-20261103`. Read-only owned-X11 telemetry was
+extended for visible journal/actions/choices and actual target health; it grants
+no progress and injects no commands.
+
+Optimized client/server build and native acceptance are in progress. The new
+`tools/qualify_quest_journal_os.py` drives actual PID-bound mouse/keyboard input,
+normal login/launcher and owned SQL. Its initial private combat fixture reduces
+wolf perception, speed and retaliation damage to isolate UI behavior; catalogue,
+objectives and rewards stay unchanged. No native success, normal default switch,
+production campaign scale or new Windows execution is claimed yet. The previous
+schema-11 playable and qualified runtime checkpoints remain preserved; all
+changes remain local.
+
+
+## Normal expanded-journal native checkpoint qualified — 3 November 2026
+
+The schema-12 launcher and Bevy journal candidate above now has actual normal
+OIDC/PostgreSQL/encrypted/native acceptance. Fresh play passes at 1920x1200,
+3440x1440 fullscreen and 1280x720. Two additional native rejoins occur after real
+PostgreSQL process restarts. All five runs have zero GPU diagnostics on connected
+Linux AMD Radeon RX 7900 XTX / RADV Vulkan / Mesa 26.2.6. These use PID-bound X11
+synthetic mouse/keyboard events, not physical hardware or native Windows.
+
+Every fresh flow accepts the introduction, chooses road/supplies/report, turns it
+in, accepts the unlocked follow-up, equips the sword, kills three actual World
+wolves, returns to the guide, chooses training and turns in. SQL has two completed
+entries, four original command receipts, seven semantic/kill receipts, journal
+head 11 and 125 total XP. The post-restart normal client sees the same completion
+with no new offered actions, submissions or rewards. Tracker text and actual
+buttons are screenshot-checked at all three sizes. The current normal launcher
+remains explicit: bare `tools/play.py` still runs its walking sandbox.
+
+The private copied combat fixture changes wolf perception to 1 m, chase/patrol
+speed to 0.1 m/s and retaliation policy damage to 1, isolating quest UI from
+unrelated combat balance. All canonical quest definitions, objectives, XP policy
+and completion rewards remain byte-identical. This is a combined real World,
+UI, identity and SQL quest proof; it does not replace prior unmodified Classic
+combat/native qualification or establish campaign-scale/party/loot behavior.
+
+The first 1920 run reached Ready after all kills but its final button did not
+activate. Quest actions now use standard Bevy click-on-release, avoiding hiding
+the widget while a press is held. Repeated actual actions pass. The tracker uses
+ASCII separators supported by the current font, suppresses the redundant legacy
+guide hint in this mode and remains above the lower-left HUD at 1280x720 with
+bounded scrolling. The three initial headless intent tests, new marker test and
+all 127 client tests pass after the fixes, with formatting and all-target
+Clippy. The 41 validator and 31 Python results are inherited unchanged from the
+same launcher slice; 1,057 workspace / 40 owned SQL checks remain the earlier
+runtime/kill baseline. No fictitious fresh full-workspace total is claimed.
+
+Proof: `build/quest-journal-launch-native-v2-20261103` (1920 + rejoin),
+`build/quest-journal-launch-native-v3-20261103` (3440/1280 + rejoin), and
+`build/quest-journal-client-qualified-v1-20261103` (source, optimized binaries,
+prepared assets and proof). Owned services stop and password files are removed.
+All changes remain local. The earlier schema-11 playable stays preserved.
+
+With the normal database/provider environment configured as described in
+[authenticated admission](AUTHENTICATED_ADMISSION.md), this local qualified kit
+can run the canonical development content with:
+
+```sh
+python3 tools/play.py --classic --account-login \
+  --binaries build/quest-journal-repeat-qualified-v1-20261103 \
+  --gameplay-manifest content/development-gameplay-classic-journal.json \
+  --players build/quest-journal-repeat-qualified-v1-20261103/art/player \
+  --creature-asset build/quest-journal-repeat-qualified-v1-20261103/art/wolf/wolf.glb
+```
+
+The kit supplies the validator as well as the matching binaries. Raw development
+launches use their configured combat data; the reduced-aggression proof copy is
+confined to the owned qualification directory. Existing legacy quest characters
+still require explicit saved-content compatibility handling; no automatic legacy
+journal migration or campaign-ID allocation is introduced.
+
+
+## Repeated guide choices and pre-accept disposition qualified
+
+The shared informational choice widgets now also use the standard Bevy Button
+click-on-release behavior. The same native mouse-selected choice is visited
+twice before acceptance and a third time during its actual stage. Those earlier
+legitimate occurrences create two no-op receipts, not retroactive quest progress
+or XP. Each new visit retains its own original authoritative occurrence identity;
+this is distinct from replaying the same receipt, which remains idempotent.
+
+An actual normal OIDC/SQL native 1920x1200 flow completes both quests, makes all
+four command actions once and obtains 125 total XP. Two pre-accept conversations
+increase the final head from 11 to 13 and event receipts from seven to nine; final
+per-quest revisions/counts are unchanged. PostgreSQL process restart and native
+rejoin retain completion, receipt counts and XP with no new offers/actions. Both
+runs have zero GPU diagnostics on the same connected Linux RX 7900 XTX / RADV
+Vulkan / Mesa 26.2.6. The earlier 3440/1280 rendering/layout evidence is inherited;
+this change alters input activation timing, not layout. It retains the explicit
+private reduced-aggression combat fixture and unchanged canonical quest content.
+
+All 127 client tests, formatting and workspace/all-target denied-warning Clippy
+pass against the updated source. Proof: `build/quest-journal-repeat-native-v1-20261103`;
+source/optimized binaries/assets: `build/quest-journal-repeat-qualified-v1-20261103`.
+Services are stopped, password files removed and all changes remain local. The
+launch command above selects this latest kit. Earlier checkpoints stay preserved.
+
+## Bounded offline pack-registry prerequisite — 3 November 2026
+
+P3-11 / P3-15. `quests::catalog::registry::Registry` validates immutable
+executable catalogues together. Current development budgets are 32 packs, each
+with the existing 32-quest / 512-objective / 64-KiB limits, and 2 MiB total input
+(up to 1,024 quests). These are bounded offline development guards, not chosen
+production limits or campaign-capacity evidence. Existing per-quest/stage/objective
+capabilities and prerequisite-count bounds remain unchanged.
+
+Catalogue, quest, stage and objective definition IDs share one global namespace.
+Contacts and objective targets cannot alias a definition in another pack.
+Prerequisites may point forward/backward across supplied packs; unknown IDs,
+self/cross-pack cycles and duplicate IDs refuse. Iterative global traversal
+handles a full 1,024-quest chain without recursive graph calls and permits valid
+shared prerequisite diamonds. Pack/source ordering does not change quest lookup
+or ownership. Each source is bounded before parsing; all prior structural and
+unsupported-feature validation still applies.
+
+Only the private registry path defers prerequisite linking. Public
+`Catalog::from_json` remains closed and unchanged for runtime journals. Registry
+exposes quest definitions, owning catalogue IDs and immutable metadata, never its
+internal partially linked `Catalog` values. No World/transport/client/SQL/journal
+loading change is made. This does not implement production pack loading,
+completed-history scaling, content compatibility/migration, hot reload or the
+consolidated narrative planning manifest as executable data.
+
+Six new checks cover canonical split definitions with retained standalone
+refusal, missing/cyclic/shared prerequisites, all definition kinds and cross-role
+collisions, cross-pack world-target aliasing, retained strict budgets/capabilities,
+and the full padded 2-MiB/1,024-quest chain plus cycle. All 296 core tests,
+formatting and workspace/all-target denied-warning Clippy pass. The six-test run
+was 0.11 s on this machine; this is a simple synthetic validation fixture, not
+runtime/population capacity. Preserve `build/quest-registry-core-qualified-v1-20261103`.
+Next is a bounded offline file/index validator with exact hashes and author-facing
+errors. Ordinary development remains the qualified schema-13 threat playable.
+
+## Offline file-index authoring workflow qualified — 3 November 2026
+
+P3-11 / P3-15. [Executable pack/index guide](QUEST_PACK_AUTHORING.md) documents
+strict schema-1 index files, current supported definitions, bounds and exact CLI
+usage. `validate_quest_packs` reads 1–32 regular contained files, retains per-pack
+64-KiB/32-quest safeguards, resolves their global namespace/graph and emits exact
+input hashes and metadata without modifying sources. It rejects outside/aliased
+paths, oversized/nonregular/missing inputs and unsupported planning fields.
+Bounded typed errors identify source indexes and offending stable IDs; CLI errors
+include filenames and never dump narrative prose. Successful reports explicitly
+state that runtime pack loading and world-reference validation are not provided.
+
+Seven pure registry checks and seven file/index checks pass, along with all 297
+core and 44 existing gameplay-validator tests, formatting and all-target denied-
+warning Clippy. The configured CI command for both validator examples passes
+locally on Linux; hosted CI and Windows execution remain unverified. The actual
+compiled CLI validates a split copy of the two canonical quests, reports their
+exact hashes, refuses a missing prerequisite with no success output, and leaves
+both valid/invalid source sets unchanged. This proves offline authoring validation,
+not World loading, campaign runtime scale or saved-state migration. Current
+normal gameplay/source/binaries remain the threat v2 playable.
+
+Preserve `build/quest-registry-cli-qualified-v1-20261103`; raw executable proof is
+`build/quest-registry-cli-actual-v1-20261103`. Next is a bounded closed-catalogue
+handoff for reviewed playable subsets; production pack loading and separate
+completion history/migration remain distinct future slices.
+
+## Closed runtime-catalogue handoff qualified — 3 November 2026
+
+P3-11 / P3-15. `Registry::compile_catalogue` produces a closed, bounded reviewed
+subset with explicit output catalogue ID/revision and every transitive quest
+prerequisite. It preserves definition IDs, versions, stage rules, objective order,
+contacts, XP and event indexes. Root/source ordering is deterministic; 32-quest,
+512-objective and 64-KiB overflow refuses without truncation. Only the fully
+reparsed closed `Catalog` can be exposed to a live journal.
+
+The existing offline tool adds explicit `--compile-selection`, with an 8-KiB
+strict request, catalogue stdout and bounded stderr provenance binding exact
+registry/selection/output hashes. Default validation remains unchanged. Seven
+core compilation and four additional file/compiler checks pass; actual CLI
+repeat bytes/hashes, no-input-mutation, missing-root refusal, normal schema-13
+manifest acceptance and unknown installed-contact refusal pass. All 1,089
+workspace tests (50 skips), 304 core, 45 gameplay-validator and 11 authoring-tool
+checks, formatting and all-target denied-warning Clippy pass. No rendering or
+persistence change; native/SQL evidence is inherited.
+
+[Current authoring workflow](QUEST_PACK_AUTHORING.md). Preserve source, tools and
+proof at `build/quest-compile-qualified-v1-20261103`. This is an offline handoff,
+not runtime pack loading, 1,024-quest active journals or saved-version migration.
+Compiled metadata/definition changes can still cause exact-byte save-profile
+incompatibility; the compiler never rewrites character progress or installs a
+new normal bundle automatically.

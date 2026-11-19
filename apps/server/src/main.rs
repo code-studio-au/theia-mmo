@@ -31,6 +31,9 @@ async fn main() -> Result<()> {
     let mut combat_membership = None;
     let mut creature_credit = None;
     let mut creature_reset = None;
+    let mut creature_threat = None;
+    let mut public_creature_attacks = false;
+    let mut public_avatar_life = false;
     let mut combat_bytes = None;
     let mut targeted = false;
     let mut combat_catalog = None;
@@ -46,7 +49,9 @@ async fn main() -> Result<()> {
     let mut reward_catalog = None;
     let mut progression_catalog = None;
     let mut quest_catalog = None;
+    let mut quest_areas = None;
     let mut explicit_quest = false;
+    let mut journal_mode = false;
     let mut quest_turn_in_xp = None;
     let mut dialogue_catalog = None;
     let mut vendor_catalog = None;
@@ -67,6 +72,16 @@ async fn main() -> Result<()> {
             "--ability-starting" => {
                 if ability_starting.is_some(){return Err("Choose one ability starting profile".into());}
                 ability_starting=Some(PathBuf::from(args.next().ok_or("Missing ability starting profile")?));
+            }
+            "--public-avatar-life" => {
+                if std::mem::replace(&mut public_avatar_life,true){return Err("Choose public avatar life once".into());}
+            }
+            "--public-creature-attacks" => {
+                if std::mem::replace(&mut public_creature_attacks, true) {return Err("Choose public creature attacks once".into());}
+            }
+            "--creature-threat" => {
+                if creature_threat.is_some(){return Err("Choose one creature threat policy".into());}
+                creature_threat=Some(PathBuf::from(args.next().ok_or("Missing creature threat policy")?));
             }
             "--creature-reset" => {
                 if creature_reset.is_some(){return Err("Choose one creature reset policy".into());}
@@ -131,9 +146,14 @@ async fn main() -> Result<()> {
                 guide_position=Some(values.try_into().map_err(|_|"Expected guide x,z")?);
             }
             "--quest-lifecycle" => explicit_quest=true,
+            "--quest-journal" => journal_mode=true,
             "--quest-turn-in-xp" => {
                 if quest_turn_in_xp.is_some() {return Err("Choose one completion XP recipe".into());}
                 quest_turn_in_xp=Some(PathBuf::from(args.next().ok_or("Missing completion XP recipe")?));
+            }
+            "--quest-areas" => {
+                if quest_areas.is_some() {return Err("Choose one quest area catalogue".into());}
+                quest_areas=Some(PathBuf::from(args.next().ok_or("Missing quest areas")?));
             }
             "--quest-catalog" => {
                 if quest_catalog.is_some() {return Err("Choose one quest catalog".into());}
@@ -485,6 +505,25 @@ async fn main() -> Result<()> {
         world.enable_creature_reset(&bytes)?;
         println!("development_creature_reset enabled=true policy=creature_return_reset_fixture_v1");
     }
+    if let Some(path) = creature_threat {
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        std::fs::File::open(path)?
+            .take(theia_core::threat::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        world.enable_creature_threat(&bytes)?;
+        println!(
+            "development_creature_threat enabled=true policy=classic_damage_threat_empirical_v1"
+        );
+    }
+    if public_creature_attacks {
+        world.enable_public_creature_attacks()?;
+        println!("development_public_creature_attacks enabled=true contract=NA01");
+    }
+    if public_avatar_life {
+        world.enable_public_avatar_life()?;
+        println!("development_public_avatar_life enabled=true contract=AV01");
+    }
     if let Some(origin) = origin
         && !world.set_origin(origin)
     {
@@ -508,6 +547,19 @@ async fn main() -> Result<()> {
         && (!account_login || world.patrol_snapshot().is_none() || !world.combat_enabled())
     {
         return Err("Progression requires account login and authoritative creature combat".into());
+    }
+    if quest_areas.is_some() && (!journal_mode || quest_catalog.is_none()) {
+        return Err("Quest areas require expanded journal mode and a catalogue".into());
+    }
+    if journal_mode && (explicit_quest || quest_turn_in_xp.is_some()) {
+        return Err(
+            "Journal mode excludes legacy quest modes and external completion recipes".into(),
+        );
+    }
+    if journal_mode
+        && (quest_catalog.is_none() || dialogue_catalog.is_none() || !account_login || !predicted)
+    {
+        return Err("Journal requires catalog, dialogue and predicted account login".into());
     }
     if quest_catalog.is_some() && progression_catalog.is_none() {
         return Err("Quest objectives require progression".into());
@@ -620,6 +672,7 @@ async fn main() -> Result<()> {
         } else {
             None
         };
+        let mut journal_progression = None;
         let progression = if let Some(path) = progression_catalog {
             use std::io::Read;
             let mut bytes = Vec::new();
@@ -627,20 +680,61 @@ async fn main() -> Result<()> {
                 .take(theia_core::progression::MAX_PROFILE_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
             let profile = theia_persistence::ProgressionCatalog::from_json(&bytes)?;
-            world.enable_progression(std::sync::Arc::new(
-                theia_network::progression_wire::Profile::from_json(&bytes)?,
-            ))?;
+            let wire =
+                std::sync::Arc::new(theia_network::progression_wire::Profile::from_json(&bytes)?);
+            if journal_mode {
+                journal_progression = Some(wire);
+            } else {
+                world.enable_progression(wire)?;
+            }
             Some(profile)
         } else {
             None
         };
-        let (quest, quest_lifecycle) = if let Some(path) = quest_catalog {
+        let (quest, quest_lifecycle, quest_journal) = if let Some(path) = quest_catalog {
             use std::io::Read;
             let mut bytes = Vec::new();
             std::fs::File::open(path)?
-                .take(theia_core::quests::MAX_PROFILE_BYTES as u64 + 1)
+                .take(
+                    if journal_mode {
+                        theia_core::quests::catalog::MAX_CATALOG_BYTES
+                    } else {
+                        theia_core::quests::MAX_PROFILE_BYTES
+                    } as u64
+                        + 1,
+                )
                 .read_to_end(&mut bytes)?;
-            if explicit_quest {
+            if journal_mode {
+                let xp = progression.as_ref().ok_or("Journal requires progression")?;
+                let wire_xp = journal_progression
+                    .take()
+                    .ok_or("Journal requires world XP policy")?;
+                let (profile, wire) = if let Some(path) = &quest_areas {
+                    let mut areas = Vec::new();
+                    std::fs::File::open(path)?
+                        .take(theia_core::quests::areas::MAX_CATALOG_BYTES as u64 + 1)
+                        .read_to_end(&mut areas)?;
+                    (
+                        theia_persistence::QuestJournalCatalog::from_json_with_areas(
+                            &bytes, &areas, xp,
+                        )?,
+                        theia_network::quest_journal::Profile::from_json_with_areas(
+                            &bytes, &areas, &wire_xp,
+                        )?,
+                    )
+                } else {
+                    (
+                        theia_persistence::QuestJournalCatalog::from_json(&bytes, xp)?,
+                        theia_network::quest_journal::Profile::from_json(&bytes, &wire_xp)?,
+                    )
+                };
+                let wire = std::sync::Arc::new(wire);
+                if profile.hash() != wire.hash() {
+                    return Err("Journal authority/persistence identity mismatch".into());
+                }
+                world.enable_quest_journal(wire, wire_xp)?;
+                (None, None, Some(profile))
+            } else if explicit_quest {
                 let recipe = if let Some(path) = &quest_turn_in_xp {
                     let mut recipe = Vec::new();
                     std::fs::File::open(path)?
@@ -674,16 +768,16 @@ async fn main() -> Result<()> {
                     )
                 };
                 world.enable_quest_lifecycle(std::sync::Arc::new(wire))?;
-                (None, Some(profile))
+                (None, Some(profile), None)
             } else {
                 let profile = theia_persistence::QuestCatalog::from_json(&bytes)?;
                 world.enable_quest(std::sync::Arc::new(
                     theia_network::quest_wire::Profile::from_json(&bytes)?,
                 ))?;
-                (Some(profile), None)
+                (Some(profile), None, None)
             }
         } else {
-            (None, None)
+            (None, None, None)
         };
         if tickets.is_some() || dev_persistence || chunk_stream || !graybox || !predicted {
             return Err("Account login requires saved predicted terrain and excludes development ticket/persistence overrides".into());
@@ -720,6 +814,7 @@ async fn main() -> Result<()> {
             config,
             shutdown,
             theia_server::authenticated::GameplayProfiles {
+                quest_journal,
                 quest_lifecycle,
                 inventory,
                 rewards,

@@ -31,6 +31,12 @@ struct Path {
     mode: policy::Mode,
     target: Option<theia_core::player_life::LifeKey>,
 }
+pub(in crate::simulation::combat) struct ThreatTransfer {
+    state: policy::State,
+    policy: theia_core::retaliation::State,
+    revision: u64,
+    cancelled: bool,
+}
 pub(super) struct Runtime {
     settings: policy::Settings,
     state: policy::State,
@@ -312,6 +318,114 @@ impl Runtime {
 }
 
 impl super::Combat {
+    pub(in crate::simulation::combat) fn threat_policy_target(
+        &self,
+    ) -> Option<theia_core::player_life::LifeKey> {
+        self.pve.as_ref()?.policy.target()
+    }
+    pub(in crate::simulation::combat) fn threat_current_victim(
+        &self,
+    ) -> Option<theia_core::player_life::LifeKey> {
+        self.membership_encounter()
+            .and_then(|(_, _, target)| target)
+            .or_else(|| self.threat_policy_target())
+    }
+    pub(in crate::simulation::combat) fn threat_candidate(
+        &self,
+        world: &crate::simulation::World,
+        life: theia_core::player_life::LifeKey,
+    ) -> Option<policy::Target> {
+        let pve = self.pve.as_ref()?;
+        let runtime = pve.pursuit.as_ref()?;
+        let directive = runtime.directive();
+        let target = self.pursuit_target(
+            world,
+            pve.npc,
+            life.actor.entity.value(),
+            runtime.settings.leash_metres,
+            pve.profile.retaliation().reach_metres(),
+        )?;
+        let anchor = directive.anchor?;
+        let position = self.creatures.iter().find(|c| c.key == pve.npc)?.position;
+        (target.key == life
+            && target.alive
+            && (target.visible || directive.target == Some(life))
+            && distance(anchor, target.position) <= runtime.settings.leash_metres
+            && distance(anchor, position) <= runtime.settings.leash_metres)
+            .then_some(target)
+    }
+    pub(in crate::simulation::combat) fn prepare_threat_transfer(
+        &self,
+        world: &crate::simulation::World,
+        target: policy::Target,
+    ) -> Result<ThreatTransfer> {
+        let pve = self.pve.as_ref().ok_or("Threat lost player life")?;
+        if pve.error.is_some() {
+            return Err("Threat pursuit authority unavailable".into());
+        }
+        let runtime = pve.pursuit.as_ref().ok_or("Threat lost pursuit")?;
+        let position = self
+            .creatures
+            .iter()
+            .find(|c| c.key == pve.npc && c.current > 0)
+            .ok_or("Threat lost living NPC")?
+            .position;
+        let changed = runtime.directive().target != Some(target.key);
+        let mut state = runtime.state.clone();
+        state
+            .transfer(world.tick, position, target)
+            .map_err(|e| format!("Threat pursuit transfer refused: {e:?}"))?;
+        let revision = if changed {
+            runtime
+                .revision
+                .checked_add(1)
+                .ok_or("Threat path revision exhausted")?
+        } else {
+            runtime.revision
+        };
+        let mut policy = pve.policy.clone();
+        let cancelled = if policy.target().is_some() {
+            matches!(
+                policy
+                    .transfer(world.tick, target.key)
+                    .map_err(|e| format!("Threat retaliation transfer refused: {e:?}"))?,
+                theia_core::retaliation::Event::Cancelled { .. }
+            )
+        } else {
+            policy
+                .record_hit(world.tick, target.key)
+                .map_err(|e| format!("Threat retaliation acquisition refused: {e:?}"))?;
+            false
+        };
+        Ok(ThreatTransfer {
+            state,
+            policy,
+            revision,
+            cancelled,
+        })
+    }
+    pub(in crate::simulation::combat) fn commit_threat_transfer(
+        &mut self,
+        transfer: ThreatTransfer,
+    ) {
+        let pve = self.pve.as_mut().expect("Prepared threat life authority");
+        let runtime = pve.pursuit.as_mut().expect("Prepared threat pursuit");
+        if transfer.revision != runtime.revision {
+            runtime.path = None;
+            runtime.reply = None;
+            runtime.tag = None;
+            runtime.requested_goal = None;
+            runtime.failed_route = false;
+            runtime.next_scan = 0;
+        }
+        runtime.state = transfer.state;
+        runtime.revision = transfer.revision;
+        pve.policy = transfer.policy;
+        pve.metrics.cancelled = pve
+            .metrics
+            .cancelled
+            .saturating_add(u64::from(transfer.cancelled));
+    }
     pub(in crate::simulation) fn poll_pursuit(&mut self) {
         if let Some(pve) = &mut self.pve
             && let Some(runtime) = &mut pve.pursuit

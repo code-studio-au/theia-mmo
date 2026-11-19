@@ -10,6 +10,8 @@ use theia_core::{
     resources::Pool,
     retaliation,
 };
+mod public_attack;
+mod public_avatar;
 mod pursuit;
 pub use pursuit::Metrics as PursuitMetrics;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -156,7 +158,8 @@ impl Combat {
             .collect()
     }
     pub(super) fn ordinary_target_ready(&self) -> bool {
-        self.reset.as_ref().is_none_or(|runtime| runtime.ready())
+        self.threat.as_ref().is_none_or(|runtime| runtime.ready())
+            && self.reset.as_ref().is_none_or(|runtime| runtime.ready())
             && self.pve.as_ref().is_some_and(|p| {
                 p.error.is_none()
                     && p.pursuit.as_ref().is_some_and(|r| {

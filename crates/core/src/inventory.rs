@@ -1,5 +1,6 @@
 //! Checked backpack proposals. A successful proposal is not a durable commit or
 //! permission to acknowledge success; the asynchronous authority must commit it.
+pub mod requirements;
 use crate::content::ContentId;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -214,6 +215,8 @@ pub enum Error {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Operation {
+    /// Permanently remove a positive quantity from one backpack stack.
+    Destroy { from: u8, amount: u32 },
     /// Move into an empty slot, merge up to the limit, or swap different items.
     Move { from: u8, to: u8 },
     /// Move a strictly partial, positive amount into an empty slot.
@@ -450,10 +453,30 @@ impl Bag {
             .checked_add(1)
             .filter(|r| *r <= MAX_REVISION)
             .ok_or(Error::RevisionExhausted)?;
+        if let Operation::Destroy { from, amount } = command.operation {
+            let from = usize::from(from);
+            let source = self
+                .slots
+                .get(from)
+                .ok_or(Error::InvalidSlot)?
+                .as_ref()
+                .ok_or(Error::EmptySource)?;
+            if amount == 0 || amount > source.count {
+                return Err(Error::InvalidAmount);
+            }
+            let mut next = self.clone();
+            next.slots[from] = (source.count > amount).then(|| Stack {
+                item: source.item.clone(),
+                count: source.count - amount,
+            });
+            next.revision = revision;
+            return Ok(next);
+        }
         let (from, to) = match command.operation {
             Operation::Move { from, to } | Operation::Split { from, to, .. } => {
                 (usize::from(from), usize::from(to))
             }
+            Operation::Destroy { .. } => unreachable!("destroy handled above"),
         };
         if from >= SLOT_COUNT || to >= SLOT_COUNT {
             return Err(Error::InvalidSlot);
@@ -464,6 +487,7 @@ impl Bag {
         let source = self.slots[from].as_ref().ok_or(Error::EmptySource)?;
         let mut next = self.clone();
         match command.operation {
+            Operation::Destroy { .. } => unreachable!("destroy handled above"),
             Operation::Move { .. } => match &self.slots[to] {
                 Some(destination) if destination.item == source.item => {
                     let limit = catalog.definition(&source.item).unwrap().maximum_stack;

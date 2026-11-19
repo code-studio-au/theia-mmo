@@ -1,3 +1,46 @@
+Schema-15 public avatar-life bundle qualified, 3 November 2026:
+`content/development-gameplay-classic-public-life.json` retains all 22 exact
+schema-14 inputs, explicitly selecting both public NPC timing and avatar life
+contracts. Normal client/server identities agree after NPC timing; earlier
+schemas keep their meanings. 131 client / 47 validator / 35 Python checks,
+1,123 workspace tests (50 skips), formatting and Clippy pass. Actual native
+remote death/fresh life and normal quest completion/database restart pass.
+[Exact evidence, privacy and limits](PUBLIC_AVATAR_LIFE.md). Preserve
+`build/avatar-life-client-qualified-v1-20261103`. Local only.
+
+Schema-14 public NPC attack bundle native checks pass, 3 November 2026:
+`content/development-gameplay-classic-public-attacks.json` explicitly selects
+`--public-creature-attacks` on both normal binaries with the same 22 exact inputs
+as schema 13. World identity adds the derived public contract after threat;
+older manifests keep their behavior. Two owned OIDC accounts/native clients
+confirm victim-only incoming strikes and a healthy unselected observer rendering
+attacks aimed at the actual remote victim (positions 7.53 m apart). Normal
+unmodified-wolf quest completion and PostgreSQL restart/rejoin also pass: head
+13, two completed quests, 125 XP and no duplicate progress/rewards. Native
+1920x1200 on Linux RX 7900 XTX / RADV Vulkan; all three successful runs have zero
+GPU diagnostics. Final workspace regression passes 1,106 tests (50 skips); preserve
+`build/creature-attack-client-qualified-v1-20261103`. No Windows/capacity claim. [Contract and current proof](PUBLIC_CREATURE_ATTACKS.md).
+
+Schema-13 damage-threat bundle qualified, 3 November 2026:
+`content/development-gameplay-classic-threat.json` adds an exact bounded threat
+policy to the canonical schema-12 journal, for 22 roles. Complete context and
+exclusive versions/roles are checked by Rust and the copied snapshot is
+revalidated before children launch. Client/server identity includes the same
+policy bytes after reset. 44 validator / 33 Python checks, full 1,074-test
+workspace regression, formatting/Clippy and normal OIDC/SQL native completion/
+restart pass. Older bundles stay unchanged. [Exact proof and limits](CREATURE_THREAT.md).
+
+Schema-12 expanded journal qualified, 3 November 2026:
+`content/development-gameplay-classic-journal.json` selects 21 exact-byte roles.
+Its `quest` role is the bounded expanded catalogue (64 KiB development maximum)
+and includes completion XP; the external legacy completion recipe is excluded.
+Canonical `quests/` and `gameplay/` paths are staged together without importing
+story planning data. Offline checks resolve every local quest contact, semantic
+choice and creature; earlier schemas retain their interpretations. The launcher
+forwards `--quest-journal` to both children. 127 client / 41 validator / 31 Python
+checks and five actual normal OIDC/SQL native runs pass. [Quest behavior, proof
+scope, private combat fixture and launch command](QUEST_ENGINE.md).
+
 Schema-11 reset adoption qualified, 2 November 2026: the explicit
 `development-gameplay-classic-reset.json` bundle adds the bounded `creature_reset`
 role (twenty-two exact-byte profiles). It requires matching pursuit, solo credit,

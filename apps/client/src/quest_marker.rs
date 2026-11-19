@@ -60,23 +60,21 @@ fn appearance(phase: Phase) -> Option<(usize, &'static str, Color)> {
     }
 }
 /// Refuse disconnected, foreign-owner, unknown/unloaded guide and stale profiles.
-fn observed(
+fn observed_context(
     state: &theia_network::client::State,
-    profile: &theia_network::quest_lifecycle_wire::Profile,
-) -> Option<(Phase, GlobalPosition, f64)> {
+    actor: theia_core::identity::EntityKey,
+) -> Option<(GlobalPosition, f64)> {
     if state.error.is_some() {
         return None;
     }
     let welcome = state.welcome.as_ref()?;
-    let journal = state.quest_lifecycle.as_ref()?;
     let presence = state.guide.as_ref()?;
     let guide = presence.guide?;
-    if journal.actor != presence.actor
-        || journal.actor.epoch.value() != welcome.epoch
-        || Some(journal.actor.entity.value()) != state.id
-        || guide.key.epoch != journal.actor.epoch
-        || guide.key.entity == journal.actor.entity
-        || journal.profile_hash != profile.hash()
+    if actor != presence.actor
+        || actor.epoch.value() != welcome.epoch
+        || Some(actor.entity.value()) != state.id
+        || guide.key.epoch != actor.epoch
+        || guide.key.entity == actor.entity
     {
         return None;
     }
@@ -99,9 +97,77 @@ fn observed(
     if distance > MAX_DISTANCE {
         return None;
     }
-    let phase = journal.progress.progress(profile.profile()).ok()?.phase;
-    Some((phase, guide.position, distance))
+    Some((guide.position, distance))
 }
+fn observed(
+    state: &theia_network::client::State,
+    profile: &theia_network::quest_lifecycle_wire::Profile,
+) -> Option<(Phase, GlobalPosition, f64)> {
+    let journal = state
+        .quest_lifecycle
+        .as_ref()
+        .filter(|j| j.profile_hash == profile.hash())?;
+    let (position, distance) = observed_context(state, journal.actor)?;
+    let phase = journal.progress.progress(profile.profile()).ok()?.phase;
+    Some((phase, position, distance))
+}
+fn observed_journal(
+    state: &theia_network::client::State,
+    profile: &theia_network::quest_journal::Profile,
+) -> Option<(Phase, GlobalPosition, f64)> {
+    use theia_core::quests::journal::Status;
+    let journal = state
+        .quest_journal
+        .as_ref()
+        .filter(|j| j.profile_hash == profile.hash())?;
+    journal
+        .validate_successor(profile, journal.actor, None)
+        .ok()?;
+    let (position, distance) = observed_context(state, journal.actor)?;
+    let ready = profile.catalog().quests().any(|q| {
+        journal
+            .journal
+            .progress(q.id())
+            .is_some_and(|p| p.status() == Status::Ready)
+    });
+    let available = profile.catalog().quests().any(|q| {
+        journal.journal.progress(q.id()).is_none()
+            && q.prerequisites().iter().all(|id| {
+                journal
+                    .journal
+                    .progress(id)
+                    .is_some_and(|p| p.status() == Status::Completed)
+            })
+    });
+    let active = journal
+        .journal
+        .quests()
+        .any(|(_, p)| p.status() == Status::Active);
+    let phase = if ready {
+        Phase::Ready
+    } else if available {
+        Phase::Available
+    } else if active {
+        Phase::Active
+    } else {
+        Phase::TurnedIn
+    };
+    Some((phase, position, distance))
+}
+
+/// Share the same committed owner/guide/prerequisite checks with the local map.
+pub(crate) fn guide_observation(
+    state: &theia_network::client::State,
+    lifecycle: Option<&theia_network::quest_lifecycle_wire::Profile>,
+    journal: Option<&theia_network::quest_journal::Profile>,
+) -> Option<(Phase, GlobalPosition, f64)> {
+    match (lifecycle, journal) {
+        (Some(profile), None) => observed(state, profile),
+        (None, Some(profile)) => observed_journal(state, profile),
+        _ => None,
+    }
+}
+
 fn anchor(position: GlobalPosition, frame: &crate::floating_origin::Frame) -> Option<Vec3> {
     let mut p = position.metres();
     p[1] += 1.9;
@@ -132,7 +198,8 @@ fn occluded(spatial: &SpatialQuery, eye: Vec3, point: Vec3) -> bool {
 #[allow(clippy::too_many_arguments)]
 fn present(
     network: Res<crate::network::Network>,
-    definitions: Res<crate::quest_lifecycle::Definitions>,
+    definitions: Option<Res<crate::quest_lifecycle::Definitions>>,
+    journal: Option<Res<crate::quest_journal::Definitions>>,
     frame: Res<crate::floating_origin::Frame>,
     cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     spatial: SpatialQuery,
@@ -155,7 +222,12 @@ fn present(
     };
     *visibility = Visibility::Hidden;
     let state = network.state();
-    let Some((phase, guide, distance)) = observed(&state, &definitions.0) else {
+    let observed = guide_observation(
+        &state,
+        definitions.as_ref().map(|d| d.0.as_ref()),
+        journal.as_ref().map(|d| d.0.as_ref()),
+    );
+    let Some((phase, guide, distance)) = observed else {
         return;
     };
     let Some((index, caption, tint)) = appearance(phase) else {
@@ -387,11 +459,17 @@ mod tests {
         cases.push(s);
         for (index, s) in cases.iter().enumerate() {
             assert!(observed(s, &profile).is_none(), "case {index}");
+            assert!(
+                guide_observation(s, Some(&profile), None).is_none(),
+                "map case {index}"
+            );
         }
         let mut s = state;
         s.guide.as_mut().unwrap().guide.as_mut().unwrap().position =
             GlobalPosition::new([60., 0.9, 0.]).unwrap();
         assert!(observed(&s, &profile).is_some());
+        assert!(guide_observation(&s, Some(&profile), None).is_some());
+        assert!(guide_observation(&s, None, None).is_none());
     }
     #[test]
     fn phase_shape_and_text_distinguish_progress_and_completion() {
@@ -417,5 +495,81 @@ mod tests {
         let second = anchor(p, &frame).unwrap();
         assert!((first - second - Vec3::new(128., 0., -128.)).length() < 0.0001);
         assert!((first.y - 21.9).abs() < 0.00001);
+    }
+    #[test]
+    fn expanded_marker_prioritizes_ready_then_available_and_uses_committed_history() {
+        use crate::quest_journal::tests::{completed_introduction, fixture, set_journal};
+        use theia_core::quests::{catalog::EventKey, journal::Status};
+        let (mut state, profile) = fixture();
+        let id = |s: &str| theia_core::content::ContentId::new(s).unwrap();
+        assert_eq!(
+            observed_journal(&state, &profile).unwrap().0,
+            Phase::Available
+        );
+        state.quest_journal_pending = true;
+        assert_eq!(
+            observed_journal(&state, &profile).unwrap().0,
+            Phase::Available,
+            "Pending acceptance is not committed progress"
+        );
+        state.quest_journal_pending = false;
+        let mut journal = completed_introduction(&profile);
+        set_journal(&mut state, journal.clone());
+        assert_eq!(
+            observed_journal(&state, &profile).unwrap().0,
+            Phase::Available,
+            "Completed first quest unlocks the next offer"
+        );
+        let quest = id("theia.dev.quest-follow-up");
+        let npc = id("theia.dev.guide");
+        journal = journal
+            .propose_accept(profile.catalog(), &quest, &npc)
+            .unwrap()
+            .journal;
+        set_journal(&mut state, journal.clone());
+        assert_eq!(observed_journal(&state, &profile).unwrap().0, Phase::Active);
+        for _ in 0..3 {
+            journal = journal
+                .propose_trusted_event(
+                    profile.catalog(),
+                    &EventKey::Kill(id("theia.dev.training-creature")),
+                )
+                .unwrap()
+                .journal;
+        }
+        journal = journal
+            .propose_trusted_event(
+                profile.catalog(),
+                &EventKey::NpcInteraction {
+                    npc: npc.clone(),
+                    interaction: id("theia.dev.interaction.training"),
+                },
+            )
+            .unwrap()
+            .journal;
+        set_journal(&mut state, journal.clone());
+        assert_eq!(observed_journal(&state, &profile).unwrap().0, Phase::Ready);
+        journal = journal
+            .propose_turn_in(profile.catalog(), &quest, &npc, 5)
+            .unwrap()
+            .journal;
+        set_journal(&mut state, journal);
+        assert_eq!(
+            state
+                .quest_journal
+                .as_ref()
+                .unwrap()
+                .journal
+                .progress(&quest)
+                .unwrap()
+                .status(),
+            Status::Completed
+        );
+        assert_eq!(
+            observed_journal(&state, &profile).unwrap().0,
+            Phase::TurnedIn
+        );
+        state.quest_journal.as_mut().unwrap().profile_hash = [9; 32];
+        assert!(observed_journal(&state, &profile).is_none());
     }
 }

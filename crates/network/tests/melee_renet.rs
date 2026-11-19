@@ -228,6 +228,9 @@ async fn scenario(rate: TickRate, blocked_presentation: bool, explicit_rules: bo
             shutdown,
             identity,
             net::GameplayClient {
+                avatar_life: None,
+                public_attacks: None,
+                journal: None,
                 classic_source: Some(source),
                 dodge: None,
                 player_life: None,

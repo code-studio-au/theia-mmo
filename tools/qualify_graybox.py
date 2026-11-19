@@ -7,6 +7,7 @@ Run without competing builds or another walkthrough for useful frame-time data.
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -34,10 +35,51 @@ def check_steady_motion(motion, budget):
     assert ratio <= budget, f'Steady held-frame ratio {ratio:.4%} exceeds {budget:.4%}'
 
 
-def run(output, binaries, players, *, duration=65, clients=1, tour=True, validation=True, speed=32, continent=False, prediction=False, impairment=False, hold_jump=False, saved_terrain=None, uncapped=True, steady_hold_budget=None, targeting=False, combat_catalog=None, feedback=None, action_ui=False, persistence=False, spawn=None, reverse_clients=False, environment=None, character_stats=None, status_catalog=None, creature_profile=None, navigation=None, window_size="1280x720"):
+
+def check_minimap_traversal(result, reports, resolution):
+    eligible = [r for r in reports if r['seconds'] >= 8 and r.get('minimap', {}).get('visible')]
+    assert len(eligible) >= 20, 'Insufficient visible map traversal observations'
+    maximum_error = 0.
+    for report in eligible:
+        m = report['minimap']
+        assert m['texture_bytes'] == 17408 and m['resident_tiles_read'] <= 81
+        assert 0 <= m['known_pixels'] <= 4096
+        centre, point = m['centre'], m['player_point']
+        projected = [centre[0]+(point[0]/176-.5)*256,
+                     centre[2]+(point[1]/176-.5)*256]
+        error = math.dist(projected, [report['rendered_position'][0], report['rendered_position'][2]])
+        maximum_error = max(maximum_error, error)
+        assert error <= .003, (report['seconds'], error)
+        arrow = m['arrow_forward']
+        assert arrow and math.dist(arrow, report['rendered_forward']) < .02, (report['seconds'], arrow, report['rendered_forward'])
+        left, top, width, height = m['bounds']
+        assert 0 <= left < left+width <= resolution[0]
+        assert 0 <= top < top+height <= resolution[1]
+    assert max(r['rendered_position'][0] for r in eligible)-min(r['rendered_position'][0] for r in eligible) > 15000
+    # At 32x speed, origins can change twice per second while this trace is
+    # emitted once per second. Distinguish sampled origins from the total count.
+    observed_origins = len({r['rebases'] for r in eligible})
+    assert observed_origins >= 40, 'Insufficient independently sampled map frames'
+    assert result['render_frame']['revision'] > 100, result['render_frame']
+    assert result['minimap']['visible'] and 0 < result['minimap']['known_pixels'] < 4096
+    assert result['minimap']['raster_updates'] <= reports[-1]['seconds']*4+3
+    return dict(passed=True, observations=len(eligible),
+                max_map_position_error_metres=maximum_error,
+                render_origin_revisions=result['render_frame']['revision'],
+                independently_sampled_origins=observed_origins,
+                final_known_pixels=result['minimap']['known_pixels'],
+                max_raster_us=result['minimap']['max_raster_us'],
+                max_present_us=result['minimap']['max_present_us'],
+                actual_arrow_matches_displayed_player=True,
+                scope='Development-ticket accelerated legacy continuous continent path; separate from normal Classic account play')
+
+
+def run(output, binaries, players, *, duration=65, clients=1, tour=True, validation=True, speed=32, continent=False, prediction=False, impairment=False, hold_jump=False, saved_terrain=None, uncapped=True, steady_hold_budget=None, targeting=False, combat_catalog=None, feedback=None, action_ui=False, persistence=False, spawn=None, reverse_clients=False, environment=None, character_stats=None, status_catalog=None, creature_profile=None, navigation=None, window_size="1280x720", minimap=False):
     resolution=[int(n) for n in window_size.split('x')]
     if len(resolution)!=2 or not (640<=resolution[0]<=7680 and 480<=resolution[1]<=4320):
         raise ValueError("Invalid qualification window size")
+    if minimap and (not continent or tour or speed != 32 or not prediction or saved_terrain is None or targeting or combat_catalog):
+        raise ValueError("Minimap traversal check requires saved predicted --continent --no-tour --speed 32 without combat")
     if persistence and (tour or continent or speed != 1 or not prediction or saved_terrain is None):
         raise ValueError("Persistence qualification requires saved terrain and normal-speed prediction without a tour")
     if bool(creature_profile) != bool(navigation):
@@ -236,6 +278,8 @@ def run(output, binaries, players, *, duration=65, clients=1, tour=True, validat
         result['expected_netcode_replay_rejections'] = expected_replays
         if continent:
             assert result['position'][0] > 15900, 'Did not traverse the continent'
+        if minimap:
+            result['minimap_traversal'] = check_minimap_traversal(result, reports, resolution)
         steady = [r for r in reports if r['seconds'] >= 8]
         frames = sum(r['frame_count'] for r in steady)
         mean = sum(r['mean_ms']*r['frame_count'] for r in steady)/frames
@@ -374,9 +418,10 @@ if __name__ == '__main__':
     parser.add_argument('--navigation', type=Path)
     parser.add_argument('--combat-catalog', type=Path, help='Native ability/death/respawn fixture; requires --prediction --speed 1 --no-tour')
     parser.add_argument('--continent', action='store_true', help='Continuous full-continent accelerated traversal')
+    parser.add_argument('--minimap', action='store_true', help='Check local map during accelerated legacy continuous saved-continent traversal')
     parser.add_argument('--no-tour', action='store_true')
     parser.add_argument('--no-validation', action='store_true')
     parser.add_argument('--speed', type=int, choices=[1,8,32], default=32)
     args = parser.parse_args()
     print(json.dumps(run(args.output, args.binaries.resolve(), args.players.resolve(), duration=args.duration,
-        clients=args.clients, tour=not args.no_tour, validation=not args.no_validation, speed=args.speed, continent=args.continent, prediction=args.prediction, impairment=args.impairment, hold_jump=args.hold_jump_teleport, saved_terrain=args.saved_terrain.resolve() if args.saved_terrain else None, uncapped=not args.paced, steady_hold_budget=args.steady_hold_budget, targeting=args.targeting, combat_catalog=args.combat_catalog.resolve() if args.combat_catalog else None, feedback=args.spell_feedback.resolve() if args.spell_feedback else None, action_ui=args.action_ui, persistence=args.persistence, spawn=args.spawn, reverse_clients=args.reverse_clients, character_stats=args.character_stats.resolve() if args.character_stats else None, status_catalog=args.status_catalog.resolve() if args.status_catalog else None, creature_profile=args.creature_profile.resolve() if args.creature_profile else None, navigation=args.navigation.resolve() if args.navigation else None, window_size=args.window_size), indent=2))
+        clients=args.clients, tour=not args.no_tour, validation=not args.no_validation, speed=args.speed, continent=args.continent, prediction=args.prediction, impairment=args.impairment, hold_jump=args.hold_jump_teleport, saved_terrain=args.saved_terrain.resolve() if args.saved_terrain else None, uncapped=not args.paced, steady_hold_budget=args.steady_hold_budget, targeting=args.targeting, combat_catalog=args.combat_catalog.resolve() if args.combat_catalog else None, feedback=args.spell_feedback.resolve() if args.spell_feedback else None, action_ui=args.action_ui, persistence=args.persistence, spawn=args.spawn, reverse_clients=args.reverse_clients, character_stats=args.character_stats.resolve() if args.character_stats else None, status_catalog=args.status_catalog.resolve() if args.status_catalog else None, creature_profile=args.creature_profile.resolve() if args.creature_profile else None, navigation=args.navigation.resolve() if args.navigation else None, window_size=args.window_size, minimap=args.minimap), indent=2))

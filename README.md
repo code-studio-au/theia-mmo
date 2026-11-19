@@ -9,15 +9,24 @@ The [story and lore folder](docs/story/README.md) contains the world bible,
 characters, campaign acts, quests and story decisions, including material awaiting
 creator review.
 
+The explicit [public player-life bundle](docs/PUBLIC_AVATAR_LIFE.md) also shows
+remote death and fresh-life animation while keeping owner controls authoritative.
+
+The explicit [public NPC attack bundle](docs/PUBLIC_CREATURE_ATTACKS.md) adds
+bystander-visible wolf attack timing to the normal account/quest development flow.
+Earlier bundles and the bare graybox launcher retain their behavior.
+
 A Rust WoW-style MMO project using **Bevy 0.20.0**.
 The development world is a 16 km × 16 km saved graybox with the POLYGON
 Base Locomotion player. Original or appropriately licensed final world art remains
 planned; imported map experiments are retained as regressions.
 
-The current application is a **local multiplayer walking prototype**, with animated
-players, bounded continental terrain streaming, server-owned capsule movement,
-static collision and an orbit camera. Combat, quests and
-persistence are still future work. See [status](docs/STATUS.md),
+The application includes animated multiplayer movement, bounded continental
+terrain streaming and server-owned capsule collision, plus an explicit authenticated
+combat, persistence and multi-quest development loop. The bare launcher retains
+the walking sandbox; the [expanded quest setup and qualified local launch](docs/QUEST_ENGINE.md)
+use a versioned content bundle. The [offline quest pack workflow](docs/QUEST_PACK_AUTHORING.md)
+validates shared IDs and prerequisites before runtime pack adoption. Production content and MMO-scale capacity remain planned. See [status](docs/STATUS.md),
 [decisions](docs/DECISIONS.md) and the [engineering plan](docs/engineering/README.md).
 The [repository assessment](docs/engineering/REPOSITORY_ASSESSMENT.md) compares the
 current prototype with the October 19 handoff and identifies what to retain or

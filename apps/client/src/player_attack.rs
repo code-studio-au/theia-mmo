@@ -171,11 +171,23 @@ impl Cues {
 }
 pub(super) struct Graph {
     pub bases: [AnimationNodeIndex; 4],
+    pub directional_bases: [Option<AnimationNodeIndex>; super::locomotion::COUNT],
     pub strike: AnimationNodeIndex,
+}
+impl Graph {
+    pub(super) fn base(&self, clip: usize) -> AnimationNodeIndex {
+        if clip < 4 {
+            self.bases[clip]
+        } else {
+            self.directional_bases[clip - super::locomotion::FIRST]
+                .expect("Selected attack direction is available")
+        }
+    }
 }
 fn mask_graph(
     graph: &mut AnimationGraph,
     sources: [Handle<AnimationClip>; 4],
+    directional: [Option<Handle<AnimationClip>>; super::locomotion::COUNT],
     attack: Handle<AnimationClip>,
     upper: &HashSet<AnimationTargetId>,
     targets: &HashSet<AnimationTargetId>,
@@ -185,6 +197,9 @@ fn mask_graph(
     }
     Graph {
         bases: sources.map(|clip| graph.add_clip_with_mask(clip, 1 << 3, 1., graph.root)),
+        directional_bases: directional.map(|source| {
+            source.map(|clip| graph.add_clip_with_mask(clip, 1 << 3, 1., graph.root))
+        }),
         strike: graph.add_clip_with_mask(attack, 1 << 2, 1., graph.root),
     }
 }
@@ -193,6 +208,7 @@ pub(super) fn prepare(
     root: Entity,
     graph: &mut AnimationGraph,
     sources: [Handle<AnimationClip>; 4],
+    directional: [Option<Handle<AnimationClip>>; super::locomotion::COUNT],
     attack: Handle<AnimationClip>,
     targets: &HashSet<AnimationTargetId>,
 ) -> Result<Graph, String> {
@@ -225,7 +241,14 @@ pub(super) fn prepare(
     {
         return Err("SwordAttack duration or channels differ from qualified source".into());
     }
-    Ok(mask_graph(graph, sources, attack, &upper, targets))
+    Ok(mask_graph(
+        graph,
+        sources,
+        directional,
+        attack,
+        &upper,
+        targets,
+    ))
 }
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
@@ -268,7 +291,7 @@ pub(crate) fn observe(world: &mut World) {
         .collect();
     for (root, owner, clip) in roots {
         let local = world.get::<crate::movement::LocalPawn>(owner).is_some();
-        let name = ["Idle", "Walk", "Run", "Jump"][clip];
+        let name = super::locomotion::base_name(clip).expect("Attack has a locomotion base");
         let ready = {
             let mut v = world.get_mut::<super::Visual>(root).unwrap();
             v.layer_frames = v.layer_frames.saturating_add(1);
@@ -295,7 +318,7 @@ pub(crate) fn observe(world: &mut World) {
         let times = visual.players.iter().find_map(|e| {
             let player = world.get::<AnimationPlayer>(*e)?;
             Some((
-                player.animation(graph.bases[clip])?.seek_time(),
+                player.animation(graph.base(clip))?.seek_time(),
                 player.animation(graph.strike)?.seek_time(),
             ))
         });
@@ -500,6 +523,7 @@ mod tests {
         let result = mask_graph(
             &mut graph,
             std::array::from_fn(|_| Handle::default()),
+            std::array::from_fn(|_| Some(Handle::default())),
             Handle::default(),
             &upper,
             &targets,
@@ -509,7 +533,11 @@ mod tests {
         for id in upper {
             assert_eq!(graph.mask_groups[&id], 1 << 3)
         }
-        for base in result.bases {
+        for base in result
+            .bases
+            .into_iter()
+            .chain(result.directional_bases.into_iter().flatten())
+        {
             assert_eq!(graph.graph[base].mask, 1 << 3)
         }
         assert_eq!(graph.graph[result.strike].mask, 1 << 2);

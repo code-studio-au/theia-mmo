@@ -1,3 +1,8 @@
+Latest: [ground movement v3 is qualified](CLASSIC_GROUND_MOVEMENT.md), with
+shared 7/4.5/2.5 m/s run/backward/walk rules, a walk/run toggle, actual native
+authority-tick speeds, unmodified wolf/quests and saved rejoin. The dated
+5/8 m/s controls evidence below retains its historical scope.
+
 Latest playable classic follow-up: [persistent targeting](CLASSIC_TARGETING.md)
 adds forward/reverse Tab and selection retention, with its own qualified v2
 profile checkpoint. The controls evidence below retains its original scope.

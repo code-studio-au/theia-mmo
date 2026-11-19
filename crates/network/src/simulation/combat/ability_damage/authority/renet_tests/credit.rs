@@ -99,6 +99,7 @@ async fn encrypted_competing_hitter_routes_only_tag_owner_to_xp_and_reward_queue
             ports.push(Ports {
                 inventory,
                 progression: net::progression::Port {
+                    journal: None,
                     profile: xp.clone(),
                     quest: None,
                     lifecycle: None,

@@ -4,7 +4,13 @@ use super::catalog::{Catalog, Completion, Definition, EventKey, MAX_QUESTS, Stag
 use crate::content::ContentId;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+mod areas;
+mod items;
+pub use areas::{MAX_REACHED_AREA_GOALS, ReachedAreaGoal, ReachedAreas};
+pub use items::PossessionTurnIn;
+pub const ITEM_PROFILE_DOMAIN: &[u8] = b"theia-quest-journal-inventory-v1\0";
 pub const PROFILE_DOMAIN: &[u8] = b"theia-quest-journal-catalog-v1\0";
+pub const KILL_OCCURRENCE_DOMAIN: &[u8] = b"theia-journal-kill-occurrence-v1\0";
 pub const MAX_ACTIVE_QUESTS: usize = 16;
 pub const MAX_JOURNAL_BYTES: usize = 65536;
 /// An authoritative action proposal; construction grants no NPC entitlement.
@@ -183,9 +189,25 @@ fn validate_progress(definition: &Definition, state: &Progress) -> Result<(), Er
     {
         return Err(Error::InvalidProgress);
     }
-    let total: u64 = state.counts.values().map(|n| u64::from(*n)).sum();
-    let expected = 1 + total + u64::from(state.status == Status::Completed);
-    if state.revision != expected || state.revision > super::MAX_REVISION {
+    let historical: u64 = objectives
+        .iter()
+        .filter(|o| !matches!(o.event(), EventKey::PossessItem(_)))
+        .map(|o| u64::from(state.counts[o.id()]))
+        .sum();
+    let nonzero_possession = objectives
+        .iter()
+        .filter(|o| matches!(o.event(), EventKey::PossessItem(_)) && state.counts[o.id()] > 0)
+        .count() as u64;
+    let minimum =
+        1 + historical + nonzero_possession + u64::from(state.status == Status::Completed);
+    // Schema-3 possession changes are monotonic mutation versions even when
+    // quantities go down. Historical-only definitions retain exact old checks.
+    let valid_revision = if definition.has_possession_objectives() {
+        state.revision >= minimum
+    } else {
+        state.revision == minimum
+    };
+    if !valid_revision || state.revision > super::MAX_REVISION {
         return Err(Error::InvalidProgress);
     }
     let mut current = Some(definition.start_stage());
@@ -297,6 +319,22 @@ impl Journal {
             catalog,
             &serde_json::to_vec(&saved).map_err(|_| Error::InvalidSnapshot)?,
         )
+    }
+    /// A committed snapshot version, not an event count. A single bounded
+    /// observation may advance several objectives in one quest, so keep the
+    /// outer head at least as high as every contained logical revision.
+    pub fn next_head_revision(&self, previous: u64) -> Result<u64, Error> {
+        let next = previous
+            .checked_add(1)
+            .filter(|v| *v <= super::MAX_REVISION)
+            .ok_or(Error::RevisionExhausted)?;
+        Ok(self
+            .quests
+            .values()
+            .map(|q| q.revision)
+            .max()
+            .unwrap_or(0)
+            .max(next))
     }
     pub fn progress(&self, quest: &ContentId) -> Option<&Progress> {
         self.quests.get(quest)
@@ -473,6 +511,11 @@ impl Journal {
         event: &EventKey,
     ) -> Result<Proposal, Error> {
         self.validate(catalog)?;
+        // Occupancy needs eligibility sealed at observation. A raw selector
+        // cannot be replayed against a newly accepted quest or later stage.
+        if matches!(event, EventKey::ReachArea(_) | EventKey::PossessItem(_)) {
+            return Err(Error::InvalidProgress);
+        }
         let mut journal = self.clone();
         let mut changed = Vec::new();
         for reference in catalog.matching(event) {
@@ -530,8 +573,21 @@ impl Journal {
         npc: &ContentId,
         expected_revision: u64,
     ) -> Result<Proposal, Error> {
+        self.turn_in_checked(catalog, quest, npc, expected_revision, false)
+    }
+    fn turn_in_checked(
+        &self,
+        catalog: &Catalog,
+        quest: &ContentId,
+        npc: &ContentId,
+        expected_revision: u64,
+        possession_checked: bool,
+    ) -> Result<Proposal, Error> {
         self.validate(catalog)?;
         let definition = catalog.quest(quest).ok_or(Error::UnknownQuest)?;
+        if definition.has_possession_objectives() && !possession_checked {
+            return Err(Error::InvalidProgress);
+        }
         if definition.turn_in() != npc {
             return Err(Error::WrongNpc);
         }

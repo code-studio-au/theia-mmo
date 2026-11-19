@@ -66,9 +66,16 @@ class Desktop:
         self.t.XTestFakeButtonEvent.argtypes=[c.c_void_p,c.c_uint,c.c_int,c.c_ulong]
         self.t.XTestFakeKeyEvent.argtypes=[c.c_void_p,c.c_uint,c.c_int,c.c_ulong]
     def focus(self,window):
-        self.x.XRaiseWindow(self.display,window);self.x.XSetInputFocus(self.display,window,2,0);self.x.XFlush(self.display)
         self.window=window
         self.refresh_ancestry()
+        # Reparenting window managers stack the decorated root child. Raising
+        # only its client child does not bring the owned frame above a peer.
+        self.x.XRaiseWindow(self.display,self.frame)
+        # Ask the window manager to activate this exact owned client as well;
+        # direct X focus does not update its stacking/active-window policy.
+        subprocess.run(['wmctrl','-i','-a',hex(window)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=3)
+        self.x.XSetInputFocus(self.display,window,2,0)
+        self.x.XFlush(self.display)
     def refresh_ancestry(self):
         current=self.window
         for _ in range(8):
