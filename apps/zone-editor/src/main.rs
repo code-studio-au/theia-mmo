@@ -767,6 +767,7 @@ fn run() -> Result<(), String> {
     let mut app = App::new();
     if let Some(directory) = &options.player_assets {
         playtest_avatar::install(&mut app, directory)?;
+        account_picker::install(&mut app, directory)?;
     }
     scenery_library.register(&mut app);
     app.insert_resource(scenery_library);
@@ -1875,3 +1876,6 @@ fn present(
         };
     }
 }
+
+#[path = "../../common/modular_hero.rs"]
+mod modular_hero;

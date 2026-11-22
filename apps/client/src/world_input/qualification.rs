@@ -432,6 +432,7 @@ fn os_trace(world: &mut World) {
         data["minimap"] = serde_json::json!(world.get_resource::<crate::minimap::Metrics>());
         data["nameplates"] = serde_json::json!(world.get_resource::<crate::nameplates::Metrics>());
         data["nameplate_buttons"] = crate::nameplates::qualification(world);
+        data["modular_heroes"] = crate::modular_hero::qualification(world);
         data["player_locomotion"] = crate::reference_scene::locomotion::qualification(world);
         data["render_frame"] = serde_json::json!({
             "revision":world.resource::<crate::floating_origin::Frame>().revision,

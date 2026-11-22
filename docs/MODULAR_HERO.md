@@ -43,7 +43,8 @@ Implemented persistence and public metadata (22 November 2026):
 - Migration 15 adds constrained seven-byte appearance to the character row;
   older rows get the default. Creation stores name and appearance together.
   Account list/select and the authenticated admission lease carry saved choices.
-- Public player metadata is PN02 (maximum 341 bytes, eight actors). Both binaries
+- Public player metadata is PN02 (maximum 341 bytes, eight actors), with gameplay
+  wire version 14 reflected in the authenticated transport protocol ID. Both binaries
   must be updated together; PN01 is not accepted as PN02. Gameplay input cannot
   submit a mesh path or override another actor's saved appearance.
 - Owned PostgreSQL character contract passed, including ownership, name/quota
@@ -73,3 +74,35 @@ Implemented asset conversion:
   conversion checks; this is not a claim of a complete visual combat audit.
 - Native Linux device: AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan,
   Mesa 26.2.7. Windows native rendering has not been exercised in this slice.
+
+Implemented native creation and presentation:
+
+- The editor's **Zone → Start account population playtest…** opens a native
+  character picker after login. Empty accounts can customize body, face, hair,
+  facial hair, skin tone, hair colour and starter outfit, rotate an animated
+  preview, enter a name and create. Existing characters preview their saved look;
+  select a row then **Enter selected character**. Incompatible facial-hair controls
+  and Enter without a selection are disabled. Cosmetic changes create a new draft;
+  this slice does not add editing of an existing character's appearance.
+- Preview and gameplay use the same curated part selection and immutable cached
+  palette materials with standard Bevy skinning. Preview has its own render layer
+  and camera. Initial visibility waits for parts and palette texture readiness.
+  Local and remote players bind choices to their current authoritative actor.
+- The private account handoff carries validated appearance on creation and in the
+  roster, retaining legacy default appearance when omitted. Selection allows ten
+  minutes. No private identity or asset pathname is sent as public player metadata.
+- `native-creation-v3/qualification.json` passes actual native creation, invalid
+  name refusal, rotated preview, Millhaven entry, two authenticated clients seeing
+  both distinct appearances, editor Stop, database restart, roster preview and
+  both clients entering again. Source zone bytes remain unchanged. Captures include
+  `fresh/custom-character.png` and `fresh/guest/two-heroes.png`.
+- The forced Vulkan validation layer reports one known initial surface-size race
+  per editor launch (VUID-VkSwapchainCreateInfoKHR-pNext-07781). This is counted by
+  the existing narrow qualification exception; there are no other GPU/UI errors.
+  This is functional native evidence, not a performance measurement. Main editor
+  capture: 3440×1440; second player: 1720×1400. Smaller-window layout is not qualified.
+- Local launch defaults prefer `build/modular-hero-v1/art-v3` when present and
+  retain the earlier POLYGON art fallback. Offline F5 uses the default hero;
+  saved customization belongs to the account playtest. The local editor wrapper
+  uses disposable account services, as before; production launcher/title screens,
+  long-lived deployment accounts and equipped-item visual swaps remain separate.

@@ -218,7 +218,11 @@ fn select_clip(
 #[derive(Component)]
 pub struct House;
 
+#[derive(Resource)]
+struct Modular(bool);
 pub fn load(mut commands: Commands, server: Res<AssetServer>, config: Res<Config>) {
+    let modular = config.players_only && config.directory.join("modular-hero.json").is_file();
+    commands.insert_resource(Modular(modular));
     commands.init_resource::<LifeAnimationMetrics>();
     commands.init_resource::<locomotion::Metrics>();
     commands.insert_resource(grip::Metrics {
@@ -229,7 +233,9 @@ pub fn load(mut commands: Commands, server: Res<AssetServer>, config: Res<Config
     });
     commands.insert_resource(Loading {
         models: if config.players_only {
-            vec![server.load(if config.polygon {
+            vec![server.load(if modular {
+                "players://character-variants.glb"
+            } else if config.polygon {
                 "players://character.glb"
             } else {
                 "players://human.glb"
@@ -467,8 +473,14 @@ pub fn tick(world: &mut World) {
             .remove::<Mesh3d>()
             .remove::<MeshMaterial3d<StandardMaterial>>()
             .insert(Attached);
+        let modular = kind == 0 && world.get_resource::<Modular>().is_some_and(|m| m.0);
         world.spawn((
             WorldAssetRoot(scene),
+            if modular {
+                Visibility::Hidden
+            } else {
+                Visibility::Inherited
+            },
             if world.resource::<Config>().polygon {
                 polygon_transform()
             } else {
@@ -571,6 +583,24 @@ pub fn tick(world: &mut World) {
                 )
                 .map(|(entity, epoch)| EntityKey { entity, epoch })
         });
+        if kind == 0 && world.get_resource::<Modular>().is_some_and(|m| m.0) {
+            let appearance = network_state
+                .as_ref()
+                .and_then(|s| s.player_identity.as_ref())
+                .and_then(|view| view.actors.iter().find(|a| Some(a.key) == actor_key))
+                .map(|a| a.appearance)
+                .unwrap_or_default();
+            match crate::modular_hero::apply(world, root, appearance, "players") {
+                Ok(true) => {
+                    world.entity_mut(root).insert(Visibility::Inherited);
+                }
+                Ok(false) => continue,
+                Err(error) => {
+                    fail(world, &error);
+                    return;
+                }
+            }
+        }
         let local = world.get::<LocalPawn>(owner).is_some();
         let life = presentation_life(network_state.as_ref(), actor_key, local);
         let life_changed = if let Some((key, _)) = life {

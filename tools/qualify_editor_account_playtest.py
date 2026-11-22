@@ -191,6 +191,7 @@ def run(args):
                     if resumed:
                         assert len(picker['characters'])==1 and picker['characters'][0].lower()=='editorarden', picker
                         click(picker_action('Existing(0)')['centre'])
+                        click(picker_action('Enter')['centre'])
                     else:
                         assert picker['characters']==[] and picker['can_create']
                         type_text(picker['name']['centre'], 'bad--name')

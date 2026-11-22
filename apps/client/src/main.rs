@@ -1957,3 +1957,6 @@ mod control_tests {
         assert_eq!(app.world().resource::<Messages<AppExit>>().len(), 1);
     }
 }
+
+#[path = "../../common/modular_hero.rs"]
+mod modular_hero;

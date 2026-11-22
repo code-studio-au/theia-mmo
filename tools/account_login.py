@@ -1,4 +1,5 @@
 """Bounded native-launcher account flow. Credentials stay in memory/private files."""
+import character_appearance
 import ipaddress
 import json
 import os
@@ -146,13 +147,22 @@ class AccountClient:
             except (KeyError, TypeError, ValueError, AttributeError):
                 raise AccountError('Invalid character list') from None
             seen.add(identifier)
-            characters.append(dict(id=identifier, name=name))
+            entry = dict(id=identifier, name=name)
+            if 'appearance' in row:
+                try:
+                    entry['appearance'] = character_appearance.validate(row['appearance'])
+                except ValueError:
+                    raise AccountError('Invalid character appearance') from None
+            characters.append(entry)
         return characters
 
-    def create_character(self, name):
+    def create_character(self, name, appearance=None):
         if not isinstance(name, str) or not 3 <= len(name) <= 20 or re.fullmatch(r"[A-Za-z]+(?:['-][A-Za-z]+)*", name) is None:
             raise AccountError('Use 3–20 ASCII letters with single interior apostrophes or hyphens')
-        character, _ = self.request('/characters', {'name': name})
+        request = {'name': name}
+        if appearance is not None:
+            request['appearance'] = character_appearance.validate(appearance)
+        character, _ = self.request('/characters', request)
         try:
             identifier = str(uuid.UUID(character['id']))
             display = character['name']

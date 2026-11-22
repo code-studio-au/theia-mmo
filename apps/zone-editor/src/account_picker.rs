@@ -1,11 +1,14 @@
 //! Native character choice for the private owned account-launcher handoff.
 use super::*;
+use theia_core::appearance::{Appearance, LABELS};
+mod preview;
 use bevy::input_focus::{
     FocusCause, InputFocus,
     tab_navigation::{TabGroup, TabIndex},
 };
 use bevy::text::EditableText;
 use bevy::ui_widgets::{SelectAllOnFocus, TextInput};
+pub(super) use preview::install;
 use serde::Deserialize;
 use std::{
     fs,
@@ -18,6 +21,8 @@ use std::{
 struct Character {
     id: String,
     name: String,
+    #[serde(default)]
+    appearance: Appearance,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -69,6 +74,10 @@ fn read_snapshot(directory: &Path) -> Result<Option<Characters>, String> {
 enum Choice {
     Existing(usize),
     Create,
+    Enter,
+    New,
+    Cycle(usize, bool),
+    Rotate(bool),
     Cancel,
 }
 fn publish_choice(
@@ -76,6 +85,7 @@ fn publish_choice(
     data: &Characters,
     choice: Choice,
     name: &str,
+    appearance: Appearance,
 ) -> Result<(), String> {
     let selection = match choice {
         Choice::Existing(index) => {
@@ -88,7 +98,7 @@ fn publish_choice(
         Choice::Create if data.can_create => {
             let name = name.trim();
             theia_core::character_name::CharacterName::parse(name).map_err(|e| e.to_string())?;
-            serde_json::json!({"schema":1,"create_name":name})
+            serde_json::json!({"schema":1,"create_name":name,"appearance":appearance})
         }
         _ => return Err("Choose an existing character".into()),
     };
@@ -117,6 +127,9 @@ struct Draft {
     data: Characters,
     action: Option<Choice>,
     message: String,
+    appearance: Appearance,
+    selected: Option<usize>,
+    yaw: f32,
 }
 #[derive(Resource, Default)]
 struct Picker {
@@ -132,6 +145,7 @@ struct Row(usize);
 enum Label {
     Character(usize),
     Message,
+    Option(usize),
 }
 #[derive(Component)]
 struct NameInput;
@@ -140,7 +154,14 @@ pub(super) fn plugin(app: &mut App) {
     app.init_resource::<Picker>()
         .add_systems(Startup, setup)
         .add_observer(choose)
-        .add_systems(Update, update.after(network_playtest::poll));
+        .add_systems(
+            Update,
+            (
+                update.after(network_playtest::poll),
+                preview::tick.after(update),
+                sync_controls.after(update),
+            ),
+        );
 }
 fn button(parent: &mut ChildSpawnerCommands, choice: Choice, caption: &str) {
     parent
@@ -156,7 +177,8 @@ fn button(parent: &mut ChildSpawnerCommands, choice: Choice, caption: &str) {
         ))
         .with_child(theme::label(caption, 13., theme::BODY));
 }
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+    let camera = preview::setup(&mut commands, &mut images);
     commands
         .spawn((
             Root,
@@ -175,68 +197,113 @@ fn setup(mut commands: Commands) {
             BackgroundColor(theme::dialog::BACKDROP),
         ))
         .with_children(|root| {
-            root.spawn(theme::dialog::panel(520.))
+            root.spawn(theme::dialog::panel(940.))
                 .with_children(|panel| {
                     panel
                         .spawn(theme::dialog::header())
-                        .with_child(theme::label("Choose your character", 18., theme::DISPLAY));
+                        .with_child(theme::label("Your adventurer", 18., theme::DISPLAY));
                     scrolling::pane(panel, 24., scrolling::Pane::Dialog, |body| {
                         body.spawn(theme::label(
                             "Choose an existing character or create one for this account.",
                             13.,
                             theme::BODY,
                         ));
-                        for index in 0..8 {
-                            body.spawn((
-                                Row(index),
-                                Choice::Existing(index),
-                                Button,
-                                ActivateOnPress,
-                                Hovered::default(),
-                                TabIndex(0),
-                                theme::Variant::Default,
-                                theme::button_node(),
-                                BackgroundColor(theme::Variant::Default.background(false)),
-                            ))
-                            .with_child((
-                                Label::Character(index),
-                                theme::label("", 13., theme::BODY),
-                            ));
-                        }
-                        body.spawn((
-                            Row(8),
-                            Node {
-                                width: percent(100),
-                                flex_direction: FlexDirection::Column,
-                                row_gap: px(8),
-                                margin: UiRect::top(px(12)),
-                                ..default()
-                            },
-                        ))
-                        .with_children(|form| {
-                            form.spawn(theme::label("New character name", 13., theme::BODY));
-                            form.spawn((
-                                NameInput,
-                                TabIndex(0),
-                                TextInput,
-                                SelectAllOnFocus,
-                                EditableText {
-                                    max_characters: Some(20),
-                                    allow_newlines: false,
+                        body.spawn(Node {
+                            width: percent(100),
+                            column_gap: px(24),
+                            ..default()
+                        })
+                        .with_children(|columns| {
+                            preview::panel(columns, camera);
+                            columns
+                                .spawn(Node {
+                                    flex_direction: FlexDirection::Column,
+                                    flex_grow: 1.,
+                                    row_gap: px(6),
+                                    min_width: px(0),
                                     ..default()
-                                },
-                                Node {
-                                    width: percent(100),
-                                    ..theme::input_node()
-                                },
-                                BorderColor::all(theme::BORDER),
-                                BackgroundColor(Color::NONE),
-                                theme::input_font(),
-                                TextColor(theme::BODY),
-                                TextLayout::no_wrap(),
-                                theme::text_cursor(),
-                            ));
-                            button(form, Choice::Create, "Create character and enter");
+                                })
+                                .with_children(|body| {
+                                    for index in 0..8 {
+                                        body.spawn((
+                                            Row(index),
+                                            Choice::Existing(index),
+                                            Button,
+                                            ActivateOnPress,
+                                            Hovered::default(),
+                                            TabIndex(0),
+                                            theme::Variant::Default,
+                                            theme::button_node(),
+                                            BackgroundColor(
+                                                theme::Variant::Default.background(false),
+                                            ),
+                                        ))
+                                        .with_child((
+                                            Label::Character(index),
+                                            theme::label("", 13., theme::BODY),
+                                        ));
+                                    }
+                                    button(body, Choice::Enter, "Enter selected character");
+                                    body.spawn((
+                                        Row(8),
+                                        Node {
+                                            width: percent(100),
+                                            flex_direction: FlexDirection::Column,
+                                            row_gap: px(8),
+                                            margin: UiRect::top(px(12)),
+                                            ..default()
+                                        },
+                                    ))
+                                    .with_children(|form| {
+                                        button(form, Choice::New, "Create a new adventurer");
+                                        for (field, label) in LABELS.iter().enumerate() {
+                                            form.spawn(Node {
+                                                align_items: AlignItems::Center,
+                                                column_gap: px(6),
+                                                ..default()
+                                            })
+                                            .with_children(|row| {
+                                                button(row, Choice::Cycle(field, false), "‹");
+                                                row.spawn((
+                                                    Label::Option(field),
+                                                    theme::label(label, 13., theme::BODY),
+                                                    Node {
+                                                        flex_grow: 1.,
+                                                        ..default()
+                                                    },
+                                                ));
+                                                button(row, Choice::Cycle(field, true), "›");
+                                            });
+                                        }
+                                        form.spawn(theme::label(
+                                            "New character name",
+                                            13.,
+                                            theme::BODY,
+                                        ));
+                                        form.spawn((
+                                            NameInput,
+                                            TabIndex(0),
+                                            TextInput,
+                                            SelectAllOnFocus,
+                                            EditableText {
+                                                max_characters: Some(20),
+                                                allow_newlines: false,
+                                                ..default()
+                                            },
+                                            Node {
+                                                width: percent(100),
+                                                ..theme::input_node()
+                                            },
+                                            BorderColor::all(theme::BORDER),
+                                            BackgroundColor(Color::NONE),
+                                            theme::input_font(),
+                                            TextColor(theme::BODY),
+                                            TextLayout::no_wrap(),
+                                            theme::text_cursor(),
+                                        ));
+                                        button(form, Choice::Create, "Create character and enter");
+                                    });
+                                });
                         });
                         body.spawn((Label::Message, theme::label("", 12., theme::MUTED)));
                     });
@@ -286,11 +353,18 @@ fn update(
                 Ok(Some(data)) => {
                     let empty = data.characters.is_empty();
                     picker.seen = Some(directory.clone());
+                    let appearance = data
+                        .characters
+                        .first()
+                        .map_or_else(Appearance::default, |c| c.appearance);
                     picker.draft = Some(Draft {
                         directory,
                         data,
                         action: None,
                         message: String::new(),
+                        appearance,
+                        selected: (!empty).then_some(0),
+                        yaw: 0.,
                     });
                     if let Ok((entity, mut name)) = names.single_mut() {
                         // Preserve Bevy's initialized editor layout/style state.
@@ -334,24 +408,64 @@ fn update(
             }
         }
         if let Some(choice) = draft.action.take() {
-            if matches!(choice, Choice::Cancel) {
-                manager.stop();
-                close = true;
-                session.status = "Stopping account playtest…".into();
-            } else {
-                let name = names
-                    .single()
-                    .map_or_else(|_| String::new(), |(_, n)| n.value().to_string());
-                match publish_choice(&draft.directory, &draft.data, choice, &name) {
-                    Ok(()) => {
-                        close = true;
-                        session.status = "Entering account playtest…".into();
-                    }
-                    Err(error) => draft.message = error,
+            match choice {
+                Choice::Cancel => {
+                    manager.stop();
+                    close = true;
+                    session.status = "Stopping account playtest…".into();
                 }
+                Choice::Existing(index) => {
+                    if let Some(character) = draft.data.characters.get(index) {
+                        draft.selected = Some(index);
+                        draft.appearance = character.appearance;
+                        draft.message = format!("{} — ready to enter", character.name);
+                    }
+                }
+                Choice::New if draft.data.can_create => {
+                    draft.selected = None;
+                    draft.appearance = Appearance::default();
+                    draft.message = "Choose your appearance and enter a name".into();
+                }
+                Choice::Cycle(field, forward) if draft.data.can_create => {
+                    if draft.selected.take().is_some() {
+                        draft.message = "Creating a new adventurer".into();
+                    }
+                    draft.appearance = draft.appearance.cycle(field, forward);
+                }
+                Choice::Rotate(forward) => {
+                    draft.yaw += if forward { 0.4 } else { -0.4 };
+                }
+                Choice::Create | Choice::Enter => {
+                    let actual = match choice {
+                        Choice::Enter => draft.selected.map(Choice::Existing),
+                        _ => Some(Choice::Create),
+                    };
+                    if let Some(actual) = actual {
+                        let name = names
+                            .single()
+                            .map_or_else(|_| String::new(), |(_, n)| n.value().to_string());
+                        match publish_choice(
+                            &draft.directory,
+                            &draft.data,
+                            actual,
+                            &name,
+                            draft.appearance,
+                        ) {
+                            Ok(()) => {
+                                close = true;
+                                session.status = "Entering account playtest…".into();
+                            }
+                            Err(error) => draft.message = error,
+                        }
+                    } else {
+                        draft.message = "Select an existing character first".into();
+                    }
+                }
+                _ => {}
             }
         }
     }
+
     if close {
         picker.draft = None;
     }
@@ -391,6 +505,19 @@ fn update(
                     .get(*i)
                     .map_or_else(String::new, |c| c.name.clone()),
                 Label::Message => draft.message.clone(),
+                Label::Option(i) => {
+                    let value = draft.appearance.values()[*i];
+                    let option = match *i {
+                        0 => ["Masculine", "Feminine"][usize::from(value)].to_owned(),
+                        3 if draft.appearance.values()[0] == 1 => "Unavailable".into(),
+                        2 | 3 if value == 0 => "None".into(),
+                        2 | 3 => format!("Style {value}"),
+                        5 => ["Brown", "Black", "Blond", "Auburn"][usize::from(value)].into(),
+                        6 => ["Traveller", "Adventurer"][usize::from(value)].into(),
+                        _ => format!("{}", value + 1),
+                    };
+                    format!("{}: {}", LABELS[*i], option)
+                }
             };
         }
     }
@@ -400,6 +527,7 @@ fn update(
 #[derive(bevy::ecs::system::SystemParam)]
 pub(super) struct Report<'w, 's> {
     picker: Option<Res<'w, Picker>>,
+    preview: Option<Res<'w, preview::Preview>>,
     controls: Query<
         'w,
         's,
@@ -434,7 +562,46 @@ impl Report<'_, '_> {
             let factor = node.inverse_scale_factor() * scale;
             serde_json::json!({"text":text.value().to_string(),"focused":focus.get()==Some(entity),"centre":(transform.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()})
         });
-        serde_json::json!({"characters":draft.data.characters.iter().map(|c| &c.name).collect::<Vec<_>>(),"can_create":draft.data.can_create,"message":draft.message,"controls":controls,"name":name})
+        serde_json::json!({"characters":draft.data.characters.iter().map(|c| &c.name).collect::<Vec<_>>(),"preview":self.preview.as_ref().map(|p| serde_json::json!({"ready":p.ready,"error":p.error,"heroes":p.evidence})),"appearance":draft.appearance,"selected":draft.selected,"can_create":draft.data.can_create,"message":draft.message,"controls":controls,"name":name})
+    }
+}
+
+fn sync_controls(
+    mut commands: Commands,
+    picker: Res<Picker>,
+    mut controls: Query<(
+        Entity,
+        &Choice,
+        &mut theme::Variant,
+        Has<bevy::ui::InteractionDisabled>,
+    )>,
+) {
+    let Some(draft) = &picker.draft else {
+        return;
+    };
+    for (entity, choice, mut variant, disabled) in &mut controls {
+        let enabled = match choice {
+            Choice::Enter => draft.selected.is_some(),
+            Choice::Cycle(3, _) => draft.data.can_create && draft.appearance.values()[0] == 0,
+            Choice::Create | Choice::New | Choice::Cycle(_, _) => draft.data.can_create,
+            _ => true,
+        };
+        if disabled == enabled {
+            if enabled {
+                commands
+                    .entity(entity)
+                    .remove::<bevy::ui::InteractionDisabled>();
+            } else {
+                commands
+                    .entity(entity)
+                    .insert(bevy::ui::InteractionDisabled);
+            }
+            *variant = if enabled {
+                theme::Variant::Default
+            } else {
+                theme::Variant::Disabled
+            };
+        }
     }
 }
 
@@ -487,20 +654,47 @@ mod tests {
         ));
         fs::create_dir(&path).unwrap();
         let data = parse_snapshot(&serde_json::to_vec(&snapshot()).unwrap()).unwrap();
-        assert!(publish_choice(&path, &data, Choice::Existing(8), "").is_err());
-        assert!(publish_choice(&path, &data, Choice::Create, "Ar--den").is_err());
+        assert!(
+            publish_choice(&path, &data, Choice::Existing(8), "", Appearance::default()).is_err()
+        );
+        assert!(
+            publish_choice(
+                &path,
+                &data,
+                Choice::Create,
+                "Ar--den",
+                Appearance::default()
+            )
+            .is_err()
+        );
         assert!(!path.join("selection.json").exists());
-        publish_choice(&path, &data, Choice::Existing(0), "").unwrap();
+        publish_choice(&path, &data, Choice::Existing(0), "", Appearance::default()).unwrap();
         let bytes = fs::read(path.join("selection.json")).unwrap();
         assert_eq!(
             serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["character_id"],
             data.characters[0].id
         );
-        assert!(publish_choice(&path, &data, Choice::Create, "Newhero").is_err());
+        assert!(
+            publish_choice(
+                &path,
+                &data,
+                Choice::Create,
+                "Newhero",
+                Appearance::default()
+            )
+            .is_err()
+        );
         assert_eq!(fs::read(path.join("selection.json")).unwrap(), bytes);
         assert!(!path.join("selection.pending").exists());
         fs::remove_file(path.join("selection.json")).unwrap();
-        publish_choice(&path, &data, Choice::Create, " Newhero ").unwrap();
+        publish_choice(
+            &path,
+            &data,
+            Choice::Create,
+            " Newhero ",
+            Appearance::default(),
+        )
+        .unwrap();
         assert_eq!(
             serde_json::from_slice::<serde_json::Value>(
                 &fs::read(path.join("selection.json")).unwrap()
