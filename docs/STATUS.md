@@ -1,3 +1,14 @@
+22 November 2026 — P2-14 production sprite package:
+The approved final sprite ZIP now has a curated runtime export: 416 PNG sprites,
+42 aligned six-state families, a 2048-square atlas, nine-slice/import metadata and
+an audit of all 408 source crops. Source-preserving deterministic cleanup removes
+extraction matte/specks and separates controls from captions/sample layouts.
+Seven pipeline regressions, export checks, fmt, strict example Clippy and release
+build pass. Native standard-Bevy atlas/slice rendering passes on Linux RX 7900 XTX /
+RADV NAVI31 / Mesa 26.2.7 / Vulkan. Windows and final game UI integration are not
+claimed. This is a separate asset pass from the unfinished reference UI edits.
+See UI_SPRITE_PRODUCTION.md and content/ui/sprites-v1/README.md.
+
 22 November 2026 — P3-01/P3-03 account screens and P2-14 shared Theia UI:
 The game now has native username/password sign-in with no browser fallback,
 a separate courtyard character roster, no model for empty accounts, and the

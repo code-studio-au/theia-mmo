@@ -1,0 +1,1509 @@
+{
+  "schema": 1,
+  "source_archive_sha256": "7de9cfe741783121df90c37434597fd2f88abb9ce9d621c4bccc207c0206f90b",
+  "assets": [
+    {
+      "name": "panel.navy",
+      "source": "S1-006",
+      "kind": "panel",
+      "slice": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "solid": true
+    },
+    {
+      "name": "panel.parchment",
+      "source": "S1-007",
+      "kind": "panel",
+      "slice": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "solid": true
+    },
+    {
+      "name": "panel.compact-navy",
+      "source": "S3-139",
+      "kind": "panel",
+      "slice": [
+        22,
+        22,
+        22,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "name": "panel.compact-blue",
+      "source": "S3-140",
+      "kind": "panel",
+      "slice": [
+        22,
+        22,
+        22,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "name": "panel.compact-parchment",
+      "source": "S3-141",
+      "kind": "panel",
+      "slice": [
+        22,
+        22,
+        22,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "name": "panel.compact-danger",
+      "source": "S3-142",
+      "kind": "panel",
+      "slice": [
+        22,
+        22,
+        22,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "name": "title.ornate",
+      "source": "S1-002",
+      "kind": "chrome",
+      "slice": [
+        45,
+        14,
+        45,
+        14
+      ],
+      "solid": true
+    },
+    {
+      "name": "title.simple",
+      "source": "S1-008",
+      "kind": "chrome",
+      "slice": [
+        45,
+        14,
+        45,
+        14
+      ],
+      "solid": true
+    },
+    {
+      "name": "field.long",
+      "source": "S1-012",
+      "kind": "chrome",
+      "slice": [
+        45,
+        14,
+        45,
+        14
+      ],
+      "solid": true
+    },
+    {
+      "name": "field.rounded",
+      "source": "S1-014",
+      "kind": "chrome",
+      "slice": [
+        45,
+        14,
+        45,
+        14
+      ],
+      "solid": true
+    },
+    {
+      "name": "ornament.corner-heavy-left",
+      "source": "S1-003",
+      "kind": "ornament"
+    },
+    {
+      "name": "ornament.corner-fine-left",
+      "source": "S1-004",
+      "kind": "ornament"
+    },
+    {
+      "name": "ornament.corner-heavy-right",
+      "source": "S1-005",
+      "kind": "ornament"
+    },
+    {
+      "name": "ornament.corner-fine-right",
+      "source": "S1-011",
+      "kind": "ornament"
+    },
+    {
+      "name": "divider.ornate",
+      "source": "S1-013",
+      "kind": "ornament"
+    },
+    {
+      "name": "divider.plain",
+      "source": "S1-015",
+      "kind": "ornament"
+    },
+    {
+      "name": "divider.selected",
+      "source": "S1-029",
+      "kind": "ornament"
+    },
+    {
+      "name": "button.primary",
+      "source": "S2-013",
+      "kind": "button",
+      "slice": [
+        20,
+        14,
+        20,
+        14
+      ],
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "button.secondary",
+      "source": "S2-022",
+      "kind": "button",
+      "slice": [
+        20,
+        14,
+        20,
+        14
+      ],
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "button.small",
+      "source": "S2-027",
+      "kind": "button",
+      "slice": [
+        20,
+        14,
+        20,
+        14
+      ],
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "input.standard",
+      "source": "S2-045",
+      "kind": "button",
+      "slice": [
+        20,
+        14,
+        20,
+        14
+      ],
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "tab.chamfered",
+      "source": "S1-017",
+      "kind": "button",
+      "slice": [
+        16,
+        13,
+        16,
+        13
+      ],
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "button.wide",
+      "source": "S1-031",
+      "kind": "button",
+      "slice": [
+        16,
+        13,
+        16,
+        13
+      ],
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "button.icon-rect",
+      "source": "S1-084",
+      "kind": "button",
+      "slice": [
+        16,
+        13,
+        16,
+        13
+      ],
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.left",
+      "source": "S1-034",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.right",
+      "source": "S1-035",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.down",
+      "source": "S1-036",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.plus",
+      "source": "S1-037",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.minus",
+      "source": "S1-038",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.close",
+      "source": "S1-039",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.settings",
+      "source": "S1-040",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.first",
+      "source": "S2-087",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.last",
+      "source": "S2-090",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.list",
+      "source": "S2-095",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.grid",
+      "source": "S2-096",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.warning",
+      "source": "S2-105",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.help",
+      "source": "S2-106",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.info",
+      "source": "S2-107",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.lock",
+      "source": "S2-108",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.star",
+      "source": "S2-109",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.flag",
+      "source": "S2-110",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.mail",
+      "source": "S2-111",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.gear",
+      "source": "S2-112",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.minimise",
+      "source": "S2-118",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.maximise",
+      "source": "S2-119",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "control.close-small",
+      "source": "S2-120",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "shortcut.potion",
+      "source": "S3-070",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "shortcut.party",
+      "source": "S3-071",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "shortcut.inventory",
+      "source": "S3-072",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "shortcut.achievements",
+      "source": "S3-073",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "shortcut.mail",
+      "source": "S3-074",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "shortcut.settings",
+      "source": "S3-075",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "slot.add-small",
+      "source": "S3-025",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "slot.add",
+      "source": "S3-026",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "slot.locked",
+      "source": "S3-030",
+      "kind": "button",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "slot.gold",
+      "source": "S1-021",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.blue",
+      "source": "S1-022",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.purple",
+      "source": "S1-023",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.green",
+      "source": "S1-024",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.silver",
+      "source": "S1-025",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.wide",
+      "source": "S1-026",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.common",
+      "source": "S1-077",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.rare",
+      "source": "S1-078",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.epic",
+      "source": "S1-079",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.uncommon",
+      "source": "S1-080",
+      "kind": "slot",
+      "solid": true
+    },
+    {
+      "name": "slot.empty",
+      "source": "S3-041",
+      "kind": "slot",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "slot.ornate",
+      "source": "S3-042",
+      "kind": "slot",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "tooltip.navy",
+      "source": "S1-074",
+      "kind": "tooltip",
+      "solid": true
+    },
+    {
+      "name": "tooltip.parchment",
+      "source": "S1-082",
+      "kind": "tooltip",
+      "solid": true
+    },
+    {
+      "name": "tooltip.large",
+      "source": "S2-113",
+      "kind": "tooltip",
+      "solid": true
+    },
+    {
+      "name": "tooltip.small",
+      "source": "S2-114",
+      "kind": "tooltip",
+      "solid": true
+    },
+    {
+      "name": "notice.warning",
+      "source": "S1-075",
+      "kind": "notification",
+      "slice": [
+        48,
+        16,
+        24,
+        16
+      ],
+      "solid": true
+    },
+    {
+      "name": "notice.success",
+      "source": "S1-076",
+      "kind": "notification",
+      "slice": [
+        48,
+        16,
+        24,
+        16
+      ],
+      "solid": true
+    },
+    {
+      "name": "notice.error",
+      "source": "S1-083",
+      "kind": "notification",
+      "slice": [
+        48,
+        16,
+        24,
+        16
+      ],
+      "solid": true
+    },
+    {
+      "name": "notice.info",
+      "source": "S1-088",
+      "kind": "notification",
+      "slice": [
+        48,
+        16,
+        24,
+        16
+      ],
+      "solid": true
+    },
+    {
+      "name": "icon.character",
+      "source": "S1-089",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.party",
+      "source": "S1-090",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.shield",
+      "source": "S1-091",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.achievement",
+      "source": "S1-092",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.hourglass",
+      "source": "S1-093",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.castle",
+      "source": "S1-094",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.mountains",
+      "source": "S1-095",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.trophy",
+      "source": "S1-096",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.swords",
+      "source": "S1-097",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.starburst",
+      "source": "S1-098",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.bag",
+      "source": "S1-099",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.shop",
+      "source": "S1-100",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.coins",
+      "source": "S1-101",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.crystal-blue",
+      "source": "S1-102",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.compass",
+      "source": "S1-103",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.tools",
+      "source": "S1-104",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.crown",
+      "source": "S1-105",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.laurel",
+      "source": "S1-106",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.diamond-blue",
+      "source": "S1-108",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.diamond-purple",
+      "source": "S1-109",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.mail-blue",
+      "source": "S1-110",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.mail-gold",
+      "source": "S1-111",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.warning-round",
+      "source": "S1-112",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.help-round",
+      "source": "S1-113",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.info-round",
+      "source": "S1-114",
+      "kind": "icon"
+    },
+    {
+      "name": "banner.blue",
+      "source": "S1-115",
+      "kind": "icon"
+    },
+    {
+      "name": "banner.red",
+      "source": "S1-116",
+      "kind": "icon"
+    },
+    {
+      "name": "ability.sword",
+      "source": "S1-117",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.whirlwind",
+      "source": "S1-118",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.sunburst",
+      "source": "S1-119",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.sprint",
+      "source": "S1-120",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.shield",
+      "source": "S1-121",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.shadow",
+      "source": "S1-122",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.arcane-arrow",
+      "source": "S1-123",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.heal",
+      "source": "S1-124",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.portal",
+      "source": "S1-125",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.ice",
+      "source": "S1-126",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.fireball",
+      "source": "S1-127",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.flame-burst",
+      "source": "S1-128",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "crest.compass",
+      "source": "S1-129",
+      "kind": "crest"
+    },
+    {
+      "name": "crest.tree",
+      "source": "S1-131",
+      "kind": "crest"
+    },
+    {
+      "name": "crest.swords",
+      "source": "S1-132",
+      "kind": "crest"
+    },
+    {
+      "name": "crest.castle",
+      "source": "S1-133",
+      "kind": "crest"
+    },
+    {
+      "name": "crest.horse",
+      "source": "S1-134",
+      "kind": "crest"
+    },
+    {
+      "name": "crest.book",
+      "source": "S1-135",
+      "kind": "crest"
+    },
+    {
+      "name": "icon.audio-muted",
+      "source": "S2-070",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.audio-volume",
+      "source": "S2-072",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.heart",
+      "source": "S2-102",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.help",
+      "source": "S2-116",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.mana",
+      "source": "S2-121",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.experience",
+      "source": "S2-124",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.loading",
+      "source": "S2-127",
+      "kind": "icon"
+    },
+    {
+      "name": "item.sword-common",
+      "source": "S3-007",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.sword-uncommon",
+      "source": "S3-008",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.sword-rare",
+      "source": "S3-009",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.sword-epic",
+      "source": "S3-010",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.sword-legendary",
+      "source": "S3-011",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.armour",
+      "source": "S3-031",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.helm",
+      "source": "S3-032",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.ring",
+      "source": "S3-033",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.potion",
+      "source": "S3-034",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.crystal",
+      "source": "S3-035",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "ability.triple-arrow",
+      "source": "S3-038",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.crossed-swords",
+      "source": "S3-039",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "ability.target",
+      "source": "S3-040",
+      "kind": "ability",
+      "solid": true
+    },
+    {
+      "name": "portrait.human",
+      "source": "S3-046",
+      "kind": "portrait",
+      "solid": true
+    },
+    {
+      "name": "portrait.elf",
+      "source": "S3-047",
+      "kind": "portrait",
+      "solid": true
+    },
+    {
+      "name": "portrait.dwarf",
+      "source": "S3-048",
+      "kind": "portrait",
+      "solid": true
+    },
+    {
+      "name": "portrait.shadow",
+      "source": "S3-049",
+      "kind": "portrait",
+      "solid": true
+    },
+    {
+      "name": "icon.experience-alt",
+      "source": "S3-056",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.loading-alt",
+      "source": "S3-062",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.star-round",
+      "source": "S3-067",
+      "kind": "icon"
+    },
+    {
+      "name": "control.plus-round",
+      "source": "S3-076",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.pointer",
+      "source": "S3-078",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.search-round",
+      "source": "S3-079",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.target-round",
+      "source": "S3-080",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.quest-available",
+      "source": "S3-086",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.quest-help",
+      "source": "S3-087",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.quest-alert",
+      "source": "S3-088",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.diamond-silver",
+      "source": "S3-096",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.diamond-green",
+      "source": "S3-097",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.diamond-cyan",
+      "source": "S3-098",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.diamond-violet",
+      "source": "S3-099",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.diamond-gold",
+      "source": "S3-100",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.star",
+      "source": "S3-101",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.star-orange",
+      "source": "S3-102",
+      "kind": "icon"
+    },
+    {
+      "name": "marker.star-gold",
+      "source": "S3-103",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.book",
+      "source": "S3-109",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.chat",
+      "source": "S3-110",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.home",
+      "source": "S3-116",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.travel",
+      "source": "S3-117",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.armour",
+      "source": "S3-118",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.anvil",
+      "source": "S3-119",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.feather",
+      "source": "S3-120",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.laurel-alt",
+      "source": "S3-121",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.pickaxes",
+      "source": "S3-122",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.exit",
+      "source": "S3-123",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.crown-alt",
+      "source": "S3-124",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.flag",
+      "source": "S3-125",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.swords-small",
+      "source": "S3-131",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.fire",
+      "source": "S3-132",
+      "kind": "icon"
+    },
+    {
+      "name": "icon.mana-small",
+      "source": "S3-133",
+      "kind": "icon"
+    },
+    {
+      "name": "item.ingot",
+      "source": "S3-111",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.leather",
+      "source": "S3-112",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.shard",
+      "source": "S3-113",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.herb",
+      "source": "S3-114",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "item.mushroom",
+      "source": "S3-115",
+      "kind": "item",
+      "solid": true
+    },
+    {
+      "name": "crest.tree-dark",
+      "source": "S3-126",
+      "kind": "crest"
+    },
+    {
+      "name": "crest.swords-alt",
+      "source": "S3-127",
+      "kind": "crest"
+    },
+    {
+      "name": "crest.castle-alt",
+      "source": "S3-128",
+      "kind": "crest",
+      "crop": [
+        0,
+        4,
+        53,
+        67
+      ]
+    },
+    {
+      "name": "crest.book-alt",
+      "source": "S3-130",
+      "kind": "crest"
+    },
+    {
+      "name": "checkbox",
+      "source": "S1-048",
+      "kind": "checkbox",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "checkbox.tick",
+      "source": "S1-047",
+      "kind": "glyph",
+      "crop": [
+        12,
+        9,
+        38,
+        29
+      ],
+      "solid": true
+    },
+    {
+      "name": "radio",
+      "source": "S1-050",
+      "kind": "radio",
+      "solid": true,
+      "states": true
+    },
+    {
+      "name": "radio.dot",
+      "source": "S1-051",
+      "kind": "radio-dot",
+      "crop": [
+        9,
+        9,
+        25,
+        26
+      ],
+      "solid": true
+    },
+    {
+      "name": "slider.thumb",
+      "source": "S1-061",
+      "kind": "thumb",
+      "crop": [
+        136,
+        0,
+        162,
+        33
+      ],
+      "solid": true
+    },
+    {
+      "name": "slider.track",
+      "source": "S1-061",
+      "kind": "slider-track",
+      "solid": true
+    },
+    {
+      "name": "slider.fill",
+      "source": "S1-061",
+      "kind": "slider-fill",
+      "solid": true
+    },
+    {
+      "name": "bar.frame",
+      "source": "S1-063",
+      "kind": "bar-frame",
+      "solid": true
+    },
+    {
+      "name": "bar.fill-health",
+      "source": "S1-042",
+      "kind": "bar-fill",
+      "solid": true
+    },
+    {
+      "name": "bar.fill-mana",
+      "source": "S1-056",
+      "kind": "bar-fill",
+      "solid": true
+    },
+    {
+      "name": "bar.fill-experience",
+      "source": "S1-057",
+      "kind": "bar-fill",
+      "solid": true
+    },
+    {
+      "name": "bar.fill-progress",
+      "source": "S1-063",
+      "kind": "bar-fill",
+      "solid": true
+    },
+    {
+      "name": "portrait.frame",
+      "source": "S1-081",
+      "kind": "portrait-frame",
+      "solid": true
+    },
+    {
+      "name": "minimap.frame",
+      "source": "S1-073",
+      "kind": "portrait-frame",
+      "solid": true
+    },
+    {
+      "name": "hotbar.end-left",
+      "source": "S1-136",
+      "kind": "ornament",
+      "crop": [
+        0,
+        0,
+        70,
+        76
+      ]
+    },
+    {
+      "name": "hotbar.end-right",
+      "source": "S1-136",
+      "kind": "ornament",
+      "crop": [
+        373,
+        0,
+        443,
+        76
+      ]
+    },
+    {
+      "name": "marker.diamond-grey-small",
+      "source": "S1-107",
+      "kind": "icon",
+      "crop": [
+        0,
+        0,
+        37,
+        37
+      ]
+    },
+    {
+      "name": "marker.diamond-green-small",
+      "source": "S1-107",
+      "kind": "icon",
+      "crop": [
+        37,
+        0,
+        74,
+        37
+      ]
+    },
+    {
+      "name": "crest.horse-alt",
+      "source": "S3-129",
+      "kind": "crest",
+      "crop": [
+        2,
+        3,
+        58,
+        62
+      ]
+    },
+    {
+      "name": "crest.compass-alt",
+      "source": "S3-129",
+      "kind": "crest",
+      "crop": [
+        58,
+        0,
+        117,
+        66
+      ]
+    }
+  ],
+  "labels": {
+    "1": [],
+    "2": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      49,
+      52,
+      54,
+      55,
+      57,
+      59,
+      63,
+      65,
+      67,
+      68,
+      69,
+      73,
+      74,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      98,
+      99,
+      100,
+      101,
+      103,
+      122,
+      125,
+      128
+    ],
+    "3": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      27,
+      28,
+      43,
+      44,
+      45,
+      52,
+      55,
+      58,
+      64,
+      65,
+      66,
+      69,
+      81,
+      82,
+      83,
+      134,
+      135,
+      136
+    ]
+  },
+  "demos": {
+    "1": [
+      1,
+      53,
+      60,
+      62,
+      65,
+      66,
+      67,
+      68,
+      130,
+      136,
+      137
+    ],
+    "2": [
+      17,
+      18,
+      26,
+      51,
+      61,
+      62,
+      64,
+      84,
+      85,
+      86,
+      97,
+      104,
+      123,
+      126
+    ],
+    "3": [
+      6,
+      17,
+      18,
+      24,
+      50,
+      53,
+      51,
+      54,
+      57,
+      59,
+      60,
+      61,
+      84,
+      85,
+      137,
+      138
+    ]
+  }
+}
