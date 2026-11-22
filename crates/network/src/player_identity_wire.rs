@@ -1,5 +1,5 @@
-//! Bounded server-owned public player labels. No ownership, credentials or stats.
-//! Codec prerequisite only; publishing/receiving is wired separately.
+//! Bounded server-owned public player names and cosmetic appearance.
+//! No account identity, credentials or gameplay stats.
 use crate::Result;
 use theia_core::{
     character_name::{CharacterName, MAX_BYTES as NAME_BYTES},

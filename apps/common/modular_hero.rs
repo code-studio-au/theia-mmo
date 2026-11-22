@@ -46,11 +46,9 @@ pub fn apply(
     {
         return Err("Modular hero is missing a selected body part".into());
     }
-    let material_entities: Vec<_> = entities
-        .iter()
-        .copied()
-        .filter(|e| world.get::<MeshMaterial3d<StandardMaterial>>(*e).is_some())
-        .collect();
+    // Equipment is attached elsewhere on this skeleton. Palette changes must
+    // only affect the modular body parts, never a weapon or another attachment.
+    let material_entities = part_materials(world, parts.iter().map(|(e, _)| *e));
     if material_entities.is_empty() {
         return Ok(false);
     }
@@ -126,4 +124,53 @@ pub fn qualification(world: &mut World) -> serde_json::Value {
         }).collect();
         serde_json::json!({"appearance":appearance,"visible_parts":parts,"position":world.get::<GlobalTransform>(root).map(|t|t.translation().to_array())})
     }).collect::<Vec<_>>())
+}
+
+fn part_materials(world: &World, roots: impl Iterator<Item = Entity>) -> Vec<Entity> {
+    let mut result = Vec::new();
+    for root in roots {
+        let mut entities = vec![root];
+        let mut index = 0;
+        while index < entities.len() {
+            let entity = entities[index];
+            if let Some(children) = world.get::<Children>(entity) {
+                entities.extend(children.iter());
+            }
+            if world
+                .get::<MeshMaterial3d<StandardMaterial>>(entity)
+                .is_some()
+            {
+                result.push(entity);
+            }
+            index += 1;
+        }
+    }
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn body_palette_selection_excludes_equipment_on_the_same_rig() {
+        let mut world = World::new();
+        let rig = world.spawn_empty().id();
+        let body = world.spawn(ChildOf(rig)).id();
+        let skin = world
+            .spawn((
+                ChildOf(body),
+                MeshMaterial3d::<StandardMaterial>(Handle::default()),
+            ))
+            .id();
+        let hand = world.spawn(ChildOf(rig)).id();
+        let weapon = world
+            .spawn((
+                ChildOf(hand),
+                MeshMaterial3d::<StandardMaterial>(Handle::default()),
+            ))
+            .id();
+        let materials = part_materials(&world, [body].into_iter());
+        assert_eq!(materials, vec![skin]);
+        assert!(!materials.contains(&weapon));
+    }
 }

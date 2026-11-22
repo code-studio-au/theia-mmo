@@ -1,3 +1,11 @@
+22 November 2026 — P2-08/P2-09, P3-03 playable modular hero slice:
+Implemented curated hero conversion, native creation/selection preview, persistent
+cosmetic choices and authoritative public appearance for local/remote players.
+Actual two-account Millhaven entry and database-restart checks pass. Appearance is
+cosmetic; equipment still owns gameplay stats. Future work: richer catalogue,
+equipped armour visual mapping and a standalone title/character launcher. Current
+entry is the editor's account population playtest; see MODULAR_HERO.md.
+
 16 November 2026 — P4-11 shared-marker presentation accepted:
 The Unit marks palette, eight shared overhead symbols and selected-target icons
 now use the private authoritative protocol from cda0608a. Exact selection/revision

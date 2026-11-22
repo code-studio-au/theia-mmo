@@ -62,7 +62,14 @@ def run(args):
                         assert editor.poll() is None, 'Owned editor exited'
                         return json.loads(report.read_text())
                     wait(lambda: state().get('menus'),60)
-                    time.sleep(1)
+                    previous, settled = None, time.monotonic()
+                    def stable_geometry():
+                        nonlocal previous, settled
+                        geometry = [(m['name'],m['centre'],m['size']) for m in state()['menus'] if m['role']=='button']
+                        if geometry != previous:
+                            previous, settled = geometry, time.monotonic()
+                        return time.monotonic()-settled >= 1.5
+                    wait(stable_geometry,30)
                     def fresh():
                         before = state()['input_elapsed']
                         return wait(lambda: state() if state()['input_elapsed']>before else None)
@@ -74,9 +81,13 @@ def run(args):
                         for char in str(value):
                             desktop.key({'/':'slash','.':'period','-':'minus'}.get(char,char)); fresh()
                     def menu(action):
-                        click(next(m['centre'] for m in state()['menus'] if m['name']=='Zone' and m['role']=='button' and min(m['size'])>0))
-                        control = wait(lambda: next((c for c in state()['workspace_controls'] if c['target']==action and c['menu_item'] and min(c['size'])>0),None))
-                        click(control['centre'])
+                        def control():
+                            return next((c for c in state()['workspace_controls'] if c['target']==action and c['menu_item'] and min(c['size'])>0),None)
+                        for _ in range(3):
+                            if control(): break
+                            click(next(m['centre'] for m in state()['menus'] if m['name']=='Zone' and m['role']=='button' and min(m['size'])>0))
+                            fresh(); time.sleep(.3)
+                        click(wait(control,10)['centre'])
                     def picker_action(action):
                         control = wait(lambda: next((c for c in (state().get('account_picker') or {}).get('controls',[]) if c['action']==action and min(c['size'])>0),None))
                         click(control['centre'])

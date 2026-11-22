@@ -1,3 +1,11 @@
+Modular character creation update — 22 November 2026:
+The editor's native account picker now implements animated rotating hero preview,
+seven cosmetic selectors, name validation, creation, saved-appearance preview and
+explicit Enter for an existing selection. It connects to real authoritative
+persistence and multiplayer; see MODULAR_HERO.md for native two-account/restart
+checks. This is the editor/account-playtest entry, not the standalone full-screen
+title/roster art direction below. The earlier screenshots remain design references.
+
 # Front-end visual references — 16 November 2026
 
 Planned direction from the user's WoW screenshots; no title/selection/loading

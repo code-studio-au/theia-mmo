@@ -1,3 +1,13 @@
+22 November 2026 — P2-08/P2-09, P3-03 modular hero creation:
+Build on the owned asset converter, standard Bevy renderer/skinning/UI, existing
+account picker, async PostgreSQL publisher and authenticated Renet admission.
+Prerequisites are present; no custom renderer, simulation I/O, client authority,
+new service or terrain-format change is introduced. Concrete acceptance covers
+valid/invalid catalogue input, actual SQL restart/ownership/rollback, bounded PN02
+metadata, two real authenticated native clients and saved-preview restoration.
+Those checks pass in the modular hero evidence set; final protocol is 14. Equipment
+armour mapping and the standalone title launcher remain separate. See MODULAR_HERO.md.
+
 16 November 2026 — P4-11 shared-marker presentation accepted:
 A compact Unit marks palette beside the member frames assigns the eight original
 symbols through cda0608a's authoritative private-party protocol. Leaders can mark

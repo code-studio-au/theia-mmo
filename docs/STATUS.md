@@ -1,3 +1,29 @@
+22 November 2026 — P2-08/P2-09, P3-03 modular hero creation:
+Owned Modular Fantasy Hero Characters now provide the player body. Native account
+creation has an animated, rotating preview with seven bounded cosmetic choices.
+Saved character selection previews those choices; the authoritative server stores
+appearance in PostgreSQL and publishes it to both local and remote players. The
+same standard Bevy parts/materials serve the preview and game. Existing main-hand
+props stay separate from body palettes. Equipped armour visuals remain future work.
+
+Actual native RX 7900 XTX / RADV / Vulkan checks create a custom hero, reject an
+invalid name, enter imported Millhaven, display two authenticated players with
+distinct looks, stop, restart PostgreSQL, select the saved character and repeat.
+Source zone bytes remain unchanged. Evidence: build/modular-hero-v1/native-creation-v3/.
+Two initial editor surface-resize diagnostics are narrowly counted, one per launch;
+no other GPU/UI errors. Functional validation is not a performance measurement.
+Migration 15 and legacy upgrades pass actual PostgreSQL contracts; strict validation,
+private handoff and encrypted impaired-UDP appearance tests pass. See MODULAR_HERO.md
+for final protocol/build checks, exact device evidence and limitations.
+Final protocol-14 release/native confirmation: native-final-v2/qualification.json.
+551 network tests pass (18 fixture-dependent ignored), 25 Python launcher tests
+pass, and fmt/denied-warning Clippy/matching optimized builds pass.
+
+Launch defaults prefer the qualified local modular package and retain old art as a
+fallback. Use Zone → Start account population playtest… for customization. Offline
+F5 previews the default hero. This implements the existing editor/account entry;
+a standalone title launcher and persistent deployed account services remain separate.
+
 16 November 2026 — P4-11 shared-marker presentation accepted:
 The Unit marks palette, eight shared overhead symbols and selected-target icons
 now use the private authoritative protocol from cda0608a. Exact selection/revision

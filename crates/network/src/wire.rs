@@ -5,7 +5,9 @@ use theia_core::{
     identity::{EntityId, WorldEpoch},
 };
 
-pub const VERSION: u32 = 13;
+// PN02 public player metadata includes mandatory validated appearance.
+// Bump the authenticated protocol ID so PN01 clients cannot join this server.
+pub const VERSION: u32 = 14;
 pub const MAX_PLAYERS: usize = 8;
 pub const MAX_BYTES: usize = 1200;
 pub const TICK_HZ: u32 = 30;

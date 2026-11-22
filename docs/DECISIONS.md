@@ -1,3 +1,16 @@
+22 November 2026 — P2-08/P2-09, P3-03 modular player appearance:
+User approved autonomous local implementation and commits for the owned Modular
+Fantasy Hero package, native customization and persistent multiplayer appearance.
+Use a curated, bounded v1 catalogue, standard Bevy glTF skins and palette materials,
+and a separate preview render layer. Retarget source deformation relative to target
+bind axes; source absolute bone poses were visually invalid and rejected.
+Store validated seven-byte appearance with character creation; account ownership
+and async persistence remain authoritative. PN02 public metadata is bounded to
+341 bytes/eight actors. Gameplay protocol 14 rejects older peers/tickets at the
+transport boundary. No client-supplied mesh paths, stats or equipment authority.
+Build on the native account picker; full title-screen work and equipped armour
+appearance stay separate. See MODULAR_HERO.md for implementation and evidence.
+
 16 November 2026 — P4-11 shared unit-mark policy:
 The eight reference symbols are Skull, Cross, Square, Moon, Triangle, Diamond,
 Circle and Star. Assignments belong to the party, not the target's global state;

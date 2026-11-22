@@ -617,14 +617,14 @@ async fn migration_nine_journal_rows_and_receipts_upgrade_without_completion_rew
         .unwrap()
         .bag;
     store.close().await.unwrap();
-    admin.batch_execute("DROP INDEX theia.reward_once_character; DROP INDEX theia.reward_per_victim_life; DROP INDEX theia.reward_pending_life_page; ALTER TABLE theia.reward_claims DROP CONSTRAINT reward_claim_source, DROP COLUMN claim_scope, DROP COLUMN victim_life, DROP COLUMN corpse_x, DROP COLUMN corpse_y, DROP COLUMN corpse_z, ADD CONSTRAINT reward_claims_realm_id_character_id_reward_id_key UNIQUE(realm_id,character_id,reward_id); DROP TABLE theia.quest_journal_actions; DROP TABLE theia.quest_journal_events; DROP TABLE theia.quest_journal_entries; DROP TABLE theia.quest_journal_heads; ALTER TABLE theia.quest_action_receipts DROP CONSTRAINT quest_action_xp_metadata, DROP COLUMN xp_profile_hash, DROP COLUMN xp_granted, DROP COLUMN xp_revision, DROP COLUMN xp_total; DROP TABLE theia.loot_rolls; DELETE FROM theia.schema_migrations WHERE version>=10;").await.unwrap();
+    admin.batch_execute("ALTER TABLE theia.characters DROP COLUMN appearance; DROP INDEX theia.reward_once_character; DROP INDEX theia.reward_per_victim_life; DROP INDEX theia.reward_pending_life_page; ALTER TABLE theia.reward_claims DROP CONSTRAINT reward_claim_source, DROP COLUMN claim_scope, DROP COLUMN victim_life, DROP COLUMN corpse_x, DROP COLUMN corpse_y, DROP COLUMN corpse_z, ADD CONSTRAINT reward_claims_realm_id_character_id_reward_id_key UNIQUE(realm_id,character_id,reward_id); DROP TABLE theia.quest_journal_actions; DROP TABLE theia.quest_journal_events; DROP TABLE theia.quest_journal_entries; DROP TABLE theia.quest_journal_heads; ALTER TABLE theia.quest_action_receipts DROP CONSTRAINT quest_action_xp_metadata, DROP COLUMN xp_profile_hash, DROP COLUMN xp_granted, DROP COLUMN xp_revision, DROP COLUMN xp_total; DROP TABLE theia.loot_rolls; DELETE FROM theia.schema_migrations WHERE version>=10;").await.unwrap();
     let mut store = Store::connect_loopback(&url, realm).await.unwrap();
     let count: i64 = admin
         .query_one("SELECT count(*) FROM theia.schema_migrations", &[])
         .await
         .unwrap()
         .get(0);
-    assert_eq!(count, 14);
+    assert_eq!(count, 15);
     assert_eq!(
         store.load_inventory(a, WORLD, &legacy_items).await.unwrap(),
         legacy_bag

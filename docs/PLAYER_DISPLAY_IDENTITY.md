@@ -1,5 +1,13 @@
 # Player display identity
 
+22 November 2026 — current protocol 14 uses PN02 public metadata. Each actor row
+adds seven bounded appearance bytes, making the maximum frame 341 bytes for eight
+actors. The server obtains appearance from the authenticated SQL-selected character;
+client gameplay input cannot supply cosmetic paths or change another actor. Netcode's
+protocol ID includes the wire version, so older PN01 peers/tickets cannot join.
+See [MODULAR_HERO.md](MODULAR_HERO.md) for persistence and native evidence. The PN01
+numbers and 7–8 November implementation checkpoints below are historical.
+
 7 November 2026. P2-03 / P3-01 / P2-14 / P5-13.
 
 **Qualified locally, 8 November 2026: gameplay name replication and owner-frame

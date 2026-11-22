@@ -106,3 +106,30 @@ Implemented native creation and presentation:
   saved customization belongs to the account playtest. The local editor wrapper
   uses disposable account services, as before; production launcher/title screens,
   long-lived deployment accounts and equipped-item visual swaps remain separate.
+
+Final qualification and handoff:
+
+- Final gameplay protocol 14 release binaries pass the native create/enter/two
+  authenticated player check in `native-final-v2/qualification.json`. The earlier
+  `native-creation-v3` check establishes the same flow across database restart.
+  Exact final executable hashes are in `final-binaries.json`.
+- `cargo fmt --all --check`, denied-warning all-target Clippy for client, server,
+  editor, nav-baker, network, core and persistence, and matching release builds pass.
+  Network library: 551 passed, 18 explicitly fixture-dependent tests ignored.
+  The initial restricted socket run failed with PermissionDenied; rerunning with
+  owned loopback access passes. Seven focused identity tests and the encrypted
+  two-peer appearance test also pass.
+- Two native-picker unit tests, the shared body-palette/equipment isolation
+  regression in both client/editor, 25 Python launcher tests, actual PostgreSQL
+  character/restart, base-schema and quest-upgrade contracts pass. See the logs in
+  `build/modular-hero-v1/`. Palette changes only affect named body-part descendants,
+  preserving existing weapon material handles elsewhere on the skeleton.
+- Early native harness attempts caught the already-known initial surface resize,
+  a test capitalization assumption, and an unsettled X11 menu click. The final
+  harness waits for settled geometry, validates actual stored spelling and counts
+  only the existing narrow surface-size exception. No product failure is waived.
+- The manual Millhaven wrapper now uses the final modular package and release
+  binaries. The pre-existing unsaved editor report was copied to
+  `build/millhaven-population-v1/recovered-unsaved-before-hero-20261122.zone.json`;
+  the saved `zone.json` was not replaced. Existing terrain/editor work remains
+  outside the hero commits. No changes were pushed.
