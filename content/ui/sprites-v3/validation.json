@@ -1,0 +1,15 @@
+{
+  "sprites": 416,
+  "families": 42,
+  "atlases": 9,
+  "audited_sources": 408,
+  "checks": [
+    "PNG decode/hash/dimensions",
+    "straight RGBA transparent safety border",
+    "atlas bounds/nonoverlap/pixel identity",
+    "complete six-state families with identical alpha/dimensions",
+    "valid nine-slice centres/minimum sizes",
+    "all 408 input crops accounted for"
+  ],
+  "scope": "Asset qualification only; no game UI integration or Windows execution."
+}

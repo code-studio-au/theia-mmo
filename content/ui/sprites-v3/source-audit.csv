@@ -1,0 +1,409 @@
+source_id,source_file,status,runtime_assets,reason
+S1-001,sprites/sheet1/s1_001_19_10.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S1-002,sprites/sheet1/s1_002_1014_21.png,exported,title.ornate,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-003,sprites/sheet1/s1_003_1296_20.png,exported,ornament.corner-heavy-left,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-004,sprites/sheet1/s1_004_1378_17.png,exported,ornament.corner-fine-left,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-005,sprites/sheet1/s1_005_1455_17.png,exported,ornament.corner-heavy-right,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-006,sprites/sheet1/s1_006_410_42.png,exported,panel.navy,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-007,sprites/sheet1/s1_007_743_42.png,exported,panel.parchment,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-008,sprites/sheet1/s1_008_1015_85.png,exported,title.simple,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-009,sprites/sheet1/s1_009_1296_98.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-010,sprites/sheet1/s1_010_1379_96.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-011,sprites/sheet1/s1_011_1454_95.png,exported,ornament.corner-fine-right,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-012,sprites/sheet1/s1_012_1042_150.png,exported,field.long,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-013,sprites/sheet1/s1_013_1316_169.png,exported,divider.ornate,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-014,sprites/sheet1/s1_014_1039_202.png,exported,field.rounded,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-015,sprites/sheet1/s1_015_1316_204.png,exported,divider.plain,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-016,sprites/sheet1/s1_016_1316_230.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-017,sprites/sheet1/s1_017_13_259.png,exported,tab.chamfered,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-018,sprites/sheet1/s1_018_177_258.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-019,sprites/sheet1/s1_019_340_259.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-020,sprites/sheet1/s1_020_503_259.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-021,sprites/sheet1/s1_021_683_256.png,exported,slot.gold,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-022,sprites/sheet1/s1_022_765_255.png,exported,slot.blue,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-023,sprites/sheet1/s1_023_845_256.png,exported,slot.purple,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-024,sprites/sheet1/s1_024_926_256.png,exported,slot.green,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-025,sprites/sheet1/s1_025_1009_256.png,exported,slot.silver,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-026,sprites/sheet1/s1_026_1103_258.png,exported,slot.wide,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-027,sprites/sheet1/s1_027_1202_258.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-028,sprites/sheet1/s1_028_1315_260.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-029,sprites/sheet1/s1_029_1318_298.png,exported,divider.selected,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-030,sprites/sheet1/s1_030_13_344.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-031,sprites/sheet1/s1_031_209_344.png,exported,button.wide,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-032,sprites/sheet1/s1_032_384_344.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-033,sprites/sheet1/s1_033_552_346.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-034,sprites/sheet1/s1_034_738_349.png,exported,control.left,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-035,sprites/sheet1/s1_035_803_349.png,exported,control.right,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-036,sprites/sheet1/s1_036_946_349.png,exported,control.down,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-037,sprites/sheet1/s1_037_1026_349.png,exported,control.plus,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-038,sprites/sheet1/s1_038_1088_349.png,exported,control.minus,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-039,sprites/sheet1/s1_039_1149_349.png,exported,control.close,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-040,sprites/sheet1/s1_040_1220_349.png,exported,control.settings,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-041,sprites/sheet1/s1_041_883_350.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-042,sprites/sheet1/s1_042_1282_350.png,exported,bar.fill-health,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-043,sprites/sheet1/s1_043_13_415.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-044,sprites/sheet1/s1_044_211_416.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-045,sprites/sheet1/s1_045_386_416.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-046,sprites/sheet1/s1_046_553_417.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-047,sprites/sheet1/s1_047_739_411.png,exported,checkbox.tick,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-048,sprites/sheet1/s1_048_797_412.png,exported,checkbox,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-049,sprites/sheet1/s1_049_847_414.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-050,sprites/sheet1/s1_050_903_415.png,exported,radio,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-051,sprites/sheet1/s1_051_949_415.png,exported,radio.dot,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-052,sprites/sheet1/s1_052_992_416.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-053,sprites/sheet1/s1_053_1043_414.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S1-054,sprites/sheet1/s1_054_1136_415.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-055,sprites/sheet1/s1_055_1205_415.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-056,sprites/sheet1/s1_056_1282_392.png,exported,bar.fill-mana,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-057,sprites/sheet1/s1_057_1281_434.png,exported,bar.fill-experience,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-058,sprites/sheet1/s1_058_11_476.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-059,sprites/sheet1/s1_059_298_476.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-060,sprites/sheet1/s1_060_505_475.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S1-061,sprites/sheet1/s1_061_749_466.png,exported,slider.thumb;slider.track;slider.fill,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-062,sprites/sheet1/s1_062_1072_466.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S1-063,sprites/sheet1/s1_063_1282_477.png,exported,bar.frame;bar.fill-progress,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-064,sprites/sheet1/s1_064_749_498.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-065,sprites/sheet1/s1_065_13_540.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S1-066,sprites/sheet1/s1_066_210_541.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S1-067,sprites/sheet1/s1_067_390_540.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S1-068,sprites/sheet1/s1_068_618_544.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S1-069,sprites/sheet1/s1_069_830_554.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-070,sprites/sheet1/s1_070_893_554.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-071,sprites/sheet1/s1_071_954_554.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-072,sprites/sheet1/s1_072_1016_554.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-073,sprites/sheet1/s1_073_1082_542.png,exported,minimap.frame,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-074,sprites/sheet1/s1_074_1178_546.png,exported,tooltip.navy,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-075,sprites/sheet1/s1_075_1336_543.png,exported,notice.warning,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-076,sprites/sheet1/s1_076_1337_592.png,exported,notice.success,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-077,sprites/sheet1/s1_077_831_627.png,exported,slot.common,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-078,sprites/sheet1/s1_078_893_627.png,exported,slot.rare,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-079,sprites/sheet1/s1_079_955_627.png,exported,slot.epic,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-080,sprites/sheet1/s1_080_1017_627.png,exported,slot.uncommon,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-081,sprites/sheet1/s1_081_1081_625.png,exported,portrait.frame,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-082,sprites/sheet1/s1_082_1178_651.png,exported,tooltip.parchment,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-083,sprites/sheet1/s1_083_1337_641.png,exported,notice.error,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-084,sprites/sheet1/s1_084_831_689.png,exported,button.icon-rect,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-085,sprites/sheet1/s1_085_892_689.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-086,sprites/sheet1/s1_086_955_689.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-087,sprites/sheet1/s1_087_1018_689.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S1-088,sprites/sheet1/s1_088_1337_690.png,exported,notice.info,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-089,sprites/sheet1/s1_089_29_755.png,exported,icon.character,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-090,sprites/sheet1/s1_090_88_758.png,exported,icon.party,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-091,sprites/sheet1/s1_091_151_757.png,exported,icon.shield,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-092,sprites/sheet1/s1_092_208_754.png,exported,icon.achievement,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-093,sprites/sheet1/s1_093_268_757.png,exported,icon.hourglass,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-094,sprites/sheet1/s1_094_323_754.png,exported,icon.castle,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-095,sprites/sheet1/s1_095_384_758.png,exported,icon.mountains,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-096,sprites/sheet1/s1_096_456_759.png,exported,icon.trophy,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-097,sprites/sheet1/s1_097_513_758.png,exported,icon.swords,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-098,sprites/sheet1/s1_098_569_755.png,exported,icon.starburst,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-099,sprites/sheet1/s1_099_628_758.png,exported,icon.bag,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-100,sprites/sheet1/s1_100_678_760.png,exported,icon.shop,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-101,sprites/sheet1/s1_101_734_758.png,exported,icon.coins,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-102,sprites/sheet1/s1_102_790_758.png,exported,icon.crystal-blue,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-103,sprites/sheet1/s1_103_833_759.png,exported,icon.compass,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-104,sprites/sheet1/s1_104_882_759.png,exported,icon.tools,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-105,sprites/sheet1/s1_105_934_757.png,exported,icon.crown,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-106,sprites/sheet1/s1_106_982_759.png,exported,icon.laurel,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-107,sprites/sheet1/s1_107_1046_763.png,exported,marker.diamond-grey-small;marker.diamond-green-small,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-108,sprites/sheet1/s1_108_1120_763.png,exported,marker.diamond-blue,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-109,sprites/sheet1/s1_109_1158_763.png,exported,marker.diamond-purple,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-110,sprites/sheet1/s1_110_1212_764.png,exported,icon.mail-blue,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-111,sprites/sheet1/s1_111_1250_764.png,exported,icon.mail-gold,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-112,sprites/sheet1/s1_112_1301_764.png,exported,icon.warning-round,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-113,sprites/sheet1/s1_113_1339_764.png,exported,icon.help-round,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-114,sprites/sheet1/s1_114_1376_764.png,exported,icon.info-round,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-115,sprites/sheet1/s1_115_1411_745.png,exported,banner.blue,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-116,sprites/sheet1/s1_116_1467_745.png,exported,banner.red,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-117,sprites/sheet1/s1_117_21_816.png,exported,ability.sword,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-118,sprites/sheet1/s1_118_111_816.png,exported,ability.whirlwind,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-119,sprites/sheet1/s1_119_202_817.png,exported,ability.sunburst,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-120,sprites/sheet1/s1_120_293_817.png,exported,ability.sprint,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-121,sprites/sheet1/s1_121_386_816.png,exported,ability.shield,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-122,sprites/sheet1/s1_122_477_817.png,exported,ability.shadow,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-123,sprites/sheet1/s1_123_568_817.png,exported,ability.arcane-arrow,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-124,sprites/sheet1/s1_124_656_817.png,exported,ability.heal,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-125,sprites/sheet1/s1_125_747_817.png,exported,ability.portal,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-126,sprites/sheet1/s1_126_836_817.png,exported,ability.ice,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-127,sprites/sheet1/s1_127_926_817.png,exported,ability.fireball,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-128,sprites/sheet1/s1_128_1016_817.png,exported,ability.flame-burst,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-129,sprites/sheet1/s1_129_1386_873.png,exported,crest.compass,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-130,sprites/sheet1/s1_130_12_898.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S1-131,sprites/sheet1/s1_131_1129_878.png,exported,crest.tree,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-132,sprites/sheet1/s1_132_1204_879.png,exported,crest.swords,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-133,sprites/sheet1/s1_133_1268_878.png,exported,crest.castle,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-134,sprites/sheet1/s1_134_1328_878.png,exported,crest.horse,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-135,sprites/sheet1/s1_135_1455_877.png,exported,crest.book,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-136,sprites/sheet1/s1_136_354_919.png,exported,hotbar.end-left;hotbar.end-right,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S1-137,sprites/sheet1/s1_137_809_934.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-001,sprites/sheet2/s2_001_15_5.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-002,sprites/sheet2/s2_002_13_119.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-003,sprites/sheet2/s2_003_624_119.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-004,sprites/sheet2/s2_004_1182_119.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-005,sprites/sheet2/s2_005_76_162.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-006,sprites/sheet2/s2_006_229_163.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-007,sprites/sheet2/s2_007_364_162.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-008,sprites/sheet2/s2_008_497_162.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-009,sprites/sheet2/s2_009_675_163.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-010,sprites/sheet2/s2_010_810_163.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-011,sprites/sheet2/s2_011_937_163.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-012,sprites/sheet2/s2_012_1058_162.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-013,sprites/sheet2/s2_013_30_187.png,exported,button.primary,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-014,sprites/sheet2/s2_014_181_185.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-015,sprites/sheet2/s2_015_326_187.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-016,sprites/sheet2/s2_016_464_187.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-017,sprites/sheet2/s2_017_634_183.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-018,sprites/sheet2/s2_018_1217_185.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-019,sprites/sheet2/s2_019_1380_185.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-020,sprites/sheet2/s2_020_1218_234.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-021,sprites/sheet2/s2_021_1381_234.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-022,sprites/sheet2/s2_022_39_250.png,exported,button.secondary,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-023,sprites/sheet2/s2_023_188_248.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-024,sprites/sheet2/s2_024_332_250.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-025,sprites/sheet2/s2_025_470_250.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-026,sprites/sheet2/s2_026_634_271.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-027,sprites/sheet2/s2_027_46_305.png,exported,button.small,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-028,sprites/sheet2/s2_028_196_304.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-029,sprites/sheet2/s2_029_339_306.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-030,sprites/sheet2/s2_030_476_306.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-031,sprites/sheet2/s2_031_1242_285.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-032,sprites/sheet2/s2_032_1296_285.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-033,sprites/sheet2/s2_033_1375_291.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-034,sprites/sheet2/s2_034_1411_291.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-035,sprites/sheet2/s2_035_1446_289.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-036,sprites/sheet2/s2_036_1248_330.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-037,sprites/sheet2/s2_037_1301_330.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-038,sprites/sheet2/s2_038_1376_330.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-039,sprites/sheet2/s2_039_1414_330.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-040,sprites/sheet2/s2_040_1450_330.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-041,sprites/sheet2/s2_041_13_369.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-042,sprites/sheet2/s2_042_571_369.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-043,sprites/sheet2/s2_043_1053_369.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-044,sprites/sheet2/s2_044_1301_369.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-045,sprites/sheet2/s2_045_19_411.png,exported,input.standard,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-046,sprites/sheet2/s2_046_166_407.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-047,sprites/sheet2/s2_047_301_411.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-048,sprites/sheet2/s2_048_433_411.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-049,sprites/sheet2/s2_049_596_413.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-050,sprites/sheet2/s2_050_704_404.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-051,sprites/sheet2/s2_051_1083_407.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-052,sprites/sheet2/s2_052_1129_412.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-053,sprites/sheet2/s2_053_1328_408.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-054,sprites/sheet2/s2_054_1372_413.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-055,sprites/sheet2/s2_055_597_451.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-056,sprites/sheet2/s2_056_704_443.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-057,sprites/sheet2/s2_057_1130_442.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-058,sprites/sheet2/s2_058_1329_439.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-059,sprites/sheet2/s2_059_1372_443.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-060,sprites/sheet2/s2_060_19_476.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-061,sprites/sheet2/s2_061_168_476.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-062,sprites/sheet2/s2_062_352_476.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-063,sprites/sheet2/s2_063_596_489.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-064,sprites/sheet2/s2_064_704_481.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-065,sprites/sheet2/s2_065_1130_471.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-066,sprites/sheet2/s2_066_1329_469.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-067,sprites/sheet2/s2_067_1372_473.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-068,sprites/sheet2/s2_068_1440_473.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-069,sprites/sheet2/s2_069_634_490.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-070,sprites/sheet2/s2_070_692_523.png,exported,icon.audio-muted,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-071,sprites/sheet2/s2_071_734_520.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-072,sprites/sheet2/s2_072_1002_523.png,exported,icon.audio-volume,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-073,sprites/sheet2/s2_073_1130_500.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-074,sprites/sheet2/s2_074_1199_500.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-075,sprites/sheet2/s2_075_1329_500.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-076,sprites/sheet2/s2_076_1372_504.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-077,sprites/sheet2/s2_077_1440_504.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-078,sprites/sheet2/s2_078_596_528.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-079,sprites/sheet2/s2_079_1130_529.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-080,sprites/sheet2/s2_080_1199_528.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-081,sprites/sheet2/s2_081_13_570.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-082,sprites/sheet2/s2_082_345_569.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-083,sprites/sheet2/s2_083_776_568.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-084,sprites/sheet2/s2_084_1150_568.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-085,sprites/sheet2/s2_085_36_611.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-086,sprites/sheet2/s2_086_361_603.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-087,sprites/sheet2/s2_087_802_610.png,exported,control.first,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-088,sprites/sheet2/s2_088_850_610.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-089,sprites/sheet2/s2_089_996_610.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-090,sprites/sheet2/s2_090_1045_610.png,exported,control.last,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-091,sprites/sheet2/s2_091_810_667.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-092,sprites/sheet2/s2_092_875_667.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-093,sprites/sheet2/s2_093_973_667.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-094,sprites/sheet2/s2_094_1030_667.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-095,sprites/sheet2/s2_095_829_734.png,exported,control.list,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-096,sprites/sheet2/s2_096_984_734.png,exported,control.grid,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-097,sprites/sheet2/s2_097_365_787.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-098,sprites/sheet2/s2_098_13_852.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-099,sprites/sheet2/s2_099_397_852.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-100,sprites/sheet2/s2_100_827_851.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-101,sprites/sheet2/s2_101_1271_852.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-102,sprites/sheet2/s2_102_19_895.png,exported,icon.heart,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-103,sprites/sheet2/s2_103_55_899.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-104,sprites/sheet2/s2_104_128_894.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-105,sprites/sheet2/s2_105_398_901.png,exported,control.warning,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-106,sprites/sheet2/s2_106_447_901.png,exported,control.help,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-107,sprites/sheet2/s2_107_496_901.png,exported,control.info,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-108,sprites/sheet2/s2_108_546_901.png,exported,control.lock,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-109,sprites/sheet2/s2_109_596_901.png,exported,control.star,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-110,sprites/sheet2/s2_110_647_901.png,exported,control.flag,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-111,sprites/sheet2/s2_111_699_901.png,exported,control.mail,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-112,sprites/sheet2/s2_112_752_901.png,exported,control.gear,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-113,sprites/sheet2/s2_113_831_898.png,exported,tooltip.large,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-114,sprites/sheet2/s2_114_1012_904.png,exported,tooltip.small,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-115,sprites/sheet2/s2_115_1121_898.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-116,sprites/sheet2/s2_116_1287_897.png,exported,icon.help,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-117,sprites/sheet2/s2_117_1334_897.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S2-118,sprites/sheet2/s2_118_1382_897.png,exported,control.minimise,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-119,sprites/sheet2/s2_119_1431_897.png,exported,control.maximise,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-120,sprites/sheet2/s2_120_1479_897.png,exported,control.close-small,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-121,sprites/sheet2/s2_121_21_924.png,exported,icon.mana,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-122,sprites/sheet2/s2_122_55_930.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-123,sprites/sheet2/s2_123_128_925.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-124,sprites/sheet2/s2_124_19_955.png,exported,icon.experience,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-125,sprites/sheet2/s2_125_55_961.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-126,sprites/sheet2/s2_126_128_956.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S2-127,sprites/sheet2/s2_127_20_986.png,exported,icon.loading,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S2-128,sprites/sheet2/s2_128_55_991.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S2-129,sprites/sheet2/s2_129_128_987.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-001,sprites/sheet3/s3_001_8_3.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-002,sprites/sheet3/s3_002_13_117.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-003,sprites/sheet3/s3_003_379_117.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-004,sprites/sheet3/s3_004_791_117.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-005,sprites/sheet3/s3_005_1159_117.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-006,sprites/sheet3/s3_006_27_153.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-007,sprites/sheet3/s3_007_392_161.png,exported,item.sword-common,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-008,sprites/sheet3/s3_008_469_161.png,exported,item.sword-uncommon,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-009,sprites/sheet3/s3_009_546_161.png,exported,item.sword-rare,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-010,sprites/sheet3/s3_010_622_161.png,exported,item.sword-epic,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-011,sprites/sheet3/s3_011_699_161.png,exported,item.sword-legendary,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-012,sprites/sheet3/s3_012_801_160.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-013,sprites/sheet3/s3_013_871_160.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-014,sprites/sheet3/s3_014_941_160.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-015,sprites/sheet3/s3_015_1011_160.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-016,sprites/sheet3/s3_016_1082_160.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-017,sprites/sheet3/s3_017_1183_157.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-018,sprites/sheet3/s3_018_1382_156.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-019,sprites/sheet3/s3_019_801_233.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-020,sprites/sheet3/s3_020_872_233.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-021,sprites/sheet3/s3_021_943_233.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-022,sprites/sheet3/s3_022_1013_233.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-023,sprites/sheet3/s3_023_1083_233.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-024,sprites/sheet3/s3_024_25_251.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-025,sprites/sheet3/s3_025_248_251.png,exported,slot.add-small,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-026,sprites/sheet3/s3_026_309_251.png,exported,slot.add,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-027,sprites/sheet3/s3_027_648_246.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-028,sprites/sheet3/s3_028_708_245.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-029,sprites/sheet3/s3_029_249_305.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-030,sprites/sheet3/s3_030_309_305.png,exported,slot.locked,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-031,sprites/sheet3/s3_031_388_280.png,exported,item.armour,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-032,sprites/sheet3/s3_032_468_280.png,exported,item.helm,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-033,sprites/sheet3/s3_033_546_280.png,exported,item.ring,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-034,sprites/sheet3/s3_034_624_280.png,exported,item.potion,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-035,sprites/sheet3/s3_035_705_280.png,exported,item.crystal,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-036,sprites/sheet3/s3_036_802_308.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-037,sprites/sheet3/s3_037_873_308.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-038,sprites/sheet3/s3_038_944_308.png,exported,ability.triple-arrow,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-039,sprites/sheet3/s3_039_1013_308.png,exported,ability.crossed-swords,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-040,sprites/sheet3/s3_040_1083_308.png,exported,ability.target,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-041,sprites/sheet3/s3_041_248_361.png,exported,slot.empty,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-042,sprites/sheet3/s3_042_308_360.png,exported,slot.ornate,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-043,sprites/sheet3/s3_043_13_428.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-044,sprites/sheet3/s3_044_442_428.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-045,sprites/sheet3/s3_045_805_440.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-046,sprites/sheet3/s3_046_27_465.png,exported,portrait.human,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-047,sprites/sheet3/s3_047_131_465.png,exported,portrait.elf,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-048,sprites/sheet3/s3_048_228_465.png,exported,portrait.dwarf,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-049,sprites/sheet3/s3_049_324_465.png,exported,portrait.shadow,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-050,sprites/sheet3/s3_050_451_477.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-051,sprites/sheet3/s3_051_488_478.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-052,sprites/sheet3/s3_052_722_483.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-053,sprites/sheet3/s3_053_800_475.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-054,sprites/sheet3/s3_054_489_513.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-055,sprites/sheet3/s3_055_722_515.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-056,sprites/sheet3/s3_056_453_542.png,exported,icon.experience-alt,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-057,sprites/sheet3/s3_057_489_546.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-058,sprites/sheet3/s3_058_722_547.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-059,sprites/sheet3/s3_059_19_561.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-060,sprites/sheet3/s3_060_321_567.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-061,sprites/sheet3/s3_061_370_567.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-062,sprites/sheet3/s3_062_452_574.png,exported,icon.loading-alt,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-063,sprites/sheet3/s3_063_489_578.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-064,sprites/sheet3/s3_064_723_579.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-065,sprites/sheet3/s3_065_817_566.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-066,sprites/sheet3/s3_066_1243_567.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-067,sprites/sheet3/s3_067_452_607.png,exported,marker.star-round,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-068,sprites/sheet3/s3_068_489_611.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-069,sprites/sheet3/s3_069_722_610.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-070,sprites/sheet3/s3_070_823_602.png,exported,shortcut.potion,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-071,sprites/sheet3/s3_071_884_602.png,exported,shortcut.party,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-072,sprites/sheet3/s3_072_946_602.png,exported,shortcut.inventory,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-073,sprites/sheet3/s3_073_1007_602.png,exported,shortcut.achievements,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-074,sprites/sheet3/s3_074_1068_602.png,exported,shortcut.mail,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-075,sprites/sheet3/s3_075_1129_602.png,exported,shortcut.settings,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-076,sprites/sheet3/s3_076_1237_604.png,exported,control.plus-round,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-077,sprites/sheet3/s3_077_1294_604.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-078,sprites/sheet3/s3_078_1352_605.png,exported,icon.pointer,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-079,sprites/sheet3/s3_079_1407_602.png,exported,icon.search-round,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-080,sprites/sheet3/s3_080_1468_602.png,exported,icon.target-round,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-081,sprites/sheet3/s3_081_12_669.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-082,sprites/sheet3/s3_082_401_670.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-083,sprites/sheet3/s3_083_834_670.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-084,sprites/sheet3/s3_084_1167_669.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-085,sprites/sheet3/s3_085_11_701.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-086,sprites/sheet3/s3_086_232_711.png,exported,marker.quest-available,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-087,sprites/sheet3/s3_087_277_711.png,exported,marker.quest-help,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-088,sprites/sheet3/s3_088_322_711.png,exported,marker.quest-alert,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-089,sprites/sheet3/s3_089_419_709.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-090,sprites/sheet3/s3_090_472_711.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-091,sprites/sheet3/s3_091_534_709.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-092,sprites/sheet3/s3_092_589_708.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-093,sprites/sheet3/s3_093_646_710.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-094,sprites/sheet3/s3_094_696_707.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-095,sprites/sheet3/s3_095_752_712.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-096,sprites/sheet3/s3_096_862_709.png,exported,marker.diamond-silver,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-097,sprites/sheet3/s3_097_922_709.png,exported,marker.diamond-green,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-098,sprites/sheet3/s3_098_983_709.png,exported,marker.diamond-cyan,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-099,sprites/sheet3/s3_099_1040_709.png,exported,marker.diamond-violet,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-100,sprites/sheet3/s3_100_1098_708.png,exported,marker.diamond-gold,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-101,sprites/sheet3/s3_101_232_757.png,exported,marker.star,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-102,sprites/sheet3/s3_102_277_757.png,exported,marker.star-orange,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-103,sprites/sheet3/s3_103_322_757.png,exported,marker.star-gold,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-104,sprites/sheet3/s3_104_418_762.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-105,sprites/sheet3/s3_105_473_760.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-106,sprites/sheet3/s3_106_535_761.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-107,sprites/sheet3/s3_107_587_766.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-108,sprites/sheet3/s3_108_643_761.png,superseded-variant,,"Alternate source crop/state; canonical family supplies aligned, consistent variants."
+S3-109,sprites/sheet3/s3_109_700_764.png,exported,icon.book,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-110,sprites/sheet3/s3_110_757_762.png,exported,icon.chat,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-111,sprites/sheet3/s3_111_842_767.png,exported,item.ingot,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-112,sprites/sheet3/s3_112_908_768.png,exported,item.leather,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-113,sprites/sheet3/s3_113_972_768.png,exported,item.shard,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-114,sprites/sheet3/s3_114_1035_768.png,exported,item.herb,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-115,sprites/sheet3/s3_115_1099_768.png,exported,item.mushroom,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-116,sprites/sheet3/s3_116_232_800.png,exported,icon.home,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-117,sprites/sheet3/s3_117_277_800.png,exported,icon.travel,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-118,sprites/sheet3/s3_118_324_801.png,exported,icon.armour,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-119,sprites/sheet3/s3_119_416_818.png,exported,icon.anvil,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-120,sprites/sheet3/s3_120_476_814.png,exported,icon.feather,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-121,sprites/sheet3/s3_121_530_811.png,exported,icon.laurel-alt,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-122,sprites/sheet3/s3_122_589_812.png,exported,icon.pickaxes,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-123,sprites/sheet3/s3_123_647_811.png,exported,icon.exit,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-124,sprites/sheet3/s3_124_700_811.png,exported,icon.crown-alt,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-125,sprites/sheet3/s3_125_758_814.png,exported,icon.flag,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-126,sprites/sheet3/s3_126_1177_812.png,exported,crest.tree-dark,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-127,sprites/sheet3/s3_127_1241_816.png,exported,crest.swords-alt,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-128,sprites/sheet3/s3_128_1302_813.png,exported,crest.castle-alt,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-129,sprites/sheet3/s3_129_1357_813.png,exported,crest.horse-alt;crest.compass-alt,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-130,sprites/sheet3/s3_130_1473_816.png,exported,crest.book-alt,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-131,sprites/sheet3/s3_131_235_848.png,exported,icon.swords-small,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-132,sprites/sheet3/s3_132_279_844.png,exported,icon.fire,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-133,sprites/sheet3/s3_133_327_844.png,exported,icon.mana-small,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-134,sprites/sheet3/s3_134_19_895.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-135,sprites/sheet3/s3_135_494_895.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-136,sprites/sheet3/s3_136_979_895.png,excluded-label,,"Source-sheet caption/heading, not runtime artwork; use live text."
+S3-137,sprites/sheet3/s3_137_22_928.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-138,sprites/sheet3/s3_138_494_930.png,replaced-composition,,"Merged controls, sample text/data or demonstration; compose named runtime assets and live text."
+S3-139,sprites/sheet3/s3_139_980_930.png,exported,panel.compact-navy,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-140,sprites/sheet3/s3_140_1122_930.png,exported,panel.compact-blue,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-141,sprites/sheet3/s3_141_1260_930.png,exported,panel.compact-parchment,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.
+S3-142,sprites/sheet3/s3_142_1396_930.png,exported,panel.compact-danger,Artwork reference only; regenerated replacement mapped by canonical name. No original pixels in v3 runtime sprite.

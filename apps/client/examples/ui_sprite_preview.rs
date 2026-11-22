@@ -25,7 +25,13 @@ struct Sprite {
     rect: [f32; 4],
     atlas: usize,
     nine_slice: Option<[f32; 4]>,
+    #[serde(default = "one")]
+    pixels_per_ui_unit: f32,
 }
+fn one() -> f32 {
+    1.0
+}
+
 #[derive(Resource)]
 struct Run {
     output: PathBuf,
@@ -76,7 +82,7 @@ fn sprite_node(sprite: &Sprite, images: &[Handle<Image>]) -> ImageNode {
                         min_inset: Vec2::new(left, top),
                         max_inset: Vec2::new(right, bottom),
                     },
-                    max_corner_scale: 1.0,
+                    max_corner_scale: 1.0 / sprite.pixels_per_ui_unit,
                     ..default()
                 })
             },
@@ -87,7 +93,12 @@ fn sprite_node(sprite: &Sprite, images: &[Handle<Image>]) -> ImageNode {
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut run: ResMut<Run>) {
     commands.spawn(Camera2d);
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content/ui/sprites-v1");
+    let root = std::env::args()
+        .nth(2)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content/ui/sprites-v1")
+        });
     let manifest: Manifest =
         serde_json::from_slice(&std::fs::read(root.join("manifest.json")).unwrap()).unwrap();
     let textures: Vec<_> = manifest
@@ -134,7 +145,15 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut run: Res
                         ("notice.success", 20., 780., 1400., 65.),
                     ]
                     .into_iter()
-                    .map(|(n, x, y, w, h)| (n.to_owned(), x, y, w, h))
+                    .map(|(n, x, y, w, h)| {
+                        let sprite = &manifest.assets[n];
+                        let h = if n.starts_with("notice.") {
+                            sprite.size[1] / sprite.pixels_per_ui_unit
+                        } else {
+                            h
+                        };
+                        (n.to_owned(), x, y, w, h)
+                    })
                     .collect()
                 } else {
                     names
@@ -144,7 +163,9 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut run: Res
                         .enumerate()
                         .map(|(i, n)| {
                             let a = &manifest.assets[*n];
-                            let scale = (214.0 / a.size[0]).min(87.0 / a.size[1]).min(1.0);
+                            let scale = (214.0 / a.size[0])
+                                .min(87.0 / a.size[1])
+                                .min(1.0 / a.pixels_per_ui_unit);
                             (
                                 n.to_string(),
                                 (i % 6) as f32 * 240. + 10.,

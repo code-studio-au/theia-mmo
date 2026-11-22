@@ -1,3 +1,15 @@
+22 November 2026 — P2-14 regenerated sprite artwork and comparison:
+The approved final package has been regenerated from 112 new masters into 416
+runtime sprites (206 canonical assets, 42 aligned six-state families), with nine
+2048-square atlases and four texture pixels per logical UI unit. Side-by-side
+review and follow-up fixes cover transparency, glyph framing, rarity borders,
+selected glyph colours and notification badge stretching. Thirteen pipeline tests,
+export validation, fmt, strict example Clippy/build, interactive comparison checks
+and all ten native Bevy preview pages pass on Linux RX 7900 XTX / RADV / Vulkan.
+Runtime and master ZIPs include exact prompts, hashes and comparison evidence.
+This qualifies the artwork export; game UI integration and Windows execution are
+not claimed. See UI_SPRITE_REGENERATION.md and content/ui/sprites-v3/README.md.
+
 22 November 2026 — P2-14 production sprite package:
 The approved final sprite ZIP now has a curated runtime export: 416 PNG sprites,
 42 aligned six-state families, a 2048-square atlas, nine-slice/import metadata and

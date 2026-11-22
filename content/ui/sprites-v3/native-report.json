@@ -1,0 +1,11 @@
+{
+  "completed": true,
+  "gpu": {
+    "backend": "Vulkan",
+    "driver": "radv",
+    "driver_info": "Mesa 26.2.7 - kisak-mesa PPA",
+    "name": "AMD Radeon RX 7900 XTX (RADV NAVI31)"
+  },
+  "pages": 10,
+  "scope": "Offline standard Bevy UI: all sprite atlas rectangles plus resized nine-slice samples. No gameplay integration or Windows qualification."
+}
