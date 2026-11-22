@@ -1,0 +1,32 @@
+{
+  "tool": "built-in image_gen",
+  "records": [
+    {
+      "name": "foot-arrow",
+      "prompt": "Use case: stylized-concept. Asset type: transparent fantasy MMORPG character rotation UI sprite. Generate ONE isolated gold curved arrow on genuine transparent background. The arrow lies in a horizontal ground plane viewed in three-quarter perspective, sweeping around the left side of an invisible character's feet. Shape like a wide shallow backwards C arc, with its broad triangular arrowhead at the lower-left/front pointing diagonally right along the arc. Polished warm gold metal, pale upper-left bevel highlight, amber dark lower bevel, refined painted fantasy game interface style, bold clean silhouette readable at 96x56 pixels. Horizontal composition, generous transparent margin. No character, no platform, no ground, no circle outline, no button backing, no text, no glow or shadow outside the silhouette. Only one curved arrow.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-216fc0a4-7f4b-4312-a8ea-6bd702df7bd0.png",
+      "source_sha256": "eaf76f4af020570c8a8f504934e04bbb3e87e79b2c5c6b4b54b4f63ca98ea57f",
+      "file": "foot-arrow.png",
+      "sha256": "002155d195cb452298cc986829d9d98529c92956157b7a9a87f0537be8609eea",
+      "cleanup": "alpha < 220 removed; opaque silhouette retained; Lanczos resized with transparent margin"
+    },
+    {
+      "name": "zoom-out",
+      "prompt": "Use case: stylized-concept. One production fantasy game UI icon on genuinely transparent background: a magnifying glass with a bold minus sign in its open transparent lens. Warm polished gold metal, restrained amber bevel, pale gold upper-left highlight, simple chunky silhouette readable at 24px. Lens upper left and short handle diagonally down-right. Centered square canvas with generous transparent margin. Single standalone symbol, no border, no button backing, no text, no ground shadow, no glow. All holes transparent. Match traditional elegant gold fantasy MMORPG menu iconography.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-0eca0601-4c58-4fff-b6a0-cb1a789d9769.png",
+      "source_sha256": "6441ce30fbe01b4d1034372c38d334a40e324069fec595d8ef1bdcd27348a0c9",
+      "file": "zoom-out.png",
+      "sha256": "d9d01d63dd2e376fe550027092c12b6fe53bca5e1f3a82769d22cca8dfee9ae2",
+      "cleanup": "alpha < 220 removed; opaque silhouette retained; Lanczos resized with transparent margin"
+    },
+    {
+      "name": "zoom-in",
+      "prompt": "Edit this transparent gold magnifying glass game icon. Change only the minus sign in the lens to a matching thick gold PLUS sign. Keep the ring, handle, pose, scale, golden shading and alpha transparency unchanged. The entire open lens interior and all exterior must be perfectly transparent, with no white haze, no backdrop, no translucent fog, no drop shadow. One isolated standalone symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-7c6195b8-6a58-4ca2-abf9-f15de6632616.png",
+      "source_sha256": "cd986c030548c4e1e69ae0487639c9ec3a3b9db117f8d6a19ac581279f5bbb6b",
+      "file": "zoom-in.png",
+      "sha256": "2eef3c59e068e394f88dfc81842bb41456e37eaebe07bc06f25e0f03f62988e8",
+      "cleanup": "alpha < 220 removed; opaque silhouette retained; Lanczos resized with transparent margin"
+    }
+  ]
+}

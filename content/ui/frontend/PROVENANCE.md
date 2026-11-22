@@ -103,5 +103,75 @@ user bust, padlock, eye; settings cog, question mark circle, power symbol. Equal
 cells, transparent padding/background, subtle bevel highlights, no labels/tiles.
 Original generated PNGs retained without destructive cropping. Bevy ImageNode
 rectangles select the button and icons at runtime; native text and widgets remain
-interactive. Existing licensed HUD fonts provide Grenze headings and Texturina
-body text. No generated wording is used for functional controls.
+interactive. The initial version used licensed HUD-pack Grenze/Texturina fonts; the
+current pass uses the Liberation fonts recorded below. No generated wording is used for functional controls.
+
+## UI refinement references, 22 November 2026
+
+`Theia Fantasy MMORPG UI Kit.png`, `Fantasy MMO Graphics Settings Interface.png`
+and `Fantasy MMORPG Party Invitation HUD.png` supplied by the user guide the
+navy surfaces, thin gold trim, amber selected cards, category sidebars and compact
+HUD. Their example names/stats/settings are visual references, not instructions
+or gameplay records. The existing primary-button art is retained, with new assets described below
+and native Bevy layout/widgets.
+
+Body/headings use unmodified Liberation Sans Regular and Liberation Serif Regular
+from the installed Debian fonts-liberation package, copied from
+`/usr/share/fonts/truetype/liberation/`. `../fonts/LICENSE.txt` preserves the
+package's copyright notices and SIL Open Font License 1.1. No modified font names
+or redistributed HUD-pack font files are introduced.
+
+### Historical generated reference-kit experiments (not loaded)
+
+Created with the built-in `image_gen.imagegen` tool on 22 November 2026.
+No generated text was used for functional labels. These experiments remain local
+artwork provenance; their PNGs are not dependencies of the integrated client.
+The v3 atlases and supplemental standalone icons below supersede them.
+Source references: the three user-supplied UI images named above.
+
+- `../theme/secondary-v2.png`: 2172×724 RGBA; runtime rectangle
+  (0,185)–(2172,525). Prompt summary: Use case: background-extraction. Asset type:
+  production game UI button sprite. Recreate ONLY one blank normal-state secondary
+  button from supplied UI references: wide horizontal chamfered midnight-navy
+  enamel, thin double bevelled gold, pointed diamond ends, 6:1, no text, icons or
+  scenery, real transparent exterior.
+- `../theme/selected-v2.png`: matching dimensions/rectangle. Prompt summary: precise-object
+  edit of the secondary button; preserve silhouette and canvas, change navy to
+  amber-gold enamel with dark warm brown lower half, bright thin top gold edge,
+  restrained glow, no text. Input was the generated secondary button.
+- `../theme/kit-icons-v2.png`: 1536×1024 RGBA, six columns × four rows of 256 px
+  cells. Prompt summary: UI mockup, single 6×4 equal-square icon atlas, polished gold
+  pictograms occupying the central 60%, no text, grid or scenery, transparent.
+  Exact row-major order: person, backpack, swords, scroll, map, book; trophy,
+  gear, power, monitor, speaker, gamepad; keyboard, window, crosshair, people,
+  accessibility, globe; shield, coins, crown, plus, eye, chat.
+- `../theme/panel-v2.png`: 1536×1024 RGBA, nine-slice border 128 px. Prompt summary:
+  precise-object-edit reusable 3:2 nine-slice empty panel matching the kit/settings
+  references, opaque midnight/ocean blue smooth texture, thin double polished
+  gold, gently rounded curling leaf corners; no text, controls, dividers or central
+  medallions, transparent only outside the frame.
+
+Tool output IDs, in the same order: `exec-80579b32-a2f9-4fc8-9cc4-471c201fa13c`,
+`exec-32e9891a-223f-49c8-8a32-617853e9a29b`,
+`exec-ae0e2364-b929-4b7b-afd5-d56af028b40d`,
+`exec-c422efb2-a75c-446d-984e-544d142732ae`.
+
+### Approved regenerated sprite integration — 22 November 2026
+
+Shared game panels/buttons/fields, control states, available pictograms, slots,
+item/ability art, bar fills and minimap trim now use `../sprites-v3/`. Exact
+generation prompts, source-archive hash and master hashes are in that package's
+`generation.json`. The rejected early UI ZIP/contact sheet are not inputs.
+The earlier panel/primary/secondary/selected artwork described above is historical;
+supplemental standalone glyphs now use `../theme/standalone-v3/`, generated with
+the approved account-bust sprite as style reference. Exact prompts and source/final
+hashes are recorded in its `generation.json`. Earlier icon sheets are not loaded. Login/courtyard/loading artwork
+and Liberation fonts are retained. See `docs/UI_SPRITE_INTEGRATION.md`.
+
+23 November preview controls: built-in image_gen produced `foot-arrow.png`,
+`zoom-out.png` and `zoom-in.png` under `content/ui/theme/standalone-v3`.
+The foot arrow is mirrored at runtime. Approved deterministic export removes
+low-alpha haze, preserves the opaque painted silhouette and downsamples with
+transparent margins. Exact final prompts, source/export hashes and processing
+are recorded in that directory's `preview-generation.json`. The rejected zoom-in
+with a pale backing is not used.

@@ -40,6 +40,8 @@ struct Pending(Option<Intent>);
 #[derive(Component)]
 struct Tracker;
 #[derive(Component)]
+struct ExpandedOnly;
+#[derive(Component)]
 struct JournalToggle;
 #[derive(Component)]
 struct JournalToggleLabel;
@@ -130,11 +132,49 @@ fn setup(
                 Pickable::IGNORE,
             ));
             root.spawn((StatusLabel, text("")));
-            root.spawn((Tracker, text("Waiting for your journal...")))
-                .insert(TextFont {
-                    font_size: FontSize::Px(16.),
-                    ..default()
+            root.spawn(Node {
+                column_gap: px(18),
+                ..default()
+            })
+            .with_children(|body| {
+                body.spawn((
+                    ExpandedOnly,
+                    Node {
+                        width: px(170),
+                        flex_shrink: 0.,
+                        display: Display::None,
+                        ..crate::fantasy_ui::kit::column()
+                    },
+                ))
+                .with_children(|nav| {
+                    for title in ["Main Story", "Region", "Crafting", "Completed"] {
+                        crate::fantasy_ui::kit::disabled(nav, title);
+                    }
                 });
+                body.spawn((
+                    Tracker,
+                    text("Waiting for your journal..."),
+                    Node {
+                        flex_grow: 1.,
+                        flex_basis: px(0),
+                        min_width: px(0),
+                        ..default()
+                    },
+                ));
+            });
+            root.spawn((
+                ExpandedOnly,
+                Node {
+                    display: Display::None,
+                    column_gap: px(8),
+                    justify_content: JustifyContent::End,
+                    ..default()
+                },
+            ))
+            .with_children(|r| {
+                crate::fantasy_ui::kit::disabled(r, "Track");
+                crate::fantasy_ui::kit::disabled(r, "Abandon");
+            });
         });
     for pane in &panes {
         commands.entity(pane).with_children(|panel| {
@@ -473,10 +513,18 @@ fn present(
     definitions: Res<Definitions>,
     mut ui: ResMut<Ui>,
     mut labels: Query<LabelView<'_>, LabelFilter>,
+    mut expanded_nodes: Query<&mut Node, (With<ExpandedOnly>, Without<ActionButton>)>,
     mut buttons: Query<ButtonView<'_>>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     let state = network.state();
+    for mut node in &mut expanded_nodes {
+        node.display = if ui.expanded {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
     let profile = &definitions.0;
     ui.intents.clear();
     if !ui.pending && network.can_act() {
@@ -570,7 +618,7 @@ fn scroll(
             };
             style.max_height = px((height - top - 110.).max(80.));
             style.top = px(top);
-            let width = px(if ui.expanded { 520. } else { 300. });
+            let width = px(if ui.expanded { 720. } else { 300. });
             if style.width != width {
                 position.y = 0.;
             }
@@ -582,7 +630,7 @@ fn scroll(
             } else {
                 px(12)
             };
-            style.margin.left = px(if ui.expanded { -260. } else { 0. });
+            style.margin.left = px(if ui.expanded { -360. } else { 0. });
             style.right = if ui.expanded || skin.is_none() {
                 Val::Auto
             } else {

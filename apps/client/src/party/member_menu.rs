@@ -249,6 +249,7 @@ pub(super) fn present(
                     let at = location.unwrap();
                     root.spawn((
                         Panel,
+                        crate::ui_theme::Panel,
                         Node {
                             position_type: PositionType::Absolute,
                             left: px(at.x),
@@ -271,6 +272,12 @@ pub(super) fn present(
                         } else {
                             "Party member"
                         }));
+                        for title in ["Whisper", "Inspect", "Set Role"] {
+                            crate::fantasy_ui::kit::disabled(panel, title);
+                        }
+                        panel
+                            .spawn(button(Control::MarksToggle, "Set Marker", true))
+                            .with_child(label("Set Marker  ▸"));
                         for (title, intent) in &menu.choices {
                             panel
                                 .spawn(button(Control::Member(intent.clone()), title, menu.enabled))

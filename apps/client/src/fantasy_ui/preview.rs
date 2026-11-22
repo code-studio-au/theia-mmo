@@ -1,7 +1,6 @@
 //! Windowless Bevy GPU image export. This mode never installs Winit or audio.
 use bevy::{
     app::{AppExit, ScheduleRunnerPlugin},
-    asset::LoadState,
     camera::RenderTarget,
     prelude::*,
     render::{
@@ -380,11 +379,13 @@ fn labels(mut commands: Commands, run: Res<Capture>, skin: Res<super::Skin>) {
             20.,
         ));
 }
+#[allow(clippy::too_many_arguments)]
 fn capture(
     mut commands: Commands,
     mut run: ResMut<Capture>,
     skin: Res<super::Skin>,
-    server: Res<AssetServer>,
+    images: Res<Assets<Image>>,
+    fonts: Res<Assets<Font>>,
     layout: Layout,
     adapter: Res<RenderAdapterInfo>,
     map_metrics: Res<crate::minimap::Metrics>,
@@ -401,18 +402,12 @@ fn capture(
         .into_iter()
         .chain(skin.item_icons.iter())
     {
-        if let Some(LoadState::Failed(error)) = server.get_load_state(handle.id()) {
-            panic!("UI image failed: {error}");
-        }
-        if !server.is_loaded_with_dependencies(handle.id()) {
+        if !images.contains(handle.id()) {
             return;
         }
     }
     for font in [&skin.title_font, &skin.body_font] {
-        if let Some(LoadState::Failed(error)) = server.get_load_state(font.id()) {
-            panic!("UI font failed: {error}");
-        }
-        if !server.is_loaded_with_dependencies(font.id()) {
+        if !fonts.contains(font.id()) {
             return;
         }
     }

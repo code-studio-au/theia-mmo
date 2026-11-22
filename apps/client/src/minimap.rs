@@ -174,6 +174,21 @@ fn setup(
                 ),
             ))
             .with_children(|map| {
+                if skin.is_some() {
+                    map.spawn((
+                        crate::ui_theme::Sprite("minimap.frame"),
+                        Pickable::IGNORE,
+                        ZIndex(2),
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(0),
+                            top: px(0),
+                            width: percent(100),
+                            height: percent(100),
+                            ..default()
+                        },
+                    ));
+                }
                 map.spawn((
                     Arrow,
                     Node {

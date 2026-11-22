@@ -96,14 +96,17 @@ fn setup(mut commands: Commands) {
         Node {
             position_type: PositionType::Absolute,
             left: px(12),
-            top: px(96),
-            width: px(268),
+            top: px(200),
+            width: px(292),
+            padding: UiRect::all(px(10)),
             display: Display::None,
             flex_direction: FlexDirection::Column,
             row_gap: px(5),
             ..default()
         },
         Pickable::IGNORE,
+        crate::ui_theme::Panel,
+        BackgroundColor(crate::fantasy_ui::PANEL),
     ));
 }
 fn children(root: &mut ChildSpawnerCommands, members: &[Member]) {
@@ -217,6 +220,10 @@ fn children(root: &mut ChildSpawnerCommands, members: &[Member]) {
                     .with_children(|bar| {
                         bar.spawn((
                             Fill(member.key, pool),
+                            crate::ui_theme::Sprite(match pool {
+                                Pool::Health => "bar.fill-health",
+                                Pool::Mana => "bar.fill-mana",
+                            }),
                             Node {
                                 width: percent(0),
                                 height: percent(100),
@@ -272,6 +279,7 @@ pub(super) fn present(
         if presentation.members != next {
             commands
                 .entity(entity)
+                .remove::<crate::ui_theme::Decorated>()
                 .despawn_children()
                 .with_children(|root| children(root, &next));
         }

@@ -1,3 +1,30 @@
+23 November 2026 — P3-03/P2-14 responsive frontend and preview controls:
+Prerequisites: approved v3 art, native account flow, standard Bevy UI and isolated
+preview camera. Cover-cropped backgrounds fill actual window allocations; controls
+anchor independently to window dimensions. Invisible model-area drag changes only
+preview yaw; bounded zoom/reset does not affect gameplay camera or actor state.
+Acceptance: login/creation/eight-character roster at single/half/quarter allocations,
+mouse drag/release/zoom/reset, readable selected text and zero GPU diagnostics.
+See ../UI_SPRITE_INTEGRATION.md for executed qualification.
+
+22 November 2026 — P2-14 regenerated game sprite integration:
+Prerequisites: qualified v3 export, shared native widgets, account/character flow,
+preference store and existing HUD windows. Embed versioned atlases/metadata and
+use standard Bevy slicing with explicit density; no renderer, service, authority
+or protocol changes. Acceptance covers live state selection, disabled controls,
+keyboard/mouse ownership, settings rollback, native screens and GPU diagnostics.
+See ../UI_SPRITE_INTEGRATION.md for executed evidence and limits.
+
+22 November 2026 — P3-03/P2-14 reference-kit presentation refinement:
+Prerequisites: working native account screens, standard Bevy widgets, preference
+resources and existing inventory/quest/party/map/ability windows. Shared nine-slice
+navy/gold panels, button states, icons, compact roster and reference menu layouts
+extend those surfaces. Unsupported controls are visibly disabled. General/combat
+log presentation preserves server facts; sending chat remains pending P4-12 client
+integration. No new simulation authority, renderer or service. Acceptance includes
+widget construction, disabled controls, settings rollback/persistence, native
+screen/input inspection and GPU diagnostics. See STATUS for executed evidence.
+
 22 November 2026 — P3-01/P3-03, P2-08/P2-09, P2-14 native frontend/theme:
 Build on the existing owned account provider/service, appearance persistence,
 Renet admission, standard Bevy widgets and modular GLTF renderer. Dedicated

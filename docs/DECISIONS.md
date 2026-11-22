@@ -1,3 +1,29 @@
+23 November 2026 — P3-03/P2-14 full-window frontend refinement:
+Login, character selection and customisation fill each client window, including
+single/two/four-player test allocations. Preserve artwork proportions with centred
+cover cropping; anchor controls and the preview to the actual window, independent
+of background crop. This does not force tiled clients into monitor fullscreen.
+Active control text is white for contrast against selected gold artwork. Reduce
+section-title horizontal clearance to 32px. Retain the compact creation layout.
+
+22 November 2026 — P2-14 approved regenerated sprites adopted in the client:
+The user approved v3 regeneration and requested game integration. Use the qualified
+v3 atlas/manifest through standard Bevy ImageNode and TextureSlicer, preserving
+live text, focus, disabled semantics and server-owned values. Generate matching standalone gold glyphs for missing pictograms, with transparent
+exteriors and no button backing. The rejected early
+UI ZIP/contact sheet remain excluded. The editor theme is outside this slice.
+See UI_SPRITE_INTEGRATION.md for implementation and qualification.
+
+22 November 2026 — P3-03/P2-14 reference-kit UI scope:
+The user requires the supplied Theia kit, graphics and party references across
+native game screens, including panel backgrounds/borders, controls, menus and
+links. Recreate these with shared bitmap decoration and standard Bevy widgets.
+Unsupported features remain visible, greyed out and InteractionDisabled; do not
+invent characters, stats, settings effects or live chat. Existing authoritative
+systems and native account flow remain prerequisites. Apply/OK/Cancel operate on
+existing preference resources with live preview and rollback, not a second store.
+The editor remains outside this game theme. See GAME_FRONTEND.md and provenance.
+
 22 November 2026 — P3-01/P3-03, P2-14 native account screens and shared UI:
 User requires login inside the game, with no browser fallback. The adopted future
 launcher handles updates/start only. Use the existing owned local Keycloak

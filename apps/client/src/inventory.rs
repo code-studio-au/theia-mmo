@@ -227,6 +227,11 @@ pub(crate) fn spawn_toggle(commands: &mut Commands, skinned: bool) {
         ))
         .insert(Node {
             position_type: PositionType::Absolute,
+            display: if skinned {
+                Display::None
+            } else {
+                Display::Flex
+            },
             right: px(12),
             bottom: px(12),
             width: px(width),
@@ -253,12 +258,13 @@ fn spawn_slots(grid: &mut ChildSpawnerCommands, profile: &Profile, skinned: bool
             button(
                 Widget::Slot(slot),
                 &format!("Backpack slot {}", slot + 1),
-                76.,
-                height,
+                if skinned { 52. } else { 76. },
+                if skinned { 52. } else { height },
             ),
         ));
         if skinned {
             entity.insert((
+                crate::ui_theme::Style::Slot,
                 Outline::new(px(1), px(-1), crate::fantasy_ui::GOLD),
                 BackgroundColor(crate::fantasy_ui::PANEL),
             ));
@@ -302,12 +308,50 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
             if skin.is_some() {
                 crate::fantasy_ui::window_header(
                     panel,
-                    text("Backpack", 18.),
+                    text("Inventory", 22.),
                     button(Widget::Toggle, "Close backpack", 28., 28.),
                     "Close backpack",
                 );
             }
 
+            if skin.is_some() {
+                panel
+                    .spawn(Node {
+                        column_gap: px(8),
+                        ..default()
+                    })
+                    .with_children(|tabs| {
+                        for (index, title, icon) in [
+                            (0, "All", 1),
+                            (1, "Equipment", 18),
+                            (2, "Consumables", 19),
+                            (3, "Crafting", 2),
+                        ] {
+                            let id = crate::fantasy_ui::kit::disabled(tabs, "");
+                            tabs.commands()
+                                .entity(id)
+                                .insert((
+                                    AccessibleLabel::new(title),
+                                    Node {
+                                        width: px(58),
+                                        height: px(34),
+                                        align_items: AlignItems::Center,
+                                        justify_content: JustifyContent::Center,
+                                        ..default()
+                                    },
+                                ))
+                                .with_children(|p| {
+                                    crate::fantasy_ui::kit::icon(p, icon, index != 0)
+                                });
+                            if index == 0 {
+                                tabs.commands()
+                                    .entity(id)
+                                    .remove::<bevy::ui::InteractionDisabled>()
+                                    .insert(crate::ui_theme::Selected);
+                            }
+                        }
+                    });
+            }
             if config.0.catalog().equipment_enabled() {
                 panel.spawn((EquipmentLabel, text("Main hand: loading...", 14.)));
             }
@@ -321,6 +365,33 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
                 },))
                 .with_children(|grid| {
                     spawn_slots(grid, &config.0, skin.is_some());
+                    if skin.is_some() {
+                        for _ in 0..4 {
+                            let id = crate::fantasy_ui::kit::disabled(grid, "");
+                            grid.commands()
+                                .entity(id)
+                                .insert((
+                                    AccessibleLabel::new("Locked inventory slot"),
+                                    Node {
+                                        width: px(52),
+                                        height: px(52),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                ))
+                                .with_child((
+                                    crate::ui_theme::Icon(1),
+                                    crate::ui_theme::Muted,
+                                    Pickable::IGNORE,
+                                    Node {
+                                        width: px(20),
+                                        height: px(20),
+                                        ..default()
+                                    },
+                                ));
+                        }
+                    }
                 });
             spawn_actions(panel, &config.0, "Loading backpack...");
             if config.0.catalog().currency_enabled() {
@@ -1183,7 +1254,7 @@ mod tests {
                 commands.spawn(Node::default()).with_children(|panel| {
                     crate::fantasy_ui::window_header(
                         panel,
-                        text("Backpack", 18.),
+                        text("Inventory", 22.),
                         button(Widget::Toggle, "Close backpack", 28., 28.),
                         "Close backpack",
                     );

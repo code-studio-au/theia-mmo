@@ -1,3 +1,20 @@
+23 November 2026 — P3-03/P2-14 approved sprites and responsive game UI:
+Integrated the approved v3 artwork across native login, roster/customisation,
+settings and existing HUD windows. Inputs share 48px sizing with visible typed
+text; icons have transparent backings, active labels are white, section title
+padding is 32px and settings actions stay bottom anchored. Frontend backgrounds
+fill the actual single/half/quarter client window with proportional cropping.
+Drag over the character to rotate; curved gold foot arrows and 75–130% zoom/reset
+controls replace the small rotation drag button. Empty accounts show no model.
+351 client tests pass (five existing skips), plus fmt, strict Clippy and release
+build. Final native frontend checks cover login, settings, name validation,
+drag/release/zoom/reset and eight-character rosters at 3440×1400, 1720×1400 and
+1720×700 with zero GPU diagnostics. Earlier full game-entry/HUD and restart runs
+retain their separate scope. Linux RX 7900 XTX / RADV / Mesa 26.2.7 / Vulkan;
+no Windows or performance claim. Exact evidence: UI_SPRITE_INTEGRATION.md.
+Next: P4-12 normal-account Say/Area opt-in and focused composer using the already
+qualified server router and client worker; speech bubbles follow separately.
+
 22 November 2026 — P2-14 regenerated sprite artwork and comparison:
 The approved final package has been regenerated from 112 new masters into 416
 runtime sprites (206 canonical assets, 42 aligned six-state families), with nine

@@ -231,10 +231,29 @@ fn ordinary(
 struct Panel;
 #[derive(Component)]
 struct Lines;
+#[derive(Component, Clone, Copy, Default, PartialEq, Eq)]
+enum Tab {
+    Chat,
+    #[default]
+    Combat,
+}
+#[derive(Resource, Default)]
+struct ActiveTab(Tab);
 pub(super) fn install(app: &mut App) {
     app.init_resource::<History>()
+        .init_resource::<ActiveTab>()
+        .add_observer(select_tab)
         .add_systems(Startup, setup)
         .add_systems(Update, paint.after(super::Presentation));
+}
+fn select_tab(
+    event: On<bevy::ui_widgets::Activate>,
+    tabs: Query<&Tab>,
+    mut active: ResMut<ActiveTab>,
+) {
+    if let Ok(tab) = tabs.get(event.entity) {
+        active.0 = *tab;
+    }
 }
 fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     if skin.is_none() {
@@ -243,43 +262,174 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     commands
         .spawn((
             Panel,
-            Pickable::IGNORE,
+            crate::ui_theme::Panel,
             Node {
                 position_type: PositionType::Absolute,
-                left: px(12),
-                bottom: px(94),
-                width: px(278),
-                max_height: px(240),
-                padding: UiRect::all(px(6)),
-                overflow: Overflow::clip(),
+                left: px(14),
+                bottom: px(96),
+                width: px(380),
+                max_width: percent(32),
+                height: px(220),
+                padding: UiRect::all(px(12)),
+                flex_direction: FlexDirection::Column,
+                row_gap: px(10),
                 display: Display::None,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.02, 0.02, 0.02, 0.85)),
+            BackgroundColor(crate::fantasy_ui::PANEL),
             GlobalZIndex(10),
         ))
-        .with_child((
-            Lines,
-            Pickable::IGNORE,
-            Text::new(""),
-            TextFont {
-                font_size: FontSize::Px(14.),
-                ..default()
-            },
-            TextColor(Color::srgb(0.85, 0.8, 0.65)),
-        ));
+        .with_children(|panel| {
+            panel
+                .spawn((
+                    Node {
+                        width: percent(100),
+                        column_gap: px(3),
+                        flex_wrap: FlexWrap::Wrap,
+                        row_gap: px(3),
+                        border: UiRect::bottom(px(1)),
+                        padding: UiRect::bottom(px(6)),
+                        ..default()
+                    },
+                    BorderColor::all(crate::ui_theme::GOLD),
+                ))
+                .with_children(|row| {
+                    for (tab, title) in [(Tab::Chat, "General"), (Tab::Combat, "Combat Log")] {
+                        row.spawn((
+                            tab,
+                            bevy::ui_widgets::Button,
+                            bevy::picking::hover::Hovered::default(),
+                            crate::ui_theme::Style::Secondary,
+                            AccessibleLabel::new(title),
+                            Node {
+                                padding: UiRect::axes(px(8), px(5)),
+                                ..default()
+                            },
+                            BackgroundColor(crate::fantasy_ui::PANEL),
+                        ))
+                        .with_child((
+                            Text::new(title),
+                            TextFont {
+                                font_size: FontSize::Px(16.),
+                                ..default()
+                            },
+                            TextColor(crate::ui_theme::CREAM),
+                            Pickable::IGNORE,
+                        ));
+                    }
+                    for title in ["Trade", "Guild", "Party"] {
+                        let id = crate::fantasy_ui::kit::disabled(row, title);
+                        row.commands().entity(id).insert(Node {
+                            padding: UiRect::axes(px(6), px(5)),
+                            min_height: px(28),
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        });
+                    }
+                });
+            panel
+                .spawn(Node {
+                    flex_grow: 1.,
+                    width: percent(100),
+                    overflow: Overflow::scroll_y(),
+                    ..default()
+                })
+                .with_child((
+                    Lines,
+                    Pickable::IGNORE,
+                    Text::new(""),
+                    TextFont {
+                        font_size: FontSize::Px(14.),
+                        ..default()
+                    },
+                    TextColor(crate::ui_theme::CREAM),
+                ));
+            panel
+                .spawn(Node {
+                    align_items: AlignItems::Center,
+                    column_gap: px(6),
+                    ..default()
+                })
+                .with_children(|r| {
+                    crate::fantasy_ui::kit::icon(r, 23, true);
+                    r.spawn((
+                        bevy::ui_widgets::TextInput,
+                        bevy::text::EditableText::default(),
+                        bevy::ui::InteractionDisabled,
+                        AccessibleLabel::new("Chat message — unavailable"),
+                        Node {
+                            width: Val::Auto,
+                            flex_grow: 1.,
+                            ..crate::ui_theme::input_box(false, false)
+                        },
+                        BorderColor::all(Color::srgb(0.3, 0.3, 0.3)),
+                        BackgroundColor(crate::ui_theme::PANEL),
+                    ))
+                    .with_child((
+                        Text::new("Type a message…"),
+                        TextFont::from_font_size(14.),
+                        TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                        Pickable::IGNORE,
+                    ));
+                    crate::fantasy_ui::kit::disabled_link(r, ">");
+                });
+        });
 }
 fn paint(
+    mut commands: Commands,
     history: Res<History>,
+    active: Res<ActiveTab>,
+    network: Option<Res<crate::network::Network>>,
+    tabs: Query<(Entity, &Tab)>,
     mut panels: Query<&mut Node, With<Panel>>,
     mut labels: Query<&mut Text, With<Lines>>,
 ) {
-    let value = history.text();
-    for mut node in &mut panels {
-        let display = if value.is_empty() {
-            Display::None
+    let state = (active.0 == Tab::Chat)
+        .then(|| network.as_ref().map(|n| n.state()))
+        .flatten();
+    let value = match active.0 {
+        Tab::Combat => {
+            let value = history.text();
+            if value.is_empty() {
+                "No combat events yet.".to_owned()
+            } else {
+                value
+                    .strip_prefix("Combat Log\n")
+                    .unwrap_or(&value)
+                    .to_owned()
+            }
+        }
+        Tab::Chat => state.as_ref().and_then(|n| n.chat.as_ref()).map_or_else(
+            || "Chat is not enabled in this playtest.".to_owned(),
+            |view| {
+                let lines: Vec<_> = view
+                    .inbox
+                    .history()
+                    .map(|d| format!("[{:?}] {}: {}", d.channel, d.name.as_str(), d.text.as_str()))
+                    .collect();
+                if lines.is_empty() {
+                    "No messages yet.".to_owned()
+                } else {
+                    lines.join("\n")
+                }
+            },
+        ),
+    };
+    for (entity, tab) in &tabs {
+        if *tab == active.0 {
+            commands.entity(entity).insert(crate::ui_theme::Selected);
         } else {
+            commands
+                .entity(entity)
+                .remove::<crate::ui_theme::Selected>();
+        }
+    }
+    for mut node in &mut panels {
+        let display = if history.context.is_some() {
             Display::Flex
+        } else {
+            Display::None
         };
         if node.display != display {
             node.display = display;
@@ -470,6 +620,42 @@ mod tests {
                 .single(world)
                 .unwrap()
                 .0
+                .contains("You deal 12 damage.")
+        );
+        let chat = world
+            .query::<(Entity, &Tab)>()
+            .iter(world)
+            .find(|(_, tab)| **tab == Tab::Chat)
+            .unwrap()
+            .0;
+        world.trigger(bevy::ui_widgets::Activate { entity: chat });
+        app.update();
+        let world = app.world_mut();
+        assert!(
+            world
+                .query_filtered::<&Text, With<Lines>>()
+                .single(world)
+                .unwrap()
+                .contains("Chat is not enabled")
+        );
+        assert_eq!(
+            world.resource::<History>().lines.back().unwrap(),
+            "You deal 12 damage."
+        );
+        let combat = world
+            .query::<(Entity, &Tab)>()
+            .iter(world)
+            .find(|(_, tab)| **tab == Tab::Combat)
+            .unwrap()
+            .0;
+        world.trigger(bevy::ui_widgets::Activate { entity: combat });
+        app.update();
+        let world = app.world_mut();
+        assert!(
+            world
+                .query_filtered::<&Text, With<Lines>>()
+                .single(world)
+                .unwrap()
                 .contains("You deal 12 damage.")
         );
         world.resource_mut::<History>().begin(&State::default());

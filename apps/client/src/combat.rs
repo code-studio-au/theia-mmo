@@ -218,6 +218,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                 ))
                 .with_child((
                     ui::HealthFill,
+                    crate::ui_theme::Sprite("bar.fill-health"),
                     Node {
                         width: percent(0),
                         height: percent(100),

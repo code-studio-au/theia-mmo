@@ -1,3 +1,21 @@
+23 November 2026 — P3-03/P2-14 frontend and sprite refinement:
+Approved v3 sprites now decorate the existing native frontend and game windows.
+Login, roster and compact creation fill each allocated client window. Preview
+rotation uses an invisible drag area with curved foot arrows; zoom/reset controls
+stay below the model. Active text is white, inputs share sizing, section titles
+have reduced padding and settings actions remain bottom anchored. See
+UI_SPRITE_INTEGRATION.md and STATUS for final evidence and remaining limits.
+Next suitable playable slice: P4-12 normal-account Say/Area profile opt-in and
+focused chat composition, building on the qualified encrypted chat worker.
+
+22 November 2026 — P3-03/P2-14 reference-kit surfaces:
+Shared textured navy/gold panel art, bevelled button states, category icons,
+reference settings and main-menu layouts extend the native frontend/game HUD.
+Unsupported controls/tabs/links are visible but disabled. Full chat composition,
+character stats/equipment, collections, the remaining graphics/audio/accessibility
+features and production account services remain separate work; decorative UI does
+not establish those capabilities. See GAME_FRONTEND.md and STATUS for evidence.
+
 22 November 2026 — Native entry refinement and P2-14 shared Theia controls:
 Client-only username/password sign-in for the local development provider, separate
 courtyard character selection, empty-account state and shared gold/blue controls

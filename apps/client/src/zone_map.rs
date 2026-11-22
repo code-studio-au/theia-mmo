@@ -331,7 +331,9 @@ fn setup(
                 Pickable::IGNORE,
             ))
             .with_children(|header| {
-                header.spawn(label(format!("{}  |  Zone map", data.title), 23., GOLD));
+                header.spawn(label(format!("World Map  ·  {}", data.title), 23., GOLD));
+                crate::fantasy_ui::kit::disabled(header, "+");
+                crate::fantasy_ui::kit::disabled(header, "−");
                 header
                     .spawn(button(Control::Close, "Close zone map [M / Esc]"))
                     .with_child(label("Close [M / Esc]", 14., GOLD));

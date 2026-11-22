@@ -43,6 +43,7 @@ pub(super) fn spawn_tooltip(commands: &mut Commands) {
     commands
         .spawn((
             Tooltip,
+            crate::ui_theme::Panel,
             Pickable::IGNORE,
             GlobalZIndex(70),
             Node {

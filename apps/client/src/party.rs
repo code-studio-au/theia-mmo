@@ -247,13 +247,18 @@ pub(crate) fn install(app: &mut App) {
                 .after(crate::world_input::Interactions),
         );
 }
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     commands
         .spawn(button(Control::Toggle, "Party [O]", true))
         .insert((
             GlobalZIndex(30),
             Node {
                 position_type: PositionType::Absolute,
+                display: if skin.is_some() {
+                    Display::None
+                } else {
+                    Display::Flex
+                },
                 right: px(312),
                 bottom: px(12),
                 width: px(140),
@@ -462,10 +467,12 @@ fn present(
         }
         commands
             .entity(entity)
+            .remove::<crate::ui_theme::Decorated>()
             .despawn_children()
             .with_children(|pane| {
-                pane.spawn(label(&next.title))
-                    .insert(TextColor(crate::fantasy_ui::GOLD));
+                crate::fantasy_ui::kit::title(pane, "Party Management", 15);
+                crate::fantasy_ui::kit::tabs(pane, &["Members", "Roles", "Loot", "Settings"], 0);
+                pane.spawn(label(&next.title));
                 pane.spawn(label(&next.status));
                 for row in &next.rows {
                     pane.spawn((
@@ -495,6 +502,18 @@ fn present(
                         }
                     });
                 }
+                pane.spawn(Node {
+                    column_gap: px(8),
+                    ..default()
+                })
+                .with_children(|actions| {
+                    for caption in ["Invite", "Promote", "Kick"] {
+                        crate::fantasy_ui::kit::disabled(actions, caption);
+                    }
+                    if next.leave.is_none() {
+                        crate::fantasy_ui::kit::disabled(actions, "Leave Party");
+                    }
+                });
                 if let Some(intent) = &next.leave {
                     pane.spawn(button(
                         Control::Command(intent.clone()),

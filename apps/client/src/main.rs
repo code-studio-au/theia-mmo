@@ -1656,6 +1656,7 @@ struct InputMode<'w> {
     party: Option<Res<'w, party::Ui>>,
     book: Option<Res<'w, combat::book::Ui>>,
     interface: Option<Res<'w, fantasy_ui::settings::Ui>>,
+    main_menu: Option<Res<'w, fantasy_ui::kit::menu::State>>,
     dialogue: Option<Res<'w, dialogue::Ui>>,
     inventory: Option<Res<'w, inventory::Ui>>,
     documents: Option<Res<'w, documents::Ui>>,
@@ -1715,6 +1716,7 @@ fn input(
             && (party::owns_escape(mode.party.as_deref())
                 || combat::book::owns_escape(mode.book.as_deref())
                 || fantasy_ui::settings::owns_escape(mode.interface.as_deref())
+                || fantasy_ui::kit::menu::owns_escape(mode.main_menu.as_deref())
                 || talking
                 || mode
                     .documents
@@ -1727,6 +1729,7 @@ fn input(
         && !party::owns_escape(mode.party.as_deref())
         && !combat::book::owns_escape(mode.book.as_deref())
         && !fantasy_ui::settings::owns_escape(mode.interface.as_deref())
+        && !fantasy_ui::kit::menu::owns_escape(mode.main_menu.as_deref())
         && !talking
         && !mode
             .documents

@@ -45,6 +45,7 @@ pub(crate) struct Menu {
     selected: Option<usize>,
     appearance: Appearance,
     yaw: f32,
+    zoom: f32,
     message: String,
     serial: u64,
     pending: bool,
@@ -89,6 +90,7 @@ pub(crate) fn install(app: &mut App, directory: PathBuf) {
         selected: None,
         appearance: Appearance::default(),
         yaw: 0.,
+        zoom: 1.,
         message: "Welcome to Theia Online".into(),
         serial: 0,
         pending: false,
@@ -99,6 +101,7 @@ pub(crate) fn install(app: &mut App, directory: PathBuf) {
     .init_resource::<login::Login>()
     .add_systems(Startup, ui::setup)
     .add_observer(ui::choose)
+    .add_observer(ui::rotate_drag)
     .add_systems(
         Update,
         (
@@ -108,6 +111,8 @@ pub(crate) fn install(app: &mut App, directory: PathBuf) {
             preview::tick,
             ui::anchor,
             ui::sync,
+            ui::name_validation,
+            ui::rotate_keyboard,
             ui::focus,
             login::present,
         )
@@ -221,10 +226,20 @@ fn tick(
     let result = match action {
         Choice::New if menu.characters.len() < 8 => {
             menu.page = Page::Create;
+            menu.message.clear();
             menu.appearance = Appearance::default();
             if let Ok(mut name) = names.single_mut() {
                 name.clear();
             }
+            Ok(())
+        }
+        Choice::Zoom(closer) if menu.preview_visible() => {
+            menu.zoom = (menu.zoom + if closer { 0.1 } else { -0.1 }).clamp(0.75, 1.3);
+            Ok(())
+        }
+        Choice::ResetView if menu.preview_visible() => {
+            menu.zoom = 1.;
+            menu.yaw = 0.;
             Ok(())
         }
         Choice::Back => {
@@ -241,10 +256,6 @@ fn tick(
         }
         Choice::Cycle(i, forward) if menu.page == Page::Create => {
             menu.appearance = menu.appearance.cycle(i, forward);
-            Ok(())
-        }
-        Choice::Rotate(right) => {
-            menu.yaw += if right { -0.35 } else { 0.35 };
             Ok(())
         }
         Choice::Enter => {
@@ -268,7 +279,11 @@ fn tick(
                         serde_json::json!({"action":"create","name":name,"appearance":appearance}),
                     )
                 }
-                Err(e) => Err(e.to_string()),
+                Err(_) => {
+                    // Live inline validation owns name-format feedback.
+                    menu.message.clear();
+                    Ok(())
+                }
             }
         }
         _ => Ok(()),
@@ -333,6 +348,7 @@ mod tests {
             selected: None,
             appearance: Appearance::default(),
             yaw: 0.,
+            zoom: 1.,
             message: String::new(),
             serial: 0,
             pending: false,

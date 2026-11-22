@@ -10,7 +10,8 @@ Online title. Username and masked password are live native inputs. Settings,
 Support and Exit are native controls; no browser login button or browser fallback
 is available in this game flow. Errors appear only when needed. Passwords are
 bounded, cleared after submission, remasked on focus loss and never included in
-widget telemetry, command files, process arguments or logs. Password editing
+widget telemetry, command files, process arguments or logs. The password visibility eye is inside the password field, with an accessible
+Show/Hide password label. Password editing
 supports Unicode, selection, cursor movement and deletion; clipboard paste is not
 yet provided for this custom masked input.
 
@@ -32,6 +33,9 @@ Character selection has its own courtyard background, right-side account roster,
 selected live hero, rotation controls and Enter World. An empty account has no
 hero and cannot enter. New Character opens the existing seven-option creation
 form. Back discards the draft; Save durably creates a server-owned character.
+The roster and creation panels are capped at 460 and 480 logical pixels
+respectively, with 24-pixel horizontal name padding. Selected rows use an amber
+fill and the regenerated chamfered frame instead of an external square focus outline.
 The roster supports eight saved entries and selects actual returned records;
 no invented classes, levels or locations appear. Enter World obtains the existing
 short-lived admission ticket and starts authenticated Renet. Normal world loading
@@ -51,15 +55,35 @@ primary buttons, dark secondary buttons, cream text, hover/pressed/disabled/focu
 states, gold icon links and input surfaces. It decorates existing native controls
 without changing gameplay actions. Inventory, dialogue, quests, documents, party,
 map, ability book and settings share the frame/button treatment; item and action
-icons retain their existing assets. Parchment dialogue keeps its readable ink body.
-Grenze headings/large labels and Texturina smaller body text come from the
-existing licensed HUD pack; inputs use the same native font set. Artwork provenance is in `content/ui/frontend/PROVENANCE.md`.
+icons now use the approved regenerated sprite package. Dialogue/document reading panels now use navy
+with cream text. Embedded Liberation Serif headings and Liberation Sans body text
+replace the heavy HUD-pack typefaces; unmodified font files and their SIL OFL
+license are in `content/ui/fonts/`. Artwork provenance is in
+`content/ui/frontend/PROVENANCE.md`. The atlas/state integration and its exact
+scope are described in [UI_SPRITE_INTEGRATION.md](UI_SPRITE_INTEGRATION.md).
+
+The settings reference guides a category sidebar and grouped existing controls;
+unsupported graphics options from the mockup are visible, greyed out and disabled.
+Reference categories include Graphics, Audio, Gameplay, Controls, Key Bindings,
+Interface, HUD, Social, Accessibility and Language. Only implemented pages and
+controls activate; Developer remains available for the existing playtest tools.
+Party management, invitation, member frames and member menus use the shared gold
+trim. The illustrated reference portraits/levels/roles are not invented game data.
+The lower-left HUD has General and Combat Log tabs. Combat history remains bounded
+and server-sourced; tab switching preserves it and disconnect clears it. The General
+tab can present an admitted inbox, but normal client chat activation/composition
+remains pending: current playtests explicitly show that chat is not enabled.
+Trade/Guild/Party tabs and the message composer/send control are disabled until
+client chat integration is available; no fake messages or voice functionality are added.
 
 Both front-end and game settings expose the same accessible VSync checkbox and
 interface-size slider (75–150%). They update existing persisted preferences, not a
 second settings store. Slider arrows, Home/End and checkbox Space/Enter work through
 Bevy's standard headless widgets. View distance and FPS limits retain their actual
-existing controls. Decorative images ignore picking. The zone editor is separate
+existing resources through dropdowns. Apply records the current preview values;
+OK accepts and closes; Cancel or Escape restores the last applied values. Changes
+preview live through the existing preference store, so this is not crash-isolated
+draft persistence. Decorative images ignore picking. The zone editor is separate
 from this game UI skin.
 
 `tools/play.py --game-front-end` requires one Classic account client and excludes
@@ -77,3 +101,24 @@ checkbox/slider mouse and keyboard input, normal/small window layout, stable mod
 visibility and native GPU diagnostics. See STATUS for the final evidence and limits.
 The Millhaven loading screen retains the supplied sunlit village with generated
 gold MILLHAVEN lettering; its progress and Cancel remain functional native UI.
+
+The reference-kit pass adds a shared textured navy panel sprite with double gold
+trim and curling corner ornaments, dark navy and amber bevelled button sprites,
+and a 24-icon gold atlas. Nine-slice rendering preserves corners across panel
+sizes. Main Menu and bottom-right HUD shortcuts open existing game windows.
+Inventory/Skills/Quest Journal/Party tabs show unsupported sections disabled;
+character deletion, registration and password recovery remain disabled too.
+The character roster keeps padded names and an amber selected row without an
+external square focus outline. The narrower customization panel and inline
+password eye retain existing account and cosmetic actions. Settings use a fixed
+reference composition fitted independently to the window, keeping the complete
+footer reachable on shorter displays without changing the preferred HUD scale.
+
+23 November responsive preview refinement: Login, character selection and the
+compact creation panel use the entire client window, including two/four-player
+tiles. Background artwork preserves its proportions by centred cropping. Drag
+left/right over the character's invisible bounding area to rotate it; gold curved
+arrows at the feet indicate the gesture. The three buttons below provide zoom out,
+reset view and zoom in (75–130%). Empty accounts show neither model nor controls.
+Active menu text is white. No preset system or additional cosmetic capability is
+introduced. See UI_SPRITE_INTEGRATION.md for evidence.

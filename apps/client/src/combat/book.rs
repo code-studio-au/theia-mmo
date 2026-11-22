@@ -52,7 +52,7 @@ fn label(text: &str, size: f32) -> impl Bundle {
             font_size: FontSize::Px(size),
             ..default()
         },
-        TextColor(Color::srgb(0.12, 0.08, 0.03)),
+        TextColor(crate::ui_theme::CREAM),
         Pickable::IGNORE,
     )
 }
@@ -91,11 +91,12 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                 display: Display::None,
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.78, 0.65, 0.43)),
+            BackgroundColor(crate::ui_theme::PANEL),
             Outline::new(px(1), px(-1), crate::fantasy_ui::GOLD),
         ))
         .with_children(|pane| {
-            pane.spawn(label("Abilities [P]", 22.));
+            crate::ui_theme::heading(pane, "Skills");
+            crate::fantasy_ui::kit::tabs(pane, &["Active", "Passive", "Professions"], 0);
             for slot in 0..PAGE_SIZE {
                 pane.spawn((
                     Node {

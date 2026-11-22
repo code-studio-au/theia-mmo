@@ -42,7 +42,6 @@ enum Control {
     Graphics,
     Back,
     FrameCap(u16),
-    Vsync(bool),
     ViewDistance(ViewDistance),
     Developer,
     DeveloperSpeed(u8),
@@ -129,7 +128,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let buttons:Vec<_>=world.query::<(&Control,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world)
         .filter(|(action,node,_)|node.size().min_element()>0. && (open || matches!(action,Control::Toggle)))
         .map(|(action,node,transform)|{
-            let name=match action {Control::Toggle=>"toggle".to_owned(),Control::Close=>"close".to_owned(),Control::Scale(value)=>format!("scale-{value}"),Control::Exit=>"exit".to_owned(),Control::Abilities=>"abilities".to_owned(),Control::Debug=>"debug".to_owned(),Control::Graphics=>"graphics".to_owned(),Control::Developer=>"developer".to_owned(),Control::DeveloperReset=>"reset-position".to_owned(),Control::DeveloperSpeed(value)=>format!("speed-{value}"),Control::Back=>"back".to_owned(),Control::FrameCap(value)=>format!("fps-{value}"),Control::ViewDistance(value)=>format!("view-{}",value.label().to_lowercase()),Control::Vsync(value)=>format!("vsync-{}",if *value {"on"} else {"off"})};
+            let name=match action {Control::Toggle=>"toggle".to_owned(),Control::Close=>"close".to_owned(),Control::Scale(value)=>format!("scale-{value}"),Control::Exit=>"exit".to_owned(),Control::Abilities=>"abilities".to_owned(),Control::Debug=>"debug".to_owned(),Control::Graphics=>"graphics".to_owned(),Control::Developer=>"developer".to_owned(),Control::DeveloperReset=>"reset-position".to_owned(),Control::DeveloperSpeed(value)=>format!("speed-{value}"),Control::Back=>"back".to_owned(),Control::FrameCap(value)=>format!("fps-{value}"),Control::ViewDistance(value)=>format!("view-{}",value.label().to_lowercase())};
             serde_json::json!({"action":name,"point":(transform.affine().translation*super::window_factor(node,scale)).to_array()})
         }).collect();
     serde_json::json!({"open":open,"graphics_open":world.resource::<Ui>().graphics_open,"developer_open":world.resource::<Ui>().developer_open,"developer_speed":world.get_resource::<super::developer::Speed>().map(|s|serde_json::json!({"requested":s.requested,"applied":s.applied,"reset_nonce":s.reset_nonce,"reset_status":s.reset_status,"stream":s.stream})),"view_distance":world.get_resource::<ViewDistance>(),"fps_cap":world.get_resource::<super::graphics::FrameCap>().map(|cap|cap.0),"vsync":world.get_resource::<super::graphics::Vsync>().is_none_or(|choice|choice.0),"present_mode":present_mode,"preferred":preferred,"displayed":scale,"buttons":buttons,"persistence":persistence,"debug_stats":world.get_resource::<super::debug::Enabled>().is_some_and(|v|v.0)})
@@ -141,6 +140,7 @@ fn setup(mut commands: Commands) {
             GlobalZIndex(30),
             Node {
                 position_type: PositionType::Absolute,
+                display: Display::None,
                 right: px(160),
                 bottom: px(12),
                 width: px(140),
@@ -151,47 +151,38 @@ fn setup(mut commands: Commands) {
             },
         ))
         .with_child(label("Interface [F10]"));
-    commands.spawn((Pane,crate::ui_theme::Panel,GlobalZIndex(90),Node{position_type:PositionType::Absolute,left:percent(50),top:px(80),margin:UiRect::left(px(-230)),width:px(460),max_width:percent(90),padding:UiRect::all(px(14)),flex_direction:FlexDirection::Column,row_gap:px(6),display:Display::None,..default()},BackgroundColor(super::PANEL),Outline::new(px(1),px(-1),super::GOLD)))
-        .with_children(|pane| {
-            pane.spawn((Section::Interface, Node { flex_direction: FlexDirection::Column, row_gap: px(6), ..default() }, Pickable::IGNORE)).with_children(|section| {
+    commands.spawn((Pane, super::kit::SettingsSurface, GlobalZIndex(90), Node {position_type:PositionType::Absolute,left:px(0),top:px(0),width:percent(100),height:percent(100),align_items:AlignItems::Center,justify_content:JustifyContent::Center,display:Display::None,..default()}))
+    .with_children(|overlay| {overlay.spawn((crate::ui_theme::Panel,super::kit::SettingsFrame,UiTransform::default(),Node{width:px(1440),height:px(940),flex_shrink:0.,padding:UiRect::all(px(24)),..super::kit::column()},BackgroundColor(super::PANEL))).with_children(|pane| {
+        super::kit::title(pane,"Settings",7);
+        pane.spawn(super::kit::settings_body()).with_children(|body| {
+            body.spawn((crate::ui_theme::Panel,Node{width:px(220),flex_shrink:0.,padding:UiRect::all(px(14)),..super::kit::column()},BackgroundColor(super::PANEL))).with_children(|nav| {
+                for (index,title,action) in [(9,"Graphics",Some(Control::Graphics)),(10,"Audio",None),(2,"Gameplay",None),(11,"Controls",None),(12,"Key Bindings",None),(13,"Interface",Some(Control::Back)),(14,"HUD",None),(15,"Social",None),(16,"Accessibility",None),(17,"Language",None),(7,"Developer",Some(Control::Developer))] {
+                    if let Some(action)=action {nav.spawn(button(action,title)).insert(Node{min_height:px(40),column_gap:px(10),align_items:AlignItems::Center,padding:UiRect::horizontal(px(12)),..default()}).with_children(|r| {super::kit::icon(r,index,false);r.spawn(label(title));});}
+                    else {let id=super::kit::disabled(nav,title);nav.commands().entity(id).insert(Node{min_height:px(40),flex_direction:FlexDirection::RowReverse,justify_content:JustifyContent::FlexEnd,padding:UiRect::horizontal(px(12)),column_gap:px(10),align_items:AlignItems::Center,..default()}).with_children(|r|super::kit::icon(r,index,true));}
+                }
+            });
+            body.spawn(Node{flex_grow:1.,flex_basis:px(0),min_width:px(0),..super::kit::column()}).with_children(|content| {
+            content.spawn((Section::Interface, Node { flex_direction: FlexDirection::Column, row_gap: px(6), ..default() }, Pickable::IGNORE)).with_children(|section| {
             section.spawn((Text::new("Interface"),TextFont{font_size:FontSize::Px(22.),..default()},TextColor(super::GOLD),Pickable::IGNORE));
             section.spawn((Summary,label("")));
-            crate::ui_theme::controls(section);
+            section.spawn((PersistenceHint,label("")));
+            crate::ui_theme::scale_control(section);
             section.spawn((Node{flex_wrap:FlexWrap::Wrap,column_gap:px(8),row_gap:px(8),..default()},Pickable::IGNORE)).with_children(|row| {
                 for value in [75,100,125,150] {row.spawn(button(Control::Scale(value),&format!("UI size {value}%"))).with_child(label(&format!("{value}%")));}
             });
             section.spawn(label("The interface fits smaller windows and restores your preferred size when space returns."));
             section.spawn(button(Control::Abilities,"Open ability book [P]")).with_child(label("Abilities [P]"));
             section.spawn(button(Control::Debug,"Toggle debug statistics")).with_child(label("Show / hide debug statistics"));
-            section.spawn(button(Control::Graphics,"Open graphics settings")).with_child(label("Graphics"));
-            section.spawn(button(Control::Developer,"Open developer settings")).with_child(label("Developer"));
             });
-            pane.spawn((Section::Graphics, Node { display: Display::None, flex_direction: FlexDirection::Column, row_gap: px(6), ..default() }, Pickable::IGNORE)).with_children(|section| {
-                section.spawn((Text::new("Graphics"), TextFont { font_size: FontSize::Px(22.), ..default() }, TextColor(super::GOLD), Pickable::IGNORE));
-                section.spawn((GraphicsSummary, label("FPS cap: 60 FPS")));
-                section.spawn((Node { flex_wrap: FlexWrap::Wrap, column_gap: px(8), row_gap: px(8), ..default() }, Pickable::IGNORE)).with_children(|row| {
-                    for value in super::graphics::CAPS {
-                        let name = super::graphics::FrameCap(value).label();
-                        row.spawn(button(Control::FrameCap(value), &format!("FPS cap: {name}"))).with_child(label(&name));
-                    }
+
+                content.spawn((Section::Graphics,Node{display:Display::None,..super::kit::column()})).with_children(|section| {
+                    super::kit::section(section,"Graphics");
+                    super::kit::graphics(section,|row,value|match value {
+                        super::kit::Value::FrameCap=> {for value in super::graphics::CAPS {let name=super::graphics::FrameCap(value).label();row.spawn(button(Control::FrameCap(value),&name)).with_child(label(&name));}},
+                        super::kit::Value::Distance=> {for value in ViewDistance::ALL {row.spawn(button(Control::ViewDistance(value),&format!("View distance: {}",value.label()))).with_child(label(value.label()));}}
+                    });
                 });
-                section.spawn(label("Limits rendering to reduce GPU use."));
-                section.spawn((Node { column_gap: px(8), ..default() }, Pickable::IGNORE)).with_children(|row| {
-                    for (value, name) in [(true, "VSync On"), (false, "VSync Off")] {
-                        row.spawn(button(Control::Vsync(value), name)).with_child(label(name));
-                    }
-                });
-                section.spawn(label("VSync prevents tearing; FPS may follow display refresh."));
-                section.spawn(label("Terrain view distance"));
-                section.spawn((Node { flex_wrap: FlexWrap::Wrap, column_gap: px(8), row_gap: px(8), ..default() }, Pickable::IGNORE)).with_children(|row| {
-                    for value in ViewDistance::ALL {
-                        row.spawn(button(Control::ViewDistance(value), &format!("View distance: {}", value.label()))).with_child(label(value.label()));
-                    }
-                });
-                section.spawn(label("Loads distant terrain progressively. Maximum shows the whole zone where supported and uses more memory."));
-                section.spawn(button(Control::Back, "Back to interface settings")).with_child(label("Back [Esc]"));
-            });
-            pane.spawn((Section::Developer, Node {display:Display::None,flex_direction:FlexDirection::Column,row_gap:px(8),..default()},Pickable::IGNORE)).with_children(|section| {
+            content.spawn((Section::Developer, Node {display:Display::None,flex_direction:FlexDirection::Column,row_gap:px(8),..default()},Pickable::IGNORE)).with_children(|section| {
                 section.spawn((Text::new("Developer"),TextFont{font_size:FontSize::Px(22.),..default()},TextColor(super::GOLD),Pickable::IGNORE));
                 section.spawn((super::developer::Summary,label("Running speed")));
                 section.spawn((Node{flex_wrap:FlexWrap::Wrap,column_gap:px(8),row_gap:px(8),..default()},Pickable::IGNORE)).with_children(|row| {
@@ -202,13 +193,22 @@ fn setup(mut commands: Commands) {
                 section.spawn(label("Changes running speed for this local walkthrough. Walking and jumping stay unchanged. Resets to 1× for a new session."));
                 section.spawn(button(Control::DeveloperReset,"Reset position to starting point")).with_child(label("Reset position"));
                 section.spawn((super::developer::ResetSummary,label("Returns to your starting point and clears falling movement.")));
+                section.spawn(button(Control::Exit,"Exit game")).with_child(label("Exit game"));
                 section.spawn(button(Control::Back,"Back from developer settings")).with_child(label("Back [Esc]"));
             });
-            pane.spawn((PersistenceHint, label("Applies to this session. The world continues running.")));
-            pane.spawn(button(Control::Close,"Close interface settings")).with_child(label("Close"));
-            pane.spawn(button(Control::Exit,"Exit game")).with_child(label("Exit game"));
+            });
         });
+        pane.spawn(super::kit::settings_footer()).with_children(|footer| {
+            super::kit::defaults(footer);
+            footer.spawn(Node{column_gap:px(12),..default()}).with_children(|r| {
+                let apply=super::kit::footer_button(r,super::kit::Footer::Apply,"Apply");r.commands().entity(apply).insert(crate::ui_theme::Style::Gold);
+                let ok=super::kit::footer_button(r,super::kit::Footer::Accept,"OK");r.commands().entity(ok).insert((Control::Close,crate::ui_theme::Style::Primary));
+                let cancel=super::kit::footer_button(r,super::kit::Footer::Cancel,"Cancel");r.commands().entity(cancel).insert(Control::Close);
+            });
+        });
+    });});
 }
+
 pub(crate) fn keyboard(
     frontend: Option<Res<crate::frontend::Menu>>,
     keys: Option<Res<ButtonInput<KeyCode>>>,
@@ -247,7 +247,6 @@ fn activate(
     mut preferred: ResMut<PreferredScale>,
     debug: Option<ResMut<super::debug::Enabled>>,
     cap: Option<ResMut<super::graphics::FrameCap>>,
-    vsync: Option<ResMut<super::graphics::Vsync>>,
     view: Option<ResMut<ViewDistance>>,
     speed: Option<ResMut<super::developer::Speed>>,
     windows: Query<&Window>,
@@ -288,14 +287,6 @@ fn activate(
             }
         }
 
-        Control::Vsync(value) if ui.open && ui.graphics_open => {
-            if let Some(mut choice) = vsync {
-                choice.0 = value;
-            }
-            if let Some(mut store) = store {
-                store.retry_failed();
-            }
-        }
         Control::Graphics if ui.open => {
             ui.graphics_open = true;
             ui.developer_open = false;
@@ -447,8 +438,10 @@ fn present(
     }
     for (entity, control, hovered, pressed, mut color) in &mut buttons {
         let value = if matches!(control,Control::Scale(v) if (f32::from(*v)/100.-preferred.0).abs()<0.001)
+            || matches!(control, Control::Graphics if ui.graphics_open)
+            || matches!(control, Control::Developer if ui.developer_open)
+            || matches!(control, Control::Back if !ui.graphics_open && !ui.developer_open)
             || matches!(control, Control::FrameCap(v) if *v == cap.0)
-            || matches!(control, Control::Vsync(v) if *v == vsync)
             || matches!(control, Control::ViewDistance(v) if *v == view)
             || matches!(control, Control::DeveloperSpeed(v) if speed.as_ref().is_some_and(|s|s.applied==Some(*v)))
         {
@@ -573,42 +566,6 @@ mod tests {
                 .stream,
             Some(1)
         );
-    }
-    #[test]
-    fn vsync_buttons_require_the_open_focused_graphics_page_and_preserve_fps_cap() {
-        use super::super::graphics::{FrameCap, Vsync};
-        let mut app = App::new();
-        app.init_resource::<Ui>()
-            .init_resource::<Vsync>()
-            .insert_resource(FrameCap(144))
-            .insert_resource(PreferredScale(1.))
-            .add_observer(activate);
-        let window = app
-            .world_mut()
-            .spawn(Window {
-                focused: true,
-                ..default()
-            })
-            .id();
-        let off = app.world_mut().spawn(Control::Vsync(false)).id();
-        let on = app.world_mut().spawn(Control::Vsync(true)).id();
-        for (open, graphics, focused) in [
-            (false, false, true),
-            (true, false, true),
-            (true, true, false),
-        ] {
-            app.world_mut().resource_mut::<Ui>().open = open;
-            app.world_mut().resource_mut::<Ui>().graphics_open = graphics;
-            app.world_mut().get_mut::<Window>(window).unwrap().focused = focused;
-            app.world_mut().trigger(Activate { entity: off });
-            assert!(app.world().resource::<Vsync>().0);
-        }
-        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
-        app.world_mut().trigger(Activate { entity: off });
-        assert!(!app.world().resource::<Vsync>().0);
-        app.world_mut().trigger(Activate { entity: on });
-        assert!(app.world().resource::<Vsync>().0);
-        assert_eq!(app.world().resource::<FrameCap>().0, 144);
     }
     #[test]
     fn graphics_cap_requires_visible_focused_page_and_escape_returns_to_interface() {

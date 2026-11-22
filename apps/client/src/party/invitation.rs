@@ -87,10 +87,11 @@ pub(super) fn present(
             root.with_children(|root| {
                 root.spawn((
                     Panel,
+                    crate::ui_theme::Panel,
                     Node {
-                        width: px(460),
+                        width: px(520),
                         max_width: percent(90),
-                        padding: UiRect::all(px(14)),
+                        padding: UiRect::all(px(20)),
                         flex_direction: FlexDirection::Column,
                         align_items: AlignItems::Center,
                         row_gap: px(10),
@@ -100,6 +101,25 @@ pub(super) fn present(
                     Outline::new(px(1), px(-1), crate::fantasy_ui::GOLD),
                 ))
                 .with_children(|panel| {
+                    crate::fantasy_ui::kit::title(panel, "Party Invitation", 15);
+                    panel
+                        .spawn(button(
+                            Control::Invitation(invitation.decline.clone()),
+                            "Decline invitation",
+                            invitation.enabled,
+                        ))
+                        .insert((
+                            crate::ui_theme::Style::Link,
+                            Node {
+                                position_type: PositionType::Absolute,
+                                right: px(10),
+                                top: px(10),
+                                width: px(24),
+                                height: px(24),
+                                ..default()
+                            },
+                        ))
+                        .with_child(label("×"));
                     panel.spawn(label(&format!(
                         "{} invites you to a party.",
                         invitation.inviter
@@ -123,6 +143,11 @@ pub(super) fn present(
                                     title,
                                     invitation.enabled,
                                 ))
+                                .insert(if title == "Accept" {
+                                    crate::ui_theme::Style::Gold
+                                } else {
+                                    crate::ui_theme::Style::Secondary
+                                })
                                 .insert(Node {
                                     min_width: px(140),
                                     min_height: px(34),

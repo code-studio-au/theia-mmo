@@ -16,6 +16,8 @@ use bevy::{
 #[derive(Component)]
 pub(super) struct Username;
 #[derive(Component)]
+pub(super) struct UsernamePlaceholder;
+#[derive(Component)]
 pub(super) struct MenuLink;
 #[derive(Component)]
 pub(super) struct PasswordLabel;
@@ -26,6 +28,8 @@ pub(super) struct DialogRoot;
 #[derive(Component)]
 pub(super) struct SettingsBody;
 #[derive(Component)]
+pub(super) struct InterfaceBody;
+#[derive(Component)]
 pub(super) struct SupportBody;
 #[derive(Component)]
 pub(super) struct GraphicsSummary;
@@ -34,15 +38,16 @@ pub(super) enum Action {
     Password,
     Reveal,
     Settings,
+    Interface,
     Support,
     Close,
-    Vsync(bool),
     Cap(u16),
     Distance(crate::fantasy_ui::graphics::ViewDistance),
 }
 #[derive(Clone, Copy, PartialEq)]
 enum Dialog {
     Settings,
+    Interface,
     Support,
 }
 #[derive(Resource, Default)]
@@ -120,68 +125,67 @@ impl Drop for Login {
 fn button(parent: &mut ChildSpawnerCommands, action: Action, text: &str) {
     ui::button(parent, ui::Choice::Account(action), text);
 }
-fn field_label(parent: &mut ChildSpawnerCommands, caption: &str, icon: usize) {
-    parent
-        .spawn(Node {
-            column_gap: px(8),
-            align_items: AlignItems::Center,
-            ..default()
-        })
-        .with_children(|row| {
-            row.spawn((
-                crate::ui_theme::Icon(icon),
-                Node {
-                    width: px(24),
-                    height: px(24),
-                    ..default()
-                },
-            ));
-            row.spawn(ui::text(caption, 18.));
-        });
-}
 pub(super) fn panel(root: &mut ChildSpawnerCommands) {
     root.spawn((
         ui::Screen(Page::Login),
         crate::ui_theme::Panel,
         Node {
             width: px(480),
+            row_gap: px(18),
             max_width: percent(90),
             padding: UiRect::all(px(28)),
             border: UiRect::all(px(2)),
             ..ui::column()
         },
-        BackgroundColor(Color::srgba(0.018, 0.027, 0.033, 0.95)),
+        BackgroundColor(crate::ui_theme::PANEL),
         BorderColor::all(ui::GOLD),
         Outline::new(px(1), px(5), ui::GOLD),
     ))
     .with_children(|panel| {
-        field_label(panel, "Username", 0);
-        panel.spawn((
-            Username,
-            TextInput,
-            TabIndex(0),
-            EditableText {
-                max_characters: Some(256),
-                allow_newlines: false,
-                ..default()
-            },
-            Node {
-                min_height: px(44),
-                padding: UiRect::all(px(8)),
-                border: UiRect::all(px(1)),
-                ..default()
-            },
-            BorderColor::all(ui::GOLD),
-            BackgroundColor(Color::srgba(0., 0., 0., 0.75)),
-            TextFont::from_font_size(20.),
-            TextColor(ui::CREAM),
-            TextLayout::no_wrap(),
-            bevy::text::TextCursorStyle {
-                color: ui::CREAM,
-                ..default()
-            },
-        ));
-        field_label(panel, "Password", 1);
+        panel
+            .spawn((
+                Username,
+                TextInput,
+                TabIndex(0),
+                EditableText {
+                    max_characters: Some(256),
+                    allow_newlines: false,
+                    ..default()
+                },
+                crate::ui_theme::input_box(true, false),
+                BorderColor::all(ui::GOLD),
+                BackgroundColor(Color::srgba(0., 0., 0., 0.75)),
+                TextFont::from_font_size(20.),
+                TextColor(ui::CREAM),
+                TextLayout::no_wrap(),
+                bevy::text::TextCursorStyle {
+                    color: ui::CREAM,
+                    ..default()
+                },
+            ))
+            .with_children(|field| {
+                field.spawn((
+                    crate::ui_theme::Icon(0),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(10),
+                        top: px(12),
+                        width: px(24),
+                        height: px(24),
+                        ..default()
+                    },
+                ));
+                field.spawn((
+                    UsernamePlaceholder,
+                    ui::text("Account Name", 20.),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(44),
+                        top: px(10),
+                        ..default()
+                    },
+                ));
+            });
         panel
             .spawn(Node {
                 column_gap: px(8),
@@ -193,19 +197,56 @@ pub(super) fn panel(root: &mut ChildSpawnerCommands) {
                     .entity(field)
                     .insert((
                         AccessibleLabel::new("Password"),
+                        crate::ui_theme::input_box(true, true),
+                    ))
+                    .with_child((PasswordLabel, ui::text("Password", 20.)))
+                    .with_child((
+                        crate::ui_theme::Icon(1),
                         Node {
-                            min_width: px(0),
-                            flex_grow: 1.,
-                            min_height: px(44),
-                            padding: UiRect::all(px(8)),
-                            border: UiRect::all(px(1)),
+                            position_type: PositionType::Absolute,
+                            left: px(10),
+                            top: px(12),
+                            width: px(24),
+                            height: px(24),
+                            ..default()
+                        },
+                    ));
+                let eye = ui::button(row, ui::Choice::Account(Action::Reveal), "");
+                row.commands()
+                    .entity(eye)
+                    .insert((
+                        crate::ui_theme::Style::Icon,
+                        AccessibleLabel::new("Show password"),
+                        Node {
+                            position_type: PositionType::Absolute,
+                            right: px(8),
+                            top: px(8),
+                            width: px(32),
+                            height: px(32),
+                            justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
-                            overflow: Overflow::clip(),
                             ..default()
                         },
                     ))
-                    .with_child((PasswordLabel, ui::text("", 20.)));
-                button(row, Action::Reveal, "Show");
+                    .with_child((
+                        crate::ui_theme::Icon(2),
+                        Node {
+                            width: px(24),
+                            height: px(24),
+                            ..default()
+                        },
+                    ));
+            });
+        panel
+            .spawn(Node {
+                width: percent(100),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceBetween,
+                ..default()
+            })
+            .with_children(|r| {
+                crate::fantasy_ui::kit::unsupported_check(r, "Remember Me");
+                crate::fantasy_ui::kit::disabled_link(r, "Forgot Password?");
             });
         let enter = ui::button(panel, ui::Choice::Login, "Log In");
         panel.commands().entity(enter).insert(Node {
@@ -214,6 +255,13 @@ pub(super) fn panel(root: &mut ChildSpawnerCommands) {
             border: UiRect::all(px(1)),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
+            ..default()
+        });
+        let create = crate::fantasy_ui::kit::disabled(panel, "Create Account");
+        panel.commands().entity(create).insert(Node {
+            min_height: px(44),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
             ..default()
         });
         panel.spawn((
@@ -263,39 +311,51 @@ pub(super) fn links(root: &mut ChildSpawnerCommands) {
                     ));
             }
         });
-    root.spawn((DialogRoot,GlobalZIndex(1200),TabGroup::modal(),Visibility::Hidden,
+    root.spawn((DialogRoot,crate::fantasy_ui::kit::SettingsSurface,GlobalZIndex(1200),TabGroup::modal(),Visibility::Hidden,
         Node{position_type:PositionType::Absolute,width:percent(100),height:percent(100),display:Display::None,
             justify_content:JustifyContent::Center,align_items:AlignItems::Center,..default()},
         BackgroundColor(Color::srgba(0.,0.,0.,0.7)))).with_children(|overlay| {
-        overlay.spawn((crate::ui_theme::Panel, Node{width:px(500),max_width:percent(90),padding:UiRect::all(px(24)),border:UiRect::all(px(1)),..ui::column()},
-            BackgroundColor(Color::srgb(0.025,0.035,0.04)),BorderColor::all(ui::GOLD))).with_children(|pane| {
-            pane.spawn((SettingsBody,ui::column())).with_children(|settings| {
-                settings.spawn(ui::text("Graphics settings",26.));
-                crate::ui_theme::controls(settings);
-                settings.spawn((GraphicsSummary,ui::text("",17.)));
-                settings.spawn(Node{column_gap:px(8),..default()}).with_children(|r| {
-                    button(r,Action::Vsync(true),"VSync On");button(r,Action::Vsync(false),"VSync Off");
-                });
-                settings.spawn(ui::text("Frame limit",17.));
-                settings.spawn(Node{flex_wrap:FlexWrap::Wrap,column_gap:px(8),row_gap:px(8),..default()}).with_children(|r| {
-                    for value in crate::fantasy_ui::graphics::CAPS {
-                        button(r,Action::Cap(value),&crate::fantasy_ui::graphics::FrameCap(value).label());
+        overlay.spawn((crate::ui_theme::Panel, crate::fantasy_ui::kit::SettingsFrame, UiTransform::default(), Node{width:px(1440),height:px(940),flex_shrink:0.,padding:UiRect::all(px(24)),..ui::column()},
+            BackgroundColor(crate::ui_theme::PANEL))).with_children(|pane| {
+            crate::fantasy_ui::kit::title(pane,"Settings",7);
+            pane.spawn(crate::fantasy_ui::kit::settings_body()).with_children(|body| {
+                body.spawn((crate::ui_theme::Panel,Node{width:px(220),flex_shrink:0.,padding:UiRect::all(px(14)),..ui::column()},BackgroundColor(crate::ui_theme::PANEL))).with_children(|nav| {
+                    for (index,title,action) in [(9,"Graphics",Some(Action::Settings)),(10,"Audio",None),(2,"Gameplay",None),(11,"Controls",None),(12,"Key Bindings",None),(13,"Interface",Some(Action::Interface)),(14,"HUD",None),(15,"Social",None),(16,"Accessibility",None),(17,"Language",None),(24,"Support",Some(Action::Support))] {
+                        if let Some(action)=action {let id=ui::button(nav,ui::Choice::Account(action),title);nav.commands().entity(id).insert(Node{height:px(40),flex_direction:FlexDirection::RowReverse,column_gap:px(8),padding:UiRect::horizontal(px(12)),align_items:AlignItems::Center,justify_content:JustifyContent::FlexEnd,..default()}).with_children(|r|crate::fantasy_ui::kit::icon(r,index,false));}
+                        else {let id=crate::fantasy_ui::kit::disabled(nav,title);nav.commands().entity(id).insert(Node{height:px(40),flex_direction:FlexDirection::RowReverse,column_gap:px(8),padding:UiRect::horizontal(px(12)),align_items:AlignItems::Center,justify_content:JustifyContent::FlexEnd,..default()}).with_children(|r|crate::fantasy_ui::kit::icon(r,index,true));}
                     }
                 });
-                settings.spawn(ui::text("Terrain view distance",17.));
-                settings.spawn(Node{flex_wrap:FlexWrap::Wrap,column_gap:px(8),row_gap:px(8),..default()}).with_children(|r| {
-                    for value in crate::fantasy_ui::graphics::ViewDistance::ALL { button(r,Action::Distance(value),value.label()); }
+                body.spawn(Node{flex_grow:1.,flex_basis:px(0),min_width:px(0),..ui::column()}).with_children(|content| {
+                    content.spawn((SettingsBody,ui::column())).with_children(|settings| {
+                        crate::fantasy_ui::kit::section(settings,"Graphics");
+                        crate::fantasy_ui::kit::graphics(settings,|row,value| match value {
+                            crate::fantasy_ui::kit::Value::FrameCap=> {for value in crate::fantasy_ui::graphics::CAPS {button(row,Action::Cap(value),&crate::fantasy_ui::graphics::FrameCap(value).label());}},
+                            crate::fantasy_ui::kit::Value::Distance=>{for value in crate::fantasy_ui::graphics::ViewDistance::ALL {button(row,Action::Distance(value),value.label());}}
+                        });
+                    });
+                    content.spawn((InterfaceBody,ui::column())).with_children(|settings| {
+                        crate::ui_theme::heading(settings,"Interface");
+                        crate::ui_theme::scale_control(settings);
+                    });
+                    content.spawn((SupportBody,ui::column())).with_children(|support| {
+                        crate::ui_theme::heading(support,"Support");
+                        support.spawn(ui::text("Check your username and password, then try Log In again. Passwords are case-sensitive.",17.));
+                        support.spawn(ui::text("For account access or password recovery, contact your game administrator. This preview uses local development accounts.",16.));
+                    });
                 });
             });
-            pane.spawn((SupportBody,ui::column())).with_children(|support| {
-                support.spawn(ui::text("Support",26.));
-                support.spawn(ui::text("Check your username and password, then try Log In again. Passwords are case-sensitive.",18.));
-                support.spawn(ui::text("For account access or password recovery, contact your game administrator. This preview uses local development accounts.",16.));
+            pane.spawn(crate::fantasy_ui::kit::settings_footer()).with_children(|footer| {
+                crate::fantasy_ui::kit::defaults(footer);
+                footer.spawn(Node{column_gap:px(12),..default()}).with_children(|r| {
+                    let apply=crate::fantasy_ui::kit::footer_button(r,crate::fantasy_ui::kit::Footer::Apply,"Apply");r.commands().entity(apply).insert(crate::ui_theme::Style::Gold);
+                    let ok=crate::fantasy_ui::kit::footer_button(r,crate::fantasy_ui::kit::Footer::Accept,"OK");r.commands().entity(ok).insert((ui::Choice::Account(Action::Close),crate::ui_theme::Style::Primary));
+                    let cancel=crate::fantasy_ui::kit::footer_button(r,crate::fantasy_ui::kit::Footer::Cancel,"Cancel");r.commands().entity(cancel).insert(ui::Choice::Account(Action::Close));
+                });
             });
-            button(pane,Action::Close,"Close");
         });
     });
 }
+
 pub(super) fn keyboard(
     mut input: MessageReader<KeyboardInput>,
     mut focus: ResMut<InputFocus>,
@@ -367,7 +427,9 @@ pub(super) fn actions(world: &mut World) {
         if pending
             && !matches!(
                 choice,
-                ui::Choice::Account(Action::Settings | Action::Support | Action::Close)
+                ui::Choice::Account(
+                    Action::Settings | Action::Interface | Action::Support | Action::Close
+                )
             )
         {
             return;
@@ -421,6 +483,10 @@ pub(super) fn actions(world: &mut World) {
             Action::Reveal => {
                 login.revealed = !login.revealed;
             }
+            Action::Interface => {
+                login.dialog = Some(Dialog::Interface);
+                login.revealed = false;
+            }
             Action::Settings => {
                 login.revealed = false;
                 login.dialog = Some(Dialog::Settings);
@@ -432,12 +498,6 @@ pub(super) fn actions(world: &mut World) {
             Action::Close => {
                 login.dialog = None;
                 world.resource_mut::<InputFocus>().clear();
-            }
-            Action::Vsync(v) => {
-                if let Some(mut r) = world.get_resource_mut::<crate::fantasy_ui::graphics::Vsync>()
-                {
-                    r.0 = v;
-                }
             }
             Action::Cap(v) => {
                 if let Some(mut r) =
@@ -519,9 +579,13 @@ pub(super) fn present(
     menu: Res<Menu>,
     focus: Res<InputFocus>,
     choices: Query<&ui::Choice>,
+    mut commands: Commands,
+    accessible: Query<(Entity, &ui::Choice)>,
+    usernames: Query<&EditableText, With<Username>>,
     mut labels: Query<(
         &mut Text,
         Has<PasswordLabel>,
+        Has<UsernamePlaceholder>,
         Has<LoginMessage>,
         Has<GraphicsSummary>,
         Option<&ChildOf>,
@@ -531,6 +595,7 @@ pub(super) fn present(
         &mut Visibility,
         Has<DialogRoot>,
         Has<SettingsBody>,
+        Has<InterfaceBody>,
         Has<SupportBody>,
         Has<LoginMessage>,
     )>,
@@ -540,7 +605,17 @@ pub(super) fn present(
 ) {
     let focused = focus.get().and_then(|e| choices.get(e).ok())
         == Some(&ui::Choice::Account(Action::Password));
-    for (mut text, password, message, summary, parent) in &mut labels {
+    for (mut text, password, username_placeholder, message, summary, parent) in &mut labels {
+        if username_placeholder {
+            **text = if usernames
+                .single()
+                .is_ok_and(|u| u.value().to_string().is_empty())
+            {
+                "Account Name".into()
+            } else {
+                String::new()
+            };
+        }
         if password {
             let start = login.cursor.saturating_sub(28);
             **text = login
@@ -550,6 +625,9 @@ pub(super) fn present(
                 .take(36)
                 .map(|c| if login.revealed { *c } else { '•' })
                 .collect();
+            if login.password.is_empty() && !focused {
+                text.push_str("Password");
+            }
             if focused {
                 text.push('│');
             }
@@ -576,14 +654,42 @@ pub(super) fn present(
         if let Some(parent) = parent
             && choices.get(parent.parent()) == Ok(&ui::Choice::Account(Action::Reveal))
         {
-            **text = if login.revealed { "Hide" } else { "Show" }.into();
+            text.clear();
         }
     }
-    for (mut node, mut vis, dialog, settings, support, message) in &mut nodes {
+    for (entity, choice) in &accessible {
+        if *choice == ui::Choice::Account(Action::Reveal) {
+            commands
+                .entity(entity)
+                .insert(AccessibleLabel::new(if login.revealed {
+                    "Hide password"
+                } else {
+                    "Show password"
+                }));
+        }
+        if let ui::Choice::Account(action) = choice {
+            let selected = matches!(action, Action::Settings)
+                && login.dialog == Some(Dialog::Settings)
+                || matches!(action, Action::Interface) && login.dialog == Some(Dialog::Interface)
+                || matches!(action, Action::Support) && login.dialog == Some(Dialog::Support)
+                || matches!(action,Action::Cap(value) if cap.as_ref().is_some_and(|c|c.0==*value))
+                || matches!(action,Action::Distance(value) if view.as_ref().is_some_and(|v|**v==*value));
+            if selected {
+                commands.entity(entity).insert(crate::ui_theme::Selected);
+            } else {
+                commands
+                    .entity(entity)
+                    .remove::<crate::ui_theme::Selected>();
+            }
+        }
+    }
+    for (mut node, mut vis, dialog, settings, interface, support, message) in &mut nodes {
         let show = if dialog {
             login.dialog.is_some()
         } else if settings {
             login.dialog == Some(Dialog::Settings)
+        } else if interface {
+            login.dialog == Some(Dialog::Interface)
         } else if support {
             login.dialog == Some(Dialog::Support)
         } else if message {

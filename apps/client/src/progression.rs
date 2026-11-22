@@ -70,6 +70,7 @@ fn setup(mut commands: Commands) {
             .with_children(|p| {
                 p.spawn((
                     Fill,
+                    crate::ui_theme::Sprite("bar.fill-experience"),
                     Node {
                         width: percent(0),
                         height: percent(100),

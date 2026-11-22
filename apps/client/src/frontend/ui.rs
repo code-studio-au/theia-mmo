@@ -16,13 +16,35 @@ pub(super) enum Choice {
     Back,
     Select(usize),
     Cycle(usize, bool),
-    Rotate(bool),
+    Rotate,
+    Zoom(bool),
+    ResetView,
     Enter,
     Create,
     Exit,
 }
 #[derive(Component)]
 pub(super) struct NameInput;
+#[derive(Component)]
+pub(super) struct NameError;
+fn invalid_name(value: &str) -> bool {
+    !value.trim().is_empty()
+        && theia_core::character_name::CharacterName::parse(value.trim()).is_err()
+}
+pub(super) fn name_validation(
+    names: Query<&EditableText, With<NameInput>>,
+    mut labels: Query<&mut Text, With<NameError>>,
+) {
+    let invalid = names
+        .single()
+        .is_ok_and(|name| invalid_name(&name.value().to_string()));
+    for mut label in &mut labels {
+        let next = if invalid { "- invalid name!" } else { "" };
+        if label.0 != next {
+            label.0 = next.into();
+        }
+    }
+}
 #[derive(Component)]
 pub(super) struct Root;
 #[derive(Component)]
@@ -44,6 +66,8 @@ pub(super) enum Placement {
     Backdrop(bool),
     Entry,
     Rotation,
+    DragArea,
+    Feet,
     Status,
     Links,
     EmptyRoster,
@@ -139,6 +163,17 @@ pub(super) fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     )
     .expect("Embedded illustrated Theia title");
     let title = images.add(title);
+    let foot_arrow = images.add(
+        Image::from_buffer(
+            include_bytes!("../../../../content/ui/theme/standalone-v3/foot-arrow.png"),
+            bevy::image::ImageType::Extension("png"),
+            bevy::image::CompressedImageFormats::NONE,
+            true,
+            bevy::image::ImageSampler::default(),
+            bevy::asset::RenderAssetUsages::default(),
+        )
+        .expect("Embedded character rotation arrow"),
+    );
     commands
         .spawn((
             Root,
@@ -153,14 +188,18 @@ pub(super) fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
                 row_gap: px(12),
-                padding: UiRect::all(px(16)),
+                overflow: Overflow::clip(),
                 ..default()
             },
         ))
         .with_children(|root| {
             root.spawn((
                 Placement::Backdrop(true),
-                ImageNode::new(image),
+                ImageNode {
+                    image,
+                    image_mode: NodeImageMode::Stretch,
+                    ..default()
+                },
                 Node {
                     position_type: PositionType::Absolute,
                     width: percent(100),
@@ -171,7 +210,11 @@ pub(super) fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
             ));
             root.spawn((
                 Placement::Backdrop(false),
-                ImageNode::new(courtyard),
+                ImageNode {
+                    image: courtyard,
+                    image_mode: NodeImageMode::Stretch,
+                    ..default()
+                },
                 Node {
                     position_type: PositionType::Absolute,
                     width: percent(100),
@@ -213,7 +256,7 @@ pub(super) fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                     column_gap: px(24),
                     ..default()
                 },
-                BackgroundColor(Color::srgba(0.018, 0.027, 0.033, 0.94)),
+                BackgroundColor(crate::ui_theme::PANEL),
                 BorderColor::all(GOLD),
             ))
             .with_children(|panel| {
@@ -227,7 +270,7 @@ pub(super) fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                         },
                     ))
                     .with_children(|body| {
-                        body.spawn(text("Character selection", 25.));
+                        crate::ui_theme::heading(body, "Select Character");
                         body.spawn((
                             Placement::EmptyRoster,
                             text(
@@ -244,6 +287,7 @@ Create your first adventurer to begin your story.",
                             body.spawn((
                                 Row(i),
                                 Choice::Select(i),
+                                crate::ui_theme::Style::Roster,
                                 Button,
                                 ActivateOnPress,
                                 TabIndex(0),
@@ -252,7 +296,7 @@ Create your first adventurer to begin your story.",
                                     min_height: px(44),
                                     align_items: AlignItems::Center,
                                     flex_shrink: 0.,
-                                    padding: UiRect::all(px(9)),
+                                    padding: UiRect::axes(px(24), px(10)),
                                     border: UiRect::all(px(1)),
                                     ..default()
                                 },
@@ -266,6 +310,7 @@ Create your first adventurer to begin your story.",
                             ..default()
                         });
                         button(body, Choice::New, "Create Character");
+                        crate::fantasy_ui::kit::disabled(body, "Delete Character");
                     });
             });
             root.spawn((
@@ -278,11 +323,11 @@ Create your first adventurer to begin your story.",
                     border: UiRect::all(px(1)),
                     ..column()
                 },
-                BackgroundColor(Color::srgba(0.018, 0.027, 0.033, 0.94)),
+                BackgroundColor(crate::ui_theme::PANEL),
                 BorderColor::all(GOLD),
             ))
             .with_children(|body| {
-                body.spawn(text("Create your adventurer", 26.));
+                crate::fantasy_ui::kit::section(body, "Create Character");
                 for (i, label) in theia_core::appearance::LABELS.iter().enumerate() {
                     body.spawn(Node {
                         column_gap: px(8),
@@ -296,13 +341,23 @@ Create your first adventurer to begin your story.",
                             text(label, 17.),
                             Node {
                                 flex_grow: 1.,
+                                justify_content: JustifyContent::Center,
                                 ..default()
                             },
                         ));
                         button(row, Choice::Cycle(i, true), "›");
                     });
                 }
-                body.spawn(text("Character name", 16.));
+                body.spawn(Node {
+                    column_gap: px(6),
+                    align_items: AlignItems::Center,
+                    ..default()
+                })
+                .with_children(|row| {
+                    row.spawn(text("Character name", 16.));
+                    row.spawn((NameError, text("", 14.)))
+                        .insert(TextColor(Color::srgb(1., 0.42, 0.32)));
+                });
                 body.spawn((
                     NameInput,
                     TabIndex(0),
@@ -312,12 +367,7 @@ Create your first adventurer to begin your story.",
                         allow_newlines: false,
                         ..default()
                     },
-                    Node {
-                        min_height: px(38),
-                        padding: UiRect::all(px(8)),
-                        border: UiRect::all(px(1)),
-                        ..default()
-                    },
+                    crate::ui_theme::input_box(false, false),
                     BorderColor::all(GOLD),
                     BackgroundColor(Color::srgba(0., 0., 0., 0.7)),
                     TextFont {
@@ -384,8 +434,79 @@ Create your first adventurer to begin your story.",
                 },
             ))
             .with_children(|row| {
-                button(row, Choice::Rotate(false), "Turn left");
-                button(row, Choice::Rotate(true), "Turn right");
+                for (choice, icon, label) in [
+                    (Choice::Zoom(false), 32, "Zoom out"),
+                    (Choice::ResetView, 31, "Reset character view"),
+                    (Choice::Zoom(true), 33, "Zoom in"),
+                ] {
+                    let control = button(row, choice, "");
+                    row.commands()
+                        .entity(control)
+                        .insert((
+                            AccessibleLabel::new(label),
+                            Node {
+                                width: px(52),
+                                height: px(44),
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                ..default()
+                            },
+                        ))
+                        .with_child((
+                            crate::ui_theme::Icon(icon),
+                            Node {
+                                width: px(28),
+                                height: px(28),
+                                ..default()
+                            },
+                        ));
+                }
+            });
+            // A transparent, bounded hit area over the model, not the whole page.
+            root.spawn((
+                Screen(Page::Entering),
+                Placement::DragArea,
+                Choice::Rotate,
+                Button,
+                ActivateOnPress,
+                TabIndex(0),
+                Hovered::default(),
+                crate::ui_theme::Style::Icon,
+                BackgroundColor(Color::NONE),
+                AccessibleLabel::new(
+                    "Rotate character: drag left or right; arrow keys when focused",
+                ),
+                Node {
+                    position_type: PositionType::Absolute,
+                    ..default()
+                },
+            ));
+            root.spawn((
+                Screen(Page::Entering),
+                Placement::Feet,
+                Pickable::IGNORE,
+                Node {
+                    position_type: PositionType::Absolute,
+                    justify_content: JustifyContent::SpaceBetween,
+                    ..default()
+                },
+            ))
+            .with_children(|row| {
+                for flip_x in [false, true] {
+                    row.spawn((
+                        ImageNode {
+                            image: foot_arrow.clone(),
+                            flip_x,
+                            ..default()
+                        },
+                        Pickable::IGNORE,
+                        Node {
+                            width: px(96),
+                            height: px(56),
+                            ..default()
+                        },
+                    ));
+                }
             });
             root.spawn((
                 Message,
@@ -402,6 +523,44 @@ Create your first adventurer to begin your story.",
 pub(super) fn choose(event: On<Activate>, choices: Query<&Choice>, mut menu: ResMut<Menu>) {
     if let Ok(choice) = choices.get(event.entity) {
         menu.action = Some(*choice);
+    }
+}
+pub(super) fn rotate_drag(
+    mut event: On<bevy::picking::events::PointerDrag>,
+    choices: Query<&Choice>,
+    windows: Query<&Window>,
+    mut menu: ResMut<Menu>,
+) {
+    if choices.get(event.entity) != Ok(&Choice::Rotate)
+        || event.button != bevy::picking::pointer::PointerButton::Primary
+        || !menu.preview_visible()
+        || menu.pending
+        || !windows.single().is_ok_and(|w| w.focused)
+        || !event.delta.x.is_finite()
+    {
+        return;
+    }
+    menu.yaw = (menu.yaw - event.delta.x * 0.012).rem_euclid(std::f32::consts::TAU);
+    event.propagate(false);
+}
+pub(super) fn rotate_keyboard(
+    focus: Res<bevy::input_focus::InputFocus>,
+    keys: Res<ButtonInput<KeyCode>>,
+    choices: Query<&Choice>,
+    mut menu: ResMut<Menu>,
+) {
+    if !menu.preview_visible()
+        || menu.pending
+        || !focus
+            .get()
+            .is_some_and(|e| choices.get(e) == Ok(&Choice::Rotate))
+    {
+        return;
+    }
+    let direction = i32::from(keys.just_pressed(KeyCode::ArrowLeft))
+        - i32::from(keys.just_pressed(KeyCode::ArrowRight));
+    if direction != 0 {
+        menu.yaw = (menu.yaw + direction as f32 * 0.15).rem_euclid(std::f32::consts::TAU);
     }
 }
 #[allow(clippy::type_complexity)]
@@ -441,8 +600,7 @@ pub(super) fn sync(
         .single()
         .map(|w| Vec2::new(w.width(), w.height()) / scale.0)
         .unwrap_or(Vec2::new(1600., 900.));
-    let art = artwork_size(size);
-    let gutter = (size - art) * 0.5;
+    let art = size;
     for (entity, mut node, screen, row, root, title, roster, placement) in &mut nodes {
         if roster {
             node.row_gap = px(if size.y < 800. { 4. } else { 10. });
@@ -458,9 +616,9 @@ pub(super) fn sync(
             node.left = px(if login {
                 (size.x - height * (1752. / 897.)) * 0.5
             } else {
-                gutter.x + 24.
+                24.
             });
-            node.top = px(gutter.y + if login { art.y * 0.01 } else { 12. });
+            node.top = px(if login { art.y * 0.01 } else { 12. });
             node.height = px(height);
             node.width = px(height * (1752. / 897.));
         }
@@ -481,16 +639,20 @@ pub(super) fn sync(
             node.display = if show { Display::Flex } else { Display::None };
             if screen.0 == Page::Login {
                 node.position_type = PositionType::Absolute;
-                node.width = px((art.x * 0.30).max(420.));
-                node.left = px((size.x - (art.x * 0.30).max(420.)) * 0.5);
-                node.top = px(gutter.y + art.y * 0.41);
+                node.width = px((art.x * 0.30).clamp(420., 560.));
+                node.left = px((size.x - (art.x * 0.30).clamp(420., 560.)) * 0.5);
+                node.top = px(art.y * 0.41);
             }
             if matches!(screen.0, Page::Characters | Page::Create) && placement.is_none() {
                 let roster = screen.0 == Page::Characters;
                 node.position_type = PositionType::Absolute;
-                node.right = px(gutter.x + art.x * 0.025);
-                node.top = px(gutter.y + art.y * if roster { 0.08 } else { 0.18 });
-                node.width = px(art.x * if roster { 0.28 } else { 0.42 });
+                node.right = px(art.x * 0.025);
+                node.top = px(art.y * if roster { 0.08 } else { 0.18 });
+                node.width = px(if roster {
+                    (art.x * 0.25).clamp(340., 460.)
+                } else {
+                    (art.x * 0.28).clamp(360., 480.)
+                });
                 node.height = if roster { px(art.y * 0.82) } else { Val::Auto };
                 node.max_width = Val::Auto;
                 node.row_gap = px(if size.y < 800. { 4. } else { 10. });
@@ -499,6 +661,11 @@ pub(super) fn sync(
         if let Some(placement) = placement {
             match placement {
                 Placement::Backdrop(login) => {
+                    let cover = background_size(size);
+                    node.width = px(cover.x);
+                    node.height = px(cover.y);
+                    node.left = px((size.x - cover.x) * 0.5);
+                    node.top = px((size.y - cover.y) * 0.5);
                     node.display = if *login == (menu.page == Page::Login) {
                         Display::Flex
                     } else {
@@ -512,17 +679,31 @@ pub(super) fn sync(
                         Display::None
                     };
                 }
+                Placement::DragArea => {
+                    node.width = px(art.x * 0.28);
+                    node.height = px(art.y * 0.70);
+                    node.left = px(art.x * 0.26);
+                    node.top = px(art.y * 0.11);
+                }
+                Placement::Feet => {
+                    node.width = px(300.);
+                    node.height = px(56.);
+                    node.left = px(art.x * 0.40 - 150.);
+                    node.top = px(art.y * 0.81 - 48.);
+                }
                 Placement::Entry | Placement::Rotation => {
                     node.position_type = PositionType::Absolute;
                     node.width = px(300.);
-                    node.left = px(gutter.x + art.x * 0.40 - 150.);
-                    node.top = px(gutter.y
-                        + art.y
-                            * if matches!(placement, Placement::Entry) {
-                                0.83
-                            } else {
-                                0.94
-                            });
+                    node.left = px(art.x * 0.40 - 150.);
+                    node.top = px(art.y
+                        * if matches!(placement, Placement::Entry) {
+                            0.83
+                        } else {
+                            0.94
+                        });
+                    if matches!(placement, Placement::Rotation) {
+                        node.top = px((art.y * 0.94).min(art.y - 60.));
+                    }
                     node.row_gap = px(4.);
                 }
                 Placement::Status | Placement::Links => {
@@ -530,9 +711,9 @@ pub(super) fn sync(
                     node.position_type = PositionType::Absolute;
                     node.bottom = px(24.);
                     node.left = px(if matches!(placement, Placement::Links) {
-                        gutter.x + 52.
+                        52.
                     } else {
-                        gutter.x + art.x * 0.71
+                        art.x * 0.71
                     });
                     if matches!(placement, Placement::Status) {
                         node.display = if login { Display::None } else { Display::Flex };
@@ -546,7 +727,7 @@ pub(super) fn sync(
             }
         }
         if let Some(row) = row {
-            node.padding = UiRect::all(px(if size.y < 800. { 4. } else { 9. }));
+            node.padding = UiRect::axes(px(24), px(if size.y < 800. { 6. } else { 10. }));
             node.display = if row.0 < menu.characters.len() {
                 Display::Flex
             } else {
@@ -602,13 +783,18 @@ pub(super) fn sync(
             choice,
             Choice::Exit
                 | Choice::Account(
-                    login::Action::Settings | login::Action::Support | login::Action::Close
+                    login::Action::Settings
+                        | login::Action::Interface
+                        | login::Action::Support
+                        | login::Action::Close
                 )
         );
         let disabled = !always_available
             && (menu.pending
                 || matches!(choice, Choice::Enter) && (menu.selected.is_none() || !preview.ready)
                 || matches!(choice, Choice::Create) && !preview.ready
+                || matches!(choice, Choice::Zoom(true)) && menu.zoom >= 1.3
+                || matches!(choice, Choice::Zoom(false)) && menu.zoom <= 0.75
                 || matches!(choice, Choice::New) && menu.characters.len() >= 8
                 || matches!(choice, Choice::Cycle(3, _)) && menu.appearance.values()[0] == 1);
         if disabled {
@@ -627,7 +813,7 @@ pub(super) fn sync(
                 .entity(entity)
                 .remove::<crate::ui_theme::Selected>();
         }
-        color.0 = if link {
+        color.0 = if link || matches!(choice, Choice::Rotate) {
             Color::NONE
         } else if disabled {
             Color::srgb(0.08, 0.08, 0.08)
@@ -649,10 +835,20 @@ pub(super) fn evidence(world: &mut World) {
     let path = menu.directory.join("frontend-evidence.json");
     let page = format!("{:?}", menu.page);
     let appearance = menu.appearance;
+    let preview_yaw = menu.yaw;
+    let preview_zoom = menu.zoom;
     let message = menu.message.clone();
     let preview_visible = menu.preview_visible();
     let character_count = menu.characters.len();
+    let invalid_name = world
+        .query_filtered::<&EditableText, With<NameInput>>()
+        .single(world)
+        .is_ok_and(|name| invalid_name(&name.value().to_string()));
     let scale = world.resource::<UiScale>().0;
+    let dialog_open = world
+        .query_filtered::<&Node, With<login::DialogRoot>>()
+        .iter(world)
+        .any(|n| n.display != Display::None);
     let geometry: serde_json::Map<String, serde_json::Value> = world
         .query::<(
             &ComputedNode,
@@ -660,10 +856,11 @@ pub(super) fn evidence(world: &mut World) {
             Option<&Choice>,
             Has<NameInput>,
             Has<login::Username>,
+            Has<login::MenuLink>,
         )>()
         .iter(world)
-        .filter_map(|(node, transform, choice, name, username)| {
-            if node.size().min_element() <= 0. {
+        .filter_map(|(node, transform, choice, name, username, login_link)| {
+            if node.size().min_element() <= 0. || (dialog_open && login_link) {
                 return None;
             }
             let label = if username {
@@ -693,7 +890,7 @@ pub(super) fn evidence(world: &mut World) {
         .map(|c| format!("{c:?}"))
         .collect();
     let ready = world.resource::<preview::Preview>().ready;
-    let value = serde_json::json!({"page":page,"appearance":appearance,"message":message,"preview_ready":ready,"preview_visible":preview_visible,"character_count":character_count,"disabled":disabled,"widgets":geometry,"theme":crate::ui_theme::snapshot(world)});
+    let value = serde_json::json!({"page":page,"appearance":appearance,"message":message,"invalid_name":invalid_name,"preview_yaw":preview_yaw,"preview_zoom":preview_zoom,"preview_ready":ready,"preview_visible":preview_visible,"character_count":character_count,"disabled":disabled,"widgets":geometry,"theme":crate::ui_theme::snapshot(world)});
     let temporary = path.with_extension("tmp");
     if std::fs::write(&temporary, serde_json::to_vec(&value).unwrap()).is_ok() {
         let _ = std::fs::rename(temporary, path);
@@ -762,7 +959,8 @@ pub(super) fn anchor(world: &mut World) {
         return;
     };
     let position = ledge_anchor(window, size, feet.truncate());
-    let art = artwork_size(window);
+    let zoom = world.resource::<Menu>().zoom;
+    let art = window;
     for (screen, mut node) in world
         .query_filtered::<(&Screen, &mut Node), Without<Placement>>()
         .iter_mut(world)
@@ -770,26 +968,40 @@ pub(super) fn anchor(world: &mut World) {
         if screen.0 == Page::Entering {
             node.left = px(position.x);
             node.top = px(position.y);
-            node.height = px(art.y * 0.82);
-            node.width = px(art.x * 0.34);
+            node.height = px(art.y * 0.82 * zoom);
+            node.width = px(art.x * 0.34 * zoom);
         }
     }
 }
 fn ledge_anchor(window: Vec2, viewport: Vec2, feet_ndc: Vec2) -> Vec2 {
-    let art = artwork_size(window);
-    (window - art) * 0.5 + art * Vec2::new(0.40, 0.81)
+    window * Vec2::new(0.40, 0.81)
         - viewport * Vec2::new((feet_ndc.x + 1.) * 0.5, (1. - feet_ndc.y) * 0.5)
 }
 
-fn artwork_size(window: Vec2) -> Vec2 {
-    // Match standard ImageNode::Auto containment, including wide-window gutters.
+fn background_size(window: Vec2) -> Vec2 {
+    // Cover each client window without stretching the artwork. Foreground UI
+    // anchors to the window, independently of the cropped background.
     let source = Vec2::new(1672., 941.);
-    source * (window / source).min_element()
+    source * (window / source).max_element()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn backgrounds_cover_single_half_and_quarter_windows() {
+        for window in [
+            Vec2::new(3440., 1400.),
+            Vec2::new(1720., 1400.),
+            Vec2::new(1720., 700.),
+            Vec2::new(1280., 720.),
+        ] {
+            let cover = background_size(window);
+            assert!(cover.x + 0.01 >= window.x && cover.y + 0.01 >= window.y);
+            assert!((cover.x / cover.y - 1672. / 941.).abs() < 0.001);
+            assert!((cover.x - window.x).abs().min((cover.y - window.y).abs()) < 0.01);
+        }
+    }
     #[test]
     fn native_widget_tree_builds_without_duplicate_components() {
         let mut app = App::new();

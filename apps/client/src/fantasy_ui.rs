@@ -1,8 +1,9 @@
-//! Optional presentation-only skin from the user's local Fantasy Warrior HUD.
-//! PNGs load through a separate Bevy source; terrain/art roots stay unchanged.
+//! Native game presentation using the approved regenerated Theia artwork.
+//! The legacy HUD source/CLI remains compatible with retained playtest launchers.
 mod debug;
 mod developer;
 pub(crate) mod graphics;
+pub(crate) mod kit;
 pub(crate) mod preferences;
 pub(crate) mod preview;
 pub(crate) mod settings;
@@ -61,8 +62,8 @@ pub(crate) const TITLE_FONT: &str = "Fonts/Grenze/Grenze-SemiBold.ttf";
 pub(crate) const BODY_FONT: &str = "Fonts/Texturina/Texturina_18pt-SemiBold.ttf";
 pub(crate) const GOLD: Color = crate::ui_theme::GOLD;
 pub(crate) const PANEL: Color = crate::ui_theme::PANEL;
-const PAPER: Color = Color::srgb(0.82, 0.70, 0.49);
-const INK: Color = Color::srgb(0.18, 0.11, 0.05);
+const PAPER: Color = PANEL;
+const INK: Color = crate::ui_theme::CREAM;
 #[derive(Component)]
 pub(crate) struct DarkSurface;
 pub(crate) fn button_color(disabled: bool, hovered: bool, pressed: bool) -> Color {
@@ -161,13 +162,13 @@ pub(crate) const SLOTS: usize = 12;
 pub(crate) const ACTION_WIDTH: f32 = SLOT * SLOTS as f32 + 4. * (SLOTS - 1) as f32 + 18.;
 #[derive(Component)]
 pub(crate) struct UnitFrame(pub bool);
-/// Centre-relative anchors keep combat information near the character on ultrawide.
+/// Reference-kit unit frames anchor to the upper left of the gameplay viewport.
 pub(crate) fn unit_frame(player: bool) -> Node {
     Node {
         position_type: PositionType::Absolute,
         left: percent(50),
         margin: UiRect::left(px(if player { -340. } else { 120. })),
-        bottom: px(190),
+        top: px(12),
         width: px(220),
         padding: UiRect::all(px(6)),
         row_gap: px(3),
@@ -176,15 +177,13 @@ pub(crate) fn unit_frame(player: bool) -> Node {
         ..default()
     }
 }
-/// Widen only when the viewport has at least 1920 logical UI pixels. Scaling
-/// the interface up reduces that space; smaller layouts retain their anchors.
 fn unit_margin(player: bool, logical_width: f32) -> f32 {
-    let extra = if logical_width.is_finite() {
-        ((logical_width - 1920.) * 0.25).clamp(0., 240.)
+    let width = if logical_width.is_finite() {
+        logical_width
     } else {
-        0.
+        1280.
     };
-    if player { -340. - extra } else { 120. + extra }
+    (if player { 16. } else { 248. }) - width * 0.5
 }
 fn unobscured_unit_margin(player: bool, width: f32, dialogue: bool, bag: bool) -> f32 {
     let normal = unit_margin(player, width);
@@ -194,7 +193,8 @@ fn unobscured_unit_margin(player: bool, width: f32, dialogue: bool, bag: bool) -
     }
     let left = if dialogue { 444. } else { 12. };
     let right = width - if bag { 352. } else { 12. };
-    (width * 0.5 + normal).clamp(left, right - 220.) - width * 0.5
+    (width * 0.5 + normal + if dialogue { 432. } else { 0. }).clamp(left, right - 220.)
+        - width * 0.5
 }
 fn responsive_units(
     windows: Query<&Window>,
@@ -229,11 +229,8 @@ fn responsive_units(
         if node.margin.left != margin {
             node.margin.left = margin;
         }
-        // The bag now occupies the column beside the fixed map/tracker.
-        // Keep unit information above that window while it is open.
-        let open = bag.as_ref().is_some_and(|b| b.open);
-        node.top = if open { px(12) } else { Val::Auto };
-        node.bottom = if open { Val::Auto } else { px(190) };
+        node.top = px(12);
+        node.bottom = Val::Auto;
     }
     // Follow the target frame when ultrawide layout moves it outwards. Slot
     // origins include the action dock's 8 px padding and 1 px border.
@@ -259,12 +256,14 @@ pub(crate) fn window_header(
             Node {
                 width: percent(100),
                 column_gap: px(8),
-                padding: UiRect::axes(px(8), px(4)),
+                padding: UiRect::axes(px(8), px(6)),
+                border: UiRect::bottom(px(1)),
                 align_items: AlignItems::Center,
                 flex_shrink: 0.,
                 ..default()
             },
             BackgroundColor(PANEL),
+            BorderColor::all(GOLD),
         ))
         .with_children(|row| {
             row.spawn(title).insert((
@@ -274,7 +273,7 @@ pub(crate) fn window_header(
                     ..default()
                 },
                 TextFont {
-                    font_size: bevy::text::FontSize::Px(18.),
+                    font_size: bevy::text::FontSize::Px(22.),
                     ..default()
                 },
                 TextColor(Color::srgb(0.92, 0.85, 0.70)),
@@ -338,7 +337,7 @@ impl Skin {
         }
     }
     /// Presentation mapping only. Unknown authored items keep a generic icon.
-    /// The pelt material and wand sceptre are provisional art, not item metadata.
+    /// Pelt/leather, stone/shard and wand/crystal are provisional art, not item metadata.
     pub(crate) fn item_icon(&self, id: &str) -> Handle<Image> {
         let index = match id {
             "theia.dev.training-stone" => 0,
@@ -484,15 +483,53 @@ pub(crate) fn register(app: &mut App, directory: PathBuf) {
 }
 pub(crate) fn load(app: &mut App) {
     crate::ui_theme::install(app);
-    let server = app.world().resource::<AssetServer>();
-    let image = |name| server.load(format!("fantasy-ui://{name}"));
+    kit::install(app);
+    let title_font = app
+        .world_mut()
+        .resource_mut::<Assets<Font>>()
+        .add(Font::from_bytes(
+            include_bytes!("../../../content/ui/fonts/LiberationSerif-Regular.ttf").to_vec(),
+        ));
+    let body_font = app
+        .world_mut()
+        .resource_mut::<Assets<Font>>()
+        .add(Font::from_bytes(
+            include_bytes!("../../../content/ui/fonts/LiberationSans-Regular.ttf").to_vec(),
+        ));
+    let mut images = app.world_mut().resource_mut::<Assets<Image>>();
+    let mut image = |bytes: &[u8]| images.add(crate::ui_theme::sprites::decode(bytes));
     let skin = Skin {
-        sword: image(SWORD),
-        arcane: image(ARCANE),
-        fallback: image(FALLBACK),
-        item_icons: ITEM_ICONS.map(image),
-        title_font: server.load(format!("fantasy-ui://{TITLE_FONT}")),
-        body_font: server.load(format!("fantasy-ui://{BODY_FONT}")),
+        sword: image(include_bytes!(
+            "../../../content/ui/sprites-v3/sprites/ability/sword.png"
+        )),
+        arcane: image(include_bytes!(
+            "../../../content/ui/sprites-v3/sprites/ability/arcane-arrow.png"
+        )),
+        fallback: image(include_bytes!(
+            "../../../content/ui/sprites-v3/sprites/icon/book.png"
+        )),
+        item_icons: [
+            image(include_bytes!(
+                "../../../content/ui/sprites-v3/sprites/item/shard.png"
+            )),
+            image(include_bytes!(
+                "../../../content/ui/sprites-v3/sprites/icon/coins.png"
+            )),
+            image(include_bytes!(
+                "../../../content/ui/sprites-v3/sprites/item/sword-common.png"
+            )),
+            image(include_bytes!(
+                "../../../content/ui/sprites-v3/sprites/item/crystal.png"
+            )),
+            image(include_bytes!(
+                "../../../content/ui/sprites-v3/sprites/item/leather.png"
+            )),
+            image(include_bytes!(
+                "../../../content/ui/sprites-v3/sprites/icon/book.png"
+            )),
+        ],
+        title_font,
+        body_font,
     };
     app.insert_resource(skin);
     app.add_systems(PostStartup, style_panels)
@@ -537,7 +574,7 @@ fn style_text(
     mut text: Query<ThemeText<'_>, NewText>,
 ) {
     for (entity, mut font, mut color) in &mut text {
-        font.font = if matches!(font.font_size, bevy::text::FontSize::Px(size) if size >= 18.) {
+        font.font = if matches!(font.font_size, bevy::text::FontSize::Px(size) if size >= 22.) {
             skin.title_font.clone().into()
         } else {
             skin.body_font.clone().into()
@@ -558,10 +595,8 @@ type ThemePanel<'a> = (
 fn style_panels(mut commands: Commands, mut panels: Query<ThemePanel>) {
     for (entity, panel, mut node, mut background, layer, backpack) in &mut panels {
         background.0 = PANEL;
-        // An outline decorates existing panes without shrinking scroll/map content.
-        commands
-            .entity(entity)
-            .insert(Outline::new(px(1), px(-1), GOLD));
+        // The shared nine-slice trim replaces rectangular outlines without shrinking content.
+        commands.entity(entity).remove::<Outline>();
         if backpack || matches!(panel, Panel::Standard | Panel::Paper | Panel::QuestTracker) {
             commands.entity(entity).insert(crate::ui_theme::Panel);
         }
@@ -706,7 +741,7 @@ mod tests {
             .spawn((
                 Text::new("Initial title"),
                 TextFont {
-                    font_size: bevy::text::FontSize::Px(20.),
+                    font_size: bevy::text::FontSize::Px(24.),
                     ..default()
                 },
             ))
@@ -786,7 +821,7 @@ mod tests {
         );
     }
     #[test]
-    fn unit_frames_spread_on_ultrawide_and_restore_with_window_and_ui_scale() {
+    fn unit_frames_keep_top_left_anchors_across_window_and_ui_scale_changes() {
         let mut app = App::new();
         app.insert_resource(bevy::ui::UiScale(1.25));
         app.add_systems(Update, responsive_units);
@@ -808,11 +843,11 @@ mod tests {
         app.update();
         assert_eq!(
             app.world().get::<Node>(player).unwrap().margin.left,
-            px(-548.)
+            px(16. - 3440. / 1.25 / 2.)
         );
         assert_eq!(
             app.world().get::<Node>(target).unwrap().margin.left,
-            px(328.)
+            px(248. - 3440. / 1.25 / 2.)
         );
         app.world_mut()
             .get_mut::<Window>(window)
@@ -822,11 +857,11 @@ mod tests {
         app.update();
         assert_eq!(
             app.world().get::<Node>(player).unwrap().margin.left,
-            px(-340.)
+            px(16. - 1920. / 1.25 / 2.)
         );
         assert_eq!(
             app.world().get::<Node>(target).unwrap().margin.left,
-            px(120.)
+            px(248. - 1920. / 1.25 / 2.)
         );
         app.world_mut()
             .get_mut::<Window>(window)
@@ -840,9 +875,9 @@ mod tests {
             app.world().get::<Node>(player).unwrap().margin.left,
             px(expected)
         );
-        assert!(expected > -548. && expected < -340.);
-        assert_eq!(unit_margin(true, 10000.), -580.);
-        assert_eq!(unit_margin(false, f32::NAN), 120.);
+        assert_eq!(3440. / 1.5 / 2. + expected, 16.);
+        assert_eq!(unit_margin(true, 10000.), 16. - 5000.);
+        assert_eq!(unit_margin(false, f32::NAN), 248. - 640.);
     }
     #[test]
     fn preferred_scale_fits_a_smaller_window_then_restores_on_resize_without_changing_it() {
@@ -965,7 +1000,7 @@ mod tests {
             Some(&Visibility::Hidden)
         );
         assert_eq!(app.world().get::<ScrollPosition>(pane).unwrap().y, 51.);
-        assert!(app.world().get::<Outline>(pane).is_some());
+        assert!(app.world().get::<Outline>(pane).is_none());
         assert!(app.world().get::<ImageNode>(pane).is_none());
         let frame = app.world().get::<Children>(pane).unwrap()[0];
         assert!(matches!(

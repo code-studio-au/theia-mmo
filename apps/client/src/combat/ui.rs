@@ -287,6 +287,7 @@ fn setup(
                     ))
                     .with_child((
                         PlayerHealthFill,
+                        crate::ui_theme::Sprite("bar.fill-health"),
                         Node {
                             width: percent(0),
                             height: percent(100),
@@ -309,6 +310,7 @@ fn setup(
                     ))
                     .with_child((
                         ManaFill,
+                        crate::ui_theme::Sprite("bar.fill-mana"),
                         Node {
                             width: percent(0),
                             height: percent(100),
@@ -422,6 +424,7 @@ fn setup(
                 .with_children(|bar| {
                     bar.spawn((
                         CastFill,
+                        crate::ui_theme::Sprite("bar.fill-progress"),
                         Node {
                             position_type: PositionType::Absolute,
                             left: px(0),
@@ -471,6 +474,7 @@ fn compact_actions(
                     justify_content: JustifyContent::Center,
                     ..default()
                 },
+                crate::ui_theme::Panel,
                 BackgroundColor(PANEL),
                 BorderColor::all(GOLD),
             ))
@@ -487,6 +491,7 @@ fn compact_actions(
                     let Some(ability) = layout.ability(&config.0, slot) else {
                         bar.spawn((
                             ActionSlot(slot),
+                            crate::ui_theme::Sprite("slot.empty.default"),
                             node,
                             BackgroundColor(Color::srgba(0.025, 0.022, 0.02, 0.96)),
                             Outline::new(px(1), px(-1), GOLD),
@@ -513,6 +518,7 @@ fn compact_actions(
                         ActivateOnPress,
                         Hovered::default(),
                         ActionButton(slot),
+                        crate::ui_theme::Style::Slot,
                         ActionSlot(slot),
                         AccessibleLabel::new(format!("Cast {name} ({})", key_label(slot))),
                         node,
@@ -523,11 +529,7 @@ fn compact_actions(
                         button.spawn((
                             Node {
                                 width: px(36),
-                                height: px(if ability.id().as_str() == "theia.dev.sword-slash" {
-                                    18.
-                                } else {
-                                    36.
-                                }),
+                                height: px(36.),
                                 ..default()
                             },
                             ImageNode::new(skin.icon(ability.id().as_str())),
