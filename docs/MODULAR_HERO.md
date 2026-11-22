@@ -54,3 +54,22 @@ Implemented persistence and public metadata (22 November 2026):
   equipment/admission test also verifies distinct appearances at both receivers
   through delay, jitter, loss and duplication (`two-peers.log`). Its admission
   policy is synthetic; SQL durability is established separately above.
+
+Implemented asset conversion:
+
+- `tools/convert_modular_hero.py` reads four named data payloads from the owned
+  Unity package, generates 16 standard texture palettes, and exports a curated
+  57-part variant GLB plus a 13-part default GLB. There are 65 skin joints,
+  at most three weights per vertex and all 22 qualified locomotion/combat clips.
+  Converted files and extracted licensed source remain ignored local artifacts.
+- Animation transfer preserves the target bind axes. Applying source absolute
+  bone poses directly produced invalid deformation and was rejected. The final
+  conversion applies source deformation relative to each target bind matrix;
+  measured maximum baked world-pose error is below 0.00002.
+- `build/modular-hero-v1/art-v3` was inspected as actual animated Bevy output:
+  native editor idle, walking and jumping captures are in `native-asset/`.
+  Native character creation also rendered the female alternate outfit and palette
+  in `native-creation/fresh/custom-character.png`. Individual combat clips have
+  conversion checks; this is not a claim of a complete visual combat audit.
+- Native Linux device: AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan,
+  Mesa 26.2.7. Windows native rendering has not been exercised in this slice.
