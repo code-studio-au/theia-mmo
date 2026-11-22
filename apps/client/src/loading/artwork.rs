@@ -19,7 +19,9 @@ impl Artwork {
     fn for_id(id: &str) -> Self {
         match id {
             // Millhaven's current editor export retains its original stable ID.
-            "theia.zone.starter-valley" | "theia.zone.millhaven" => Self::Millhaven,
+            "theia.zone.starter-valley"
+            | "theia.zone.millhaven"
+            | "theia.zone.millhaven-population-village" => Self::Millhaven,
             _ => Self::Valley,
         }
     }
@@ -27,7 +29,7 @@ impl Artwork {
         match self {
             Self::Valley => include_bytes!("../../../../content/ui/loading/theia-valley-v1.png"),
             Self::Millhaven => {
-                include_bytes!("../../../../content/ui/loading/millhaven-valley-sunset.png")
+                include_bytes!("../../../../content/ui/loading/millhaven-sunlit-v2.png")
             }
         }
     }
@@ -49,6 +51,10 @@ mod tests {
             Artwork::Millhaven
         );
         assert_eq!(Artwork::for_id("theia.zone.millhaven"), Artwork::Millhaven);
+        assert_eq!(
+            Artwork::for_id("theia.zone.millhaven-population-village"),
+            Artwork::Millhaven
+        );
         for other in ["theia.zone.other", "theia.zone.millhaven-annex", ""] {
             assert_eq!(Artwork::for_id(other), Artwork::Valley);
         }

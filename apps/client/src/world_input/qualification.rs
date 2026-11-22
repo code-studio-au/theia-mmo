@@ -40,7 +40,8 @@ pub(crate) fn enemy_screen(
     project(world, point)
 }
 fn project(world: &mut World, point: Vec3) -> Option<Vec2> {
-    let mut query = world.query_filtered::<(&Camera, &GlobalTransform), With<Camera3d>>();
+    let mut query =
+        world.query_filtered::<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>();
     let (camera, transform) = query.single(world).ok()?;
     let screen = camera.world_to_viewport(transform, point).ok()?;
     let size = camera.logical_viewport_size()?;

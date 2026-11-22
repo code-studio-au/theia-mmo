@@ -65,7 +65,7 @@ pub fn observe(
     mut run: ResMut<Run>,
     pawn: Query<&Transform, With<LocalPawn>>,
     adapter: Res<RenderAdapterInfo>,
-    camera: Query<&Transform, (With<Camera3d>, Without<LocalPawn>)>,
+    camera: Query<&Transform, (crate::frontend::WorldCamera, Without<LocalPawn>)>,
     orbit: Res<crate::camera::Orbit>,
     (references, ready): (
         Option<Res<crate::reference_scene::Config>>,

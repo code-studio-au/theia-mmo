@@ -133,7 +133,7 @@ fn present(
     time: Res<Time>,
     frame: Res<crate::floating_origin::Frame>,
     scale: Option<Res<bevy::ui::UiScale>>,
-    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     mut cursor: ResMut<Cursor>,
     mut labels: Query<(&mut Node, &mut Text, &mut TextColor), With<Label>>,
 ) {

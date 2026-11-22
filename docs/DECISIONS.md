@@ -1,3 +1,14 @@
+22 November 2026 — P3-01/P3-03 native title and character flow:
+Keep Login, roster, creation and gameplay in one standard Bevy client/window.
+Reuse the existing browser OIDC/account APIs and private bounded atomic launcher
+handoff; defer network admission until the user selects Enter World. Credentials
+remain outside the native UI and no account I/O enters simulation. The live hero
+uses the shared modular catalogue on a separate preview render layer. Project its
+feet onto the cleared artwork ledge across aspect changes. Use illustrated title
+art and the user-supplied sunlit Millhaven scene with matching gold lettering;
+functional inputs remain native widgets. Native restart/same-window checks pass;
+see GAME_FRONTEND.md. This supersedes the earlier standalone-title deferral below.
+
 22 November 2026 — P2-08/P2-09, P3-03 modular player appearance:
 User approved autonomous local implementation and commits for the owned Modular
 Fantasy Hero package, native customization and persistent multiplayer appearance.

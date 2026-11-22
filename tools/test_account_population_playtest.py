@@ -41,7 +41,7 @@ class AccountPopulation(unittest.TestCase):
             command = launcher.prepare(args, root)
             report = json.loads((args.output/'launch.json').read_text())
             self.assertEqual(len(report['profiles']), 16)
-            self.assertIn('--character-picker', command)
+            self.assertIn('--game-front-end', command)
             self.assertIn('--stop-on-stdin-eof', command)
             self.assertIn('--account-login', command)
             self.assertNotIn('--parties', command)
@@ -94,7 +94,7 @@ class AccountPopulation(unittest.TestCase):
             self.assertEqual(command.count('--parties'), 1)
             self.assertIn('--classic', command)
             self.assertIn('--account-login', command)
-            self.assertIn('--character-picker', command)
+            self.assertIn('--game-front-end', command)
             self.assertTrue(json.loads((args.output/'launch.json').read_text())['parties'])
 
     def test_test_route_freezes_relative_navigation_and_remains_opt_in(self):

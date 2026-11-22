@@ -269,7 +269,7 @@ fn setup(world: &mut World) {
         impact,
     });
     let cameras: Vec<_> = world
-        .query_filtered::<Entity, With<Camera3d>>()
+        .query_filtered::<Entity, crate::frontend::WorldCamera>()
         .iter(world)
         .collect();
     assert_eq!(

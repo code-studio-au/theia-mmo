@@ -106,7 +106,7 @@ pub fn scenery_clearance(
         Option<Res<CollisionMode>>,
     ),
     mut pawn: Query<(&Transform, &mut Visibility), With<LocalPawn>>,
-    mut camera: Query<&mut Transform, (With<Camera3d>, Without<LocalPawn>)>,
+    mut camera: Query<&mut Transform, (crate::frontend::WorldCamera, Without<LocalPawn>)>,
     camera_mode: Option<Res<mode::Mode>>,
 ) {
     if scenery.is_empty() {
@@ -284,7 +284,7 @@ pub fn controls(
 pub fn follow(
     orbit: Res<Orbit>,
     mut pawn: Query<(&Transform, &mut Visibility), With<LocalPawn>>,
-    mut camera: Query<&mut Transform, (With<Camera3d>, Without<LocalPawn>)>,
+    mut camera: Query<&mut Transform, (crate::frontend::WorldCamera, Without<LocalPawn>)>,
     network: Option<Res<crate::network::Network>>,
     terrain: Option<Res<crate::terrain_scene::Config>>,
     (chunks, chunks_ready): (
@@ -356,7 +356,7 @@ pub fn follow(
 
 /// The camera is a root entity. Mesh clearance runs after propagation, so write
 /// its final global pose explicitly before extraction without repropagating bones.
-type RootCamera = (With<Camera3d>, Without<ChildOf>);
+type RootCamera = (crate::frontend::WorldCamera, Without<ChildOf>);
 pub fn sync_camera_global(mut cameras: Query<(&Transform, &mut GlobalTransform), RootCamera>) {
     for (transform, mut global) in &mut cameras {
         *global = GlobalTransform::from(*transform);

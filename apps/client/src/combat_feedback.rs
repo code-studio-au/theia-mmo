@@ -371,7 +371,7 @@ fn spawn(mut commands: Commands, mut pending: ResMut<Pending>, labels: Query<&La
 fn paint(
     mut commands: Commands,
     mut labels: Query<(Entity, &Label, &mut Node, &mut TextColor, &mut Visibility)>,
-    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     frame: Res<crate::floating_origin::Frame>,
     ui_scale: Option<Res<bevy::ui::UiScale>>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,

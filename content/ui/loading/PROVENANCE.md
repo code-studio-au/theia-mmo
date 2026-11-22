@@ -21,3 +21,27 @@ The client embeds it for `theia.zone.millhaven` and the current Millhaven playte
 legacy `theia.zone.starter-valley` package ID. Other package IDs retain the original
 valley fallback. This cosmetic mapping does not rename or change world identity,
 authoring data, gameplay admission or persistence.
+
+## Millhaven sunlit village — 22 November 2026
+
+`millhaven-sunlit-v2.png` replaces the older sunset loading illustration for the
+exact Millhaven package IDs, including `theia.zone.millhaven-population-village`.
+The user supplied `Millhaven_ A Sunlit Village Haven.png` and requested MILLHAVEN
+in the illustrated title's style. The original download and older artwork remain.
+The built-in image-generation tool edited that scene using the new transparent
+Theia title as a typography reference. Prompt:
+
+> Edit the FIRST image into a polished Millhaven zone loading-screen illustration.
+> Preserve the sunlit pastoral village scene, framing tree, river, watermill, dock,
+> boats, market, timber houses, sheep, fields, hills, colours and composition as
+> faithfully as possible. Add the single word 'MILLHAVEN' prominently in the upper
+> centre, across the sky/hills above the village buildings. Style the lettering to
+> match the SECOND image's THEIA title: elegant grand fantasy serif capitals,
+> embossed beveled metallic gold, rich warm highlights, restrained dark dimensional
+> shadow for readability, with subtle thin gold ornamental flourishes underneath.
+> Make the word beautifully legible at game loading-screen size, approximately
+> 45 percent of the image width, and keep generous top margin. Do not add THEIA,
+> ONLINE, the crest, any subtitle, any other text, buttons, progress bars or UI
+> panels. Keep the scenic buildings and village centre unobstructed. Output a
+> complete landscape 16:9 loading-screen image at the original scene dimensions,
+> with opaque background.

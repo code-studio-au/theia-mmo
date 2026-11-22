@@ -120,7 +120,10 @@ pub(super) fn configure_camera(
     mut commands: Commands,
     choice: Res<ViewDistance>,
     mut gray: ResMut<Graybox>,
-    mut cameras: Query<(Entity, &mut Projection, Option<&OriginalFar>), With<Camera3d>>,
+    mut cameras: Query<
+        (Entity, &mut Projection, Option<&OriginalFar>),
+        crate::frontend::WorldCamera,
+    >,
 ) {
     if gray.view.choice != *choice {
         gray.view = View::for_choice(

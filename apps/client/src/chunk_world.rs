@@ -159,7 +159,8 @@ pub fn load(mut commands: Commands, config: Res<Config>, assets: Res<AssetServer
 }
 #[derive(bevy::ecs::system::SystemParam)]
 pub struct ReadyView<'w, 's> {
-    camera: Query<'w, 's, (&'static Camera, &'static GlobalTransform), With<Camera3d>>,
+    camera:
+        Query<'w, 's, (&'static Camera, &'static GlobalTransform), crate::frontend::WorldCamera>,
     frame: Res<'w, crate::floating_origin::Frame>,
 }
 pub fn report_ready(

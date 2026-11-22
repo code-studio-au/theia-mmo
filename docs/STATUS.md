@@ -1,3 +1,26 @@
+22 November 2026 — P3-01/P3-03 native game entry, P2-08/P2-09 presentation:
+Login, saved-character selection, New Character/customization and Millhaven entry
+now share one native Bevy game window. The default account population launcher
+uses this route; the editor picker remains an explicit fallback. The live modular
+hero stands on the cleared sunset rock ledge, with the illustrated gold Theia
+crest/title restored above functional controls. The newly supplied sunlit village
+illustration now carries matching gold MILLHAVEN lettering and is used by the
+actual imported Millhaven package's loading transition. See GAME_FRONTEND.md.
+
+Final native evidence: build/game-front-end-v1/native-v5/qualification.json.
+Fresh creation of two characters, selecting the customized hero, PostgreSQL restart,
+saved appearance restoration, New/Back and entry all pass with stable process/window
+identity within each run. Normal 1920x1080 and smaller 1720x700 layouts pass on
+RX 7900 XTX / RADV NAVI31 / Mesa 26.2.7 / Vulkan; zero GPU diagnostics in both
+final runs. Gameplay camera/render target isolation is included. No Windows or
+performance qualification is claimed. Final client tests: 344 passed, 5 ignored;
+broader relevant Rust suites: 1205 passed. Bridge/launcher tests (23), account helper
+contracts (16) and account selection tests (6) pass. Fmt, denied-warning all-target
+Clippy, matching optimized builds and diff checks pass. Evidence/logs are under
+build/game-front-end-v1/. Browser OIDC remains the actual sign-in mechanism;
+registration/recovery and deployed persistent account services remain future work.
+The local wrapper still owns its temporary database/provider lifetime.
+
 22 November 2026 — P2-08/P2-09, P3-03 modular hero creation:
 Owned Modular Fantasy Hero Characters now provide the player body. Native account
 creation has an animated, rotating preview with seven bounded cosmetic choices.

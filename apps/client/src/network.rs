@@ -482,6 +482,7 @@ impl Network {
     #[allow(clippy::too_many_arguments)]
     pub fn from_args(
         args: &[String],
+        frontend: Option<std::path::PathBuf>,
         prediction: bool,
         expected_world: [u8; 32],
         targeted: bool,
@@ -594,7 +595,12 @@ impl Network {
         if !address.ip().is_loopback() {
             return Err("Only loopback connections qualified in this prototype".into());
         }
-        let cert = std::fs::read(&args[2])?;
+        let ticket_path = std::path::PathBuf::from(&args[2]);
+        let cert = if frontend.is_none() {
+            std::fs::read(&ticket_path)?
+        } else {
+            Vec::new()
+        };
         let smoke = if smoke {
             let house = args[4] == "house";
             let jump_demo = args[4].ends_with("-jump");
@@ -720,6 +726,9 @@ impl Network {
             .name("theia-network".into())
             .spawn(move || {
                 let result = runtime.block_on(async {
+                    let (address, cert) = if let Some(directory) = frontend {
+                        crate::frontend::admission(&directory, &ticket_path, shutdown.clone()).await?
+                    } else { (address, cert) };
                     if classic
                         || dodge_mode.is_some()
                         || inventory_profile.is_some()
@@ -1721,9 +1730,13 @@ pub struct ReferenceArt<'w, 's> {
     chunk_stream: Option<Res<'w, crate::chunk_world::Stream>>,
     shared_images: crate::shared_images::Bindings<'w, 's>,
     material_profiles: crate::runtime_materials::Evidence<'w, 's>,
-    camera: Query<'w, 's, &'static Transform, With<Camera3d>>,
-    camera_projection:
-        Query<'w, 's, (&'static Projection, &'static GlobalTransform), With<Camera3d>>,
+    camera: Query<'w, 's, &'static Transform, crate::frontend::WorldCamera>,
+    camera_projection: Query<
+        'w,
+        's,
+        (&'static Projection, &'static GlobalTransform),
+        crate::frontend::WorldCamera,
+    >,
     scenery_stats: Res<'w, crate::camera::SceneryCameraStats>,
 }
 

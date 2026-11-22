@@ -1,3 +1,12 @@
+Native game entry update — 22 November 2026:
+The default account population playtest now opens Login, saved-character selection
+and New Character/customization inside the gameplay window. A live hero stands on
+the sunset artwork's rock ledge; gold illustrated title art sits above the native
+controls. Enter World transitions through the new Millhaven loading illustration.
+Browser OIDC still performs sign-in. The earlier editor picker remains available
+with --editor-character-picker. See GAME_FRONTEND.md for implementation, evidence
+and remaining service limitations. Older planned/reference notes below are history.
+
 Modular character creation update — 22 November 2026:
 The editor's native account picker now implements animated rotating hero preview,
 seven cosmetic selectors, name validation, creation, saved-appearance preview and

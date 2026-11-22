@@ -100,7 +100,7 @@ pub(super) struct Views<'w, 's> {
     counts: Query<'w, 's, (&'static Count, &'static mut Text), Without<TooltipText>>,
     slots: Query<'w, 's, SlotView<'static>>,
     tooltip: Query<'w, 's, (&'static mut Node, &'static ComputedNode), TooltipFilter>,
-    cameras: Query<'w, 's, &'static Camera, With<Camera3d>>,
+    cameras: Query<'w, 's, &'static Camera, crate::frontend::WorldCamera>,
     scale: Res<'w, bevy::ui::UiScale>,
     tooltip_text: Query<'w, 's, &'static mut Text, (With<TooltipText>, Without<Count>)>,
 }

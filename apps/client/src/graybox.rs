@@ -718,7 +718,7 @@ fn qualification(world: &mut World) {
         })
         .reduce(f64::max);
     let camera_far = world
-        .query_filtered::<&Projection, With<Camera3d>>()
+        .query_filtered::<&Projection, crate::frontend::WorldCamera>()
         .iter(world)
         .filter_map(|p| match p {
             Projection::Perspective(p) => Some(p.far),

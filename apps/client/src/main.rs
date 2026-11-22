@@ -18,6 +18,7 @@ mod dodge;
 mod equipment;
 mod fantasy_ui;
 mod floating_origin;
+mod frontend;
 mod graybox;
 mod inventory;
 mod loading;
@@ -75,6 +76,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.first().is_some_and(|a| a == "--chunk-smoke") {
         return chunk_scene::run(&args);
     }
+    let frontend_directory = frontend::arguments(&mut args)?;
     let hide_world_particles =
         if let Some(i) = args.iter().position(|a| a == "--hide-world-particles") {
             args.remove(i);
@@ -1001,6 +1003,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let content_world = graybox || chunks.is_some() || terrain.is_some();
     let references = reference_scene::Config::parse(&mut args)?;
+    if frontend_directory.is_some()
+        && references
+            .as_ref()
+            .is_none_or(|r| !r.players_only || !r.directory.join("modular-hero.json").is_file())
+    {
+        return Err("Game front end requires the prepared modular hero player assets".into());
+    }
     if let Some(references) = &references
         && content_world != references.players_only
     {
@@ -1204,9 +1213,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         return Ok(());
     }
+    if frontend_directory.is_some() && (!connected || !classic) {
+        return Err("Game front end requires Classic secure account entry".into());
+    }
     let mut net = if connected {
         Some(network::Network::from_args(
             &args,
+            frontend_directory.clone(),
             prediction,
             content_identity,
             targeted,
@@ -1320,7 +1333,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         primary_window: Some(Window {
             // Map interactive entry once its loading view has rendered.
             visible: !(connected && classic),
-            title: if content_world {
+            title: if frontend_directory.is_some() {
+                "Theia Online"
+            } else if content_world {
                 "Theia MMO — development map"
             } else {
                 "Theia MMO — movement sandbox"
@@ -1608,6 +1623,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .add_systems(Last, smoke::observe);
     }
     info!("Theia; connected mode: {connected}; offline smoke mode: {scripted}");
+    if let Some(directory) = frontend_directory {
+        frontend::install(&mut app, directory);
+    }
     match app.run() {
         AppExit::Success => Ok(()),
         AppExit::Error(code) => Err(format!("Client exited with code {code}").into()),

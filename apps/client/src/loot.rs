@@ -410,7 +410,7 @@ pub(crate) fn qualification(world: &mut World) -> serde_json::Value {
         .map(|c| c.0)
         .collect();
     let frame = world.resource::<crate::floating_origin::Frame>().render;
-    let corpses:Vec<_>=world.query_filtered::<(&Camera,&GlobalTransform),With<Camera3d>>().single(world).ok().map_or_else(Vec::new,|(camera,transform)|sources.into_iter().map(|source| {
+    let corpses:Vec<_>=world.query_filtered::<(&Camera,&GlobalTransform),crate::frontend::WorldCamera>().single(world).ok().map_or_else(Vec::new,|(camera,transform)|sources.into_iter().map(|source| {
         let point=frame.to_local(source.position).map(|p|Vec3::from_array(p.metres())+Vec3::new(0.,-theia_network::world::PAWN_Y+0.2,0.));
         let screen=point.and_then(|p|camera.world_to_viewport(transform,p).ok());
         serde_json::json!({"life":source.life.bytes(),"position":source.position.metres(),"screen":screen.map(|s|s.to_array())})

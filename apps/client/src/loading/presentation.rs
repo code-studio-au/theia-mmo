@@ -35,20 +35,26 @@ pub(super) fn reveal(
 pub(super) fn sync(
     mut commands: Commands,
     state: Res<State>,
-    mut cameras: Query<CameraState<'_>, PresentationCameras>,
+    frontend: Option<Res<crate::frontend::Menu>>,
+    mut cameras: Query<
+        CameraState<'_>,
+        (PresentationCameras, Without<crate::frontend::PreviewCamera>),
+    >,
 ) {
+    let choosing = frontend.is_some_and(|f| f.active());
     for (entity, mut camera, loading, saved) in &mut cameras {
+        camera.is_active = !choosing;
         if loading {
-            camera.is_active = state.phase != Phase::Playing;
+            camera.is_active = !choosing && state.phase != Phase::Playing;
         } else if state.phase != Phase::Playing {
             if saved.is_none() {
                 commands
                     .entity(entity)
                     .insert((WorldOutput(camera.output_mode), IsDefaultUiCamera));
             }
-            // Do not disable this camera: asset/pipeline warm-up needs its real
-            // view. Skip only the final window write, including the first frame
-            // before the loading UI shaders have compiled.
+            // During world loading, warm the real view without publishing it.
+            // The title/roster phase keeps it inactive: only the front-end camera
+            // owns that surface, including initial monitor-tile resizing.
             camera.output_mode = CameraOutputMode::Skip;
         } else if let Some(saved) = saved {
             camera.output_mode = saved.0;

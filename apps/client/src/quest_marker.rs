@@ -259,7 +259,7 @@ fn present(
     journal: Option<Res<crate::quest_journal::Definitions>>,
     frame: Res<crate::floating_origin::Frame>,
     ui_scale: Option<Res<bevy::ui::UiScale>>,
-    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     spatial: SpatialQuery,
     mut labels: Query<MarkerLabel<'_>>,
     mut metrics: ResMut<Metrics>,

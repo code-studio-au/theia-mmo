@@ -200,7 +200,7 @@ def prepare_profiles(args, repository, bundle=None):
         command.append('--quest-loot')
     if encounter:
         command.append('--public-creature-attacks')
-    command.extend(['--character-id', args.character_id] if args.character_id else ['--character-picker'])
+    command.extend(['--character-id', args.character_id] if args.character_id else ['--character-picker' if getattr(args, 'editor_character_picker', False) else '--game-front-end'])
     if route:
         (output/'test-route.json').write_bytes(route[0])
         command.extend(['--test-route', str(output/'test-route.json')])
@@ -240,6 +240,7 @@ def main():
     parser.add_argument('--quest-areas', type=Path, help='Explicit authored quest/map areas; requires --quest-catalog')
     parser.add_argument('--gameplay-manifest', type=Path, help='Complete validated schema-16+ gameplay snapshot; uses the authored guide and excludes individual overrides')
     parser.add_argument('--gameplay-validator', type=Path, help='Optional Rust validator executable for --gameplay-manifest')
+    parser.add_argument('--editor-character-picker', action='store_true', help='Retain the legacy editor-owned picker for qualification')
     parser.add_argument('--character-id', help='Optional existing owned character; otherwise publish the private picker')
     args = parser.parse_args()
     repository = Path(__file__).resolve().parent.parent

@@ -453,7 +453,7 @@ fn observed(state: &State, key: EntityKey) -> bool {
 #[allow(clippy::too_many_arguments)]
 fn project(
     network: Res<crate::network::Network>,
-    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     scale: Res<bevy::ui::UiScale>,
     spatial: avian3d::prelude::SpatialQuery,
     visuals: Query<Visual<'_>>,

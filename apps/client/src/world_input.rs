@@ -173,7 +173,7 @@ fn mark_meshes(
         }
     }
 }
-fn cameras(mut commands: Commands, cameras: Query<Entity, With<Camera3d>>) {
+fn cameras(mut commands: Commands, cameras: Query<Entity, crate::frontend::WorldCamera>) {
     for camera in &cameras {
         commands.entity(camera).insert(MeshPickingCamera);
     }
@@ -181,7 +181,7 @@ fn cameras(mut commands: Commands, cameras: Query<Entity, With<Camera3d>>) {
 fn reticle_click(
     mode: Res<crate::camera::mode::Mode>,
     buttons: Res<ButtonInput<MouseButton>>,
-    camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    camera: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     nodes: Query<ActorNode<'_>>,
     mut ray_cast: bevy::picking::mesh_picking::ray_cast::MeshRayCast,
     mut pending: ResMut<Pending>,
@@ -233,7 +233,7 @@ fn consume(
     keys: Res<ButtonInput<KeyCode>>,
     mut pending: ResMut<Pending>,
     mut selection: ResMut<Selection>,
-    cameras: Query<&GlobalTransform, With<Camera3d>>,
+    cameras: Query<&GlobalTransform, crate::frontend::WorldCamera>,
     spatial: SpatialQuery,
     classic: Option<Res<crate::classic_controls::Controller>>,
     mut loot: Option<ResMut<crate::loot::Ui>>,

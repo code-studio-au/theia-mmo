@@ -23,3 +23,4 @@ theia-network.workspace = true
 theia-core.workspace = true
 theia-vfx = { path = "../../crates/vfx" }
 tokio.workspace = true
+uuid = "1"

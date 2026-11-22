@@ -57,7 +57,7 @@ fn setup(
 fn present(
     network: Res<Network>,
     scale: Res<bevy::ui::UiScale>,
-    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     contacts: Query<(&ContactDefinition, &Transform, &Visibility), With<GuideVisual>>,
     spatial: avian3d::prelude::SpatialQuery,
     mut names: Query<(&Nameplate, &mut Node)>,

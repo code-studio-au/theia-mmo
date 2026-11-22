@@ -165,6 +165,7 @@ fn install_input(app: &mut App) {
 // released and pressed again; they cannot open panels, steer or trigger a spell.
 fn shield_keyboard(
     mut state: ResMut<State>,
+    frontend: Option<Res<crate::frontend::Menu>>,
     mut keys: ResMut<ButtonInput<KeyCode>>,
     mut events: MessageReader<bevy::input::keyboard::KeyboardInput>,
     windows: Query<&Window>,
@@ -182,7 +183,10 @@ fn shield_keyboard(
         return;
     }
     state.held_keys.extend(keys.get_pressed().copied());
-    if windows.single().is_ok_and(|w| w.focused) && keys.just_pressed(KeyCode::Escape) {
+    if !frontend.as_ref().is_some_and(|f| f.active())
+        && windows.single().is_ok_and(|w| w.focused)
+        && keys.just_pressed(KeyCode::Escape)
+    {
         exit.write(if state.phase == Phase::Failed {
             AppExit::error()
         } else {
@@ -190,7 +194,21 @@ fn shield_keyboard(
         });
     }
     state.blocked_key_frames += u64::from(keys.get_pressed().next().is_some());
+    let modifiers: Vec<_> = [
+        KeyCode::ShiftLeft,
+        KeyCode::ShiftRight,
+        KeyCode::ControlLeft,
+        KeyCode::ControlRight,
+        KeyCode::AltLeft,
+        KeyCode::AltRight,
+    ]
+    .into_iter()
+    .filter(|key| frontend.as_ref().is_some_and(|f| f.active()) && keys.pressed(*key))
+    .collect();
     keys.reset_all();
+    for key in modifiers {
+        keys.press(key);
+    }
 }
 
 /// Reuse the authority's exact epoch/report/ack barrier, including the current
@@ -220,7 +238,11 @@ fn authority_ready(state: &theia_network::client::State, predicted: bool) -> boo
                 .correction
                 .is_some_and(|c| c.state.ready_sequence == report.sequence))
 }
-fn observe(world: &mut World) {
+pub(crate) fn observe(world: &mut World) {
+    if crate::frontend::active(world) {
+        world.resource_mut::<State>().started = Instant::now();
+        return;
+    }
     if !world.resource::<State>().blocks_input() {
         return;
     }

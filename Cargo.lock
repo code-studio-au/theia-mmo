@@ -7733,6 +7733,7 @@ dependencies = [
  "theia-network",
  "theia-vfx",
  "tokio",
+ "uuid",
 ]
 
 [[package]]

@@ -1,3 +1,13 @@
+22 November 2026 — P3-01/P3-03 native game entry completed:
+The account population launcher now opens a native title, saved-character roster
+and animated creation screen before entering Millhaven in the same game window.
+Illustrated title art, ledge-positioned live preview and the new gold-lettered
+Millhaven loading image are integrated. Fresh/restarted account and normal/small
+window native checks pass. Remaining: deployed account/service lifecycle,
+registration/recovery, richer cosmetic catalogue and equipped armour visuals.
+Browser OIDC is retained; this supersedes the standalone-title deferral below.
+See GAME_FRONTEND.md for exact implemented scope and evidence.
+
 22 November 2026 — P2-08/P2-09, P3-03 playable modular hero slice:
 Implemented curated hero conversion, native creation/selection preview, persistent
 cosmetic choices and authoritative public appearance for local/remote players.

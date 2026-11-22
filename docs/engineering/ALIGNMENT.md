@@ -1,3 +1,14 @@
+22 November 2026 — P3-01/P3-03, P2-08/P2-09 native game entry:
+Prerequisites are the implemented account APIs, PostgreSQL appearance persistence,
+authenticated Renet admission, modular hero catalogue and loading readiness gate.
+Standard Bevy widgets, GLTF animation and isolated preview render target provide
+Login → roster → creation → gameplay in one window. Existing async launcher work
+owns OIDC and ticket acquisition; simulation has no new account I/O. No protocol,
+world-authority or terrain format change. Native fresh/restart appearance and
+same-window checks pass at normal/small sizes with zero final GPU diagnostics.
+The local service lifecycle and browser authentication remain explicit limits.
+See GAME_FRONTEND.md and STATUS.md; prior title deferral below is superseded.
+
 22 November 2026 — P2-08/P2-09, P3-03 modular hero creation:
 Build on the owned asset converter, standard Bevy renderer/skinning/UI, existing
 account picker, async PostgreSQL publisher and authenticated Renet admission.

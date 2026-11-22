@@ -204,7 +204,7 @@ fn health(state: &State, key: EntityKey) -> Option<&Health> {
 fn present(
     network: Res<crate::network::Network>,
     scale: Res<bevy::ui::UiScale>,
-    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     actors: Query<(&crate::targeting::TargetVisual, &Transform, &Visibility)>,
     spatial: SpatialQuery,
     creatures: Option<Res<crate::creature_visual::Pending>>,

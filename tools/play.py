@@ -35,7 +35,9 @@ def fantasy_ui_options(directory, classic, combat_catalog, ui_scale=None, ui_pre
     return ['--fantasy-ui', str(directory), *(['--ui-scale', str(ui_scale)] if ui_scale is not None else []), *(['--ui-preferences', str(Path(ui_preferences).resolve())] if ui_preferences is not None else [])]
 
 
-def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn=None, dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None, ui_scale=None, ui_preferences=None, authored_world=None, population_config=None, test_route=None, character_id=None, stop_requested=None, session_directory=None, character_picker=False, parties=False, test_window=None):
+def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn=None, dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None, ui_scale=None, ui_preferences=None, authored_world=None, population_config=None, test_route=None, character_id=None, stop_requested=None, session_directory=None, character_picker=False, parties=False, test_window=None, game_frontend=False):
+    if game_frontend and (not account_login or not classic or clients != 1 or character_id is not None or character_picker or session_directory is None):
+        raise ValueError("Game front end requires one Classic account client, a new private session directory and no other character picker")
     if test_window is not None:
         match = re.fullmatch(r'([1-4])/([1-4])', test_window)
         if not match or int(match[1]) > int(match[2]) or clients != 1 or fullscreen:
@@ -44,7 +46,7 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
         raise ValueError("Parties require Classic account admission")
     if character_picker and (not account_login or character_id is not None or session_directory is None or stop_requested is None):
         raise ValueError("Character picker requires an owned account launch with a new session directory and no explicit character ID")
-    if stop_requested is not None and account_login and character_id is None and not character_picker:
+    if stop_requested is not None and account_login and character_id is None and not character_picker and not game_frontend:
         raise ValueError("Owned account launch requires explicit character selection")
     stop_requested = stop_requested or (lambda: False)
     if stop_requested():
@@ -356,7 +358,10 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
                     ready = next((json.loads(line.removeprefix('account_game_ready ')) for line in (session/'server.log').read_text().splitlines() if line.startswith('account_game_ready ')),None)
                     if ready:
                         from account_login import AccountClient
-                        account = AccountClient(ready['account_address'],alive=lambda:server.poll() is None,cancelled=stop_requested)
+                        account = AccountClient(ready['account_address'],alive=lambda:server.poll() is None,cancelled=lambda: stop_requested() or (game_frontend and len(processes) > 1 and processes[-1].poll() is not None))
+                        if game_frontend:
+                            address = '127.0.0.1:1'  # Worker waits for the private admission result.
+                            break
                         print('Sign in using your system browser.' if character_id or character_picker else 'Sign in using your system browser, then return here to choose your character.',flush=True)
                         account.login()
                         if character_picker:
@@ -375,12 +380,20 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
             for index in range(clients):
                 if stop_requested():
                     return
-                processes.append(subprocess.Popen([str(client_binary), '--window-size', window_size, *client_window_options(index, clients, fullscreen, test_window), *ui_options, *(['--fullscreen'] if fullscreen else []),
+                processes.append(subprocess.Popen([str(client_binary), '--window-size', window_size, *client_window_options(index, clients, fullscreen, test_window), *ui_options, *(['--game-front-end', str(session)] if game_frontend else []), *(['--fullscreen'] if fullscreen else []),
                     *(['--controls-file',str(controls_file.resolve())] if controls_file else []), *(['--camera-collision', camera_collision] if camera_collision else []), *(['--spell-feedback', str(feedback)] if feedback else []), *(['--creature-asset', str(creature_asset.resolve())] if creature_asset else []), *scene,
                     '--player-assets', str(players), *route_options,
                     '--renet-connect' if tickets else '--connect', address,
                     str(Path(tickets.name) / f'client-{index+1}.token') if tickets else str(certificate)],
                     env=client_environment(os.environ)))
+            if game_frontend:
+                from game_frontend import run
+                client = processes[-1]
+                def cancelled():
+                    if server.poll() is not None:
+                        raise RuntimeError(f'Game server stopped; see {session / "server.log"}')
+                    return stop_requested() or client.poll() is not None
+                run(account, session, Path(tickets.name)/'client-1.token', cancelled)
             if combat_catalog:
                 print('Combat: click the action slot or press 1 to cast; health, cooldown and respawn come from the server.', flush=True)
             if targeting:
@@ -436,6 +449,7 @@ def main(argv=None):
     parser.add_argument('--ui-preferences', type=Path, help='Optional local UI preference JSON; requires --fantasy-ui; explicit --ui-scale overrides on launch')
     parser.add_argument('--players', type=Path, help='Player assets; defaults to POLYGON for graybox')
     parser.add_argument('--prediction', action=argparse.BooleanOptionalAction, default=None, help='Movement prediction (default for graybox; --no-prediction retains server-pose interpolation)')
+    parser.add_argument('--game-front-end', action='store_true', help='Login, saved characters and creation in the game window')
     parser.add_argument('--character-picker', action='store_true', help='Publish owned characters and await selection.json in a new private session directory; requires account login and owner pipe')
     parser.add_argument('--session-directory', type=Path, help='Reserve a new private directory for this launch’s logs and temporary tickets; refuses an existing directory')
     parser.add_argument('--stop-on-stdin-eof', action='store_true', help='Stop owned children when the launching editor closes its stdin pipe; account mode requires --character-id')
@@ -633,7 +647,7 @@ def main(argv=None):
         from player_assets import default_player_assets
         players = args.players or (default_player_assets() if graybox else Path('build/reference-scene'))
         play(args.world.resolve() if args.world else None, players.resolve(), args.clients, args.binaries.resolve(), args.tick_hz, args.transport,
-             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot, args.document_catalog.resolve() if args.document_catalog else None, args.quest_item_rewards.resolve() if args.quest_item_rewards else None, args.fantasy_ui, args.ui_scale, args.ui_preferences, args.authored_world.resolve() if args.authored_world else None, args.population_config.resolve() if args.population_config else None, args.test_route.resolve() if args.test_route else None, args.character_id, stopped.is_set if args.stop_on_stdin_eof else None, args.session_directory, args.character_picker, args.parties, args.test_window)
+             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot, args.document_catalog.resolve() if args.document_catalog else None, args.quest_item_rewards.resolve() if args.quest_item_rewards else None, args.fantasy_ui, args.ui_scale, args.ui_preferences, args.authored_world.resolve() if args.authored_world else None, args.population_config.resolve() if args.population_config else None, args.test_route.resolve() if args.test_route else None, args.character_id, stopped.is_set if args.stop_on_stdin_eof else None, args.session_directory, args.character_picker, args.parties, args.test_window, args.game_front_end)
 
 
 if __name__ == '__main__':

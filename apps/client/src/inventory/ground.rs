@@ -6,7 +6,7 @@ pub(crate) struct Pickup(pub theia_core::rewards::ClaimId);
 struct GroundItem(theia_core::content::ContentId);
 pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let camera = world
-        .query_filtered::<(&Camera, &GlobalTransform), With<Camera3d>>()
+        .query_filtered::<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>()
         .iter(world)
         .next()
         .map(|(c, t)| (c.clone(), *t));

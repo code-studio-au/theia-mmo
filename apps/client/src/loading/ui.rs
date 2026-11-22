@@ -82,6 +82,7 @@ type Nodes<'a> = (&'a mut Node, Has<Root>, Has<Art>, Has<Progress>);
 #[allow(clippy::too_many_arguments)]
 pub(super) fn present(
     state: Res<State>,
+    frontend: Option<Res<crate::frontend::Menu>>,
     artwork: Res<Artwork>,
     windows: Query<&Window>,
     scale: Res<UiScale>,
@@ -102,11 +103,12 @@ pub(super) fn present(
         .max(1.);
     for (mut node, root, art, progress) in &mut nodes {
         if root {
-            node.display = if state.phase == Phase::Playing {
-                Display::None
-            } else {
-                Display::Flex
-            };
+            node.display =
+                if state.phase == Phase::Playing || frontend.as_ref().is_some_and(|f| f.active()) {
+                    Display::None
+                } else {
+                    Display::Flex
+                };
         }
         if art {
             node.width = px(width);
