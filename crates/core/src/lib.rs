@@ -31,3 +31,5 @@ pub mod time;
 pub mod vendors;
 
 pub mod melee;
+
+pub mod appearance;
