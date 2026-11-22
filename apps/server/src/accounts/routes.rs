@@ -20,6 +20,8 @@ pub(super) struct Poll {
 #[serde(deny_unknown_fields)]
 pub(super) struct Create {
     name: String,
+    #[serde(default)]
+    appearance: theia_core::appearance::Appearance,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -265,7 +267,7 @@ pub(super) async fn list(
     state.counters.lists.fetch_add(1, Ordering::Relaxed);
     let entries: Vec<_> = characters
         .into_iter()
-        .map(|c| serde_json::json!({"id":c.id.value().to_string(),"name":c.name.as_str()}))
+        .map(|c| serde_json::json!({"id":c.id.value().to_string(),"name":c.name.as_str(),"appearance":c.appearance}))
         .collect();
     Ok(Json(serde_json::json!({"characters":entries})))
 }
@@ -284,13 +286,19 @@ pub(super) async fn create(
     })?;
     let character = state
         .publisher
-        .create_character(*context.owner(), state.world, name, state.spawn)
+        .create_character_with_appearance(
+            *context.owner(),
+            state.world,
+            name,
+            state.spawn,
+            create.appearance,
+        )
         .await
         .map_err(database)?;
     state.validate(&context)?;
     state.counters.creations.fetch_add(1, Ordering::Relaxed);
     Ok(Json(
-        serde_json::json!({"id":character.saved.binding.character.value().to_string(),"name":character.name.as_str()}),
+        serde_json::json!({"id":character.saved.binding.character.value().to_string(),"name":character.name.as_str(),"appearance":character.appearance}),
     ))
 }
 pub(super) async fn select(
@@ -318,7 +326,7 @@ pub(super) async fn select(
     state.validate(&context)?;
     state.counters.selections.fetch_add(1, Ordering::Relaxed);
     Ok(Json(
-        serde_json::json!({"id":selected.saved.binding.character.value().to_string(),"name":selected.name.as_str(),"game_admission":false}),
+        serde_json::json!({"id":selected.saved.binding.character.value().to_string(),"name":selected.name.as_str(),"appearance":selected.appearance,"game_admission":false}),
     ))
 }
 pub(super) async fn logout(

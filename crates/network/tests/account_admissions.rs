@@ -37,9 +37,13 @@ struct Ledger {
     dropped: usize,
     inventory: Option<net::inventory::Port>,
     name: Option<theia_core::character_name::CharacterName>,
+    appearance: theia_core::appearance::Appearance,
 }
 struct Lease(Arc<Policy>);
 impl AdmissionLease for Lease {
+    fn appearance(&self) -> Result<theia_core::appearance::Appearance> {
+        Ok(self.0.state.lock().unwrap().appearance)
+    }
     fn display_name(&self) -> Result<Option<theia_core::character_name::CharacterName>> {
         Ok(self.0.state.lock().unwrap().name.clone())
     }
@@ -478,6 +482,7 @@ async fn encrypted_item_ports(coalesced: bool) {
         {
             let mut state = policy.state.lock().unwrap();
             state.code = i as u8 + 1;
+
             state.position = GlobalPosition::new(body);
             state.inventory = Some(if i == 0 {
                 items_a.clone()
@@ -838,6 +843,9 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
         {
             let mut state = policy.state.lock().unwrap();
             state.code = i as u8 + 1;
+            state.appearance =
+                theia_core::appearance::Appearance::new([i as u8, 2, 4, 0, i as u8 + 1, 3, 1])
+                    .unwrap();
             state.name = Some(
                 theia_core::character_name::CharacterName::parse(if i == 0 {
                     "Arden"
@@ -923,6 +931,10 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
             .map(|a| a.name.as_ref().unwrap().as_str())
             .collect();
         assert!(names.contains(&"Arden") && names.contains(&"Briar"));
+        for actor in &roster.actors {
+            let i = u8::from(actor.name.as_ref().unwrap().as_str() == "Briar");
+            assert_eq!(actor.appearance.values(), [i, 2, 4, 0, i + 1, 3, 1]);
+        }
         assert!(
             roster
                 .actors

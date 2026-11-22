@@ -59,6 +59,7 @@ mod tests {
             tick: 1,
             world: state.welcome.as_ref().unwrap().world,
             actors: vec![theia_network::player_identity_wire::Actor {
+                appearance: Default::default(),
                 key: actor,
                 name: Some(name.clone()),
             }],

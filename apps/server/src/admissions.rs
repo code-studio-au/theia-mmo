@@ -56,6 +56,7 @@ enum Phase {
 }
 struct Entry {
     display_name: Option<theia_core::character_name::CharacterName>,
+    appearance: theia_core::appearance::Appearance,
     progression: Option<progression::Session>,
     inventory: Option<inventory::Session>,
     generation: u64,
@@ -338,6 +339,7 @@ impl GameAdmissions {
         state.generation = generation;
         state.slots[slot] = Some(Entry {
             display_name: None,
+            appearance: Default::default(),
             progression: None,
             inventory: None,
             generation,
@@ -518,7 +520,7 @@ impl Reservation {
     }
 
     pub fn issue(self, saved: SavedCharacter) -> GateResult<IssuedTicket> {
-        self.issue_with_name(saved, None)
+        self.issue_with_name(saved, None, Default::default())
     }
     /// Accept the whole SQL-selected record so the name and saved binding travel
     /// together. Neither public gameplay input nor ticket userdata supplies it.
@@ -526,12 +528,13 @@ impl Reservation {
         self,
         selected: theia_persistence::Character,
     ) -> GateResult<IssuedTicket> {
-        self.issue_with_name(selected.saved, Some(selected.name))
+        self.issue_with_name(selected.saved, Some(selected.name), selected.appearance)
     }
     fn issue_with_name(
         mut self,
         saved: SavedCharacter,
         name: Option<theia_core::character_name::CharacterName>,
+        appearance: theia_core::appearance::Appearance,
     ) -> GateResult<IssuedTicket> {
         let mut state = self.gate.lock()?;
         let entry = state.slots[self.slot]
@@ -563,6 +566,7 @@ impl Reservation {
             .map_err(|_| Error::Unavailable)?;
         entry.saved = Some(saved);
         entry.display_name = name;
+        entry.appearance = appearance;
         entry.phase = Phase::Reserved;
         entry.deadline = Instant::now() + Duration::from_secs(TICKET_SECONDS);
         state.sequence = state.sequence.max(saved.sequence);
@@ -578,6 +582,20 @@ impl Drop for Reservation {
     }
 }
 impl AdmissionLease for Lease {
+    fn appearance(&self) -> Result<theia_core::appearance::Appearance> {
+        let state = self.gate.lock()?;
+        let entry = state.slots[self.slot]
+            .as_ref()
+            .filter(|e| {
+                e.generation == self.generation
+                    && matches!(e.phase, Phase::Consumed | Phase::Active)
+            })
+            .ok_or(Error::Unavailable)?;
+        if !self.gate.authorized(entry)? {
+            return Err(Error::Unauthorized.into());
+        }
+        Ok(entry.appearance)
+    }
     fn display_name(&self) -> Result<Option<theia_core::character_name::CharacterName>> {
         let state = self.gate.lock()?;
         let entry = state.slots[self.slot]

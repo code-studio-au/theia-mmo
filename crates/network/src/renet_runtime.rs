@@ -103,6 +103,7 @@ pub fn read_ticket(bytes: &[u8], address: SocketAddr) -> Result<ConnectToken> {
 struct Peer {
     party: parties::Peer,
     display_name: Option<theia_core::character_name::CharacterName>,
+    appearance: theia_core::appearance::Appearance,
     identity_sent: Option<crate::player_identity_wire::State>,
     avatar_life_sent: Option<crate::avatar_life_wire::Observation>,
     public_attack_sent: Option<crate::creature_attack_wire::Observation>,
@@ -533,6 +534,11 @@ fn admit_peer(
         .map(|a| a.display_name())
         .transpose()?
         .flatten();
+    let appearance = admission
+        .as_ref()
+        .map(|a| a.appearance())
+        .transpose()?
+        .unwrap_or_default();
     if world.parties_enabled() && display_name.is_none() {
         server.disconnect(client);
         return Ok(None);
@@ -624,6 +630,7 @@ fn admit_peer(
     let peer = Peer {
         party: parties::Peer::default(),
         display_name,
+        appearance,
         identity_sent: None,
         avatar_life_sent: None,
         public_attack_sent: None,

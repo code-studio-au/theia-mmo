@@ -14,6 +14,10 @@ pub(super) fn publish(
         .values()
         .map(|peer| (peer.actor, peer.display_name.clone()))
         .collect();
+    let appearances: BTreeMap<_, _> = peers
+        .values()
+        .map(|peer| (peer.actor, peer.appearance))
+        .collect();
     for (&id, peer) in peers.iter_mut() {
         let actors = world
             .snapshot_for(peer.actor)
@@ -25,6 +29,7 @@ pub(super) fn publish(
                         .entity_key(player.id)
                         .ok_or("Identity actor missing")?,
                     name: names.get(&player.id).cloned().flatten(),
+                    appearance: appearances.get(&player.id).copied().unwrap_or_default(),
                 })
             })
             .collect::<Result<Vec<_>>>()?;

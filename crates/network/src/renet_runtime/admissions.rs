@@ -13,6 +13,9 @@ pub trait AdmissionLease: Send + Sync {
     fn display_name(&self) -> Result<Option<theia_core::character_name::CharacterName>> {
         Ok(None)
     }
+    fn appearance(&self) -> Result<theia_core::appearance::Appearance> {
+        Ok(Default::default())
+    }
     fn progression(&self) -> Result<Option<super::progression::Port>> {
         Ok(None)
     }

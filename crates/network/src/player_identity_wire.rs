@@ -5,9 +5,9 @@ use theia_core::{
     character_name::{CharacterName, MAX_BYTES as NAME_BYTES},
     identity::{EntityId, EntityKey, WorldEpoch},
 };
-pub const STATE_TAG: &[u8; 4] = b"PN01";
+pub const STATE_TAG: &[u8; 4] = b"PN02";
 pub const HEADER_BYTES: usize = 53;
-pub const ROW_BYTES: usize = 9;
+pub const ROW_BYTES: usize = 16;
 pub const MAX_ACTORS: usize = crate::wire::MAX_PLAYERS;
 pub const MAX_BYTES: usize = HEADER_BYTES + MAX_ACTORS * (ROW_BYTES + NAME_BYTES);
 
@@ -15,6 +15,7 @@ pub const MAX_BYTES: usize = HEADER_BYTES + MAX_ACTORS * (ROW_BYTES + NAME_BYTES
 pub struct Actor {
     pub key: EntityKey,
     pub name: Option<CharacterName>,
+    pub appearance: theia_core::appearance::Appearance,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct State {
@@ -57,6 +58,7 @@ impl State {
             bytes.extend(actor.key.entity.value().to_le_bytes());
             let name = actor.name.as_ref().map_or("", CharacterName::as_str);
             bytes.push(name.len() as u8);
+            bytes.extend(actor.appearance.values());
             bytes.extend(name.as_bytes());
         }
         Ok(bytes)
@@ -83,6 +85,8 @@ impl State {
             if length > NAME_BYTES {
                 return Err("Player name exceeds its byte limit".into());
             }
+            let appearance =
+                theia_core::appearance::Appearance::new(take(bytes, &mut offset, 7)?.try_into()?)?;
             let name = if length == 0 {
                 None
             } else {
@@ -95,6 +99,7 @@ impl State {
             actors.push(Actor {
                 key: EntityKey { epoch, entity },
                 name,
+                appearance,
             });
         }
         if offset != bytes.len() {
@@ -157,6 +162,7 @@ mod tests {
                 entity: EntityId::new(id).unwrap(),
             },
             name: name.map(|name| CharacterName::parse(name).unwrap()),
+            appearance: Default::default(),
         }
     }
     fn view() -> State {
@@ -184,8 +190,24 @@ mod tests {
                 assert_eq!(bytes.len(), MAX_BYTES);
             }
         }
-        assert_eq!(MAX_BYTES, 285);
+        assert_eq!(MAX_BYTES, 341);
         const { assert!(MAX_BYTES <= crate::wire::MAX_BYTES) };
+    }
+    #[test]
+    fn distinct_appearances_roundtrip_and_invalid_catalogue_bytes_reject() {
+        let mut state = view();
+        state.actors.push(actor(2, Some("Elara")));
+        state.actors[1].appearance =
+            theia_core::appearance::Appearance::new([1, 3, 4, 0, 3, 2, 1]).unwrap();
+        assert_eq!(State::decode(&state.encode().unwrap()).unwrap(), state);
+        let before = state.clone();
+        state.actors[0].appearance = state.actors[0].appearance.cycle(2, true);
+        assert!(!state.same_view(&before));
+        for index in 0..7 {
+            let mut bytes = state.encode().unwrap();
+            bytes[HEADER_BYTES + 9 + index] = 255;
+            assert!(State::decode(&bytes).is_err());
+        }
     }
     #[test]
     fn all_truncations_and_trailing_payload_are_rejected() {

@@ -26,10 +26,33 @@ async fn owned_characters_names_quotas_selection_and_rejections_are_transactiona
             .await,
         Err(Error::AccountMissing)
     ));
+    let appearance = theia_core::appearance::Appearance::new([0, 2, 4, 3, 2, 1, 1]).unwrap();
     let arden = store
-        .create_character(alice, world, name("Arden"), spawn())
+        .create_character_with_appearance(alice, world, name("Arden"), spawn(), appearance)
         .await
         .unwrap();
+    assert_eq!(arden.appearance, appearance);
+    assert_eq!(
+        store.list_characters(alice, world).await.unwrap()[0].appearance,
+        appearance
+    );
+    for invalid in [vec![0_u8; 6], vec![255; 7], vec![1, 0, 1, 1, 0, 0, 0]] {
+        let error = admin
+            .execute(
+                "UPDATE theia.characters SET appearance=$1 WHERE realm_id=$2 AND character_id=$3",
+                &[
+                    &invalid,
+                    &realm.value(),
+                    &arden.saved.binding.character.value(),
+                ],
+            )
+            .await
+            .unwrap_err();
+        assert_eq!(
+            error.code(),
+            Some(&tokio_postgres::error::SqlState::CHECK_VIOLATION)
+        );
+    }
     assert_eq!(arden.saved.position, spawn());
     assert_eq!(arden.saved.sequence, 0);
     assert_eq!(
@@ -195,7 +218,7 @@ async fn owned_characters_names_quotas_selection_and_rejections_are_transactiona
     // Upgrade a genuine version-3 shape while preserving accounts, development
     // bindings and unnamed character rows. Names did not exist in version 3.
     store.close().await.unwrap();
-    admin.batch_execute("DROP TABLE theia.quest_journal_actions; DROP TABLE theia.quest_journal_events; DROP TABLE theia.quest_journal_entries; DROP TABLE theia.quest_journal_heads; DROP TABLE theia.quest_lifecycle_kills; DROP TABLE theia.quest_action_receipts; DROP TABLE theia.quest_lifecycles; DROP TABLE theia.quest_kill_receipts; DROP TABLE theia.quest_objectives; DROP TABLE theia.experience_receipts; DROP TABLE theia.progression; DROP TABLE theia.reward_claims; DROP TABLE theia.backpacks; DROP TABLE theia.character_names; DROP TABLE theia.loot_rolls; DELETE FROM theia.schema_migrations WHERE version>=4;").await.unwrap();
+    admin.batch_execute("ALTER TABLE theia.characters DROP COLUMN appearance; DROP TABLE theia.quest_journal_actions; DROP TABLE theia.quest_journal_events; DROP TABLE theia.quest_journal_entries; DROP TABLE theia.quest_journal_heads; DROP TABLE theia.quest_lifecycle_kills; DROP TABLE theia.quest_action_receipts; DROP TABLE theia.quest_lifecycles; DROP TABLE theia.quest_kill_receipts; DROP TABLE theia.quest_objectives; DROP TABLE theia.experience_receipts; DROP TABLE theia.progression; DROP TABLE theia.reward_claims; DROP TABLE theia.backpacks; DROP TABLE theia.character_names; DROP TABLE theia.loot_rolls; DELETE FROM theia.schema_migrations WHERE version>=4;").await.unwrap();
     let mut store = Store::connect_loopback(&url, realm).await.unwrap();
     assert_eq!(store.resolve_owner(&issuer, "alice").await.unwrap(), alice);
     assert_eq!(

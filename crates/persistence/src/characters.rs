@@ -7,9 +7,11 @@ pub const MAX_CHARACTERS_PER_OWNER: usize = 8;
 pub struct CharacterSummary {
     pub id: CharacterId,
     pub name: CharacterName,
+    pub appearance: theia_core::appearance::Appearance,
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct Character {
     pub saved: SavedCharacter,
     pub name: CharacterName,
+    pub appearance: theia_core::appearance::Appearance,
 }

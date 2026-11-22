@@ -37,3 +37,20 @@ Planned slices and acceptance:
 
 Verification results and completed slice scope will be recorded below. A planned
 screen or a successful conversion alone does not establish persistent multiplayer.
+
+Implemented persistence and public metadata (22 November 2026):
+
+- Migration 15 adds constrained seven-byte appearance to the character row;
+  older rows get the default. Creation stores name and appearance together.
+  Account list/select and the authenticated admission lease carry saved choices.
+- Public player metadata is PN02 (maximum 341 bytes, eight actors). Both binaries
+  must be updated together; PN01 is not accepted as PN02. Gameplay input cannot
+  submit a mesh path or override another actor's saved appearance.
+- Owned PostgreSQL character contract passed, including ownership, name/quota
+  rollback, invalid appearance SQL constraints and upgrading the old schema.
+  A nondefault appearance survives process/database restart and list/select.
+  Evidence: `build/modular-hero-v1/database-v2/`.
+- Seven bounded identity codec tests passed. The real encrypted two-peer
+  equipment/admission test also verifies distinct appearances at both receivers
+  through delay, jitter, loss and duplication (`two-peers.log`). Its admission
+  policy is synthetic; SQL durability is established separately above.
