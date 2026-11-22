@@ -20,8 +20,11 @@ mod file_picker;
 mod gameplay_export;
 mod gizmo;
 mod ground_item_export;
+mod group_selection;
 #[cfg(test)]
 mod headless_ui;
+mod imported_export;
+mod imported_terrain;
 mod markers;
 mod menus;
 mod naming;
@@ -122,6 +125,8 @@ struct Session {
     editor: Editor,
     saved_zone: Option<Zone>,
     selected: Option<u64>,
+    group: std::collections::BTreeSet<u64>,
+    marquee: Option<group_selection::Marquee>,
     particle_selected: Option<u64>,
     quest_area_selected: Option<u64>,
     spawn_group_selected: Option<u64>,
@@ -159,6 +164,10 @@ struct Session {
     sculpt_blend: f32,
     paint_blend: f32,
     flatten_height: f64,
+    flatten_edge: f64,
+    flatten_noise: bool,
+    noise_height: f32,
+    noise_width: f64,
     brush_point: Option<Vec3>,
     stroke: Option<terrain::Stroke>,
     path_mode: bool,
@@ -204,6 +213,11 @@ impl Session {
             .unwrap_or_else(|| std::path::Path::new("."))
             .to_path_buf();
         static DOCUMENT_IDS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+        let flatten_height = if editor.zone().imported_terrain.is_some() {
+            editor.zone().spawn[1] - editor.zone().origin[1] - 0.1
+        } else {
+            0.
+        };
         Session {
             document_id: DOCUMENT_IDS.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             ui: panels::Layout::default(),
@@ -211,6 +225,8 @@ impl Session {
             editor,
             saved_zone,
             selected: None,
+            group: default(),
+            marquee: None,
             particle_selected: None,
             quest_area_selected: None,
             spawn_group_selected: None,
@@ -247,7 +263,11 @@ impl Session {
             brush_strength: 2.,
             sculpt_blend: 0.5,
             paint_blend: 1.,
-            flatten_height: 0.,
+            flatten_height,
+            flatten_edge: 16.,
+            flatten_noise: false,
+            noise_height: 1.,
+            noise_width: 16.,
             brush_point: None,
             stroke: None,
             path_mode: false,
@@ -362,6 +382,8 @@ impl Session {
             || self.account_picker_open
     }
     fn set_mode(&mut self, mode: EditorMode) {
+        self.group.clear();
+        self.marquee = None;
         self.inspect_spawn = false;
         self.placement_preview = None;
         self.terrain_mode = matches!(mode, EditorMode::Sculpt | EditorMode::Paint);
@@ -371,6 +393,9 @@ impl Session {
         } else if matches!(self.brush_tool, terrain::Tool::Paint(_)) {
             self.brush_tool = terrain::Tool::Raise;
         }
+        self.brush_radius = self
+            .brush_radius
+            .min(terrain::radius_limit(self.brush_tool));
         self.path_mode = mode == EditorMode::Guides;
         self.marker_mode = mode == EditorMode::Markers;
         self.vegetation_mode = mode == EditorMode::Plants;
@@ -391,7 +416,9 @@ impl Session {
         self.spawn_boundary_point = None;
         self.scenery_selected = None;
         self.test_player_selected = None;
-        self.status = if self.terrain_paint {
+        self.status = if self.terrain_mode && self.editor.zone().imported_terrain.is_some() {
+            "Imported terrain: click or drag to sculpt/paint; I samples flatten height".into()
+        } else if self.terrain_paint {
             "Terrain paint - choose a surface and click or drag".into()
         } else if self.vegetation_mode {
             "Vegetation tools - place or scatter tree/shrub proxies".into()
@@ -402,7 +429,7 @@ impl Session {
         } else if self.terrain_mode {
             "Terrain tools - create a patch, then click or drag to sculpt".into()
         } else {
-            "Object tools".into()
+            "Object tools · drag empty space to box-select · Shift adds · Ctrl toggles · Ctrl+A selects all assets".into()
         };
     }
     fn is_dirty(&self) -> bool {
@@ -443,6 +470,11 @@ impl Session {
         self.reconcile();
     }
     fn reconcile(&mut self) {
+        let ids: std::collections::BTreeSet<_> = group_selection::assets(self.editor.zone())
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        self.group.retain(|id| ids.contains(id));
         if !self
             .editor
             .zone()
@@ -762,8 +794,20 @@ fn run() -> Result<(), String> {
         return Ok(());
     }
     let initial_target = camera_views::terrain_target(editor.zone());
+    let imported_distance = editor
+        .zone()
+        .imported_terrain
+        .as_ref()
+        .map(|t| imported_terrain::overview_radius(t) * 3. + 8.);
+    let imported_view = imported_distance.is_some();
     let path = options.editor_path();
-    let saved_zone = Zone::load(&path).ok();
+    let saved_zone = Zone::load(&path).ok().map(|saved| {
+        if &saved == editor.zone() {
+            editor.zone().clone()
+        } else {
+            saved
+        }
+    });
     let mut app = App::new();
     if let Some(directory) = &options.player_assets {
         playtest_avatar::install(&mut app, directory)?;
@@ -816,13 +860,24 @@ fn run() -> Result<(), String> {
         }
         None => {}
     }
+    imported_terrain::install(&mut app);
     app.insert_resource(session);
     app.insert_resource(View {
         target: initial_target.unwrap_or(Vec3::ZERO),
-        yaw: 0.6,
-        pitch: 0.8,
+        yaw: if imported_view {
+            std::f32::consts::PI
+        } else {
+            0.6
+        },
+        pitch: if imported_view { 1.1 } else { 0.8 },
         show_grid: true,
-        distance: if initial_target.is_some() { 120. } else { 32. },
+        distance: if let Some(distance) = imported_distance {
+            distance
+        } else if initial_target.is_some() {
+            120.
+        } else {
+            32.
+        },
         preset: camera_views::Preset::Perspective,
     })
     .insert_resource({
@@ -893,6 +948,7 @@ fn run() -> Result<(), String> {
             authoring_grid::setup,
             gizmo::setup,
             terrain::setup,
+            imported_terrain::setup,
             paths::setup,
             markers::setup,
             particle_anchors::setup,
@@ -930,13 +986,14 @@ fn run() -> Result<(), String> {
             (playtest_controls::input, camera_controls)
                 .chain()
                 .after(keyboard),
-            terrain::sync,
+            (imported_terrain::sync, terrain::sync).chain(),
             terrain::palette,
             (
                 viewport::sync,
                 gizmo::sync,
                 authoring_grid::sync,
                 placement::sync,
+                group_selection::draw,
             )
                 .chain(),
             paths::sync,
@@ -1117,6 +1174,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         return;
     }
     session.drag = None;
+    session.marquee = None;
     session.stroke = None;
     if !matches!(
         action,
@@ -1225,6 +1283,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             }
         }
         Action::Select => {
+            session.group.clear();
             session.palette = None;
             session.marker_palette = None;
             session.plant_palette = None;
@@ -1238,6 +1297,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         | Action::DeleteMarker
         | Action::MarkerRadius(_) => markers::perform(action, session),
         Action::Place(primitive) => {
+            session.group.clear();
             session.inspect_spawn = false;
             session.particle_selected = None;
             session.quest_area_selected = None;
@@ -1362,7 +1422,29 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             };
         }
         Action::Delete => {
-            if session.vegetation_mode {
+            if !session.group.is_empty() {
+                let zone = session.editor.zone();
+                let edits = session
+                    .group
+                    .iter()
+                    .map(|&id| {
+                        if zone.scenery.iter().any(|v| v.id == id) {
+                            Edit::DeleteScenery { id }
+                        } else if zone.plants.iter().any(|v| v.id == id) {
+                            Edit::DeletePlant { id }
+                        } else if zone.markers.iter().any(|v| v.id == id) {
+                            Edit::DeleteMarker { id }
+                        } else if zone.particles.iter().any(|v| v.id == id) {
+                            Edit::DeleteParticle { id }
+                        } else if zone.test_players.iter().any(|v| v.id == id) {
+                            Edit::DeleteTestPlayer { id }
+                        } else {
+                            Edit::Delete { id }
+                        }
+                    })
+                    .collect();
+                session.edit(edits);
+            } else if session.vegetation_mode {
                 vegetation::perform(Action::DeletePlant, session);
             } else if session.marker_mode {
                 markers::perform(Action::DeleteMarker, session);
@@ -1420,9 +1502,13 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 view.distance = 120.;
             }
         }
-        Action::Brush(tool) => session.brush_tool = tool,
+        Action::Brush(tool) => {
+            session.brush_tool = tool;
+            session.brush_radius = session.brush_radius.min(terrain::radius_limit(tool));
+        }
         Action::Radius(direction) => {
-            session.brush_radius = (session.brush_radius + f64::from(direction) * 4.).clamp(4., 32.)
+            session.brush_radius = (session.brush_radius + f64::from(direction) * 4.)
+                .clamp(4., terrain::radius_limit(session.brush_tool))
         }
         Action::BrushStrength(direction) => {
             session.brush_strength =
@@ -1448,8 +1534,11 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         }
         Action::FlattenHeight(direction) => {
             let increment = if session.snap { session.move_step } else { 0.1 };
-            session.flatten_height =
-                (session.flatten_height + f64::from(direction) * increment).clamp(-64., 64.);
+            session.flatten_height = (session.flatten_height + f64::from(direction) * increment)
+                .clamp(
+                    -terrain::height_limit(session.editor.zone()),
+                    terrain::height_limit(session.editor.zone()),
+                );
             session.status = format!(
                 "Flatten level {:.2} m relative to zone origin",
                 session.flatten_height
@@ -1460,6 +1549,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
 }
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn keyboard(
+    qualifying: Option<Res<imported_terrain::sculpt_qualification::Run>>,
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
     mut session: ResMut<Session>,
@@ -1480,6 +1570,9 @@ fn keyboard(
         ),
     >,
 ) {
+    if qualifying.is_some() || imported_terrain::area_qualification::active() {
+        return;
+    }
     if focus
         .get()
         .is_some_and(|entity| text_inputs.contains(entity))
@@ -1494,6 +1587,7 @@ fn keyboard(
     }
     if !windows.single().is_ok_and(|w| w.focused) {
         session.drag = None;
+        session.marquee = None;
         session.stroke = None;
         session.path_draft = None;
         return;
@@ -1524,6 +1618,18 @@ fn keyboard(
     }
     let ctrl = keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight);
     let shift = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
+    if ctrl
+        && keys.just_pressed(KeyCode::KeyA)
+        && workspace::mode(&session) == EditorMode::Objects
+        && !workspace::busy(&session)
+    {
+        let ids = group_selection::assets(session.editor.zone())
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        group_selection::select(&mut session, ids);
+        return;
+    }
     if ctrl && !shift && keys.just_pressed(KeyCode::KeyN) {
         workspace::new_document(&mut session, &mut view, &mut content);
         return;
@@ -1744,6 +1850,7 @@ fn camera_controls(
         && !session.has_modal()
         && !session.inline_editing
         && session.drag.is_none()
+        && session.marquee.is_none()
         && !session.ui.input_owned
         && !session.ui.overlay_owned
         && !focus
@@ -1767,6 +1874,7 @@ fn camera_controls(
             current - previous,
             (window.height() - workspace::HEADER - session.ui.canvas_bottom(window.height(), true))
                 * window.scale_factor(),
+            session.editor.zone().local_bounds(),
         );
         *panning = Some(current);
     }
@@ -1780,21 +1888,27 @@ fn camera_controls(
             view.pitch = (view.pitch + motion.delta.y * 0.005).clamp(0.15, 1.5);
         }
         if outside {
-            view.distance = (view.distance * (-scroll.delta.y * 0.1).exp())
-                .clamp(3., selection::MAX_VIEW_DISTANCE);
+            view.distance = (view.distance * (-scroll.delta.y * 0.1).exp()).clamp(
+                3.,
+                imported_terrain::max_view_distance(session.editor.zone()),
+            );
         }
         if !keys.pressed(KeyCode::ControlLeft) && !keys.pressed(KeyCode::ControlRight) {
-            let (right, up) = view.preset.pan_axes();
+            let (right, up) = camera_views::navigation_axes(&view);
             let horizontal = (i32::from(keys.pressed(KeyCode::KeyD))
                 - i32::from(keys.pressed(KeyCode::KeyA))) as f32;
             let vertical = (i32::from(keys.pressed(KeyCode::KeyW))
                 - i32::from(keys.pressed(KeyCode::KeyS))) as f32;
             let axis = right * horizontal + up * vertical;
-            view.target =
-                (view.target + axis.normalize_or_zero() * time.delta_secs().min(0.1) * 16.).clamp(
-                    Vec3::splat(-theia_zone::ZONE_EXTENT as f32),
-                    Vec3::splat(theia_zone::ZONE_EXTENT as f32),
-                );
+            let speed = if keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight) {
+                128.
+            } else {
+                16.
+            };
+            let bounds = session.editor.zone().local_bounds();
+            view.target = (view.target
+                + axis.normalize_or_zero() * time.delta_secs().min(0.1) * speed)
+                .clamp(Vec3::from_array(bounds[0]), Vec3::from_array(bounds[1]));
         }
     }
     if let Ok((mut transform, mut projection)) = camera.single_mut() {

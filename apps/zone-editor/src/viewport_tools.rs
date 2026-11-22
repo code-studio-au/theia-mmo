@@ -31,7 +31,7 @@ pub(super) fn bounds(window: &Window, session: &Session) -> Option<Rect> {
         || session.quest_area_selected.is_some()
         || session.spawn_group_selected.is_some()
         || outliner::selection(session) == Some(outliner::Target::Spawn)
-        || outliner::selection(session).is_none()
+        || (outliner::selection(session).is_none() && session.group.is_empty())
     {
         return None;
     }

@@ -38,6 +38,14 @@ impl Scene {
     pub(crate) fn diagnostics(&self) -> &Diagnostics {
         &self.diagnostics
     }
+    pub(crate) fn required_at(&self, point: theia_core::coordinates::GlobalPosition) -> bool {
+        self.store.imported().is_none()
+            || theia_network::procedural::owner(point)
+                .is_some_and(|owner| self.store.objects_intersect_patch(owner))
+    }
+    pub(crate) fn has_streamed_ground(&self) -> bool {
+        self.store.imported().is_some()
+    }
     pub(crate) fn map_contains(&self, point: theia_core::coordinates::GlobalPosition) -> bool {
         self.ready() && self.store.map_contains(point)
     }
@@ -78,13 +86,16 @@ pub(crate) fn install(app: &mut App, store: Arc<Store>) {
     );
 }
 fn tick(world: &mut World) {
+    if crate::loading::failed(world) {
+        return;
+    }
     let mut scene = world.remove_resource::<Scene>().expect("Authored scene");
     let result = prepare(world, &mut scene);
     if let Err(error) = result {
         error!("Authored scene failed: {error}");
         scene.cpu_ready = false;
         scene.gpu_clear_frames = 0;
-        world.write_message(AppExit::error());
+        crate::loading::fail_or_exit(world, "The world could not be prepared.");
     }
     world.insert_resource(scene);
 }
@@ -101,7 +112,15 @@ fn prepare(world: &mut World, scene: &mut Scene) -> Result<(), String> {
     if let Some(LoadState::Failed(error)) = server.get_load_state(asset.id()) {
         return Err(error.to_string());
     }
-    readiness_deadline(scene.ready(), &mut scene.waiting_since, Instant::now())?;
+    let needed = world
+        .get_resource::<crate::network::Network>()
+        .and_then(|n| n.state().authority_focus())
+        .is_none_or(|p| scene.required_at(p));
+    if needed {
+        readiness_deadline(scene.ready(), &mut scene.waiting_since, Instant::now())?;
+    } else {
+        scene.waiting_since = None;
+    }
     if !server.is_loaded_with_dependencies(asset.id()) {
         scene.cpu_ready = false;
         return Ok(());
@@ -137,7 +156,9 @@ fn prepare(world: &mut World, scene: &mut Scene) -> Result<(), String> {
     // Before admission the initial frame can be distant. Do not display misplaced
     // geometry or grant readiness until the server-owned focus establishes a frame.
     let Some(local) = local else {
-        scene.cpu_ready = false;
+        if needed {
+            scene.cpu_ready = false;
+        }
         world.entity_mut(root).insert(Visibility::Hidden);
         return Ok(());
     };

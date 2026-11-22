@@ -2,6 +2,8 @@
 mod classic;
 pub mod combat;
 pub mod creatures;
+#[cfg(test)]
+mod development_tests;
 pub mod dialogue;
 mod dodging;
 mod follow;
@@ -61,6 +63,7 @@ pub struct World {
     tour_started: Option<std::time::Instant>,
     predicted: bool,
     classic: bool,
+    development_speed_enabled: bool,
     dodge: Option<std::sync::Arc<crate::dodging::Profile>>,
 }
 struct Actor {
@@ -71,6 +74,7 @@ struct Actor {
     input_tick: u64,
     body: crate::kinematic::Motion,
     spawn: LocalPosition,
+    development_home: Option<GlobalPosition>,
     ready: Option<std::collections::BTreeSet<theia_core::coordinates::ChunkId>>,
     ready_sequence: u64,
     commands: Option<crate::commands::Timeline>,
@@ -131,6 +135,7 @@ impl Default for World {
             tour_started: None,
             predicted: false,
             classic: false,
+            development_speed_enabled: false,
             dodge: None,
         }
     }
@@ -217,14 +222,94 @@ impl World {
             ..Self::default()
         })
     }
+    pub fn enable_development_speed(&mut self) -> crate::Result<()> {
+        if !self.classic
+            || !self.predicted
+            || self.tick != 0
+            || !self.players.is_empty()
+            || self.dev_tour
+            || self.procedural.as_ref().is_none_or(|r| {
+                !matches!(
+                    r.source,
+                    crate::procedural::Source::Saved(_) | crate::procedural::Source::Procedural
+                )
+            })
+        {
+            return Err(
+                "Developer speed requires an inactive local Classic terrain walkthrough".into(),
+            );
+        }
+        self.development_speed_enabled = true;
+        Ok(())
+    }
+    pub fn development_speed_enabled(&self) -> bool {
+        self.development_speed_enabled
+    }
+    /// Trusted owner operation; clients have no request message for this.
+    pub fn set_development_speed(&mut self, speed: u8) -> bool {
+        if !self.development_speed_enabled || !crate::development::valid(speed) {
+            return false;
+        }
+        self.procedural.as_mut().unwrap().speed = f32::from(speed);
+        true
+    }
     pub fn procedural(&self) -> Option<&crate::procedural::Runtime> {
         self.procedural.as_ref()
+    }
+    /// Reset the single local walkthrough actor to its original admitted spawn.
+    /// Destination collision is prepared by the existing teleport owner pump.
+    pub fn reset_development_position(&mut self) -> bool {
+        if !self.development_speed_enabled || self.players.len() != 1 {
+            return false;
+        }
+        let (&id, actor) = self.players.iter().next().unwrap();
+        let Some(home) = actor.development_home else {
+            return false;
+        };
+        let [x, _, z] = home.metres();
+        if self.terrain_teleport == Some((id, [x, z])) {
+            return true;
+        }
+        self.teleport_development(id, [x, z])
+    }
+
+    fn recover_development_fall(&mut self) {
+        if !self.development_speed_enabled || self.terrain_teleport.is_some() {
+            return;
+        }
+        // Only enabled for saved/generated single-surface terrain walkthroughs.
+        // Authored caves/buildings and ordinary/account gameplay are excluded.
+        let below = self.players.values().any(|actor| {
+            let Some(patch) = self
+                .procedural
+                .as_ref()
+                .and_then(|r| r.patch(actor.position))
+            else {
+                return false;
+            };
+            let Some(local) = patch.frame.to_local(actor.position) else {
+                return false;
+            };
+            let [x, y, z] = local.metres();
+            patch
+                .scene
+                .ground([x, z], 2048.)
+                .is_some_and(|(ground, _)| y - crate::world::PAWN_Y < ground - 2.)
+        });
+        if below && self.reset_development_position() {
+            self.movement_recoveries += 1;
+            eprintln!("development_fall_recovery queued=true");
+        }
     }
     /// Trusted owner-side developer operation. No wire message can set coordinates.
     pub fn teleport_development(&mut self, id: u64, xz: [f64; 2]) -> bool {
         if self.procedural.is_none()
             || !self.players.contains_key(&id)
             || self.terrain_teleport.is_some()
+            || self
+                .procedural
+                .as_ref()
+                .is_some_and(|r| !r.source.valid_spawn_xz(xz))
             || xz
                 .iter()
                 .any(|v| !v.is_finite() || !(1. ..=crate::procedural::SIDE - 1.).contains(v))
@@ -263,6 +348,7 @@ impl World {
         Ok(())
     }
     fn poll_terrain_inner(&mut self, additional: &[GlobalPosition]) {
+        self.recover_development_fall();
         if let Some(combat) = &mut self.combat {
             combat.poll_pursuit(self.tick);
         }
@@ -390,6 +476,14 @@ impl World {
                 actor.input_tick = applied.fresh_tick;
                 actor.applied_sequence = applied.applied_sequence;
             }
+            if self
+                .terrain_teleport
+                .is_some_and(|(id, _)| id == actor.id.value())
+            {
+                actor.intent = Intent::default();
+                actor.body.reset(false);
+                continue;
+            }
             let request = actor.intent.dodge;
             let alive = self
                 .combat
@@ -466,13 +560,14 @@ impl World {
                 crate::dodging::Movement::None => continue,
                 crate::dodging::Movement::Ordinary if self.classic => {
                     intent.facing = actor.facing;
-                    crate::kinematic::advance_classic(
+                    crate::kinematic::advance_classic_development(
                         &patch.scene,
                         &mut actor.body,
                         start,
                         intent,
                         self.rate,
                         Some(&coverage),
+                        terrain.speed,
                     )
                 }
                 crate::dodging::Movement::Ordinary => crate::kinematic::advance_development(
@@ -668,7 +763,12 @@ impl World {
             .collect();
         if ids.iter().any(|&id| {
             self.chunks.as_ref().map_or_else(
-                || !crate::procedural::contains(id),
+                || {
+                    self.procedural.as_ref().map_or_else(
+                        || !crate::procedural::contains(id),
+                        |runtime| !runtime.source.contains(id),
+                    )
+                },
                 |chunks| !chunks.residency().index().contains(id),
             )
         }) {
@@ -928,6 +1028,7 @@ impl World {
                 body: crate::kinematic::Motion::default(),
                 spawn: LocalPosition::new([spawn[0], spawn[1] - crate::world::PAWN_Y, spawn[2]])
                     .expect("Validated capsule spawn"),
+                development_home: global_spawn,
             },
         );
         if let Some(position) = global_spawn {

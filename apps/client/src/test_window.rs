@@ -82,13 +82,18 @@ pub(crate) fn install(app: &mut App, view: View) {
         .add_systems(Update, arrange);
 }
 
+#[derive(Default)]
+struct Placement {
+    placed: bool,
+    resizing: Option<(UVec2, IVec2)>,
+    visible_frame: bool,
+}
 fn arrange(
     view: Res<View>,
     monitors: Query<(&Monitor, Has<PrimaryMonitor>)>,
     mut windows: Query<(Entity, &mut Window), With<PrimaryWindow>>,
     network: Option<Res<crate::network::Network>>,
-    mut placed: Local<bool>,
-    mut resizing: Local<Option<(UVec2, IVec2)>>,
+    mut placement: Local<Placement>,
     mut resized: MessageReader<WindowResized>,
 ) {
     let Ok((entity, mut window)) = windows.single_mut() else {
@@ -98,10 +103,21 @@ fn arrange(
     if window.title != title {
         window.title = title;
     }
-    if *placed {
+    if placement.placed {
         return;
     }
-    if let Some((size, position)) = *resizing {
+    // A hidden startup surface has not been mapped by the window manager yet.
+    // Positioning it now can be overwritten by initial map placement. Allow a
+    // full visible update (and Winit's Last synchronization) before arranging.
+    if !window.visible {
+        placement.visible_frame = false;
+        return;
+    }
+    if !placement.visible_frame {
+        placement.visible_frame = true;
+        return;
+    }
+    if let Some((size, position)) = placement.resizing {
         // Native resizing is asynchronous. Positioning against the old height
         // lets a desktop panel push the bottom row upward before resize lands.
         let scale = window.resolution.scale_factor();
@@ -111,8 +127,8 @@ fn arrange(
                 && (event.height * scale).round() as u32 == size.y
         }) {
             window.position = WindowPosition::At(position);
-            *resizing = None;
-            *placed = true;
+            placement.resizing = None;
+            placement.placed = true;
         }
         return;
     }
@@ -140,10 +156,10 @@ fn arrange(
     if window.resolution.physical_width() == size.x && window.resolution.physical_height() == size.y
     {
         window.position = WindowPosition::At(position);
-        *placed = true;
+        placement.placed = true;
     } else {
         window.resolution.set_physical_resolution(size.x, size.y);
-        *resizing = Some((size, position));
+        placement.resizing = Some((size, position));
     }
     println!(
         "{}",
@@ -183,6 +199,61 @@ fn layout(view: View, monitor: UVec2, origin: IVec2, preferred: UVec2) -> Option
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn hidden_entry_tiles_after_mapping_then_preserves_user_movement() {
+        let mut app = App::new();
+        app.add_message::<WindowResized>()
+            .insert_resource(View::parse("2/2").unwrap())
+            .add_systems(Update, arrange);
+        app.world_mut().spawn((
+            Monitor {
+                name: None,
+                physical_width: 3440,
+                physical_height: 1400,
+                physical_position: IVec2::ZERO,
+                refresh_rate_millihertz: None,
+                scale_factor: 1.,
+                video_modes: vec![],
+            },
+            PrimaryMonitor,
+        ));
+        let entity = app
+            .world_mut()
+            .spawn((
+                Window {
+                    visible: false,
+                    resolution: (1720, 1400).into(),
+                    position: WindowPosition::At(IVec2::ZERO),
+                    ..default()
+                },
+                PrimaryWindow,
+            ))
+            .id();
+        app.update();
+        app.update();
+        assert_eq!(
+            app.world().get::<Window>(entity).unwrap().position,
+            WindowPosition::At(IVec2::ZERO)
+        );
+        app.world_mut().get_mut::<Window>(entity).unwrap().visible = true;
+        app.update();
+        assert_eq!(
+            app.world().get::<Window>(entity).unwrap().position,
+            WindowPosition::At(IVec2::ZERO)
+        );
+        app.update();
+        assert_eq!(
+            app.world().get::<Window>(entity).unwrap().position,
+            WindowPosition::At(IVec2::new(1720, 0))
+        );
+        app.world_mut().get_mut::<Window>(entity).unwrap().position =
+            WindowPosition::At(IVec2::new(35, 20));
+        app.update();
+        assert_eq!(
+            app.world().get::<Window>(entity).unwrap().position,
+            WindowPosition::At(IVec2::new(35, 20))
+        );
+    }
     #[test]
     fn arguments_are_bounded_and_do_not_consume_other_client_arguments() {
         for invalid in ["", "0/2", "3/2", "1/0", "1/5", "5/4", "1/1/1", "-1/2"] {

@@ -6,6 +6,104 @@ cosmetic; equipment still owns gameplay stats. Future work: richer catalogue,
 equipped armour visual mapping and a standalone title/character launcher. Current
 entry is the editor's account population playtest; see MODULAR_HERO.md.
 
+22 November 2026 — P5-17 asset group transforms:
+Use transient viewport selection over existing placement IDs and the standard
+Bevy handles/outline rendering. Move preserves offsets; yaw and uniform scale
+share the bounds-centre pivot in checked global f64 coordinates. Preview commits
+as one validated transaction and supports exact undo; the bounded edit budget
+covers every supported asset in a document. Terrain and guide/volume authoring
+remain separate. CPU regressions and isolated native RX 7900 XTX input/render/save
+checks pass; see STATUS and ZONE_EDITOR for controls, evidence and limitations.
+No runtime protocol or persisted selection-group format was added.
+
+22 November 2026 — P2-08 imported Millhaven manual performance:
+Manual editor/imported playtest launchers now default to matching release builds.
+Nearby was already reducing residency to 81 tiles; the slow session used debug
+binaries. Same stationary imported village, Nearby and 3440x1400 with editor closed:
+39.96 FPS / 25.02 ms debug versus 496.86 FPS / 2.01 ms release, uncapped, no input
+injection or quality reduction. Matching optimized editor is reopened with its local
+services. Build/launcher/strict checks pass; see STATUS and build/mhp-20261122b/report.json
+for device, exact scope and limits. No route or Windows performance claim.
+
+22 November 2026 — P5-17 large smoothing and centre-height area flattening:
+Smooth radius now reaches 160 m (5x). New Flatten area holds the exact initial
+centre height, with an adjustable outer transition and optional deterministic
+Perlin bumps controlled by height/width sliders. Imported schema-18 journals retain
+undo/cancel/save and shared samples. Native rendering identified and resolved a
+coarse-mesh/brush overlay mismatch: the existing bounded 25-tile fine region follows
+the active brush. Zone/editor suites, focused final regressions, strict lint/build
+and native RX 7900 XTX rendering/save/reload checks pass; see STATUS and ZONE_EDITOR.
+Runtime publishing and Windows execution remain separate; all changes stay local.
+
+17 November 2026 — P2-04 / P2-14 reset recovery and P3-15 gentler pass 2:
+F10 Developer Reset position uses trusted local-owner controls and server collision-
+prepared teleport to the original spawn, clearing fall/prediction state while
+preserving speed. Single-surface local walkthroughs automatically recover below
+terrain; ordinary/account/cave behavior is unchanged. Disconnected sessions require
+relaunch. This safeguards recovery without claiming the original CCD bug is fixed.
+The user-approved second smoothing/60% scaling pass is available separately as
+build/covenant-seven-gentle-v2, with original and v1 sources retained. See STATUS
+for source metrics, tests, native Reset proof and exact limits.
+
+17 November 2026 — P5-17 / P3-15 / P2-14 gentle regional terrain and maps:
+The seven-zone 7296 x 8192 m editor and separate 2 m walkthrough are ready locally.
+Whole-master smoothing/60% height scaling preserve originals and shared samples.
+Map M, seven hover boundaries, Graphics/Developer HUD and the larger-view minimap
+fix pass focused suites and Linux native checks; see STATUS for exact scope/evidence.
+The editor and normal playtest are open. Further terrain design, publishing editor
+journals, native Windows and whole-continent capacity remain separate work.
+
+17 November 2026 — P2-04 / P2-14 / P3-15 original Covenant H1/H2 walkthrough:
+Original archive Millhaven and Stoneford are available in one continuous saved-
+terrain walkthrough, with HUD Graphics and an explicitly local F10 Developer
+running-speed control. Server authority/prediction, bounded codec/UI guards and
+Linux native menu/terrain checks pass; see STATUS and IMPORTED_HEIGHTFIELDS.
+Manual walkthrough is open. Editor combined-width support, authored population
+integration and Windows execution remain separate; no World Machine edits adopted.
+
+17 November 2026 — P2-06 / P2-08 / P2-14 Graphics view distance:
+Saved live Nearby/Far/Maximum terrain controls are available in F10 → Graphics.
+Linux native menu, restart, 460/289/81-tile transitions, GPU cleanup and camera
+restoration pass; see STATUS and UI_FANTASY_WARRIOR for limits and evidence.
+This completes the requested control; the earlier terrain-design work remains
+set aside. No editor, object-streaming, server-interest or Windows scope added.
+
+17 November 2026 — P5-17 / P3-15 imported terrain editing:
+Full-zone Raise, Lower, Flatten, Smooth and surface-colour painting now share the
+existing stroke/history/save workflow. A schema-17 journal preserves the immutable
+source and restores edited samples on load. See ZONE_EDITOR and STATUS for controls,
+bounds and validation. Publishing this edited layer into a runtime terrain package
+is still a separate slice; the original walkthrough package remains unchanged.
+
+17 November 2026 — P5-17 / P3-15 full imported-zone editor:
+The editor now accepts the complete Millhaven height-tile package as an immutable
+base for scene navigation and object authoring. Whole-zone framing, bounded near
+detail and independent saved placements replace the old patch-size restriction
+for these documents. See ZONE_EDITOR and STATUS for usage and validation.
+Imported height sculpting/painting and runtime publication of authored objects
+remain separate follow-up slices; the existing terrain walkthrough still works.
+
+17 November 2026 — navigation direction correction:
+The map overview follow-up corrects reflected east/west when keeping +Z north.
+The editor follow-up makes perspective WASD navigation follow the camera after
+orbiting. See STATUS, ZONE_OVERVIEW and ZONE_EDITOR for evidence and scope.
+
+17 November 2026 — P2-14 / P3-15 Millhaven overview map:
+M opens the full-zone terrain/roads/watercourses overview with live player facing
+and position, seven landmark sites and selection distances. See ZONE_OVERVIEW.md
+and STATUS for exact package binding, input ownership and Linux qualification.
+This supports manual walkthrough review before bridge/water/scenery work. The
+larger quest log, continent hierarchy, zoom/pan and map authoring remain separate.
+
+17 November 2026 — full imported Millhaven terrain walkthrough:
+P1-10 / P2-06/07/08 / P3-13/15 now include a bounded saved-terrain import path
+for the supplied 4,096 x 3,072 m zone with 1 m source detail. See STATUS and
+IMPORTED_HEIGHTFIELDS.md for acceptance and launch instructions. Next content
+work is manual terrain/route review, explicit bridge and water decisions, then
+scenery and gameplay integration. Stoneford remains a reviewed neighbouring
+source; its shared edge matches but it is not part of this runtime package.
+Whole-zone editing and native Windows qualification remain separate work.
+
 16 November 2026 — P4-11 shared-marker presentation accepted:
 The Unit marks palette, eight shared overhead symbols and selected-target icons
 now use the private authoritative protocol from cda0608a. Exact selection/revision

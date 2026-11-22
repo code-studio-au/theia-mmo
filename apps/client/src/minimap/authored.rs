@@ -78,6 +78,7 @@ mod tests {
         for x in [128_000_000_000.125, -128_000_000_000.125] {
             let mut cache = Cache::default();
             let view = View {
+                north_positive_z: false,
                 centre: GlobalPosition::new([x, 0., x]).unwrap(),
             };
             assert_eq!(
@@ -100,6 +101,7 @@ mod tests {
     fn cache_is_bounded_reuses_pan_overlap_and_caches_unknown_cells() {
         let mut cache = Cache::default();
         let mut view = View {
+            north_positive_z: false,
             centre: GlobalPosition::new([8192., 0., 8192.]).unwrap(),
         };
         let mut total = 0;

@@ -4,7 +4,7 @@ use bevy::picking::mesh_picking::ray_cast::{MeshRayCast, MeshRayCastSettings};
 use std::collections::BTreeMap;
 use theia_zone::vegetation::{Plant, PlantKind, Scatter};
 #[derive(Component)]
-pub(super) struct AuthoredPlant(u64);
+pub(super) struct AuthoredPlant(pub u64);
 #[derive(Resource)]
 pub(super) struct Scene {
     meshes: [Handle<Mesh>; 2],
@@ -104,7 +104,7 @@ pub(super) fn sync(mut commands: Commands, session: Res<Session>, mut scene: Res
         session.editor.revision(),
         session.plant_selected.filter(|_| session.vegetation_mode),
     );
-    if scene.signature != Some(signature) {
+    if scene.signature != Some(signature) || group_selection::active(&session) {
         let removed: Vec<_> = scene
             .cache
             .keys()
@@ -116,7 +116,18 @@ pub(super) fn sync(mut commands: Commands, session: Res<Session>, mut scene: Res
                 commands.entity(e).despawn();
             }
         }
-        for plant in &session.editor.zone().plants {
+        for original in &session.editor.zone().plants {
+            let pose = group_selection::preview(
+                &session,
+                original.id,
+                &group_selection::pose(original.position, original.yaw_degrees, original.scale),
+            );
+            let plant = &theia_zone::vegetation::Plant {
+                position: pose.position,
+                yaw_degrees: pose.yaw_degrees,
+                scale: pose.size[0],
+                ..original.clone()
+            };
             let parts = parts(session.editor.zone(), plant);
             if scene
                 .cache
@@ -166,7 +177,11 @@ pub(super) fn sync(mut commands: Commands, session: Res<Session>, mut scene: Res
                 scene.cache.insert(plant.id, entities);
             }
         }
-        scene.signature = Some(signature);
+        scene.signature = if group_selection::active(&session) {
+            None
+        } else {
+            Some(signature)
+        };
     }
     if session.vegetation_mode
         && session.play.is_none()
@@ -228,7 +243,7 @@ pub(super) fn pointer(
     camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
     plants: Query<&AuthoredPlant>,
     objects: Query<(), With<viewport::Authored>>,
-    ground: Query<(), With<terrain::GroundPart>>,
+    ground: Query<(), imported_terrain::GroundFilter>,
     mut raycast: MeshRayCast,
     mut session: ResMut<Session>,
 ) {

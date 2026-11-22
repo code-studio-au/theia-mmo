@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -118,6 +119,9 @@ def run(args):
                         return (directory/'input-os.json').exists()
                     state_a = lambda: state(owner, lambda: launcher.poll() is None)
                     wait(lambda: report_ready(owner, lambda: launcher.poll() is None), 90)
+                    if args.loading_entry:
+                        from loading_os import entry
+                        entry(state_a, owner)
                     a = wait(lambda: value if (value := state_a()).get('connected') and value.get('inventory_bag') and value.get('quest_journal') else None, 90)
                     ready = next(json.loads(line.removeprefix('account_game_ready '))
                         for line in (runtime/'server.log').read_text().splitlines() if line.startswith('account_game_ready '))
@@ -141,6 +145,8 @@ def run(args):
                     second = subprocess.Popen(client_args, env=second_env, stdout=guest_log, stderr=guest_log)
                     state_b = lambda: state(guest, lambda: second.poll() is None)
                     wait(lambda: report_ready(guest, lambda: second.poll() is None), 90)
+                    if args.loading_entry:
+                        entry(state_b, guest)
                     b = wait(lambda: value if (value := state_b()).get('connected') and value.get('inventory_bag') and value.get('quest_journal') else None, 90)
                     wait(lambda: len((state_a().get('public_avatar_life') or {}).get('actors', [])) == 2 and len((state_b().get('public_avatar_life') or {}).get('actors', [])) == 2, 30)
                     for observe in [state_a, state_b]:
@@ -148,6 +154,15 @@ def run(args):
                             c['npc'] for c in observe().get('contacts', [])), 45)
                     assert a['actor'] != b['actor']
                     windows = [wait(lambda: owned_window(a['pid']), 30), wait(lambda: owned_window(b['pid']), 30)]
+                    native_windows = []
+                    for index, window in enumerate(windows):
+                        expected = [index * window_size[0], 0, *window_size]
+                        def placed():
+                            info = subprocess.check_output(['xwininfo', '-id', hex(window)], text=True)
+                            fields = ['Absolute upper-left X', 'Absolute upper-left Y', 'Width', 'Height']
+                            actual = [int(re.search(field + r':\s+(-?\d+)', info)[1]) for field in fields]
+                            return actual if actual == expected else None
+                        native_windows.append(wait(placed, 10))
                     for value in [state_a(), state_b()]:
                         assert value['window'][:2] == window_size, value['window']
                     print(f'Both authenticated clients ready at {window_size[0]}x{window_size[1]}', flush=True)
@@ -232,6 +247,7 @@ def run(args):
                             distinct_background_ticks=[len(ticks) for ticks in peer_ticks],
                             proofs=[proof_a, proof_b]))
                     runs[-1]['scene_readiness'] = [s()['authored_scene'] for s in [state_a, state_b]]
+                    runs[-1]['native_windows'] = native_windows
             finally:
                 if desktop: desktop.close()
                 stop(second)
@@ -297,6 +313,7 @@ if __name__ == '__main__':
     parser.add_argument('--fantasy-ui', type=Path, required=True)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--loading-entry', action='store_true', help='Exercise held keys during genuine startup and capture loading layout')
     parser.add_argument('--quadrants', action='store_true', help='Use the first two quarter-screen tiles to check the shorter four-player UI layout')
     party = parser.add_mutually_exclusive_group()
     party.add_argument('--party-only', action='store_true', help='Qualify party controls and solo rejoin, leaving all quest progress unchanged')

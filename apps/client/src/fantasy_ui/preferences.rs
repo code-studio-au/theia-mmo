@@ -1,5 +1,5 @@
 //! Explicit local preference file. Reads before App creation; writes on Bevy's I/O pool.
-use super::PreferredScale;
+use super::{PreferredScale, graphics::ViewDistance};
 use bevy::{
     prelude::*,
     tasks::{IoTaskPool, Task, futures::check_ready},
@@ -12,11 +12,23 @@ use std::{
 };
 
 const LIMIT: u64 = 4096;
+fn default_vsync() -> bool {
+    true
+}
+fn default_fps_cap() -> u16 {
+    super::graphics::FrameCap::default().0
+}
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct File {
     schema: u8,
     ui_scale: f32,
+    #[serde(default = "default_fps_cap")]
+    fps_cap: u16,
+    #[serde(default = "default_vsync")]
+    vsync: bool,
+    #[serde(default)]
+    view_distance: ViewDistance,
     #[serde(default)]
     debug_stats: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -24,12 +36,18 @@ struct File {
 }
 impl File {
     fn valid(&self) -> bool {
-        self.schema == 1 && self.ui_scale.is_finite() && (0.75..=1.5).contains(&self.ui_scale)
+        self.schema == 1
+            && super::graphics::FrameCap(self.fps_cap).valid()
+            && self.ui_scale.is_finite()
+            && (0.75..=1.5).contains(&self.ui_scale)
     }
 }
 pub(crate) struct Config {
     path: PathBuf,
     pub scale: f32,
+    fps_cap: u16,
+    vsync: bool,
+    view_distance: ViewDistance,
     debug_stats: bool,
     pub world_effects: Option<bool>,
 }
@@ -65,6 +83,13 @@ impl Config {
                 saved.as_ref().map_or(scale, |file| file.ui_scale)
             },
             debug_stats: saved.as_ref().is_some_and(|file| file.debug_stats),
+            fps_cap: saved
+                .as_ref()
+                .map_or_else(default_fps_cap, |file| file.fps_cap),
+            vsync: saved.as_ref().is_none_or(|file| file.vsync),
+            view_distance: saved
+                .as_ref()
+                .map_or_else(ViewDistance::default, |file| file.view_distance),
             world_effects: saved.and_then(|file| file.world_effects),
         }))
     }
@@ -74,8 +99,14 @@ impl Config {
             .get_resource::<crate::particle_world::VisibilityChoice>()
             .map(|choice| choice.0);
         app.insert_resource(super::debug::Enabled(self.debug_stats));
+        app.insert_resource(super::graphics::FrameCap(self.fps_cap));
+        app.insert_resource(super::graphics::Vsync(self.vsync));
+        app.insert_resource(self.view_distance);
         app.insert_resource(Store {
             requested_debug: self.debug_stats,
+            requested_fps: self.fps_cap,
+            requested_vsync: self.vsync,
+            requested_view: self.view_distance,
             path: self.path,
             requested: self.scale,
             world_effects: self.world_effects,
@@ -104,7 +135,10 @@ fn read_settings(path: &Path) -> Result<Option<File>, Box<dyn std::error::Error>
     }
     let file: File = serde_json::from_slice(&bytes)?;
     if !file.valid() {
-        return Err("Interface preferences require schema 1 and UI scale 0.75..1.5".into());
+        return Err(
+            "Interface preferences require schema 1, UI scale 0.75..1.5 and a supported FPS cap"
+                .into(),
+        );
     }
     Ok(Some(file))
 }
@@ -114,17 +148,31 @@ fn read(path: &Path) -> Result<Option<f32>, Box<dyn std::error::Error>> {
 }
 #[cfg(test)]
 fn write(path: &Path, scale: f32) -> Result<(), String> {
-    write_preferences(path, scale, None, false)
+    write_preferences(
+        path,
+        scale,
+        None,
+        false,
+        default_fps_cap(),
+        true,
+        ViewDistance::default(),
+    )
 }
 fn write_preferences(
     path: &Path,
     scale: f32,
     world_effects: Option<bool>,
     debug_stats: bool,
+    fps_cap: u16,
+    vsync: bool,
+    view_distance: ViewDistance,
 ) -> Result<(), String> {
     let data = File {
         schema: 1,
         ui_scale: scale,
+        fps_cap,
+        vsync,
+        view_distance,
         debug_stats,
         world_effects,
     };
@@ -172,6 +220,9 @@ enum Status {
 #[derive(Resource)]
 pub(super) struct Store {
     requested_debug: bool,
+    requested_fps: u16,
+    requested_vsync: bool,
+    requested_view: ViewDistance,
     path: PathBuf,
     requested: f32,
     world_effects: Option<bool>,
@@ -203,8 +254,14 @@ fn save(
     effects: Option<Res<crate::particle_world::VisibilityChoice>>,
     mut store: ResMut<Store>,
     debug: Option<Res<super::debug::Enabled>>,
+    cap: Option<Res<super::graphics::FrameCap>>,
+    vsync: Option<Res<super::graphics::Vsync>>,
+    view: Option<Res<ViewDistance>>,
 ) {
+    let view_distance = view.as_deref().copied().unwrap_or_default();
+    let vsync = vsync.as_ref().is_none_or(|choice| choice.0);
     let debug_stats = debug.as_ref().is_some_and(|v| v.0);
+    let fps_cap = cap.as_ref().map_or_else(default_fps_cap, |cap| cap.0);
     let current_effects = effects.as_ref().map(|choice| choice.0);
     let effects_changed = current_effects.is_some() && current_effects != store.observed_effects;
     if effects_changed {
@@ -226,19 +283,32 @@ fn save(
         && (store.requested != preferred.0
             || store.retry_requested
             || store.requested_effects != store.world_effects
-            || store.requested_debug != debug_stats)
+            || store.requested_debug != debug_stats
+            || store.requested_fps != fps_cap
+            || store.requested_vsync != vsync
+            || store.requested_view != view_distance)
     {
         store.retry_requested = false;
         store.requested = preferred.0;
         store.requested_debug = debug_stats;
+        store.requested_fps = fps_cap;
+        store.requested_vsync = vsync;
+        store.requested_view = view_distance;
         store.requested_effects = store.world_effects;
         let scale = preferred.0;
         let path = store.path.clone();
         let world_effects = store.world_effects;
-        store.pending = Some(
-            IoTaskPool::get()
-                .spawn(async move { write_preferences(&path, scale, world_effects, debug_stats) }),
-        );
+        store.pending = Some(IoTaskPool::get().spawn(async move {
+            write_preferences(
+                &path,
+                scale,
+                world_effects,
+                debug_stats,
+                fps_cap,
+                vsync,
+                view_distance,
+            )
+        }));
         store.status = Status::Saving;
     }
 }
@@ -265,6 +335,143 @@ mod tests {
     impl Drop for Scratch {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+    #[test]
+    fn view_distance_buttons_save_reload_and_guard_hidden_or_unfocused_settings() {
+        let scratch = Scratch::new();
+        let path = scratch.file();
+        fs::write(
+            &path,
+            r#"{"schema":1,"ui_scale":1,"fps_cap":144,"vsync":false}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            read_settings(&path).unwrap().unwrap().view_distance,
+            ViewDistance::Nearby
+        );
+        let args = || {
+            vec![
+                "--ui-preferences".into(),
+                path.to_string_lossy().into_owned(),
+            ]
+        };
+        let config = Config::parse(&mut args(), true, 1., false)
+            .unwrap()
+            .unwrap();
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
+        super::super::install_scale(&mut app, 1.);
+        config.install(&mut app);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: true,
+                ..default()
+            })
+            .id();
+        app.update();
+        let button = |world: &mut World, title: &str| {
+            world
+                .query::<(Entity, &AccessibleLabel)>()
+                .iter(world)
+                .find(|(_, label)| label.0 == title)
+                .unwrap()
+                .0
+        };
+        let maximum = button(app.world_mut(), "View distance: Maximum");
+        for (open, graphics, focused) in [
+            (false, false, true),
+            (true, false, true),
+            (true, true, false),
+        ] {
+            let mut ui = app.world_mut().resource_mut::<super::super::settings::Ui>();
+            ui.open = open;
+            ui.graphics_open = graphics;
+            app.world_mut().get_mut::<Window>(window).unwrap().focused = focused;
+            app.world_mut()
+                .trigger(bevy::ui_widgets::Activate { entity: maximum });
+            assert_eq!(
+                *app.world().resource::<ViewDistance>(),
+                ViewDistance::Nearby
+            );
+        }
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        for choice in [
+            ViewDistance::Maximum,
+            ViewDistance::Far,
+            ViewDistance::Nearby,
+        ] {
+            let entity = button(
+                app.world_mut(),
+                &format!("View distance: {}", choice.label()),
+            );
+            app.world_mut()
+                .trigger(bevy::ui_widgets::Activate { entity });
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+            loop {
+                app.update();
+                if matches!(app.world().resource::<Store>().status, Status::Saved)
+                    && app.world().resource::<Store>().requested_view == choice
+                {
+                    break;
+                }
+                assert!(std::time::Instant::now() < deadline);
+                std::thread::yield_now();
+            }
+            let saved = read_settings(&path).unwrap().unwrap();
+            assert_eq!(saved.view_distance, choice);
+            assert_eq!(saved.fps_cap, 144);
+            assert!(!saved.vsync);
+            let mut restarted = App::new();
+            Config::parse(&mut args(), true, 1., false)
+                .unwrap()
+                .unwrap()
+                .install(&mut restarted);
+            assert_eq!(*restarted.world().resource::<ViewDistance>(), choice);
+        }
+        let invalid = r#"{"schema":1,"ui_scale":1,"view_distance":"unbounded"}"#;
+        fs::write(&path, invalid).unwrap();
+        assert!(read_settings(&path).is_err());
+        assert_eq!(fs::read_to_string(&path).unwrap(), invalid);
+    }
+    #[test]
+    fn vsync_defaults_on_for_legacy_settings_and_round_trips_off() {
+        let scratch = Scratch::new();
+        let path = scratch.file();
+        for bytes in [
+            r#"{"schema":1,"ui_scale":1}"#,
+            r#"{"schema":1,"ui_scale":1,"fps_cap":144}"#,
+        ] {
+            fs::write(&path, bytes).unwrap();
+            assert!(read_settings(&path).unwrap().unwrap().vsync);
+        }
+        write_preferences(&path, 1., None, false, 144, false, ViewDistance::default()).unwrap();
+        let saved = read_settings(&path).unwrap().unwrap();
+        assert!(!saved.vsync);
+        assert_eq!(saved.fps_cap, 144);
+        for value in ["null", "0", "\"on\""] {
+            let bytes = format!(r#"{{"schema":1,"ui_scale":1,"vsync":{value}}}"#);
+            fs::write(&path, &bytes).unwrap();
+            assert!(read_settings(&path).is_err());
+            assert_eq!(fs::read_to_string(&path).unwrap(), bytes);
+        }
+    }
+    #[test]
+    fn fps_preferences_accept_legacy_files_and_reject_invalid_caps_without_rewriting() {
+        let scratch = Scratch::new();
+        let path = scratch.file();
+        fs::write(&path, r#"{"schema":1,"ui_scale":1}"#).unwrap();
+        assert_eq!(read_settings(&path).unwrap().unwrap().fps_cap, 60);
+        for cap in [0, 30, 60, 90, 120, 144, 165, 240] {
+            write_preferences(&path, 1., None, false, cap, true, ViewDistance::default()).unwrap();
+            assert_eq!(read_settings(&path).unwrap().unwrap().fps_cap, cap);
+        }
+        for cap in [1, 29, 1000, 65535] {
+            let bytes = format!(r#"{{"schema":1,"ui_scale":1,"fps_cap":{cap}}}"#);
+            fs::write(&path, &bytes).unwrap();
+            assert!(read_settings(&path).is_err());
+            assert_eq!(fs::read_to_string(&path).unwrap(), bytes);
         }
     }
     #[test]
@@ -436,6 +643,9 @@ mod tests {
         super::super::install_scale(&mut app, 1.);
         Config {
             debug_stats: false,
+            fps_cap: default_fps_cap(),
+            vsync: true,
+            view_distance: ViewDistance::default(),
             path: path.clone(),
             scale: 1.,
             world_effects: None,
@@ -528,6 +738,9 @@ mod tests {
             .insert_resource(PreferredScale(1.));
         Config {
             debug_stats: false,
+            fps_cap: default_fps_cap(),
+            vsync: true,
+            view_distance: ViewDistance::default(),
             path: path.clone(),
             scale: 1.,
             world_effects: None,
@@ -580,6 +793,9 @@ mod tests {
             .insert_resource(PreferredScale(1.));
         Config {
             debug_stats: false,
+            fps_cap: default_fps_cap(),
+            vsync: true,
+            view_distance: ViewDistance::default(),
             path: path.clone(),
             scale: 1.,
             world_effects: None,
@@ -588,8 +804,17 @@ mod tests {
         app.update();
         assert!(!path.exists(), "No launch-time write");
         app.world_mut().resource_mut::<PreferredScale>().0 = 1.5;
+        app.world_mut()
+            .resource_mut::<super::super::graphics::FrameCap>()
+            .0 = 120;
         app.update();
         app.world_mut().resource_mut::<PreferredScale>().0 = 0.75;
+        app.world_mut()
+            .resource_mut::<super::super::graphics::FrameCap>()
+            .0 = 144;
+        app.world_mut()
+            .resource_mut::<super::super::graphics::Vsync>()
+            .0 = false;
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
         loop {
             app.update();
@@ -607,6 +832,8 @@ mod tests {
         ];
         let fresh = Config::parse(&mut args, true, 1., false).unwrap().unwrap();
         assert_eq!(fresh.scale, 0.75);
+        assert_eq!(fresh.fps_cap, 144);
+        assert!(!fresh.vsync);
         assert_eq!(super::super::fit_scale(1.5, Vec2::new(1280., 720.)), 1.);
         assert_eq!(read(&path).unwrap(), Some(0.75));
     }
@@ -614,7 +841,16 @@ mod tests {
     fn world_effects_choice_persists_without_saving_a_startup_override() {
         let scratch = Scratch::new();
         let path = scratch.file();
-        write_preferences(&path, 1.25, Some(true), false).unwrap();
+        write_preferences(
+            &path,
+            1.25,
+            Some(true),
+            false,
+            default_fps_cap(),
+            true,
+            ViewDistance::default(),
+        )
+        .unwrap();
         let mut args = vec![
             "--ui-preferences".into(),
             path.to_string_lossy().into_owned(),

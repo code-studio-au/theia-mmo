@@ -366,11 +366,22 @@ fn cylinder_segments(radius: f64) -> u32 {
         .ceil()
         .max(32.) as u32
 }
+#[cfg(test)]
 pub(super) fn geometry(
     zone: &Zone,
     gameplay_areas: bool,
 ) -> Result<(Vec<u8>, Value, Value), String> {
+    geometry_with_ground(zone, gameplay_areas, None)
+}
+pub(super) fn geometry_with_ground(
+    zone: &Zone,
+    gameplay_areas: bool,
+    imported_ground: Option<&theia_network::procedural::Geometry>,
+) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
+    if zone.imported_terrain.is_some() {
+        return Err("Imported-zone object edits can be saved; this legacy playtest/export path does not yet publish them. Use the full-zone terrain walkthrough for terrain testing.".into());
+    }
     if !zone.spawn_groups.is_empty() {
         return Err("NPC spawn groups require the population export workflow".into());
     }
@@ -394,7 +405,11 @@ pub(super) fn geometry(
     let mut glb = Glb::new();
     let mut bodies = vec![];
     let mut pool = vec![];
-    for (i, (centre, size)) in terrain::ground_boxes(zone).into_iter().enumerate() {
+    for (i, (centre, size)) in terrain::ground_boxes(zone)
+        .into_iter()
+        .enumerate()
+        .filter(|_| imported_ground.is_none())
+    {
         glb.add(
             &format!("Ground {i}"),
             Mesh::from(Cuboid::new(size.x, size.y, size.z)),
@@ -403,7 +418,13 @@ pub(super) fn geometry(
         )?;
         bodies.push(json!({"kind":"box","center":centre.to_array(),"size":size.to_array(),"rotation":[0,0,0,1]}));
     }
-    let mut triangles = vec![];
+    let mut triangles = imported_ground.map_or_else(Vec::new, |geometry| {
+        geometry
+            .triangles
+            .iter()
+            .map(|t| t.map(|i| geometry.positions[i as usize]))
+            .collect()
+    });
     if let Some(geometry) = terrain::geometry(zone) {
         for triangle in &geometry.triangles {
             triangles.push(triangle.map(|i| geometry.positions[i as usize]));
@@ -571,6 +592,14 @@ fn publish_combined(
         return Err("Export requires a new output directory".into());
     }
     zone.validate()?;
+    let original_zone = zone;
+    let imported = zone
+        .imported_terrain
+        .as_ref()
+        .map(|_| crate::imported_export::Prepared::new(zone))
+        .transpose()?;
+    let zone = imported.as_ref().map_or(zone, |p| &p.zone);
+    let ground = imported.as_ref().map(|p| &p.ground);
     let gameplay = template
         .map(|path| crate::gameplay_export::Draft::prepare(zone, path, content_id, revision))
         .transpose()?;
@@ -580,9 +609,9 @@ fn publish_combined(
         Some(crate::particle_export::draft(zone, library)?)
     };
     let (visual, profile, mut report) = if let Some(scenery) = scenery {
-        scenery_export::geometry(zone, gameplay.is_some(), scenery)?
+        scenery_export::geometry_with_ground(zone, gameplay.is_some(), scenery, ground)?
     } else {
-        geometry(zone, gameplay.is_some())?
+        geometry_with_ground(zone, gameplay.is_some(), ground)?
     };
     let profile = serde_json::to_vec(&profile).map_err(|e| e.to_string())?;
     // Run the actual headless runtime decoder/spawn validator before writing.
@@ -670,11 +699,16 @@ fn publish_combined(
         fs::write(stage.join("terrain.glb"), visual).map_err(|e| e.to_string())?;
         fs::write(stage.join("terrain.json"), profile).map_err(|e| e.to_string())?;
         fs::write(stage.join("world.manifest.json"), manifest).map_err(|e| e.to_string())?;
-        zone.save(&stage.join("authoring.zone.json"))?;
+        original_zone.save(&stage.join("authoring.zone.json"))?;
+        if let Some(imported) = &imported {
+            imported.write(&stage)?;
+        }
         fs::write(
             stage.join(theia_network::authored_world::ANCHOR_FILE),
             serde_json::to_vec_pretty(&theia_network::authored_world::Anchor {
-                schema: if !contacts.is_empty() {
+                schema: if imported.is_some() {
+                    4
+                } else if !contacts.is_empty() {
                     3
                 } else if contact.is_some() {
                     2
@@ -685,10 +719,15 @@ fn publish_combined(
                 world_identity: checked.identity(),
                 contact: contact.clone(),
                 contacts: contacts.clone(),
+                imported: imported.as_ref().map(|p| p.binding()),
             })
             .map_err(|e| e.to_string())?,
         )
         .map_err(|e| e.to_string())?;
+        if imported.is_some() {
+            theia_network::authored_world::Store::open(&stage).map_err(|e| e.to_string())?;
+            report["imported_ground"] = json!({"full_streamed_terrain":true,"terrain_unchanged":true,"ground_snapshot_visual":false});
+        }
         report["patrol_route_requests"] = crate::patrol_export::write(zone, &stage)?;
         fs::write(
             stage.join("export.json"),
@@ -711,6 +750,10 @@ fn publish_combined(
         // Move verified artifacts first and publish the required manifest last.
         fs::create_dir(path).map_err(|e| e.to_string())?;
         destination_created = true;
+        if imported.is_some() {
+            fs::rename(stage.join("heightfield"), path.join("heightfield"))
+                .map_err(|e| e.to_string())?;
+        }
         if gameplay.is_some() {
             fs::rename(stage.join("gameplay"), path.join("gameplay")).map_err(|e| e.to_string())?;
         }

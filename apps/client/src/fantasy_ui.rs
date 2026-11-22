@@ -1,6 +1,8 @@
 //! Optional presentation-only skin from the user's local Fantasy Warrior HUD.
 //! PNGs load through a separate Bevy source; terrain/art roots stay unchanged.
 mod debug;
+mod developer;
+pub(crate) mod graphics;
 pub(crate) mod preferences;
 pub(crate) mod preview;
 pub(crate) mod settings;
@@ -421,6 +423,7 @@ pub(crate) fn install_scale(app: &mut App, preferred: f32) {
     app.insert_resource(PreferredScale(preferred))
         .insert_resource(bevy::ui::UiScale(preferred))
         .add_systems(Update, fit_window);
+    graphics::install(app);
     settings::install(app);
     debug::install(app);
 }

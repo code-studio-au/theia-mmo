@@ -20,6 +20,7 @@ mod fantasy_ui;
 mod floating_origin;
 mod graybox;
 mod inventory;
+mod loading;
 mod loot;
 mod melee_qualification;
 mod minimap;
@@ -55,6 +56,7 @@ mod test_window;
 mod triplanar;
 mod ui_buttons;
 mod world_input;
+mod zone_map;
 
 use bevy::{app::AppExit, prelude::*, time::TimeUpdateStrategy, window::WindowResolution};
 use movement::{LocalPawn, MoveIntent};
@@ -128,15 +130,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let mut loading_artwork = loading::Artwork::default();
     let authored = if let Some(i) = args.iter().position(|a| a == "--authored-world") {
         args.remove(i);
         if i >= args.len() {
             return Err("Missing authored world directory".into());
         }
-        Some(std::sync::Arc::new(
-            theia_network::authored_world::Store::open(std::path::Path::new(&args.remove(i)))
-                .map_err(|e| e.to_string())?,
-        ))
+        let directory = std::path::PathBuf::from(args.remove(i));
+        let store =
+            theia_network::authored_world::Store::open(&directory).map_err(|e| e.to_string())?;
+        loading_artwork = loading::Artwork::for_package(&directory).map_err(|e| e.to_string())?;
+        Some(std::sync::Arc::new(store))
     } else {
         None
     };
@@ -177,11 +181,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let classic_controller = classic_controls::Controller::from_args(&mut args, classic)?;
     let parties = party::parse(&mut args, classic)?;
-    let test_controller = test_controller::from_args(
-        &mut args,
-        classic && matches!(&source, theia_network::procedural::Source::Authored(_)),
-        &source,
-    )?;
+    let test_controller = test_controller::from_args(&mut args, classic && graybox, &source)?;
     if classic && !prediction {
         return Err("Classic controls require predicted terrain".into());
     }
@@ -1318,6 +1318,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let mut plugins = DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
+            // Map interactive entry once its loading view has rendered.
+            visible: !(connected && classic),
             title: if content_world {
                 "Theia MMO — development map"
             } else {
@@ -1572,6 +1574,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
             .add_systems(Last, network::capture);
     }
+    if connected && classic {
+        app.insert_resource(loading_artwork);
+        loading::install(&mut app);
+    }
     app.add_systems(Update, toggle_fullscreen)
         .add_systems(
             Update,
@@ -1626,6 +1632,8 @@ fn toggle_fullscreen(
 
 #[derive(bevy::ecs::system::SystemParam)]
 struct InputMode<'w> {
+    zone_map: Option<Res<'w, zone_map::Ui>>,
+    loading: Option<Res<'w, loading::State>>,
     party: Option<Res<'w, party::Ui>>,
     book: Option<Res<'w, combat::book::Ui>>,
     interface: Option<Res<'w, fantasy_ui::settings::Ui>>,
@@ -1661,6 +1669,11 @@ fn input(
     test_controller: Option<Res<test_controller::Run>>,
 ) {
     intent.jump = false;
+    if mode.loading.as_ref().is_some_and(|s| s.blocks_input()) {
+        intent.direction = Vec2::ZERO;
+        intent.sprint = false;
+        return;
+    }
     if test_controller.is_some_and(|run| run.active) {
         return;
     }
@@ -1749,7 +1762,8 @@ fn input(
                 .network
                 .as_ref()
                 .is_some_and(|n| n.connected() && n.can_act());
-        let world_mouse = gesture.as_ref().is_none_or(|g| g.world_origin());
+        let world_mouse = !zone_map::blocks_pointer(mode.zone_map.as_deref())
+            && gesture.as_ref().is_none_or(|g| g.world_origin());
         let both = world_mouse
             && buttons.pressed(MouseButton::Left)
             && buttons.pressed(MouseButton::Right);

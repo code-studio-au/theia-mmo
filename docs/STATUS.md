@@ -24,6 +24,562 @@ fallback. Use Zone → Start account population playtest… for customization. O
 F5 previews the default hero. This implements the existing editor/account entry;
 a standalone title launcher and persistent deployed account services remain separate.
 
+22 November 2026 — P5-17 viewport asset selection groups:
+Objects mode now supports a drag rectangle, Shift add / Ctrl toggle, Ctrl+A,
+shared-pivot move/yaw/uniform scale, live multi-asset preview, F framing and
+atomic delete. Supported: primitives, scenery, plants, NPC/quest markers, particles
+and test-player anchors. Terrain, guides and gameplay volumes remain separate.
+Selection stays transient; ordinary validated edits retain names, bindings and
+exact history. Global f64 math preserves far-frame offsets. Invalid members reject
+the whole candidate. The bounded transaction ceiling now covers the full asset
+budget (2308 edits), allowing a full scene to remain one undo entry.
+
+Prerequisites are the existing pose/gizmo/placement renderers and transactional
+zone editor; no runtime protocol, terrain resolution or schema change is needed.
+276 editor tests, 84 zone tests, 550 network tests, 25 server tests and six nav-baker
+library tests pass; six final focused group regressions pass. Strict all-target
+client/server/editor/nav/network Clippy, fmt and diff checks pass. Initial sandbox
+UDP refusals passed with native local socket access. Matching release build passes.
+
+Isolated native RX 7900 XTX / RADV NAVI31 / Vulkan checks pass: visible rectangle,
+Ctrl toggle / Shift add, mixed real scenery + primitive move/rotate/scale previews,
+source unchanged during drag, one revision on release, exact undo/redo, Escape
+cancellation and saved-document equality. Captures reviewed; no GPU diagnostics.
+An initial harness rectangle began inside a mesh; repeating from empty space passed.
+Evidence: build/group-selection-checks/{tests-native.log,focused.log,clippy.log,build.log}
+and native/result.json with reviewed PNGs. No user terrain/draft modifications and
+no gameplay input automation. Native Windows interaction remains unqualified.
+
+22 November 2026 — P2-08 imported Millhaven optimized manual playtests:
+Nearby was applied in the user's slow session: 81 resident terrain tiles, final
+24 reports averaging 66.01 ms / 15.15 FPS. The session had launched unoptimized
+debug executables. Build a matching release editor/client/server/nav-baker/validator
+and make release the default for edit_local.py and play_imported_population.py.
+The Millhaven open_editor.py launcher now uses target/release directly, preserving
+its owned login/database services, map, HUD and saved authoring document.
+
+Paired stationary native measurements at the same populated imported spawn,
+3440x1400, Nearby, uncapped/no VSync, editor closed in both cases: debug 39.96 FPS,
+25.02 ms mean / 29.88 ms P95; release 496.86 FPS, 2.01 ms mean / 2.38 ms P95.
+Same 111 ready scene meshes/pipelines, no readiness retractions, unchanged player
+position and camera. RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.7. GPU busy
+averaged 12.72% debug and 69.98% release. This isolates a major build-profile cost;
+it does not attribute every frame in the user's different camera/editor session.
+No scenery, sample resolution or rendering quality reduction. Timings include
+read-only telemetry, exclude compilation and validation layers, and inject no
+mouse/keyboard/movement/combat. An initial camera-moved sample was discarded.
+The fixture now explicitly fixes and guards Nearby. Ordinary saved FPS caps remain.
+
+Matching release build, five launcher regressions, Python syntax, fmt, diff checks
+and denied-warning all-target client/server/editor/nav/network Clippy pass. Native
+captures reviewed with no GPU error diagnostics. Evidence: build/mhp-20261122b/report.json;
+original symptom: build/millhaven-performance-20261122/reported-baseline.json.
+The user closed the old editor; optimized Millhaven is reopened with local services.
+No gameplay automation, full-route performance or native Windows qualification.
+
+22 November 2026 — P5-17 large Smooth / centre-sampled Flatten area:
+Smooth maximum radius is 160 m, five times the previous 32 m. New Flatten area
+samples exact terrain at the initial centre and holds it throughout the stroke;
+full-strength interior plus adjustable 1..80 m quintic outer blend. Optional
+world-anchored, fixed-seed Perlin bumps expose 0..8 m maximum deviation and
+4..128 m wavelength. New settings use the existing guarded native checkbox/sliders.
+Keep manual Flatten, original raise/lower/paint bounds, locked small-patch borders,
+shared imported samples, cancellation and one undo entry per stroke. Large brushes
+use radius-scaled stamp spacing. Imported extended brushes upgrade journals to
+schema 18 without downgrading on subsequent old-tool/paint edits; source stays immutable.
+
+84 zone tests and 269 editor tests pass (16 existing editor tests ignored), including
+centre sampling in local/far frames, frozen drag level, plateau/outer band, noise,
+seams, large Smooth, replay/undo and malformed input preservation. Strict all-target
+zone/editor Clippy, fmt and debug editor build pass. One sandbox-blocked encrypted
+UDP export test passed with native local-network access. After native harness focus isolation and the preview-detail fix, 11 focused area
+checks plus two detail-policy checks and strict lint/build pass again. Native
+preview/commit, undo/redo, schema-18 save/reload and 27 rendered terrain rays across
+plain/noisy/smoothed surfaces pass on RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa
+26.2.7. Captures reviewed, no GPU diagnostics. The same bounded 25-tile fine region
+now follows the active brush even when zoomed out, preventing a fine brush overlay
+from intersecting the coarse overview. The automatically closed native check uses
+app-owned strokes; checkbox/slider observers are CPU-tested, not OS-input-qualified.
+Evidence: build/area-brush-checks/native/{qualification.json,noise-controls.png}.
+Original seven-zone source/draft and runtime package are preserved.
+Runtime publication of editor journals and native Windows remain separate work.
+
+17 November 2026 — P2-04 / P2-14 local Reset position and P3-15 second terrain pass:
+The user fell beneath the terrain at developer 16x; captured logs show onset around
+X5514/Z2680, then continued falling and correction rejection near Y=-1023 m.
+Add F10 -> Developer -> Reset position to the opted-in local walkthrough. A bounded
+atomic owner file carries an optional monotonic reset nonce alongside speed; there
+is no client wire teleport or chosen destination. The single local actor returns
+to its original admitted global spawn through the existing collision preparation
+and authoritative teleport path. Freeze motion while destination loads, clear
+vertical motion/readiness and start a fresh input stream; stale commands are rejected.
+The UI only confirms after the server stream changes and its corrected feet reach
+the original spawn. Preserve selected speed. Repeated file reads do not repeat reset.
+A disconnected client is told to relaunch; the old disconnected session was replaced.
+
+For this opted-in single-surface saved/procedural local mode, the owner pump detects
+feet more than 2 m below prepared heightfield support and queues the same recovery.
+Ordinary/account servers and authored buildings/caves are excluded. This is a
+recovery safeguard, not a claimed fix or reproduction of the original CCD failure.
+The original collision path at 16x remains a follow-up investigation if it recurs.
+
+549 network library tests plus 6 Classic-facing, 2 encrypted Classic UDP and 1 speed
+integration test pass; 339 client tests pass. Network/client/server strict all-target
+Clippy, fmt and matching release server/client builds pass. Native owned-window
+W movement and F10/Developer/speed-8/Reset clicks return exactly to spawn, retain 8x,
+advance stream 1 -> 2 once and stay connected; screenshot reviewed at 1280x720.
+RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6. Evidence and preserved failure logs:
+build/covenant-reset-checks/{native-reset.json,native-reset.png,fall-onset.json}.
+Automatic recovery is covered by authority tests; native Windows and exhaustive
+collision traversal are not qualified.
+
+The user also requested another smoothing/elevation pass. A distinct v2 applies
+another nominal 40 m Gaussian pass and 60% elevation factor to the v1 float master;
+cumulative scaling is 36% of original before further smoothing peak reduction.
+Preserve land/sea mask and coast fade, shared master crops, original archive and v1.
+Millhaven peak 342.2 m / median slope 8.55 deg; Stoneford 183.5 m / 8.61 deg.
+The 7296 x 8192 m / 3648-tile 2 m package verifies all 15,412,800 stored samples.
+Editor headless admission and native gameplay/reset check use this v2 package.
+Separate zone.json, play.py, map masks, source crops, provenance and export ZIP:
+build/covenant-seven-gentle-v2. Fresh manual walkthrough starts at 1x; original and
+v1 packages remain available. Editor journals still do not auto-publish to runtime.
+
+17 November 2026 — P5-17 / P3-15 / P2-14 gentler seven-zone area accepted on Linux:
+Separate Covenant copy includes Millhaven, Stoneford, Valecrown, Deepward Holds,
+Greenward, Canopy Marches and Treaty Marches. Gaussian sigma 13.333 m, nominal 40 m
+radius (42.96875 m sample-rounded support per axis), 60% sea-relative elevations,
+land-normalized filtering and a 40 m coast fade are applied to the continuous
+master before zone crops. Sea stays zero and coastline samples retain their scaled
+original values. Original ZIP hash is unchanged. Median slopes: H1 27.9 -> 15.2 deg;
+H2 28.5 -> 15.5 deg. Peaks: H1 1005.8 -> 580.7 m, H2 529.7 -> 310.8 m.
+Deepward remains steep (45 deg median); this is a test variant, not finished routes.
+
+Combined engine extent 7296 x 8192 m, 2 m samples, 3648 tiles. All 15,412,800 stored
+samples including shared edges verify against the derived field. Source crops keep
+3.90625 m spacing and common 0..1600 m uint16 decoding. The editor admits 8192 m per
+axis / 4096 tiles / 128 MiB source data without changing the +/-4096 m local frame.
+16 m large-area overview and at most 25 nearby source-detail tiles keep mesh work
+bounded. Native sculpt/paint preview-cancel, undo/redo, seam normals, rendered rays
+and Save/reload pass on a disposable copy. The clean document is open separately.
+
+M map loads local exact-identity cartography with correct aspect and dimensions.
+Hover outlines/tints each original zone mask and displays its name. M/Escape/buttons,
+all seven regions and leaving the map pass native app-owned input checks at 1280x720.
+The minimap now selects the local 3x3 footprint before bounding mesh reads, fixing
+arbitrary first-81 omissions at larger view distance. Baked cartography fills actual
+missing visual samples without claiming geometry readiness. Native Maximum has
+775 resident tiles and all 4096 minimap samples; maximum ground discrepancy is
+0.0000015 m at the checked start. Final normal 3440x1440 walkthrough is Playing,
+with HUD, Graphics and Developer speed controls; the user retains input control.
+
+82 zone, 267 editor and 337 client tests pass (16 editor/5 client ignored). Encrypted
+UDP tests required execution outside the network sandbox; the initial denied UDP
+runs are not product failures. Strict all-target editor/client Clippy, fmt, whitespace
+checks and final binaries pass. Native checks use RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, with no observed GPU validation errors. An initial duplicate hover-label
+component was caught at native startup, fixed and covered by an actual UI-startup
+regression. Final caption-only rebuild corrected inherited Millhaven dimensions.
+Evidence: build/covenant-seven-gentle-v1/qualification.json, editor-native/, logs and
+recorded map session. The full initial hover sequence precedes the caption-only
+rebuild. Native Windows, whole-world streaming and complete route traversal are not
+claimed. Editor journals do not automatically publish into the walkthrough.
+Reopen using local play.py / zone.json; README.txt explains data and controls.
+
+17 November 2026 — P2-04 / P2-14 / P3-15 original H1/H2 + Developer menu accepted on Linux:
+User correction: load original Millhaven and Stoneford from the Covenant all-zone
+ZIP, with HUD Graphics and F10 Developer speed multipliers. Both zone R16 grids
+match the archive master exactly. A continuous original-master crop is converted
+linearly to 2 m samples, preserving scale/placement, with east/south edge padding:
+4683.59375 x 3457.03125 m source, 4736 x 3584 m engine, 37 x 28 / 1036 tiles.
+All 4,377,100 stored samples including seams pass offline bit checks. Original
+archive/source heights are untouched; there is no World Machine processing.
+Local package, hashes, launch script and instructions: build/covenant-h1-h2-original-v1.
+
+F10 Developer offers session-only 1x/2x/4x/8x/16x running speed. The loopback ticket
+server explicitly enables a local owner-control file; bounded worker reads and
+owner queue changes apply between authoritative steps. Player command packets
+cannot choose speed. Explicit DT03 corrections carry the accepted multiplier;
+ordinary TP03 remains normal speed and developer decoding/prediction require
+local opt-in. Walk, gravity/jump constants, facing, collision and readiness remain.
+The UI displays server-confirmed speed; writes are asynchronous. New local launch
+sessions initialize 1x and retain normal persistent Graphics preferences.
+
+547 network library tests pass (18 ignored), plus 6 Classic facing, 2 encrypted
+Classic Renet and 1 dynamic developer authority/prediction test. All 331 client
+tests pass (5 ignored); server test build, strict all-target network/client/server
+Clippy, fmt and matching optimized binaries pass. Native Millhaven confirms every
+speed button, 16x travel and reset, and Graphics Maximum (650 resident tiles).
+A separate input-free Stoneford run confirms readiness, collision, developer 1x
+and Maximum terrain rendering. Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa
+26.2.6; zero observed GPU diagnostics. Actual menu screenshots were inspected.
+Evidence and exact native scope: build/developer-speed-checks/qualification.json.
+An earlier automated click sequence missed buttons; its partial evidence remains
+separate. Native Windows, account gameplay and whole-zone traversal are not claimed.
+
+The manual combined walkthrough is open at Millhaven with HUD, 1x initial speed
+and the user's existing Graphics preference. Reopen with the local play.py;
+--site stoneford or --site pass chooses another start. This is separate from the
+populated village/wolves scene. Maximum uses a moving ring for this larger package;
+a single combined editor document exceeds the editor's existing width limit.
+A full disk interrupted the first check build. Only regenerable Rust incremental
+cache and old duplicate test executables were removed; source/assets were retained.
+
+17 November 2026 — P2-06 / P2-08 / P2-14 Graphics view distance accepted on Linux:
+F10 → Graphics now offers Nearby, Far and Maximum terrain view distance, with
+live application and local preference persistence. Nearby keeps the existing
+4-tile radius (81 maximum); Far uses 8 (289); Maximum shows a bounded saved zone
+up to 32 x 32 tiles, or a 15-tile radius (961) for larger/generated sources.
+Near source detail and bounded visual workers remain; lowering the choice removes
+extra meshes and restores the original camera far plane. This is presentation
+only: collision, server interest and authoritative readiness are unchanged.
+Legacy preference files default to Nearby; invalid enum values are rejected.
+Monolithic/authored object streaming and editor view settings are unchanged.
+
+330 client tests pass (five ignored), including actual button focus/page guards,
+background save/reload, bounded rings and camera restoration. Denied-warning
+all-target client Clippy, fmt, diff whitespace and optimized client build pass.
+Evidence: build/graphics-view-checks/{tests,clippy,build}.log and native/qualification.json.
+Actual native F10/Graphics clicks at 1280 x 720 switch 460 → 289 → 81 → 460 tiles;
+restart restores Maximum, then Nearby returns to 81. CPU/GPU mesh assets settle
+to terrain count plus seven scene meshes. Camera far plane restores from 4918.25 m
+to 1000 m; physics mismatch remains below 0.003 m. Linux RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6 reports no GPU validation diagnostics. The menu capture was
+visually reviewed. Native Windows and continent capacity are not claimed.
+The existing terrain was only a verification fixture; terrain design stays set
+aside. The user's editor and preferences were not changed; tests used a separate
+preference file and owned test processes. Normal release client is rebuilt.
+
+17 November 2026 — P5-17 / P3-15 imported sculpt/paint accepted on Linux:
+The user requested editable imported terrain after the read-only first slice.
+Raise, Lower, Flatten, Smooth and grass/dirt/rock/sand colour painting now work
+across the complete Millhaven base. Existing pointer picking, interpolated drag
+stamps, preview/cancel, one undo entry per drag and explicit Save/reload are wired
+to schema 17. Source heights stay immutable; a bounded versioned brush journal
+reconstructs edited samples and paint exactly. Changed buffers use copy-on-write;
+unchanged buffers and journal pages are shared across snapshots. Old schema-16
+base documents remain loadable and become schema 17 on the first terrain edit.
+
+Shared-edge samples remain identical, smoothing reads across tiles, and rendered
+edge normals agree using full-resolution neighbours. Dependent neighbour meshes
+refresh under the existing two-replacement frame budget. The brush overlay and
+placement grounding sample the edited surface. Sculpt/Paint now open Tools instead
+of the empty terrain Attributes pane. Imported flatten sampling/controls accept
+absolute elevations up to +/-1024 m. Legacy +/-64 m tools remain unchanged.
+
+81 zone tests pass, including all brush operations at 1/2/4 m, seam paint/samples,
+outer-edge editing, unchanged source bytes, atomic invalid transactions/redo,
+shared unchanged tiles, schema admission and exact save/load replay. All 267 editor
+tests pass (16 ignored), including its local-UDP regression. Final Tools-category
+and mesh/bounds regressions pass; denied-warning all-target editor/zone Clippy,
+fmt and diff whitespace checks pass. Logs: build/imported-sculpt-{zone-tests,
+editor-tests,final-tests,clippy,zone-clippy,fmt}.log. Normal dev binary rebuilt.
+
+Native final evidence: build/imported-sculpt-native-v2/qualification.json and
+preview/painted-seam/far-corner captures, 3440 x 1440, Linux AMD RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6. Shared app-owned stroke lifecycle proves preview
+cancel, separate sculpt/paint undo entries, redo and save/reload; actual rendered
+mesh rays agree with edited heights within 2 mm. Shared vertex normals agree at
+the four-tile seam. Seven stamps save in 2820 bytes; all 768 tiles remain resident.
+770 source/package/manual-document hashes are unchanged, with zero observed GPU
+validation errors. Native OS input injection and Windows execution are not claimed.
+V1 passed lifecycle checks; V2 includes the final tool visibility and seam-lighting
+corrections. The user confirmed no changes and closed the prior editor before
+replacement. Test edits exist only in disposable qualification documents.
+
+Controls and limits are in ZONE_EDITOR: 128 stamps per drag, 65,536 total stamps,
+32 MiB imported document limit; ordinary documents retain their 2 MiB limit.
+Runtime publication of edited terrain/objects and embedded Play/export remain
+separate work. The original full-zone walkthrough package remains unchanged.
+The normal editor is reopened on build/millhaven-full-editor-v1/zone.json with
+the existing scenery/player library; test edits were not copied into it.
+Changes are local; no push.
+
+17 November 2026 — P5-17 / P3-15 full imported-zone editor accepted on Linux:
+The user chose full imported-zone support and requested the editor opened with
+Millhaven loaded. Schema 16 references the exact immutable saved-height package;
+a shared reader in theia-zone retains the network reader's validation/identity.
+All 768 tiles cover 4096 x 3072 m, with 4 m overview meshes and at most 25 nearby
+1 m meshes. Full 1 m samples drive grounding/picking; source arrays are shared
+across edits/history/reloads. Mesh work is bounded to 8 creations and 2 detail
+replacements per frame, with updated culling bounds and skirts at LOD seams.
+The centered local frame, camera pan, placement limits and selection framing
+cover the complete imported rectangle. Shift+WASD enables faster scene travel.
+Object edits use existing selection/transform/save/reload/undo controls.
+
+Validation: 79 zone tests pass; editor suite 266 passes plus its one existing
+local-UDP regression passes when rerun with socket access (16 ignored). Final
+mesh/bounds and camera tests pass (2 + 7); shared saved-terrain/imported-heightfield
+integration tests pass (3 + 1, one native check ignored). Denied-warning all-target
+editor and shared zone/network Clippy pass; cargo fmt --all --check and diff
+whitespace checks pass. Logs: build/full-zone-{authoring-tests,editor-tests,
+editor-udp-test,editor-final-tests,terrain-regression-tests,editor-clippy,
+shared-clippy,fmt}.log. The normal dev editor binary is rebuilt.
+
+Native final evidence: build/full-zone-editor-native-v3/qualification.json and
+four captures at 3440 x 1440, Linux AMD RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6. All tiles render; actual mesh rays at the village, cave site and far
+corner agree with full source heights within 2 mm. Ordinary app-owned placement,
+far transform, undo/redo and save/reload pass (three objects, 1642-byte document).
+772 original package/draft/prepared-document files retain their hashes. Zero
+observed GPU validation errors. No OS input injection or Windows execution is
+claimed. Initial native v1 exposed cropped framing and a fixture visibility-order
+error; both are corrected. V2 passed, then v3 qualifies the final LOD bounds/cache
+changes. Unsupported sculpt, embedded Play and legacy export fail explicitly
+without creating output: build/full-zone-editor-refusals-v1/checks.json.
+
+The clean editable document is build/millhaven-full-editor-v1/zone.json, with
+Player spawn at the village. The normal editor is now open on that document
+with the existing scenery library and player assets; its report confirms all
+768 terrain tiles resident at the whole-zone view. Test objects remain only in disposable qualification
+documents. Imported sculpt/paint and publication of object edits into the runtime
+walkthrough remain deferred. Original terrain and the prior small draft, including
+its separately recorded unsaved state, are preserved. Changes remain local.
+
+17 November 2026 — map facing and editor navigation correction accepted on Linux:
+P2-14 / P3-15: the initial Millhaven map combined +Z north with +X east,
+reflecting the game's right-handed Y-up plane. Right turns appeared as left
+turns despite arrow-to-world agreement. Schema 2 cartography keeps +Z north and
+uses -X east across the baked image, landmarks, minimap raster/pins/hover and
+shared arrow rotation. Farm display names follow the game compass; original
+feature coordinates, terrain, controls and authority remain unchanged. Earlier
+v4 acceptance did not test apparent turn handedness and is superseded here.
+
+P5-17: the user's editor navigation report exposed fixed world-axis WASD in
+perspective. It now follows the camera's horizontal bearing after orbiting,
+keeping ground-plane height. Orthographic authoring planes and mouse pan/orbit
+remain unchanged. Actual camera_controls tests cover WASD at four bearings and
+confirm the document is untouched; projection-basis checks also cover pitch.
+
+325 client tests and 265 editor tests pass (5 and 16 ignored), strict all-target
+client/editor Clippy and fmt pass: build/map-direction-v2-checks.json and logs.
+New map regressions exercise actual D-key right turns through all cardinals for
+both compass conventions and projected forward/right vectors. Client release
+and normal editor dev binaries are rebuilt: build/map-direction-builds.json.
+The original sandbox test attempt denied the existing local UDP regression;
+the repeated suite with local UDP passes. The combined release build was stopped
+to avoid rebuilding unrelated shared features; the separate builds are final.
+
+Native 1280x720 Classic/Renet map-turns passes all five rendered cardinal captures
+(north/east/south/west/north), seven UI actions, eastward position movement,
+minimap agreement and existing terrain/physics/prediction limits at about 60 FPS:
+build/map-direction-native-v1/qualification.json. The compact 640x480 process
+exited 143 after all five open-map captures but before the final terrain report;
+its independently checked UI/cardinal/label geometry evidence is restricted to
+build/map-direction-small-native-v1/ui-qualification.json, not a full route pass.
+The rebuilt editor passes a disposable 3440x1440 native startup/render capture:
+build/editor-navigation-native-v1/qualification.json. Navigation input itself is
+qualified by the actual-system CPU tests, not physical OS event injection.
+All native checks use AMD RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6,
+with zero observed validation diagnostics. Native Windows remains unqualified.
+
+The user closed the previous walkthrough and confirmed the editor was not open.
+The updated normal walkthrough is reopened at last recorded X,Z 2456.634838,
+1313.058212 under build/millhaven-direction-manual-v1. The editor remains closed;
+target/debug/theia-zone-editor contains the correction for the next normal launch.
+Source documents remain unchanged. Changes are local; no push.
+
+17 November 2026 — P2-14 / P3-15 Millhaven whole-zone overview accepted on Linux:
+M or Zone map opens the complete 4,096 x 3,072 m cartographic overview. A live
+player arrow follows checked presented position and manual character facing;
+seven source landmark sites include village centre, healing house, militia
+ground, merchant yard, both farms and bandit caves. Selection shows an exact pin,
+description and straight-line distance. The footer reports position and village
+distance. Source-derived relief, contours, roads and watercourses remain visible
+independently of streamed 3D tiles. Map image/provenance are under
+content/zones/millhaven, bound to the exact terrain package identity and bounds.
+
+The overview and matching local minimap use the archive's +Z-north convention.
+Other worlds retain -Z north; no terrain, authority or controls are transformed.
+Escape closes the map without forwarding to underlying panels/targets. Keyboard
+movement remains available; mouse steering/orbit/zoom are held while open. The
+existing UI gesture tracker now also installs independently of targeting for
+the terrain walkthrough, preventing UI-origin drags from grabbing the camera.
+
+323 client tests pass (five ignored), fmt, denied-warning all-target client
+Clippy and optimized build pass: build/zone-map-v4-checks.json and matching logs.
+Checks cover map projection/bounds/source north, image decode, compact/wide
+layout, focus and Escape handling, landmark admission, camera isolation and
+terrain-only pointer ownership alongside existing client regressions.
+Final native Classic/Renet checks pass at 1280x720, 640x480 and 3440x1400:
+build/zone-map-native-{1280,small,wide}-v4/qualification.json. Seven map actions
+per run exercise M, Escape, button opening and landmark selection. Captures and
+measured node geometry prove labels fit without overlap and the live player
+marker aligns with global coordinates; village traversal moves across terrain
+owners while the complete overview remains available. Tile/mesh budgets and
+prediction/physics agreement remain within the accepted terrain limits.
+Linux AMD RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, approximately 60 FPS
+at the normal cap, zero observed Vulkan validation diagnostics. Native Windows
+and physical OS keyboard/mouse input remain unqualified for this slice.
+
+Native input is app-owned: focused input snapshots restore the actual focus
+state before Winit applies window changes; no desktop focus/input is requested.
+V1's opening check correctly refused an unfocused window. V2 exposed compact
+farm-label overlap and unavailable font glyphs; v3 corrected layout, and v4
+adds the independent gesture tracker. Earlier runs are retained as evidence,
+not substituted for final acceptance. References are layout inspiration only;
+no screenshot artwork/chat is shipped. No water/bridge/cave-interior, quest-log,
+map authoring, account or MMO-scale claims. See ZONE_OVERVIEW.md. No push.
+
+17 November 2026 — full Millhaven V3 1 m terrain walkthrough accepted on Linux:
+P1-10 / P2-06/07/08 / P3-13/15 continuation. The supplied 4,096 x 3,072 m
+heightfield is imported into 768 immutable 128 m tiles at build/millhaven-v3-1m.
+All 12,590,081 source samples are bit-preserved; complete duplicate-edge checks
+cover 12,780,288 stored samples. Saved-terrain schema 2 supports rectangular
+offset layouts and 1/2/4 m spacing while retaining the schema-1 contract.
+Nearby Bevy meshes and Avian collision retain every fine source sample; distant
+fine-source meshes use 4 m spacing. Existing workers, readiness, local origins
+and Classic Renet authority/prediction remain bounded. Demands/admission clip to
+the actual package extent, including the finite outer boundary. Minimap sampling
+supports fine grids and the overlay reports the imported dimensions/spacing.
+
+576 targeted network tests pass (25 ignored); the separately invoked Millhaven
+fixture verifies all 768 tile seams and 494,090 actual Avian surface queries over
+ten representative tiles. Maximum surface error is 0.000030518 m. Synthetic
+1/2 m grids cover asymmetric axes, offsets, both triangles, high spawns, rehashed
+bad data, 20/30/60 Hz seam movement and no fixed-step tile I/O. Two Python importer
+tests pass with 1/2/4 m cases. All 316 client tests pass (five ignored), fmt,
+denied-warning all-target network/client/server Clippy and optimized builds pass.
+Evidence: build/heightfield-checks.json, heightfield-presentation-checks.json,
+imported-heightfield-tests-v2.log and millhaven-1m-physics.json. Earlier combined
+test builds were interrupted after renderer feature unification inflated headless
+test binaries; package-separated runs are the acceptance evidence.
+
+Five final native encrypted-Renet checks pass: village traversal across three
+owners with tile retirement, eastern boundary, north-west high ground (>256 m),
+south-east corner and bandit terrace/jump. At most 81 visual tiles reside; meshes
+retire within the existing asset budget. Actual physics probes and same-tick
+prediction/authority errors stay below 0.003 m; no input queue drops. At the normal
+60 FPS cap, final steady samples measure 59.99-60.01 FPS at 1280x720 on Linux
+AMD Radeon RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6. Vulkan validation is
+observed with zero diagnostics; screenshots show the corrected minimap and extent.
+See build/millhaven-1m-native-v2/qualification.json and per-case captures/logs.
+Follow-up minimap coverage audit counts every pixel centre against the actual
+zone rectangle: all five captures show every in-bounds sample. Dark edge strips
+are outside the zone (the southern-edge view is one-quarter outside), not missing
+chunks. Evidence: the same directory's minimap-coverage.json; the native harness
+now enforces exact expected coverage rather than accepting any nonempty map.
+V1 established movement but exposed stale dimension text and blank fine-grid
+minimap; v2 is the final presentation evidence. No desktop input was injected.
+
+Launch instructions, source audit and limits: IMPORTED_HEIGHTFIELDS.md.
+This is the whole terrain available through streaming, with sampled native
+routes; it is not every-route, account, full-map editing, Windows or MMO-capacity
+qualification. Plain diagnostic terrain has no water, bridge decks, caves,
+buildings or navigation. Stoneford's shared edge matches but it is not integrated.
+The existing editor/draft is preserved; generated assets and credentials remain
+ignored. Changes stay local; no push.
+Manual handoff: tools/play.py has opened the optimized full-zone client near
+X,Z 2048,1810, with its local server under build/millhaven-1m-manual-v1.
+Initial telemetry shows 81 resident tiles, 4,096/4,096 known minimap samples,
+zero measured ground error and approximately 60 FPS. This handoff has no scripted
+movement or automatic exit; close the game window to end its owned server.
+
+16 November 2026 — P2-08 VSync setting accepted on Linux:
+F10 -> Graphics now includes VSync On/Off, default On, independently of the saved
+FPS cap. On uses strict FIFO; Off uses AutoNoVsync. Selection applies to the native
+Window presentation mode and saves asynchronously with the existing UI settings.
+Missing vsync in legacy files defaults to true; malformed values are rejected
+without rewriting. The diagnostic uncapped override changes neither saved choice.
+315 client tests pass (five ignored), including visible/focused page guards,
+live window-mode mapping, benchmark override, legacy/default/invalid preferences
+and async persistence alongside cap edits. Strict all-target client Clippy, fmt
+and optimized client build pass: build/graphics-vsync-checks.json.
+Current physical display mode is 3440x1440 at 60 Hz (left unchanged); game viewport
+3440x1400. Native account samples measured 59.82 FPS with VSync On + cap 60,
+60.00 FPS with On + Unlimited, and 490.28 FPS with Off + Unlimited. Telemetry
+confirms FIFO/AutoNoVsync respectively and unchanged saved cap/VSync choices.
+See build/graphics-vsync-{on,off}-native-v1/report.json. Same stationary spawn,
+editor running, no desktop input injection, no diagnostic uncapped override in
+these cases; 10 Hz read-only telemetry overhead included. No every-scene guarantee.
+Windowless native-GPU Graphics previews at 1720x700 and 3440x1400 fit their bounds
+with zero validation diagnostics: build/graphics-vsync-previews-v1. Linux RX 7900
+XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; native Windows remains unqualified.
+The release client is installed beside the still-open editor for the next account
+playtest; unsaved authoring state was preserved. Hash: build/graphics-vsync-handoff.json.
+No push.
+
+16 November 2026 — P2-08 Graphics FPS cap accepted on Linux:
+F10 -> Graphics offers 30/60/90/120/144/165/240 FPS and Unlimited (default 60).
+Selection is highlighted, requires the focused open Graphics page and applies
+through Bevy's render schedule. Escape returns to Interface; Close closes the
+menu. Cap/debug/UI choices persist through the account launcher's shared local
+preference file. Older schema-1 preferences default to 60; malformed/unsupported
+caps are rejected without rewriting the file. Server timing remains unchanged.
+312 client tests pass (five ignored), strict all-target client Clippy, fmt and
+optimized build pass: build/graphics-cap-checks.json. Thirty focused Python
+launcher/environment/window tests pass. Native real-account samples at 3440x1400
+with editor running measured 29.95, 59.80, 119.16 and 485.09 FPS for 30/60/120/
+Unlimited. Mean frame intervals were 33.39/16.72/8.39/2.06 ms. Native cap cases did
+not use the diagnostic uncapped override; the saved setting drove the limiter.
+Evidence: build/graphics-cap-native-v2/report.json. The first v1 30-FPS sample is
+invalid because the setting changed to 144 during sampling; it is not acceptance.
+Guarded v2 checks reject changed caps/camera and enforce measured rate bounds.
+Actual GPU widget previews at 1720x700 and 3440x1400 fit within their viewports,
+with zero validation diagnostics: build/graphics-cap-previews-v2. These previews
+are windowless widget fixtures; account measurements use native windows with
+10 Hz read-only telemetry. Activation/focus/back/persistence have automated
+regression coverage; no automated desktop input was injected. Linux RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6; native Windows pacing remains unqualified.
+The final release client is copied beside the open editor for its next playtest,
+with hash/evidence in build/graphics-cap-native-v2/handoff.json. The earlier
+optimized baseline and original debug executables are retained. No push.
+
+16 November 2026 — P2-08 Millhaven optimized-build performance baseline:
+The manual editor had launched unoptimized debug client/server binaries. At the
+same stationary authored spawn, HUD and 3440x1400 viewport, uncapped debug measured
+38.62 FPS / 25.89 ms mean / 31.17 ms P95 with the editor running; optimized release
+measured 503.16 FPS / 1.99 ms mean / 2.46 ms P95. Pausing the editor gave 42.60 and
+536.90 FPS respectively; it was resumed after each comparison without losing its
+draft. Discrete GPU utilization was about 15% debug and 70% release with the editor
+running. This identifies build optimization as the dominant difference in this
+stationary comparison, not the exact cause of every reported 55 ms frame/view.
+Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6. No quality reduction, input
+injection, validation layers or compile workloads during samples; identical 10 Hz
+read-only UI telemetry overhead is included. No Windows, route or MMO-scale claim.
+Evidence: build/millhaven-performance-v1/report.json and its native captures.
+Optimized client/server/validator copies now sit beside the still-open debug
+editor; prior executables and build metadata are preserved under that session's
+debug-before-performance and build-before-optimized.json. The editor itself was
+not restarted. About 31 GiB of regenerable incremental caches were removed to make
+room; authored assets, drafts, databases and validation artifacts were retained.
+
+16 November 2026 — P2-08 solo playtest sizing and F10 follow-up:
+The ordinary solo launcher now supplies the same Bevy work-area placement hints
+as tiled playtests. The existing open editor picks up tools/play.py on its next
+account population launch; no editor/client rebuild or restart is required.
+Native frozen-client check measured position 0,0 and viewport 3440x1400 on Linux,
+AMD RX 7900 XTX / RADV NAVI31 / Vulkan, with no GPU diagnostics:
+build/solo-interface-native-v1/qualification.json. This is offline geometry/render
+evidence, not account gameplay or a native keyboard test. No input was injected.
+309 client tests pass (five ignored), including actual InputPlugin F10 events
+through loading, held-key repeat, physical release and subsequent settings toggle.
+Existing debug-toggle/focus tests pass; no F10 product failure was reproduced.
+Strict all-target client Clippy and fmt pass: build/solo-interface-checks.json.
+Python window/population suites: 43 pass, one skip. Combat history is hidden until
+an event; client chat remains unimplemented. The manual editor stays open, with
+native F10 confirmation left to the user's next playtest. All changes remain local.
+
+16 November 2026 — P2-02/P2-08 loading implementation; manual editor handoff:
+Connected Classic clients now use the initial loading cover independently of the
+optional HUD skin. Six real readiness milestones drive the bar; percentage text
+is removed. The world camera prepares normally but skips its window write until
+entry. Native windows remain hidden until loading frames are ready; the user
+confirmed the scene/T-pose flash stopped. Test-window tiling now runs after native
+mapping, with actual desktop bounds checked by the two-account harness.
+Millhaven uses the supplied sunset PNG unchanged, preserving its title/aspect ratio
+and avoiding a duplicate heading. The current starter-valley package ID is its
+legacy alias; other zones retain the generic art. Provenance is in content/ui/loading.
+308 client tests pass (five ignored), with fmt, strict all-target client Clippy and
+build passing: build/loading-ui-checks.json. New regressions cover progress,
+window visibility, camera output, post-map tiling and exact artwork selection.
+Native runs established real entry, held-input isolation and several complete
+fresh-account party flows, but final paired/restart/quadrant acceptance remains
+incomplete. Interrupted/failing v4–v10 runs are not final acceptance; latest
+Millhaven startup captures are under build/loading-ui-paired-v10/fresh/.
+The user requested manual use, then the editor only. Automated game drivers have
+exited; the editor is open via tools/edit_zone.py --no-build. Do not restart desktop
+input automation while the user is using it. Retain local changes; no push.
+
 16 November 2026 — P4-11 shared-marker presentation accepted:
 The Unit marks palette, eight shared overhead symbols and selected-target icons
 now use the private authoritative protocol from cda0608a. Exact selection/revision

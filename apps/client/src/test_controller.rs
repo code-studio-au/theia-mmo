@@ -166,7 +166,7 @@ pub(crate) fn from_args(
             .iter()
             .any(|s| s == "--test-controller" || s == "--test-route")
     {
-        return Err("Test controller requires one script and an authored Classic world".into());
+        return Err("Test controller requires one script and a Classic terrain world".into());
     }
     use std::io::Read;
     let path = PathBuf::from(args.remove(i));
@@ -310,7 +310,7 @@ fn drive(
     mut run: ResMut<Run>,
     network: Res<crate::network::Network>,
     gray: Res<crate::graybox::Graybox>,
-    scene: Res<crate::authored_scene::Scene>,
+    scene: Option<Res<crate::authored_scene::Scene>>,
     character: Option<Res<crate::reference_scene::Ready>>,
     mut controller: ResMut<crate::classic_controls::Controller>,
     mut intent: ResMut<crate::movement::MoveIntent>,
@@ -355,7 +355,7 @@ fn drive(
         controller.sync(Some(c.state));
     }
     let allowed = network.can_act()
-        && scene.ready()
+        && scene.as_ref().is_none_or(|scene| scene.ready())
         && character.is_some()
         && ready(&state, gray.patch.as_deref());
     let sample = if run.travel.is_some() {

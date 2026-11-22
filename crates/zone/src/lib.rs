@@ -1,6 +1,8 @@
 //! Bounded authoring documents and transactional commands, independent of Bevy.
 mod duplication;
 pub mod grading;
+pub mod height_tiles;
+pub mod imported;
 pub mod mailbox;
 pub mod markers;
 mod naming;
@@ -24,9 +26,16 @@ use std::{collections::BTreeSet, fs, io::Read, path::Path};
 use theia_core::coordinates::{GlobalPosition, LocalFrame, LocalPosition};
 
 pub const MAX_OBJECTS: usize = 1024;
-pub const MAX_DOCUMENT_BYTES: u64 = 2 * 1024 * 1024;
+pub const MAX_DOCUMENT_BYTES: u64 = 32 * 1024 * 1024;
+const MAX_LEGACY_DOCUMENT_BYTES: u64 = 2 * 1024 * 1024;
 pub const MAX_HISTORY: usize = 64;
-pub const MAX_EDITS: usize = 128;
+// One bounded transaction can transform every selectable asset in a full document.
+pub const MAX_EDITS: usize = MAX_OBJECTS
+    + scenery::MAX_SCENERY_PLACEMENTS
+    + vegetation::MAX_PLANTS
+    + markers::MAX_MARKERS
+    + particles::MAX_PARTICLE_PLACEMENTS
+    + test_players::MAX_TEST_PLAYERS;
 pub const ZONE_EXTENT: f64 = 512.;
 pub type Result<T> = std::result::Result<T, String>;
 
@@ -67,6 +76,8 @@ pub struct Zone {
     pub objects: Vec<Object>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub terrain: Option<terrain::HeightPatch>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub imported_terrain: Option<imported::Imported>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<paths::GuidePath>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -100,6 +111,7 @@ impl Default for Zone {
             spawn: [0., 0.1, 6.],
             objects: vec![],
             terrain: None,
+            imported_terrain: None,
             paths: vec![],
             markers: vec![],
             plants: vec![],
@@ -133,6 +145,11 @@ impl Zone {
     }
     /// Exact triangular terrain support, falling back to flat zone-origin Y.
     pub fn surface_position(&self, xz: [f64; 2]) -> Result<[f64; 3]> {
+        if let Some(imported) = &self.imported_terrain {
+            let position = [xz[0], f64::from(imported.height(xz)?), xz[1]];
+            self.check_position(position, 0.)?;
+            return Ok(position);
+        }
         let height = match &self.terrain {
             Some(p) => p.height(xz[0], xz[1])?.unwrap_or(0.),
             None => 0.,
@@ -141,19 +158,65 @@ impl Zone {
         self.check_position(position, 0.)?;
         Ok(position)
     }
-    fn check_position(&self, position: [f64; 3], margin: f64) -> Result<()> {
+    pub fn bounds(&self) -> [[f64; 3]; 2] {
+        if let Some(t) = &self.imported_terrain {
+            [
+                [t.bounds[0][0], -1024., t.bounds[0][1]],
+                [t.bounds[1][0], 1024., t.bounds[1][1]],
+            ]
+        } else {
+            [
+                self.origin.map(|v| v - ZONE_EXTENT),
+                self.origin.map(|v| v + ZONE_EXTENT),
+            ]
+        }
+    }
+    pub fn local_bounds(&self) -> [[f32; 3]; 2] {
+        self.bounds()
+            .map(|b| std::array::from_fn(|i| (b[i] - self.origin[i]) as f32))
+    }
+    pub fn check_position(&self, position: [f64; 3], margin: f64) -> Result<()> {
         self.local(position)?;
+        let bounds = self.bounds();
         require(
-            (0..3).all(|i| (position[i] - self.origin[i]).abs() + margin <= ZONE_EXTENT),
-            "Outside bounded 1024 m authoring zone",
+            margin.is_finite()
+                && margin >= 0.
+                && (0..3).all(|i| {
+                    position[i] - margin >= bounds[0][i] && position[i] + margin <= bounds[1][i]
+                }),
+            "Outside bounded authoring zone",
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=15), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=18), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
         )?;
+        if let Some(imported) = &self.imported_terrain {
+            require(
+                self.schema >= 16 && self.terrain.is_none(),
+                "Imported terrain needs schema 16..18 and no editable patch",
+            )?;
+            require(
+                !imported.extended_brushes() || self.schema >= 18,
+                "Extended terrain brushes require schema 18",
+            )?;
+            imported.validate()?;
+            require(
+                imported.stamp_count() == 0 || self.schema >= 17,
+                "Imported terrain edits require schema 17",
+            )?;
+            require(
+                self.origin
+                    == [
+                        (imported.bounds[0][0] + imported.bounds[1][0]) * 0.5,
+                        0.,
+                        (imported.bounds[0][1] + imported.bounds[1][1]) * 0.5,
+                    ],
+                "Imported authoring origin must be the package centre",
+            )?;
+        }
         if let Some(terrain) = &self.terrain {
             terrain.validate(self)?;
         }
@@ -321,7 +384,11 @@ impl Zone {
             serde_json::to_vec_pretty(self)
                 .map_err(|e| e.to_string())?
                 .len() as u64
-                <= MAX_DOCUMENT_BYTES,
+                <= if self.imported_terrain.is_some() {
+                    MAX_DOCUMENT_BYTES
+                } else {
+                    MAX_LEGACY_DOCUMENT_BYTES
+                },
             "Zone document byte budget exceeded",
         )?;
         Ok(())
@@ -347,7 +414,10 @@ impl Zone {
             bytes.len() as u64 <= MAX_DOCUMENT_BYTES,
             "Zone file too large",
         )?;
-        let zone: Self = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+        let mut zone: Self = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+        if let Some(imported) = &mut zone.imported_terrain {
+            imported.hydrate()?;
+        }
         zone.validate()?;
         Ok(zone)
     }
@@ -564,9 +634,14 @@ impl Editor {
             .checked_add(1)
             .ok_or("Revision exhausted".into())
     }
-    pub fn replace(&mut self, zone: Zone, expected: u64) -> Result<()> {
+    pub fn replace(&mut self, mut zone: Zone, expected: u64) -> Result<()> {
         let next = self.advance(expected)?;
         zone.validate()?;
+        if let (Some(next), Some(current)) =
+            (&mut zone.imported_terrain, &self.zone.imported_terrain)
+        {
+            next.share_samples_from(current);
+        }
         Self::push(&mut self.undo, std::mem::replace(&mut self.zone, zone));
         self.redo.clear();
         self.revision = next;
@@ -581,10 +656,21 @@ impl Editor {
                 self.advance(expected_revision)?;
                 require(
                     !edits.is_empty() && edits.len() <= MAX_EDITS,
-                    "Transaction needs 1..128 edits",
+                    "Transaction is empty or exceeds the document asset budget",
                 )?;
                 let mut candidate = self.zone.clone();
                 for edit in edits {
+                    if candidate.imported_terrain.is_some()
+                        && matches!(
+                            &edit,
+                            Edit::SetTerrain { .. }
+                                | Edit::ResampleTerrain { .. }
+                                | Edit::CreateStarterBasin
+                                | Edit::CreateStarterValley
+                        )
+                    {
+                        return Err("Imported terrain keeps its source resolution; use sculpt and paint tools to edit it".into());
+                    }
                     match edit {
                         Edit::Place { object } => {
                             require(
@@ -643,12 +729,17 @@ impl Editor {
                         }
                         Edit::PaintTerrain { paint } => {
                             candidate.schema = candidate.schema.max(6);
-                            paint.apply(
-                                candidate
-                                    .terrain
-                                    .as_mut()
-                                    .ok_or("Create terrain before painting")?,
-                            )?;
+                            if let Some(imported) = &mut candidate.imported_terrain {
+                                imported.paint(&paint)?;
+                                candidate.schema = candidate.schema.max(17);
+                            } else {
+                                paint.apply(
+                                    candidate
+                                        .terrain
+                                        .as_mut()
+                                        .ok_or("Create terrain before painting")?,
+                                )?;
+                            }
                         }
                         Edit::InsertPathPoint {
                             id,
@@ -900,11 +991,19 @@ impl Editor {
                             candidate.schema = candidate.schema.max(5);
                             candidate.plants.extend(plants);
                         }
-                        Edit::Brush { brush } => candidate
-                            .terrain
-                            .as_mut()
-                            .ok_or("Create terrain before brushing")?
-                            .apply(&brush)?,
+                        Edit::Brush { brush } => {
+                            if let Some(imported) = &mut candidate.imported_terrain {
+                                imported.sculpt(&brush)?;
+                                candidate.schema =
+                                    candidate.schema.max(if brush.extended() { 18 } else { 17 });
+                            } else {
+                                candidate
+                                    .terrain
+                                    .as_mut()
+                                    .ok_or("Create terrain before brushing")?
+                                    .apply(&brush)?;
+                            }
+                        }
                     }
                 }
                 self.replace(candidate, expected_revision)

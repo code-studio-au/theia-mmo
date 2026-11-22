@@ -305,6 +305,7 @@ fn os_trace(world: &mut World) {
             .get_resource::<crate::authored_scene::Scene>()
             .map(|scene| serde_json::to_value(scene.diagnostics()).unwrap())
             .unwrap_or_default();
+        data["loading"] = crate::loading::snapshot(world);
         data["ready_chunks"] = serde_json::json!(state.chunk_report);
         data["loot"] = crate::loot::qualification(world);
         data["combat_targets"] = state

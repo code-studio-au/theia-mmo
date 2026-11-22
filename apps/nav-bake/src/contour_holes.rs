@@ -187,35 +187,48 @@ mod tests {
 
     #[test]
     fn two_holes_preserve_excluded_area_through_actual_backend_triangulation() {
-        let mut set = ContourSet {
-            contours: vec![hole(22), outline(), hole(10)],
-            ..Default::default()
-        };
-        assert!(set.clone().into_polygon_mesh(6).is_err());
-        join(&mut set).unwrap();
-        assert_eq!(
-            set.contours
-                .iter()
-                .filter(|c| !c.vertices.is_empty())
-                .count(),
-            1
-        );
-        let mesh = set.into_polygon_mesh(6).unwrap();
-        let mut twice_area = 0;
-        for polygon in mesh.polygons() {
-            let v: Vec<_> = polygon
-                .map(|i| (mesh.vertices[usize::from(i)], 0))
-                .collect();
-            twice_area += area(&v).abs();
-            for x in [12, 24] {
-                let center = U16Vec3::new(x, 0, 12);
-                assert!(
-                    (0..v.len()).any(|i| cross(v[i].0, v[(i + 1) % v.len()].0, center) > 0),
-                    "Obstacle hole was filled by a walkable polygon"
-                );
+        // 640-cell outlines exceed u16 squared-distance range. Preserve both
+        // holes and exact area at actual 128m / 0.2m tile scale as well.
+        for scale in [1_u16, 16] {
+            let mut set = ContourSet {
+                contours: vec![hole(22), outline(), hole(10)],
+                ..Default::default()
+            };
+            for contour in &mut set.contours {
+                for (v, _) in &mut contour.vertices {
+                    v.x *= scale;
+                    v.z *= scale;
+                }
             }
+            assert!(set.clone().into_polygon_mesh(6).is_err());
+            join(&mut set).unwrap();
+            assert_eq!(
+                set.contours
+                    .iter()
+                    .filter(|c| !c.vertices.is_empty())
+                    .count(),
+                1
+            );
+            let mesh = set.into_polygon_mesh(6).unwrap();
+            let mut twice_area = 0;
+            for polygon in mesh.polygons() {
+                let v: Vec<_> = polygon
+                    .map(|i| (mesh.vertices[usize::from(i)], 0))
+                    .collect();
+                twice_area += area(&v).abs();
+                for x in [12, 24] {
+                    let center = U16Vec3::new(x * scale, 0, 12 * scale);
+                    assert!(
+                        (0..v.len()).any(|i| cross(v[i].0, v[(i + 1) % v.len()].0, center) > 0),
+                        "Obstacle hole was filled by a walkable polygon"
+                    );
+                }
+            }
+            assert_eq!(
+                twice_area,
+                2 * (40 * 40 - 2 * 4 * 4) * i64::from(scale).pow(2)
+            );
         }
-        assert_eq!(twice_area, 2 * (40 * 40 - 2 * 4 * 4));
     }
 
     #[test]

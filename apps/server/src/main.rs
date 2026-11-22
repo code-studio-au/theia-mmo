@@ -1194,6 +1194,26 @@ async fn main() -> Result<()> {
             .await
             .map(|_| ());
         }
+        if let Some(path) = std::env::var_os(theia_network::development::ENV) {
+            let path = PathBuf::from(path);
+            if !address.ip().is_loopback() || !path.is_absolute() || chunk_stream {
+                return Err("Developer speed control requires a local terrain server and absolute control path".into());
+            }
+            world.enable_development_speed()?;
+            let (control, requests) = theia_network::renet_runtime::world_control();
+            let watcher = tokio::spawn(theia_network::development::watch(
+                path,
+                control,
+                stop.clone(),
+            ));
+            let result = theia_network::renet_runtime::run_server_with_world_control(
+                transport, stop, world, requests,
+            )
+            .await;
+            watcher.abort();
+            let _ = watcher.await;
+            return result.map(|_| ());
+        }
         return if chunk_stream {
             theia_network::renet_runtime::run_server_streaming(transport, stop, world)
                 .await

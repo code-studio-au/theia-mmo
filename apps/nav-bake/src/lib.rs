@@ -12,10 +12,11 @@ use theia_network::{
     navigation::{Agent, Tile},
     procedural::Geometry,
 };
-// The dressed valley needs more source triangles than the terrain-only profile.
+// A dressed village on exact 2m imported ground needs more clipped input than
+// the old 4m valley. Keep bounded offline admission (64K vertices/128K triangles).
 // These offline input caps do not change the runtime polygon/tile budgets.
-pub(crate) const MAX_INPUT_VERTICES: usize = 32_768;
-pub(crate) const MAX_INPUT_TRIANGLES: usize = 65_536;
+pub(crate) const MAX_INPUT_VERTICES: usize = 65_536;
+pub(crate) const MAX_INPUT_TRIANGLES: usize = 131_072;
 
 pub fn bake(id: ChunkId, source: [u8; 32], agent: Agent, geometry: Geometry) -> Result<Tile> {
     bake_if_walkable(id, source, agent, geometry)?

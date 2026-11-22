@@ -85,6 +85,8 @@ pub(super) fn message(session: &Session) -> String {
         || session.marker_palette.is_some()
     {
         "Click Place · Esc Select · MMB Pan · Wheel Zoom"
+    } else if session.terrain_mode && session.editor.zone().imported_terrain.is_some() {
+        "Drag Sculpt/paint · I Sample height · Ctrl Z Undo · Ctrl S Save · Shift WASD Move"
     } else if session.terrain_mode {
         "Drag Sculpt/paint · Ctrl Z Undo · MMB Pan · Wheel Zoom"
     } else {
@@ -121,7 +123,13 @@ fn context(session: &Session) -> String {
             outliner::Target::Terrain => "Terrain".into(),
             outliner::Target::Spawn => "Player spawn".into(),
         })
-        .unwrap_or_else(|| "No selection".into());
+        .unwrap_or_else(|| {
+            if session.group.is_empty() {
+                "No selection".into()
+            } else {
+                format!("{} selected assets", session.group.len())
+            }
+        });
     format!("{selection}  |  {} objects", zone.objects.len())
 }
 pub(super) fn sync(

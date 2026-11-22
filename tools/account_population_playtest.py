@@ -184,7 +184,10 @@ def prepare_profiles(args, repository, bundle=None):
     skin = getattr(args, 'fantasy_ui', None)
     if getattr(args, 'parties', False):
         command.append('--parties')
-    command.extend(play.fantasy_ui_options(skin, True, True))
+    preferences = getattr(args, 'ui_preferences', None)
+    if skin and preferences is None:
+        preferences = repository/'build/user-preferences/interface.json'
+    command.extend(play.fantasy_ui_options(skin, True, True, ui_preferences=preferences))
     if corpse_loot:
         command.append('--creature-loot')
     if quests:
@@ -224,6 +227,7 @@ def main():
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--fantasy-ui', type=Path, default=os.environ.get('THEIA_FANTASY_UI'), help='Local Synty Fantasy Warrior HUD')
+    parser.add_argument('--ui-preferences', type=Path, help='Local interface/graphics settings; defaults to build/user-preferences/interface.json with the HUD')
     parser.add_argument('--parties', action='store_true', help='Enable party membership controls in this account test')
     parser.add_argument('--test-window', help='Monitor tile INDEX/COUNT for this account client')
     parser.add_argument('--window-size', default='3440x1440')

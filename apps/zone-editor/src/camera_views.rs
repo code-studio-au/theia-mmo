@@ -4,6 +4,15 @@ use bevy::camera::ScalingMode;
 
 /// Centre the actual authored patch, including its height, in the local frame.
 pub(super) fn terrain_target(zone: &Zone) -> Option<Vec3> {
+    if let Some(t) = &zone.imported_terrain {
+        let xz = [
+            (t.bounds[0][0] + t.bounds[1][0]) * 0.5,
+            (t.bounds[0][1] + t.bounds[1][1]) * 0.5,
+        ];
+        return Some(Vec3::from_array(
+            zone.local(zone.surface_position(xz).ok()?).ok()?,
+        ));
+    }
     let patch = zone.terrain.as_ref()?;
     let start = patch.origin().ok()?;
     let half = patch.extent_metres() / 2.;
@@ -39,6 +48,17 @@ impl Preset {
         }
     }
 }
+/// Keyboard navigation follows the view's horizontal bearing in perspective.
+/// Orthographic presets keep their exact authoring planes.
+pub(super) fn navigation_axes(view: &View) -> (Vec3, Vec3) {
+    if view.preset == Preset::Perspective {
+        let rotation = Quat::from_rotation_y(view.yaw);
+        (rotation * Vec3::X, rotation * Vec3::NEG_Z)
+    } else {
+        view.preset.pan_axes()
+    }
+}
+
 pub(super) fn transform(view: &View) -> Transform {
     let (direction, up) = match view.preset {
         Preset::Top => (Vec3::Y, Vec3::NEG_Z),
@@ -56,7 +76,7 @@ pub(super) fn transform(view: &View) -> Transform {
     let distance = if view.preset == Preset::Perspective {
         view.distance
     } else {
-        2. * theia_zone::ZONE_EXTENT as f32
+        view.distance.max(2. * theia_zone::ZONE_EXTENT as f32)
     };
     Transform::from_translation(view.target + direction * distance).looking_at(view.target, up)
 }
@@ -66,9 +86,14 @@ pub(super) fn projection(view: &View, play: bool, projection: &mut Projection) {
             *projection = Projection::Perspective(PerspectiveProjection::default());
         }
         if let Projection::Perspective(perspective) = projection {
-            perspective.far = if play { 1000. } else { 4096. };
+            perspective.far = if play {
+                1000.
+            } else {
+                (view.distance * 3.).max(4096.)
+            };
         }
     } else if let Projection::Orthographic(orthographic) = projection {
+        orthographic.far = (view.distance * 3.).max(4096.);
         if !matches!(orthographic.scaling_mode,ScalingMode::FixedVertical { viewport_height } if viewport_height==view.distance)
         {
             orthographic.scaling_mode = ScalingMode::FixedVertical {
@@ -78,7 +103,7 @@ pub(super) fn projection(view: &View, play: bool, projection: &mut Projection) {
     } else {
         *projection = Projection::Orthographic(OrthographicProjection {
             near: 0.01,
-            far: 4096.,
+            far: (view.distance * 3.).max(4096.),
             scaling_mode: ScalingMode::FixedVertical {
                 viewport_height: view.distance,
             },
@@ -89,7 +114,7 @@ pub(super) fn projection(view: &View, play: bool, projection: &mut Projection) {
 
 /// Drag the scene with the pointer in the camera plane through its target.
 /// This changes only the editor's bounded local view, never authored positions.
-pub(super) fn pan(view: &mut View, delta: Vec2, viewport_height: f32) {
+pub(super) fn pan(view: &mut View, delta: Vec2, viewport_height: f32, bounds: [[f32; 3]; 2]) {
     if !delta.is_finite() || !viewport_height.is_finite() || viewport_height <= 0. {
         return;
     }
@@ -108,15 +133,77 @@ pub(super) fn pan(view: &mut View, delta: Vec2, viewport_height: f32) {
     if !offset.is_finite() {
         return;
     }
-    view.target = (view.target + offset).clamp(
-        Vec3::splat(-theia_zone::ZONE_EXTENT as f32),
-        Vec3::splat(theia_zone::ZONE_EXTENT as f32),
-    );
+    view.target =
+        (view.target + offset).clamp(Vec3::from_array(bounds[0]), Vec3::from_array(bounds[1]));
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn editor_wasd_moves_the_view_in_its_current_basis_without_editing_objects() {
+        let mut world = World::new();
+        let zone = Zone::default();
+        world.insert_resource(Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            PathBuf::new(),
+            Some(zone.clone()),
+        ));
+        let mut time = Time::<()>::default();
+        time.advance_by(std::time::Duration::from_secs_f32(0.05));
+        world.insert_resource(time);
+        world.insert_resource(ButtonInput::<KeyCode>::default());
+        world.insert_resource(ButtonInput::<MouseButton>::default());
+        world.insert_resource(AccumulatedMouseMotion::default());
+        world.insert_resource(AccumulatedMouseScroll::default());
+        world.insert_resource(bevy::input_focus::InputFocus::default());
+        world.spawn(Window {
+            focused: true,
+            ..default()
+        });
+        let camera = world
+            .spawn((
+                crate::viewport::ZoneCamera,
+                Transform::default(),
+                Projection::default(),
+            ))
+            .id();
+        for yaw in [0., std::f32::consts::FRAC_PI_2, std::f32::consts::PI, 4.7] {
+            for key in [KeyCode::KeyD, KeyCode::KeyA, KeyCode::KeyW, KeyCode::KeyS] {
+                let mut view = view();
+                view.yaw = yaw;
+                let start = view.target;
+                let eye = transform(&view);
+                world.insert_resource(view);
+                world.resource_mut::<ButtonInput<KeyCode>>().reset_all();
+                world.resource_mut::<ButtonInput<KeyCode>>().press(key);
+                world.run_system_once(crate::camera_controls).unwrap();
+                let delta = world.resource::<View>().target - start;
+                let local = eye.rotation.inverse() * delta;
+                match key {
+                    KeyCode::KeyD => assert!(local.x > 0.79 && local.y.abs() < 0.00001),
+                    KeyCode::KeyA => assert!(local.x < -0.79 && local.y.abs() < 0.00001),
+                    KeyCode::KeyW => {
+                        assert!(local.z < 0. && local.y > 0. && local.x.abs() < 0.00001)
+                    }
+                    KeyCode::KeyS => {
+                        assert!(local.z > 0. && local.y < 0. && local.x.abs() < 0.00001)
+                    }
+                    _ => unreachable!(),
+                }
+                assert_eq!(delta.y, 0.);
+                assert!(
+                    (world.get::<Transform>(camera).unwrap().translation - eye.translation - delta)
+                        .length()
+                        < 0.00003
+                );
+                assert_eq!(world.resource::<Session>().editor.zone(), &zone);
+            }
+        }
+    }
+
     #[test]
     fn terrain_start_view_uses_full_span_and_surface_height_at_local_and_far_origins() {
         for xz in [8192., 128_000_000_000., -128_000_000_000.] {
@@ -159,6 +246,38 @@ mod tests {
         }
     }
     #[test]
+    fn perspective_navigation_tracks_screen_right_and_horizontal_forward_after_orbit() {
+        let mut view = view();
+        for yaw in [
+            0.,
+            0.6,
+            std::f32::consts::FRAC_PI_2,
+            std::f32::consts::PI,
+            4.7,
+        ] {
+            view.yaw = yaw;
+            for pitch in [0.15, 0.8, 1.5] {
+                view.pitch = pitch;
+                let camera = transform(&view);
+                let (right, forward) = navigation_axes(&view);
+                let actual_forward = camera.rotation * Vec3::NEG_Z;
+                assert!((right - camera.rotation * Vec3::X).length() < 0.00001);
+                assert!(
+                    (forward - Vec3::new(actual_forward.x, 0., actual_forward.z).normalize())
+                        .length()
+                        < 0.00001
+                );
+                assert_eq!(right.y, 0.);
+                assert_eq!(forward.y, 0.);
+                assert!(right.dot(forward).abs() < 0.00001);
+            }
+        }
+        for preset in [Preset::Top, Preset::Front, Preset::Right] {
+            preset.select(&mut view);
+            assert_eq!(navigation_axes(&view), preset.pan_axes());
+        }
+    }
+    #[test]
     fn pointer_pan_uses_the_projection_plane_and_zoom_scale() {
         for preset in [
             Preset::Top,
@@ -177,7 +296,12 @@ mod tests {
             };
             let expected =
                 before + (rotation * Vec3::X * (-100.) + rotation * Vec3::Y * 50.) * (span / 1440.);
-            pan(&mut view, Vec2::new(100., 50.), 1440.);
+            pan(
+                &mut view,
+                Vec2::new(100., 50.),
+                1440.,
+                [[-512.; 3], [512.; 3]],
+            );
             assert!((view.target - expected).length() < 0.0001);
             let offset = view.target - before;
             match preset {
@@ -188,7 +312,12 @@ mod tests {
             }
             view.target = before;
             view.distance *= 0.5;
-            pan(&mut view, Vec2::new(100., 50.), 1440.);
+            pan(
+                &mut view,
+                Vec2::new(100., 50.),
+                1440.,
+                [[-512.; 3], [512.; 3]],
+            );
             assert!((view.target - before - offset * 0.5).length() < 0.0001);
         }
     }
@@ -202,10 +331,15 @@ mod tests {
             (Vec2::ONE, 0.),
             (Vec2::ONE, f32::INFINITY),
         ] {
-            pan(&mut view, delta, height);
+            pan(&mut view, delta, height, [[-512.; 3], [512.; 3]]);
             assert_eq!(view.target, before);
         }
-        pan(&mut view, Vec2::new(-100_000., 100_000.), 1440.);
+        pan(
+            &mut view,
+            Vec2::new(-100_000., 100_000.),
+            1440.,
+            [[-512.; 3], [512.; 3]],
+        );
         assert_eq!(view.target, Vec3::new(512., 512., before.z));
     }
     #[test]

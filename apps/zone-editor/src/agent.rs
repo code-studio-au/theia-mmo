@@ -29,6 +29,7 @@ pub(super) fn poll(
     }
     mailbox.elapsed = 0.;
     let busy = session.drag.is_some()
+        || session.marquee.is_some()
         || session.stroke.is_some()
         || session.path_draft.is_some()
         || session.play.is_some()

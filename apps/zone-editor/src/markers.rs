@@ -4,7 +4,7 @@ use bevy::picking::mesh_picking::ray_cast::{MeshRayCast, MeshRayCastSettings};
 use std::collections::BTreeMap;
 use theia_zone::markers::{Marker, MarkerKind};
 #[derive(Component)]
-pub(super) struct AuthoredMarker(u64);
+pub(super) struct AuthoredMarker(pub u64);
 #[derive(Resource)]
 pub(super) struct Scene {
     meshes: [Handle<Mesh>; 3],
@@ -60,7 +60,7 @@ pub(super) fn sync(mut commands: Commands, session: Res<Session>, mut scene: Res
         session.marker_selected.filter(|_| session.marker_mode),
         session.play.is_some(),
     );
-    if scene.signature == Some(signature) {
+    if scene.signature == Some(signature) && !group_selection::active(&session) {
         return;
     }
     let removed: Vec<_> = scene
@@ -74,7 +74,22 @@ pub(super) fn sync(mut commands: Commands, session: Res<Session>, mut scene: Res
             commands.entity(entity).despawn();
         }
     }
-    for marker in &session.editor.zone().markers {
+    for original in &session.editor.zone().markers {
+        let pose = group_selection::preview(
+            &session,
+            original.id,
+            &group_selection::pose(
+                original.position,
+                original.yaw_degrees,
+                original.radius_metres,
+            ),
+        );
+        let marker = &theia_zone::markers::Marker {
+            position: pose.position,
+            yaw_degrees: pose.yaw_degrees,
+            radius_metres: pose.size[0],
+            ..original.clone()
+        };
         let material = if signature.1 == Some(marker.id) {
             scene.selected.clone()
         } else if marker.kind == MarkerKind::Npc {
@@ -134,7 +149,11 @@ pub(super) fn sync(mut commands: Commands, session: Res<Session>, mut scene: Res
             scene.cache.insert(marker.id, entities);
         }
     }
-    scene.signature = Some(signature);
+    scene.signature = if group_selection::active(&session) {
+        None
+    } else {
+        Some(signature)
+    };
 }
 pub(super) fn perform(action: Action, session: &mut Session) {
     match action {
@@ -188,7 +207,7 @@ pub(super) fn pointer(
     camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
     markers: Query<&AuthoredMarker>,
     objects: Query<(), With<viewport::Authored>>,
-    ground: Query<(), With<terrain::GroundPart>>,
+    ground: Query<(), imported_terrain::GroundFilter>,
     mut raycast: MeshRayCast,
     mut session: ResMut<Session>,
 ) {

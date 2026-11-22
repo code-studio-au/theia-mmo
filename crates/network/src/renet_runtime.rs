@@ -295,6 +295,8 @@ pub struct WorldRequests(mpsc::Receiver<WorldRequest>);
 pub type ChunkControl = WorldControl;
 pub type ChunkRequests = WorldRequests;
 enum WorldRequest {
+    DevelopmentSpeed(u8, oneshot::Sender<bool>),
+    DevelopmentReset(oneshot::Sender<bool>),
     Plan(
         Vec<theia_core::coordinates::ChunkId>,
         oneshot::Sender<Result<crate::chunk_world::LoadPlan>>,
@@ -316,6 +318,31 @@ pub fn world_control() -> (WorldControl, WorldRequests) {
     )
 }
 impl WorldControl {
+    pub async fn development_reset(&self) -> Result<bool> {
+        let _permit = self
+            .gate
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| "World transaction already in flight")?;
+        let (reply, receive) = oneshot::channel();
+        self.requests
+            .send(WorldRequest::DevelopmentReset(reply))
+            .await?;
+        Ok(receive.await?)
+    }
+    pub async fn development_speed(&self, speed: u8) -> Result<bool> {
+        let _permit = self
+            .gate
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| "World transaction already in flight")?;
+        let (reply, receive) = oneshot::channel();
+        self.requests
+            .send(WorldRequest::DevelopmentSpeed(speed, reply))
+            .await?;
+        Ok(receive.await?)
+    }
+
     /// Trusted local management only; not a client message or combat hot path.
     pub async fn remove_target(&self, key: theia_core::identity::EntityKey) -> Result<bool> {
         let _permit = self
@@ -1317,7 +1344,7 @@ async fn run_server_inner(
                     publish_combat_events(&mut server, &mut peers, &mut world, &mut stats, &events)?;
                 }
                 if world.procedural().is_some() {
-                    for (&id,peer) in &peers {server.send_message(id,MOVEMENT_CHANNEL,encode(&world.snapshot_for(peer.actor))?); if let Some(correction)=world.correction(peer.actor) {let bytes=if world.classic_enabled() {crate::classic_wire::encode_correction(correction)?} else {match world.dodge_profile() {Some(profile)=>crate::dodge_prediction_wire::encode_correction(correction,profile)?,None=>correction.encode()?}};server.send_message(id,MOVEMENT_CHANNEL,bytes);}}
+                    for (&id,peer) in &peers {server.send_message(id,MOVEMENT_CHANNEL,encode(&world.snapshot_for(peer.actor))?); if let Some(correction)=world.correction(peer.actor) {let bytes=if world.development_speed_enabled() {crate::development::encode(correction)?} else if world.classic_enabled() {crate::classic_wire::encode_correction(correction)?} else {match world.dodge_profile() {Some(profile)=>crate::dodge_prediction_wire::encode_correction(correction,profile)?,None=>correction.encode()?}};server.send_message(id,MOVEMENT_CHANNEL,bytes);}}
                 } else {
                     let bytes = encode(&snapshot)?;
                     for &id in peers.keys() {server.send_message(id, MOVEMENT_CHANNEL, bytes.clone());}
@@ -1358,6 +1385,8 @@ async fn run_server_inner(
             }
             Some(request) = requests.0.recv() => {
                 match request {
+                    WorldRequest::DevelopmentSpeed(speed,reply)=>{let _=reply.send(world.set_development_speed(speed));}
+                    WorldRequest::DevelopmentReset(reply)=>{let _=reply.send(world.reset_development_position());}
                     WorldRequest::RemoveTarget(key,reply)=>{let _=reply.send(world.remove_development_target(key));}
                     WorldRequest::Plan(ids, reply) => { let _ = reply.send(world.plan_chunks(&ids)); }
                     WorldRequest::Publish(candidate, reply) => {
@@ -2535,9 +2564,14 @@ async fn run_client_inner(
                 // Snapshots may arrive before reliable welcome; discard those
                 // rather than publishing an identity-less presentation state.
                 while let Some(bytes) = client.receive_message(MOVEMENT_CHANNEL) {
-                    if bytes.starts_with(crate::classic_wire::CORRECTION_TAG) || bytes.starts_with(crate::prediction_wire::CORRECTION_TAG) || bytes.starts_with(crate::dodge_prediction_wire::CORRECTION_TAG) {
+                    if bytes.starts_with(crate::development::CORRECTION_TAG) || bytes.starts_with(crate::classic_wire::CORRECTION_TAG) || bytes.starts_with(crate::prediction_wire::CORRECTION_TAG) || bytes.starts_with(crate::dodge_prediction_wire::CORRECTION_TAG) {
                         if commands.is_none() {return Err("Server requires the opt-in prediction profile".into());}
-                        let packet=if classic_source.is_some() {crate::classic_wire::decode_correction(&bytes)?} else {match &dodge {
+                        let packet=if classic_source.is_some() {
+                            if bytes.starts_with(crate::development::CORRECTION_TAG) {
+                                if std::env::var_os(crate::development::ENV).is_none() {return Err("Developer correction requires explicit local opt-in".into());}
+                                crate::development::decode(&bytes)?
+                            } else {crate::classic_wire::decode_correction(&bytes)?}
+                        } else {match &dodge {
                             Some(mode)=>crate::dodge_prediction_wire::decode_correction(&bytes,&mode.profile)?,
                             None=>crate::prediction_wire::Corrected::decode(&bytes)?,
                         }};

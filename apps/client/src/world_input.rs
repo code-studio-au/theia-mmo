@@ -116,8 +116,10 @@ fn dragged(event: On<PointerDrag>, mut gesture: ResMut<Gesture>) {
         gesture.travel = gesture.travel.max(event.distance.length());
     }
 }
+#[allow(clippy::too_many_arguments)]
 fn clicked(
     mut event: On<PointerClick>,
+    loading: Option<Res<crate::loading::State>>,
     nodes: Query<ActorNode<'_>>,
     gesture: Res<Gesture>,
     mut pending: ResMut<Pending>,
@@ -125,7 +127,9 @@ fn clicked(
     mode: Option<Res<crate::camera::mode::Mode>>,
     windows: Query<&Window>,
 ) {
-    if !windows.single().is_ok_and(|window| window.focused) {
+    if loading.is_some_and(|s| s.blocks_input())
+        || !windows.single().is_ok_and(|window| window.focused)
+    {
         pending.0 = None;
         event.propagate(false);
         return;
@@ -394,7 +398,23 @@ fn consume(
         }
     }
 }
+/// UI gesture ownership also applies to terrain-only sessions without targeting.
+pub(crate) fn install_gestures(app: &mut App) {
+    if app.world().contains_resource::<Gesture>() {
+        return;
+    }
+    app.init_resource::<Gesture>()
+        .add_observer(pressed)
+        .add_observer(dragged)
+        .add_systems(
+            PreUpdate,
+            track
+                .after(bevy::input::InputSystems)
+                .before(PickingSystems::ProcessInput),
+        );
+}
 pub(crate) fn install(app: &mut App) {
+    install_gestures(app);
     crate::camera::mode::install(app);
     qualification::install(app);
     #[derive(serde::Deserialize)]
@@ -413,22 +433,13 @@ pub(crate) fn install(app: &mut App) {
     })
     .init_resource::<Selection>()
     .init_resource::<Pending>()
-    .init_resource::<Gesture>()
     .insert_resource(MeshPickingSettings {
         require_markers: true,
         ..default()
     })
     .add_plugins(MeshPickingPlugin)
     .add_observer(clicked)
-    .add_observer(pressed)
-    .add_observer(dragged)
     .add_systems(Startup, cameras.after(crate::scene::setup))
-    .add_systems(
-        PreUpdate,
-        track
-            .after(bevy::input::InputSystems)
-            .before(PickingSystems::ProcessInput),
-    )
     .add_systems(Update, mark_meshes)
     .add_systems(
         Update,
@@ -451,6 +462,39 @@ mod tests {
     use bevy::picking::{backend::HitData, events::Pointer, pointer::Location};
     use std::time::Duration;
     use theia_core::identity::{EntityId, WorldEpoch};
+    #[test]
+    fn terrain_only_ui_press_owns_drag_without_installing_targeting() {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<MouseButton>>()
+            .init_resource::<AccumulatedMouseMotion>();
+        install_gestures(&mut app);
+        install_gestures(&mut app);
+        assert!(!app.world().contains_resource::<Selection>());
+        let window = app.world_mut().spawn(Window::default()).id();
+        let ui = app.world_mut().spawn(Node::default()).id();
+        app.world_mut().trigger(PointerPress {
+            entity: ui,
+            pointer: pointer(window),
+            button: PointerButton::Secondary,
+            hit: HitData::new(ui, 0., None, None),
+            count: 1,
+        });
+        app.world_mut().resource_mut::<Gesture>().travel = 50.;
+        app.update();
+        let gesture = app.world().resource::<Gesture>();
+        assert!(!gesture.world_origin());
+        assert!(!gesture.camera_dragging());
+        let ground = app.world_mut().spawn_empty().id();
+        app.world_mut().trigger(PointerPress {
+            entity: ground,
+            pointer: pointer(window),
+            button: PointerButton::Secondary,
+            hit: HitData::new(ground, 0., None, None),
+            count: 1,
+        });
+        app.world_mut().resource_mut::<Gesture>().travel = 50.;
+        assert!(app.world().resource::<Gesture>().camera_dragging());
+    }
     #[test]
     fn corpse_art_ignores_bind_pose_picking_and_uses_only_nonblocking_pick_surface() {
         let mut app = App::new();

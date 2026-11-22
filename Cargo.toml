@@ -1,4 +1,5 @@
 [workspace]
+exclude = ["third_party/rerecast", "third_party/landmass"]
 members = ["third_party/sprinkles/crates/bevy_sprinkles", "third_party/sprinkles/crates/bevy_sprinkles_editor", "apps/zone-editor", "crates/zone", "crates/vfx", "apps/nav-bake", "apps/client", "apps/server", "crates/core", "crates/network", "crates/persistence", "crates/auth"]
 resolver = "3"
 
@@ -29,3 +30,8 @@ theia-core = { path = "crates/core" }
 
 [profile.release]
 debug = 1
+
+# Recast-compatible squared-distance fix; see third_party/rerecast/THEIA.md.
+[patch.crates-io]
+rerecast = { path = "third_party/rerecast" }
+landmass = { path = "third_party/landmass" }

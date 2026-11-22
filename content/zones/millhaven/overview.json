@@ -1,0 +1,114 @@
+{
+  "schema": 2,
+  "title": "Millhaven",
+  "terrain_identity": [
+    49,
+    233,
+    230,
+    107,
+    64,
+    235,
+    214,
+    116,
+    202,
+    148,
+    40,
+    0,
+    214,
+    151,
+    99,
+    2,
+    97,
+    50,
+    158,
+    252,
+    211,
+    177,
+    26,
+    160,
+    109,
+    245,
+    174,
+    31,
+    220,
+    60,
+    84,
+    59
+  ],
+  "bounds": [
+    [
+      0.0,
+      0.0
+    ],
+    [
+      4096.0,
+      3072.0
+    ]
+  ],
+  "north_positive_z": true,
+  "landmarks": [
+    {
+      "name": "Village centre",
+      "description": "Village clearing and central meeting point.",
+      "xz": [
+        2048,
+        1810
+      ],
+      "major": true
+    },
+    {
+      "name": "Healing house",
+      "description": "Planned healing-house site.",
+      "xz": [
+        2010,
+        1845
+      ],
+      "major": false
+    },
+    {
+      "name": "Militia ground",
+      "description": "Militia training clearing.",
+      "xz": [
+        1710,
+        1840
+      ],
+      "major": false
+    },
+    {
+      "name": "Merchant yard",
+      "description": "Merchant and trade-yard site.",
+      "xz": [
+        2370,
+        1730
+      ],
+      "major": false
+    },
+    {
+      "name": "Southeast farm",
+      "description": "Southeastern farmstead.",
+      "xz": [
+        1470,
+        860
+      ],
+      "major": true
+    },
+    {
+      "name": "Southwest farm",
+      "description": "Southwestern farmstead.",
+      "xz": [
+        2890,
+        850
+      ],
+      "major": true
+    },
+    {
+      "name": "Bandit caves",
+      "description": "Cave entrance terrace. The cave interior is not built yet.",
+      "xz": [
+        2560,
+        2540
+      ],
+      "major": true
+    }
+  ]
+}

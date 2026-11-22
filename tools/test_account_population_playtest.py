@@ -70,6 +70,21 @@ class AccountPopulation(unittest.TestCase):
             self.assertEqual(command[command.index('--fantasy-ui')+1], str(args.fantasy_ui))
             self.assertNotIn('--test-route', command)
 
+    def test_graphics_preferences_survive_new_account_playtest_exports(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = self.fixture(root)
+            args.fantasy_ui = root/'HUD'
+            args.fantasy_ui.mkdir()
+            command = launcher.prepare(args, root)
+            self.assertEqual(command[command.index('--ui-preferences')+1],
+                             str(root/'build/user-preferences/interface.json'))
+            args.output = root/'second-session'
+            args.ui_preferences = root/'isolated-graphics.json'
+            command = launcher.prepare(args, root)
+            self.assertEqual(command[command.index('--ui-preferences')+1], str(args.ui_preferences))
+            self.assertFalse(args.ui_preferences.exists(), 'Only the client writes preferences')
+
     def test_explicit_party_mode_retains_named_classic_account_admission(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

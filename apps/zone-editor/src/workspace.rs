@@ -46,6 +46,7 @@ pub(super) struct Requests {
 pub(super) enum Control {
     PlayerModel,
     SpawnEnabled,
+    FlattenNoise,
     PlayerAnimation(playtest_avatar::Preview),
     New,
     AssetBrowser,
@@ -97,6 +98,9 @@ pub(super) enum Setting {
     Strength,
     Blend,
     Level,
+    FlattenEdge,
+    NoiseHeight,
+    NoiseWidth,
     ScatterRadius,
     ScatterCount,
 }
@@ -117,7 +121,7 @@ pub(super) fn busy(session: &Session) -> bool {
     session.ui.input_owned
         || session.has_modal()
         || session.play.is_some()
-        || session.drag.is_some()
+        || (session.drag.is_some() || session.marquee.is_some())
         || session.stroke.is_some()
         || session.path_draft.is_some()
 }
@@ -488,6 +492,11 @@ pub(super) fn setup(
                             property_tabs::group(panel, property_tabs::Tab::Tools, |panel| {
                                 setup_tools(panel);
                                 sections::spawn(panel, "Tool settings", |panel| {
+                                    theme::checkbox::spawn(
+                                        panel,
+                                        Control::FlattenNoise,
+                                        "Add terrain bumps",
+                                    );
                                     for setting in [
                                         Setting::MoveGrid,
                                         Setting::PlacementSize(0),
@@ -497,6 +506,9 @@ pub(super) fn setup(
                                         Setting::Strength,
                                         Setting::Blend,
                                         Setting::Level,
+                                        Setting::FlattenEdge,
+                                        Setting::NoiseHeight,
+                                        Setting::NoiseWidth,
                                         Setting::ScatterRadius,
                                         Setting::ScatterCount,
                                     ] {
@@ -716,7 +728,11 @@ impl Control {
                         .is_some_and(|p| p.points.len() > 2)
             }
             Self::Frame => {
-                (session.terrain_mode && session.editor.zone().terrain.is_some()) || selected
+                (session.terrain_mode
+                    && (session.editor.zone().terrain.is_some()
+                        || session.editor.zone().imported_terrain.is_some()))
+                    || selected
+                    || !session.group.is_empty()
             }
             Self::Command(Action::Ground) => {
                 selected
@@ -740,8 +756,21 @@ impl Setting {
             Self::Strength => (0.05, 8.),
             Self::Blend => (5., 100.),
             Self::Level => (-64., 64.),
+            Self::FlattenEdge => (1., 80.),
+            Self::NoiseHeight => (0., 8.),
+            Self::NoiseWidth => (4., 128.),
             Self::ScatterRadius => (1., 32.),
             Self::ScatterCount => (1., 64.),
+        }
+    }
+    fn range_for(self, session: &Session) -> (f32, f32) {
+        if matches!(self, Self::Radius) {
+            (4., terrain::radius_limit(session.brush_tool) as f32)
+        } else if matches!(self, Self::Level) {
+            let limit = terrain::height_limit(session.editor.zone()) as f32;
+            (-limit, limit)
+        } else {
+            self.range()
         }
     }
     fn value(self, session: &Session) -> f32 {
@@ -751,7 +780,9 @@ impl Setting {
                 .position(|&step| step == session.move_step)
                 .unwrap_or(3) as f32,
             Self::PlacementSize(axis) => session.placement_size[axis] as f32,
-            Self::Radius => session.brush_radius as f32,
+            Self::Radius => session
+                .brush_radius
+                .min(terrain::radius_limit(session.brush_tool)) as f32,
             Self::Strength => session.brush_strength,
             Self::Blend => {
                 100. * if session.terrain_paint {
@@ -761,6 +792,9 @@ impl Setting {
                 }
             }
             Self::Level => session.flatten_height as f32,
+            Self::FlattenEdge => session.flatten_edge as f32,
+            Self::NoiseHeight => session.noise_height,
+            Self::NoiseWidth => session.noise_width as f32,
             Self::ScatterRadius => session.scatter_radius as f32,
             Self::ScatterCount => session.scatter_count as f32,
         }
@@ -783,6 +817,14 @@ impl Setting {
             Self::ScatterRadius | Self::ScatterCount => {
                 session.vegetation_mode && session.plant_scatter && session.plant_palette.is_some()
             }
+            Self::FlattenEdge => {
+                session.terrain_mode && session.brush_tool == terrain::Tool::FlattenArea
+            }
+            Self::NoiseHeight | Self::NoiseWidth => {
+                session.terrain_mode
+                    && session.brush_tool == terrain::Tool::FlattenArea
+                    && session.flatten_noise
+            }
             Self::Radius => session.terrain_mode,
             Self::Strength => {
                 session.terrain_mode
@@ -795,7 +837,7 @@ impl Setting {
                 session.terrain_mode
                     && !matches!(
                         session.brush_tool,
-                        terrain::Tool::Raise | terrain::Tool::Lower
+                        terrain::Tool::Raise | terrain::Tool::Lower | terrain::Tool::FlattenArea
                     )
             }
             Self::Level => {
@@ -819,6 +861,9 @@ impl Setting {
             Self::Strength => format!("Strength  {value:.3} m / stamp"),
             Self::Blend => format!("Blend  {value:.2}%"),
             Self::Level => format!("Flatten level  {value:.2} m"),
+            Self::FlattenEdge => format!("Edge blend width  {value:.1} m"),
+            Self::NoiseHeight => format!("Bump height  {value:.2} m"),
+            Self::NoiseWidth => format!("Bump width  {value:.1} m"),
             Self::ScatterRadius => format!("Scatter radius  {value:.1} m"),
             Self::ScatterCount => format!("Plants per click  {value:.0}"),
         }
@@ -863,7 +908,11 @@ pub(super) fn execute(
 ) {
     if matches!(
         control,
-        Control::Snap | Control::Handles | Control::Grid | Control::SpawnEnabled
+        Control::Snap
+            | Control::Handles
+            | Control::Grid
+            | Control::SpawnEnabled
+            | Control::FlattenNoise
     ) {
         return;
     }
@@ -974,7 +1023,11 @@ pub(super) fn execute(
         Control::ParticlePreview => requests.particle_preview = true,
         Control::BindParticle => requests.bind_particle = true,
         Control::PreviewLibraryParticle => requests.preview_library_particle = true,
-        Control::Snap | Control::Handles | Control::Grid | Control::SpawnEnabled => {}
+        Control::Snap
+        | Control::Handles
+        | Control::Grid
+        | Control::SpawnEnabled
+        | Control::FlattenNoise => {}
     }
 }
 pub(super) fn change(
@@ -992,7 +1045,7 @@ pub(super) fn change(
     if !setting.visible(&session) {
         return;
     }
-    let (minimum, maximum) = setting.range();
+    let (minimum, maximum) = setting.range_for(&session);
     let value = event.value.clamp(minimum, maximum);
     match setting {
         Setting::MoveGrid => session.move_step = snapping::STEPS[value.round() as usize],
@@ -1009,6 +1062,9 @@ pub(super) fn change(
             }
         }
         Setting::Level => session.flatten_height = f64::from(value),
+        Setting::FlattenEdge => session.flatten_edge = f64::from(value),
+        Setting::NoiseHeight => session.noise_height = value,
+        Setting::NoiseWidth => session.noise_width = f64::from(value),
         Setting::ScatterRadius => session.scatter_radius = f64::from(value),
         Setting::ScatterCount => session.scatter_count = value.round() as u32,
     }
@@ -1025,6 +1081,11 @@ pub(super) fn toggle(
         return;
     }
     match controls.get(event.source) {
+        Ok(Control::FlattenNoise)
+            if session.terrain_mode && session.brush_tool == terrain::Tool::FlattenArea =>
+        {
+            session.flatten_noise = event.value
+        }
         Ok(Control::Grid) => view.show_grid = event.value,
         Ok(Control::Snap) => session.snap = event.value,
         Ok(Control::Handles) => session.show_move_handles = event.value,
@@ -1123,12 +1184,16 @@ pub(super) fn sync(
         menu_item,
     ) in &mut controls
     {
-        node.display = if matches!(
-            control,
-            Control::Point(_)
-                | Control::WholePath
-                | Control::Command(Action::InsertPoint | Action::RemovePoint)
-        ) && !session.path_mode
+        node.display = if (matches!(control, Control::FlattenNoise)
+            && (!session.terrain_mode
+                || session.brush_tool != terrain::Tool::FlattenArea
+                || session.play.is_some()))
+            || matches!(
+                control,
+                Control::Point(_)
+                    | Control::WholePath
+                    | Control::Command(Action::InsertPoint | Action::RemovePoint)
+            ) && !session.path_mode
             || matches!(
                 control,
                 Control::Command(
@@ -1157,6 +1222,7 @@ pub(super) fn sync(
             Control::Snap => session.snap,
             Control::Handles => session.show_move_handles,
             Control::Grid => view.show_grid,
+            Control::FlattenNoise => session.flatten_noise,
             Control::SpawnEnabled => session
                 .editor
                 .zone()
@@ -1176,7 +1242,11 @@ pub(super) fn sync(
         background.0 = if rail
             || matches!(
                 control,
-                Control::Snap | Control::Handles | Control::Grid | Control::SpawnEnabled
+                Control::Snap
+                    | Control::Handles
+                    | Control::Grid
+                    | Control::SpawnEnabled
+                    | Control::FlattenNoise
             ) {
             Color::NONE
         } else if !enabled {
@@ -1192,7 +1262,11 @@ pub(super) fn sync(
         };
         if matches!(
             control,
-            Control::Snap | Control::Handles | Control::Grid | Control::SpawnEnabled
+            Control::Snap
+                | Control::Handles
+                | Control::Grid
+                | Control::SpawnEnabled
+                | Control::FlattenNoise
         ) && checked != active
         {
             if active {
@@ -1231,6 +1305,10 @@ pub(super) fn sync(
         }
     }
     for (entity, setting, value, range, disabled) in &sliders {
+        let (min, max) = setting.range_for(&session);
+        if range.start() != min || range.end() != max {
+            commands.entity(entity).insert(SliderRange::new(min, max));
+        }
         let enabled = !busy(&session) && setting.visible(&session);
         if disabled == enabled {
             if enabled {
@@ -1311,3 +1389,78 @@ mod keyboard_tests;
 #[cfg(test)]
 #[path = "placement_tests.rs"]
 mod placement_tests;
+
+#[cfg(test)]
+mod area_brush_tests {
+    use super::*;
+    #[test]
+    fn sliders_toggle_tool_bounds_and_busy_guards_preserve_document() {
+        let zone = Zone::default();
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            "unused.json".into(),
+            Some(zone.clone()),
+        );
+        session.set_mode(EditorMode::Sculpt);
+        session.brush_tool = terrain::Tool::FlattenArea;
+        let mut app = App::new();
+        app.insert_resource(session)
+            .insert_resource(View {
+                target: Vec3::ZERO,
+                yaw: 0.,
+                pitch: 1.,
+                distance: 32.,
+                preset: camera_views::Preset::Perspective,
+                show_grid: true,
+            })
+            .add_observer(change)
+            .add_observer(toggle);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: true,
+                ..default()
+            })
+            .id();
+        let noise = app.world_mut().spawn(Control::FlattenNoise).id();
+        assert!(!Setting::NoiseHeight.visible(app.world().resource::<Session>()));
+        app.world_mut().trigger(ValueChange {
+            source: noise,
+            value: true,
+            is_final: true,
+        });
+        assert!(Setting::NoiseHeight.visible(app.world().resource::<Session>()));
+        for (setting, value) in [
+            (Setting::Radius, 160.),
+            (Setting::FlattenEdge, 40.),
+            (Setting::NoiseHeight, 3.),
+            (Setting::NoiseWidth, 24.),
+        ] {
+            let entity = app.world_mut().spawn(setting).id();
+            app.world_mut().trigger(ValueChange {
+                source: entity,
+                value,
+                is_final: true,
+            });
+            assert_eq!(setting.value(app.world().resource::<Session>()), value);
+        }
+        let s = app.world().resource::<Session>();
+        assert_eq!(s.editor.zone(), &zone);
+        assert_eq!(s.editor.history(), (0, 0));
+        assert!(!Setting::Blend.visible(s));
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+        app.world_mut().trigger(ValueChange {
+            source: noise,
+            value: false,
+            is_final: true,
+        });
+        assert!(app.world().resource::<Session>().flatten_noise);
+        let mut s = app.world_mut().resource_mut::<Session>();
+        s.brush_tool = terrain::Tool::Smooth;
+        assert_eq!(Setting::Radius.range_for(&s), (4., 160.));
+        assert!(!Setting::FlattenEdge.visible(&s));
+        s.set_mode(EditorMode::Paint);
+        assert_eq!(Setting::Radius.range_for(&s), (4., 32.));
+        assert_eq!(s.brush_radius, 32.);
+    }
+}

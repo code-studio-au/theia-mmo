@@ -133,16 +133,28 @@ pub fn tick(
     assets: Res<Assets<Gltf>>,
     view: SceneReadiness,
     mut pipelines: ResMut<crate::capture_ready::CaptureReady>,
-    mut exit: MessageWriter<AppExit>,
+    mut exit: (
+        MessageWriter<AppExit>,
+        Option<ResMut<crate::loading::State>>,
+    ),
 ) {
-    if view.ready.is_some() {
+    if view.ready.is_some()
+        || exit
+            .1
+            .as_ref()
+            .is_some_and(|s| s.phase == crate::loading::Phase::Failed)
+    {
         return;
     }
     if matches!(server.load_state(loading.asset.id()), LoadState::Failed(_))
         || loading.started.elapsed().as_secs() > 120
     {
         error!("Terrain scene dependency/pipeline loading failed or timed out");
-        exit.write(AppExit::error());
+        crate::loading::exit_unless_presented(
+            &mut exit.0,
+            exit.1.as_deref_mut(),
+            "World assets could not be prepared.",
+        );
         return;
     }
     if !server.is_loaded_with_dependencies(loading.asset.id()) {
@@ -170,7 +182,11 @@ pub fn tick(
                 Ok(false) => return,
                 Err(error) => {
                     error!("Terrain material validation failed: {error}");
-                    exit.write(AppExit::error());
+                    crate::loading::exit_unless_presented(
+                        &mut exit.0,
+                        exit.1.as_deref_mut(),
+                        "World assets could not be prepared.",
+                    );
                     return;
                 }
             }

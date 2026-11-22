@@ -14,16 +14,27 @@ pub(super) fn circle_contains(point: [f32; 2], inset: f32) -> bool {
         && (point[0] - radius).hypot(point[1] - radius) <= radius - inset
 }
 
+/// Both map axes must turn together: +Z north requires -X east in Y-up.
+/// Keeping +X east would reflect the map and reverse apparent turn direction.
+pub(crate) fn heading_rotation(yaw: f32, north_positive_z: bool) -> bevy::math::Rot2 {
+    bevy::math::Rot2::radians(if north_positive_z {
+        std::f32::consts::PI - yaw
+    } else {
+        -yaw
+    })
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct View {
+    pub north_positive_z: bool,
     pub centre: GlobalPosition,
 }
 impl View {
     pub fn project(self, point: GlobalPosition) -> Option<[f32; 2]> {
         let a = self.centre.metres();
         let b = point.metres();
-        let dx = b[0] - a[0];
-        let dz = b[2] - a[2];
+        let dx = (b[0] - a[0]) * if self.north_positive_z { -1. } else { 1. };
+        let dz = (b[2] - a[2]) * if self.north_positive_z { -1. } else { 1. };
         if dx.abs() > RADIUS || dz.abs() > RADIUS {
             return None;
         }
@@ -39,7 +50,11 @@ impl View {
         }
         let a = self.centre.metres();
         let offset = |v: usize| ((v as f64 + 0.5) / PIXELS as f64 * 2. - 1.) * RADIUS;
-        GlobalPosition::new([a[0] + offset(x), 0., a[2] + offset(z)])
+        GlobalPosition::new([
+            a[0] + offset(x) * if self.north_positive_z { -1. } else { 1. },
+            0.,
+            a[2] + offset(z) * if self.north_positive_z { -1. } else { 1. },
+        ])
     }
 }
 
@@ -51,7 +66,7 @@ pub(super) struct HeightTile<'a> {
 impl HeightTile<'_> {
     /// Match the rendered grid's two triangles; ignore its appended skirts.
     pub fn height(&self, point: GlobalPosition) -> Option<f32> {
-        if !matches!(self.cells, 8 | 32)
+        if !matches!(self.cells, 8 | 32 | 64 | 128)
             || self.positions.len() < (self.cells + 1).pow(2)
             || point.chunk(128)? != self.id
         {
@@ -88,6 +103,67 @@ impl HeightTile<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bevy::prelude::*;
+
+    #[test]
+    fn right_turns_are_clockwise_and_forward_motion_matches_arrow_for_both_compasses() {
+        for north_positive_z in [false, true] {
+            let mut controller = crate::classic_controls::Controller::parse(include_bytes!(
+                "../../../../content/input/classic-controls.json"
+            ))
+            .unwrap();
+            let mut keys = ButtonInput::default();
+            let north_yaw = if north_positive_z {
+                std::f32::consts::PI
+            } else {
+                0.
+            };
+            controller.sample(&keys, 0., north_yaw, true, false, true);
+            let view = View {
+                north_positive_z,
+                centre: p(2048., 1810.),
+            };
+            let centre = Vec2::from_array(view.project(view.centre).unwrap());
+            // Actual D-key input: north -> east -> south -> west -> north.
+            for expected in [Vec2::NEG_Y, Vec2::X, Vec2::Y, Vec2::NEG_X, Vec2::NEG_Y] {
+                let arrow = heading_rotation(controller.yaw(), north_positive_z) * Vec2::NEG_Y;
+                assert!(
+                    arrow.distance(expected) < 0.00001,
+                    "{north_positive_z}: {arrow:?}"
+                );
+                let forward = Quat::from_rotation_y(controller.yaw()) * Vec3::NEG_Z;
+                let ahead = p(
+                    2048. + f64::from(forward.x) * 20.,
+                    1810. + f64::from(forward.z) * 20.,
+                );
+                let projected =
+                    (Vec2::from_array(view.project(ahead).unwrap()) - centre).normalize();
+                assert!(projected.distance(arrow) < 0.00001);
+                keys.press(KeyCode::KeyD);
+                for _ in 0..30 {
+                    controller.sample(&keys, 1. / 60., 0., false, false, true);
+                }
+                keys.release(KeyCode::KeyD);
+            }
+        }
+    }
+
+    #[test]
+    fn imported_north_and_pixel_projection_are_inverses() {
+        let view = View {
+            north_positive_z: true,
+            centre: p(2048., 1810.),
+        };
+        assert_eq!(view.project(p(2048., 1938.)), Some([88., 0.]));
+        assert_eq!(view.project(p(2176., 1810.)), Some([0., 88.]));
+        for row in 0..PIXELS {
+            for col in 0..PIXELS {
+                let point = view.project(view.pixel(col, row).unwrap()).unwrap();
+                assert!((point[0] - (col as f32 + 0.5) * DISPLAY / PIXELS as f32).abs() < 0.001);
+                assert!((point[1] - (row as f32 + 0.5) * DISPLAY / PIXELS as f32).abs() < 0.001);
+            }
+        }
+    }
     #[test]
     fn round_map_keeps_marker_extents_inside_the_circle() {
         assert!(circle_contains([88., 88.], 15.));
@@ -110,7 +186,10 @@ mod tests {
             p(1e12 - 256., -1e12 + 256.),
         ] {
             let [x, _, z] = centre.metres();
-            let v = View { centre };
+            let v = View {
+                north_positive_z: false,
+                centre,
+            };
             assert_eq!(v.project(centre), Some([88., 88.]));
             assert_eq!(v.project(p(x + 128., z)), Some([176., 88.]));
             assert_eq!(v.project(p(x, z - 128.)), Some([88., 0.]));
@@ -120,17 +199,22 @@ mod tests {
     }
     #[test]
     fn pixel_centres_and_world_edges_remain_checked_and_do_not_wrap_chunks() {
-        let v = View { centre: p(0., 0.) };
+        let v = View {
+            north_positive_z: false,
+            centre: p(0., 0.),
+        };
         assert_eq!(v.pixel(0, 0).unwrap().metres(), [-126., 0., -126.]);
         assert_eq!(v.pixel(63, 63).unwrap().metres(), [126., 0., 126.]);
         assert!(v.pixel(64, 0).is_none());
         assert!(theia_network::procedural::owner(v.pixel(0, 0).unwrap()).is_none());
         let edge = View {
+            north_positive_z: false,
             centre: p(15999., 15999.),
         };
         assert!(theia_network::procedural::owner(edge.pixel(63, 63).unwrap()).is_none());
         assert!(theia_network::procedural::owner(edge.pixel(0, 0).unwrap()).is_some());
         let far = View {
+            north_positive_z: false,
             centre: p(1e12, 0.),
         };
         assert!(far.pixel(63, 0).is_none());
@@ -177,7 +261,7 @@ mod tests {
     }
     #[test]
     fn shared_tile_edges_match_across_lods_without_reading_or_generating_new_tiles() {
-        for cells in [8, 32] {
+        for cells in [8, 32, 64, 128] {
             let mut a = theia_network::procedural::grid(cells);
             let mut b = theia_network::procedural::grid(cells);
             for vertex in &mut a.positions {

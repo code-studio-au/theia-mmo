@@ -19,10 +19,9 @@ pub(super) fn add(session: &mut Session) {
         })
         .find(|candidate| !zone.quest_areas.iter().any(|a| &a.definition == candidate))
         .expect("More candidate names than existing areas");
-    let min = std::array::from_fn(|i| {
-        zone.origin[i]
-            + (zone.spawn[i] - zone.origin[i] - 4.)
-                .clamp(-theia_zone::ZONE_EXTENT, theia_zone::ZONE_EXTENT - 8.)
+    let bounds = zone.bounds();
+    let min = std::array::from_fn::<_, 3, _>(|i| {
+        (zone.spawn[i] - 4.).clamp(bounds[0][i], bounds[1][i] - 8.)
     });
     let max = min.map(|v| v + 8.);
     let revision = session.editor.revision();

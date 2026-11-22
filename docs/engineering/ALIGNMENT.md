@@ -8,6 +8,241 @@ metadata, two real authenticated native clients and saved-preview restoration.
 Those checks pass in the modular hero evidence set; final protocol is 14. Equipment
 armour mapping and the standalone title launcher remain separate. See MODULAR_HERO.md.
 
+22 November 2026 — P5-17 asset group transforms:
+Use transient viewport selection over existing placement IDs and the standard
+Bevy handles/outline rendering. Move preserves offsets; yaw and uniform scale
+share the bounds-centre pivot in checked global f64 coordinates. Preview commits
+as one validated transaction and supports exact undo; the bounded edit budget
+covers every supported asset in a document. Terrain and guide/volume authoring
+remain separate. CPU regressions and isolated native RX 7900 XTX input/render/save
+checks pass; see STATUS and ZONE_EDITOR for controls, evidence and limitations.
+No runtime protocol or persisted selection-group format was added.
+
+22 November 2026 — P2-08 imported Millhaven manual performance:
+Manual editor/imported playtest launchers now default to matching release builds.
+Nearby was already reducing residency to 81 tiles; the slow session used debug
+binaries. Same stationary imported village, Nearby and 3440x1400 with editor closed:
+39.96 FPS / 25.02 ms debug versus 496.86 FPS / 2.01 ms release, uncapped, no input
+injection or quality reduction. Matching optimized editor is reopened with its local
+services. Build/launcher/strict checks pass; see STATUS and build/mhp-20261122b/report.json
+for device, exact scope and limits. No route or Windows performance claim.
+
+22 November 2026 — P5-17 large smoothing and centre-height area flattening:
+Smooth radius now reaches 160 m (5x). New Flatten area holds the exact initial
+centre height, with an adjustable outer transition and optional deterministic
+Perlin bumps controlled by height/width sliders. Imported schema-18 journals retain
+undo/cancel/save and shared samples. Native rendering identified and resolved a
+coarse-mesh/brush overlay mismatch: the existing bounded 25-tile fine region follows
+the active brush. Zone/editor suites, focused final regressions, strict lint/build
+and native RX 7900 XTX rendering/save/reload checks pass; see STATUS and ZONE_EDITOR.
+Runtime publishing and Windows execution remain separate; all changes stay local.
+
+17 November 2026 — P2-04 / P2-14 reset recovery and P3-15 gentler pass 2:
+F10 Developer Reset position uses trusted local-owner controls and server collision-
+prepared teleport to the original spawn, clearing fall/prediction state while
+preserving speed. Single-surface local walkthroughs automatically recover below
+terrain; ordinary/account/cave behavior is unchanged. Disconnected sessions require
+relaunch. This safeguards recovery without claiming the original CCD bug is fixed.
+The user-approved second smoothing/60% scaling pass is available separately as
+build/covenant-seven-gentle-v2, with original and v1 sources retained. See STATUS
+for source metrics, tests, native Reset proof and exact limits.
+
+17 November 2026 — P5-17 / P3-15 / P2-14 gentle regional terrain and maps:
+The seven-zone 7296 x 8192 m editor and separate 2 m walkthrough are ready locally.
+Whole-master smoothing/60% height scaling preserve originals and shared samples.
+Map M, seven hover boundaries, Graphics/Developer HUD and the larger-view minimap
+fix pass focused suites and Linux native checks; see STATUS for exact scope/evidence.
+The editor and normal playtest are open. Further terrain design, publishing editor
+journals, native Windows and whole-continent capacity remain separate work.
+
+17 November 2026 — P2-04 / P2-14 / P3-15 original H1/H2 developer walkthrough:
+User scope: load Millhaven and Stoneford directly from Covenant_All_20_Zone_Heightmaps_v1.zip,
+with Graphics HUD and a new F10 Developer running-speed multiplier. The older
+4 km Millhaven preview and World Machine edits are explicitly excluded. Verify
+both shared-grid crops against the archive master, preserve elevations/relative
+placement and convert only to admitted 2 m terrain tiles with outer edge padding.
+Prerequisites: saved terrain, encrypted local Renet, Classic fixed-step prediction,
+Graphics menu and bounded owner-management queue. Developer speed is explicit
+local-loopback ticket-server opt-in; requests use a local file and bounded owner
+queue, never player wire input. Separate DT03 correction envelope carries accepted
+1/2/4/8/16 multipliers; ordinary TP03 remains strict normal speed. Multiply running
+only, preserve walk/jump/gravity/collision/readiness and reset new sessions to 1×.
+Acceptance: immutable source proof, unit/authority/prediction/wire/UI regressions,
+strict Clippy/fmt, matching binaries, native controls and both original zones,
+then leave the requested manual walkthrough open. Accepted at this scope: targeted
+network/authority/Classic suites, 331 client tests, strict Clippy/fmt and builds;
+actual Millhaven menu/speed/Graphics interaction and input-free Stoneford native
+rendering pass. Manual walkthrough is open. See STATUS for evidence/limitations.
+
+17 November 2026 — P2-06 / P2-08 / P2-14 Graphics view-distance control:
+New user request: put view distance in Graphics after cancelling the earlier
+terrain-specific maximum-view task. Reuse that local bounded visual policy;
+prerequisites are the saved-terrain streamer and existing local Graphics store.
+Nearby/Far/Maximum apply live, persist with legacy-safe defaults, and restore
+camera clipping when reduced. Maximum uses a full saved zone up to 32 x 32 tiles,
+otherwise a bounded 15-tile radius. Preserve near detail, collision and authority.
+Acceptance: actual widget guards/save/reload, ring bounds/camera restoration,
+client suite, strict Clippy/fmt, build, native menu and live residency/cleanup.
+This does not resume terrain design or change the open editor. Accepted on Linux:
+330 tests, strict Clippy/fmt/build and actual native menu/restart/460→289→81
+residency, mesh cleanup and camera restoration pass. See STATUS and
+build/graphics-view-checks/native/qualification.json. No Windows claim.
+
+17 November 2026 — P2-06 / P2-08 / P3-15 earlier full-zone terrain view (cancelled):
+The user cancelled this task before its build completed. Its local visual policy
+is reused by the separately requested Graphics control above. Historical plan:
+The user requested maximum terrain/chunk view in the WM v3 walkthrough. The
+current 81-tile visual ring hides distant surrounding mountains; the editor
+already shows all 460 tiles. Add an opt-in client-only full saved-zone view,
+bounded to 32 x 32 tiles. Retain near source detail, existing far LOD, one-job
+visual workers, nearby collision and authoritative readiness. Extend only the
+camera far plane to cover the package diagonal. Acceptance: policy/camera tests,
+client regressions, fmt/strict Clippy, optimized build and actual native 460-tile
+residency/distant visibility, movement, memory and physics checks. Preserve the
+open editor and terrain documents. No server streaming-capacity claim.
+
+17 November 2026 — P5-17 / P3-15 imported terrain editing:
+User scope: implement sculpt/paint and persistent undoable editing on the full
+imported zone. Prerequisites are the accepted schema-16 source binding, full-zone
+renderer, shared stroke command engine and bounded camera coordinates. Use the
+existing brushes with a schema-17 deterministic journal and shared edited tile
+caches. Acceptance covers all tools at 1/2/4 m, seams, outer edges, normalized paint,
+atomic refusals, unchanged source files, live preview/cancel, one undo per drag,
+save/reload and native mesh/normal checks. Retain Bevy rendering and the existing
+8-create/2-replace frame budgets. Runtime publication and Windows remain separate.
+
+17 November 2026 — P5-17 / P3-15 imported-zone authoring:
+User request: add editor support for the complete imported Millhaven zone and
+open it for scene navigation/object editing. Actual prerequisites are verified
+saved height tiles, checked centered coordinates, the existing document/history
+model and camera-relative editor navigation. Acceptance: full 4096 x 3072 m
+coverage, exact close-up terrain picking, placement/transform/save/reload/undo
+at distant sites, bounded mesh detail, preserved source and prior draft, CPU
+regressions, strict Clippy/fmt and native Bevy rendering. Imported sculpt/paint,
+object publication to the walkthrough and embedded offline play remain deferred.
+
+17 November 2026 — P2-14 / P3-15 / P5-17 direction follow-up:
+User walkthrough feedback exposed a reflected +Z-north / +X-east map and editor
+navigation tied to world axes after camera orbit. Keep +Z north, pair it with
+-X east across the overview/minimap, and retain exact source positions. Editor
+perspective WASD follows camera bearing on the horizontal plane; orthographic
+planes and mouse pan/orbit remain. Prerequisites are the accepted map package
+and existing view controls. Acceptance includes cardinal D-key turns, projected
+forward/right agreement, actual editor camera-controls WASD checks with unchanged
+document, client/editor suites, strict Clippy/fmt and native rendered checks.
+
+17 November 2026 — P2-14 / P3-15 full-zone map overview:
+The user supplied MMO map references and requested orientation relative to the
+whole Millhaven zone, village and bandit caves. Prerequisites are the accepted
+terrain package, source feature coordinates, checked position/facing and Bevy
+UI. Bind complete offline cartography to the exact package; show a live player
+arrow, source landmarks and straight-line distances without loading more terrain.
+M/button/Escape use ordinary UI ownership; preserve manual movement and targets.
+The matching local minimap adopts source +Z north so both maps agree. Reuse the
+existing mouse-gesture tracker in this terrain-only session, independently of
+targeting. Scope, asset provenance and acceptance are in ZONE_OVERVIEW.md/STATUS.
+No quest-log expansion, gameplay movement requests, content migration or Windows
+qualification is implied. The editor and its unsaved draft remain preserved.
+
+17 November 2026 — P1-10 / P2-06/07/08 / P3-13/15 full Millhaven walkthrough:
+The user's next playable slice is the entire supplied 4,096 x 3,072 m terrain.
+Use the accepted saved-terrain loader, checked origins, bounded workers and
+Classic Renet authority/prediction. Rectangular v2 packages retain all 1 m source
+samples; fine collision uses standard Avian heightfields, near Bevy meshes retain
+full detail and distant meshes use 4 m spacing. Legacy v1 packages are preserved.
+Actual prerequisites and acceptance are in IMPORTED_HEIGHTFIELDS.md and STATUS.
+This is terrain traversal, not a full-map editor, account/content migration,
+navigation qualification, Windows proof or MMO-scale capacity result. Keep the
+existing editor and its unsaved draft; water/bridges/scenery remain separate.
+
+16 November 2026 — P2-08 VSync control:
+User-approved follow-up to the Graphics FPS cap: independent saved On/Off choice,
+default On, strict FIFO for tear-free presentation and AutoNoVsync for Off. Uses
+Bevy's standard native window update; no renderer, simulation or display-mode
+changes. Prerequisites were accepted Graphics widgets, async preferences and
+render pacing. 315 client tests, strict client Clippy/fmt and release build pass.
+Native 60 Hz evidence: On/cap60 59.82 FPS; On/Unlimited 60.00; Off/Unlimited 490.28.
+Small/wide native-GPU widget previews fit with zero diagnostics. STATUS records
+exact reports and scope; native Windows remains separate. Editor stays open with
+its unsaved draft; next account launch uses the installed optimized client.
+
+16 November 2026 — P2-08 optimized playtests and Graphics FPS cap:
+Prerequisites: current authenticated population launch, accepted F10/debug controls,
+ordinary Bevy 0.20 render schedule and async local UI preferences. First establish
+the optimized Millhaven baseline (503 FPS vs 39 FPS debug at the same stationary
+3440x1400 spawn, editor running), then implement the user's requested Graphics
+page and persistent local cap. No terrain simplification, gameplay-rate change,
+new renderer or mismatched Bevy plugin. Native final 30/60/120/Unlimited caps measure
+29.95/59.80/119.16/485.09 FPS; small/wide GPU layouts pass with zero diagnostics.
+312 client tests, strict client Clippy/fmt/release build and 30 focused Python tests
+pass. STATUS records exact evidence, invalid v1 sample and native/telemetry scope.
+The existing editor remains open; its next account launch uses the new optimized
+client/server and shared graphics preferences. No native Windows or broader
+scene/route/MMO capacity claim. No push.
+
+16 November 2026 — P2-08 solo work-area follow-up:
+Ordinary solo account/population launches now use the existing Bevy 1/1 placement
+path, clamping the requested size to the desktop work area like paired/quadrant
+launches. Prerequisites are the accepted work-area parser and post-map placement.
+Acceptance: native 3440x1400 viewport at 0,0 on Linux RX 7900 XTX / Vulkan, no GPU
+diagnostics; 309 client tests (five ignored), strict Clippy/fmt and 43 Python tests
+(one skipped) pass. See build/solo-interface-native-v1/qualification.json and
+build/solo-interface-checks.json. F10 after loading/release passes InputPlugin
+regression coverage; no native keyboard acceptance or reproduced shortcut bug is
+claimed. The existing editor remains open for manual account population playtests.
+
+16 November 2026 — P2-02/P2-08 loading implementation; manual editor handoff:
+Connected Classic clients now use the initial loading cover independently of the
+optional HUD skin. Six real readiness milestones drive the bar; percentage text
+is removed. The world camera prepares normally but skips its window write until
+entry. Native windows remain hidden until loading frames are ready; the user
+confirmed the scene/T-pose flash stopped. Test-window tiling now runs after native
+mapping, with actual desktop bounds checked by the two-account harness.
+Millhaven uses the supplied sunset PNG unchanged, preserving its title/aspect ratio
+and avoiding a duplicate heading. The current starter-valley package ID is its
+legacy alias; other zones retain the generic art. Provenance is in content/ui/loading.
+308 client tests pass (five ignored), with fmt, strict all-target client Clippy and
+build passing: build/loading-ui-checks.json. New regressions cover progress,
+window visibility, camera output, post-map tiling and exact artwork selection.
+Native runs established real entry, held-input isolation and several complete
+fresh-account party flows, but final paired/restart/quadrant acceptance remains
+incomplete. Interrupted/failing v4–v10 runs are not final acceptance; latest
+Millhaven startup captures are under build/loading-ui-paired-v10/fresh/.
+The user requested manual use, then the editor only. Automated game drivers have
+exited; the editor is open via tools/edit_zone.py --no-build. Do not restart desktop
+input automation while the user is using it. Retain local changes; no push.
+
+16 November 2026 — P2-02/P2-08 loading startup correction in progress:
+The user observed an unfinished world/T-pose before the loading cover and requested
+0–100% progress. Keep the 3D camera active for genuine pipeline preparation but
+skip its final window write until entry; a separate standard Bevy 2D camera owns
+an opaque clear and explicitly targeted loading UI. Keep gameplay UI bound to the
+world camera. The user still observed a native startup flash in v4/v5; these are
+not acceptance. Now create the window hidden and reveal it only after stable
+loading frames. The user confirms no flash with this change, but reports stacked
+windows: defer tiling until native mapping and check actual desktop bounds.
+Remove the numeric percentage text per subsequent user feedback. Verify cold first frames, error/cancel and party input after entry.
+Progress counts six equally weighted completed readiness milestones: connection,
+world, characters, owner-chunk authority, renderer and stable completion. Count
+only their completed prefix, retract on lost readiness and show 100% for a frame
+before entering play. This measures readiness milestones, not bytes or predicted
+time. No timer-driven percentage or new server authority is introduced.
+
+16 November 2026 — P2-02/P2-08 initial loading presentation in progress:
+Prerequisites: accepted authored-scene pipeline warm-up (97cdac16), real
+chunk-ready acknowledgement, P3-01/P3-03 admission and existing character assets.
+Implement an initial-only standard Bevy UI overlay with original embedded valley
+art, actual named readiness stages, a measured framed preparation bar,
+tip and Cancel/Close. Gate player commands until connected, configured world and
+character presentation, stable renderer and current owner chunk acknowledgement
+are ready. Do not reopen loading artwork over later readiness retractions. Keep
+startup failures visible with a close action; retain failure exits for diagnostic
+clients without this overlay. Editor account playtests inherit it. Title and
+character roster remain subsequent slices. Acceptance: transition/error/cancel/
+stale-ack/input tests, fmt/strict Clippy/client build, native 1720x1400 and
+1720x700 startup captures, ordinary input after entry, early cancel/failure, and
+existing two-account party flow/restart without readiness regressions.
+
 16 November 2026 — P4-11 shared-marker presentation accepted:
 A compact Unit marks palette beside the member frames assigns the eight original
 symbols through cda0608a's authoritative private-party protocol. Leaders can mark

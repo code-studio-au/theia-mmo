@@ -3,6 +3,7 @@
 use super::{Result, Zone, require};
 use serde::{Deserialize, Serialize};
 use theia_core::coordinates::ChunkId;
+pub mod area;
 pub const AXIS: usize = 33;
 pub const SAMPLE_COUNT: usize = AXIS * AXIS;
 pub const TILE_METRES: f64 = 128.;
@@ -57,10 +58,24 @@ pub struct HeightPatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum BrushOperation {
-    Raise { metres: f32 },
-    Lower { metres: f32 },
-    Flatten { height: f32, blend: f32 },
-    Smooth { blend: f32 },
+    Raise {
+        metres: f32,
+    },
+    Lower {
+        metres: f32,
+    },
+    Flatten {
+        height: f32,
+        blend: f32,
+    },
+    Smooth {
+        blend: f32,
+    },
+    FlattenArea {
+        height: f32,
+        edge_metres: f64,
+        noise: Option<area::AreaNoise>,
+    },
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -205,8 +220,8 @@ impl HeightPatch {
         require(
             centre.iter().all(|v| v.is_finite())
                 && radius_metres.is_finite()
-                && (4. ..=32.).contains(&radius_metres),
-            "Brush needs finite centre and 4..32 metre radius",
+                && (4. ..=240.).contains(&radius_metres),
+            "Brush needs finite centre and 4..240 metre support radius",
         )?;
         let origin = self.origin()?;
         require(
@@ -226,7 +241,12 @@ impl HeightPatch {
     }
     pub(crate) fn apply(&mut self, brush: &Brush) -> Result<()> {
         let axis = self.axis();
-        let influence = self.brush_influence(brush.centre, brush.radius_metres)?;
+        require(
+            brush.radius_metres.is_finite()
+                && (4. ..=brush.maximum_radius()).contains(&brush.radius_metres),
+            "Invalid sculpt radius",
+        )?;
+        let influence = self.brush_influence(brush.centre, brush.support_radius())?;
         match brush.operation {
             BrushOperation::Raise { metres } | BrushOperation::Lower { metres } => require(
                 metres.is_finite() && (0.05..=8.).contains(&metres),
@@ -239,6 +259,11 @@ impl HeightPatch {
                     && (0.05..=1.).contains(&blend),
                 "Invalid flatten height/blend",
             )?,
+            BrushOperation::FlattenArea {
+                height,
+                edge_metres,
+                noise,
+            } => area::validate(height, edge_metres, noise, 64.)?,
             BrushOperation::Smooth { blend } => require(
                 blend.is_finite() && (0.05..=1.).contains(&blend),
                 "Invalid smooth blend",
@@ -260,6 +285,16 @@ impl HeightPatch {
                     BrushOperation::Lower { metres } => old - metres * weight,
                     BrushOperation::Flatten { height, blend } => {
                         old + (height - old) * blend * weight
+                    }
+                    BrushOperation::FlattenArea { .. } => {
+                        let origin = self.origin()?;
+                        brush.area_value(
+                            [
+                                origin[0] + x as f64 * self.sample_metres(),
+                                origin[2] + z as f64 * self.sample_metres(),
+                            ],
+                            old,
+                        )
                     }
                     BrushOperation::Smooth { blend } => {
                         let average = (previous[index - 1]
@@ -548,7 +583,7 @@ mod influence_tests {
             ([64., f64::INFINITY], 8.),
             ([64., 64.], f64::NAN),
             ([64., 64.], 3.9),
-            ([64., 64.], 32.1),
+            ([64., 64.], 240.1),
             ([-0.01, 64.], 8.),
             ([64., 128.01], 8.),
         ] {

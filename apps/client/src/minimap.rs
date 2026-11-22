@@ -12,6 +12,7 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
     text::FontSize,
 };
+pub(crate) use projection::heading_rotation;
 use projection::{DISPLAY, HeightTile, PIXELS, View};
 use std::{collections::BTreeMap, time::Instant};
 use theia_core::{coordinates::GlobalPosition, quests::lifecycle::Phase};
@@ -239,6 +240,7 @@ fn seed_preview(
     metrics.objective_pixels = guidance::shade(
         &mut pixels,
         View {
+            north_positive_z: false,
             centre: GlobalPosition::new([0., 0., 0.]).unwrap(),
         },
         &regions,
@@ -284,7 +286,14 @@ fn raster(world: &mut World, view: View, cache: &authored::Cache) -> (Vec<u8>, u
     let meshes = world.resource::<Assets<Mesh>>();
     let tiles: BTreeMap<_, _> = query
         .iter(world)
-        .take(theia_network::procedural::MAX_VISUALS)
+        // The Graphics setting may retain hundreds of distant tiles. Select
+        // the minimap's 256 m footprint before bounding mesh reads.
+        .filter(|tile| {
+            view.centre.chunk(128).is_some_and(|centre| {
+                (tile.id.x - centre.x).abs() <= 1 && (tile.id.z - centre.z).abs() <= 1
+            })
+        })
+        .take(9)
         .filter_map(|tile| {
             let VertexAttributeValues::Float32x3(positions) = meshes
                 .get(&tile.mesh)?
@@ -308,7 +317,7 @@ fn raster(world: &mut World, view: View, cache: &authored::Cache) -> (Vec<u8>, u
     for z in 0..PIXELS {
         for x in 0..PIXELS {
             let height = view.pixel(x, z).and_then(|p| {
-                if let Some(scene) = authored {
+                if let Some(scene) = authored.filter(|s| !s.has_streamed_ground()) {
                     scene.map_contains(p).then(|| cache.height(p)).flatten()
                 } else {
                     let id = theia_network::procedural::owner(p)?;
@@ -327,14 +336,17 @@ fn raster(world: &mut World, view: View, cache: &authored::Cache) -> (Vec<u8>, u
                         255,
                     ]
                 }
-                None => [15, 20, 26, 255],
+                None => view
+                    .pixel(x, z)
+                    .and_then(|p| crate::zone_map::cartography_pixel(world, p))
+                    .unwrap_or([15, 20, 26, 255]),
             };
             data[(z * PIXELS + x) * 4..(z * PIXELS + x) * 4 + 4].copy_from_slice(&color);
         }
     }
     (data, known, tiles.len())
 }
-fn owner_position(
+pub(crate) fn owner_position(
     world: &mut World,
     state: &theia_network::client::State,
 ) -> Option<GlobalPosition> {
@@ -359,6 +371,7 @@ fn owner_position(
     predicted
         .filter(|p| {
             View {
+                north_positive_z: false,
                 centre: authoritative,
             }
             .project(*p)
@@ -366,7 +379,7 @@ fn owner_position(
         })
         .or(Some(authoritative))
 }
-fn player_heading(world: &mut World, state: &theia_network::client::State) -> f32 {
+pub(crate) fn player_heading(world: &mut World, state: &theia_network::client::State) -> f32 {
     if let Some(controller) = world.get_resource::<crate::classic_controls::Controller>() {
         return controller.yaw();
     }
@@ -426,12 +439,16 @@ fn present_inner(world: &mut World) {
     }
     if let Some(scene) = world
         .get_resource::<crate::authored_scene::Scene>()
-        .filter(|s| s.ready())
+        .filter(|s| s.ready() && !s.has_streamed_ground())
     {
         let started = Instant::now();
-        let queries = map
-            .authored
-            .warm(View { centre: position }, |p| scene.map_height(p));
+        let queries = map.authored.warm(
+            View {
+                north_positive_z: false,
+                centre: position,
+            },
+            |p| scene.map_height(p),
+        );
         let elapsed = started.elapsed().as_micros() as u64;
         let mut metrics = world.resource_mut::<Metrics>();
         metrics.authored_cached_samples = map.authored.len();
@@ -441,7 +458,10 @@ fn present_inner(world: &mut World) {
     let update = map.epoch != Some(epoch) || now - map.updated >= 0.25;
     if update {
         let started = Instant::now();
-        let view = View { centre: position };
+        let view = View {
+            north_positive_z: crate::zone_map::north_positive_z(world),
+            centre: position,
+        };
         let (mut data, known, tiles) = raster(world, view, &map.authored);
         let (objective_regions, objective_pixels) = world
             .get_resource::<crate::quest_journal::Definitions>()
@@ -503,7 +523,7 @@ fn present_inner(world: &mut World) {
             node.left = left;
             node.top = top;
         }
-        let rotation = Rot2::radians(-heading);
+        let rotation = heading_rotation(heading, view.north_positive_z);
         if transform.rotation != rotation {
             transform.rotation = rotation;
         }
@@ -637,6 +657,48 @@ fn observe(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn maximum_view_distant_tiles_cannot_displace_nearby_minimap_samples() {
+        let mut world = World::new();
+        let mut assets = Assets::<Mesh>::default();
+        let mut mesh = Mesh::new(
+            bevy::mesh::PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0., 25., 0.]; 81]);
+        let handle = assets.add(mesh);
+        world.insert_resource(assets);
+        for x in 40..140 {
+            world.spawn(crate::graybox::Tile {
+                id: theia_core::coordinates::ChunkId { x, z: 40 },
+                cells: 8,
+                mesh: handle.clone(),
+            });
+        }
+        for z in 9..=11 {
+            for x in 9..=11 {
+                world.spawn(crate::graybox::Tile {
+                    id: theia_core::coordinates::ChunkId { x, z },
+                    cells: 8,
+                    mesh: handle.clone(),
+                });
+            }
+        }
+        let view = View {
+            north_positive_z: false,
+            centre: GlobalPosition::new([1344., 0., 1344.]).unwrap(),
+        };
+        let (pixels, known, tiles) = raster(&mut world, view, &authored::Cache::default());
+        assert_eq!(tiles, 9);
+        assert_eq!(known, PIXELS * PIXELS);
+        assert!(
+            pixels
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .all(|p| *p != [15, 20, 26, 255])
+        );
+    }
     #[test]
     fn retained_walking_arrow_follows_actual_character_rotation_without_camera_authority() {
         let mut world = World::new();

@@ -342,6 +342,9 @@ fn validate_roots(
     Ok(())
 }
 pub fn validate_initial(world: &mut World) {
+    if crate::loading::failed(world) {
+        return;
+    }
     if world.contains_resource::<BoundsChecked>() {
         return;
     }
@@ -355,7 +358,7 @@ pub fn validate_initial(world: &mut World) {
             Ok(false) => return,
             Err(error) => {
                 error!("Chunk startup material validation failed: {error}");
-                world.write_message(AppExit::error());
+                crate::loading::fail_or_exit(world, "World assets could not be prepared.");
                 return;
             }
         }
@@ -384,7 +387,7 @@ pub fn validate_initial(world: &mut World) {
         }
         Err(error) => {
             error!("Chunk startup contributor validation failed: {error}");
-            world.write_message(AppExit::error());
+            crate::loading::fail_or_exit(world, "World assets could not be prepared.");
         }
     }
 }
@@ -564,9 +567,17 @@ pub fn tick(
     (server, assets): (Res<AssetServer>, Res<Assets<Gltf>>),
     hierarchy: (Query<&Children>, Query<&Mesh3d>),
     mut pipelines: ResMut<crate::capture_ready::CaptureReady>,
-    mut exit: MessageWriter<AppExit>,
+    mut exit: (
+        MessageWriter<AppExit>,
+        Option<ResMut<crate::loading::State>>,
+    ),
 ) {
-    if ready.is_some() {
+    if ready.is_some()
+        || exit
+            .1
+            .as_ref()
+            .is_some_and(|s| s.phase == crate::loading::Phase::Failed)
+    {
         return;
     }
     let failed = loading.handles.values().any(|h| {
@@ -578,7 +589,11 @@ pub fn tick(
     });
     if failed || loading.started.elapsed().as_secs() > 120 {
         error!("Chunk startup asset/dependency loading failed or timed out");
-        exit.write(AppExit::error());
+        crate::loading::exit_unless_presented(
+            &mut exit.0,
+            exit.1.as_deref_mut(),
+            "World assets could not be prepared.",
+        );
         return;
     }
     if !loading
@@ -598,7 +613,11 @@ pub fn tick(
                 .or_else(|| gltf.scenes.first().cloned())
             else {
                 error!("Chunk GLB has no scene");
-                exit.write(AppExit::error());
+                crate::loading::exit_unless_presented(
+                    &mut exit.0,
+                    exit.1.as_deref_mut(),
+                    "World assets could not be prepared.",
+                );
                 return;
             };
             let local = config

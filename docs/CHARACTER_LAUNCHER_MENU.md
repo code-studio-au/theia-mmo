@@ -6,6 +6,13 @@ persistence and multiplayer; see MODULAR_HERO.md for native two-account/restart
 checks. This is the editor/account-playtest entry, not the standalone full-screen
 title/roster art direction below. The earlier screenshots remain design references.
 
+Loading implementation update — 16 November 2026:
+Initial connected-Classic loading presentation is implemented with real readiness
+progress, no numeric percentage text, startup camera/window shielding, and the
+user-supplied Millhaven illustration. Current native acceptance limits and the
+manual editor handoff are recorded at the top of STATUS.md. Title and character
+selection screens below remain planned; the earlier reference notes are history.
+
 # Front-end visual references — 16 November 2026
 
 Planned direction from the user's WoW screenshots; no title/selection/loading

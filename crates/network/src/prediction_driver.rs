@@ -105,6 +105,7 @@ impl Stats {
 #[derive(Default)]
 pub struct Driver {
     classic_world: Option<[u8; 32]>,
+    development_speed: bool,
     dodge: Option<([u8; 32], std::sync::Arc<crate::dodging::Profile>)>,
     life_required: bool,
     life_held: bool,
@@ -126,6 +127,11 @@ pub struct Driven {
     pub reset: bool,
 }
 impl Driver {
+    pub fn with_development_speed(mut self, enabled: bool) -> Self {
+        self.development_speed = enabled;
+        self
+    }
+
     pub fn with_classic(source_world: [u8; 32], player_life: bool) -> Self {
         Self::with_classic_social(source_world, player_life, None, false)
     }
@@ -194,7 +200,8 @@ impl Driver {
         let c = corrected.state;
         let classic = if let Some(world) = self.classic_world {
             if !c.valid()
-                || corrected.speed != 1
+                || (corrected.speed != 1
+                    && (!self.development_speed || !crate::development::valid(corrected.speed)))
                 || self.dodge.is_some()
                 || c.world != world
                 || c.pose.facing.is_none()
@@ -274,9 +281,14 @@ impl Driver {
             (Some(patch), Some(binding)) => {
                 binding.terrain_step_at(patch, &ready, pose, intent, rate, tick, true)
             }
-            (Some(patch), None) if classic => {
-                crate::classic::terrain_step(patch, &ready, pose, intent, rate)
-            }
+            (Some(patch), None) if classic => crate::classic::terrain_step_development(
+                patch,
+                &ready,
+                pose,
+                intent,
+                rate,
+                f32::from(corrected.speed),
+            ),
             (Some(patch), None) => crate::prediction::terrain_step(
                 patch,
                 &ready,

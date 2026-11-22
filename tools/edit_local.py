@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Open a manual editor/account playtest with disposable local services (Linux).
 
-The editor uses a private copy of the zone and frozen executables. Account progress
+The editor uses a private copy of the zone and frozen release executables by default. Account progress
 survives Stop/Start while this editor remains open. Closing the editor stops its
 owned services; a new invocation creates a fresh synthetic account/database.
 No movement, combat, character selection or editor input is automated.
@@ -60,7 +60,7 @@ def prepare(args, root=ROOT):
         raise ValueError('Roaming radius must be 0..16 metres')
     output.mkdir(mode=0o700, parents=True)
     print(f'Preparing editor session: {output}', flush=True)
-    print('Copying and checking the debug executables; this can take a minute.', flush=True)
+    print('Copying and checking the selected executables; this can take a minute.', flush=True)
     zone_path = output/'draft.zone.json'
     radius = getattr(args, 'roam_radius', None)
     if radius is not None:
@@ -190,7 +190,8 @@ def main():
     for name in ('zone', 'scenery-library', 'players', 'creature-definition',
                  'creature-asset', 'gameplay-template', 'output'):
         parser.add_argument('--'+name, type=Path, required=True)
-    parser.add_argument('--binaries', type=Path, default=ROOT/'target/debug')
+    parser.add_argument('--binaries', type=Path, default=ROOT/'target/release',
+                        help='Prepared editor/client/server tools (default: target/release; use target/debug explicitly for debugging)')
     parser.add_argument('--roam-radius', type=float, help='Set roaming radius on the private draft groups (0..16 m)')
     parser.add_argument('--fantasy-ui', type=Path, help='Local Synty Fantasy Warrior HUD for account playtests')
     parser.add_argument('--access-path', type=int, help='Prefill the checked access-road ID')

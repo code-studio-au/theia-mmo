@@ -11,6 +11,235 @@ transport boundary. No client-supplied mesh paths, stats or equipment authority.
 Build on the native account picker; full title-screen work and equipped armour
 appearance stay separate. See MODULAR_HERO.md for implementation and evidence.
 
+22 November 2026 — P5-17 asset group transforms:
+Use transient viewport selection over existing placement IDs and the standard
+Bevy handles/outline rendering. Move preserves offsets; yaw and uniform scale
+share the bounds-centre pivot in checked global f64 coordinates. Preview commits
+as one validated transaction and supports exact undo; the bounded edit budget
+covers every supported asset in a document. Terrain and guide/volume authoring
+remain separate. CPU regressions and isolated native RX 7900 XTX input/render/save
+checks pass; see STATUS and ZONE_EDITOR for controls, evidence and limitations.
+No runtime protocol or persisted selection-group format was added.
+
+22 November 2026 — P2-08 manual Millhaven playtest performance:
+The user reports approximately 16 FPS / 63 ms even on Nearby. Their recorded
+session confirms 81 resident tiles and 66.01 ms mean over its final 24 reports;
+view-distance reduction was applied. This session used unoptimized debug builds,
+reintroducing the build-profile problem measured on 16 November. Build a matching
+release editor/client/server/baker/validator, measure the same populated imported
+scene without gameplay input, and use optimized executables for manual sessions.
+Make release the default in edit_local.py and play_imported_population.py while
+retaining explicit debug selection. Preserve quality, source terrain, editor data,
+server authority and local-service lifetime. No speculative renderer rewrite.
+Acceptance: paired stationary native timing, correct manual launch profile, local
+launcher regressions and current build checks; actual results belong in STATUS.
+
+22 November 2026 — P5-17 / P3-15 / P3-06 populated Millhaven integration:
+User explicitly requests the old population village on Millhaven in both editor
+and live NPC/combat playtest. Preserve its authored relative placement, bindings,
+paths and quest locations; re-ground against the existing gentle-v2 heightfield.
+Preserve originals. Pair one bounded settlement with an immutable copied imported
+terrain package, bind both identities, and stream exact terrain beneath static
+village colliders. Do not render/collide the legacy admission ground snapshot or
+add the old small-world boundary walls. Require both object and terrain readiness.
+Navigation remains bounded to the populated vicinity; surrounding terrain remains
+walkable. Refuse unbaked terrain journals and outlying settlement content rather
+than silently discard edits. Prerequisites are existing static export, saved tiles,
+account population, quest/contact profiles and navigation. Acceptance requires
+source/placement audit, regressions, strict checks and native editor plus connected
+NPC/combat verification. This entry records intent; STATUS records actual results.
+
+22 November 2026 — P5-17 larger smoothing and centre-sampled flatten area:
+User requests five times the maximum Smooth size and a centre-height flatten tool
+with a smooth outer join and optional adjustable bumps. Smooth radius becomes
+160 m (previously 32 m). Keep the old manual-level Flatten; add Flatten area,
+sampling the exact triangle surface at the first stamp X/Z, relative to zone Y,
+and hold that height throughout the stroke. Full strength inside its 4..160 m
+radius, a separate 1..80 m quintic blend band outside, no modification beyond it.
+Optional fixed-seed Perlin bumps expose 0..8 m maximum height deviation and
+4..128 m wavelength; world-anchored noise is zero at the initial sampled centre
+and repeats across stamps/replay. No new random seed per frame. Preserve locked
+small-patch borders, imported shared samples, immutable source, undo and cancel.
+Imported extended brushes require schema 18; old journals still replay unchanged.
+Prerequisites: existing imported edit journal, triangle queries, native sliders,
+transaction history and brush preview. Acceptance: centre/drag semantics, seams,
+falloff/noise bounds, save/replay/undo, rejected edits, widget guards, large-radius
+preview, strict lint/format/tests and a disposable native rendered check. Runtime
+terrain publishing remains separate; these tools do not mutate a running server.
+
+17 November 2026 — local recovery and second gentle terrain pass:
+User request: add a Developer Reset position button after falling through terrain,
+then apply another smoothing/elevation pass. Reuse trusted local owner controls and
+the server's collision-prepared teleport/input-stream reset; preserve speed, show
+server-confirmed status and keep ordinary/player-wire authority strict. Scope the
+automatic below-surface safeguard to opted-in single-player saved/generated terrain;
+never treat roofs as a heightfield in authored scenes. Do not claim a CCD root fix.
+Apply a second identical 40 m smoothing / 60% elevation pass to v1, producing v2
+at cumulative 36% elevation scaling, preserving earlier versions and shared borders.
+
+17 November 2026 — P5-17 / P3-15 / P2-14 gentler seven-zone terrain and cartography:
+The user approved a separate smoothed copy of Millhaven, Stoneford and surrounding
+Valecrown, Deepward Holds, Greenward, Canopy Marches and Treaty Marches. Process the
+continuous original master before cropping: Gaussian sigma 13.333 m, 40 m support,
+60% sea-relative elevations, land-normalized filtering and 40 m coastline fade.
+Preserve the archive and previous editor documents. Convert the combined rectangle
+to 2 m samples, padding only east/south to 7296 x 8192 m. Expand imported editor
+admission to 8192 m per axis, 4096 tiles and 128 MiB source samples; retain checked
++/-4096 m local frames, 8 creations/2 replacements per frame and 25 near-detail
+tiles. Large areas use a 16 m overview. No whole-continent capacity claim.
+
+The user also requests an enabled walkthrough map, reports dark minimap chunks,
+and asks for hover zone-boundary highlighting. Bind local baked cartography to the
+exact saved-terrain identity/bounds; use the original zone-ID mask for geographic
+hover outlines and names. Preserve native aspect/orientation and use baked color
+as presentation fallback where minimap mesh samples are absent; readiness/collision
+and the known-sample metric remain independent. This is not gameplay region ownership.
+Prerequisites: imported sculpt/history, saved terrain, HUD and existing map controls.
+Acceptance: original preservation, crop/tile seam checks, bounded editor/save tests,
+format/lint, and native editor editing/map/hover captures on the actual derived area.
+Implementation qualification is recorded separately in STATUS and ZONE_EDITOR.
+
+17 November 2026 — local developer running speed:
+The user requested F10 → Developer multipliers for the original archive H1/H2
+walkthrough. Add 1×, 2×, 4×, 8×, 16× as a session-only local developer extension,
+not a Classic formula change. Running/backward running scale; walk, jump/gravity,
+facing, collision and readiness retain existing behavior. The loopback local-ticket
+server explicitly enables trusted owner controls. Ordinary/account servers do not
+accept a player speed request. Use a bounded owner queue with file I/O on a worker,
+and an explicit DT03 correction envelope distinct from normal TP03. The menu shows
+server-applied state and writes requests off the render thread. New sessions start
+at 1×; Graphics preferences stay independently persistent.
+
+17 November 2026 — Graphics menu terrain view distance:
+The user requested a saved live View Distance control. Nearby (default), Far and
+Maximum use 4/8/15 tile radii; Maximum instead shows the complete saved zone when
+its layout passes the 32 x 32 bound. Distant terrain keeps existing coarse LOD.
+The setting changes client terrain presentation and camera far clipping only;
+server interest, collision and near readiness remain unchanged. It does not add
+streaming to monolithic/authored object scenes. Legacy preference files default
+to Nearby. THEIA_TERRAIN_VIEW is an initial fallback; explicit saved preferences
+and subsequent menu choices take precedence. The earlier plan to force the WM
+launcher to full view is superseded; terrain design remains set aside.
+
+17 November 2026 — P2-06 / P2-08 / P3-15 maximum terrain view:
+The user requests maximum view/chunk loading for the WM v3 playtest. Provide
+THEIA_TERRAIN_VIEW=full for bounded saved zones up to 32 x 32 tiles; nearby
+remains the default. Full view changes visual residency and camera far clipping,
+not local collision, server simulation or near-detail movement readiness. The
+WM v3 local launcher will opt in after native qualification. Keep the existing
+editor and saved terrain intact; this is not a continent-wide capacity claim.
+
+17 November 2026 — P5-17 / P3-15 imported terrain edits:
+The user explicitly requested implementation after discovering the imported zone
+was read-only. Enable the existing sculpt and colour-paint tools across its whole
+extent. Save a schema-17 deterministic brush journal over the exact immutable
+source; share cached tile buffers across history and copy changed buffers only.
+Support seam-crossing raise/lower/flatten/smooth/paint, preview cancellation,
+one undo entry per completed drag and normal explicit Save/reload. Preserve source
+resolution and identity. Imported flatten heights use absolute source Y metres.
+This supersedes the prior editing limitation; runtime publication remains deferred.
+
+17 November 2026 — P5-17 / P3-15 full imported-zone editor:
+The user explicitly chose full-zone editor support over reopening the legacy
+512 m draft. Use the verified immutable saved-heightfield package as a schema-16
+terrain reference, with independent authored objects and existing undo/save/load.
+Share decoded samples across document history, preserve 1 m grounding, and render
+standard Bevy meshes at 4 m across the zone with at most 25 nearby 1 m tiles.
+Keep source heights read-only in this slice; legacy terrain sculpt/paint and
+static-package playtest/export cannot silently consume this new base. Existing
+walkthrough and old editor drafts remain independent. No runtime publication of
+new object edits or Windows qualification is implied.
+
+17 November 2026 — map orientation and editor navigation correction:
+P2-14 / P3-15: retain Millhaven source +Z north but use -X east in the game's
+right-handed Y-up frame. The earlier +Z-north / +X-east map projection reflected
+turns. Correct cartography, sites, pixel/hover projection and arrows together;
+source positions and gameplay controls remain unchanged. Farm display names
+follow their game compass quadrants. P5-17: perspective editor WASD follows the
+current camera bearing on the horizontal plane, rather than fixed world axes.
+Orthographic navigation retains each authoring plane; mouse drag-pan/orbit remains.
+
+17 November 2026 — P2-14 / P3-15 whole-zone map:
+The user requested an overview of their location relative to the village, bandit
+caves and other Millhaven landmarks. Use a complete offline cartographic image
+and exact source landmark coordinates, bound to the admitted saved-terrain
+identity. M opens the standard Bevy UI map; selection shows a place and straight-
+line distance without requesting gameplay movement. Keep keyboard movement while
+viewing; map mouse input owns camera/steering, and Escape closes the map first.
+Use the supplied +Z-north convention for this overview and its matching minimap.
+This is a package-specific presentation orientation, not a world-coordinate or
+control change; other maps retain their established compass convention. Source
+screenshots guide layout, not asset reuse or a requirement to build their quest
+log/world hierarchy in this slice. See ZONE_OVERVIEW.md for scope and evidence.
+
+17 November 2026 — P1-10 / P2-06/07 / P3-13/15 imported whole-zone terrain:
+Implement the user's full Millhaven walkthrough through the existing saved-terrain
+streamer. Preserve the supplied 1 m samples for collision and nearby meshes;
+2 m is supported, not a mandatory maximum. Rectangular schema 2 packages carry
+explicit tile counts/origin and 33/65/129 samples per 128 m tile. Schema 1 keeps
+its original contract and identity. Use standard Avian heightfields for fine
+sources, bounded full-detail near meshes and 4 m distant meshes. Importing a zone
+does not enlarge finite editor patches or establish full-map editing support.
+Source notes remain reference material, not instructions to alter the landscape.
+This terrain-only slice preserves riverbeds, missing crossings and sharp cuts;
+water, bridges, scenery, navigation and account content need separate work.
+See IMPORTED_HEIGHTFIELDS.md for exact limits, reproducible import and evidence.
+
+16 November 2026 — P2-08 VSync selection:
+The user approved a separate saved VSync On/Off control in F10 -> Graphics,
+defaulting to On. This supersedes the fixed AutoNoVsync policy below. On uses
+Bevy PresentMode::Fifo, which is universally supported and tear-free; do not use
+AutoVsync for this promise because it can select relaxed FIFO and tear on late
+frames. Off uses AutoNoVsync with Bevy's platform fallback. Retain the FPS cap
+independently, including Unlimited: VSync can still impose the refresh ceiling.
+Apply the native Window presentation change live and persist the boolean in the
+existing local schema-1 preferences; absent vsync defaults to true. The explicit
+uncapped benchmark override bypasses VSync and the cap without changing saved
+choices. No display refresh-rate change, custom swapchain, server timing or
+Bevy/plugin version change. Native Windows remains a separate validation target.
+
+16 November 2026 — P2-08 local Graphics / FPS-cap policy:
+The user requested Graphics in the F10 menu and a saved FPS cap after the optimized
+Millhaven performance comparison. Offer 30/60/90/120/144/165/240 FPS and Unlimited,
+defaulting to 60. Apply changes to client presentation immediately; keep simulation
+and authority unchanged. Use the ordinary Bevy render schedule to sleep after frame
+presentation, subtracting elapsed work, with no busy loop or accumulated catch-up.
+Use AutoNoVsync so refresh synchronization does not impose a second ceiling; its
+platform fallback remains Bevy-owned. FPS limiting is distinct from VSync/VRR.
+The explicit THEIA_PERFORMANCE_UNCAPPED benchmark override still bypasses the cap
+without rewriting saved preferences. The installed engine is exact Bevy 0.20;
+reviewed bevy_framepace main still pins 0.19, so no incompatible plugin is added.
+Retain version-1 UI preference compatibility: missing fps_cap means 60, zero means
+Unlimited, and invalid caps fail validation. Editor account playtests share the
+local build/user-preferences/interface.json unless explicitly overridden; test
+fixtures use isolated files. No remote preference service or gameplay setting.
+
+16 November 2026 — Millhaven loading artwork:
+Use the user's supplied Millhaven Valley at Sunset PNG unchanged, with its
+embedded Theia/Millhaven title and no duplicate heading. Preserve its aspect ratio
+at both playtest heights; keep the progress bar, stage message, tip and Cancel
+below it. Bind it to the current legacy `theia.zone.starter-valley` package ID
+and `theia.zone.millhaven`; other zones keep the original valley fallback. This
+cosmetic choice changes no authoring, world/admission identity or persistence.
+Source/hash provenance is in `content/ui/loading/PROVENANCE.md`.
+
+16 November 2026 — loading presentation and progress policy (P2-02/P2-08):
+User feedback requires no unfinished world/T-pose flash before loading and a real
+0–100% preparation bar. Use ordinary Bevy cameras: world rendering continues to
+prepare assets/pipelines, with its final window write suppressed until entry;
+the loading camera clears opaquely even before UI assets can draw. Keep the native
+window hidden until stable loading frames have rendered, then relinquish its
+visibility to ordinary window handling. Tile test windows after native mapping;
+placement made while hidden may be overwritten by the window manager. Verify
+actual desktop coordinates and preserve later user movement. Display the bar and
+stage message without the numeric percentage label, as the user requested. Six
+equally weighted readiness milestones drive progress: connection, world, characters,
+current owner authority acknowledgement, renderer and stable completion. Count
+the completed prefix, allow regression if readiness retracts, and show 100% before
+entry. This is readiness-stage completion, not a byte counter or time estimate.
+Never fabricate percentages from elapsed time. Later in-play readiness losses
+retain the existing authority barrier and do not reopen the startup artwork.
+
 16 November 2026 — P4-11 shared unit-mark policy:
 The eight reference symbols are Skull, Cross, Square, Moon, Triangle, Diamond,
 Circle and Star. Assignments belong to the party, not the target's global state;

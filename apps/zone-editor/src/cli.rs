@@ -18,6 +18,7 @@ pub enum CaptureView {
 #[derive(Default)]
 pub struct Options {
     pub zone: Option<PathBuf>,
+    pub imported_terrain: Option<PathBuf>,
     pub commands: Option<PathBuf>,
     pub output: Option<PathBuf>,
     pub save_path: Option<PathBuf>,
@@ -51,6 +52,13 @@ impl Options {
         let mut args = std::env::args().skip(1);
         while let Some(arg) = args.next() {
             match arg.as_str() {
+                "--imported-terrain" => {
+                    result.imported_terrain = Some(
+                        args.next()
+                            .ok_or("--imported-terrain needs a package directory")?
+                            .into(),
+                    )
+                }
                 "--zone" => result.zone = Some(args.next().ok_or("--zone needs a path")?.into()),
                 "--creature-definition" => {
                     result.creature_definition = Some(
@@ -201,7 +209,7 @@ impl Options {
                 }
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--creature-asset EMBEDDED_GLB] [--gameplay-template MANIFEST] [--creature-definition FILE] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|test-player|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test] [--population --population-creature FILE [--navigation-baker BIN] [--population-spacing METRES] [--population-access-path ID]]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                        "theia-zone-editor [--zone FILE | --imported-terrain DIRECTORY] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--creature-asset EMBEDDED_GLB] [--gameplay-template MANIFEST] [--creature-definition FILE] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|test-player|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test] [--population --population-creature FILE [--navigation-baker BIN] [--population-spacing METRES] [--population-access-path ID]]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
@@ -300,7 +308,30 @@ impl Options {
             .unwrap_or_else(|| "build/zone-draft.json".into())
     }
     pub fn prepare(&self) -> Result<Editor> {
-        let zone = if let Some(path) = &self.zone {
+        if self.zone.is_some() && self.imported_terrain.is_some() {
+            return Err(
+                "Choose an existing zone document or a new imported terrain package".into(),
+            );
+        }
+        let zone = if let Some(path) = &self.imported_terrain {
+            let imported = theia_zone::imported::Imported::open(path)?;
+            let centre = [
+                (imported.bounds[0][0] + imported.bounds[1][0]) * 0.5,
+                (imported.bounds[0][1] + imported.bounds[1][1]) * 0.5,
+            ];
+            Zone {
+                schema: 16,
+                name: "Imported zone".into(),
+                origin: [centre[0], 0., centre[1]],
+                spawn: [
+                    centre[0],
+                    f64::from(imported.height(centre)?) + 0.1,
+                    centre[1],
+                ],
+                imported_terrain: Some(imported),
+                ..Default::default()
+            }
+        } else if let Some(path) = &self.zone {
             Zone::load(path)?
         } else {
             Zone::default()

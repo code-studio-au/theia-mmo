@@ -4765,8 +4765,6 @@ dependencies = [
 [[package]]
 name = "landmass"
 version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd2fd988b81194c6f02c293a28b510b44f1d8581c80b1bfe498e85e9c3f57b93"
 dependencies = [
  "disjoint",
  "dodgy_2d",
@@ -6830,8 +6828,6 @@ dependencies = [
 [[package]]
 name = "rerecast"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e800c409bdb4f5762360b647a4ccfa3793a630ab2258a5d8d6c027c83b02317"
 dependencies = [
  "anyhow",
  "bevy_reflect",
@@ -7832,6 +7828,7 @@ dependencies = [
 name = "theia-zone"
 version = "0.1.0"
 dependencies = [
+ "ring",
  "serde",
  "serde_json",
  "theia-core",

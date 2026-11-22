@@ -84,8 +84,12 @@ fn search(
 ) -> Option<String> {
     let regions = guidance::regions(state, profile);
     let centre = view.centre.metres();
-    let dx = (f64::from(point[0]) / f64::from(DISPLAY) * 2. - 1.) * projection::RADIUS;
-    let dz = (f64::from(point[1]) / f64::from(DISPLAY) * 2. - 1.) * projection::RADIUS;
+    let dx = (f64::from(point[0]) / f64::from(DISPLAY) * 2. - 1.)
+        * projection::RADIUS
+        * if view.north_positive_z { -1. } else { 1. };
+    let dz = (f64::from(point[1]) / f64::from(DISPLAY) * 2. - 1.)
+        * projection::RADIUS
+        * if view.north_positive_z { -1. } else { 1. };
     let hit: Vec<_> = regions
         .into_iter()
         .filter(|area| {
@@ -244,6 +248,7 @@ mod tests {
     fn search_hover_uses_validated_active_geometry_and_clears_for_foreign_owner() {
         let (mut state, profile) = super::super::guidance::tests::fixture();
         let view = projection::View {
+            north_positive_z: false,
             centre: theia_core::coordinates::GlobalPosition::new([7864., 0., 8000.]).unwrap(),
         };
         let text = search(&state, &profile, view, [88., 88.]).unwrap();

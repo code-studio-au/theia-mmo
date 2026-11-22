@@ -7,5 +7,6 @@ publish.workspace = true
 
 [dependencies]
 theia-core.workspace = true
-serde.workspace = true
+serde = { workspace = true, features = ["rc"] }
 serde_json.workspace = true
+ring = "=0.17.14"

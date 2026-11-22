@@ -84,3 +84,12 @@ Theia choices. Drop probability is dimensionless; all corpse distances remain
 metric. Initial 60% pelt / 25% token values are provisional authored rates, not
 historical Classic data. Quest-only eligibility and live possession admission
 remain separate work; ordinary development pelts currently have neither gate.
+
+### Local developer running multipliers — 17 November 2026
+
+User-requested Theia developer extension: an explicitly enabled loopback terrain
+walkthrough can multiply running/backward-running by 1/2/4/8/16 through trusted
+owner management. Walking, jump/gravity constants and facing retain the adopted
+Classic data. These multipliers are session-only exploration tools, not sourced
+Classic buffs or ordinary/account gameplay rules. Server corrections determine
+client prediction; normal TP03/profile behavior remains unchanged. See STATUS.

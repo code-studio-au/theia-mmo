@@ -1,3 +1,35 @@
+17 November 2026 — regional cartography and larger view distances (P2-14):
+THEIA_ZONE_MAP_DIRECTORY selects a local overview.json/overview.png pair. The map
+only installs when validated metadata identity and bounds match the active saved
+terrain. Files and decoded dimensions are bounded; absent configuration keeps the
+embedded Millhaven map. The M panel preserves the actual terrain aspect ratio.
+Optional unique regions and regions.png provide geographic IDs: cursor hover tints
+and outlines the matching irregular region and shows its name. Sea, outside-panel
+positions, closed maps and lost focus clear the highlight. Geographic borders are
+presentation data and do not alter server ownership or collision.
+
+The local minimap now selects the player's 3 x 3 tile footprint before bounding
+mesh reads. Previously taking the first 81 arbitrary resident entities could omit
+nearby chunks when Graphics retained hundreds of distant ones. A regression inserts
+100 distant tiles before the nine needed tiles and requires all 4096 raster samples.
+Where geometry is genuinely unavailable, exact-source baked map colour supplies a
+visual fallback; the known-height sample metric still counts only available geometry.
+Native results and local assets are recorded in STATUS after qualification.
+
+17 November 2026 — map handedness correction:
+Millhaven +Z north now pairs with -X east. Both map axes, pixel sampling,
+hover inverse projection and facing rotate together; the old +X-east pairing
+mirrored apparent right turns. Other worlds retain -Z north / +X east.
+See ZONE_OVERVIEW.md and STATUS for regression/native evidence.
+
+P2-14 / P3-15 Millhaven overview alignment, 17 November 2026:
+The exact imported Millhaven V3 package now uses its source's +Z-north convention
+on both local minimap and whole-zone overview. Pixel sampling, point projection,
+facing arrows and hover-area inverse projection share this orientation. Other
+worlds retain the historical -Z-north behavior below. The local map keeps its
+existing texture/sample/residency budget. M opens the separate complete zone map;
+see ZONE_OVERVIEW.md. No terrain flip, coordinate migration or control change.
+
 P5-17 / P2-14 authored-world adapter, 12 November 2026:
 Authored packages do not create the old regular visual-grid Tile components.
 Their map now uses the loaded immutable package's ground surfaces, projected

@@ -49,3 +49,10 @@ def desktop_work_area():
 def work_area_options():
     area = desktop_work_area()
     return ['--test-work-area', ','.join(map(str, area))] if area else []
+
+
+def client_window_options(index, clients, fullscreen=False, test_window=None):
+    """Fit ordinary solo and tiled playtests inside the desktop's usable area."""
+    if fullscreen or (test_window is None and not 1 <= clients <= 4):
+        return []
+    return ['--test-window', test_window or f'{index + 1}/{clients}', *work_area_options()]

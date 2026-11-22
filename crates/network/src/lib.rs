@@ -12,6 +12,7 @@ pub mod combat_wire;
 pub mod commands;
 pub mod content;
 pub mod creature_attack_wire;
+pub mod development;
 pub mod dialogue;
 pub mod dialogue_wire;
 pub mod document_wire;

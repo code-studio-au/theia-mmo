@@ -481,7 +481,7 @@ pub(super) fn pointer(
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
-    ground: Query<(), With<terrain::GroundPart>>,
+    ground: Query<(), imported_terrain::GroundFilter>,
     mut raycast: MeshRayCast,
     visuals: Query<&GuideVisual>,
     handles: Query<&PointHandle>,

@@ -81,6 +81,16 @@ pub fn terrain_step(
     intent: Intent,
     rate: TickRate,
 ) -> Result<Option<Pose>, &'static str> {
+    terrain_step_development(patch, ready, pose, intent, rate, 1.)
+}
+pub fn terrain_step_development(
+    patch: &crate::procedural::Patch,
+    ready: &BTreeSet<ChunkId>,
+    pose: Pose,
+    intent: Intent,
+    rate: TickRate,
+    multiplier: f32,
+) -> Result<Option<Pose>, &'static str> {
     let facing = pose.facing.ok_or("Missing classic character facing")?;
     if pose.dodge.is_some() || intent.dodge.is_some() {
         return Err("Dodge is excluded from classic movement");
@@ -90,12 +100,11 @@ pub fn terrain_step(
     let mut movement = intent;
     movement.facing = Some(intent.facing.unwrap_or(facing));
     Ok(
-        crate::prediction::terrain_step_classic(patch, ready, base, movement, rate)?.map(|p| {
-            Pose {
+        crate::prediction::terrain_step_classic(patch, ready, base, movement, rate, multiplier)?
+            .map(|p| Pose {
                 facing: Some(intent.facing.unwrap_or(facing)),
                 ..p
-            }
-        }),
+            }),
     )
 }
 

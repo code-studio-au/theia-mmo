@@ -277,6 +277,7 @@ pub(super) mod tests {
             let region = areas.areas().next().unwrap();
             let mut data = [44, 62, 42, 255].repeat(PIXELS * PIXELS);
             let view = View {
+                north_positive_z: false,
                 centre: GlobalPosition::new([origin, 0., origin]).unwrap(),
             };
             let count = shade(&mut data, view, &[region], true);
@@ -315,6 +316,7 @@ pub(super) mod tests {
         let region = area.areas().next().unwrap();
         let mut data = [44, 62, 42, 255].repeat(PIXELS * PIXELS);
         let view = View {
+            north_positive_z: false,
             centre: GlobalPosition::new([0., 0., 0.]).unwrap(),
         };
         assert_eq!(shade(&mut data, view, &[region], false), 4);
@@ -323,6 +325,7 @@ pub(super) mod tests {
             shade(
                 &mut distant,
                 View {
+                    north_positive_z: false,
                     centre: GlobalPosition::new([1000., 0., 1000.]).unwrap()
                 },
                 &[region],
@@ -349,6 +352,7 @@ pub(super) mod tests {
         assert_eq!(regions.len(), theia_core::quests::areas::MAX_AREAS);
         let base = [44, 62, 42, 255].repeat(PIXELS * PIXELS);
         let view = View {
+            north_positive_z: false,
             centre: GlobalPosition::new([0., 0., 0.]).unwrap(),
         };
         let mut timings = Vec::new();

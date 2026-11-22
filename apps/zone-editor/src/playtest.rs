@@ -29,6 +29,9 @@ fn collision_with_library(
     library: &scenery_library::Library,
 ) -> Result<StaticScene, String> {
     zone.validate()?;
+    if zone.imported_terrain.is_some() {
+        return Err("Imported-zone object edits can be saved; this legacy playtest/export path does not yet publish them. Use the full-zone terrain walkthrough for terrain testing.".into());
+    }
     let scenery = scenery_collision::colliders(zone, library)?;
     let mut colliders: Vec<_> = terrain::ground_boxes(zone)
         .into_iter()

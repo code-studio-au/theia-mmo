@@ -22,6 +22,15 @@ pub struct Anchor {
     pub contact: Option<Contact>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contacts: Vec<Contact>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub imported: Option<ImportedGround>,
+}
+/// A contained immutable heightfield paired with a bounded authored village.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ImportedGround {
+    pub directory: String,
+    pub identity: [u8; 32],
 }
 /// An explicit noncombat dialogue contact with checked global feet.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -49,6 +58,7 @@ impl Contact {
 }
 pub struct Store {
     terrain: Terrain,
+    imported: Option<Arc<crate::saved_terrain::Store>>,
     origin: GlobalPosition,
     identity: [u8; 32],
     visual: Arc<Vec<u8>>,
@@ -77,9 +87,18 @@ impl Store {
                     && (1..=theia_core::dialogue::catalog::MAX_CONTACTS)
                         .contains(&anchor.contacts.len())
             }
+            4 => {
+                (anchor.contact.is_none()
+                    && anchor.contacts.len() <= theia_core::dialogue::catalog::MAX_CONTACTS)
+                    || (anchor.contact.is_some() && anchor.contacts.is_empty())
+            }
             _ => false,
         };
-        if !valid_contacts || anchor.origin[1] != 0. || (anchor.schema < 3 && bytes.len() > 4096) {
+        if !valid_contacts
+            || ((anchor.schema == 4) != anchor.imported.is_some())
+            || anchor.origin[1] != 0.
+            || (anchor.schema < 3 && bytes.len() > 4096)
+        {
             return Err("Invalid authored anchor schema/contact collection or origin Y".into());
         }
         let mut ids = std::collections::BTreeSet::new();
@@ -132,22 +151,70 @@ impl Store {
         let mut identity_bytes = b"theia-authored-predicted-world-v1\0".to_vec();
         identity_bytes.extend(&bytes);
         identity_bytes.extend(package.identity());
-        let terrain = terrain.into_world();
+        let imported = anchor
+            .imported
+            .as_ref()
+            .map(|binding| -> Result<_> {
+                if binding.directory.is_empty()
+                    || binding.directory.len() > 256
+                    || !Path::new(&binding.directory)
+                        .components()
+                        .all(|p| matches!(p, std::path::Component::Normal(_)))
+                {
+                    return Err("Imported ground requires a contained relative directory".into());
+                }
+                let store = crate::saved_terrain::Store::open(&path(&root, &binding.directory)?)?;
+                if store.identity() != binding.identity {
+                    return Err("Imported ground identity mismatch".into());
+                }
+                Ok(Arc::new(store))
+            })
+            .transpose()?;
+        let terrain = if imported.is_some() {
+            terrain
+        } else {
+            terrain.into_world()
+        };
         if let Some(contact) = &anchor.contact {
             contact.validate(origin, &terrain.physics)?;
         }
         for contact in &anchor.contacts {
             contact.validate(origin, &terrain.physics)?;
         }
-        Ok(Self {
+        let result = Self {
             terrain,
+            imported,
             origin,
             identity: sha256(&identity_bytes),
             visual: Arc::new(visual),
             contact: anchor.contact,
             contacts: anchor.contacts,
             particles,
-        })
+        };
+        if result.imported.is_some() {
+            // Check real combined support, never trust the admission snapshot
+            // alone and never perform these loads in the fixed simulation step.
+            for feet in result
+                .contact
+                .iter()
+                .chain(result.contacts.iter())
+                .map(|c| c.feet)
+                .chain(std::iter::once(
+                    result.spawn(0).ok_or("Missing imported spawn")?.metres(),
+                ))
+            {
+                let p = GlobalPosition::new(feet).ok_or("Invalid imported feet")?;
+                let patch =
+                    result.patch(procedural::owner(p).ok_or("Imported feet outside domain")?)?;
+                patch
+                    .try_spawn_near(p)
+                    .ok_or("Imported feet have no combined terrain/object support")?;
+            }
+        }
+        Ok(result)
+    }
+    pub fn imported(&self) -> Option<&Arc<crate::saved_terrain::Store>> {
+        self.imported.as_ref()
     }
     pub fn identity(&self) -> [u8; 32] {
         self.identity
@@ -234,7 +301,51 @@ impl Store {
             .metres();
         self.terrain.height([local[0], local[2]])
     }
+    /// Test in global f64 before converting a distant settlement to a local
+    /// collision/render frame. Imported terrain can extend beyond that frame.
+    pub fn objects_intersect_patch(&self, owner: ChunkId) -> bool {
+        let Some(patch_origin) = owner.origin(128) else {
+            return false;
+        };
+        let patch_origin = patch_origin.metres();
+        let origin = self.origin.metres();
+        let bounds = self.terrain.bounds();
+        (0..2).all(|i| {
+            origin[i * 2] + f64::from(bounds[1][i]) >= patch_origin[i * 2] - 128.
+                && origin[i * 2] + f64::from(bounds[0][i]) <= patch_origin[i * 2] + 256.
+        })
+    }
     pub fn patch(&self, owner: ChunkId) -> Result<procedural::Patch> {
+        if let Some(imported) = &self.imported {
+            let mut patch =
+                procedural::Patch::load(owner, &procedural::Source::Saved(imported.clone()))?;
+            if !self.objects_intersect_patch(owner) {
+                return Ok(patch);
+            }
+            let offset = patch
+                .frame
+                .to_local(self.origin)
+                .ok_or("Village outside patch frame")?
+                .metres();
+            let bounds = self.terrain.bounds();
+            if (0..2).all(|i| {
+                offset[i * 2] + bounds[1][i] >= -128. && offset[i * 2] + bounds[0][i] <= 256.
+            }) {
+                let mut colliders = patch.scene.colliders.clone();
+                colliders.extend(
+                    self.terrain
+                        .object_colliders()
+                        .iter()
+                        .cloned()
+                        .map(|mut c| {
+                            c.center += bevy::prelude::Vec3::from_array(offset);
+                            c
+                        }),
+                );
+                patch.scene = StaticScene::new(colliders);
+            }
+            return Ok(patch);
+        }
         if !procedural::contains(owner) {
             return Err("Authored patch leaves supported domain".into());
         }
@@ -310,6 +421,7 @@ mod tests {
             world_identity: identity,
             contact: None,
             contacts: vec![],
+            imported: None,
         };
         for (name, bytes) in [
             ("terrain.json", profile),
@@ -320,6 +432,89 @@ mod tests {
             std::fs::write(root.join(name), bytes).unwrap();
         }
         (Folder(root), anchor)
+    }
+    #[test]
+    fn imported_village_uses_one_streamed_ground_and_retains_objects_across_tiles() {
+        let (folder, mut anchor) = spawn_fixture([8192., 0., 8192.], true, false);
+        let root = folder.0.join("heightfield");
+        std::fs::create_dir(&root).unwrap();
+        let mut hashes = vec![];
+        for z in 63_i64..67 {
+            for x in 63_i64..103 {
+                let mut data = b"THTILE01".to_vec();
+                data.extend(x.to_le_bytes());
+                data.extend(z.to_le_bytes());
+                data.resize(24 + 65 * 65 * 4, 0);
+                std::fs::write(root.join(format!("tile_{x}_{z}.height")), &data).unwrap();
+                hashes.push(sha256(&data));
+            }
+        }
+        let manifest = serde_json::to_vec(&json!({"schema":2,"content_id":"theia.test.village-ground","revision":1,
+            "chunk_metres":128,"chunks_xz":[40,4],"chunk_origin":[63,63],"samples_per_axis":65,"tiles":hashes})).unwrap();
+        std::fs::write(root.join("terrain.manifest.json"), &manifest).unwrap();
+        let saved = crate::saved_terrain::Store::open(&root).unwrap();
+        anchor.schema = 4;
+        anchor.imported = Some(ImportedGround {
+            directory: "heightfield".into(),
+            identity: saved.identity(),
+        });
+        let publish = |a: &Anchor| {
+            std::fs::write(folder.0.join(ANCHOR_FILE), serde_json::to_vec(a).unwrap()).unwrap()
+        };
+        publish(&anchor);
+        let store = Arc::new(Store::open(&folder.0).unwrap());
+        let source = procedural::Source::Authored(store.clone());
+        assert_eq!(source.cells(), 64);
+        assert!(!source.contains(ChunkId { x: 62, z: 64 }));
+        assert!(!source.valid_spawn_xz([8064., 8192.]));
+        assert_eq!(
+            source
+                .geometry(ChunkId { x: 64, z: 64 }, 64)
+                .unwrap()
+                .positions
+                .len(),
+            65 * 65
+        );
+        let patch = store.patch(ChunkId { x: 64, z: 64 }).unwrap();
+        assert_eq!(patch.ids.len(), 9);
+        // Nine exact heightfields and two authored objects: neither duplicate
+        // legacy ground nor the old 64m world's boundary walls are inserted.
+        assert_eq!(patch.scene.colliders.len(), 11);
+        assert!((patch.scene.ground([0., 0.], 10.).unwrap().0 - 4.5).abs() < 0.001);
+        assert!(patch.scene.ground([40., 40.], 10.).unwrap().0.abs() < 0.001);
+        let outer = store.patch(ChunkId { x: 66, z: 64 }).unwrap();
+        assert_eq!(outer.scene.colliders.len(), outer.ids.len());
+        assert!(outer.scene.ground([20., 20.], 10.).unwrap().0.abs() < 0.001);
+        assert!(store.patch(ChunkId { x: 103, z: 64 }).is_err());
+        let distant = ChunkId { x: 100, z: 64 };
+        assert!(!store.objects_intersect_patch(distant));
+        let patch = store.patch(distant).unwrap();
+        assert_eq!(patch.scene.colliders.len(), patch.ids.len());
+        let identity = store.identity();
+        anchor.imported.as_mut().unwrap().identity[0] ^= 1;
+        publish(&anchor);
+        assert!(Store::open(&folder.0).is_err());
+        anchor.imported.as_mut().unwrap().identity = saved.identity();
+        anchor.imported.as_mut().unwrap().directory = "../heightfield".into();
+        publish(&anchor);
+        assert!(Store::open(&folder.0).is_err());
+        anchor.imported.as_mut().unwrap().directory = "heightfield".into();
+        anchor.schema = 3;
+        publish(&anchor);
+        assert!(Store::open(&folder.0).is_err());
+        anchor.schema = 4;
+        publish(&anchor);
+        assert_eq!(Store::open(&folder.0).unwrap().identity(), identity);
+        let tile = root.join("tile_66_64.height");
+        let mut bytes = std::fs::read(&tile).unwrap();
+        bytes[24] ^= 1;
+        std::fs::write(tile, bytes).unwrap();
+        assert!(
+            Store::open(&folder.0)
+                .unwrap()
+                .patch(ChunkId { x: 66, z: 64 })
+                .is_err()
+        );
     }
     #[test]
     fn map_samples_use_checked_global_origin_and_do_not_extend_the_world() {

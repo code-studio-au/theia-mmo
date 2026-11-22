@@ -369,6 +369,9 @@ fn prepare(mut pending: ResMut<Pending>, network: Res<crate::network::Network>) 
             .retain(|c| c.until > now && Some(c.key.epoch.value()) == epoch);
     }
 }
+pub(crate) fn initial_assets_ready(world: &World) -> bool {
+    !world.contains_resource::<Loading>() || world.contains_resource::<Catalog>()
+}
 fn load(world: &mut World) -> Result<bool, String> {
     if world.contains_resource::<Catalog>() {
         return Ok(true);
@@ -425,11 +428,14 @@ fn load(world: &mut World) -> Result<bool, String> {
     Ok(true)
 }
 fn update(world: &mut World) {
+    if crate::loading::failed(world) {
+        return;
+    }
     match load(world) {
         Ok(false) => return,
         Err(e) => {
             error!("Creature presentation: {e}");
-            world.write_message(AppExit::error());
+            crate::loading::fail_or_exit(world, "Creature assets could not be prepared.");
             return;
         }
         Ok(true) => (),
@@ -548,7 +554,7 @@ fn update(world: &mut World) {
             }
             if players.len() != 1 {
                 error!("Wolf has multiple animation players");
-                world.write_message(AppExit::error());
+                crate::loading::fail_or_exit(world, "Creature assets could not be prepared.");
                 return;
             }
             let graph = world.resource::<Catalog>().graph.clone();

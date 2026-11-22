@@ -143,11 +143,12 @@ pub(super) fn sync(
         }
     });
     for player in &zone.test_players {
-        let position = session
-            .drag
-            .as_ref()
-            .filter(|d| d.id == player.id)
-            .map_or(player.position, |d| d.preview.position);
+        let position = group_selection::preview(
+            &session,
+            player.id,
+            &group_selection::pose(player.position, 0., 1.),
+        )
+        .position;
         let transform = Transform::from_translation(
             Vec3::from_array(zone.local(position).expect("Validated test player")) + Vec3::Y * 0.9,
         );

@@ -49,7 +49,7 @@ def controls(desktop, window, state, folder, check_banner=False):
     def close():
         for _ in range(4):
             s=state()
-            if not (s['dialogue_open'] or s['inventory_open'] or s['interface']['open'] or s.get('party', {}).get('open')): return
+            if not (s['dialogue_open'] or s['inventory_open'] or s['interface']['open'] or (s.get('party') or {}).get('open')): return
             desktop.key('Escape')
             time.sleep(.25)
         assert not state()['dialogue_open'] and not state()['inventory_open']

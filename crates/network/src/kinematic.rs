@@ -320,7 +320,23 @@ pub fn advance_classic(
     rate: TickRate,
     boundary: Option<&dyn Boundary>,
 ) -> Result<LocalPosition, &'static str> {
-    let speed = crate::classic::ground_speed(intent)?;
+    advance_classic_development(scene, state, start, intent, rate, boundary, 1.)
+}
+/// Trusted owner multiplier for local terrain review; gravity, jump and walk stay unchanged.
+#[allow(clippy::too_many_arguments)]
+pub fn advance_classic_development(
+    scene: &StaticScene,
+    state: &mut Motion,
+    start: LocalPosition,
+    intent: Intent,
+    rate: TickRate,
+    boundary: Option<&dyn Boundary>,
+    multiplier: f32,
+) -> Result<LocalPosition, &'static str> {
+    if !matches!(multiplier, 1. | 2. | 4. | 8. | 16.) {
+        return Err("Invalid Classic developer multiplier");
+    }
+    let speed = crate::classic::ground_speed(intent)? * if intent.sprint { multiplier } else { 1. };
     advance_kind(
         scene,
         state,
@@ -486,6 +502,52 @@ fn advance_kind(
 mod tests {
     use super::*;
 
+    #[test]
+    fn developer_run_multipliers_preserve_walk_gravity_and_jump() {
+        let scene = StaticScene::new(vec![crate::physics::PlacedCollider {
+            shape: Collider::cuboid(512., 0.5, 512.),
+            center: Vec3::new(0., -0.25, 0.),
+            layer: WORLD,
+        }]);
+        for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+            for running in [true, false] {
+                let mut baseline: Option<Vec<f32>> = None;
+                for multiplier in [1., 2., 4., 8., 16.] {
+                    let mut state = Motion::default();
+                    let start = spawn(&scene, LocalPosition::new([0., 0.01, 0.]).unwrap()).unwrap();
+                    let mut feet = start;
+                    let mut vertical = Vec::new();
+                    for n in 0..rate.hz() {
+                        let intent = Intent {
+                            facing: Some(theia_core::facing::Facing::default()),
+                            axes: [0, -1000],
+                            sprint: running,
+                            jump: n == 1,
+                            ..Intent::default()
+                        };
+                        feet = advance_classic_development(
+                            &scene, &mut state, feet, intent, rate, None, multiplier,
+                        )
+                        .unwrap();
+                        vertical.push(feet.metres()[1]);
+                    }
+                    let expected = if running { 7. * multiplier } else { 2.5 };
+                    assert!((feet.metres()[2].abs() - expected).abs() < 0.01);
+                    if let Some(base) = &baseline {
+                        // Horizontal capsule sweeps can alter support height on
+                        // the large collider; compare jump apex within 5 cm.
+                        let apex = |values: &Vec<f32>| {
+                            values.iter().copied().fold(f32::NEG_INFINITY, f32::max)
+                        };
+                        assert!((apex(&vertical) - apex(base)).abs() < 0.05);
+                        assert!(vertical.last().unwrap().abs() < 0.01);
+                    } else {
+                        baseline = Some(vertical);
+                    }
+                }
+            }
+        }
+    }
     #[test]
     fn classic_actual_capsule_distances_normalize_diagonals_and_keep_jump_all_rates() {
         let scene = StaticScene::new(vec![crate::physics::PlacedCollider {

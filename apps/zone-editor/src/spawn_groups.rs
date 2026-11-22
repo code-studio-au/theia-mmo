@@ -227,10 +227,9 @@ pub(super) fn add(session: &mut Session) {
         return;
     }
     let zone = session.editor.zone();
+    let bounds = zone.bounds();
     let lower = std::array::from_fn::<_, 3, _>(|i| {
-        zone.origin[i]
-            + (zone.spawn[i] - zone.origin[i] - 8.)
-                .clamp(-theia_zone::ZONE_EXTENT, theia_zone::ZONE_EXTENT - 16.)
+        (zone.spawn[i] - 8.).clamp(bounds[0][i], bounds[1][i] - 16.)
     });
     let volume = match theia_core::spawn_volume::PolygonVolume::new(
         vec![

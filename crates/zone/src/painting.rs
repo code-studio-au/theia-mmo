@@ -32,6 +32,10 @@ impl Paint {
     pub(crate) fn apply(&self, patch: &mut HeightPatch) -> Result<()> {
         let axis = patch.axis();
         let count = axis * axis;
+        require(
+            self.radius_metres.is_finite() && (4. ..=32.).contains(&self.radius_metres),
+            "Paint radius must be 4..32 metres",
+        )?;
         let influence = patch.brush_influence(self.centre, self.radius_metres)?;
         require(
             self.blend.is_finite() && (0.05..=1.).contains(&self.blend),

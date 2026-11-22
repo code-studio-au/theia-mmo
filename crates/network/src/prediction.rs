@@ -32,7 +32,7 @@ pub fn terrain_step(
     rate: TickRate,
     speed: f32,
 ) -> Result<Option<Pose>, &'static str> {
-    terrain_step_kind(patch, ready, pose, intent, rate, Some(speed))
+    terrain_step_kind(patch, ready, pose, intent, rate, Some(speed), 1.)
 }
 pub(crate) fn terrain_step_classic(
     patch: &crate::procedural::Patch,
@@ -40,8 +40,9 @@ pub(crate) fn terrain_step_classic(
     pose: Pose,
     intent: Intent,
     rate: TickRate,
+    multiplier: f32,
 ) -> Result<Option<Pose>, &'static str> {
-    terrain_step_kind(patch, ready, pose, intent, rate, None)
+    terrain_step_kind(patch, ready, pose, intent, rate, None, multiplier)
 }
 fn terrain_step_kind(
     patch: &crate::procedural::Patch,
@@ -50,6 +51,7 @@ fn terrain_step_kind(
     intent: Intent,
     rate: TickRate,
     development_speed: Option<f32>,
+    classic_multiplier: f32,
 ) -> Result<Option<Pose>, &'static str> {
     if pose.dodge.is_some()
         || intent.dodge.is_some()
@@ -81,13 +83,14 @@ fn terrain_step_kind(
             speed,
         )?
     } else {
-        crate::kinematic::advance_classic(
+        crate::kinematic::advance_classic_development(
             &patch.scene,
             &mut motion,
             start,
             intent,
             rate,
             Some(&coverage),
+            classic_multiplier,
         )?
     };
     let feet = patch

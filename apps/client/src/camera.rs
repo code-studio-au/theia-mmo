@@ -178,6 +178,8 @@ pub use orbit::Orbit;
 
 #[allow(clippy::too_many_arguments)]
 pub fn controls(
+    zone_map: Option<Res<crate::zone_map::Ui>>,
+    loading: Option<Res<crate::loading::State>>,
     mut orbit: ResMut<Orbit>,
     buttons: Res<ButtonInput<MouseButton>>,
     motion: Res<AccumulatedMouseMotion>,
@@ -207,6 +209,13 @@ pub fn controls(
     let Ok((window, mut cursor)) = window.single_mut() else {
         return;
     };
+    if loading.is_some_and(|s| s.blocks_input())
+        || crate::zone_map::blocks_pointer(zone_map.as_deref())
+    {
+        cursor.visible = true;
+        cursor.grab_mode = CursorGrabMode::None;
+        return;
+    }
     let action = mode.as_ref().is_some_and(|m| m.active);
     let rotating = action
         || (window.focused

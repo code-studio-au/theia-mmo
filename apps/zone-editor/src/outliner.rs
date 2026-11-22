@@ -132,6 +132,17 @@ pub(super) enum Label {
 
 fn entries(zone: &Zone) -> Vec<Entry> {
     let mut rows = vec![];
+    if let Some(imported) = &zone.imported_terrain {
+        rows.push(Entry {
+            target: Target::Terrain,
+            label: format!(
+                "Imported terrain | {:.0} x {:.0} m | {} m samples",
+                imported.bounds[1][0] - imported.bounds[0][0],
+                imported.bounds[1][1] - imported.bounds[0][1],
+                128 / imported.cells
+            ),
+        });
+    }
     if let Some(patch) = &zone.terrain {
         rows.push(Entry {
             target: Target::Terrain,
@@ -200,12 +211,9 @@ pub(super) fn selection(session: &Session) -> Option<Target> {
     if session.play.is_some() {
         None
     } else if session.terrain_mode {
-        session
-            .editor
-            .zone()
-            .terrain
-            .as_ref()
-            .map(|_| Target::Terrain)
+        (session.editor.zone().terrain.is_some()
+            || session.editor.zone().imported_terrain.is_some())
+        .then_some(Target::Terrain)
     } else if session.path_mode {
         session.path_selected.map(Target::Guide)
     } else if session.marker_mode {
@@ -413,7 +421,7 @@ pub(super) fn select_row(
     let label = entry.label.clone();
     let zone = session.editor.zone();
     let present = match target {
-        Target::Terrain => zone.terrain.is_some(),
+        Target::Terrain => zone.terrain.is_some() || zone.imported_terrain.is_some(),
         Target::Spawn => true,
         Target::Object(id) => zone.objects.iter().any(|v| v.id == id),
         Target::Guide(id) => zone.paths.iter().any(|v| v.id == id),

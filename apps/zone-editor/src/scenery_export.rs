@@ -2,17 +2,19 @@
 use super::*;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
-pub(super) fn geometry(
+pub(super) fn geometry_with_ground(
     zone: &Zone,
     gameplay_areas: bool,
     library: &scenery_library::Library,
+    ground: Option<&theia_network::procedural::Geometry>,
 ) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
     // Build the established terrain/primitive payload first; every removed
     // scenery reference is resolved below before any artifact can be published.
     let mut base = zone.clone();
     base.scenery.clear();
-    let (visual, mut profile, mut report) = export::geometry(&base, gameplay_areas)?;
+    let (visual, mut profile, mut report) =
+        export::geometry_with_ground(&base, gameplay_areas, ground)?;
     let mut glb = scenery_glb::Glb::read(&visual)?;
     let mut meshes = BTreeMap::new();
     let mut collision_meshes = BTreeMap::new();

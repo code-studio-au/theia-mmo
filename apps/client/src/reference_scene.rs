@@ -253,7 +253,7 @@ pub fn load(mut commands: Commands, server: Res<AssetServer>, config: Res<Config
 
 fn fail(world: &mut World, message: &str) {
     error!("Reference scene failed: {message}");
-    world.write_message(AppExit::error());
+    crate::loading::fail_or_exit(world, "Character assets could not be prepared.");
 }
 
 fn catalog(world: &mut World) -> Result<Option<Catalog>, String> {
@@ -409,6 +409,9 @@ pub fn house_transform() -> Transform {
 }
 
 pub fn tick(world: &mut World) {
+    if crate::loading::failed(world) {
+        return;
+    }
     if !world.contains_resource::<Catalog>() {
         match catalog(world) {
             Ok(Some(assets)) => {

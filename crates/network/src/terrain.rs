@@ -63,6 +63,7 @@ pub struct Terrain {
     pub package: Option<Manifest>,
     pub solids: Vec<Solid>,
     pub physics: StaticScene,
+    object_collider_count: usize,
     ground_ceiling: f32,
     step_height: f32,
     spawns: Vec<[f32; 3]>,
@@ -315,6 +316,7 @@ impl Terrain {
         if let Some(shapes) = shapes {
             colliders.extend(shapes.colliders);
         }
+        let object_collider_count = colliders.len();
         let vertices: Vec<Vec3> = profile
             .triangles
             .iter()
@@ -347,6 +349,7 @@ impl Terrain {
             package: None,
             solids: profile.solids,
             physics: StaticScene::new(colliders),
+            object_collider_count,
             ground_ceiling,
             step_height: profile.step_height,
             spawns: Vec::new(),
@@ -394,6 +397,11 @@ impl Terrain {
     }
     pub fn below_world(&self, feet: theia_core::coordinates::LocalPosition) -> bool {
         feet.metres()[1] < self.fall_limit
+    }
+    /// Authored objects without the legacy ground snapshot or world envelope.
+    /// Imported worlds supply their exact streamed ground separately.
+    pub fn object_colliders(&self) -> &[physics::PlacedCollider] {
+        &self.physics.colliders[..self.object_collider_count]
     }
     /// Add the finite development-world envelope only at normal-world adoption.
     /// Individual residency chunks retain their open ownership seams.

@@ -19,11 +19,11 @@ pub(super) fn transform(
         let p: [f64; 3] =
             std::array::from_fn(|i| entry.bounds[(corner >> i) & 1][i] * placement.scale);
         let offset = [cos * p[0] + sin * p[2], p[1], -sin * p[0] + cos * p[2]];
-        if (0..3).any(|i| {
-            (placement.position[i] - zone.origin[i] + offset[i]).abs() > theia_zone::ZONE_EXTENT
-        }) {
-            return Err("Scenery bounds leave the authoring zone".into());
-        }
+        zone.check_position(
+            std::array::from_fn(|i| placement.position[i] + offset[i]),
+            0.,
+        )
+        .map_err(|_| "Scenery bounds leave the authoring zone".to_owned())?;
     }
     Ok(
         Transform::from_translation(Vec3::from_array(zone.local(placement.position)?))
@@ -171,11 +171,8 @@ pub(super) fn sync(
     mut scene: ResMut<Scene>,
 ) {
     let signature = (session.document_id, session.editor.revision());
-    let preview = session
-        .drag
-        .as_ref()
-        .filter(|d| session.editor.zone().scenery.iter().any(|p| p.id == d.id));
-    if scene.signature == Some(signature) && preview.is_none() {
+    let previewing = session.drag.is_some();
+    if scene.signature == Some(signature) && !previewing {
         return;
     }
     let mut old = std::mem::take(&mut scene.roots);
@@ -185,10 +182,12 @@ pub(super) fn sync(
             errors += 1;
             continue;
         };
-        let placement = preview.filter(|d| d.id == placement.id).map_or_else(
-            || placement.clone(),
-            |d| transform_target::scenery_preview(placement, &d.preview),
+        let pose = group_selection::preview(
+            &session,
+            placement.id,
+            &transform_target::scenery_pose(placement),
         );
+        let placement = transform_target::scenery_preview(placement, &pose);
         let Ok(transform) = transform(session.editor.zone(), &placement, &asset.entry) else {
             errors += 1;
             continue;
@@ -220,7 +219,6 @@ pub(super) fn sync(
     for (entity, _) in old.into_values() {
         commands.entity(entity).despawn();
     }
-    let previewing = preview.is_some();
     if errors > 0 {
         session.status =
             format!("{errors} scenery placements unavailable · check library IDs and model bounds");

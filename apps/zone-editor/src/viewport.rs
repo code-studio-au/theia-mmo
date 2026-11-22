@@ -164,17 +164,14 @@ pub(super) fn sync(
                 .iter()
                 .find(|o| o.id == authored.0)
                 .expect("Synced object");
-            let pose = session
-                .drag
-                .as_ref()
-                .filter(|d| d.id == object.id)
-                .map_or(&object.pose, |d| &d.preview);
-            *visual = transform(session.editor.zone(), pose);
-            material.0 = if session.selected == Some(object.id) {
-                palette.selected.clone()
-            } else {
-                palette.normal.clone()
-            };
+            let pose = group_selection::preview(&session, object.id, &object.pose);
+            *visual = transform(session.editor.zone(), &pose);
+            material.0 =
+                if session.selected == Some(object.id) || session.group.contains(&object.id) {
+                    palette.selected.clone()
+                } else {
+                    palette.normal.clone()
+                };
         }
     }
     if let Ok((mut visual, mut visibility)) = spawn.single_mut() {
@@ -204,6 +201,9 @@ pub(super) fn sync(
 #[allow(clippy::too_many_arguments)]
 pub(super) fn pointer(
     mouse: Res<ButtonInput<MouseButton>>,
+    keys: Res<ButtonInput<KeyCode>>,
+    plants: Query<&vegetation::AuthoredPlant>,
+    markers: Query<&markers::AuthoredMarker>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
     objects: Query<&Authored>,
@@ -212,7 +212,7 @@ pub(super) fn pointer(
     test_players: Query<&test_players::Badge>,
     parents: Query<&ChildOf>,
     handles: Query<(&gizmo::TransformHandle, &Visibility, &Transform)>,
-    ground: Query<(), With<terrain::GroundPart>>,
+    ground: Query<(), imported_terrain::GroundFilter>,
     mut raycast: MeshRayCast,
     library: Option<Res<scenery_library::Library>>,
     mut session: ResMut<Session>,
@@ -229,15 +229,19 @@ pub(super) fn pointer(
     }
     if !window.focused || session.play.is_some() {
         session.drag = None;
+        session.marquee = None;
+        return;
+    }
+    let Ok((camera, camera_transform)) = camera.single() else {
+        return;
+    };
+    if group_selection::update_marquee(&mut session, window, &mouse, camera, camera_transform) {
         return;
     }
     let Some(cursor) = canvas_cursor(window, &session) else {
         if mouse.just_released(MouseButton::Left) {
             session.drag = None;
         }
-        return;
-    };
-    let Ok((camera, camera_transform)) = camera.single() else {
         return;
     };
     let Ok(ray) = camera.viewport_to_world(camera_transform, cursor) else {
@@ -276,6 +280,8 @@ pub(super) fn pointer(
                 || scenery_id(entity).is_some()
                 || test_players.contains(entity)
                 || particles.contains(entity)
+                || plants.contains(entity)
+                || markers.contains(entity)
                 || ground.contains(entity)
                 || handles
                     .get(entity)
@@ -286,6 +292,49 @@ pub(super) fn pointer(
             .cast_ray(ray, &settings)
             .first()
             .map(|(entity, _)| *entity);
+        let add = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
+        let toggle = keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight);
+        let asset_id = hit.and_then(|e| {
+            scenery_id(e)
+                .or_else(|| objects.get(e).ok().map(|p| p.0))
+                .or_else(|| particles.get(e).ok().map(|p| p.0))
+                .or_else(|| test_players.get(e).ok().map(|p| p.0))
+                .or_else(|| plants.get(e).ok().map(|p| p.0))
+                .or_else(|| markers.get(e).ok().map(|p| p.0))
+        });
+        let handle_hit = hit.is_some_and(|e| handles.contains(e));
+        if !handle_hit && (add || toggle || asset_id.is_none()) {
+            // A modifier drag can start over an asset; a modifier click toggles/adds it.
+            group_selection::begin(&mut session, cursor, add, toggle);
+            if let Some(id) = asset_id {
+                let m = session.marquee.as_mut().unwrap();
+                m.clicked = Some(id);
+            }
+            return;
+        }
+        if !handle_hit && asset_id.is_some_and(|id| session.group.contains(&id)) {
+            if session.gizmo_tool == gizmo::Tool::Move
+                && let Some(pose) = group_selection::pivot(&session)
+                && let Ok(local) = session.editor.zone().local(pose.position)
+                && let Some(gesture) = gizmo::Gesture::plane(ray, Vec3::from_array(local))
+            {
+                session.drag = Some(Drag {
+                    id: 0,
+                    before: pose.clone(),
+                    preview: pose,
+                    revision: session.editor.revision(),
+                    gesture: gesture.with_grid(session.grid()),
+                });
+            }
+            return;
+        }
+        if !handle_hit {
+            session.group.clear();
+        }
+        if !handle_hit && hit.is_some_and(|e| plants.contains(e) || markers.contains(e)) {
+            group_selection::select(&mut session, asset_id.into_iter().collect());
+            return;
+        }
         if let Some((handle, _, handle_transform)) = hit.and_then(|entity| handles.get(entity).ok())
         {
             if let Some((id, pose)) = transform_target::selected(&session) {
@@ -401,12 +450,7 @@ pub(super) fn pointer(
             let valid = Editor::new(zone.clone()).and_then(|mut candidate| {
                 candidate.execute(Command::Apply {
                     expected_revision: 0,
-                    edits: vec![transform_target::edit(
-                        zone,
-                        drag.id,
-                        &pose,
-                        library.as_deref(),
-                    )?],
+                    edits: group_selection::edits(&session, drag.id, &pose, library.as_deref())?,
                 })
             });
             match valid {
@@ -416,15 +460,10 @@ pub(super) fn pointer(
         }
         if mouse.just_released(MouseButton::Left) {
             if drag.preview != drag.before {
-                match transform_target::edit(
-                    session.editor.zone(),
-                    drag.id,
-                    &drag.preview,
-                    library.as_deref(),
-                ) {
-                    Ok(edit) => session.execute(Command::Apply {
+                match group_selection::edits(&session, drag.id, &drag.preview, library.as_deref()) {
+                    Ok(edits) => session.execute(Command::Apply {
                         expected_revision: drag.revision,
-                        edits: vec![edit],
+                        edits,
                     }),
                     Err(error) => session.status = error,
                 }
@@ -490,7 +529,9 @@ pub(super) fn capture(
             ),
         });
     }
-    let capture_frame = if matches!(
+    let capture_frame = if let Some(source) = &session.editor.zone().imported_terrain {
+        240.max(source.tile_count().div_ceil(8) as u32 + 90)
+    } else if matches!(
         capture.view,
         Some(
             cli::CaptureView::ParticlePreview
@@ -559,7 +600,7 @@ pub(super) fn capture(
             },
         );
     }
-    assert!(capture.frames < 600, "Capture timed out");
+    assert!(capture.frames < 900, "Capture timed out");
 }
 
 /// Opt-in read-only native qualification output; never consumed as a command.
@@ -663,6 +704,7 @@ pub(super) fn report(
             With<asset_browser::Search>,
         >,
         crate::account_picker::Report,
+        Option<Res<imported_terrain::Scene>>,
     ),
     session: Res<Session>,
     view: Res<View>,
@@ -689,6 +731,7 @@ pub(super) fn report(
         spawn_groups,
         asset_search,
         account_picker,
+        imported_scene,
     ) = input;
     let Some(mut report) = report else {
         return;
@@ -747,6 +790,8 @@ pub(super) fn report(
         "terrain_points":[project(Vec3::new(64.,0.,64.)),project(Vec3::new(72.,0.,64.)),project(Vec3::new(48.,0.,64.))],
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
+    value["selection_group"] = serde_json::json!(session.group);
+    value["marquee_active"] = session.marquee.is_some().into();
     value["spawn_group_selected"] = session.spawn_group_selected.into();
     value["particle_selected"] = session.particle_selected.into();
     value["exit_confirmation"] = session.exit_confirmation.into();
@@ -1011,6 +1056,7 @@ pub(super) fn report(
         Some(serde_json::json!({"visible":*visibility!=Visibility::Hidden,"mesh":format!("{:?}",handle.0.id()),"vertices":positions.len(),"triangles":mesh.indices().map_or(0,|i|i.len()/3),"samples":samples}))
     }));
     value["brush_point"] = serde_json::json!(session.brush_point.map(|p| p.to_array()));
+    value["imported_terrain"] = serde_json::json!({"scene":imported_scene.as_ref().map(|s|s.summary()),"source_sample_bytes":session.editor.zone().imported_terrain.as_ref().map(|t|t.sample_bytes())});
     value["view"] = serde_json::json!({"target":view.target.to_array(),"distance":view.distance,"yaw":view.yaw,"pitch":view.pitch,"preset":format!("{:?}",view.preset)});
     let temp = report.path.with_extension("tmp");
     if let Err(error) = std::fs::write(&temp, serde_json::to_vec_pretty(&value).unwrap())

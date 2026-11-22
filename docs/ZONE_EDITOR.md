@@ -1,3 +1,154 @@
+22 November 2026 — P5-17 viewport asset groups:
+In Objects mode (F1), left-drag empty viewport space to draw a selection
+rectangle. Shift-drag may start over an asset and adds to the selection;
+Ctrl-drag toggles members. Shift-click adds and Ctrl-click toggles a single asset.
+Ctrl+A selects every supported asset in the document. F frames the selection.
+A box selects asset anchors inside its screen rectangle, including occluded
+anchors in front of the camera; it does not depend on mesh occlusion. Top view
+is useful for selecting a village footprint. A click on empty space clears.
+
+Supported members: primitives, imported scenery, vegetation, NPC/quest markers,
+particle anchors and test-player anchors. Terrain, road/stream guides, quest areas,
+spawn-group volumes and the player spawn are not asset members. Names, catalogue
+keys and gameplay bindings are retained. Selection is transient, not a saved group.
+
+Use the viewport Move / Rotate / Scale buttons and handles. Move preserves relative
+spacing; dragging an already-selected member moves the group on the XZ plane.
+Rotate turns positions and yaw around the common Y-up pivot. Uniform Scale changes
+positions and sizes around that pivot. The pivot is the centre of the selected
+anchors' bounds, calculated in global f64. Test-player anchors move around the
+pivot but retain their authored fixed size/facing. Existing snap settings apply.
+Gold outlines and the status-bar count identify group members; the blue rectangle
+shows an ongoing selection. Escape cancels a preview and clears selection; loss of
+window focus cancels the preview. One release is one atomic undo/redo transaction.
+If any member fails bounds/scale/library validation, the entire candidate is refused.
+Delete removes all selected members in one transaction. Per-asset properties and
+Duplicate still require a single ordinary selection.
+
+Actual prerequisites: existing checked poses, transactional zone edits, scene
+placement renderers and native viewport gizmos. Acceptance: both rectangle drag
+directions and modifier selection; mixed-asset move/yaw/uniform scale, cancellation,
+far-origin precision, invalid-member rejection, exact undo/redo/save; groups beyond
+128 members; native rendered rectangle/outlines/handles and input ownership.
+Verification evidence is recorded separately in STATUS.md.
+
+22 November 2026 — large Smooth and Flatten area (P5-17):
+Qualified with 84 zone and 269 editor tests, final area/detail regressions, strict
+lint/format/build, and native Vulkan preview/undo/save/reload plus 27 rendered rays
+on RX 7900 XTX. Evidence: build/area-brush-checks/native/qualification.json.
+Native automation uses app-owned strokes; no Windows qualification.
+In F2 / Sculpt, Smooth now reaches a 160 m radius (320 m diameter), five times
+the previous maximum. Select **Flatten area (centre height)** for a level platform:
+the initial exact cursor-centre surface height is held for the whole drag. Release
+and start another stroke to sample a different level. The radius controls the fully
+flattened interior; **Edge blend width** adds a 1..80 m transition outside it.
+The preview shows the interior and faded outer band. The bounded 25-tile
+high-detail display follows the active brush, including when zoomed out. Original small-patch borders
+remain locked; imported internal tile boundaries remain editable and continuous.
+
+**Add terrain bumps** enables deterministic Perlin noise. **Bump height** controls
+maximum deviation (0..8 m); **Bump width** controls wavelength (4..128 m). Larger
+width makes broader bumps. Off gives a perfectly level interior; zero height also
+removes noise. Repeated overlapping stamps use the same spatial noise instead of
+accumulating it. The initial centre is the zero-noise anchor. Turning bumps off
+changes subsequent strokes; Undo removes a completed noisy stroke.
+
+Release commits one undo step; Escape cancels. Ctrl S saves the edit journal;
+Ctrl Z / Ctrl Y undo/redo. The previous manual-level Flatten remains available.
+Raise/lower/paint retain their 32 m radius cap. Large-brush spacing scales with
+radius; the existing 128-stamp stroke budget remains. New imported large/area
+brush journals use schema 18, explicitly refused by older editor builds. Original
+source tiles remain unchanged. Saved editor changes are not automatically
+published into the already-running development walkthrough.
+
+17 November 2026 — seven-zone imported terrain authoring (P5-17 / P3-15):
+Imported documents now admit up to 8192 m per axis, 4096 tiles and 128 MiB of
+source height buffers, with the origin fixed at the package centre. The existing
+checked +/-4096 m local coordinate limit is unchanged. This admits the gentler
+Covenant seven-zone rectangle, 7296 x 8192 m / 3648 tiles / 61,651,200 source bytes.
+Areas over 1024 tiles use 16 m overview meshes; up to 25 nearby tiles retain source
+detail (2 m for this copy). Creation/replacement budgets remain 8/2 per frame.
+Sculpt, colour paint, history and saved edit journals use the existing workflow.
+A journal is not automatically exported into the separate walkthrough package.
+
+Local derived assets and reproduction: build/covenant-seven-gentle-v1/README.txt,
+prepare.py, bake_map.py, conversion.json, zones/, terrain/, zone.json and play.py.
+The separate source master and all per-zone grids share one smoothing pass. Original
+ZIP, original packages and previous editor documents remain intact. Source zone
+rasters retain 3.90625 m spacing and the common uint16 0..1600 m decode scale;
+engine samples are bilinearly resampled to 2 m, with eastern/southern padding.
+The rectangular editor also includes intervening terrain outside the seven masks.
+Use F2 for sculpt, F7 for paint, Ctrl+S to save and Ctrl+Z to undo. Qualification
+results are recorded in STATUS once complete; this does not qualify all 20 zones.
+
+17 November 2026 — imported-zone sculpting and painting (schema 17):
+This supersedes the read-only imported-terrain limitation below. Open the existing
+Millhaven document, select Sculpt (F2) or Paint (F7), and zoom to the work area.
+These modes open the Tools inspector directly. Raise, Lower, Flatten and Smooth
+use the same radius/strength/blend controls and drag-stroke lifecycle as ordinary
+patch terrain. Paint blends grass, dirt, rock or sand vertex colours. Press I over
+the terrain in Sculpt mode to sample the flatten height. Imported flatten levels
+use absolute Y metres within +/-1024 m, including Millhaven's elevations near
+190–325 m; legacy patch tools retain their +/-64 m local-height limits.
+
+The brush preview follows edited source samples. Release commits one undo entry;
+Escape cancels the preview. Ctrl Z/Ctrl Y undo/redo and Ctrl S saves. Shared edge
+samples are edited together, smoothing reads across tile boundaries, and mesh
+normals use shared full-resolution neighbours to avoid tile-edge lighting seams.
+Ground placement queries the edited surface. Brush work is local; only affected
+mesh buffers and their normal neighbours refresh under the existing frame budgets.
+
+The saved zone records a versioned deterministic sculpt/paint journal bound to
+its original package identity. Source files stay unchanged. Loading verifies the
+source and rebuilds edited samples; snapshots share unchanged tile arrays and
+journal pages. This slice permits 65,536 stamps (128 per drag) and a 32 MiB imported
+zone JSON budget; ordinary documents retain the 2 MiB admission limit. No-op or
+invalid edits refuse atomically, preserving history and redo. Undo history remains
+session-local, as with the existing editor; saved terrain edits persist.
+
+This is editor authoring. Publishing edited terrain/objects into the network
+walkthrough and the legacy embedded Play/export path remain separate work.
+Keep the original package available when reopening the saved zone. Native rendered
+preview/cancel, cross-tile sculpt/paint, undo/redo and save/reload evidence is in STATUS.
+
+17 November 2026 — full imported-zone object authoring (schema 16):
+Start a new document with `--imported-terrain build/millhaven-v3-1m --save-path
+build/millhaven-full-editor-v1/zone.json`, or reopen its saved JSON with `--zone`.
+Use only one of `--zone` and `--imported-terrain`. The package reference contains
+its absolute local directory, exact identity, bounds and sample spacing; keep
+the package available. All tiles and shared edges are checked before admission.
+Saving stores authored content and this reference, never duplicates source heights.
+
+Millhaven's complete 4096 x 3072 m base is available for object placement,
+selection, transforms, undo/redo and explicit save/reload. The initial camera
+frames the terrain. Select Imported terrain in the outliner and press F to frame
+it again. WASD follows camera bearing, Shift increases travel speed to 128 m/s,
+right mouse orbits, middle mouse pans and the wheel zooms. Frame Player spawn to
+reach the village in the prepared local document. These are scene controls.
+
+All 768 tiles have 4 m overview meshes; close views replace at most 25 tiles with
+1 m source meshes. Creation is limited to 8 meshes/frame and LOD changes to 2.
+Grounding always samples the full 1 m source triangles. Samples occupy 51,121,152
+bytes and are shared across undo snapshots and reload history. Local render
+coordinates are centered and bounded; supported imported extents are at most
+4096 m per axis / 1024 tiles. Original legacy patch documents retain their bounds.
+
+Imported heights are read-only: sculpt/paint/resampling are unavailable. The
+legacy embedded Play and static export paths report an unsupported imported-base
+message; they cannot omit the terrain and accidentally publish a flat scene.
+Use the separately qualified full-zone walkthrough for terrain testing. Newly
+authored object edits are not yet exported into that walkthrough. The old draft
+and original height package remain untouched. Native evidence is in STATUS.
+
+17 November 2026 — perspective scene navigation:
+WASD follows the current camera bearing after orbiting: D/A move the view
+right/left and W/S forward/back along the ground plane. Previously perspective
+navigation used fixed +X/-Z axes, so directions felt reversed after a half-turn.
+Top/front/right presets retain their exact authoring planes. This changes view
+navigation only; object coordinates, transforms, undo history and playtest
+controls are unaffected. Mouse orbit and grab-style middle-button panning retain
+their existing behavior. Validation is recorded in STATUS.
+
 Party account playtests (15 November 2026): owned account Start enables the
 qualified party profile and Party [O] panel. Development Test Players keep their
 existing mode. Native export/create/select, all three travel quests, editor Stop
@@ -108,6 +259,18 @@ input. Browser sign-in uses the existing owned synthetic account helper. Account
 progress survives Stop/Start within the editor session. Closing the editor stops
 its owned services; each new invocation starts a fresh synthetic account/database.
 This is a disposable development session, not a persistent account installation.
+
+Manual sessions default to optimized executables in `target/release` (22 November
+2026). Build a matching editor/client/server/baker/validator set before launching:
+
+```sh
+cargo build --release --locked -p theia-client -p theia-server -p theia-zone-editor -p theia-nav-bake -p theia-network --bins --example validate_gameplay -j2
+```
+
+Use `--binaries target/debug` only when deliberately debugging. The editor launches
+the runtime beside its own executable, so opening a debug editor also selects a
+debug playtest. Reducing terrain view distance does not remove unoptimized CPU
+overhead. `tools/play_imported_population.py` likewise defaults to `target/release`.
 
 For the locally prepared populated valley:
 

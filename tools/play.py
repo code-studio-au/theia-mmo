@@ -16,7 +16,7 @@ import sys
 import threading
 from launcher_owner import watch_owner
 from launch_environment import client_environment
-from playtest_windows import work_area_options
+from playtest_windows import client_window_options
 
 
 def fantasy_ui_options(directory, classic, combat_catalog, ui_scale=None, ui_preferences=None):
@@ -372,11 +372,10 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
                 time.sleep(.05)
             if address is None:
                 raise RuntimeError('Server readiness timed out')
-            window_area = work_area_options() if test_window or (2 <= clients <= 4 and not fullscreen) else []
             for index in range(clients):
                 if stop_requested():
                     return
-                processes.append(subprocess.Popen([str(client_binary), '--window-size', window_size, *window_area, *ui_options, *(['--test-window', test_window or f'{index+1}/{clients}'] if test_window or (2 <= clients <= 4 and not fullscreen) else []), *(['--fullscreen'] if fullscreen else []),
+                processes.append(subprocess.Popen([str(client_binary), '--window-size', window_size, *client_window_options(index, clients, fullscreen, test_window), *ui_options, *(['--fullscreen'] if fullscreen else []),
                     *(['--controls-file',str(controls_file.resolve())] if controls_file else []), *(['--camera-collision', camera_collision] if camera_collision else []), *(['--spell-feedback', str(feedback)] if feedback else []), *(['--creature-asset', str(creature_asset.resolve())] if creature_asset else []), *scene,
                     '--player-assets', str(players), *route_options,
                     '--renet-connect' if tickets else '--connect', address,

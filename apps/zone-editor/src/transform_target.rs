@@ -2,6 +2,9 @@
 use super::*;
 
 pub(super) fn selected(session: &Session) -> Option<(u64, Pose)> {
+    if let Some(pivot) = group_selection::pivot(session) {
+        return Some((0, pivot));
+    }
     let zone = session.editor.zone();
     if let Some(id) = session.test_player_selected {
         let player = zone.test_players.iter().find(|p| p.id == id)?;
@@ -58,6 +61,24 @@ pub(super) fn edit(
             .ok_or("Load the scenery library before moving this model")?;
         scenery_scene::transform(zone, &placement, &entry.entry)?;
         Ok(Edit::PutScenery { scenery: placement })
+    } else if let Some(original) = zone.plants.iter().find(|p| p.id == id) {
+        let mut plant = original.clone();
+        plant.position = pose.position;
+        plant.yaw_degrees = pose.yaw_degrees;
+        plant.scale = pose.size[0];
+        Ok(Edit::PutPlant { plant })
+    } else if let Some(original) = zone.markers.iter().find(|p| p.id == id) {
+        let mut marker = original.clone();
+        marker.position = pose.position;
+        marker.yaw_degrees = pose.yaw_degrees;
+        marker.radius_metres = pose.size[0];
+        Ok(Edit::PutMarker { marker })
+    } else if let Some(original) = zone.particles.iter().find(|p| p.id == id) {
+        let mut particle = original.clone();
+        particle.position = pose.position;
+        particle.yaw_degrees = pose.yaw_degrees;
+        particle.scale = pose.size[0];
+        Ok(Edit::PutParticle { particle })
     } else if let Some(original) = zone.test_players.iter().find(|p| p.id == id) {
         if pose.yaw_degrees != 0. || pose.size != [1.; 3] {
             return Err("Test players currently support position only".into());

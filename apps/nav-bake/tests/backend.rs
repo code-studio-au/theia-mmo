@@ -126,6 +126,31 @@ fn actual_128m_seam_is_connected_at_15km_and_a_missing_tile_has_no_fallback() {
     assert!(Query::new(&[left, foreign]).is_err());
 }
 #[test]
+fn neighbouring_tile_height_quantization_connects_but_separate_floors_do_not() {
+    let a = ChunkId { x: 10, z: 28 };
+    let b = ChunkId { x: 11, z: 28 };
+    let left = bake(a, [7; 32], Agent::development(), floor(256.)).unwrap();
+    let mut geometry = floor(256.);
+    for p in &mut geometry.positions {
+        p[0] -= 128.;
+    }
+    let right = bake(b, [7; 32], Agent::development(), geometry).unwrap();
+    for difference in [0.06, 0.5] {
+        let mut shifted = right.clone();
+        for p in shifted
+            .vertices
+            .iter_mut()
+            .chain(&mut shifted.detail.vertices)
+        {
+            p[1] += difference;
+        }
+        let query = Query::new(&[left.clone(), shifted]).unwrap();
+        let result = query.route(point(a, 120., 0., 64.), point(b, 8., difference, 64.));
+        assert_eq!(result.is_ok(), difference < 0.1, "{result:?}");
+    }
+}
+
+#[test]
 fn forbidden_slope_is_disconnected_and_low_headroom_cannot_snap_onto_roof() {
     let id = ChunkId { x: 0, z: 0 };
     let agent = Agent::development();

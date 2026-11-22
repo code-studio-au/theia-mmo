@@ -1,3 +1,13 @@
+17 November 2026 — P2-04 / P2-14 reset recovery and P3-15 gentler pass 2:
+F10 Developer Reset position uses trusted local-owner controls and server collision-
+prepared teleport to the original spawn, clearing fall/prediction state while
+preserving speed. Single-surface local walkthroughs automatically recover below
+terrain; ordinary/account/cave behavior is unchanged. Disconnected sessions require
+relaunch. This safeguards recovery without claiming the original CCD bug is fixed.
+The user-approved second smoothing/60% scaling pass is available separately as
+build/covenant-seven-gentle-v2, with original and v1 sources retained. See STATUS
+for source metrics, tests, native Reset proof and exact limits.
+
 15 November 2026 acceptance: native 3440x1440 bag hover/coin footer and vendor
 prices pass in build/quest-economy-native-20261115-v1/qualification.json, including
 exact buy/sell changes and PostgreSQL restart. The tooltip is beside the hovered
@@ -13,10 +23,43 @@ Enemy health bars appear for the selected target or observed attacks on the
 local player, with a three-second grace between swings. Tab/Shift+Tab cycling
 remains available with the bag/conversation open. The ordinary Connected label
 is hidden; connection failures and loading states remain visible.
-Interface [F10] toggles a small optional FPS, frame-time, window, server-rate,
-player/chunk and position panel. It starts hidden and uses existing preference
-persistence. Default test windows are 3440x1440 solo and 1920x1440 per player;
-two windows overlap if the display cannot fit both at their requested width.
+Interface [F10] opens settings; "Show / hide debug statistics" toggles the optional
+FPS, frame-time, window, server-rate, player/chunk and position panel. Statistics
+start hidden. Graphics opens a separate page with 30/60/90/120/144/165/240 FPS and
+Unlimited; the default is 60. Escape returns from Graphics to Interface, then
+closes Interface. The cap limits client presentation, not the server tick rate.
+Account population playtests save UI/debug/graphics choices in
+build/user-preferences/interface.json; explicit --ui-preferences isolates a test.
+Graphics also offers saved VSync On/Off, default On. On uses Bevy FIFO for
+tear-free presentation; Off uses AutoNoVsync with its platform fallback. The FPS
+cap remains independent: Unlimited with VSync On can still be refresh-limited.
+Changes apply live; legacy preference files default VSync to On. The explicit
+uncapped benchmark flag bypasses both limits without saving an override.
+Graphics → Terrain view distance offers Nearby, Far and Maximum. Changes apply
+live and save alongside FPS/VSync with `--ui-preferences`; legacy files use Nearby.
+Nearby retains up to 81 terrain tiles (4-tile radius, roughly 512 m along each
+axis); Far uses up to 289 (8 tiles, roughly 1 km). Maximum loads an entire saved
+zone up to 32 x 32 tiles, otherwise up to 961 tiles in a 15-tile radius (roughly
+1.9 km). These are square tile neighbourhoods, not exact circular clip distances.
+Distant meshes load progressively at coarse detail. Lowering the choice retires
+unneeded meshes and restores the camera's original far clipping for Nearby.
+Higher choices use more memory; they do not extend server actor visibility or
+collision, or add object streaming to authored/monolithic scenes.
+F10 → Developer provides 1×/2×/4×/8×/16× running multipliers in explicitly
+launched local developer walkthroughs. Walking, jump/gravity and facing retain
+normal rates. The page displays the server-applied value while a local request is
+pending; ordinary/account playtests show that a developer walkthrough is required.
+The control is session-only and new walkthroughs start at 1×. It does not save into
+Graphics preferences. The local launcher creates an isolated owner-control file;
+file work stays off the render/simulation threads and requests are not gameplay
+network commands. DT03 corrections are accepted only with the explicit developer
+opt-in; ordinary TP03 stays normal-speed. This is a Theia developer extension.
+Default requested playtest sizes are 3440x1440 solo, 1720x1440 for
+two clients and 1720x720 for three/four. Windowed groups of one to four fit the
+desktop work area through Bevy; on the current 3440x1440 display with a 40-pixel
+panel, solo is 3440x1400, pairs are 1720x1400 and quadrants are 1720x700.
+Fullscreen remains explicit. The combat log appears after a received combat
+event; a client chat composer/history is still pending (see LOCAL_CHAT.md).
 STATUS records native evidence separately from widget tests and earlier previews.
 
 14 November multiple-contact UI continuation:

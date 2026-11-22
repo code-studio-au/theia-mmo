@@ -131,7 +131,7 @@ struct Layout<'w, 's> {
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if !(6..=9).contains(&args.len()) || args[2] != "--output" || args[4] != "--size" {
         return Err(
-            "Expected --preview-fantasy-ui HUD_DIRECTORY --output DIRECTORY --size WIDTHxHEIGHT [--ui-scale FACTOR] [--reader | --interface]"
+            "Expected --preview-fantasy-ui HUD_DIRECTORY --output DIRECTORY --size WIDTHxHEIGHT [--ui-scale FACTOR] [--reader | --interface | --graphics]"
                 .into(),
         );
     }
@@ -151,12 +151,16 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .filter(|a| a.as_str() == "--interface")
         .count();
-    if reader_flags + interface_flags > 1 {
-        return Err("Choose at most one --reader or --interface preview flag".into());
+    let graphics_flags = scale_args
+        .iter()
+        .filter(|a| a.as_str() == "--graphics")
+        .count();
+    if reader_flags + interface_flags + graphics_flags > 1 {
+        return Err("Choose at most one --reader, --interface or --graphics preview flag".into());
     }
     let reader = reader_flags == 1;
-    let interface = interface_flags == 1;
-    scale_args.retain(|arg| arg != "--reader" && arg != "--interface");
+    let interface = interface_flags == 1 || graphics_flags == 1;
+    scale_args.retain(|arg| arg != "--reader" && arg != "--interface" && arg != "--graphics");
     let preferred_scale = super::parse_scale(&mut scale_args, true)?;
     let ui_scale = super::fit_scale(preferred_scale, size.as_vec2());
     if !scale_args.is_empty() {
@@ -248,6 +252,9 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     }
     if interface {
         super::settings::install_preview(&mut app, preferred_scale);
+        app.world_mut()
+            .resource_mut::<super::settings::Ui>()
+            .graphics_open = graphics_flags == 1;
     }
     crate::combat::ui::install_preview(&mut app);
     crate::minimap::install_preview(&mut app);

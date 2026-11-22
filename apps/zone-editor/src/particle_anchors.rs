@@ -44,7 +44,7 @@ pub(super) fn sync(mut commands: Commands, session: Res<Session>, mut scene: Res
         session.particle_selected,
         session.play.is_some(),
     );
-    if scene.signature == Some(signature) {
+    if scene.signature == Some(signature) && !group_selection::active(&session) {
         return;
     }
     let removed: Vec<_> = scene
@@ -58,7 +58,18 @@ pub(super) fn sync(mut commands: Commands, session: Res<Session>, mut scene: Res
             commands.entity(entity).despawn();
         }
     }
-    for particle in &session.editor.zone().particles {
+    for original in &session.editor.zone().particles {
+        let pose = group_selection::preview(
+            &session,
+            original.id,
+            &group_selection::pose(original.position, original.yaw_degrees, original.scale),
+        );
+        let particle = &theia_zone::particles::ParticlePlacement {
+            position: pose.position,
+            yaw_degrees: pose.yaw_degrees,
+            scale: pose.size[0],
+            ..original.clone()
+        };
         let position = Vec3::from_array(
             session
                 .editor
@@ -96,7 +107,11 @@ pub(super) fn sync(mut commands: Commands, session: Res<Session>, mut scene: Res
             scene.entities.insert(particle.id, entity);
         }
     }
-    scene.signature = Some(signature);
+    scene.signature = if group_selection::active(&session) {
+        None
+    } else {
+        Some(signature)
+    };
 }
 
 #[cfg(test)]

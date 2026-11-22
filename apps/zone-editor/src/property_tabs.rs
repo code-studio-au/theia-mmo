@@ -154,7 +154,7 @@ pub(super) fn sync(
     );
     if state.context != Some(context) {
         state.context = Some(context);
-        state.active = if context.2.is_some() && !context.1 {
+        state.active = if context.2.is_some() && !context.1 && !session.terrain_mode {
             Tab::Attributes
         } else {
             Tab::Tools
@@ -295,5 +295,11 @@ mod tests {
         app.world_mut().resource_mut::<Session>().ui.input_owned = true;
         app.world_mut().trigger(Activate { entity: buttons[0] });
         assert_eq!(app.world().resource::<State>().active, Tab::View);
+        for mode in [EditorMode::Sculpt, EditorMode::Paint] {
+            app.world_mut().resource_mut::<Session>().set_mode(mode);
+            app.world_mut().run_system_once(sync).unwrap();
+            assert_eq!(app.world().resource::<State>().active, Tab::Tools);
+            assert_eq!(app.world().resource::<Session>().editor.zone(), &zone);
+        }
     }
 }

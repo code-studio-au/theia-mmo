@@ -10,6 +10,7 @@ pub(super) fn keyboard(
 ) -> bool {
     if session.play.is_some()
         || session.drag.is_some()
+        || session.marquee.is_some()
         || session.stroke.is_some()
         || session.path_draft.is_some()
         || session.path_mode
@@ -23,6 +24,7 @@ pub(super) fn keyboard(
         && !session.vegetation_mode
         && !session.terrain_mode
     {
+        session.group.clear();
         session.inspect_spawn = false;
         session.particle_selected = None;
         session.quest_area_selected = None;
@@ -59,7 +61,27 @@ pub(super) fn keyboard(
 
 pub(super) fn frame(session: &mut Session, view: &mut View) -> bool {
     let zone = session.editor.zone();
-    let framing = if session.terrain_mode {
+    let framing = if let Some(pivot) = group_selection::pivot(session) {
+        let radius = group_selection::assets(zone)
+            .into_iter()
+            .filter(|(id, _)| session.group.contains(id))
+            .map(|(_, p)| {
+                ((0..3)
+                    .map(|i| (p.position[i] - pivot.position[i]).powi(2))
+                    .sum::<f64>()
+                    .sqrt()
+                    + p.size.into_iter().fold(0., f64::max)) as f32
+            })
+            .fold(1., f32::max);
+        Some((pivot.position, radius))
+    } else if session.terrain_mode && zone.imported_terrain.is_some() {
+        camera_views::terrain_target(zone)
+            .and_then(|p| zone.global(p.to_array()).ok())
+            .map(|p| {
+                let t = zone.imported_terrain.as_ref().unwrap();
+                (p, imported_terrain::overview_radius(t))
+            })
+    } else if session.terrain_mode {
         zone.terrain.as_ref().and_then(|patch| {
             let start = patch.origin().ok()?;
             let minimum = patch.heights.iter().copied().fold(f32::INFINITY, f32::min);
@@ -146,7 +168,8 @@ pub(super) fn frame(session: &mut Session, view: &mut View) -> bool {
                 view.target = Vec3::from_array(local);
                 // A factor of three encloses a sphere at the standard 45 degree
                 // vertical field of view, with margin for the editor UI.
-                view.distance = (radius * 3. + 8.).clamp(8., MAX_VIEW_DISTANCE);
+                view.distance =
+                    (radius * 3. + 8.).clamp(8., imported_terrain::max_view_distance(zone));
                 session.status = "Focused selection".into();
             }
             Err(error) => session.status = error,

@@ -39,6 +39,7 @@ pub struct Network {
     /// Reserves one UI intent across panels until a later item reply arrives.
     item_reservation: std::sync::atomic::AtomicU64,
     input: watch::Sender<Intent>,
+    pub(crate) loading_blocked: bool,
     chunk_ready: watch::Sender<Option<Vec<theia_core::coordinates::ChunkId>>>,
     state: watch::Receiver<State>,
     stop: watch::Sender<bool>,
@@ -104,7 +105,8 @@ pub struct Smoke {
 impl Network {
     pub(crate) fn can_act(&self) -> bool {
         let state = self.state.borrow();
-        state.error.is_none()
+        !self.loading_blocked
+            && state.error.is_none()
             && (self.life_events.is_none()
                 || state.player_life.as_ref().is_some_and(|life| {
                     state
@@ -197,7 +199,8 @@ impl Network {
         let Some(view) = &state.inventory else {
             return false;
         };
-        if !self.connected()
+        if self.loading_blocked
+            || !self.connected()
             || !state.rewards.as_ref().is_some_and(|r| {
                 r.available
                     .iter()
@@ -316,7 +319,7 @@ impl Network {
         &self,
         command: impl FnOnce(u64) -> theia_core::inventory::ItemCommand,
     ) -> bool {
-        if !self.connected() {
+        if self.loading_blocked || !self.connected() {
             return false;
         }
         let state = self.state.borrow();
@@ -389,6 +392,9 @@ impl Network {
         self.combat_events.as_mut()?.try_recv().ok()
     }
     pub(crate) fn request_target(&self, target: Option<theia_core::identity::EntityId>) {
+        if self.loading_blocked {
+            return;
+        }
         if let Some(choices) = &self.target_choice {
             choices.send_replace(Some(theia_network::targeting::Choice { target }));
         }
@@ -455,6 +461,9 @@ impl Network {
         self.state.borrow().clone()
     }
     pub(crate) fn party_action(&self, intent: theia_network::party_client::Intent) -> bool {
+        if self.loading_blocked {
+            return false;
+        }
         self.party_actions
             .as_ref()
             .is_some_and(|actions| actions.try_send(intent).is_ok())
@@ -892,6 +901,7 @@ impl Network {
             pickups: loot_enabled.then_some(pickups),
             item_reservation: std::sync::atomic::AtomicU64::new(0),
             input,
+            loading_blocked: false,
             chunk_ready,
             state,
             stop,
@@ -911,6 +921,9 @@ impl Network {
                         life_enabled,
                         None,
                         parties,
+                    )
+                    .with_development_speed(
+                        std::env::var_os(theia_network::development::ENV).is_some(),
                     )
                 } else if let Some(profile) = dodge_profile {
                     theia_network::prediction_driver::Driver::with_dodge(
@@ -1205,6 +1218,15 @@ pub fn send_input(
     }
     if let Some(run) = projectile {
         value = run.intent();
+    }
+    if network.loading_blocked {
+        value = Intent {
+            facing: state
+                .correction
+                .and_then(|c| c.state.pose.facing)
+                .or(value.facing),
+            ..default()
+        };
     }
     network.input.send_replace(value);
 }

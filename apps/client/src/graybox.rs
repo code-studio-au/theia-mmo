@@ -12,6 +12,7 @@ use std::{
 };
 use theia_core::coordinates::{ChunkId, GlobalPosition};
 use theia_network::procedural::{self, Geometry, Patch};
+mod view;
 
 #[derive(Component)]
 pub(crate) struct Tile {
@@ -32,8 +33,10 @@ struct Built {
 }
 #[derive(Resource)]
 pub struct Graybox {
+    view: view::View,
     render_motion: crate::movement_metrics::Metrics,
     saved: Option<Arc<theia_network::saved_terrain::Store>>,
+    source: procedural::Source,
     sender: mpsc::SyncSender<(ChunkId, usize)>,
     receiver: Mutex<mpsc::Receiver<theia_network::Result<Built>>>,
     pending: Option<(ChunkId, usize)>,
@@ -69,13 +72,19 @@ impl Graybox {
         self.saved.as_ref().map(|s| s.stats())
     }
     pub fn new(source: procedural::Source) -> Self {
-        let saved = match &source {
-            procedural::Source::Saved(store) => Some(store.clone()),
-            _ => None,
-        };
+        let saved = source.saved().cloned();
+        let view = view::View::parse(
+            std::env::var("THEIA_TERRAIN_VIEW").ok().as_deref(),
+            saved.as_ref().map(|store| store.chunk_layout()),
+        )
+        .unwrap_or_else(|error| {
+            eprintln!("Terrain view: {error}");
+            std::process::exit(1);
+        });
         let visual_source = source.clone();
         let (sender, jobs) = mpsc::sync_channel(1);
         let (results, receiver) = mpsc::sync_channel(1);
+        let collision_source = source.clone();
         std::thread::Builder::new()
             .name("terrain-visuals".into())
             .spawn(move || {
@@ -100,7 +109,7 @@ impl Graybox {
             .spawn(move || {
                 while let Ok(id) = jobs.recv() {
                     if results
-                        .send(Patch::load(id, &source).map(Arc::new))
+                        .send(Patch::load(id, &collision_source).map(Arc::new))
                         .is_err()
                     {
                         break;
@@ -109,8 +118,10 @@ impl Graybox {
             })
             .expect("Terrain collision worker");
         Self {
+            view,
             render_motion: Default::default(),
             saved,
+            source,
             sender,
             receiver: Mutex::new(receiver),
             pending: None,
@@ -270,14 +281,14 @@ pub fn tick(world: &mut World) {
     };
     let owner = procedural::owner(global).unwrap();
     let authored = world.contains_resource::<crate::authored_scene::Scene>();
-    let desired: BTreeMap<_, _> = procedural::neighbours(owner, procedural::VISUAL_RADIUS)
-        .into_iter()
-        .filter(|_| !authored)
-        .map(|id| {
-            let dist = (id.x - owner.x).abs().max((id.z - owner.z).abs());
-            (id, if dist <= 2 { 32 } else { 8 })
-        })
-        .collect();
+    let gray = world.resource::<Graybox>();
+    let full_cells = gray.source.cells();
+    let streamed = gray.source.saved().is_some();
+    let desired = if authored && !streamed {
+        BTreeMap::new()
+    } else {
+        gray.view.desired(&gray.source, owner)
+    };
     let existing: Vec<_> = world
         .query::<(Entity, &Tile)>()
         .iter(world)
@@ -401,7 +412,7 @@ pub fn tick(world: &mut World) {
         gray.last_position = global.metres();
         gray.visited.insert(owner);
         gray.max_resident = gray.max_resident.max(current.len());
-        assert!(current.len() <= procedural::MAX_VISUALS);
+        assert!(current.len() <= gray.view.budget());
     }
     let render = world.resource::<crate::floating_origin::Frame>().render;
     for (tile, mut transform) in world.query::<(&Tile, &mut Transform)>().iter_mut(world) {
@@ -448,13 +459,18 @@ pub fn tick(world: &mut World) {
             p.ids
                 .iter()
                 .filter(|id| {
-                    if authored {
-                        world.resource::<crate::authored_scene::Scene>().ready()
-                    } else {
-                        current.get(id) == Some(&32)
-                            && world.resource::<Graybox>().prepared_visuals.contains(id)
-                            && world.resource::<Graybox>().terrain_pipeline_clear_frames >= 3
-                    }
+                    let objects_ready = !authored || {
+                        let scene = world.resource::<crate::authored_scene::Scene>();
+                        !scene.required_at(global) || scene.ready()
+                    };
+                    objects_ready
+                        && if authored && !streamed {
+                            true
+                        } else {
+                            current.get(id) == Some(&full_cells)
+                                && world.resource::<Graybox>().prepared_visuals.contains(id)
+                                && world.resource::<Graybox>().terrain_pipeline_clear_frames >= 3
+                        }
                 })
                 .copied()
                 .collect()
@@ -580,9 +596,22 @@ fn report(
         .copied()
         .unwrap_or(0.);
     let p = gray.last_position;
+    let visual_limit = gray.view.budget();
     if let Ok(mut text) = hud.single_mut() {
+        let terrain_label = gray.saved.as_ref().map_or_else(
+            || "GRAYBOX | 16 x 16 km | 256 sq km".into(),
+            |store| {
+                let [min, max] = store.bounds();
+                format!(
+                    "SAVED TERRAIN | {:.0} x {:.0} m | {} m samples",
+                    max[0] - min[0],
+                    max[1] - min[1],
+                    128 / store.cells()
+                )
+            },
+        );
         **text = format!(
-            "GRAYBOX | 16 × 16 km | 256 km²\nPosition {:.1}, {:.1}, {:.1} m | chunk {}, {}\nTerrain: {resident}/81 resident | {visible} visible | {} loaded / {} retired\n{:.0} FPS | mean {mean:.2} ms | p95 {p95:.2} ms | terrain mesh {:.1} MiB",
+            "{terrain_label}\nPosition {:.1}, {:.1}, {:.1} m | chunk {}, {}\nTerrain: {resident}/{visual_limit} resident | {visible} visible | {} loaded / {} retired\n{:.0} FPS | mean {mean:.2} ms | p95 {p95:.2} ms | terrain mesh {:.1} MiB",
             p[0],
             p[1],
             p[2],
@@ -596,12 +625,13 @@ fn report(
     }
     eprintln!(
         "{}",
-        serde_json::json!({"graybox":{"render_motion":gray.render_motion,"saved_terrain": gray.saved.as_ref().map(|s| s.stats()),"seconds":gray.started.elapsed().as_secs_f64(),"position":p,"rendered_position":gray.last_render.map(|p|p.metres()),"rendered_forward":pawn.single().ok().map(|(t,_)|(t.rotation*Vec3::NEG_Z).xz().to_array()),"resident":resident,"visible":visible,"loaded":gray.loaded,"unloaded":gray.unloaded,"patches":gray.patches,"visited":gray.visited.len(),"max_resident":gray.max_resident,"mesh_bytes":mesh_bytes,"mean_ms":mean,"p95_ms":p95,"frame_count":gray.frames.len(),"mesh_assets":meshes.len(),"gpu_mesh_assets":gray.gpu_mesh_assets,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"rebases":frame.revision,"minimap":minimap.as_deref()}})
+        serde_json::json!({"graybox":{"render_motion":gray.render_motion,"saved_terrain": gray.saved.as_ref().map(|s| s.stats()),"seconds":gray.started.elapsed().as_secs_f64(),"position":p,"rendered_position":gray.last_render.map(|p|p.metres()),"rendered_forward":pawn.single().ok().map(|(t,_)|(t.rotation*Vec3::NEG_Z).xz().to_array()),"visual_mode":gray.view.name(),"visual_limit":gray.view.budget(),"resident":resident,"visible":visible,"loaded":gray.loaded,"unloaded":gray.unloaded,"patches":gray.patches,"visited":gray.visited.len(),"max_resident":gray.max_resident,"mesh_bytes":mesh_bytes,"mean_ms":mean,"p95_ms":p95,"frame_count":gray.frames.len(),"mesh_assets":meshes.len(),"gpu_mesh_assets":gray.gpu_mesh_assets,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"rebases":frame.revision,"minimap":minimap.as_deref()}})
     );
     gray.frames.clear();
     gray.last_report = Instant::now();
 }
 pub fn install(app: &mut App, source: procedural::Source) {
+    crate::zone_map::install(app, &source);
     if let procedural::Source::Authored(store) = &source {
         crate::authored_scene::install(app, store.clone());
     }
@@ -612,6 +642,7 @@ pub fn install(app: &mut App, source: procedural::Source) {
         .add_systems(Last, qualification.after(report))
         .add_systems(Update, tick.after(crate::network::present))
         .add_systems(Last, report.after(crate::physics::probe));
+    view::install(app);
 }
 
 /// Opt-in reproducible native qualification. Ordinary interactive input is unchanged.
@@ -676,6 +707,24 @@ fn qualification(world: &mut World) {
         .iter(world)
         .next()
         .map(|t| (t.rotation * Vec3::NEG_Z).xz().to_array());
+    let player_position = world.resource::<Graybox>().last_position;
+    let farthest_visible_tile_m = world
+        .query::<(&Tile, &ViewVisibility)>()
+        .iter(world)
+        .filter(|(_, visibility)| visibility.get())
+        .map(|(tile, _)| {
+            (tile.id.x as f64 * 128. + 64. - player_position[0])
+                .hypot(tile.id.z as f64 * 128. + 64. - player_position[2])
+        })
+        .reduce(f64::max);
+    let camera_far = world
+        .query_filtered::<&Projection, With<Camera3d>>()
+        .iter(world)
+        .filter_map(|p| match p {
+            Projection::Perspective(p) => Some(p.far),
+            _ => None,
+        })
+        .reduce(f32::max);
     let gray = world.resource::<Graybox>();
     let prediction = world
         .resource::<crate::network::Network>()
@@ -685,7 +734,7 @@ fn qualification(world: &mut World) {
     let connection = world.resource::<crate::network::Network>();
     let connected = connection.connected();
     let network_error = connection.state().error;
-    let data = serde_json::json!({"target_motion":world.get_resource::<crate::targeting::motion::Metrics>(),"creature_visuals":world.get_resource::<crate::creature_visual::Pending>().map(|p| &p.metrics),"target_count":connection.state().targeting.as_ref().map_or(0, |t| t.targets.len()),"minimap":world.get_resource::<crate::minimap::Metrics>(),"render_frame":{"revision":world.resource::<crate::floating_origin::Frame>().revision,"origin":world.resource::<crate::floating_origin::Frame>().render.origin().metres()},"connected":connected,"network_error":network_error,"render_motion":gray.render_motion,"saved_terrain":gray.saved.as_ref().map(|s| s.stats()),"held_jump_reset_samples":gray.held_jump_reset_samples,"held_jump_reset_failures":gray.held_jump_reset_failures,"prediction":prediction,"resident":resident,"max_resident":gray.max_resident,"mesh_assets":mesh_assets,"extra_meshes":extra_meshes,"gpu_mesh_assets":gray.gpu_mesh_assets,"loaded":gray.loaded,"unloaded":gray.unloaded,"visited":gray.visited.len(),"patches":gray.patches,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"position":gray.last_position,"rendered_position":gray.last_render.map(|p|p.metres()),"rendered_forward":rendered_forward});
+    let data = serde_json::json!({"target_motion":world.get_resource::<crate::targeting::motion::Metrics>(),"creature_visuals":world.get_resource::<crate::creature_visual::Pending>().map(|p| &p.metrics),"target_count":connection.state().targeting.as_ref().map_or(0, |t| t.targets.len()),"minimap":world.get_resource::<crate::minimap::Metrics>(),"render_frame":{"revision":world.resource::<crate::floating_origin::Frame>().revision,"origin":world.resource::<crate::floating_origin::Frame>().render.origin().metres()},"connected":connected,"network_error":network_error,"render_motion":gray.render_motion,"saved_terrain":gray.saved.as_ref().map(|s| s.stats()),"held_jump_reset_samples":gray.held_jump_reset_samples,"held_jump_reset_failures":gray.held_jump_reset_failures,"prediction":prediction,"camera_far_m":camera_far,"farthest_visible_tile_m":farthest_visible_tile_m,"visual_mode":gray.view.name(),"visual_limit":gray.view.budget(),"resident":resident,"max_resident":gray.max_resident,"mesh_assets":mesh_assets,"extra_meshes":extra_meshes,"gpu_mesh_assets":gray.gpu_mesh_assets,"loaded":gray.loaded,"unloaded":gray.unloaded,"visited":gray.visited.len(),"patches":gray.patches,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"position":gray.last_position,"rendered_position":gray.last_render.map(|p|p.metres()),"rendered_forward":rendered_forward});
     std::fs::write(
         output.join("world.json"),
         serde_json::to_vec_pretty(&data).unwrap(),
@@ -796,6 +845,30 @@ mod tests {
             );
             assert!(mesh.attribute(Mesh::ATTRIBUTE_NORMAL).is_some());
             assert!(attributes.iter().all(|p| p.iter().all(|v| v.is_finite())));
+        }
+    }
+    #[test]
+    fn imported_one_metre_mesh_retains_every_sample_and_bounds_skirts() {
+        for cells in [64, 128] {
+            let mut g = procedural::grid(cells);
+            for p in &mut g.positions {
+                p[1] = 300. + p[0] * 0.03125 + p[2] * 0.0625;
+            }
+            let source = g.positions.clone();
+            let result = mesh(g, cells);
+            let points = result
+                .attribute(Mesh::ATTRIBUTE_POSITION)
+                .unwrap()
+                .as_float3()
+                .unwrap();
+            assert_eq!(&points[..source.len()], source);
+            assert_eq!(points.len(), (cells + 1).pow(2) + cells * 8);
+            assert!(result.indices().unwrap().iter().all(|i| i < points.len()));
+            assert!(points.iter().all(|p| p.iter().all(|v| v.is_finite())));
+            assert_eq!(
+                result.attribute(Mesh::ATTRIBUTE_NORMAL).unwrap().len(),
+                points.len()
+            );
         }
     }
 }
