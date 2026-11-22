@@ -77,6 +77,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     commands
         .spawn((
             Pane,
+            crate::ui_theme::Panel,
             GlobalZIndex(70),
             Node {
                 position_type: PositionType::Absolute,

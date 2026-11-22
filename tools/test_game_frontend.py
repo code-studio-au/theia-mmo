@@ -1,5 +1,7 @@
 """Account front-end handshake tests; no credentials or windows."""
 import json
+import socket
+import struct
 from pathlib import Path
 import tempfile
 import threading
@@ -43,11 +45,20 @@ class FrontEnd(unittest.TestCase):
                     time.sleep(.01)
                 self.fail('Timed out waiting for native bridge')
             def command(serial, action, **fields):
-                publish(root,'frontend-command.json',dict(serial=serial,action=action,**fields))
+                if action=='credentials':
+                    endpoint=json.loads((root/'frontend-credentials.json').read_text())
+                    data=dict(serial=serial,action=action,username='fixture',password='test-only',token=endpoint['token'])
+                    raw=json.dumps(data).encode()
+                    host,port=endpoint['address'].split(':')
+                    with socket.create_connection((host,int(port))) as connection:
+                        connection.sendall(struct.pack('!I',len(raw))+raw)
+                        self.assertEqual(connection.recv(1),bytes([1]))
+                else:
+                    publish(root,'frontend-command.json',dict(serial=serial,action=action,**fields))
             try:
                 wait(0)
-                command(1,'login'); self.assertEqual(wait(1,'Try again')['phase'],'login')
-                command(2,'login'); self.assertEqual(wait(2)['phase'],'characters')
+                command(1,'credentials'); self.assertEqual(wait(1,'Try again')['phase'],'login')
+                command(2,'credentials'); self.assertEqual(wait(2)['phase'],'characters')
                 command(3,'enter',id='someone-else'); wait(3,'this account')
                 account.enter.assert_not_called()
                 command(4,'create',name='Arden',appearance=DEFAULT); wait(4,'saved')

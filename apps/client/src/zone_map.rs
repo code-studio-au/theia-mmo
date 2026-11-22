@@ -307,6 +307,7 @@ fn setup(
     commands
         .spawn((
             Root,
+            crate::ui_theme::Panel,
             GlobalZIndex(200),
             Node {
                 position_type: PositionType::Absolute,

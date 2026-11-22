@@ -1,3 +1,14 @@
+22 November 2026 — P3-01/P3-03, P2-08/P2-09, P2-14 native frontend/theme:
+Build on the existing owned account provider/service, appearance persistence,
+Renet admission, standard Bevy widgets and modular GLTF renderer. Dedicated
+account roster/preview, private loopback credential handoff and shared decorative
+UI skin add no simulation I/O, client gameplay authority or protocol changes.
+VSync and UI-size controls use the existing preference resources/store. Native
+login supports the owned development provider only; future launcher updates and
+production authentication remain separate. Concrete acceptance includes native
+invalid/valid sign-in, empty/full roster, restart/entry, responsive layout,
+mouse/keyboard controls and a stable ready preview. See GAME_FRONTEND.md and STATUS.
+
 22 November 2026 — P3-01/P3-03, P2-08/P2-09 native game entry:
 Prerequisites are the implemented account APIs, PostgreSQL appearance persistence,
 authenticated Renet admission, modular hero catalogue and loading readiness gate.

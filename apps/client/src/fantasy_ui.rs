@@ -59,8 +59,8 @@ const IMAGE_DIMENSIONS: [(u32, u32); FILES.len()] = [
 ];
 pub(crate) const TITLE_FONT: &str = "Fonts/Grenze/Grenze-SemiBold.ttf";
 pub(crate) const BODY_FONT: &str = "Fonts/Texturina/Texturina_18pt-SemiBold.ttf";
-pub(crate) const GOLD: Color = Color::srgb(0.64, 0.48, 0.26);
-pub(crate) const PANEL: Color = Color::srgba(0.055, 0.045, 0.035, 0.96);
+pub(crate) const GOLD: Color = crate::ui_theme::GOLD;
+pub(crate) const PANEL: Color = crate::ui_theme::PANEL;
 const PAPER: Color = Color::srgb(0.82, 0.70, 0.49);
 const INK: Color = Color::srgb(0.18, 0.11, 0.05);
 #[derive(Component)]
@@ -69,11 +69,11 @@ pub(crate) fn button_color(disabled: bool, hovered: bool, pressed: bool) -> Colo
     if disabled {
         Color::srgb(0.16, 0.14, 0.12)
     } else if pressed {
-        Color::srgb(0.52, 0.20, 0.09)
+        Color::srgb(0.30, 0.22, 0.10)
     } else if hovered {
-        Color::srgb(0.42, 0.14, 0.08)
+        Color::srgb(0.06, 0.22, 0.30)
     } else {
-        Color::srgb(0.28, 0.08, 0.04)
+        Color::srgb(0.025, 0.11, 0.15)
     }
 }
 /// Computed UI coordinates are physical target pixels; inverse_scale_factor
@@ -324,7 +324,6 @@ pub(crate) struct Skin {
     item_icons: [Handle<Image>; 6],
     title_font: Handle<Font>,
     body_font: Handle<Font>,
-    panel_frame: Handle<Image>,
 }
 impl Skin {
     #[cfg(test)]
@@ -336,7 +335,6 @@ impl Skin {
             item_icons: default(),
             title_font: default(),
             body_font: default(),
-            panel_frame: default(),
         }
     }
     /// Presentation mapping only. Unknown authored items keep a generic icon.
@@ -401,7 +399,7 @@ pub(crate) fn parse_scale(
     Ok(scale)
 }
 #[derive(Resource)]
-struct PreferredScale(f32);
+pub(crate) struct PreferredScale(pub(crate) f32);
 /// Retain a 1280x720 logical layout when resizing/fullscreen reduces space.
 /// This changes only Bevy's UI scale, never the window, camera or world frame.
 pub(crate) fn fit_scale(preferred: f32, viewport: Vec2) -> f32 {
@@ -485,6 +483,7 @@ pub(crate) fn register(app: &mut App, directory: PathBuf) {
     );
 }
 pub(crate) fn load(app: &mut App) {
+    crate::ui_theme::install(app);
     let server = app.world().resource::<AssetServer>();
     let image = |name| server.load(format!("fantasy-ui://{name}"));
     let skin = Skin {
@@ -494,7 +493,6 @@ pub(crate) fn load(app: &mut App) {
         item_icons: ITEM_ICONS.map(image),
         title_font: server.load(format!("fantasy-ui://{TITLE_FONT}")),
         body_font: server.load(format!("fantasy-ui://{BODY_FONT}")),
-        panel_frame: image(PANEL_FRAME),
     };
     app.insert_resource(skin);
     app.add_systems(PostStartup, style_panels)
@@ -529,7 +527,10 @@ fn paper_text(mut entity: Entity, surfaces: &Query<Surface<'_>>) -> bool {
     false
 }
 type ThemeText<'a> = (Entity, &'a mut TextFont, &'a mut TextColor);
-type NewText = (With<Text>, Added<TextFont>);
+type NewText = (
+    Or<(With<Text>, With<bevy::text::EditableText>)>,
+    Added<TextFont>,
+);
 fn style_text(
     skin: Res<Skin>,
     surfaces: Query<Surface<'_>>,
@@ -554,41 +555,15 @@ type ThemePanel<'a> = (
     Option<&'a GlobalZIndex>,
     Has<crate::inventory::Pane>,
 );
-fn style_panels(mut commands: Commands, skin: Res<Skin>, mut panels: Query<ThemePanel>) {
+fn style_panels(mut commands: Commands, mut panels: Query<ThemePanel>) {
     for (entity, panel, mut node, mut background, layer, backpack) in &mut panels {
         background.0 = PANEL;
         // An outline decorates existing panes without shrinking scroll/map content.
         commands
             .entity(entity)
             .insert(Outline::new(px(1), px(-1), GOLD));
-        if backpack || matches!(panel, Panel::Paper | Panel::QuestTracker) {
-            // ImageNode on the padded panel itself would draw inside its
-            // content box, behind text and slots. An absolute, noninteractive
-            // child decorates the outside without affecting content layout.
-            commands.entity(entity).with_child((
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(0),
-                    right: px(0),
-                    top: px(0),
-                    bottom: px(0),
-                    ..default()
-                },
-                Pickable::IGNORE,
-                bevy::ui::IgnoreScroll(BVec2::TRUE),
-                ImageNode {
-                    image: skin.panel_frame.clone(),
-                    color: Color::srgb(0.83, 0.65, 0.39),
-                    image_mode: NodeImageMode::Sliced(bevy::sprite::TextureSlicer {
-                        // Source alpha is confined to the outer 11 pixels. Keep
-                        // one transparent guard pixel; this is a Theia slice,
-                        // not a claim to recover absent Unity import metadata.
-                        border: bevy::sprite::BorderRect::all(12.),
-                        ..default()
-                    }),
-                    ..default()
-                },
-            ));
+        if backpack || matches!(panel, Panel::Standard | Panel::Paper | Panel::QuestTracker) {
+            commands.entity(entity).insert(crate::ui_theme::Panel);
         }
         match panel {
             Panel::Standard | Panel::Paper => {
@@ -952,7 +927,9 @@ mod tests {
     #[test]
     fn cosmetic_panel_skin_preserves_hidden_state_scroll_and_content_dimensions() {
         let mut app = App::new();
-        app.insert_resource(Skin::fixture());
+        app.insert_resource(Skin::fixture())
+            .init_resource::<Assets<Image>>();
+        crate::ui_theme::install(&mut app);
         let node = Node {
             width: px(340),
             max_height: percent(75),

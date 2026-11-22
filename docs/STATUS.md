@@ -1,3 +1,34 @@
+22 November 2026 — P3-01/P3-03 account screens and P2-14 shared Theia UI:
+The game now has native username/password sign-in with no browser fallback,
+a separate courtyard character roster, no model for empty accounts, and the
+painted cloaked adventurer restored on Login. Settings/Support/Exit are native.
+Gold frames, sapphire/dark buttons, icon links, shared serif fonts and focused,
+hovered/pressed/disabled states extend across game screens and menus. Both settings
+screens have a gold VSync checkbox and diamond-handled 75–150% UI-size slider,
+bound to existing persisted preferences. The character preview latches readiness
+so unrelated shader compilation cannot briefly hide an already loaded model.
+See GAME_FRONTEND.md for scope; the editor UI is separate.
+
+Native fresh and restarted account runs pass at 1920×1080 and 1720×700:
+invalid/valid in-game credentials, empty roster, abandoned creation, eight saved
+characters, selected appearance restoration and same-window world entry.
+Checkbox mouse/Space and slider Home/End/arrows update actual preferences.
+Evidence: build/character-selection-v2/native-theme-v2/qualification.json (zero GPU
+diagnostics). Final corrected-widget native confirmation:
+build/character-selection-v2/native-verified/qualification.json, also zero GPU
+diagnostics, with the drawn checkmark and diamond handle visually inspected.
+Device: Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.7 / Vulkan. No Windows or
+performance qualification is claimed. Full client suite: 348 passed, 5 explicit
+ignores; final shared-control regression, fmt and denied-warning all-target Clippy
+pass. Native credential/bridge Python tests: 5 passed. Build/check logs are under
+build/character-selection-v2/; artifacts and fixture credentials stay outside Git.
+
+Limits: working in-game sign-in currently supports the owned local Keycloak dev
+provider only, retaining code/PKCE validation. Production native auth, MFA,
+registration/recovery and launcher update delivery remain future work. The adopted
+split is updater/start in the launcher and login in the game. This supersedes the
+browser/cleared-login-ledge implementation descriptions immediately below.
+
 22 November 2026 — P3-01/P3-03 native game entry, P2-08/P2-09 presentation:
 Login, saved-character selection, New Character/customization and Millhaven entry
 now share one native Bevy game window. The default account population launcher

@@ -1,3 +1,16 @@
+22 November 2026 — P3-01/P3-03, P2-14 native account screens and shared UI:
+User requires login inside the game, with no browser fallback. The adopted future
+launcher handles updates/start only. Use the existing owned local Keycloak
+code/PKCE flow through a bounded in-memory credential adapter; do not claim a
+production native account API or updater. Dedicated character courtyard and
+account roster replace the login-screen live hero; empty accounts show no model.
+Restore the painted adventurer on Login. Use the supplied gold/sapphire UI references
+for shared standard Bevy buttons, panels, checkbox, slider, links and fonts.
+Existing gameplay actions, authority and preference persistence remain unchanged.
+Latch preview readiness after loading so unrelated pipeline work cannot hide it.
+See GAME_FRONTEND.md for implementation and provider/clipboard limitations.
+This supersedes the browser-login and cleared-login-ledge decisions below.
+
 22 November 2026 — P3-01/P3-03 native title and character flow:
 Keep Login, roster, creation and gameplay in one standard Bevy client/window.
 Reuse the existing browser OIDC/account APIs and private bounded atomic launcher

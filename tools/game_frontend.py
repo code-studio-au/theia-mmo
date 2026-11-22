@@ -18,6 +18,15 @@ def publish(directory, name, value):
 
 
 def run(account, directory, ticket, stopped):
+    from native_login import Credentials
+    credentials = Credentials(directory)
+    try:
+        return _run(account, directory, ticket, stopped, credentials)
+    finally:
+        credentials.close()
+
+
+def _run(account, directory, ticket, stopped, credentials):
     phase, characters, serial = 'login', [], 0
 
     def state(message='', busy=False):
@@ -27,28 +36,40 @@ def run(account, directory, ticket, stopped):
     state('Sign in to choose your adventurer.')
     while not stopped():
         command = directory / 'frontend-command.json'
+        data = credentials.receive()
+        native_credentials = data is not None
+        if data is None:
+            try:
+                with command.open('rb') as file:
+                    raw = file.read(2049)
+            except FileNotFoundError:
+                time.sleep(.05)
+                continue
+            command.unlink()
+            try:
+                if len(raw) > 2048:
+                    raise ValueError()
+                data = json.loads(raw)
+            except ValueError:
+                state('Invalid menu command')
+                continue
         try:
-            with command.open('rb') as file:
-                raw = file.read(2049)
-        except FileNotFoundError:
-            time.sleep(.05)
-            continue
-        command.unlink()
-        try:
-            if len(raw) > 2048:
-                raise ValueError('Command exceeds size limit')
-            data = json.loads(raw)
             if not isinstance(data, dict) or type(data.get('serial')) is not int or data['serial'] != serial + 1:
                 raise ValueError('Stale or invalid menu command')
             serial = data['serial']
             action = data.get('action')
             fields = {'serial', 'action'}
-            if action == 'login' and phase == 'login' and set(data) == fields:
-                state('Complete sign-in in your browser, then return here.', busy=True)
-                account.login()
+            if native_credentials and action == 'credentials' and phase == 'login' and set(data) == fields | {'username', 'password'}:
+                from native_login import authorize
+                state('Signing in…', busy=True)
+                try:
+                    account.login(lambda url: authorize(url, account._base, data['username'], data['password']))
+                finally:
+                    data.clear()
+                state('Retrieving character list…', busy=True)
                 characters = account.characters()
                 phase = 'characters'
-                state('Choose an adventurer or create a new character.' if characters else 'No characters yet. Create your first adventurer.')
+                state('Choose your adventurer.' if characters else 'Create your first adventurer.')
             elif action == 'create' and phase == 'characters' and set(data) == fields | {'name', 'appearance'}:
                 if len(characters) >= 8:
                     raise ValueError('Your account already has eight characters.')

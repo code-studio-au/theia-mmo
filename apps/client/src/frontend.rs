@@ -1,4 +1,5 @@
 //! P3-01/P3-03: native title, owned roster and cosmetic creation in one window.
+mod login;
 mod preview;
 mod ui;
 use bevy::prelude::*;
@@ -52,6 +53,11 @@ pub(crate) struct Menu {
     action: Option<ui::Choice>,
 }
 impl Menu {
+    fn preview_visible(&self) -> bool {
+        self.page == Page::Create
+            || self.page == Page::Characters
+                && self.selected.and_then(|i| self.characters.get(i)).is_some()
+    }
     pub(crate) fn active(&self) -> bool {
         self.page != Page::Entering
     }
@@ -90,11 +96,21 @@ pub(crate) fn install(app: &mut App, directory: PathBuf) {
         elapsed: 0.,
         action: None,
     })
+    .init_resource::<login::Login>()
     .add_systems(Startup, ui::setup)
     .add_observer(ui::choose)
     .add_systems(
         Update,
-        (tick, preview::tick, ui::anchor, ui::sync, ui::focus)
+        (
+            login::keyboard,
+            login::actions,
+            tick,
+            preview::tick,
+            ui::anchor,
+            ui::sync,
+            ui::focus,
+            login::present,
+        )
             .chain()
             .before(crate::loading::observe),
     )
@@ -203,9 +219,6 @@ fn tick(
     }
     use ui::Choice;
     let result = match action {
-        Choice::Login if menu.page == Page::Login => {
-            send(&mut menu, serde_json::json!({"action":"login"}))
-        }
         Choice::New if menu.characters.len() < 8 => {
             menu.page = Page::Create;
             menu.appearance = Appearance::default();
@@ -310,6 +323,40 @@ mod tests {
         value["phase"] = "characters".into();
         value["characters"] = serde_json::json!([{"id":"12345678-1234-4234-8234-123456789abc","name":"Arden","appearance":{"schema":99}}]);
         assert!(snapshot(&serde_json::to_vec(&value).unwrap()).is_err());
+    }
+    #[test]
+    fn empty_accounts_have_no_preview_even_after_abandoning_creation() {
+        let mut menu = Menu {
+            directory: PathBuf::new(),
+            page: Page::Characters,
+            characters: vec![],
+            selected: None,
+            appearance: Appearance::default(),
+            yaw: 0.,
+            message: String::new(),
+            serial: 0,
+            pending: false,
+            last_snapshot: vec![],
+            elapsed: 0.,
+            action: None,
+        };
+        assert!(!menu.preview_visible());
+        menu.page = Page::Create;
+        assert!(menu.preview_visible());
+        menu.page = Page::Characters;
+        assert!(!menu.preview_visible());
+        menu.characters.push(Character {
+            id: "12345678-1234-4234-8234-123456789abc".into(),
+            name: "Arden".into(),
+            appearance: Appearance::default(),
+        });
+        assert!(!menu.preview_visible());
+        menu.selected = Some(0);
+        assert!(menu.preview_visible());
+        menu.page = Page::Login;
+        assert!(!menu.preview_visible());
+        menu.page = Page::Entering;
+        assert!(!menu.preview_visible());
     }
     #[tokio::test]
     async fn deferred_admission_honours_stop_without_a_ticket() {

@@ -56,6 +56,7 @@ mod test_controller;
 mod test_window;
 mod triplanar;
 mod ui_buttons;
+mod ui_theme;
 mod world_input;
 mod zone_map;
 

@@ -1,3 +1,12 @@
+22 November 2026 — Native entry refinement and P2-14 shared Theia controls:
+Client-only username/password sign-in for the local development provider, separate
+courtyard character selection, empty-account state and shared gold/blue controls
+are implemented. Shared checkbox/slider bind actual saved graphics/UI preferences.
+Pending: production native account integration (including MFA, registration and
+recovery), launcher update delivery, expanded cosmetics and equipped armour visuals.
+The launcher-updates/game-login split is adopted, not a claim of working patch
+infrastructure. See GAME_FRONTEND.md; older browser/ledge descriptions are history.
+
 22 November 2026 — P3-01/P3-03 native game entry completed:
 The account population launcher now opens a native title, saved-character roster
 and animated creation screen before entering Millhaven in the same game window.

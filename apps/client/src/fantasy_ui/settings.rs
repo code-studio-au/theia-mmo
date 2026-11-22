@@ -87,7 +87,12 @@ pub(super) fn install(app: &mut App) {
                 .before(crate::camera::controls)
                 .before(crate::input),
         )
-        .add_systems(PostUpdate, present.before(bevy::ui::UiSystems::Layout));
+        .add_systems(
+            PostUpdate,
+            present
+                .in_set(crate::ui_theme::SourceStyles)
+                .before(bevy::ui::UiSystems::Layout),
+        );
 }
 pub(super) fn install_preview(app: &mut App, preferred: f32) {
     app.insert_resource(PreferredScale(preferred))
@@ -98,7 +103,12 @@ pub(super) fn install_preview(app: &mut App, preferred: f32) {
             developer_open: false,
         })
         .add_systems(Startup, setup)
-        .add_systems(PostUpdate, present.before(bevy::ui::UiSystems::Layout));
+        .add_systems(
+            PostUpdate,
+            present
+                .in_set(crate::ui_theme::SourceStyles)
+                .before(bevy::ui::UiSystems::Layout),
+        );
 }
 /// Read-only native pointer telemetry; it supplies no actions or preference edits.
 pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
@@ -141,11 +151,12 @@ fn setup(mut commands: Commands) {
             },
         ))
         .with_child(label("Interface [F10]"));
-    commands.spawn((Pane,GlobalZIndex(90),Node{position_type:PositionType::Absolute,left:percent(50),top:px(80),margin:UiRect::left(px(-230)),width:px(460),max_width:percent(90),padding:UiRect::all(px(14)),flex_direction:FlexDirection::Column,row_gap:px(6),display:Display::None,..default()},BackgroundColor(super::PANEL),Outline::new(px(1),px(-1),super::GOLD)))
+    commands.spawn((Pane,crate::ui_theme::Panel,GlobalZIndex(90),Node{position_type:PositionType::Absolute,left:percent(50),top:px(80),margin:UiRect::left(px(-230)),width:px(460),max_width:percent(90),padding:UiRect::all(px(14)),flex_direction:FlexDirection::Column,row_gap:px(6),display:Display::None,..default()},BackgroundColor(super::PANEL),Outline::new(px(1),px(-1),super::GOLD)))
         .with_children(|pane| {
             pane.spawn((Section::Interface, Node { flex_direction: FlexDirection::Column, row_gap: px(6), ..default() }, Pickable::IGNORE)).with_children(|section| {
             section.spawn((Text::new("Interface"),TextFont{font_size:FontSize::Px(22.),..default()},TextColor(super::GOLD),Pickable::IGNORE));
             section.spawn((Summary,label("")));
+            crate::ui_theme::controls(section);
             section.spawn((Node{flex_wrap:FlexWrap::Wrap,column_gap:px(8),row_gap:px(8),..default()},Pickable::IGNORE)).with_children(|row| {
                 for value in [75,100,125,150] {row.spawn(button(Control::Scale(value),&format!("UI size {value}%"))).with_child(label(&format!("{value}%")));}
             });
@@ -199,11 +210,15 @@ fn setup(mut commands: Commands) {
         });
 }
 pub(crate) fn keyboard(
+    frontend: Option<Res<crate::frontend::Menu>>,
     keys: Option<Res<ButtonInput<KeyCode>>>,
     windows: Query<&Window>,
     mut ui: ResMut<Ui>,
 ) {
     ui.closed_this_frame = false;
+    if frontend.as_ref().is_some_and(|m| m.active()) {
+        return;
+    }
     let Some(keys) = keys else {
         return;
     };
@@ -336,6 +351,7 @@ fn activate(
 }
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn present(
+    mut commands: Commands,
     ui: Res<Ui>,
     preferred: Res<PreferredScale>,
     scale: Res<bevy::ui::UiScale>,
@@ -363,7 +379,13 @@ fn present(
             Without<GraphicsSummary>,
         ),
     >,
-    mut buttons: Query<(&Control, &Hovered, Has<Pressed>, &mut BackgroundColor)>,
+    mut buttons: Query<(
+        Entity,
+        &Control,
+        &Hovered,
+        Has<Pressed>,
+        &mut BackgroundColor,
+    )>,
 ) {
     for (section, mut node) in &mut sections {
         let visible = match section {
@@ -423,7 +445,7 @@ fn present(
             text.0 = hint.to_owned();
         }
     }
-    for (control, hovered, pressed, mut color) in &mut buttons {
+    for (entity, control, hovered, pressed, mut color) in &mut buttons {
         let value = if matches!(control,Control::Scale(v) if (f32::from(*v)/100.-preferred.0).abs()<0.001)
             || matches!(control, Control::FrameCap(v) if *v == cap.0)
             || matches!(control, Control::Vsync(v) if *v == vsync)
@@ -434,6 +456,13 @@ fn present(
         } else {
             button_color(false, hovered.0, pressed)
         };
+        if value == Color::srgb(0.38, 0.25, 0.08) {
+            commands.entity(entity).insert(crate::ui_theme::Selected);
+        } else {
+            commands
+                .entity(entity)
+                .remove::<crate::ui_theme::Selected>();
+        }
         if color.0 != value {
             color.0 = value;
         }

@@ -17,6 +17,18 @@ pub(super) struct Preview {
     appearance: Option<Appearance>,
     pub(super) error: Option<String>,
 }
+impl Preview {
+    fn observe_ready(&mut self, model_ready: bool, pipelines_ready: bool) {
+        self.settled = if model_ready && pipelines_ready {
+            self.settled.saturating_add(1)
+        } else {
+            0
+        };
+        // Page/appearance transitions reset this latch. Global renderer work
+        // must never blank a character that has already finished loading.
+        self.ready |= self.settled >= 8;
+    }
+}
 pub(super) fn setup(commands: &mut Commands, images: &mut Assets<Image>) -> Entity {
     let image = images.add(Image::new_target_texture(
         1,
@@ -67,11 +79,13 @@ pub(super) fn setup(commands: &mut Commands, images: &mut Assets<Image>) -> Enti
 }
 pub(super) fn tick(world: &mut World) {
     let menu = world.resource::<Menu>();
-    let show = menu.active() && menu.page != Page::Login;
+    let show = menu.preview_visible();
     let (appearance, yaw) = (menu.appearance, menu.yaw);
     world.resource_scope(|world, mut preview: Mut<Preview>| {
         world.get_mut::<Camera>(preview.camera).unwrap().is_active = show;
         if !show {
+            preview.ready = false;
+            preview.settled = 0;
             if let Some(root) = preview.root {
                 world.entity_mut(root).insert(Visibility::Hidden);
             }
@@ -80,19 +94,14 @@ pub(super) fn tick(world: &mut World) {
         if preview.appearance != Some(appearance) {
             preview.appearance = Some(appearance);
             preview.settled = 0;
+            preview.ready = false;
         }
         match prepare(world, &mut preview, appearance, yaw) {
             Ok(ready) => {
-                preview.settled = if ready
-                    && world
-                        .resource::<crate::capture_ready::CaptureReady>()
-                        .ready()
-                {
-                    preview.settled.saturating_add(1)
-                } else {
-                    0
-                };
-                preview.ready = preview.settled >= 8;
+                let pipelines_ready = world
+                    .resource::<crate::capture_ready::CaptureReady>()
+                    .ready();
+                preview.observe_ready(ready, pipelines_ready);
             }
             Err(error) => {
                 world.resource_mut::<Menu>().message = error.clone();
@@ -184,4 +193,36 @@ fn prepare(
         },
     ));
     Ok(ready)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn unrelated_shader_work_does_not_hide_a_ready_character() {
+        let mut preview = Preview {
+            camera: Entity::PLACEHOLDER,
+            model: None,
+            root: None,
+            graph: None,
+            ready: false,
+            settled: 0,
+            appearance: None,
+            error: None,
+        };
+        for _ in 0..7 {
+            preview.observe_ready(true, true);
+            assert!(!preview.ready);
+        }
+        preview.observe_ready(true, true);
+        assert!(preview.ready);
+        for _ in 0..20 {
+            preview.observe_ready(true, false);
+            assert!(preview.ready);
+        }
+        preview.ready = false;
+        preview.settled = 0;
+        preview.observe_ready(false, true);
+        assert!(!preview.ready);
+    }
 }

@@ -34,7 +34,7 @@ impl ViewDistance {
         }
     }
 }
-pub(super) const CAPS: [u16; 8] = [30, 60, 90, 120, 144, 165, 240, 0];
+pub(crate) const CAPS: [u16; 8] = [30, 60, 90, 120, 144, 165, 240, 0];
 #[derive(Resource, Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct FrameCap(pub u16);
 #[derive(Resource, Clone, Copy, Debug, PartialEq, Eq)]
@@ -55,7 +55,7 @@ impl FrameCap {
     pub(super) fn valid(self) -> bool {
         CAPS.contains(&self.0)
     }
-    pub(super) fn label(self) -> String {
+    pub(crate) fn label(self) -> String {
         if self.0 == 0 {
             "Unlimited".into()
         } else {

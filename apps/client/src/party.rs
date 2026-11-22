@@ -283,6 +283,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         BackgroundColor(crate::fantasy_ui::PANEL),
+        crate::ui_theme::Panel,
         Outline::new(px(1), px(-1), crate::fantasy_ui::GOLD),
     ));
 }

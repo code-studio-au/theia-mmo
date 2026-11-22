@@ -1,3 +1,12 @@
+Native account/theme refinement — 22 November 2026:
+Login restores the painted cloaked figure and full in-game username/password panel,
+with Settings, Support and Exit. Character selection now has a dedicated courtyard,
+right-side saved roster and live selected hero; empty accounts show no character.
+Shared gold/sapphire panels, buttons, checkbox, slider, links and licensed serif
+fonts follow the supplied UI references. The current game route never opens a
+browser. Local provider limitations and the future updater/game-login separation
+are documented in GAME_FRONTEND.md. Earlier browser/ledge notes below are history.
+
 Native game entry update — 22 November 2026:
 The default account population playtest now opens Login, saved-character selection
 and New Character/customization inside the gameplay window. A live hero stands on
