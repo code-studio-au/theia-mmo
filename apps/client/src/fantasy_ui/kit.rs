@@ -408,18 +408,24 @@ fn graphics_section(parent: &mut ChildSpawnerCommands, caption: &str) {
             ])),
         ))
         .with_children(|bar| {
-            bar.spawn((
-                ui_theme::Sprite("ornament.corner-fine-left"),
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(-3),
-                    top: px(2),
-                    width: px(26),
-                    height: px(26),
-                    ..default()
-                },
-                Pickable::IGNORE,
-            ));
+            // Offset the transparent sprite margin so the gold meets the bar border.
+            for (top, bottom, vertical_scale) in [(px(-3), Val::Auto, 1.), (Val::Auto, px(-3), -1.)]
+            {
+                bar.spawn((
+                    ui_theme::Sprite("ornament.corner-fine-left"),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(-3),
+                        top,
+                        bottom,
+                        width: px(22),
+                        height: px(22),
+                        ..default()
+                    },
+                    UiTransform::from_scale(Vec2::new(1., vertical_scale)),
+                    Pickable::IGNORE,
+                ));
+            }
             highlight(bar, px(0), 62., false);
             bar.spawn((
                 text(caption, 22.),
