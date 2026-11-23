@@ -11,6 +11,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use theia_core::appearance::Appearance;
+pub(crate) use ui::FrontCamera;
 
 pub(crate) fn face_thumbnail(appearance: Appearance) -> Rect {
     let [body, face, ..] = appearance.values();

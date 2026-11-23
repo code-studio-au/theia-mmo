@@ -116,6 +116,29 @@ preview live through the existing preference store, so this is not crash-isolate
 draft persistence. Decorative images ignore picking. The zone editor is separate
 from this game UI skin.
 
+The P2-14 Graphics panel uses the primary Bevy window and its current monitor
+for three display modes. Windowed uses an ordinary decorated window and lets
+the player choose a size. Borderless fills the monitor at its desktop resolution.
+Fullscreen uses exclusive video modes on supported backends, with resolutions
+reported by the monitor. Wayland offers Windowed and Borderless.
+
+Apply and OK preview display changes. Keep Changes saves the new mode and
+resolution. Revert, Escape or a 15-second timeout restores the previous setting.
+Cancel discards unapplied choices. F11 switches between windowed and borderless
+for the current session. The configured UI preference file has a companion
+`.display.json` file for confirmed choices, so previous game releases can still
+read the ordinary preferences. Dedicated tiled test windows retain their launch
+layout and leave these controls disabled.
+
+Local client release 0.1.0.5 passed 369 client tests with five existing ignores,
+formatting and denied-warning Clippy. Private X11 with Vulkan llvmpipe verified
+1280×720 windowed, 1920×1080 borderless and exclusive, deferred Apply, OK and
+Keep Changes, Cancel, manual and timed reversion, and restored preferences after
+relaunch. The run logged 13 instances of the known Vulkan swapchain resize
+diagnostic, above the usual threshold, and no other GPU diagnostics. The private
+X server lacked DRI3 for RADV presentation. Native hardware and Windows remain
+unverified for this feature. See `build/graphics-display-native-a6foawve/qualification.json`.
+
 `tools/play.py --game-front-end` requires one Classic account client and excludes
 explicit character IDs and the old editor picker. Account population launch uses
 it by default; `--editor-character-picker` retains the earlier route. Public bounded

@@ -7727,6 +7727,7 @@ dependencies = [
  "avian3d",
  "bevy",
  "bevy_sprinkles",
+ "raw-window-handle",
  "serde",
  "serde_json",
  "theia-core",

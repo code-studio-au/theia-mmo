@@ -347,6 +347,7 @@ pub(super) fn links(root: &mut ChildSpawnerCommands) {
                         crate::fantasy_ui::kit::graphics(settings,|row,value| match value {
                             crate::fantasy_ui::kit::Value::FrameCap=> {for value in crate::fantasy_ui::graphics::CAPS {button(row,Action::Cap(value),&crate::fantasy_ui::graphics::FrameCap(value).label());}},
                             crate::fantasy_ui::kit::Value::Distance=>{for value in crate::fantasy_ui::graphics::ViewDistance::ALL {button(row,Action::Distance(value),value.label());}}
+                            _ => {}
                         });
                     });
                     content.spawn((InterfaceBody,ui::column())).with_children(|settings| {

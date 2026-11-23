@@ -180,6 +180,7 @@ fn setup(mut commands: Commands) {
                     super::kit::graphics(section,|row,value|match value {
                         super::kit::Value::FrameCap=> {for value in super::graphics::CAPS {let name=super::graphics::FrameCap(value).label();row.spawn(button(Control::FrameCap(value),&name)).with_child(label(&name));}},
                         super::kit::Value::Distance=> {for value in ViewDistance::ALL {row.spawn(button(Control::ViewDistance(value),&format!("View distance: {}",value.label()))).with_child(label(value.label()));}}
+                        _ => {}
                     });
                 });
             content.spawn((Section::Developer, Node {display:Display::None,flex_direction:FlexDirection::Column,row_gap:px(8),..default()},Pickable::IGNORE)).with_children(|section| {

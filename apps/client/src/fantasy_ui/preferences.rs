@@ -50,6 +50,7 @@ pub(crate) struct Config {
     view_distance: ViewDistance,
     debug_stats: bool,
     pub world_effects: Option<bool>,
+    pub display: Option<super::display::Choice>,
 }
 impl Config {
     pub(crate) fn parse(
@@ -75,6 +76,12 @@ impl Config {
             std::env::current_dir()?.join(path)
         };
         let saved = read_settings(&path)?;
+        let display = read_local::<super::display::Choice>(&display_path(&path))
+            .unwrap_or_else(|error| {
+                eprintln!("Could not read display preferences: {error}");
+                None
+            })
+            .filter(|choice| choice.valid());
         Ok(Some(Self {
             path,
             scale: if explicit {
@@ -91,6 +98,7 @@ impl Config {
                 .as_ref()
                 .map_or_else(ViewDistance::default, |file| file.view_distance),
             world_effects: saved.and_then(|file| file.world_effects),
+            display,
         }))
     }
     pub(crate) fn install(self, app: &mut App) {
@@ -107,6 +115,7 @@ impl Config {
             requested_fps: self.fps_cap,
             requested_vsync: self.vsync,
             requested_view: self.view_distance,
+            requested_display: self.display,
             path: self.path,
             requested: self.scale,
             world_effects: self.world_effects,
@@ -120,6 +129,18 @@ impl Config {
     }
 }
 fn read_settings(path: &Path) -> Result<Option<File>, Box<dyn std::error::Error>> {
+    let file = read_local::<File>(path)?;
+    if file.as_ref().is_some_and(|file| !file.valid()) {
+        return Err(
+            "Interface preferences require schema 1, UI scale 0.75..1.5 and a supported FPS cap"
+                .into(),
+        );
+    }
+    Ok(file)
+}
+fn read_local<T: serde::de::DeserializeOwned>(
+    path: &Path,
+) -> Result<Option<T>, Box<dyn std::error::Error>> {
     let file = match fs::File::open(path) {
         Ok(file) => file,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -133,14 +154,13 @@ fn read_settings(path: &Path) -> Result<Option<File>, Box<dyn std::error::Error>
     if bytes.len() as u64 > LIMIT {
         return Err("Interface preferences exceed 4 KiB".into());
     }
-    let file: File = serde_json::from_slice(&bytes)?;
-    if !file.valid() {
-        return Err(
-            "Interface preferences require schema 1, UI scale 0.75..1.5 and a supported FPS cap"
-                .into(),
-        );
-    }
-    Ok(Some(file))
+    Ok(Some(serde_json::from_slice(&bytes)?))
+}
+fn display_path(path: &Path) -> PathBuf {
+    // Keep the established interface file readable by older game releases.
+    let mut path = path.as_os_str().to_owned();
+    path.push(".display.json");
+    PathBuf::from(path)
 }
 #[cfg(test)]
 fn read(path: &Path) -> Result<Option<f32>, Box<dyn std::error::Error>> {
@@ -158,6 +178,7 @@ fn write(path: &Path, scale: f32) -> Result<(), String> {
         ViewDistance::default(),
     )
 }
+#[cfg(test)]
 fn write_preferences(
     path: &Path,
     scale: f32,
@@ -167,18 +188,26 @@ fn write_preferences(
     vsync: bool,
     view_distance: ViewDistance,
 ) -> Result<(), String> {
-    let data = File {
-        schema: 1,
-        ui_scale: scale,
-        fps_cap,
-        vsync,
-        view_distance,
-        debug_stats,
-        world_effects,
-    };
+    write_settings(
+        path,
+        File {
+            schema: 1,
+            ui_scale: scale,
+            fps_cap,
+            vsync,
+            view_distance,
+            debug_stats,
+            world_effects,
+        },
+    )
+}
+fn write_settings(path: &Path, data: File) -> Result<(), String> {
     if !data.valid() {
-        return Err("Invalid UI scale".into());
+        return Err("Invalid interface preferences".into());
     }
+    write_file(path, &data)
+}
+fn write_file(path: &Path, data: &impl Serialize) -> Result<(), String> {
     let parent = path.parent().ok_or("Missing preference directory")?;
     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     // A unique same-directory candidate avoids truncating an existing preference.
@@ -199,7 +228,7 @@ fn write_preferences(
         .open(&temp)
         .map_err(|e| e.to_string())?;
     let result = (|| {
-        let bytes = serde_json::to_vec_pretty(&data).map_err(|e| e.to_string())?;
+        let bytes = serde_json::to_vec_pretty(data).map_err(|e| e.to_string())?;
         file.write_all(&bytes).map_err(|e| e.to_string())?;
         file.sync_all().map_err(|e| e.to_string())?;
         drop(file);
@@ -223,6 +252,7 @@ pub(super) struct Store {
     requested_fps: u16,
     requested_vsync: bool,
     requested_view: ViewDistance,
+    requested_display: Option<super::display::Choice>,
     path: PathBuf,
     requested: f32,
     world_effects: Option<bool>,
@@ -249,6 +279,7 @@ impl Store {
         }
     }
 }
+#[allow(clippy::too_many_arguments)]
 fn save(
     preferred: Res<PreferredScale>,
     effects: Option<Res<crate::particle_world::VisibilityChoice>>,
@@ -257,11 +288,15 @@ fn save(
     cap: Option<Res<super::graphics::FrameCap>>,
     vsync: Option<Res<super::graphics::Vsync>>,
     view: Option<Res<ViewDistance>>,
+    display: Option<Res<super::display::State>>,
 ) {
     let view_distance = view.as_deref().copied().unwrap_or_default();
     let vsync = vsync.as_ref().is_none_or(|choice| choice.0);
     let debug_stats = debug.as_ref().is_some_and(|v| v.0);
     let fps_cap = cap.as_ref().map_or_else(default_fps_cap, |cap| cap.0);
+    let display = display
+        .as_deref()
+        .map_or(store.requested_display, super::display::State::saved);
     let current_effects = effects.as_ref().map(|choice| choice.0);
     let effects_changed = current_effects.is_some() && current_effects != store.observed_effects;
     if effects_changed {
@@ -279,35 +314,41 @@ fn save(
             Status::Saved
         };
     }
-    if store.pending.is_none()
-        && (store.requested != preferred.0
-            || store.retry_requested
-            || store.requested_effects != store.world_effects
-            || store.requested_debug != debug_stats
-            || store.requested_fps != fps_cap
-            || store.requested_vsync != vsync
-            || store.requested_view != view_distance)
-    {
+    let preferences_changed = store.retry_requested
+        || store.requested != preferred.0
+        || store.requested_effects != store.world_effects
+        || store.requested_debug != debug_stats
+        || store.requested_fps != fps_cap
+        || store.requested_vsync != vsync
+        || store.requested_view != view_distance;
+    let display_changed = store.retry_requested || store.requested_display != display;
+    if store.pending.is_none() && (preferences_changed || display_changed) {
         store.retry_requested = false;
         store.requested = preferred.0;
         store.requested_debug = debug_stats;
         store.requested_fps = fps_cap;
         store.requested_vsync = vsync;
         store.requested_view = view_distance;
+        store.requested_display = display;
         store.requested_effects = store.world_effects;
-        let scale = preferred.0;
         let path = store.path.clone();
-        let world_effects = store.world_effects;
+        let data = File {
+            schema: 1,
+            ui_scale: preferred.0,
+            world_effects: store.world_effects,
+            debug_stats,
+            fps_cap,
+            vsync,
+            view_distance,
+        };
         store.pending = Some(IoTaskPool::get().spawn(async move {
-            write_preferences(
-                &path,
-                scale,
-                world_effects,
-                debug_stats,
-                fps_cap,
-                vsync,
-                view_distance,
-            )
+            if preferences_changed {
+                write_settings(&path, data)?;
+            }
+            if display_changed && let Some(display) = display {
+                write_file(&display_path(&path), &display)?;
+            }
+            Ok(())
         }));
         store.status = Status::Saving;
     }
@@ -649,6 +690,7 @@ mod tests {
             path: path.clone(),
             scale: 1.,
             world_effects: None,
+            display: None,
         }
         .install(&mut app);
         let window = app
@@ -744,6 +786,7 @@ mod tests {
             path: path.clone(),
             scale: 1.,
             world_effects: None,
+            display: None,
         }
         .install(&mut app);
         app.world_mut().resource_mut::<PreferredScale>().0 = 1.25;
@@ -799,6 +842,7 @@ mod tests {
             path: path.clone(),
             scale: 1.,
             world_effects: None,
+            display: None,
         }
         .install(&mut app);
         app.update();

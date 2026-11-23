@@ -1,4 +1,5 @@
 //! Reference-kit layouts. Unimplemented features remain visibly disabled widgets.
+use super::display;
 use crate::ui_theme::{self, Style};
 pub(crate) mod menu;
 use bevy::{
@@ -10,26 +11,49 @@ use bevy::{
 };
 #[derive(Component)]
 pub(crate) struct Preview;
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Value {
     FrameCap,
     Distance,
+    DisplayMode,
+    Resolution,
+}
+impl Value {
+    fn name(self) -> &'static str {
+        match self {
+            Self::FrameCap => "fps-menu",
+            Self::Distance => "view-menu",
+            Self::DisplayMode => "display-mode",
+            Self::Resolution => "resolution",
+        }
+    }
 }
 #[derive(Component)]
 struct DropToggle(Entity, Value);
 #[derive(Component)]
 struct DropList;
+#[derive(Component, Default)]
+struct ResolutionRows(Vec<[u32; 2]>);
+#[derive(Component, Clone, Copy)]
+enum DisplayOption {
+    Mode(display::Mode),
+    Size([u32; 2]),
+}
 #[derive(Resource, Default)]
 struct OpenList(Option<Entity>);
 #[derive(Component)]
 struct Defaults;
 pub(crate) fn install(app: &mut App) {
     menu::install(app);
+    display::install(app);
     app.init_resource::<OpenList>()
         .init_resource::<Transaction>()
         .add_observer(activate)
         .add_observer(transaction_action)
-        .add_systems(Update, (present, fit_settings))
+        .add_systems(
+            Update,
+            (present, fit_settings, display_options, scroll_resolutions),
+        )
         .add_systems(
             PostUpdate,
             transactions
@@ -325,6 +349,7 @@ pub(crate) fn dropdown(
             ..column()
         })
         .with_children(|holder| {
+            let down = matches!(value, Value::DisplayMode | Value::Resolution);
             let list = holder
                 .spawn((
                     DropList,
@@ -332,7 +357,8 @@ pub(crate) fn dropdown(
                     ui_theme::Panel,
                     Node {
                         position_type: PositionType::Absolute,
-                        bottom: percent(100),
+                        top: if down { percent(100) } else { Val::Auto },
+                        bottom: if down { Val::Auto } else { percent(100) },
                         width: percent(100),
                         display: Display::None,
                         padding: UiRect::all(px(8)),
@@ -342,6 +368,13 @@ pub(crate) fn dropdown(
                 ))
                 .with_children(options)
                 .id();
+            if value == Value::Resolution {
+                holder.commands().entity(list).insert((
+                    ResolutionRows::default(),
+                    ScrollPosition::default(),
+                    Hovered::default(),
+                ));
+            }
             holder
                 .spawn((
                     DropToggle(list, value),
@@ -356,6 +389,121 @@ pub(crate) fn dropdown(
                     chevron(p, false);
                 });
         });
+}
+
+fn display_row(parent: &mut ChildSpawnerCommands, label: &str, value: Value) {
+    parent
+        .spawn(Node {
+            justify_content: JustifyContent::SpaceBetween,
+            align_items: AlignItems::Center,
+            column_gap: px(8),
+            ..default()
+        })
+        .with_children(|row| {
+            row.spawn(text(label, 14.));
+            dropdown(row, value, |options| {
+                if value == Value::DisplayMode {
+                    for mode in display::Mode::ALL {
+                        options
+                            .spawn(display_option(DisplayOption::Mode(mode), mode.label()))
+                            .with_child(text(mode.label(), 15.));
+                    }
+                }
+            });
+        });
+}
+
+fn display_option(option: DisplayOption, label: &str) -> impl Bundle {
+    (
+        option,
+        Button,
+        Hovered::default(),
+        Style::Secondary,
+        AccessibleLabel::new(label),
+        Node {
+            min_height: px(30),
+            padding: UiRect::horizontal(px(10)),
+            align_items: AlignItems::Center,
+            flex_shrink: 0.,
+            ..default()
+        },
+    )
+}
+
+fn display_options(
+    mut commands: Commands,
+    state: Res<display::State>,
+    toggles: Query<(Entity, &DropToggle, Has<InteractionDisabled>)>,
+    options: Query<(Entity, &DisplayOption, Has<InteractionDisabled>)>,
+    mut rows: Query<(Entity, &mut ResolutionRows, &mut Node, &mut ScrollPosition)>,
+) {
+    for (entity, toggle, disabled) in &toggles {
+        let enabled = match toggle.1 {
+            Value::DisplayMode => state.editable(),
+            Value::Resolution => state.resolution_editable(),
+            _ => continue,
+        };
+        if enabled == disabled {
+            if enabled {
+                commands.entity(entity).remove::<InteractionDisabled>();
+            } else {
+                commands.entity(entity).insert(InteractionDisabled);
+            }
+        }
+    }
+    for (entity, option, disabled) in &options {
+        if let DisplayOption::Mode(mode) = option
+            && disabled == state.allows(*mode)
+        {
+            if disabled {
+                commands.entity(entity).remove::<InteractionDisabled>();
+            } else {
+                commands.entity(entity).insert(InteractionDisabled);
+            }
+        }
+    }
+    if rows.is_empty() {
+        return;
+    }
+    let sizes = state.choices();
+    for (entity, mut displayed, mut node, mut scroll) in &mut rows {
+        if displayed.0 != sizes {
+            displayed.0.clone_from(&sizes);
+            node.max_height = px(285);
+            node.overflow = Overflow::scroll_y();
+            scroll.y = 0.;
+            commands
+                .entity(entity)
+                .despawn_related::<Children>()
+                .with_children(|options| {
+                    for &size in &sizes {
+                        let label = display::size_label(size);
+                        options
+                            .spawn(display_option(DisplayOption::Size(size), &label))
+                            .with_child(text(label, 15.));
+                    }
+                });
+        }
+    }
+}
+
+fn scroll_resolutions(
+    opened: Res<OpenList>,
+    mut wheel: MessageReader<bevy::input::mouse::MouseWheel>,
+    mut rows: Query<(&Hovered, &mut ScrollPosition), With<ResolutionRows>>,
+) {
+    for event in wheel.read() {
+        if let Some(entity) = opened.0
+            && let Ok((hovered, mut position)) = rows.get_mut(entity)
+            && hovered.get()
+        {
+            let amount = match event.unit {
+                bevy::input::mouse::MouseScrollUnit::Line => event.y * 38.,
+                bevy::input::mouse::MouseScrollUnit::Pixel => event.y,
+            };
+            position.y = (position.y - amount).max(0.);
+        }
+    }
 }
 pub(crate) fn settings_body() -> Node {
     Node {
@@ -401,7 +549,20 @@ fn activate(
     mut vsync: Option<ResMut<super::graphics::Vsync>>,
     mut distance: Option<ResMut<super::graphics::ViewDistance>>,
     mut scale: Option<ResMut<super::PreferredScale>>,
+    mut display: Option<ResMut<display::State>>,
+    display_options: Query<(&DisplayOption, &ChildOf), Without<InteractionDisabled>>,
+    windows: Query<&Window, With<bevy::window::PrimaryWindow>>,
 ) {
+    if let Some(ref mut state) = display
+        && let Ok((option, parent)) = display_options.get(event.entity)
+        && opened.0 == Some(parent.parent())
+        && windows.single().is_ok_and(|window| window.focused)
+    {
+        match *option {
+            DisplayOption::Mode(mode) => state.select_mode(mode),
+            DisplayOption::Size(size) => state.select_size(size),
+        }
+    }
     if let Ok(toggle) = drops.get(event.entity) {
         opened.0 = if opened.0 == Some(toggle.0) {
             None
@@ -412,6 +573,9 @@ fn activate(
         opened.0 = None;
     }
     if defaults.contains(event.entity) {
+        if let Some(ref mut state) = display {
+            state.defaults();
+        }
         if let Some(ref mut v) = cap {
             **v = default();
         }
@@ -432,6 +596,7 @@ fn present(
     mut labels: Query<(&Value, &mut Text)>,
     cap: Option<Res<super::graphics::FrameCap>>,
     distance: Option<Res<super::graphics::ViewDistance>>,
+    display_state: Res<display::State>,
 ) {
     for (e, mut n) in &mut lists {
         let display = if opened.0 == Some(e) {
@@ -452,6 +617,8 @@ fn present(
                 .unwrap_or_default()
                 .label()
                 .into(),
+            Value::DisplayMode => display_state.label(),
+            Value::Resolution => display_state.resolution_label(),
         };
         let next = label;
         if text.0 != next {
@@ -476,12 +643,9 @@ pub(crate) fn graphics(
             })
             .with_children(|display| {
                 section(display, "Display");
-                for (label, value) in [
-                    ("Display Mode", "Windowed"),
-                    ("Resolution", "Current"),
-                    ("Refresh Rate", "Desktop"),
-                    ("Monitor", "Primary"),
-                ] {
+                display_row(display, "Display Mode", Value::DisplayMode);
+                display_row(display, "Resolution", Value::Resolution);
+                for (label, value) in [("Refresh Rate", "Desktop"), ("Monitor", "Primary")] {
                     unsupported_row(display, label, value);
                 }
                 for (label, value) in [
@@ -694,10 +858,21 @@ fn transaction_action(
     mut vsync: Option<ResMut<super::graphics::Vsync>>,
     mut distance: Option<ResMut<super::graphics::ViewDistance>>,
     mut scale: Option<ResMut<super::PreferredScale>>,
+    mut display: Option<ResMut<display::State>>,
+    mut windows: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
 ) {
     let Ok(action) = actions.get(event.entity) else {
         return;
     };
+    if let Some(ref mut display) = display {
+        if matches!(action, Footer::Cancel) {
+            display.clear();
+        } else if let Ok(mut window) = windows.single_mut()
+            && window.focused
+        {
+            display.preview(&mut window, std::time::Instant::now());
+        }
+    }
     let (Some(cap), Some(vsync), Some(distance), Some(scale)) =
         (&mut cap, &mut vsync, &mut distance, &mut scale)
     else {
@@ -729,6 +904,8 @@ fn transactions(
     mut vsync: Option<ResMut<super::graphics::Vsync>>,
     mut distance: Option<ResMut<super::graphics::ViewDistance>>,
     mut scale: Option<ResMut<super::PreferredScale>>,
+    mut display: Option<ResMut<display::State>>,
+    mut opened: ResMut<OpenList>,
 ) {
     let (Some(cap), Some(vsync), Some(distance), Some(scale)) =
         (&mut cap, &mut vsync, &mut distance, &mut scale)
@@ -743,28 +920,38 @@ fn transactions(
     };
     if roots.iter().any(|n| n.display != Display::None) {
         let baseline = *transaction.baseline.get_or_insert(current);
+        let display_changed = display.as_deref().is_some_and(display::State::changed);
         for (e, a) in &actions {
             if matches!(a, Footer::Apply) {
-                if baseline == current {
+                if baseline == current && !display_changed {
                     commands.entity(e).insert(InteractionDisabled);
                 } else {
                     commands.entity(e).remove::<InteractionDisabled>();
                 }
             }
         }
-    } else if let Some(base) = transaction.baseline.take() {
-        cap.0 = base.cap;
-        vsync.0 = base.vsync;
-        **distance = base.distance;
-        scale.0 = base.scale;
+    } else {
+        if opened.0.is_some() {
+            opened.0 = None;
+        }
+        if let Some(display) = &mut display {
+            display.clear();
+        }
+        if let Some(base) = transaction.baseline.take() {
+            cap.0 = base.cap;
+            vsync.0 = base.vsync;
+            **distance = base.distance;
+            scale.0 = base.scale;
+        }
     }
 }
 
 pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let scale = world.resource::<bevy::ui::UiScale>().0;
-    let dropdowns:Vec<_>=world.query::<(&DropToggle,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world).filter(|(_,n,_)|n.size().min_element()>0.).map(|(d,n,t)|serde_json::json!({"name":match d.1{Value::FrameCap=>"fps-menu",Value::Distance=>"view-menu"},"point":(t.affine().translation*super::window_factor(n,scale)).to_array()})).collect();
+    let dropdowns:Vec<_>=world.query::<(&DropToggle,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world).filter(|(_,n,_)|n.size().min_element()>0.).map(|(d,n,t)|serde_json::json!({"name":d.1.name(),"point":(t.affine().translation*super::window_factor(n,scale)).to_array()})).collect();
+    let display_options: Vec<_> = world.query::<(&DisplayOption, &AccessibleLabel, &ComputedNode, &bevy::ui::UiGlobalTransform)>().iter(world).filter(|(_,_,n,_)|n.size().min_element()>0.).map(|(_,label,n,t)|serde_json::json!({"name":&*label.0,"point":(t.affine().translation*super::window_factor(n,scale)).to_array()})).collect();
     let footer:Vec<_>=world.query::<(&Footer,&ComputedNode,&bevy::ui::UiGlobalTransform,Has<InteractionDisabled>)>().iter(world).filter(|(_,n,_,_)|n.size().min_element()>0.).map(|(a,n,t,disabled)|serde_json::json!({"name":match a{Footer::Apply=>"apply",Footer::Accept=>"ok",Footer::Cancel=>"cancel"},"disabled":disabled,"point":(t.affine().translation*super::window_factor(n,scale)).to_array()})).collect();
-    serde_json::json!({"dropdowns":dropdowns,"footer":footer})
+    serde_json::json!({"dropdowns":dropdowns,"footer":footer,"display_options":display_options,"display_confirmation":display::snapshot(world, scale)})
 }
 
 #[cfg(test)]

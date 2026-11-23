@@ -2,6 +2,7 @@
 //! The legacy HUD source/CLI remains compatible with retained playtest launchers.
 mod debug;
 mod developer;
+pub(crate) mod display;
 pub(crate) mod graphics;
 pub(crate) mod kit;
 pub(crate) mod preferences;

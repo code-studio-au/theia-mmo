@@ -1351,18 +1351,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .into(),
             decorations: test_view.is_none(),
             resize_constraints: bevy::window::WindowResizeConstraints {
-                min_width: if test_view.is_some() {
-                    1.
-                } else {
-                    width.min(1920) as f32
-                },
-                // Window managers can otherwise subtract their panels/title bar
-                // from a desktop-height request during initial placement.
-                min_height: if test_view.is_some() {
-                    1.
-                } else {
-                    height.min(1440) as f32
-                },
+                min_width: if test_view.is_some() { 1. } else { 640. },
+                min_height: if test_view.is_some() { 1. } else { 480. },
                 ..default()
             },
             resolution: WindowResolution::new(width, height).with_scale_factor_override(1.),
@@ -1512,6 +1502,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if fantasy_skin {
         fantasy_ui::install_scale(&mut app, ui_scale);
+        app.insert_resource(fantasy_ui::display::State::new(
+            fantasy_ui::display::Choice::launch(fullscreen, width, height),
+            ui_preferences
+                .as_ref()
+                .and_then(|preferences| preferences.display),
+            test_view.is_some(),
+        ));
         if let Some(preferences) = ui_preferences {
             preferences.install(&mut app);
         }
@@ -1647,10 +1644,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn toggle_fullscreen(
     keys: Res<ButtonInput<KeyCode>>,
     mut windows: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+    display: Option<ResMut<fantasy_ui::display::State>>,
+    tile: Option<Res<test_window::View>>,
 ) {
     if keys.just_pressed(KeyCode::F11)
+        && tile.is_none()
         && let Ok(mut window) = windows.single_mut()
     {
+        if let Some(mut display) = display {
+            display.toggle(&mut window);
+            return;
+        }
         window.mode = match window.mode {
             bevy::window::WindowMode::Windowed => bevy::window::WindowMode::BorderlessFullscreen(
                 bevy::window::MonitorSelection::Current,

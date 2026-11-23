@@ -64,7 +64,7 @@ pub(super) struct Message;
 #[derive(Component)]
 pub(super) struct Row(usize);
 #[derive(Component)]
-pub(super) struct FrontCamera;
+pub(crate) struct FrontCamera;
 #[derive(Component, Clone, Copy)]
 pub(super) enum Placement {
     Backdrop(bool),
