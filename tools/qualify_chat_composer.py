@@ -148,7 +148,7 @@ def run(args):
     os.environ['DISPLAY'] = args.display
     out = args.output.resolve()
     out.mkdir(mode=0o700, parents=True, exist_ok=False)
-    with Identity(out/'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True) as identity, \
+    with Identity(out/'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True, users=2 if args.peer_check else 1) as identity, \
             Cluster(out/'cluster', Path('build/postgres-sdk')) as cluster:
         game = out/'game'
         game.mkdir()
@@ -228,6 +228,10 @@ def run(args):
                 wait(lambda: state()['connected'] and state()['loading']['phase'] == 'Playing', 120)
                 print('Native account world entry passed', flush=True)
                 result = qualify(desktop, window, state, screenshot, saved_name, args.bubbles)
+                if args.peer_check:
+                    from chat_peer_os import qualify as qualify_peer
+                    result['peer_check'] = qualify_peer(desktop, window, state, screenshot, session,
+                                                       env, identity.users[1], out)
                 result['adapter'] = state()['adapter']
                 result['say_bubbles'] = args.bubbles
                 screenshot('chat-complete.png')
@@ -243,7 +247,7 @@ def run(args):
         result['gpu_diagnostics'] = check_gpu_diagnostics((out/'launcher.log').read_text(), allow_surface_resize=True)
         for path in out.rglob('*'):
             if path.is_file() and path.suffix in ('.json', '.log'):
-                assert identity.users[0][1] not in path.read_text(errors='replace'), 'Credential leaked to evidence'
+                assert all(password not in path.read_text(errors='replace') for _,password in identity.users), 'Credential leaked to evidence'
     (out/'qualification.json').write_text(json.dumps(result, indent=2))
 
 
@@ -257,4 +261,5 @@ if __name__ == '__main__':
     parser.add_argument('--display', default=':0')
     parser.add_argument('--software-vulkan', action='store_true')
     parser.add_argument('--bubbles', action='store_true')
+    parser.add_argument('--peer-check', action='store_true', help='Two native accounts, remote Say/Area and retirement')
     run(parser.parse_args())

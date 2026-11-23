@@ -5,6 +5,18 @@ and the farmhouse for a static building/housing reference. The opt-in scene now
 uses those roles together, including connected remote players. This is local
 compatibility content; no new third-party models/textures are committed.
 
+## Per-actor loading deadline (23 November 2026)
+
+Each new visual starts its own bounded 60-second animation-instantiation timer.
+Previously this used the asset catalogue's startup timer, so a remote player
+joining an established client could immediately trigger “No animation player
+instantiated” during Bevy's ordinary deferred scene spawn. The asset/dependency
+loading deadline remains separate. Actual failed or stalled instances still fail.
+
+The regression exercises an hour-old catalogue, a new remote root with no spawned
+animation yet, subsequent pending frames and its own expired deadline. Native
+late-join qualification is recorded with the Say peer checks in LOCAL_CHAT.md.
+
 ## Run
 
 Prepared local assets currently live in ignored `build/reference-scene/`:

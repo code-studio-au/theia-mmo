@@ -1,3 +1,12 @@
+23 November 2026 — P4-12/P2-08/P2-09 late join and remote speech:
+Fixed the shared startup timeout that could terminate an established client when
+a new remote character spawned. Each visual now has its own bounded instantiation
+timer. 362 client tests (five skips), strict checks and two native accounts pass:
+distinct saved bodies, bidirectional Say, Area exclusion, long bubble wrapping and
+retirement before expiry. Linux Vulkan llvmpipe, zero GPU diagnostics in both.
+See ../LOCAL_CHAT.md and ../REFERENCE_SCENE.md. Next: contain long history text and preserve
+correct chat status while the connected game window is unfocused.
+
 23 November 2026 — P4-12/P2-14 Say speech bubbles:
 Confirmed Say delivery now renders bounded, noninteractive overhead bubbles on
 visible player models; Area stays in history. One per speaker, eight maximum,
@@ -2493,7 +2502,13 @@ For each task: inspect existing code first; write a short design and tests; impl
 - **Dependencies (initial):** P4-11, P3-16, P1-03.
 - **Codex task:** Implement and document chat/moderation using approved architecture; add automated tests and observability; avoid blocking simulation or leaking renderer dependencies into headless server.
 - **Acceptance:** Implementation demonstrated for chat/moderation; automated correctness/error-path test; metrics or logs captured; integration with authoritative server and relevant Bevy client verified; documentation updated.
-- **Status:** NOT STARTED / NOT VERIFIED.
+- **Status:** IN PROGRESS. Authoritative bounded Say/Area routing, encrypted
+  client delivery/receipts, native focused composer/history and Say speech bubbles
+  are implemented. Normal native account/server checks cover self-echo, refusal,
+  input ownership, Area exclusion and expiry; pure tests cover lifecycle filtering.
+  See ../LOCAL_CHAT.md for current evidence and subsequent remote-client checks.
+  Public moderation, account-wide reconnect flood control, cross-area lifecycle
+  and additional channels remain unimplemented; this does not complete P4-12.
 
 ### P4-13 — Friends and presence
 - **Primary wave:** W7; work may begin earlier when prerequisites permit.

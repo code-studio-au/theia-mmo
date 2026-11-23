@@ -154,6 +154,7 @@ pub struct Visual {
     layer_frames: u8,
     attack_sequence: Option<u64>,
     dodge_key: Option<crate::dodge::animation::Key>,
+    instantiation_started: Instant,
 }
 impl Visual {
     pub(crate) fn sword_stance_active(&self) -> bool {
@@ -503,6 +504,7 @@ pub fn tick(world: &mut World) {
                 layer_frames: 0,
                 attack_sequence: None,
                 dodge_key: None,
+                instantiation_started: Instant::now(),
             },
         ));
     }
@@ -518,7 +520,9 @@ pub fn tick(world: &mut World) {
                 .filter(|e| world.get::<AnimationPlayer>(*e).is_some())
                 .collect();
             if players.is_empty() {
-                if world.resource::<Loading>().started.elapsed().as_secs() > 60 {
+                // Every late-joining/recreated actor needs its own asynchronous
+                // scene-instantiation budget, independent of asset startup.
+                if visual.instantiation_started.elapsed().as_secs() > 60 {
                     fail(world, "No animation player instantiated");
                 }
                 continue;
@@ -1009,6 +1013,57 @@ fn sample_poses(world: &mut World) {
 mod tests {
     use super::*;
     #[test]
+    fn late_remote_spawn_has_its_own_bounded_animation_instantiation_deadline() {
+        let mut world = World::new();
+        world.init_resource::<Messages<AppExit>>();
+        world.insert_resource(Config {
+            directory: PathBuf::new(),
+            capture: None,
+            players_only: true,
+            polygon: true,
+        });
+        world.insert_resource(Loading {
+            models: Vec::new(),
+            started: Instant::now() - std::time::Duration::from_secs(3600),
+        });
+        world.insert_resource(Catalog {
+            scenes: vec![Handle::default()],
+            graphs: Vec::new(),
+            indices: Vec::new(),
+            durations: Vec::new(),
+            optional_slots: [None; 2],
+            attack_slot: None,
+            dodge_slots: [None; 4],
+            dodge_durations: [0.; 4],
+            locomotion_slots: [None; locomotion::COUNT],
+            grip: None,
+        });
+        let owner = world
+            .spawn(crate::network::RemotePawn::stationary(
+                2,
+                theia_core::coordinates::GlobalPosition::new([0.; 3]).unwrap(),
+            ))
+            .id();
+        // The scene root is created this frame; Bevy has not spawned its
+        // AnimationPlayer yet. An old catalogue must not fail the client.
+        tick(&mut world);
+        assert!(world.get::<Attached>(owner).is_some());
+        assert!(world.resource::<Messages<AppExit>>().is_empty());
+        assert!(!world.contains_resource::<Ready>());
+        let root = world
+            .query_filtered::<Entity, With<Visual>>()
+            .single(&world)
+            .unwrap();
+        assert!(world.get::<Visual>(root).unwrap().players.is_empty());
+        tick(&mut world);
+        assert!(world.resource::<Messages<AppExit>>().is_empty());
+        // A genuinely stalled instance still fails after its own budget.
+        world.get_mut::<Visual>(root).unwrap().instantiation_started =
+            Instant::now() - std::time::Duration::from_secs(61);
+        tick(&mut world);
+        assert_eq!(world.resource::<Messages<AppExit>>().len(), 1);
+    }
+    #[test]
     fn optional_clip_slots_do_not_alias_when_death_is_absent() {
         assert_eq!(
             optional_slots(&["Idle", "Walk", "Run", "Jump"]),
@@ -1063,6 +1118,7 @@ mod tests {
                     layer_frames: 0,
                     attack_sequence: None,
                     dodge_key: None,
+                    instantiation_started: Instant::now(),
                 },
             ))
             .id();
@@ -1212,6 +1268,7 @@ mod tests {
             layer_frames: 0,
             attack_sequence: None,
             dodge_key: None,
+            instantiation_started: Instant::now(),
         };
         let key = LifeKey {
             actor: EntityKey {
@@ -1278,6 +1335,7 @@ mod tests {
                     layer_frames: 0,
                     attack_sequence: None,
                     dodge_key: None,
+                    instantiation_started: Instant::now(),
                 },
             ))
             .id();

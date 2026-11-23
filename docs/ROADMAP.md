@@ -1,3 +1,12 @@
+23 November 2026 — P4-12/P2-08/P2-09 late join and remote speech:
+Fixed the shared startup timeout that could terminate an established client when
+a new remote character spawned. Each visual now has its own bounded instantiation
+timer. 362 client tests (five skips), strict checks and two native accounts pass:
+distinct saved bodies, bidirectional Say, Area exclusion, long bubble wrapping and
+retirement before expiry. Linux Vulkan llvmpipe, zero GPU diagnostics in both.
+See LOCAL_CHAT.md and REFERENCE_SCENE.md. Next: contain long history text and preserve
+correct chat status while the connected game window is unfocused.
+
 23 November 2026 — P4-12/P2-14 Say speech bubbles:
 Confirmed Say delivery now renders bounded, noninteractive overhead bubbles on
 visible player models; Area stays in history. One per speaker, eight maximum,

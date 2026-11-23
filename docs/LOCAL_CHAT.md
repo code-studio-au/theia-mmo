@@ -365,3 +365,36 @@ owned peer window instead of requesting no focus under a window manager.
 This is one native account and local server, not proof of remote-player bubble
 presentation, discrete-GPU performance, Windows or MMO capacity. Two native
 accounts/remote presentation are the next bounded qualification slice.
+
+
+## Two native accounts and late model attachment
+
+P4-12/P2-08/P2-09, 23 November 2026. The `--peer-check` extension starts a
+second native frontend against the same owned server and authenticates a second
+account through the in-game form. Each saves a distinct body choice, enters via
+normal account admission and moves through ordinary authoritative input. It
+checks Say delivery/presentation in both directions, Area delivery without a
+bubble, long unbroken text and removal on actor retirement before normal expiry.
+Message bodies and credentials are not added to result telemetry.
+
+The first diagnostic attempt lacked the second bridge's provider setting. The
+second reached admission and exposed a real late-join failure: reference visuals
+used the asset catalogue's startup timer for scene instantiation, immediately
+failing a new remote model after the client had run for over a minute. Visuals now
+start their own bounded timer; see REFERENCE_SCENE.md. The regression also proves
+a genuinely stalled instance retains a timeout.
+
+Final `build/bubbles-peers-v3/qualification.json` passes with the first client
+already 64 seconds old before peer launch. Both saved body choices appear in both
+clients; Say works in both directions, Area remains history-only, a 200-byte
+unbroken message wraps inside its bubble, and retiring the sender removes that
+bubble 2.30 seconds after submission (before its six-second expiry) while history
+remains. 362 client tests (five skips), formatting, strict Clippy and release build
+pass. Inspected native screenshots use Linux Vulkan, llvmpipe LLVM 21.1.8 /
+Mesa 26.2.7; zero GPU diagnostics in either client. No discrete-GPU performance,
+Windows, public deployment or MMO-capacity claim is made.
+
+Visual follow-up: that long message still escapes the separate history panel,
+and an unfocused connected client temporarily displays “Chat unavailable”. Those
+are the next focused UI corrections; the peer qualification does not claim they
+are fixed.
