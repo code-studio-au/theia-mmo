@@ -6,7 +6,7 @@ use bevy::{
     picking::{Pickable, hover::Hovered},
     prelude::*,
     text::FontSize,
-    ui::InteractionDisabled,
+    ui::{BackgroundGradient, InteractionDisabled, LinearGradient},
     ui_widgets::{Activate, Button},
 };
 #[derive(Component)]
@@ -47,6 +47,8 @@ enum DisplayOption {
 struct OpenList(Option<Entity>);
 #[derive(Component)]
 struct Defaults;
+#[derive(Component)]
+struct SettingsClose;
 pub(crate) fn install(app: &mut App) {
     menu::install(app);
     display::install(app);
@@ -210,6 +212,321 @@ pub(crate) fn section(parent: &mut ChildSpawnerCommands, caption: &str) {
         ))
         .with_child((text(caption, 22.), TextColor(ui_theme::GOLD)));
 }
+
+pub(crate) fn settings_panel_gradient(parent: &mut ChildSpawnerCommands) {
+    parent.spawn((
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(7),
+            right: px(7),
+            top: px(7),
+            bottom: px(7),
+            border_radius: BorderRadius::all(px(12)),
+            ..default()
+        },
+        BackgroundGradient::from(LinearGradient::to_bottom(vec![
+            Color::srgba(0.065, 0.155, 0.24, 0.45).into(),
+            (Color::srgba(0.012, 0.043, 0.07, 0.32), percent(53)).into(),
+            Color::srgba(0.055, 0.12, 0.18, 0.42).into(),
+        ])),
+        Pickable::IGNORE,
+    ));
+}
+
+pub(crate) fn settings_header(parent: &mut ChildSpawnerCommands, close: impl Component) {
+    parent
+        .spawn(Node {
+            width: percent(100),
+            height: px(34),
+            flex_shrink: 0.,
+            ..default()
+        })
+        .with_children(|header| {
+            header
+                .spawn(Node {
+                    position_type: PositionType::Absolute,
+                    top: px(-38),
+                    left: px(0),
+                    right: px(0),
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                })
+                .with_children(|row| {
+                    row.spawn((
+                        ui_theme::Plate,
+                        Node {
+                            width: px(360),
+                            height: px(57),
+                            column_gap: px(12),
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        },
+                    ))
+                    .with_children(|plate| {
+                        plate.spawn((
+                            Node {
+                                position_type: PositionType::Absolute,
+                                left: percent(18),
+                                right: percent(18),
+                                top: px(7),
+                                bottom: px(7),
+                                border_radius: BorderRadius::all(px(9)),
+                                ..default()
+                            },
+                            BackgroundGradient::from(LinearGradient::to_right(vec![
+                                Color::NONE.into(),
+                                (Color::srgba(0.08, 0.27, 0.42, 0.52), percent(49)).into(),
+                                Color::NONE.into(),
+                            ])),
+                            Pickable::IGNORE,
+                        ));
+                        highlight(plate, px(4), 64., true);
+                        icon(plate, 7, false);
+                        plate.spawn((
+                            text("Settings", 30.),
+                            TextColor(ui_theme::CREAM),
+                            title_shadow(),
+                        ));
+                    });
+                });
+            header
+                .spawn((
+                    SettingsClose,
+                    Footer::Cancel,
+                    close,
+                    Button,
+                    Hovered::default(),
+                    Style::Icon,
+                    AccessibleLabel::new("Close Settings"),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        top: px(-5),
+                        right: px(2),
+                        width: px(38),
+                        height: px(38),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    BackgroundColor(Color::NONE),
+                ))
+                .with_child((text("×", 38.), TextColor(ui_theme::GOLD), title_shadow()));
+        });
+}
+
+fn title_shadow() -> TextShadow {
+    TextShadow {
+        offset: Vec2::splat(1.5),
+        color: Color::BLACK,
+    }
+}
+
+fn highlight(parent: &mut ChildSpawnerCommands, top: Val, width: f32, diamond: bool) {
+    parent.spawn((
+        Node {
+            position_type: PositionType::Absolute,
+            top,
+            left: percent((100. - width) / 2.),
+            width: percent(width),
+            height: px(2),
+            ..default()
+        },
+        BackgroundGradient::from(LinearGradient::to_right(vec![
+            Color::NONE.into(),
+            (Color::srgba(0.36, 0.78, 1.0, 0.82), percent(48)).into(),
+            Color::NONE.into(),
+        ])),
+        Pickable::IGNORE,
+    ));
+    if diamond {
+        parent.spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                top: px(2),
+                left: percent(50),
+                width: px(5),
+                height: px(5),
+                ..default()
+            },
+            BackgroundColor(ui_theme::CREAM),
+            UiTransform::from_rotation(Rot2::degrees(45.)),
+            Pickable::IGNORE,
+        ));
+    }
+}
+
+pub(crate) fn graphics_heading(parent: &mut ChildSpawnerCommands) {
+    parent
+        .spawn((
+            Node {
+                width: percent(100),
+                height: px(48),
+                column_gap: px(11),
+                padding: UiRect::horizontal(px(14)),
+                align_items: AlignItems::Center,
+                border: UiRect::bottom(px(1)),
+                ..default()
+            },
+            BorderColor::all(Color::srgba(0.78, 0.58, 0.29, 0.56)),
+            BackgroundGradient::from(LinearGradient::to_right(vec![
+                Color::srgb(0.035, 0.104, 0.165).into(),
+                Color::srgba(0.024, 0.072, 0.12, 0.22).into(),
+            ])),
+        ))
+        .with_children(|row| {
+            icon(row, 9, false);
+            row.spawn((
+                text("Graphics", 27.),
+                TextColor(ui_theme::CREAM),
+                title_shadow(),
+            ));
+            highlight(row, px(46), 80., false);
+        });
+}
+
+fn graphics_section(parent: &mut ChildSpawnerCommands, caption: &str) {
+    parent
+        .spawn((
+            Node {
+                width: percent(100),
+                height: px(32),
+                padding: UiRect::horizontal(px(19)),
+                align_items: AlignItems::Center,
+                border: UiRect::vertical(px(1)),
+                ..default()
+            },
+            BorderColor::all(Color::srgba(0.74, 0.56, 0.29, 0.55)),
+            BackgroundGradient::from(LinearGradient::to_right(vec![
+                Color::srgb(0.047, 0.191, 0.32).into(),
+                (Color::srgb(0.035, 0.125, 0.216), percent(55)).into(),
+                Color::srgba(0.021, 0.065, 0.113, 0.18).into(),
+            ])),
+        ))
+        .with_children(|bar| {
+            bar.spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(1),
+                    top: px(11),
+                    width: px(8),
+                    height: px(8),
+                    border: UiRect::left(px(1)).with_bottom(px(1)),
+                    ..default()
+                },
+                BorderColor::all(ui_theme::CREAM),
+                UiTransform::from_rotation(Rot2::degrees(45.)),
+                Pickable::IGNORE,
+            ));
+            highlight(bar, px(0), 62., false);
+            bar.spawn((
+                text(caption, 22.),
+                TextColor(ui_theme::CREAM),
+                title_shadow(),
+            ));
+        });
+}
+
+pub(crate) fn settings_sidebar() -> impl Bundle {
+    (
+        ui_theme::Panel,
+        Node {
+            width: px(220),
+            flex_shrink: 0.,
+            padding: UiRect::all(px(10)),
+            row_gap: px(2),
+            ..column()
+        },
+        BackgroundColor(ui_theme::PANEL),
+    )
+}
+
+pub(crate) fn settings_tab<T: Component>(
+    parent: &mut ChildSpawnerCommands,
+    caption: &str,
+    index: usize,
+    action: Option<T>,
+) -> Entity {
+    let enabled = action.is_some();
+    let mut tab = parent.spawn((
+        Button,
+        Hovered::default(),
+        Style::SettingsTab,
+        AccessibleLabel::new(caption),
+        Node {
+            height: px(44),
+            flex_shrink: 0.,
+            padding: UiRect::horizontal(px(14)),
+            align_items: AlignItems::Center,
+            column_gap: px(10),
+            ..default()
+        },
+        BackgroundColor(Color::NONE),
+    ));
+    if let Some(action) = action {
+        tab.insert(action);
+    } else {
+        tab.insert(InteractionDisabled);
+    }
+    tab.with_children(|row| {
+        icon(row, index, !enabled);
+        row.spawn(ui_theme::control_label(caption));
+        row.spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                bottom: px(0),
+                left: px(12),
+                right: px(12),
+                height: px(1),
+                ..default()
+            },
+            BackgroundGradient::from(LinearGradient::to_right(vec![
+                Color::NONE.into(),
+                (Color::srgba(0.77, 0.57, 0.30, 0.34), percent(55)).into(),
+                Color::NONE.into(),
+            ])),
+            Pickable::IGNORE,
+        ));
+    });
+    tab.id()
+}
+
+pub(crate) fn settings_watermark(parent: &mut ChildSpawnerCommands) {
+    parent.spawn((
+        ui_theme::Sprite("crest.tree-dark"),
+        ui_theme::Muted,
+        Node {
+            width: px(82),
+            height: px(95),
+            align_self: AlignSelf::Center,
+            margin: UiRect {
+                top: Val::Auto,
+                bottom: px(12),
+                ..default()
+            },
+            ..default()
+        },
+    ));
+}
+
+pub(crate) fn settings_content() -> impl Bundle {
+    (
+        Node {
+            flex_grow: 1.,
+            flex_basis: px(0),
+            min_width: px(0),
+            padding: UiRect::all(px(11)),
+            border: UiRect::all(px(1)),
+            border_radius: BorderRadius::all(px(12)),
+            ..column()
+        },
+        BorderColor::all(Color::srgba(0.77, 0.59, 0.33, 0.43)),
+        BackgroundGradient::from(LinearGradient::to_bottom(vec![
+            Color::srgba(0.028, 0.086, 0.139, 0.42).into(),
+            Color::srgba(0.01, 0.034, 0.052, 0.53).into(),
+        ])),
+    )
+}
 fn dropdown_row(
     parent: &mut ChildSpawnerCommands,
     caption: &str,
@@ -338,10 +655,12 @@ fn dropdown_field<'a>(
     let mut field = parent.spawn((
         Button,
         Hovered::default(),
-        Style::Secondary,
+        Style::Dropdown,
         AccessibleLabel::new(caption),
         Node {
             width: px(DROPDOWN_WIDTH),
+            border: UiRect::all(px(1)),
+            border_radius: BorderRadius::all(px(8)),
             height: px(CONTROL_HEIGHT),
             flex_shrink: 0.,
             padding: UiRect {
@@ -460,10 +779,12 @@ pub(crate) fn dropdown_option<'a>(
         action,
         Button,
         Hovered::default(),
-        Style::Secondary,
+        Style::Dropdown,
         AccessibleLabel::new(label),
         Node {
             min_height: px(CONTROL_HEIGHT),
+            border: UiRect::all(px(1)),
+            border_radius: BorderRadius::all(px(7)),
             padding: UiRect::horizontal(px(14)),
             align_items: AlignItems::Center,
             flex_shrink: 0.,
@@ -684,7 +1005,7 @@ pub(crate) fn graphics(
                 ..column()
             })
             .with_children(|display| {
-                section(display, "Display");
+                graphics_section(display, "Display");
                 display_row(display, "Display Mode", Value::DisplayMode);
                 display_row(display, "Resolution", Value::Resolution);
                 for (label, value) in [("Refresh Rate", "Desktop"), ("Monitor", "Primary")] {
@@ -703,24 +1024,33 @@ pub(crate) fn graphics(
                 ..column()
             })
             .with_children(|preset| {
-                section(preset, "Graphics Preset");
+                graphics_section(preset, "Graphics Preset");
                 preset
                     .spawn(Node {
-                        column_gap: px(4),
-                        flex_wrap: FlexWrap::Wrap,
+                        column_gap: px(8),
                         ..default()
                     })
                     .with_children(|r| {
                         for title in ["Low", "Medium", "High", "Ultra", "Custom"] {
-                            disabled(r, title);
+                            let id = disabled(r, title);
+                            r.commands().entity(id).insert(Node {
+                                flex_grow: 1.,
+                                flex_basis: px(0),
+                                min_width: px(0),
+                                min_height: px(CONTROL_HEIGHT),
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                ..default()
+                            });
                         }
                     });
                 preset.spawn((
                     Preview,
                     Node {
                         width: percent(100),
-                        height: px(182),
+                        height: px(225),
                         border: UiRect::all(px(1)),
+                        border_radius: BorderRadius::all(px(12)),
                         ..default()
                     },
                     BorderColor::all(ui_theme::GOLD),
@@ -741,7 +1071,7 @@ pub(crate) fn graphics(
                     ..column()
                 })
                 .with_children(|advanced| {
-                    section(advanced, "Advanced Graphics");
+                    graphics_section(advanced, "Advanced Graphics");
                     advanced
                         .spawn(Node {
                             column_gap: px(18),
@@ -749,7 +1079,7 @@ pub(crate) fn graphics(
                         })
                         .with_children(|cols| {
                             cols.spawn(Node {
-                                width: percent(53),
+                                width: percent(50),
                                 ..column()
                             })
                             .with_children(|quality| {
@@ -768,7 +1098,7 @@ pub(crate) fn graphics(
                                 });
                             });
                             cols.spawn(Node {
-                                width: percent(47),
+                                width: percent(50),
                                 row_gap: px(0),
                                 ..column()
                             })
@@ -793,10 +1123,11 @@ pub(crate) fn graphics(
             bottom
                 .spawn(Node {
                     width: percent(37),
+                    margin: UiRect::top(px(34)),
                     ..column()
                 })
                 .with_children(|performance| {
-                    section(performance, "Performance");
+                    graphics_section(performance, "Performance");
                     ui_theme::vsync_control(performance);
                     dropdown(
                         performance,
@@ -977,7 +1308,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let scale = world.resource::<bevy::ui::UiScale>().0;
     let dropdowns:Vec<_>=world.query::<(&DropToggle,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world).filter(|(_,n,_)|n.size().min_element()>0.).map(|(d,n,t)|serde_json::json!({"name":d.1.name(),"point":(t.affine().translation*super::window_factor(n,scale)).to_array()})).collect();
     let display_options: Vec<_> = world.query::<(&DisplayOption, &AccessibleLabel, &ComputedNode, &bevy::ui::UiGlobalTransform)>().iter(world).filter(|(_,_,n,_)|n.size().min_element()>0.).map(|(_,label,n,t)|serde_json::json!({"name":&*label.0,"point":(t.affine().translation*super::window_factor(n,scale)).to_array()})).collect();
-    let footer:Vec<_>=world.query::<(&Footer,&ComputedNode,&bevy::ui::UiGlobalTransform,Has<InteractionDisabled>)>().iter(world).filter(|(_,n,_,_)|n.size().min_element()>0.).map(|(a,n,t,disabled)|serde_json::json!({"name":match a{Footer::Apply=>"apply",Footer::Accept=>"ok",Footer::Cancel=>"cancel"},"disabled":disabled,"point":(t.affine().translation*super::window_factor(n,scale)).to_array()})).collect();
+    let footer:Vec<_>=world.query_filtered::<(&Footer,&ComputedNode,&bevy::ui::UiGlobalTransform,Has<InteractionDisabled>),Without<SettingsClose>>().iter(world).filter(|(_,n,_,_)|n.size().min_element()>0.).map(|(a,n,t,disabled)|serde_json::json!({"name":match a{Footer::Apply=>"apply",Footer::Accept=>"ok",Footer::Cancel=>"cancel"},"disabled":disabled,"point":(t.affine().translation*super::window_factor(n,scale)).to_array()})).collect();
     serde_json::json!({"dropdowns":dropdowns,"footer":footer,"display_options":display_options,"display_confirmation":display::snapshot(world, scale)})
 }
 
@@ -1013,7 +1344,7 @@ mod tests {
             let node = world.get::<Node>(field).unwrap();
             assert_eq!(node.width, px(DROPDOWN_WIDTH));
             assert_eq!(node.height, px(CONTROL_HEIGHT));
-            assert!(matches!(world.get::<Style>(field), Some(Style::Secondary)));
+            assert!(matches!(world.get::<Style>(field), Some(Style::Dropdown)));
             let disabled = world.get::<InteractionDisabled>(field).is_some();
             assert_eq!(
                 color,

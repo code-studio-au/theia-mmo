@@ -26,6 +26,8 @@ pub(crate) enum Style {
     Gold,
     #[default]
     Secondary,
+    Dropdown,
+    SettingsTab,
     Link,
     Icon,
     Input,
@@ -100,7 +102,7 @@ pub(crate) fn install(app: &mut App) {
     let art = Art {
         standalone,
         preview: load(include_bytes!(
-            "../../../content/ui/frontend/character-courtyard-v1.png"
+            "../../../content/ui/frontend/launcher-harbour-v1.png"
         )),
     };
     fade::install(app);
@@ -136,11 +138,11 @@ fn absolute() -> Node {
 fn family(style: Style) -> Option<&'static str> {
     Some(match style {
         Style::Primary | Style::Gold => "button.primary",
-        Style::Secondary => "button.secondary",
+        Style::Secondary | Style::SettingsTab => "button.secondary",
         Style::Input => "input.standard",
         Style::Roster | Style::Tab => "tab.chamfered",
         Style::Close => "control.close",
-        Style::Link | Style::Icon | Style::Slot => return None,
+        Style::Link | Style::Icon | Style::Slot | Style::Dropdown => return None,
     })
 }
 fn state(
@@ -279,9 +281,11 @@ fn decorate(
         }
     }
     for entity in &previews {
-        commands
-            .entity(entity)
-            .insert(ImageNode::new(art.preview.clone()));
+        commands.entity(entity).insert(
+            ImageNode::new(art.preview.clone())
+                .with_rect(Rect::new(0., 60., 1817., 800.))
+                .with_mode(bevy::ui::widget::NodeImageMode::Stretch),
+        );
     }
     for entity in &plates {
         commands.entity(entity).insert(sprites.node("title.simple"));
@@ -351,6 +355,28 @@ fn present(
                 t.0 = color;
             }
         }
+        if matches!(style, Style::Dropdown) {
+            let engaged = !disabled && (focused || pressed || hover.is_some_and(|h| h.0));
+            let fill = if engaged {
+                Color::srgb(0.045, 0.118, 0.18)
+            } else {
+                Color::srgb(0.026, 0.062, 0.10)
+            };
+            let edge = if disabled {
+                Color::srgb(0.31, 0.31, 0.29)
+            } else if engaged {
+                Color::srgb(0.99, 0.82, 0.48)
+            } else {
+                GOLD
+            };
+            if background.0 != fill {
+                background.0 = fill;
+            }
+            if *border != BorderColor::all(edge) {
+                *border = BorderColor::all(edge);
+            }
+            continue;
+        }
         if matches!(style, Style::Slot) {
             let (well, edge) = slot::colors(state(
                 disabled,
@@ -397,7 +423,16 @@ fn present(
                     hover.is_some_and(|h| h.0)
                 )
             );
-            let next = sprites.node(&name);
+            let mut next = sprites.node(&name);
+            if matches!(style, Style::SettingsTab) && !selected {
+                next.color = Color::WHITE.with_alpha(
+                    if !disabled && (focused || hover.is_some_and(|h| h.0)) {
+                        0.26
+                    } else {
+                        0.
+                    },
+                );
+            }
             if image.image != next.image || image.rect != next.rect || image.color != next.color {
                 *image = next;
             }

@@ -153,15 +153,16 @@ fn setup(mut commands: Commands) {
         .with_child(label("Interface [F10]"));
     commands.spawn((Pane, super::kit::SettingsSurface, GlobalZIndex(90), Node {position_type:PositionType::Absolute,left:px(0),top:px(0),width:percent(100),height:percent(100),align_items:AlignItems::Center,justify_content:JustifyContent::Center,display:Display::None,..default()}))
     .with_children(|overlay| {overlay.spawn((crate::ui_theme::Panel,super::kit::SettingsFrame,UiTransform::default(),Node{width:px(1440),height:px(940),flex_shrink:0.,padding:UiRect::all(px(24)),..super::kit::column()},BackgroundColor(super::PANEL))).with_children(|pane| {
-        super::kit::title(pane,"Settings",7);
+        super::kit::settings_panel_gradient(pane);
+        super::kit::settings_header(pane, Control::Close);
         pane.spawn(super::kit::settings_body()).with_children(|body| {
-            body.spawn((crate::ui_theme::Panel,Node{width:px(220),flex_shrink:0.,padding:UiRect::all(px(14)),..super::kit::column()},BackgroundColor(super::PANEL))).with_children(|nav| {
+            body.spawn(super::kit::settings_sidebar()).with_children(|nav| {
                 for (index,title,action) in [(9,"Graphics",Some(Control::Graphics)),(10,"Audio",None),(2,"Gameplay",None),(11,"Controls",None),(12,"Key Bindings",None),(13,"Interface",Some(Control::Back)),(14,"HUD",None),(15,"Social",None),(16,"Accessibility",None),(17,"Language",None),(7,"Developer",Some(Control::Developer))] {
-                    if let Some(action)=action {nav.spawn(button(action,title)).insert(Node{min_height:px(40),column_gap:px(10),align_items:AlignItems::Center,padding:UiRect::horizontal(px(12)),..default()}).with_children(|r| {super::kit::icon(r,index,false);r.spawn(label(title));});}
-                    else {let id=super::kit::disabled(nav,title);nav.commands().entity(id).insert(Node{min_height:px(40),flex_direction:FlexDirection::RowReverse,justify_content:JustifyContent::FlexEnd,padding:UiRect::horizontal(px(12)),column_gap:px(10),align_items:AlignItems::Center,..default()}).with_children(|r|super::kit::icon(r,index,true));}
+                    super::kit::settings_tab(nav, title, index, action);
                 }
+                super::kit::settings_watermark(nav);
             });
-            body.spawn(Node{flex_grow:1.,flex_basis:px(0),min_width:px(0),..super::kit::column()}).with_children(|content| {
+            body.spawn(super::kit::settings_content()).with_children(|content| {
             content.spawn((Section::Interface, Node { flex_direction: FlexDirection::Column, row_gap: px(6), ..default() }, Pickable::IGNORE)).with_children(|section| {
             section.spawn((Text::new("Interface"),TextFont{font_size:FontSize::Px(22.),..default()},TextColor(super::GOLD),Pickable::IGNORE));
             section.spawn((Summary,label("")));
@@ -176,7 +177,7 @@ fn setup(mut commands: Commands) {
             });
 
                 content.spawn((Section::Graphics,Node{display:Display::None,..super::kit::column()})).with_children(|section| {
-                    super::kit::section(section,"Graphics");
+                    super::kit::graphics_heading(section);
                     super::kit::graphics(section,|row,value|match value {
                         super::kit::Value::FrameCap => {for value in super::graphics::CAPS {
                             super::kit::dropdown_option(row, Control::FrameCap(value), &super::graphics::FrameCap(value).label());

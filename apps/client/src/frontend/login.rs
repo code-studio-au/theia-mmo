@@ -330,17 +330,21 @@ pub(super) fn links(root: &mut ChildSpawnerCommands) {
         BackgroundColor(Color::srgba(0.,0.,0.,0.7)))).with_children(|overlay| {
         overlay.spawn((crate::ui_theme::Panel, crate::fantasy_ui::kit::SettingsFrame, UiTransform::default(), Node{width:px(1440),height:px(940),flex_shrink:0.,padding:UiRect::all(px(24)),..ui::column()},
             BackgroundColor(crate::ui_theme::PANEL))).with_children(|pane| {
-            crate::fantasy_ui::kit::title(pane,"Settings",7);
+            crate::fantasy_ui::kit::settings_panel_gradient(pane);
+            crate::fantasy_ui::kit::settings_header(pane, ui::Choice::Account(Action::Close));
             pane.spawn(crate::fantasy_ui::kit::settings_body()).with_children(|body| {
-                body.spawn((crate::ui_theme::Panel,Node{width:px(220),flex_shrink:0.,padding:UiRect::all(px(14)),..ui::column()},BackgroundColor(crate::ui_theme::PANEL))).with_children(|nav| {
+                body.spawn(crate::fantasy_ui::kit::settings_sidebar()).with_children(|nav| {
                     for (index,title,action) in [(9,"Graphics",Some(Action::Settings)),(10,"Audio",None),(2,"Gameplay",None),(11,"Controls",None),(12,"Key Bindings",None),(13,"Interface",Some(Action::Interface)),(14,"HUD",None),(15,"Social",None),(16,"Accessibility",None),(17,"Language",None),(24,"Support",Some(Action::Support))] {
-                        if let Some(action)=action {let id=ui::button(nav,ui::Choice::Account(action),title);nav.commands().entity(id).insert(Node{height:px(40),flex_direction:FlexDirection::RowReverse,column_gap:px(8),padding:UiRect::horizontal(px(12)),align_items:AlignItems::Center,justify_content:JustifyContent::FlexEnd,..default()}).with_children(|r|crate::fantasy_ui::kit::icon(r,index,false));}
-                        else {let id=crate::fantasy_ui::kit::disabled(nav,title);nav.commands().entity(id).insert(Node{height:px(40),flex_direction:FlexDirection::RowReverse,column_gap:px(8),padding:UiRect::horizontal(px(12)),align_items:AlignItems::Center,justify_content:JustifyContent::FlexEnd,..default()}).with_children(|r|crate::fantasy_ui::kit::icon(r,index,true));}
+                        let tab = crate::fantasy_ui::kit::settings_tab(nav, title, index, action.map(ui::Choice::Account));
+                        if action.is_some() {
+                            nav.commands().entity(tab).insert((ActivateOnPress, TabIndex(0)));
+                        }
                     }
+                    crate::fantasy_ui::kit::settings_watermark(nav);
                 });
-                body.spawn(Node{flex_grow:1.,flex_basis:px(0),min_width:px(0),..ui::column()}).with_children(|content| {
+                body.spawn(crate::fantasy_ui::kit::settings_content()).with_children(|content| {
                     content.spawn((SettingsBody,ui::column())).with_children(|settings| {
-                        crate::fantasy_ui::kit::section(settings,"Graphics");
+                        crate::fantasy_ui::kit::graphics_heading(settings);
                         crate::fantasy_ui::kit::graphics(settings,|row,value| match value {
                             crate::fantasy_ui::kit::Value::FrameCap => {for value in crate::fantasy_ui::graphics::CAPS {
                                 crate::fantasy_ui::kit::dropdown_option(row, ui::Choice::Account(Action::Cap(value)), &crate::fantasy_ui::graphics::FrameCap(value).label())
