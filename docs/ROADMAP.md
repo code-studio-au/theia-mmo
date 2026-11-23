@@ -1,3 +1,11 @@
+23 November 2026 — P2-14 Stoneford HUD reference:
+Rounded unit frames, saved portrait choices, authoritative vitals and effects,
+a framed minimap and world map, a gold skill dock and a violet XP strip now use
+the approved theme. 363 client tests, 29 Python tests, strict checks and release
+build pass. Three offscreen allocation sizes pass. Native selected Wolf and
+seven-zone map hover pass on Linux Vulkan llvmpipe with zero GPU diagnostics.
+See IN_GAME_HUD.md for exact scope and the native resize limitation.
+
 23 November 2026 — P3-01/P3-03 native account switching:
 Back to Login revokes the session before clearing the roster and preview.
 A failed sign-out keeps the current account available for retry. 25 Python

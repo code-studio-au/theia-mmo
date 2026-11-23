@@ -101,6 +101,7 @@ pub(super) struct Views<'w, 's> {
     counts: Query<'w, 's, (&'static Count, &'static mut Text), Without<TooltipText>>,
     slots: Query<'w, 's, SlotView<'static>>,
     tooltip: Query<'w, 's, (&'static mut Node, &'static ComputedNode), TooltipFilter>,
+    preview_cameras: Query<'w, 's, &'static Camera, With<Camera2d>>,
     cameras: Query<'w, 's, &'static Camera, crate::frontend::WorldCamera>,
     scale: Res<'w, bevy::ui::UiScale>,
     tooltip_text: Query<'w, 's, &'static mut Text, (With<TooltipText>, Without<Count>)>,
@@ -161,7 +162,7 @@ pub(super) fn present(
         }
     }
     if ui.open
-        && let Some(preview) = preview
+        && let Some(preview) = preview.as_deref()
     {
         hovered = description(&config, &ui, preview.0);
     }
@@ -174,6 +175,13 @@ pub(super) fn present(
         .cameras
         .iter()
         .find_map(|c| c.logical_viewport_size())
+        .or_else(|| {
+            preview.as_ref()?;
+            views
+                .preview_cameras
+                .iter()
+                .find_map(Camera::logical_viewport_size)
+        })
         .map(|p| p / views.scale.0);
     for (mut node, computed) in &mut views.tooltip {
         if let (Some(slot), Some(viewport)) = (anchor, viewport) {

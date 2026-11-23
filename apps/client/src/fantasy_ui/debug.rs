@@ -44,8 +44,8 @@ fn setup(mut commands: Commands) {
         GlobalZIndex(25),
         Node {
             position_type: PositionType::Absolute,
-            left: px(12),
-            top: px(12),
+            left: px(super::UNIT_WIDTH + 26.),
+            top: px(128),
             padding: UiRect::all(px(10)),
             display: Display::None,
             ..default()

@@ -13,7 +13,7 @@ mod regions;
 const MAP_JSON: &[u8] = include_bytes!("../../../content/zones/millhaven/overview.json");
 const MAP_PNG: &[u8] = include_bytes!("../../../content/zones/millhaven/overview.png");
 const GOLD: Color = Color::srgb(0.88, 0.73, 0.42);
-const PANEL: Color = Color::srgb(0.10, 0.085, 0.065);
+const PANEL: Color = crate::fantasy_ui::PANEL;
 
 #[derive(Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
@@ -102,7 +102,7 @@ struct PositionText;
 #[derive(Component)]
 struct RowText(usize);
 #[derive(Component, Clone, Copy)]
-enum Control {
+pub(crate) enum Control {
     Toggle,
     Close,
     Landmark(usize),
@@ -223,6 +223,21 @@ pub(crate) fn install(app: &mut App, source: &Source) {
         .add_systems(PostUpdate, present.before(bevy::ui::UiSystems::Layout));
     qualification::install(app);
 }
+pub(crate) fn area_title(
+    world: &World,
+    position: theia_core::coordinates::GlobalPosition,
+) -> Option<&str> {
+    let data = world.get_resource::<Data>()?;
+    let p = position.metres();
+    let uv = data.project([p[0], p[2]])?;
+    world
+        .get_resource::<regions::Mask>()
+        .and_then(|mask| mask.at(uv))
+        .and_then(|id| data.regions.iter().find(|r| r.id == id))
+        .map(|region| region.name.as_str())
+        .or(Some(&data.title))
+}
+
 fn label(value: impl Into<String>, size: f32, color: Color) -> impl Bundle {
     (
         Text::new(value),
@@ -281,29 +296,32 @@ fn setup(
     map_image: Res<MapImage>,
     mask: Option<Res<regions::Mask>>,
     mut images: ResMut<Assets<Image>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     let terrain = images.add(map_image.0.clone());
     let overlay = mask
         .as_ref()
         .map(|mask| regions::setup(&mut commands, &mut images, mask));
     let player = images.add(arrow());
-    commands
-        .spawn(button(Control::Toggle, "Open zone map [M]"))
-        .insert((
-            GlobalZIndex(31),
-            Node {
-                position_type: PositionType::Absolute,
-                left: percent(50),
-                top: px(12),
-                margin: UiRect::left(px(-70)),
-                width: px(140),
-                height: px(32),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
-        ))
-        .with_child(label("Zone map [M]", 15., GOLD));
+    if skin.is_none() {
+        commands
+            .spawn(button(Control::Toggle, "Open zone map [M]"))
+            .insert((
+                GlobalZIndex(31),
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: percent(50),
+                    top: px(12),
+                    margin: UiRect::left(px(-70)),
+                    width: px(140),
+                    height: px(32),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+            ))
+            .with_child(label("Zone map [M]", 15., GOLD));
+    }
     commands
         .spawn((
             Root,
@@ -331,12 +349,35 @@ fn setup(
                 Pickable::IGNORE,
             ))
             .with_children(|header| {
-                header.spawn(label(format!("World Map  ·  {}", data.title), 23., GOLD));
-                crate::fantasy_ui::kit::disabled(header, "+");
-                crate::fantasy_ui::kit::disabled(header, "−");
                 header
-                    .spawn(button(Control::Close, "Close zone map [M / Esc]"))
-                    .with_child(label("Close [M / Esc]", 14., GOLD));
+                    .spawn((
+                        crate::ui_theme::Plate,
+                        Node {
+                            min_width: px(280),
+                            height: px(34),
+                            padding: UiRect::axes(px(28), px(0)),
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        },
+                        Pickable::IGNORE,
+                    ))
+                    .with_child(label(
+                        format!("World Map  ·  {}", data.title),
+                        20.,
+                        Color::WHITE,
+                    ));
+                header
+                    .spawn((
+                        button(Control::Close, "Close zone map [M / Esc]"),
+                        crate::fantasy_ui::HeaderClose,
+                    ))
+                    .insert(Node {
+                        width: px(34),
+                        height: px(34),
+                        ..default()
+                    })
+                    .with_child(label("×", 18., GOLD));
             });
             root.spawn((
                 Node {
@@ -355,6 +396,7 @@ fn setup(
                         ..default()
                     },
                     ImageNode::new(terrain),
+                    Outline::new(px(1), px(0), GOLD),
                 ))
                 .with_children(|map| {
                     if let Some(overlay) = overlay {
@@ -370,7 +412,7 @@ fn setup(
                         ));
                         map.spawn((
                             regions::HoverLabel,
-                            label("Hover over a zone to see its boundary", 15., GOLD),
+                            label("", 15., GOLD),
                             Node {
                                 position_type: PositionType::Absolute,
                                 left: px(12),
@@ -453,15 +495,14 @@ fn setup(
                     Pickable::IGNORE,
                 ))
                 .with_children(|side| {
-                    side.spawn(label(
+                    crate::ui_theme::heading(
+                        side,
                         if data.regions.is_empty() {
-                            "LANDMARKS"
+                            "Landmarks"
                         } else {
-                            "ZONES"
+                            "Zones"
                         },
-                        16.,
-                        GOLD,
-                    ));
+                    );
                     for (i, p) in data.landmarks.iter().enumerate() {
                         side.spawn(button(Control::Landmark(i), &p.name))
                             .with_child((
@@ -469,7 +510,16 @@ fn setup(
                                 label(format!("{}. {}", i + 1, p.name), 13., Color::WHITE),
                             ));
                     }
-                    side.spawn((Detail, label("", 13., Color::srgb(0.86, 0.81, 0.69))));
+                    side.spawn((
+                        crate::ui_theme::Panel,
+                        Node {
+                            padding: UiRect::all(px(10)),
+                            width: percent(100),
+                            ..default()
+                        },
+                        Pickable::IGNORE,
+                    ))
+                    .with_child((Detail, label("", 13., Color::WHITE)));
                 });
             });
             root.spawn((
@@ -650,16 +700,21 @@ fn present(world: &mut World) {
             text.0 = name.to_owned();
         }
     }
-    for (control, mut color) in world
-        .query::<(&Control, &mut BackgroundColor)>()
-        .iter_mut(world)
-    {
-        if let Control::Landmark(i) = control {
-            color.0 = if *i == selected {
-                Color::srgb(0.38, 0.28, 0.13)
-            } else {
-                Color::srgb(0.18, 0.15, 0.10)
-            };
+    let rows: Vec<_> = world
+        .query::<(Entity, &Control, Has<crate::ui_theme::Selected>)>()
+        .iter(world)
+        .filter_map(|(e, control, highlighted)| match control {
+            Control::Landmark(i) if highlighted != (*i == selected) => Some((e, *i == selected)),
+            _ => None,
+        })
+        .collect();
+    for (entity, selected) in rows {
+        if selected {
+            world.entity_mut(entity).insert(crate::ui_theme::Selected);
+        } else {
+            world
+                .entity_mut(entity)
+                .remove::<crate::ui_theme::Selected>();
         }
     }
     for mut text in world

@@ -32,11 +32,95 @@ pub(crate) fn install(app: &mut App, profile: Arc<theia_network::progression_wir
         .add_systems(Startup, setup)
         .add_systems(Update, present.after(crate::network::present));
 }
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
+    if skin.is_some() {
+        use bevy::picking::{Pickable, hover::Hovered};
+        commands
+            .spawn((
+                Root,
+                Hovered::default(),
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: percent(50),
+                    margin: UiRect::left(px(-crate::fantasy_ui::ACTION_WIDTH * 0.5)),
+                    bottom: px(5),
+                    width: px(crate::fantasy_ui::ACTION_WIDTH),
+                    height: px(13),
+                    ..default()
+                },
+            ))
+            .with_children(|root| {
+                root.spawn((
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(5),
+                        right: px(5),
+                        top: px(3),
+                        bottom: px(3),
+                        overflow: Overflow::clip(),
+                        ..default()
+                    },
+                    BackgroundColor(crate::fantasy_ui::PANEL),
+                    Pickable::IGNORE,
+                ))
+                .with_child((
+                    Fill,
+                    crate::ui_theme::Sprite("bar.fill-experience"),
+                    Node {
+                        width: percent(0),
+                        height: percent(100),
+                        ..default()
+                    },
+                ));
+                root.spawn((
+                    crate::ui_theme::Sprite("bar.frame"),
+                    Node {
+                        width: percent(100),
+                        height: percent(100),
+                        ..default()
+                    },
+                ));
+                root.spawn((
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: percent(50),
+                        margin: UiRect::left(px(-6)),
+                        top: px(1),
+                        width: px(12),
+                        height: px(12),
+                        ..default()
+                    },
+                    crate::ui_theme::Sprite("marker.diamond-gold"),
+                ));
+                root.spawn((
+                    Label,
+                    Text::new("Experience: waiting for server"),
+                    TextLayout {
+                        justify: bevy::text::Justify::Center,
+                        ..default()
+                    },
+                    TextFont {
+                        font_size: FontSize::Px(14.),
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                    crate::fantasy_ui::hud_shadow(),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        width: percent(100),
+                        bottom: px(90),
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    Visibility::Hidden,
+                    Pickable::IGNORE,
+                ));
+            });
+        return;
+    }
     commands
         .spawn((
             Root,
-            crate::fantasy_ui::Panel::Progression,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(12),
@@ -84,8 +168,9 @@ fn setup(mut commands: Commands) {
 fn present(
     network: Res<Network>,
     profile: Res<Profile>,
-    mut labels: Query<&mut Text, With<Label>>,
+    mut labels: Query<(&mut Text, &mut Visibility), With<Label>>,
     mut bars: Query<&mut Node, With<Fill>>,
+    hover: Query<&bevy::picking::hover::Hovered, With<Root>>,
 ) {
     let state = network.state();
     let (text, fraction) = if state.error.is_some() {
@@ -109,13 +194,24 @@ fn present(
     } else {
         ("Experience: waiting for server".to_owned(), 0.)
     };
-    for mut label in &mut labels {
+    let visible = if hover.single().is_ok_and(|hovered| !hovered.0) {
+        Visibility::Hidden
+    } else {
+        Visibility::Inherited
+    };
+    for (mut label, mut visibility) in &mut labels {
+        if *visibility != visible {
+            *visibility = visible;
+        }
         if label.0 != text {
             label.0.clone_from(&text);
         }
     }
     for mut bar in &mut bars {
-        bar.width = percent((fraction * 100.) as f32);
+        let width = percent((fraction * 100.) as f32);
+        if bar.width != width {
+            bar.width = width;
+        }
     }
 }
 

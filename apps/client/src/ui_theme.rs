@@ -192,13 +192,7 @@ fn decorate(
     mut commands: Commands,
     art: Res<Art>,
     sprites: Res<Sprites>,
-    panels: Query<
-        Entity,
-        (
-            Or<(With<Panel>, With<crate::fantasy_ui::UnitFrame>)>,
-            Without<Decorated>,
-        ),
-    >,
+    panels: Query<Entity, (With<Panel>, Without<Decorated>)>,
     buttons: Query<
         (
             Entity,

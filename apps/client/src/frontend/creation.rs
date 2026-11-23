@@ -524,7 +524,7 @@ pub(super) fn sync(
     }
 }
 
-fn thumbnail_rect(body: u8, field: usize, value: u8) -> Rect {
+pub(super) fn thumbnail_rect(body: u8, field: usize, value: u8) -> Rect {
     let index = if field == 0 {
         usize::from(value) * 16
     } else {

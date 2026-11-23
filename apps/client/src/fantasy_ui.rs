@@ -162,17 +162,25 @@ pub(crate) const SLOTS: usize = 12;
 pub(crate) const ACTION_WIDTH: f32 = SLOT * SLOTS as f32 + 4. * (SLOTS - 1) as f32 + 18.;
 #[derive(Component)]
 pub(crate) struct UnitFrame(pub bool);
-/// Reference-kit unit frames anchor to the upper left of the gameplay viewport.
+pub(crate) fn hud_shadow() -> bevy::ui::widget::TextShadow {
+    bevy::ui::widget::TextShadow {
+        offset: Vec2::splat(1.5),
+        color: Color::BLACK,
+    }
+}
+pub(crate) const UNIT_WIDTH: f32 = 326.;
+pub(crate) const UNIT_INSET: f32 = 84.;
+
 pub(crate) fn unit_frame(player: bool) -> Node {
     Node {
         position_type: PositionType::Absolute,
         left: percent(50),
-        margin: UiRect::left(px(if player { -340. } else { 120. })),
+        margin: UiRect::left(px(unit_margin(player, 1280.))),
         top: px(12),
-        width: px(220),
-        padding: UiRect::all(px(6)),
-        row_gap: px(3),
-        border: UiRect::all(px(1)),
+        width: px(UNIT_WIDTH),
+        min_height: px(92),
+        padding: UiRect::new(px(UNIT_INSET), px(0), px(7), px(0)),
+        row_gap: px(1),
         flex_direction: FlexDirection::Column,
         ..default()
     }
@@ -183,18 +191,27 @@ fn unit_margin(player: bool, logical_width: f32) -> f32 {
     } else {
         1280.
     };
-    (if player { 16. } else { 248. }) - width * 0.5
+    let left = if player {
+        14.
+    } else {
+        (width * 0.39).min(width - 560.)
+    };
+    left - width * 0.5
 }
 fn unobscured_unit_margin(player: bool, width: f32, dialogue: bool, bag: bool) -> f32 {
-    let normal = unit_margin(player, width);
-    // The standard skin fits its minimum logical viewport before this runs.
-    if width < 1200. || !width.is_finite() {
-        return normal;
+    if !width.is_finite() || (!dialogue && !bag) {
+        return unit_margin(player, width);
     }
-    let left = if dialogue { 444. } else { 12. };
+    let left = if dialogue { 444. } else { 14. };
     let right = width - if bag { 352. } else { 12. };
-    (width * 0.5 + normal + if dialogue { 432. } else { 0. }).clamp(left, right - 220.)
-        - width * 0.5
+    let player_x = left;
+    let target_x = width * 0.5 + unit_margin(false, width);
+    let target_x = if right - left >= 2. * UNIT_WIDTH + 12. {
+        target_x.clamp(left + UNIT_WIDTH + 12., right - UNIT_WIDTH)
+    } else {
+        right - UNIT_WIDTH
+    };
+    (if player { player_x } else { target_x }) - width * 0.5
 }
 fn responsive_units(
     windows: Query<&Window>,
@@ -229,14 +246,23 @@ fn responsive_units(
         if node.margin.left != margin {
             node.margin.left = margin;
         }
-        node.top = px(12);
-        node.bottom = Val::Auto;
+        let stacked = !side.0
+            && dialogue.as_ref().is_some_and(|d| d.open)
+            && bag.as_ref().is_some_and(|b| b.open)
+            && viewport.x / scale.0 < 444. + 352. + 2. * UNIT_WIDTH + 12.;
+        let top = px(if stacked { 180. } else { 12. });
+        if node.top != top {
+            node.top = top;
+        }
     }
-    // Follow the target frame when ultrawide layout moves it outwards. Slot
-    // origins include the action dock's 8 px padding and 1 px border.
+    // Keep hover details to the right of the cast bar, and within the window.
+    let width = viewport.x / scale.0;
+    let tooltip_x = (width * 0.5 + ACTION_WIDTH * 0.5 + 12.).min(width - 292.);
     for (slot, mut node) in &mut tooltips {
-        node.left =
-            px(ACTION_WIDTH * 0.5 + margin(false) + 220. + 12. - 9. - slot.0 as f32 * (SLOT + 4.));
+        let left = px(tooltip_x - (width - ACTION_WIDTH) * 0.5 - 9. - slot.0 as f32 * (SLOT + 4.));
+        if node.left != left {
+            node.left = left;
+        }
     }
 }
 #[derive(Component)]
@@ -310,15 +336,15 @@ pub(crate) enum Panel {
     Standard,
     Paper,
     QuestTracker,
-    Progression,
     Connection,
-    Statuses,
 }
 
 #[derive(Resource)]
 pub(crate) struct Skin {
+    pub(crate) wolf: Handle<Image>,
     sword: Handle<Image>,
     arcane: Handle<Image>,
+    fire: Handle<Image>,
     fallback: Handle<Image>,
     item_icons: [Handle<Image>; 6],
     title_font: Handle<Font>,
@@ -328,8 +354,10 @@ impl Skin {
     #[cfg(test)]
     pub(crate) fn fixture() -> Self {
         Self {
+            wolf: default(),
             sword: default(),
             arcane: default(),
+            fire: default(),
             fallback: default(),
             item_icons: default(),
             title_font: default(),
@@ -354,6 +382,7 @@ impl Skin {
         match id {
             "theia.dev.sword-slash" => self.sword.clone(),
             "theia.dev.arcane-bolt" => self.arcane.clone(),
+            "theia.dev.scorch" => self.fire.clone(),
             _ => self.fallback.clone(),
         }
     }
@@ -499,11 +528,15 @@ pub(crate) fn load(app: &mut App) {
     let mut images = app.world_mut().resource_mut::<Assets<Image>>();
     let mut image = |bytes: &[u8]| images.add(crate::ui_theme::sprites::decode(bytes));
     let skin = Skin {
+        wolf: image(include_bytes!("../../../content/ui/hud/wolf-portrait.png")),
         sword: image(include_bytes!(
             "../../../content/ui/sprites-v3/sprites/ability/sword.png"
         )),
         arcane: image(include_bytes!(
             "../../../content/ui/sprites-v3/sprites/ability/arcane-arrow.png"
+        )),
+        fire: image(include_bytes!(
+            "../../../content/ui/sprites-v3/sprites/ability/flame-burst.png"
         )),
         fallback: image(include_bytes!(
             "../../../content/ui/sprites-v3/sprites/icon/book.png"
@@ -612,30 +645,15 @@ fn style_panels(mut commands: Commands, mut panels: Query<ThemePanel>) {
             Panel::QuestTracker => {
                 node.left = Val::Auto;
                 node.right = px(12);
-                node.top = px(252);
+                node.top = px(267);
                 node.width = px(300);
                 node.max_height = percent(34);
-            }
-            Panel::Progression => {
-                node.left = percent(50);
-                node.margin.left = px(-ACTION_WIDTH * 0.5);
-                node.top = Val::Auto;
-                node.bottom = px(78);
-                node.width = px(ACTION_WIDTH);
-                node.padding = UiRect::all(px(4));
-                node.row_gap = px(2);
             }
             Panel::Connection => {
                 node.top = Val::Auto;
                 node.bottom = px(12);
                 node.width = px(240);
                 node.padding = UiRect::all(px(6));
-            }
-            Panel::Statuses => {
-                node.left = px(304);
-                node.top = px(180);
-                node.bottom = Val::Auto;
-                node.width = px(276);
             }
         }
     }
@@ -812,8 +830,10 @@ mod tests {
         for width in [1280., 1920., 3440. / 1.5, 3440.] {
             let player = width * 0.5 + unobscured_unit_margin(true, width, true, true);
             let target = width * 0.5 + unobscured_unit_margin(false, width, true, true);
-            assert!(player >= 444. && target >= player + 232.);
-            assert!(target + 220. <= width - 352.);
+            assert!(player >= 444. && target + UNIT_WIDTH <= width - 352.);
+            if width >= 444. + 352. + 2. * UNIT_WIDTH + 12. {
+                assert!(target >= player + UNIT_WIDTH + 12.);
+            }
         }
         assert_eq!(
             unobscured_unit_margin(true, 1280., false, false),
@@ -843,11 +863,11 @@ mod tests {
         app.update();
         assert_eq!(
             app.world().get::<Node>(player).unwrap().margin.left,
-            px(16. - 3440. / 1.25 / 2.)
+            px(14. - 3440. / 1.25 / 2.)
         );
         assert_eq!(
             app.world().get::<Node>(target).unwrap().margin.left,
-            px(248. - 3440. / 1.25 / 2.)
+            px(unit_margin(false, 3440. / 1.25))
         );
         app.world_mut()
             .get_mut::<Window>(window)
@@ -857,11 +877,11 @@ mod tests {
         app.update();
         assert_eq!(
             app.world().get::<Node>(player).unwrap().margin.left,
-            px(16. - 1920. / 1.25 / 2.)
+            px(14. - 1920. / 1.25 / 2.)
         );
         assert_eq!(
             app.world().get::<Node>(target).unwrap().margin.left,
-            px(248. - 1920. / 1.25 / 2.)
+            px(unit_margin(false, 1920. / 1.25))
         );
         app.world_mut()
             .get_mut::<Window>(window)
@@ -875,9 +895,9 @@ mod tests {
             app.world().get::<Node>(player).unwrap().margin.left,
             px(expected)
         );
-        assert_eq!(3440. / 1.5 / 2. + expected, 16.);
-        assert_eq!(unit_margin(true, 10000.), 16. - 5000.);
-        assert_eq!(unit_margin(false, f32::NAN), 248. - 640.);
+        assert_eq!(3440. / 1.5 / 2. + expected, 14.);
+        assert_eq!(unit_margin(true, 10000.), 14. - 5000.);
+        assert_eq!(unit_margin(false, f32::NAN), unit_margin(false, 1280.));
     }
     #[test]
     fn preferred_scale_fits_a_smaller_window_then_restores_on_resize_without_changing_it() {

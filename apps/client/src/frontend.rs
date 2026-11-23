@@ -11,6 +11,21 @@ use std::{
     path::{Path, PathBuf},
 };
 use theia_core::appearance::Appearance;
+
+pub(crate) fn face_thumbnail(appearance: Appearance) -> Rect {
+    let [body, face, ..] = appearance.values();
+    creation::thumbnail_rect(body, 1, face)
+}
+
+pub(crate) fn thumbnail_atlas(
+    server: Option<&AssetServer>,
+    references: Option<&crate::reference_scene::Config>,
+) -> Option<Handle<Image>> {
+    references
+        .filter(|r| r.directory.join("appearance-thumbnails.png").is_file())
+        .and(server)
+        .map(|s| s.load("players://appearance-thumbnails.png"))
+}
 #[derive(Component)]
 pub(crate) struct PreviewCamera;
 pub(crate) type WorldCamera = (With<Camera3d>, Without<PreviewCamera>);

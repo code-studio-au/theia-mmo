@@ -1,6 +1,6 @@
 //! Standard Bevy widgets and bounded, server-derived progress. No gameplay authority.
 pub(super) mod tooltip;
-mod unit_frame;
+pub(super) mod unit_frame;
 use super::Config;
 use bevy::{
     picking::hover::Hovered,
@@ -9,7 +9,7 @@ use bevy::{
     ui::Pressed,
     ui_widgets::{Activate, ActivateOnPress, Button},
 };
-pub(super) use unit_frame::{owner_level, owner_name};
+pub(super) use unit_frame::{owner_identity, owner_level};
 
 #[derive(Component)]
 pub(crate) struct ActionButton(pub(crate) usize);
@@ -22,11 +22,24 @@ pub(crate) struct ActionLabel(pub(crate) usize);
 #[derive(Component)]
 pub(super) struct HealthFill;
 #[derive(Component)]
+pub(super) struct TargetHealthLabel;
+#[derive(Component)]
 struct CastFill;
 #[derive(Component)]
 struct CooldownFill(usize);
 #[derive(Component)]
 pub(crate) struct CastLabel;
+#[derive(Component)]
+struct CastSurface;
+#[derive(Component)]
+struct CastIcon;
+#[derive(serde::Serialize)]
+pub(crate) struct Cast {
+    pub(crate) ability: String,
+    pub(crate) name: String,
+    pub(crate) elapsed: f64,
+    pub(crate) total: f64,
+}
 #[derive(Component)]
 struct PlayerHealthFill;
 #[derive(Component)]
@@ -94,6 +107,9 @@ pub(crate) struct Action {
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Model {
     pub player_level: Option<u8>,
+    pub player_appearance: Option<theia_core::appearance::Appearance>,
+    pub target_health_text: String,
+    pub target_is_wolf: bool,
     pub player_name: Option<String>,
     pub life_blocked: bool,
     pub life_status: String,
@@ -105,6 +121,7 @@ pub(crate) struct Model {
     pub mana_text: String,
     pub health: f32,
     pub cast: f32,
+    pub cast_info: Option<Cast>,
     pub cooldown: f32,
     pub action: String,
     pub status: String,
@@ -157,7 +174,10 @@ pub(super) fn install(app: &mut App) {
         .add_systems(Startup, (super::action_bar::prepare, setup).chain())
         .add_systems(Update, refresh_bar.before(collect))
         .add_systems(Update, collect.before(super::present))
-        .add_systems(Update, paint.after(super::present))
+        .add_systems(
+            Update,
+            (paint, paint_portrait, paint_cast).after(super::present),
+        )
         .add_systems(Last, observe);
 }
 /// Developer offscreen preview of the same widgets/painter, with explicit fixture
@@ -167,7 +187,10 @@ pub(crate) fn install_preview(app: &mut App) {
         Startup,
         (super::action_bar::prepare, setup, super::setup).chain(),
     )
-    .add_systems(Update, (preview_hover, paint).chain())
+    .add_systems(
+        Update,
+        (preview_hover, paint, paint_portrait, paint_cast).chain(),
+    )
     .add_systems(
         PostStartup,
         |mut labels: Query<(&mut Text, Has<super::Hud>, Has<crate::targeting::TargetHud>)>| {
@@ -176,7 +199,7 @@ pub(crate) fn install_preview(app: &mut App) {
                     **label = "Health 57 / 100".into();
                 }
                 if heading {
-                    **label = "Target: Wolf".into();
+                    **label = "Wolf".into();
                 }
             }
         },
@@ -231,6 +254,8 @@ fn setup(
     graybox: Option<Res<crate::graybox::Graybox>>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
     layout: Res<super::action_bar::Layout>,
+    server: Option<Res<AssetServer>>,
+    references: Option<Res<crate::reference_scene::Config>>,
 ) {
     if config.1.is_some() {
         commands
@@ -255,77 +280,67 @@ fn setup(
                 },
                 crate::fantasy_ui::UnitFrame(true),
                 BackgroundColor(if skin.is_some() {
-                    crate::fantasy_ui::PANEL
+                    Color::NONE
                 } else {
                     Color::srgba(0.02, 0.03, 0.05, 0.9)
                 }),
-                BorderColor::all(crate::fantasy_ui::GOLD),
+                bevy::picking::Pickable::IGNORE,
             ))
             .with_children(|panel| {
                 if skin.is_some() {
+                    unit_frame::portrait(
+                        panel,
+                        crate::frontend::thumbnail_atlas(server.as_deref(), references.as_deref()),
+                        true,
+                    );
                     panel.spawn((
                         PlayerHeading,
-                        text("Player", 16.),
+                        text("Player", 22.),
+                        Node {
+                            min_height: px(24),
+                            ..default()
+                        },
+                        crate::fantasy_ui::hud_shadow(),
                         TextLayout {
-                            linebreak: bevy::text::LineBreak::AnyCharacter,
+                            linebreak: bevy::text::LineBreak::NoWrap,
                             ..default()
                         },
+                        bevy::picking::Pickable::IGNORE,
                     ));
-                }
-                panel.spawn((
-                    PlayerHealthLabel,
-                    text("Waiting for health", if skin.is_some() { 14. } else { 16. }),
-                ));
-                panel
-                    .spawn((
-                        Node {
-                            width: percent(100),
-                            height: px(if skin.is_some() { 12. } else { 10. }),
-                            ..default()
-                        },
-                        BackgroundColor(Color::srgb(0.12, 0.16, 0.12)),
-                    ))
-                    .with_child((
+                    unit_frame::bar(
+                        panel,
+                        unit_frame::Pool::Health,
+                        (),
                         PlayerHealthFill,
-                        crate::ui_theme::Sprite("bar.fill-health"),
-                        Node {
-                            width: percent(0),
-                            height: percent(100),
-                            ..default()
-                        },
-                        BackgroundColor(Color::srgb(0.2, 0.68, 0.37)),
-                    ));
-                panel.spawn((
-                    ManaLabel,
-                    text("Waiting for mana", if skin.is_some() { 14. } else { 16. }),
-                ));
-                panel
-                    .spawn((
-                        Node {
-                            width: percent(100),
-                            height: px(if skin.is_some() { 8. } else { 10. }),
-                            ..default()
-                        },
-                        BackgroundColor(Color::srgb(0.08, 0.12, 0.18)),
-                    ))
-                    .with_child((
+                        PlayerHealthLabel,
+                    );
+                    unit_frame::bar(panel, unit_frame::Pool::Mana, (), ManaFill, ManaLabel);
+                    crate::status_effects::widgets(panel, true);
+                } else {
+                    panel.spawn((PlayerHealthLabel, text("Waiting for health", 16.)));
+                    legacy_pool(
+                        panel,
+                        PlayerHealthFill,
+                        "bar.fill-health",
+                        Color::srgb(0.2, 0.68, 0.37),
+                    );
+                    panel.spawn((ManaLabel, text("Waiting for mana", 16.)));
+                    legacy_pool(
+                        panel,
                         ManaFill,
-                        crate::ui_theme::Sprite("bar.fill-mana"),
-                        Node {
-                            width: percent(0),
-                            height: percent(100),
-                            ..default()
-                        },
-                        BackgroundColor(Color::srgb(0.18, 0.42, 0.92)),
-                    ));
+                        "bar.fill-mana",
+                        Color::srgb(0.18, 0.42, 0.92),
+                    );
+                }
                 if config.2 {
-                    panel.spawn((
-                        LifeLabel,
-                        text(
-                            "Waiting for player life",
-                            if skin.is_some() { 14. } else { 16. },
-                        ),
-                    ));
+                    let mut label =
+                        panel.spawn((LifeLabel, text("", if skin.is_some() { 14. } else { 16. })));
+                    if skin.is_some() {
+                        label.insert((
+                            crate::fantasy_ui::hud_shadow(),
+                            bevy::picking::Pickable::IGNORE,
+                        ));
+                    }
                 }
             });
     }
@@ -413,13 +428,17 @@ fn setup(
         .with_children(|parent| {
             parent
                 .spawn((
+                    CastSurface,
                     Node {
-                        width: px(320),
-                        min_height: px(30),
-                        padding: UiRect::all(px(6)),
+                        width: px(340),
+                        min_height: px(34),
+                        padding: UiRect::axes(px(12), px(5)),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
                         ..default()
                     },
-                    BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
+                    BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.94)),
+                    bevy::picking::Pickable::IGNORE,
                 ))
                 .with_children(|bar| {
                     bar.spawn((
@@ -435,10 +454,67 @@ fn setup(
                         },
                         BackgroundColor(Color::srgb(0.12, 0.36, 0.57)),
                     ));
-                    bar.spawn((CastLabel, text("Waiting for combat", 16.)));
+                    if let Some(skin) = skin.as_deref() {
+                        bar.spawn((
+                            crate::ui_theme::Sprite("bar.frame"),
+                            Node {
+                                position_type: PositionType::Absolute,
+                                width: percent(100),
+                                height: percent(100),
+                                ..default()
+                            },
+                        ));
+                        bar.spawn((
+                            CastIcon,
+                            ImageNode::new(skin.icon("")),
+                            Node {
+                                position_type: PositionType::Absolute,
+                                left: px(-28),
+                                top: px(-6),
+                                width: px(44),
+                                height: px(44),
+                                display: Display::None,
+                                ..default()
+                            },
+                            bevy::picking::Pickable::IGNORE,
+                        ));
+                    }
+                    bar.spawn((
+                        CastLabel,
+                        text("Waiting for combat", 16.),
+                        crate::fantasy_ui::hud_shadow(),
+                        bevy::picking::Pickable::IGNORE,
+                    ));
                 });
         });
 }
+fn legacy_pool(
+    parent: &mut ChildSpawnerCommands,
+    fill: impl Bundle,
+    sprite: &'static str,
+    colour: Color,
+) {
+    parent
+        .spawn((
+            Node {
+                width: percent(100),
+                height: px(10),
+                ..default()
+            },
+            BackgroundColor(Color::srgb(0.08, 0.12, 0.18)),
+        ))
+        .with_child((
+            fill,
+            crate::ui_theme::Sprite(sprite),
+            Node {
+                width: percent(0),
+                height: percent(100),
+                ..default()
+            },
+            BackgroundColor(colour),
+        ));
+}
+
 /// Twelve Classic primary bindings; only configured actions issue commands.
 /// Empty positions are decoration and never invent abilities.
 fn compact_actions(
@@ -455,7 +531,7 @@ fn compact_actions(
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0),
-                bottom: px(12),
+                bottom: px(20),
                 width: percent(100),
                 justify_content: JustifyContent::Center,
                 ..default()
@@ -466,7 +542,8 @@ fn compact_actions(
             root.spawn((
                 Node {
                     max_width: percent(96),
-                    padding: UiRect::all(px(8)),
+                    width: px(ACTION_WIDTH),
+                    padding: UiRect::new(px(8), px(8), px(6), px(13)),
                     border: UiRect::all(px(1)),
                     column_gap: px(4),
                     row_gap: px(4),
@@ -479,6 +556,21 @@ fn compact_actions(
                 BorderColor::all(GOLD),
             ))
             .with_children(|bar| {
+                for (right, sprite) in [(false, "hotbar.end-left"), (true, "hotbar.end-right")] {
+                    let mut node = Node {
+                        position_type: PositionType::Absolute,
+                        top: px(8),
+                        width: px(45),
+                        height: px(45),
+                        ..default()
+                    };
+                    if right {
+                        node.right = px(-34);
+                    } else {
+                        node.left = px(-34);
+                    }
+                    bar.spawn((crate::ui_theme::Sprite(sprite), node, Pickable::IGNORE));
+                }
                 for slot in 0..SLOTS {
                     let node = Node {
                         width: px(SLOT),
@@ -496,20 +588,7 @@ fn compact_actions(
                             BackgroundColor(Color::srgba(0.025, 0.022, 0.02, 0.96)),
                             Outline::new(px(1), px(-1), GOLD),
                         ))
-                        .with_children(|empty| {
-                            empty
-                                .spawn((
-                                    text(key_label(slot), 12.),
-                                    Pickable::IGNORE,
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        left: px(5),
-                                        top: px(2),
-                                        ..default()
-                                    },
-                                ))
-                                .insert(TextColor(GOLD));
-                        });
+                        .with_child(slot_key(slot));
                         continue;
                     };
                     let name = ability_name(ability.id().as_str());
@@ -528,8 +607,8 @@ fn compact_actions(
                     .with_children(|button| {
                         button.spawn((
                             Node {
-                                width: px(36),
-                                height: px(36.),
+                                width: px(40),
+                                height: px(40.),
                                 ..default()
                             },
                             ImageNode::new(skin.icon(ability.id().as_str())),
@@ -548,23 +627,14 @@ fn compact_actions(
                             BackgroundColor(Color::srgb(0.92, 0.68, 0.2)),
                             Pickable::IGNORE,
                         ));
-                        button.spawn((
-                            text(key_label(slot), 14.),
-                            Pickable::IGNORE,
-                            Node {
-                                position_type: PositionType::Absolute,
-                                left: px(5),
-                                top: px(2),
-                                ..default()
-                            },
-                        ));
+                        button.spawn(slot_key(slot));
                         button.spawn((
                             ActionLabel(slot),
                             text("Waiting for server", 16.),
                             Pickable::IGNORE,
                             Node {
                                 position_type: PositionType::Absolute,
-                                bottom: px(44),
+                                bottom: px(54),
                                 left: px(ACTION_WIDTH + 12. - slot as f32 * (SLOT + 4.)),
                                 width: px(280),
                                 padding: UiRect::all(px(10)),
@@ -581,6 +651,66 @@ fn compact_actions(
             });
         });
 }
+fn slot_key(slot: usize) -> impl Bundle {
+    (
+        Node {
+            position_type: PositionType::Absolute,
+            width: percent(100),
+            bottom: px(-13),
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        bevy::picking::Pickable::IGNORE,
+        children![(
+            text(key_label(slot), 13.),
+            crate::fantasy_ui::hud_shadow(),
+            bevy::picking::Pickable::IGNORE
+        )],
+    )
+}
+
+type CastNodes = Or<(With<CastSurface>, With<CastIcon>)>;
+type CastWidget = (
+    &'static mut Node,
+    Option<&'static mut ImageNode>,
+    Has<CastSurface>,
+);
+fn paint_cast(
+    model: Res<Model>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
+    mut widgets: Query<CastWidget, CastNodes>,
+) {
+    let Some(skin) = skin else {
+        return;
+    };
+    let feedback = model.cast_info.is_some()
+        || (model.connected
+            && !matches!(
+                model.status.as_str(),
+                "" | "Select a living target" | "Ready" | "Waiting for server"
+            ));
+    for (mut node, image, surface) in &mut widgets {
+        let display = if if surface {
+            feedback
+        } else {
+            model.cast_info.is_some()
+        } {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        if node.display != display {
+            node.display = display;
+        }
+        if let (Some(mut image), Some(cast)) = (image, &model.cast_info) {
+            let handle = skin.icon(&cast.ability);
+            if image.image != handle {
+                image.image = handle;
+            }
+        }
+    }
+}
+
 fn refresh_bar(
     mut commands: Commands,
     layout: Res<super::action_bar::Layout>,
@@ -599,6 +729,87 @@ fn refresh_bar(
     }
     compact_actions(&mut commands, &config, &layout, &skin);
 }
+fn pool_text(value: &str, prefix: &str, waiting: &str, skinned: bool) -> String {
+    if value.is_empty() {
+        if skinned {
+            "—".into()
+        } else {
+            waiting.into()
+        }
+    } else if skinned {
+        value.strip_prefix(prefix).unwrap_or(value).into()
+    } else {
+        value.into()
+    }
+}
+
+type LevelBadge = (With<unit_frame::Level>, Without<unit_frame::PlayerPortrait>);
+type WolfPhoto = (
+    With<unit_frame::WolfPortrait>,
+    Without<unit_frame::Level>,
+    Without<unit_frame::PlayerPortrait>,
+);
+fn paint_portrait(
+    model: Res<Model>,
+    mut badges: Query<(&Children, &mut Node), LevelBadge>,
+    mut labels: Query<&mut Text>,
+    mut photos: Query<(&mut Node, &mut ImageNode, &unit_frame::PlayerPortrait)>,
+    images: Option<Res<Assets<Image>>>,
+    mut wolves: Query<&mut Node, WolfPhoto>,
+) {
+    for mut node in &mut wolves {
+        let display = if model.target_is_wolf {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        if node.display != display {
+            node.display = display;
+        }
+    }
+    for (children, mut badge) in &mut badges {
+        let display = if model.player_level.is_some() {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        if badge.display != display {
+            badge.display = display;
+        }
+        if let Some(level) = model.player_level {
+            let value = level.to_string();
+            for child in children.iter() {
+                if let Ok(mut label) = labels.get_mut(child)
+                    && label.0 != value
+                {
+                    **label = value.clone();
+                }
+            }
+        }
+    }
+    for (mut node, mut image, atlas) in &mut photos {
+        let rect = model
+            .player_appearance
+            .filter(|_| {
+                images
+                    .as_ref()
+                    .is_some_and(|images| images.contains(atlas.0.id()))
+            })
+            .map(crate::frontend::face_thumbnail);
+        let display = if rect.is_some() {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        if node.display != display {
+            node.display = display;
+        }
+        if image.rect != rect {
+            image.rect = rect;
+        }
+    }
+}
+
 type FillComponents<'a> = (
     &'a mut Node,
     Option<&'a HealthFill>,
@@ -615,6 +826,7 @@ type LabelComponents<'a> = (
     Option<&'a ManaLabel>,
     Option<&'a LifeLabel>,
     Option<&'a PlayerHeading>,
+    Option<&'a TargetHealthLabel>,
 );
 type ButtonComponents<'a> = (
     Has<Pressed>,
@@ -653,7 +865,8 @@ fn paint(
             node.width = width;
         }
     }
-    for (mut label, action, cast, player_health, mana, life, heading) in &mut labels {
+    for (mut label, action, cast, player_health, mana, life, heading, target_health) in &mut labels
+    {
         let value = if let Some(action) = action {
             let Some(ability) = layout.ability(&config.0, action.0) else {
                 let value = format!("[{}] Empty slot", key_label(action.0));
@@ -687,33 +900,39 @@ fn paint(
                 }
             }
         } else if cast.is_some() {
-            model.status.clone()
+            model
+                .cast_info
+                .as_ref()
+                .filter(|_| skin.is_some())
+                .map_or_else(
+                    || model.status.clone(),
+                    |cast| {
+                        format!(
+                            "{}      {:.1} / {:.1}s",
+                            cast.name, cast.elapsed, cast.total
+                        )
+                    },
+                )
+        } else if target_health.is_some() {
+            model.target_health_text.clone()
         } else if player_health.is_some() {
-            if model.vitals_ready {
-                model.player_health_text.clone()
-            } else {
-                "Waiting for health".into()
-            }
+            pool_text(
+                &model.player_health_text,
+                "Health ",
+                "Waiting for health",
+                skin.is_some(),
+            )
         } else if mana.is_some() {
-            if model.vitals_ready {
-                model.mana_text.clone()
-            } else {
-                "Waiting for mana".into()
-            }
+            pool_text(
+                &model.mana_text,
+                "Mana ",
+                "Waiting for mana",
+                skin.is_some(),
+            )
         } else if life.is_some() {
             model.life_status.clone()
         } else if heading.is_some() {
-            let name = model.player_name.as_deref().unwrap_or("Player");
-            model.player_level.map_or_else(
-                || name.into(),
-                |level| {
-                    if model.player_name.is_some() {
-                        format!("{name}\nLevel {level}")
-                    } else {
-                        format!("{name} · Level {level}")
-                    }
-                },
-            )
+            model.player_name.as_deref().unwrap_or("Player").into()
         } else {
             continue;
         };
@@ -839,19 +1058,17 @@ pub(super) mod tests {
     fn player_heading_updates_with_level_and_drops_unavailable_progression() {
         let mut app = widget_app(true);
         app.update();
-        for (level, expected) in [
-            (Some(1), "Player · Level 1"),
-            (Some(2), "Player · Level 2"),
-            (None, "Player"),
-        ] {
+        for (level, expected) in [(Some(1), Some("1")), (Some(2), Some("2")), (None, None)] {
             app.world_mut().resource_mut::<Model>().player_level = level;
             app.update();
             let world = app.world_mut();
-            let heading = world
-                .query_filtered::<&Text, With<PlayerHeading>>()
+            let (node, children) = world
+                .query_filtered::<(&Node, &Children), With<unit_frame::Level>>()
                 .single(world)
                 .unwrap();
-            assert_eq!(heading.0, expected);
+            let value = (node.display == Display::Flex)
+                .then(|| world.get::<Text>(children[0]).unwrap().0.as_str());
+            assert_eq!(value, expected);
             assert_eq!(world.resource::<Input>().0, None);
         }
     }
@@ -860,7 +1077,7 @@ pub(super) mod tests {
         let mut app = widget_app(true);
         app.update();
         for (name, level, expected) in [
-            (Some("Arden"), Some(2), "Arden\nLevel 2"),
+            (Some("Arden"), Some(2), "Arden"),
             (Some("Abcdefghijklmnopqrst"), None, "Abcdefghijklmnopqrst"),
             (None, None, "Player"),
         ] {
@@ -1038,7 +1255,10 @@ pub(super) mod tests {
             .init_resource::<ButtonInput<KeyCode>>()
             .add_observer(activate)
             .add_systems(Startup, (super::super::action_bar::prepare, setup).chain())
-            .add_systems(Update, (refresh_bar, collect, paint).chain());
+            .add_systems(
+                Update,
+                (refresh_bar, collect, paint, paint_portrait).chain(),
+            );
         if skin {
             app.insert_resource(crate::fantasy_ui::Skin::fixture());
         }
@@ -1082,7 +1302,10 @@ pub(super) mod tests {
             assert!(changed.0 > 0 && changed.1 > 0 && changed.2 > 0);
             let world = app.world_mut();
             let mut health = world.query_filtered::<(&Text,), With<PlayerHealthLabel>>();
-            assert_eq!(health.single(world).unwrap().0.0, "Health 45 / 100");
+            assert_eq!(
+                health.single(world).unwrap().0.0,
+                if skin { "45 / 100" } else { "Health 45 / 100" }
+            );
             app.update();
             let settled = *app.world().resource::<DirtyFrame>();
             samples.push((skin, settled.0, settled.1, settled.2));
@@ -1193,7 +1416,11 @@ pub(super) mod tests {
             .map(|(e, a)| (e, a.0))
             .collect();
         assert_eq!(buttons.len(), 2);
-        let frames = world.query::<&ImageNode>().iter(world).count();
+        let frames = world
+            .query::<(&ImageNode, &ChildOf)>()
+            .iter(world)
+            .filter(|(_, parent)| world.get::<ActionButton>(parent.parent()).is_some())
+            .count();
         assert_eq!(
             frames, 2,
             "Only configured ability icons require image nodes"

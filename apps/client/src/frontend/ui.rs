@@ -131,11 +131,7 @@ pub(super) fn setup(
     server: Option<Res<AssetServer>>,
     references: Option<Res<crate::reference_scene::Config>>,
 ) {
-    let atlas = references
-        .as_ref()
-        .filter(|r| r.directory.join("appearance-thumbnails.png").is_file())
-        .and(server.as_ref())
-        .map(|s| s.load("players://appearance-thumbnails.png"));
+    let atlas = super::thumbnail_atlas(server.as_deref(), references.as_deref());
     let registration_art = registration::art(&mut images);
     let preview = preview::setup(&mut commands, &mut images);
     let camera = commands

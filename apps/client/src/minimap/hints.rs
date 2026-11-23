@@ -18,7 +18,7 @@ pub(super) fn setup(mut commands: Commands) {
             GlobalZIndex(70),
             Node {
                 position_type: PositionType::Absolute,
-                right: px(DISPLAY + 40.),
+                right: px(DISPLAY + 65.),
                 top: px(40),
                 width: px(280),
                 padding: UiRect::all(px(10)),

@@ -20,8 +20,10 @@ pub(crate) fn owner_level(state: &State, profile: &Profile) -> Option<u8> {
         .map(|p| p.level)
 }
 
-/// Names are presentation only and must belong to the current admitted view.
-pub(crate) fn owner_name(state: &State) -> Option<String> {
+/// Identity must belong to the admitted owner in the current roster.
+pub(in crate::combat) fn owner_identity(
+    state: &State,
+) -> Option<&theia_network::player_identity_wire::Actor> {
     let welcome = state.welcome.as_ref()?;
     let snapshot = state.snapshot.as_ref()?;
     let view = state.player_identity.as_ref()?;
@@ -37,12 +39,217 @@ pub(crate) fn owner_name(state: &State) -> Option<String> {
         entity: theia_core::identity::EntityId::new(welcome.id)?,
     };
     view.validate_successor(owner, welcome.world, None).ok()?;
-    view.actors
-        .iter()
-        .find(|a| a.key == owner)?
-        .name
-        .as_ref()
-        .map(|name| name.as_str().to_owned())
+    view.actors.iter().find(|a| a.key == owner)
+}
+
+use bevy::{picking::Pickable, prelude::*};
+
+#[derive(Component)]
+pub(super) struct Level;
+
+#[derive(Component)]
+pub(super) struct WolfPortrait;
+
+#[derive(Component)]
+pub(super) struct PlayerPortrait(pub Handle<Image>);
+
+pub(in crate::combat) fn portrait(
+    parent: &mut ChildSpawnerCommands,
+    atlas: Option<Handle<Image>>,
+    player: bool,
+) {
+    let size = if player { 92. } else { 86. };
+    parent
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(-3),
+                top: px(0),
+                width: px(size),
+                height: px(size),
+                ..default()
+            },
+            ZIndex(1),
+            Pickable::IGNORE,
+        ))
+        .with_children(|portrait| {
+            portrait.spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: percent(9),
+                    top: percent(9),
+                    width: percent(82),
+                    height: percent(82),
+                    border_radius: BorderRadius::MAX,
+                    ..default()
+                },
+                Pickable::IGNORE,
+                BackgroundColor(crate::fantasy_ui::PANEL),
+            ));
+            portrait.spawn((
+                crate::ui_theme::Sprite("icon.character"),
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: percent(25),
+                    top: percent(25),
+                    width: percent(50),
+                    height: percent(50),
+                    ..default()
+                },
+                Pickable::IGNORE,
+            ));
+            if let Some(image) = atlas {
+                let mut picture = portrait.spawn((
+                    ImageNode::new(image.clone()),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: percent(9),
+                        top: percent(9),
+                        width: percent(82),
+                        height: percent(82),
+                        border_radius: BorderRadius::MAX,
+                        display: Display::None,
+                        ..default()
+                    },
+                    Pickable::IGNORE,
+                ));
+                if player {
+                    picture.insert(PlayerPortrait(image));
+                } else {
+                    picture.insert(WolfPortrait);
+                }
+            }
+            portrait.spawn((
+                crate::ui_theme::Sprite("portrait.frame"),
+                Node {
+                    width: percent(100),
+                    height: percent(100),
+                    ..default()
+                },
+                Pickable::IGNORE,
+            ));
+            if player {
+                portrait
+                    .spawn((
+                        Level,
+                        Node {
+                            position_type: PositionType::Absolute,
+                            right: px(0),
+                            bottom: px(0),
+                            width: px(28),
+                            height: px(28),
+                            border_radius: BorderRadius::MAX,
+                            border: UiRect::all(px(1)),
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            display: Display::None,
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.03, 0.045, 0.067)),
+                        BorderColor::all(crate::fantasy_ui::GOLD),
+                        Pickable::IGNORE,
+                    ))
+                    .with_child((super::text("", 16.), Pickable::IGNORE));
+            }
+        });
+}
+
+pub(in crate::combat) enum Pool {
+    Health,
+    Mana,
+    Hostile,
+}
+
+pub(in crate::combat) fn bar(
+    parent: &mut ChildSpawnerCommands,
+    pool: Pool,
+    track: impl Bundle,
+    fill: impl Bundle,
+    label: impl Bundle,
+) {
+    use bevy::ui::{BackgroundGradient, ColorStop, LinearGradient};
+    let height = match pool {
+        Pool::Health | Pool::Hostile => 24.,
+        Pool::Mana => 21.,
+    };
+    parent
+        .spawn((
+            track,
+            Node {
+                width: percent(100),
+                height: px(height),
+                ..default()
+            },
+            Pickable::IGNORE,
+        ))
+        .with_children(|bar| {
+            bar.spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(5),
+                    right: px(5),
+                    top: px(3),
+                    bottom: px(3),
+                    overflow: Overflow::clip(),
+                    border_radius: BorderRadius::all(px(3)),
+                    ..default()
+                },
+                BackgroundColor(Color::srgba(0.015, 0.025, 0.04, 0.96)),
+                Pickable::IGNORE,
+            ))
+            .with_children(|track| {
+                let mut fill = track.spawn((
+                    fill,
+                    Node {
+                        width: percent(0),
+                        height: percent(100),
+                        ..default()
+                    },
+                    Pickable::IGNORE,
+                ));
+                match pool {
+                    Pool::Health => fill.insert(crate::ui_theme::Sprite("bar.fill-health")),
+                    Pool::Mana => fill.insert(crate::ui_theme::Sprite("bar.fill-mana")),
+                    Pool::Hostile => fill.insert(BackgroundGradient(vec![
+                        LinearGradient::new(
+                            LinearGradient::TO_BOTTOM,
+                            vec![
+                                ColorStop::percent(Color::srgb(1., 0.37, 0.33), 0),
+                                ColorStop::percent(Color::srgb(0.8, 0.035, 0.05), 40),
+                                ColorStop::percent(Color::srgb(0.44, 0.012, 0.055), 100),
+                            ],
+                        )
+                        .into(),
+                    ])),
+                };
+            });
+            bar.spawn((
+                crate::ui_theme::Sprite("bar.frame"),
+                Node {
+                    width: percent(100),
+                    height: percent(100),
+                    ..default()
+                },
+                Pickable::IGNORE,
+            ));
+            bar.spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    width: percent(100),
+                    height: percent(100),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                Pickable::IGNORE,
+            ))
+            .with_child((
+                label,
+                super::text("—", 14.),
+                crate::fantasy_ui::hud_shadow(),
+                Pickable::IGNORE,
+            ));
+        });
 }
 
 #[cfg(test)]
@@ -64,7 +271,7 @@ mod tests {
                 name: Some(name.clone()),
             }],
         });
-        assert_eq!(owner_name(&state).as_deref(), Some(name.as_str()));
+        assert_eq!(owner_identity(&state).unwrap().name.as_ref(), Some(&name));
         let original = state.clone();
         for case in 0..9 {
             state = original.clone();
@@ -80,7 +287,10 @@ mod tests {
                 8 => state.player_identity.as_mut().unwrap().actors[0].name = None,
                 _ => unreachable!(),
             }
-            assert_eq!(owner_name(&state), None, "case {case}");
+            assert!(
+                owner_identity(&state).is_none_or(|a| a.name.is_none()),
+                "case {case}"
+            );
         }
     }
     #[test]

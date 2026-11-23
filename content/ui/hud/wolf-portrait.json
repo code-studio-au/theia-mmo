@@ -1,0 +1,17 @@
+{
+  "asset": "wolf-portrait.png",
+  "generator": "Built-in OpenAI image generation",
+  "generated": "2026-11-23",
+  "reference": "User-supplied Theia HUD concept, wolf medallion art direction",
+  "source_sha256": "10aa6260c8590e254ff6c34480e00d3a8d6000bee97cc795c459a4f5d4413b7c",
+  "source_size": [
+    1254,
+    1254
+  ],
+  "runtime_size": [
+    384,
+    384
+  ],
+  "runtime_sha256": "f10a130769f1da139b0f0257db90695f5e00d3c556d401cc37bde07ec4209e1c",
+  "prompt": "Generate one square 1:1 raster game UI portrait asset for Theia Online, an original fantasy MMORPG. A snarling grey timber wolf based on the natural grey wolf, head and just a bit of neck only, facing camera in a slight three-quarter turn to screen right. Crown of ears and mouth comfortably contained within the middle 80% of the square, so the client can crop it inside its own circular portrait frame. Fierce amber eyes, layered realistic charcoal and silver fur, warm soft sidelight on cheek and cool indigo rim light. Hand-painted fantasy game illustration with realistic anatomy and high contrast that reads as a tiny 72 px HUD icon. Deep desaturated ink navy background with a subtle light vignette. No frame, no border, no circular cutout, no text, no panels, no spell effects, no scenery, no props. A single image fills the square. The Stoneford reference in the conversation inspires only the wolf medallion subject and art direction."
+}

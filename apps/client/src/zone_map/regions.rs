@@ -5,8 +5,8 @@ use std::io::Read;
 #[derive(Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Region {
-    id: u8,
-    name: String,
+    pub(super) id: u8,
+    pub(super) name: String,
 }
 pub(super) fn valid(regions: &[Region]) -> bool {
     regions.len() <= 20
@@ -48,7 +48,7 @@ impl Mask {
             edges,
         }
     }
-    fn at(&self, uv: Vec2) -> Option<u8> {
+    pub(super) fn at(&self, uv: Vec2) -> Option<u8> {
         if !uv.is_finite() || uv.min_element() < 0. || uv.max_element() >= 1. {
             return None;
         }

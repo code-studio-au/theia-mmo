@@ -109,6 +109,7 @@ fn setup(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
+    overview: Option<Res<crate::zone_map::Ui>>,
 ) {
     let handle = images.add(image(PIXELS, vec![0; PIXELS * PIXELS * 4]));
     let mut arrow = vec![0; 16 * 16 * 4];
@@ -116,8 +117,16 @@ fn setup(
         for x in 0..16usize {
             let dx = (x as i32 - 7).abs();
             if (y < 10 && dx <= y as i32 / 2) || (y >= 8 && (6..=9).contains(&x)) {
-                arrow[(y * 16 + x) * 4..(y * 16 + x) * 4 + 4]
-                    .copy_from_slice(&[245, 248, 255, 255]);
+                let color = if skin.is_none() {
+                    [245, 248, 255, 255]
+                } else if dx >= y as i32 / 2 || y == 15 {
+                    [15, 38, 62, 255]
+                } else if x < 7 {
+                    [219, 250, 255, 255]
+                } else {
+                    [58, 173, 243, 255]
+                };
+                arrow[(y * 16 + x) * 4..(y * 16 + x) * 4 + 4].copy_from_slice(&color);
             }
         }
     }
@@ -136,10 +145,15 @@ fn setup(
                 position_type: PositionType::Absolute,
                 right: px(12),
                 top: px(12),
-                width: px(DISPLAY + 16.),
-                padding: UiRect::all(px(8)),
+                width: px(if skin.is_some() {
+                    DISPLAY + 48.
+                } else {
+                    DISPLAY + 16.
+                }),
+                padding: UiRect::all(px(if skin.is_some() { 0. } else { 8. })),
                 flex_direction: FlexDirection::Column,
-                row_gap: px(4),
+                align_items: AlignItems::Center,
+                row_gap: px(if skin.is_some() { 9. } else { 4. }),
                 display: Display::None,
                 ..default()
             },
@@ -150,72 +164,160 @@ fn setup(
             }),
         ))
         .with_children(|root| {
-            root.spawn((MapCaption::Heading, label("N  |  Local area", 14.)));
-            root.spawn((
-                Surface,
-                bevy::ui::RelativeCursorPosition::default(),
+            if skin.is_some() {
+                root.spawn((
+                    crate::ui_theme::Plate,
+                    Node {
+                        width: percent(100),
+                        height: px(30),
+                        padding: UiRect::axes(px(24), px(0)),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    Pickable::IGNORE,
+                ))
+                .with_child((MapCaption::Heading, label("Local Area", 16.)));
+            } else {
+                root.spawn((MapCaption::Heading, label("N  |  Local area", 14.)));
+            }
+            let mut body = root.spawn((
                 Node {
                     width: px(DISPLAY),
                     height: px(DISPLAY),
-                    overflow: Overflow::clip(),
-                    border_radius: if skin.is_some() {
-                        BorderRadius::MAX
-                    } else {
-                        BorderRadius::ZERO
-                    },
                     ..default()
                 },
-                ImageNode::new(handle),
                 Pickable::IGNORE,
-                Outline::new(
-                    px(if skin.is_some() { 2. } else { 0. }),
-                    px(-1),
-                    crate::fantasy_ui::GOLD,
-                ),
-            ))
-            .with_children(|map| {
-                if skin.is_some() {
+            ));
+            body.with_children(|wrap| {
+                wrap.spawn((
+                    Surface,
+                    bevy::ui::RelativeCursorPosition::default(),
+                    Node {
+                        width: px(DISPLAY),
+                        height: px(DISPLAY),
+                        overflow: Overflow::clip(),
+                        border_radius: if skin.is_some() {
+                            BorderRadius::MAX
+                        } else {
+                            BorderRadius::ZERO
+                        },
+                        ..default()
+                    },
+                    ImageNode::new(handle),
+                    Pickable::IGNORE,
+                ))
+                .with_children(|map| {
                     map.spawn((
+                        Arrow,
+                        Node {
+                            position_type: PositionType::Absolute,
+                            width: px(18),
+                            height: px(18),
+                            ..default()
+                        },
+                        ImageNode::new(arrow),
+                        Pickable::IGNORE,
+                    ));
+                    for index in 0..theia_core::dialogue::catalog::MAX_CONTACTS {
+                        map.spawn((
+                            Guide(index),
+                            label("G", 18.),
+                            Node {
+                                position_type: PositionType::Absolute,
+                                width: px(18),
+                                height: px(22),
+                                display: Display::None,
+                                justify_content: JustifyContent::Center,
+                                ..default()
+                            },
+                        ));
+                    }
+                });
+                if skin.is_some() {
+                    wrap.spawn((
                         crate::ui_theme::Sprite("minimap.frame"),
                         Pickable::IGNORE,
                         ZIndex(2),
                         Node {
                             position_type: PositionType::Absolute,
-                            left: px(0),
-                            top: px(0),
-                            width: percent(100),
-                            height: percent(100),
+                            left: px(-18),
+                            top: px(-14),
+                            width: px(DISPLAY + 36.),
+                            height: px(DISPLAY + 28.),
                             ..default()
                         },
                     ));
-                }
-                map.spawn((
-                    Arrow,
-                    Node {
-                        position_type: PositionType::Absolute,
-                        width: px(18),
-                        height: px(18),
-                        ..default()
-                    },
-                    ImageNode::new(arrow),
-                    Pickable::IGNORE,
-                ));
-                for index in 0..theia_core::dialogue::catalog::MAX_CONTACTS {
-                    map.spawn((
-                        Guide(index),
-                        label("G", 18.),
+                    wrap.spawn((
                         Node {
                             position_type: PositionType::Absolute,
-                            width: px(18),
+                            left: px(DISPLAY * 0.5 - 11.),
+                            top: px(-5),
+                            width: px(22),
                             height: px(22),
-                            display: Display::None,
+                            border: UiRect::all(px(1)),
+                            border_radius: BorderRadius::MAX,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        },
+                        BorderColor::all(crate::fantasy_ui::GOLD),
+                        BackgroundColor(crate::fantasy_ui::PANEL),
+                        Pickable::IGNORE,
+                        ZIndex(3),
+                    ))
+                    .with_children(|disc| {
+                        disc.spawn(label("N", 13.))
+                            .insert(TextColor(crate::fantasy_ui::GOLD));
+                    });
+                }
+            });
+            root.spawn((
+                Node {
+                    align_items: AlignItems::Center,
+                    column_gap: px(6),
+                    ..default()
+                },
+                Pickable::IGNORE,
+            ))
+            .with_children(|footer| {
+                footer.spawn((
+                    MapCaption::Extent,
+                    label("256 m", 12.),
+                    crate::fantasy_ui::hud_shadow(),
+                ));
+                if skin.is_some() {
+                    let mut toggle = footer.spawn((
+                        bevy::ui_widgets::Button,
+                        AccessibleLabel::new("Open world map [M]"),
+                        crate::zone_map::Control::Toggle,
+                        crate::ui_theme::Style::Secondary,
+                        Node {
+                            width: px(29),
+                            height: px(25),
+                            align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
                             ..default()
                         },
                     ));
+                    if overview.is_none() {
+                        toggle.insert(bevy::ui::InteractionDisabled);
+                    }
+                    toggle.with_children(|button| {
+                        let mut icon = button.spawn((
+                            crate::ui_theme::Icon(23),
+                            Node {
+                                width: px(17),
+                                height: px(17),
+                                ..default()
+                            },
+                        ));
+                        if overview.is_none() {
+                            icon.insert(crate::ui_theme::Muted);
+                        }
+                    });
                 }
             });
-            root.spawn((MapCaption::Extent, label("256 m across", 12.)));
         });
 }
 /// Same widgets as the live map, with an explicitly synthetic raster. No World,
@@ -281,8 +383,8 @@ fn seed_preview(
     for (mut text, caption, guide) in &mut captions {
         if let Some(caption) = caption {
             **text = match caption {
-                MapCaption::Heading => "N | Fixture map",
-                MapCaption::Extent => "256 m fixture raster",
+                MapCaption::Heading => "Millhaven (preview)",
+                MapCaption::Extent => "256 m",
             }
             .into();
         } else if guide {
@@ -473,6 +575,16 @@ fn present_inner(world: &mut World) {
     let update = map.epoch != Some(epoch) || now - map.updated >= 0.25;
     if update {
         let started = Instant::now();
+        if world.contains_resource::<crate::fantasy_ui::Skin>() {
+            let title = crate::zone_map::area_title(world, position)
+                .unwrap_or("Local Area")
+                .to_owned();
+            for (caption, mut label) in world.query::<(&MapCaption, &mut Text)>().iter_mut(world) {
+                if matches!(caption, MapCaption::Heading) && label.0 != title {
+                    label.0.clone_from(&title);
+                }
+            }
+        }
         let view = View {
             north_positive_z: crate::zone_map::north_positive_z(world),
             centre: position,
@@ -672,6 +784,24 @@ fn observe(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn skinned_minimap_builds_the_compass_and_map_control_without_duplicate_components() {
+        let mut app = App::new();
+        app.init_resource::<Assets<Image>>()
+            .insert_resource(crate::fantasy_ui::Skin::fixture())
+            .add_systems(Startup, setup);
+        app.update();
+        let world = app.world_mut();
+        let mut controls = world.query::<(
+            &crate::zone_map::Control,
+            Has<bevy::ui::InteractionDisabled>,
+        )>();
+        assert!(matches!(
+            controls.single(world),
+            Ok((crate::zone_map::Control::Toggle, true))
+        ));
+    }
+
     #[test]
     fn maximum_view_distant_tiles_cannot_displace_nearby_minimap_samples() {
         let mut world = World::new();

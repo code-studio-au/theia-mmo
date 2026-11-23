@@ -156,49 +156,64 @@ pub fn install(
         );
 }
 fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
-    commands
-        .spawn((
-            if skin.is_some() {
-                crate::fantasy_ui::unit_frame(false)
-            } else {
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(12),
-                    bottom: px(186),
-                    width: px(348),
-                    flex_direction: FlexDirection::Column,
-                    row_gap: px(8),
-                    padding: UiRect::all(px(12)),
-                    ..default()
-                }
-            },
-            crate::fantasy_ui::UnitFrame(false),
-            BackgroundColor(if skin.is_some() {
-                crate::fantasy_ui::PANEL
-            } else {
-                Color::srgba(0.02, 0.03, 0.05, 0.9)
-            }),
-            BorderColor::all(crate::fantasy_ui::GOLD),
-        ))
-        .with_children(|panel| {
-            if skin.is_some() {
+    if let Some(skin) = skin {
+        commands
+            .spawn((
+                crate::fantasy_ui::unit_frame(false),
+                crate::fantasy_ui::UnitFrame(false),
+                bevy::picking::Pickable::IGNORE,
+            ))
+            .with_children(|panel| {
+                ui::unit_frame::portrait(panel, Some(skin.wolf.clone()), false);
                 panel.spawn((
                     crate::targeting::TargetHud,
-                    Text::new("Targets loading..."),
+                    Text::new(""),
                     TextFont {
-                        font_size: FontSize::Px(16.),
+                        font_size: FontSize::Px(22.),
                         ..default()
                     },
-                    TextColor(Color::srgb(0.92, 0.85, 0.70)),
+                    TextColor(Color::WHITE),
+                    crate::fantasy_ui::hud_shadow(),
+                    Node {
+                        min_height: px(24),
+                        ..default()
+                    },
+                    bevy::picking::Pickable::IGNORE,
                 ));
-            }
-        })
+                ui::unit_frame::bar(
+                    panel,
+                    ui::unit_frame::Pool::Hostile,
+                    TargetVitals,
+                    ui::HealthFill,
+                    ui::TargetHealthLabel,
+                );
+                crate::party::selection::widgets(panel);
+                crate::party::marks::target_widget(panel);
+                crate::status_effects::widgets(panel, false);
+            });
+        return;
+    }
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(12),
+                bottom: px(186),
+                width: px(348),
+                flex_direction: FlexDirection::Column,
+                row_gap: px(8),
+                padding: UiRect::all(px(12)),
+                ..default()
+            },
+            crate::fantasy_ui::UnitFrame(false),
+            BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
+        ))
         .with_child((
             Hud,
             TargetVitals,
             Text::new("Preparing abilities..."),
             TextFont {
-                font_size: FontSize::Px(if skin.is_some() { 14. } else { 18. }),
+                font_size: FontSize::Px(18.),
                 ..default()
             },
             TextColor(Color::WHITE),
@@ -211,7 +226,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                     TargetVitals,
                     Node {
                         width: percent(100),
-                        height: px(if skin.is_some() { 12. } else { 10. }),
+                        height: px(10),
                         ..default()
                     },
                     BackgroundColor(Color::srgb(0.17, 0.08, 0.1)),
@@ -317,7 +332,10 @@ fn present(
     *panel = ui::Model::default();
     panel.connected = network.connected();
     if panel.connected {
-        panel.player_name = ui::owner_name(&state);
+        if let Some(owner) = ui::owner_identity(&state) {
+            panel.player_name = owner.name.as_ref().map(|name| name.as_str().to_owned());
+            panel.player_appearance = Some(owner.appearance);
+        }
         panel.player_level = progression
             .as_ref()
             .and_then(|profile| ui::owner_level(&state, &profile.0));
@@ -636,7 +654,10 @@ fn present(
             .map_or(30., |s| f64::from(s.tick_hz));
         let health = combat.targets.iter().find(|h| Some(h.entity) == selected);
         panel.has_target = health.is_some_and(|h| h.current > 0);
+        panel.target_is_wolf = health.is_some() && creature_visuals.is_some();
         panel.health = health.map_or(0., |h| h.current as f32 / h.maximum as f32);
+        panel.target_health_text =
+            health.map_or_else(|| "—".into(), |h| format!("{} / {}", h.current, h.maximum));
         let health_line = if let Some(health) = health {
             metrics.selected_health_frames += 1;
             metrics.last_health = Some(health.current);
@@ -729,6 +750,14 @@ fn present(
             .and_then(|cast| config.0.ability(cast.ability.as_str()))
             .unwrap_or(ability);
         let name = ui::ability_name(active_ability.id().as_str());
+        if let Some(cast) = combat.cast.as_ref().filter(|c| c.completes > now) {
+            panel.cast_info = Some(ui::Cast {
+                ability: cast.ability.as_str().to_owned(),
+                name: name.clone(),
+                elapsed: now.saturating_sub(cast.started) as f64 / hz,
+                total: cast.completes.saturating_sub(cast.started) as f64 / hz,
+            });
+        }
         panel.action = action.clone();
         panel.status = if combat.cast.as_ref().is_some_and(|c| c.completes > now) {
             format!("{name} | {action}")
@@ -833,6 +862,7 @@ fn present(
         if panel.life_blocked {
             panel.status = panel.life_status.clone();
             panel.cast = 0.;
+            panel.cast_info = None;
         }
     }
     if state.error.is_some() {

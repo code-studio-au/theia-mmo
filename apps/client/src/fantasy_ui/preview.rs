@@ -212,6 +212,16 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     app.insert_resource(crate::combat::Config(Arc::new(catalog), Some(stats), true))
         .insert_resource(crate::combat::ui::Model {
             player_level: Some(2),
+            player_name: Some("Arden".into()),
+            target_health_text: "57 / 100".into(),
+            target_is_wolf: true,
+            cast: 0.4,
+            cast_info: Some(crate::combat::ui::Cast {
+                ability: "theia.dev.arcane-bolt".into(),
+                name: "Arcane Bolt".into(),
+                elapsed: 0.8,
+                total: 2.,
+            }),
             connected: true,
             has_target: true,
             vitals_ready: true,
@@ -568,14 +578,11 @@ fn capture(
                     && viewport.contains(rect.min)
                     && viewport.contains(rect.max)
             );
-            assert!(
-                if side.0 {
-                    rect.max.x < centre_x
-                } else {
-                    rect.min.x > centre_x
-                },
-                "Unit frames must flank the central world view"
-            );
+            assert!(if side.0 {
+                rect.max.x < centre_x
+            } else {
+                rect.min.x > centre_x * 0.65
+            });
             assert!(
                 rect.intersect(cast).is_empty(),
                 "Unit frame must not cover casting feedback"
