@@ -1,7 +1,7 @@
 //! Standard Bevy informational guide/panel. Every displayed node is observed;
 //! widget choice and movement never advance dialogue optimistically.
 mod motion;
-mod names;
+pub(crate) mod names;
 mod qualification;
 use crate::{floating_origin::Frame, network::Network, scene::PawnAssets};
 use bevy::{

@@ -26,10 +26,10 @@ This slice supplies the resource and displays it. Enemy spell selection,
 mana spending by enemy abilities and regeneration rules require a casting
 behavior. The existing wolves remain melee-only.
 
-Active effects use small icons with a countdown and a hover description. Slots
-only display effects that are current for the admitted owner or selected
-hostile. The configured development effect is Scorch. Positive buffs require
-their own corresponding authoritative observations.
+The two portrait rows display only current effects for the admitted owner or
+selected hostile. The 32-pixel slots use the matte skill-bar treatment and the
+effect's own icon. A translucent sweep shows elapsed time, and the countdown
+uses minutes or seconds. Hover shows the effect's name and remaining seconds.
 
 Twelve skill positions keep their established keys, click actions, drag
 bindings and cooldown feedback. Actual casts carry the ability icon and
@@ -172,3 +172,36 @@ balance. The fixture shows 5 gold, 25 silver and 50 copper. See
 `build/bright-minimap-native/qualification.json` and `inventory-coins.png`
 in the same directory. The three offscreen sizes, strict Clippy, release build
 and 365 client tests passed again, with five skips and zero Vulkan diagnostics.
+
+## Overhead readability and portrait effect test
+
+P2-14 and P3-11 reuse the unit frame's red health and blue mana styling over
+selected and attacking enemies. The overhead bar keeps the enemy selection
+action. The name and exact resource totals are on the target portrait. Enemies
+with no mana pool have one overhead bar.
+
+NPC names and professions use separate bold lines with a dark shadow. Committed
+quest states use larger shadowed glyphs. The layout reserves room between labels
+in crowded projections. Floating hits use 32-pixel bold type and criticals use
+42-pixel bold type. The font is Liberation Sans Bold under the same OFL as the
+existing embedded UI fonts.
+
+Frost Armor is a self-cast test ability in the Classic development catalog. It
+uses the existing ice icon, costs 10 mana and applies a 90-second timed buff.
+The effect tests status duration and refresh. Its authored rules leave damage
+resolution unchanged. The server validates the self target, invokes the ordinary
+cast and cooldown rules, and publishes the buff to its owner. Death, expiry and
+departure clear it. Existing packaged gameplay data can be rebuilt from the
+updated development catalogs to get the third starting action.
+
+The 1720×1000 native account run checked empty effect rows, Frost Armor from
+slot 3, the minutes-to-seconds transition, the changing sweep, box-free NPC
+labels, and a live wolf with a configured 140-point mana pool. See
+`build/overhead-effects-qualified-native-mana/qualification.json`. At long
+distance a projected bar can pass behind the fixed target frame.
+The offscreen captures at 1920×1080, 1720×700 and 1280×720 passed. Linux Vulkan
+llvmpipe (LLVM 21.1.8, Mesa 26.2.7) reported zero validation diagnostics.
+Strict Clippy, release builds, 366 client tests and 222 combat-authority tests
+passed. The self-cast authority test checks the mana cost, owner-only wire
+round trip and expiry at the authored tick. Status wire and catalog suites
+passed separately.

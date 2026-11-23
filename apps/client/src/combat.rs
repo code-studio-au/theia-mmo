@@ -617,7 +617,13 @@ fn present(
                 ui::Source::Widget => metrics.widget_requests += 1,
             }
 
-            if let Some(target) = selected {
+            let target = match ability.target() {
+                theia_core::abilities::Target::SelfAlive => {
+                    state.id.and_then(theia_core::identity::EntityId::new)
+                }
+                theia_core::abilities::Target::HostileAlive => selected,
+            };
+            if let Some(target) = target {
                 if !network.request_cast(ability.id().clone(), target) {
                     metrics.input_backpressure += 1;
                     note(&mut ui, "Ability input busy; try again");

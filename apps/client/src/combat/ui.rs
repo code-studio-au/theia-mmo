@@ -1,6 +1,6 @@
 //! Standard Bevy widgets and bounded, server-derived progress. No gameplay authority.
 pub(super) mod tooltip;
-pub(super) mod unit_frame;
+pub(crate) mod unit_frame;
 use super::Config;
 use bevy::{
     picking::hover::Hovered,
@@ -1433,14 +1433,14 @@ pub(super) mod tests {
             .iter(world)
             .map(|(e, a)| (e, a.0))
             .collect();
-        assert_eq!(buttons.len(), 2);
+        assert_eq!(buttons.len(), 3);
         let frames = world
             .query::<(&ImageNode, &ChildOf)>()
             .iter(world)
             .filter(|(_, parent)| world.get::<ActionButton>(parent.parent()).is_some())
             .count();
         assert_eq!(
-            frames, 2,
+            frames, 3,
             "Only configured ability icons require image nodes"
         );
         let first = buttons.iter().find(|(_, slot)| *slot == 0).unwrap().0;

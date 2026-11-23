@@ -61,13 +61,16 @@ fn configuration(
         return Err("Status abilities require explicit status and resource profiles".into());
     }
     for ability in catalog.abilities() {
-        if let Effect::ApplyStatus { status } = ability.effect()
-            && status_catalog
+        if let Effect::ApplyStatus { status } = ability.effect() {
+            let definition = status_catalog
                 .as_ref()
                 .and_then(|c| c.definition(&status))
-                .is_none()
-        {
-            return Err("Ability references an unknown status definition".into());
+                .ok_or("Ability references an unknown status definition")?;
+            if definition.effect().periodic()
+                != (ability.target() == theia_core::abilities::Target::HostileAlive)
+            {
+                return Err("Status effect and ability target are incompatible".into());
+            }
         }
     }
     if let Some(profile) = &profile
@@ -753,7 +756,8 @@ impl Authority {
         moved: bool,
     ) -> std::result::Result<(), Reason> {
         let actor = world.players.get(&id).ok_or(Reason::Interrupted)?;
-        if !self.population_target_ready(target) {
+        let self_cast = ability.target() == theia_core::abilities::Target::SelfAlive;
+        if !self_cast && !self.population_target_ready(target) {
             return Err(Reason::NotReady);
         }
         if !self.player_alive(id) {
@@ -767,14 +771,22 @@ impl Authority {
         {
             return Err(Reason::EquipmentRequired);
         }
-        let health = self
-            .creatures
-            .iter()
-            .find(|c| c.key == target)
-            .ok_or(Reason::UnknownTarget)?;
-        if health.current == 0 {
-            return Err(Reason::Dead);
-        }
+        let health = if self_cast {
+            if world.entity_key(id) != Some(target) {
+                return Err(Reason::UnknownTarget);
+            }
+            None
+        } else {
+            let health = self
+                .creatures
+                .iter()
+                .find(|c| c.key == target)
+                .ok_or(Reason::UnknownTarget)?;
+            if health.current == 0 {
+                return Err(Reason::Dead);
+            }
+            Some(health)
+        };
         if !Self::ready(world, id) {
             return Err(Reason::NotReady);
         }
@@ -788,6 +800,9 @@ impl Authority {
         {
             return Err(Reason::Moving);
         }
+        let Some(health) = health else {
+            return Ok(());
+        };
         let a = actor.position.metres();
         let b = health.position.metres();
         let distance2: f64 = a.into_iter().zip(b).map(|(a, b)| (a - b) * (a - b)).sum();
@@ -840,6 +855,17 @@ impl Authority {
                 })
                 .max(actor.cooldowns.get(ability.id()).copied().unwrap_or(now))
         })
+    }
+    fn living_cast_target(&self, actor: EntityKey, target: EntityKey, ability: &Ability) -> bool {
+        match ability.target() {
+            theia_core::abilities::Target::SelfAlive => {
+                target == actor && self.player_alive(actor.entity.value())
+            }
+            theia_core::abilities::Target::HostileAlive => self
+                .creatures
+                .iter()
+                .any(|c| c.key == target && c.current > 0),
+        }
     }
     fn start(
         &mut self,
@@ -1108,11 +1134,7 @@ impl Authority {
                     Some(Reason::NotReady)
                 } else if !self.actors[&id].equipment.permits(ability) {
                     Some(Reason::EquipmentRequired)
-                } else if !self
-                    .creatures
-                    .iter()
-                    .any(|c| c.key == cast.target && c.current > 0)
-                {
+                } else if !self.living_cast_target(key, cast.target, ability) {
                     Some(Reason::Dead)
                 } else if !ability.cast_while_moving()
                     && (moved
@@ -1169,10 +1191,7 @@ impl Authority {
                     .catalog
                     .ability(queued.request.ability.as_str())
                     .unwrap();
-                let dead = !self
-                    .creatures
-                    .iter()
-                    .any(|c| c.key == queued.request.target && c.current > 0);
+                let dead = !self.living_cast_target(key, queued.request.target, ability);
                 if dead || !Self::ready(world, id) {
                     self.actors.get_mut(&id).unwrap().queued = None;
                     self.cancel(
@@ -1283,7 +1302,15 @@ impl World {
     pub fn combat_status_snapshot(&self, actor: u64) -> Option<Vec<Status>> {
         let authority = self.combat.as_ref()?;
         let statuses = authority.statuses.as_ref()?;
-        Some(statuses.views(self.players.get(&actor)?.position, &authority.creatures))
+        let owner = authority
+            .player_alive(actor)
+            .then(|| self.entity_key(actor))
+            .flatten();
+        Some(statuses.views(
+            owner,
+            self.players.get(&actor)?.position,
+            &authority.creatures,
+        ))
     }
     fn enable_combat_config(
         &mut self,

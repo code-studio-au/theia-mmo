@@ -8,6 +8,12 @@
       "duration_ms": 6000,
       "interval_ms": 1000,
       "effect": { "kind": "periodic_damage", "amount": 5 }
+    },
+    {
+      "id": "theia.dev.frost-armor",
+      "name": "Frost Armor",
+      "duration_ms": 90000,
+      "effect": { "kind": "timed_buff" }
     }
   ]
 }

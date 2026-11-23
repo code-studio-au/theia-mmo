@@ -168,7 +168,9 @@ fn positional_ability_rules_and_valid_health_bounds_are_required_before_binding(
     ))
     .unwrap();
     legacy["schema"] = json!(6);
-    for ability in legacy["abilities"].as_array_mut().unwrap() {
+    let abilities = legacy["abilities"].as_array_mut().unwrap();
+    abilities.retain(|a| a["target"] == "hostile_alive");
+    for ability in abilities {
         ability.as_object_mut().unwrap().remove("combat");
     }
     known.abilities = abilities::Catalog::from_json(&bytes(&legacy)).unwrap();

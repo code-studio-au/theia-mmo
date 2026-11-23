@@ -3,7 +3,7 @@ use crate::{
     commands::Command,
     prediction_wire::Commands,
     simulation::combat::{
-        Reason,
+        self, Reason,
         autoattack::{self, Outcome, Pause, Phase},
     },
     wire::{ChunkReady, Intent, VERSION},
@@ -92,6 +92,58 @@ fn optional_creature_mana_is_bound_to_the_authoritative_profile() {
             .current(),
         140
     );
+}
+
+#[test]
+fn frost_armor_self_cast_spends_mana_and_replicates_a_private_timed_buff() {
+    let (mut world, creature) = inactive(TickRate::Hz30, true);
+    let actor = join(&mut world);
+    let other = join(&mut world);
+    let owner = world.entity_key(actor).unwrap();
+    let request = |sequence, target| combat::Request {
+        epoch: owner.epoch.value(),
+        sequence,
+        ability: ContentId::new("theia.dev.frost-armor").unwrap(),
+        target,
+    };
+    for (sequence, target) in [(1, creature), (2, world.entity_key(other).unwrap())] {
+        assert_eq!(
+            world.cast(actor, request(sequence, target)).reply.outcome,
+            combat::Outcome::Rejected(Reason::UnknownTarget)
+        );
+    }
+    let mana = world.combat_vitals(actor).unwrap().mana();
+    assert!(matches!(
+        world.cast(actor, request(3, owner)).reply.outcome,
+        combat::Outcome::Started { .. }
+    ));
+    assert_eq!(world.combat_vitals(actor).unwrap().mana(), mana - 10);
+    world.step();
+    let statuses = world.combat_status_snapshot(actor).unwrap();
+    let [status] = statuses.as_slice() else {
+        panic!("Expected one buff")
+    };
+    assert_eq!(status.source, owner);
+    assert_eq!(status.target, owner);
+    assert_eq!(status.next_tick, None);
+    assert_eq!(status.expires_at - world.tick, 90 * 30);
+    assert!(world.combat_status_snapshot(other).unwrap().is_empty());
+    let observation = crate::status_wire::State {
+        epoch: world.epoch(),
+        tick: world.tick,
+        rate: world.rate,
+        statuses,
+    };
+    let catalog = world.combat_status_catalog().unwrap();
+    assert_eq!(
+        crate::status_wire::State::decode(&observation.encode(catalog).unwrap(), catalog).unwrap(),
+        observation
+    );
+    let expires_at = observation.statuses[0].expires_at;
+    while world.tick < expires_at {
+        world.step();
+    }
+    assert!(world.combat_status_snapshot(actor).unwrap().is_empty());
 }
 fn join(w: &mut World) -> u64 {
     let xz = [8008., 8002.];

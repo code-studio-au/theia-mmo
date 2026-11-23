@@ -460,7 +460,7 @@ fn capture(
             serde_json::json!({"slot":slot.0,"centre":point.to_array(),"size":size.to_array()})
         })
         .collect();
-    assert_eq!(buttons.len(), 2);
+    assert_eq!(buttons.len(), 3);
     let glyphs: usize = layout.text.iter().map(|text| text.glyphs.len()).sum();
     assert!(
         glyphs > 40,

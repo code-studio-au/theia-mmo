@@ -1,5 +1,5 @@
 //! Authored eligibility/timing only: never predicts damage, success or readiness.
-use theia_core::abilities::Ability;
+use theia_core::abilities::{Ability, Target};
 fn number(value: f64) -> String {
     if value > 0. && value < 0.001 {
         format!("{value:.2e}")
@@ -10,8 +10,12 @@ fn number(value: f64) -> String {
 pub(crate) fn describe(ability: &Ability, key: &str, state: &str) -> String {
     let name = super::ability_name(ability.id().as_str());
     let maximum = number(ability.range_metres());
-    let range = match ability.combat_rules().map(|r| r.minimum_range_metres()) {
-        Some(minimum) if minimum > 0. => format!("{}–{maximum} m range", number(minimum)),
+    let range = match (
+        ability.target(),
+        ability.combat_rules().map(|r| r.minimum_range_metres()),
+    ) {
+        (Target::SelfAlive, _) => "Self".into(),
+        (_, Some(minimum)) if minimum > 0. => format!("{}–{maximum} m range", number(minimum)),
         _ => format!("{maximum} m range"),
     };
     let cost = if ability.mana_cost() > 0 {

@@ -78,7 +78,9 @@ fn definitions_reject_unbounded_unknown_or_ambiguous_status_data() {
 #[test]
 fn exact_six_second_cadence_expires_once_and_includes_the_last_tick_at_every_rate() {
     let catalog = Catalog::from_json(DATA).unwrap();
-    let status = catalog.definitions().next().unwrap();
+    let status = catalog
+        .definition(&ContentId::new("theia.dev.scorch").unwrap())
+        .unwrap();
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let timing = status.timing(rate);
         let hz = u64::from(rate.hz());
@@ -119,7 +121,9 @@ fn exact_six_second_cadence_expires_once_and_includes_the_last_tick_at_every_rat
 #[test]
 fn refresh_preserves_cadence_including_exact_due_ticks_and_fractional_duration_boundaries() {
     let catalog = Catalog::from_json(DATA).unwrap();
-    let status = catalog.definitions().next().unwrap();
+    let status = catalog
+        .definition(&ContentId::new("theia.dev.scorch").unwrap())
+        .unwrap();
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let hz = u64::from(rate.hz());
         let mut schedule = Schedule::start(0, status.timing(rate)).unwrap();
@@ -166,7 +170,9 @@ fn refresh_preserves_cadence_including_exact_due_ticks_and_fractional_duration_b
     raw["statuses"][0]["duration_ms"] = json!(251);
     raw["statuses"][0]["interval_ms"] = json!(101);
     let catalog = Catalog::from_json(&serde_json::to_vec(&raw).unwrap()).unwrap();
-    let status = catalog.definitions().next().unwrap();
+    let status = catalog
+        .definition(&ContentId::new("theia.dev.scorch").unwrap())
+        .unwrap();
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let timing = status.timing(rate);
         let hz = u64::from(rate.hz());

@@ -49,8 +49,13 @@ impl Registry {
         target: EntityKey,
         status: &ContentId,
     ) -> Result<(), Reason> {
-        if self.catalog.definition(status).is_none() {
-            return Err(Reason::Unavailable);
+        let effect = self
+            .catalog
+            .definition(status)
+            .ok_or(Reason::Unavailable)?
+            .effect();
+        if effect.periodic() == (source == target) {
+            return Err(Reason::UnknownTarget);
         }
         if let Some(instance) = self.active.get(&key(source, target, status)) {
             return if instance.source == source && instance.target == target {
@@ -108,22 +113,35 @@ impl Registry {
         self.active.retain(|_, s| s.target != key);
         before - self.active.len()
     }
-    pub(super) fn views(&self, focus: GlobalPosition, creatures: &[Health]) -> Vec<Status> {
+    fn effect(&self, instance: &Instance) -> Effect {
+        self.catalog.definition(&instance.status).unwrap().effect()
+    }
+    pub(super) fn views(
+        &self,
+        owner: Option<EntityKey>,
+        focus: GlobalPosition,
+        creatures: &[Health],
+    ) -> Vec<Status> {
         self.active
             .values()
             .filter(|s| {
-                creatures.iter().any(|c| {
-                    c.key == s.target
-                        && c.current > 0
-                        && crate::targeting::relevant(focus, c.position)
-                })
+                Some(s.target) == owner
+                    || creatures.iter().any(|c| {
+                        c.key == s.target
+                            && c.current > 0
+                            && crate::targeting::relevant(focus, c.position)
+                    })
             })
             .map(|s| Status {
                 source: s.source,
                 target: s.target,
                 status: s.status.clone(),
                 expires_at: s.schedule.expires_at(),
-                next_tick: s.schedule.next_tick(),
+                next_tick: self
+                    .effect(s)
+                    .periodic()
+                    .then(|| s.schedule.next_tick())
+                    .flatten(),
             })
             .collect()
     }
@@ -138,11 +156,16 @@ impl Authority {
             let Some(mut instance) = statuses.active.remove(&key) else {
                 continue;
             };
-            if world.entity_key(instance.source.entity.value()) != Some(instance.source)
-                || !self
-                    .creatures
+            let effect = statuses.effect(&instance);
+            let target_alive = if effect.periodic() {
+                self.creatures
                     .iter()
                     .any(|c| c.key == instance.target && c.current > 0)
+            } else {
+                self.player_alive(instance.target.entity.value())
+            };
+            if world.entity_key(instance.source.entity.value()) != Some(instance.source)
+                || !target_alive
             {
                 continue;
             }
@@ -150,12 +173,9 @@ impl Authority {
                 .schedule
                 .advance(world.tick)
                 .expect("Fixed steps visit every bounded status deadline");
-            if step.damage_due {
-                let Effect::PeriodicDamage { amount } = statuses
-                    .catalog
-                    .definition(&instance.status)
-                    .unwrap()
-                    .effect();
+            if step.damage_due
+                && let Effect::PeriodicDamage { amount } = effect
+            {
                 self.damage(
                     world,
                     Hit {
@@ -168,10 +188,11 @@ impl Authority {
                     },
                 );
             }
-            if !self
-                .creatures
-                .iter()
-                .any(|c| c.key == instance.target && c.current > 0)
+            if effect.periodic()
+                && !self
+                    .creatures
+                    .iter()
+                    .any(|c| c.key == instance.target && c.current > 0)
             {
                 statuses.remove_target(instance.target);
             } else if !step.expired {

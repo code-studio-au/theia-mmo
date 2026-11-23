@@ -349,10 +349,12 @@ pub(crate) struct Skin {
     sword: ImageNode,
     arcane: ImageNode,
     fire: ImageNode,
+    ice: ImageNode,
     fallback: ImageNode,
     item_icons: [ImageNode; 6],
     title_font: Handle<Font>,
     body_font: Handle<Font>,
+    bold_font: Handle<Font>,
 }
 impl Skin {
     #[cfg(test)]
@@ -362,10 +364,12 @@ impl Skin {
             sword: default(),
             arcane: default(),
             fire: default(),
+            ice: default(),
             fallback: default(),
             item_icons: default(),
             title_font: default(),
             body_font: default(),
+            bold_font: default(),
         }
     }
     /// Presentation mapping only. Unknown authored items keep a generic icon.
@@ -387,6 +391,7 @@ impl Skin {
             "theia.dev.sword-slash" => self.sword.clone(),
             "theia.dev.arcane-bolt" => self.arcane.clone(),
             "theia.dev.scorch" => self.fire.clone(),
+            "theia.dev.frost-armor" => self.ice.clone(),
             _ => self.fallback.clone(),
         }
     }
@@ -529,6 +534,12 @@ pub(crate) fn load(app: &mut App) {
         .add(Font::from_bytes(
             include_bytes!("../../../content/ui/fonts/LiberationSans-Regular.ttf").to_vec(),
         ));
+    let bold_font = app
+        .world_mut()
+        .resource_mut::<Assets<Font>>()
+        .add(Font::from_bytes(
+            include_bytes!("../../../content/ui/fonts/LiberationSans-Bold.ttf").to_vec(),
+        ));
     let mut images = app.world_mut().resource_mut::<Assets<Image>>();
     let mut image = |bytes: &[u8]| images.add(crate::ui_theme::sprites::decode(bytes));
     let wolf = image(include_bytes!("../../../content/ui/hud/wolf-portrait.png"));
@@ -554,6 +565,10 @@ pub(crate) fn load(app: &mut App) {
         fire: tile(
             include_bytes!("../../../content/ui/sprites-v3/sprites/ability/flame-burst.png"),
             [32., 26., 300., 294.],
+        ),
+        ice: tile(
+            include_bytes!("../../../content/ui/sprites-v3/sprites/ability/ice.png"),
+            [30., 27., 290., 287.],
         ),
         fallback: book.clone(),
         item_icons: [
@@ -581,6 +596,7 @@ pub(crate) fn load(app: &mut App) {
         ],
         title_font,
         body_font,
+        bold_font,
     };
     app.insert_resource(skin);
     app.add_systems(PostStartup, style_panels)
@@ -625,7 +641,9 @@ fn style_text(
     mut text: Query<ThemeText<'_>, NewText>,
 ) {
     for (entity, mut font, mut color) in &mut text {
-        font.font = if matches!(font.font_size, bevy::text::FontSize::Px(size) if size >= 22.) {
+        font.font = if font.weight == bevy::text::FontWeight::BOLD {
+            skin.bold_font.clone().into()
+        } else if matches!(font.font_size, bevy::text::FontSize::Px(size) if size >= 22.) {
             skin.title_font.clone().into()
         } else {
             skin.body_font.clone().into()

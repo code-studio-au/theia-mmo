@@ -1,12 +1,16 @@
-//! Bounded clickable enemy health labels from authoritative observations.
+//! Bounded clickable enemy vitals from authoritative observations.
+use crate::combat::ui::unit_frame::{Pool, pool_art};
 use avian3d::prelude::SpatialQuery;
-use bevy::{picking::Pickable, prelude::*, text::FontSize};
+use bevy::{picking::Pickable, prelude::*};
 use theia_core::identity::EntityKey;
 use theia_network::{client::State, combat_wire::Health, targeting::MAX_TARGETS};
 
 const WIDTH: f32 = 140.;
-const HEIGHT: f32 = 36.;
-/// Cosmetic combat text starts beside the name/health column. Prefer right,
+const HEALTH_HEIGHT: f32 = 18.;
+const MANA_HEIGHT: f32 = 14.;
+const GAP: f32 = 1.;
+const HEIGHT: f32 = HEALTH_HEIGHT + GAP + MANA_HEIGHT;
+/// Cosmetic combat text starts beside the vitals. Prefer right,
 /// then left near the viewport's right edge; crowd/movement stacking is separate.
 pub(crate) fn feedback_left(centre: f32, viewport: f32, text_width: f32) -> f32 {
     let right = centre + WIDTH * 0.5 + 8.;
@@ -19,16 +23,16 @@ pub(crate) fn feedback_left(centre: f32, viewport: f32, text_width: f32) -> f32 
 #[derive(Component)]
 pub(crate) struct Root(usize);
 #[derive(Component)]
-struct Name(usize);
+struct Frame(usize);
 #[derive(Component)]
-struct Fill(usize);
+struct Fill(usize, bool);
 #[derive(Component)]
-struct Bar(usize);
+struct Bar(usize, bool);
 struct Plate {
     key: Option<EntityKey>,
     anchor: Vec2,
-    name: &'static str,
     fraction: f32,
+    mana: Option<f32>,
     selected: bool,
 }
 #[derive(Resource, Default)]
@@ -100,8 +104,8 @@ pub(crate) fn install_preview(app: &mut App, anchor: Vec2) {
     app.insert_resource(Model(vec![Plate {
         key: None,
         anchor,
-        name: "Wolf (fixture)",
         fraction: 0.57,
+        mana: Some(0.65),
         selected: true,
     }]))
     .add_systems(PostUpdate, paint.before(bevy::ui::UiSystems::Layout));
@@ -114,62 +118,42 @@ fn widgets(app: &mut App) {
         .add_systems(Startup, setup)
         .add_systems(Last, observe);
 }
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     for slot in 0..MAX_TARGETS {
         commands
             .spawn((
                 Root(slot),
                 PlateTarget(None),
                 bevy::ui_widgets::Button,
+                AccessibleLabel::new("Select enemy"),
                 Node {
                     position_type: PositionType::Absolute,
                     width: px(WIDTH),
-                    height: px(HEIGHT),
                     flex_direction: FlexDirection::Column,
-                    row_gap: px(3),
+                    row_gap: px(GAP),
                     display: Display::None,
                     ..default()
                 },
                 GlobalZIndex(2),
             ))
             .with_children(|root| {
-                root.spawn((
-                    Name(slot),
-                    Text::new(""),
-                    TextFont {
-                        font_size: FontSize::Px(14.),
-                        ..default()
-                    },
-                    TextColor(Color::WHITE),
-                    TextLayout::justify(Justify::Center),
-                    TextShadow {
-                        offset: Vec2::ONE,
-                        color: Color::BLACK,
-                    },
-                    Pickable::IGNORE,
-                ));
-                root.spawn((
-                    Bar(slot),
-                    Node {
-                        width: percent(100),
-                        height: px(10),
-                        border: UiRect::all(px(1)),
-                        ..default()
-                    },
-                    BorderColor::all(Color::BLACK),
-                    BackgroundColor(Color::srgb(0.08, 0.03, 0.03)),
-                    Pickable::IGNORE,
-                ))
-                .with_child((
-                    Fill(slot),
-                    Node {
-                        width: percent(0),
-                        height: percent(100),
-                        ..default()
-                    },
-                    BackgroundColor(Color::srgb(0.78, 0.16, 0.12)),
-                    Pickable::IGNORE,
-                ));
+                for (mana, pool, height) in [
+                    (false, Pool::Hostile, HEALTH_HEIGHT),
+                    (true, Pool::Mana, MANA_HEIGHT),
+                ] {
+                    root.spawn((
+                        Bar(slot, mana),
+                        Node {
+                            width: percent(100),
+                            height: px(height),
+                            border: UiRect::all(px(if skin.is_some() { 0. } else { 1. })),
+                            ..default()
+                        },
+                        BorderColor::all(Color::BLACK),
+                        Pickable::IGNORE,
+                    ))
+                    .with_children(|bar| pool_art(bar, pool, Fill(slot, mana), Frame(slot)));
+                }
             });
     }
 }
@@ -207,7 +191,6 @@ fn present(
     cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     actors: Query<(&crate::targeting::TargetVisual, &Transform, &Visibility)>,
     spatial: SpatialQuery,
-    creatures: Option<Res<crate::creature_visual::Pending>>,
     mut model: ResMut<Model>,
     mut attackers: ResMut<Attackers>,
 ) {
@@ -263,16 +246,11 @@ fn present(
         model.0.push(Plate {
             key: Some(actor.key),
             anchor,
-            name: if creatures.is_some() {
-                "Wolf"
-            } else {
-                "Training target"
-            },
             fraction: health.current as f32 / health.maximum as f32,
-            selected: state
-                .targeting
-                .as_ref()
-                .is_some_and(|v| v.selected == Some(actor.key.entity)),
+            mana: health
+                .mana
+                .map(|pool| pool.current() as f32 / pool.maximum() as f32),
+            selected,
         });
     }
     model.0.sort_by_key(|p| p.key.map(|k| k.entity.value()));
@@ -332,12 +310,13 @@ fn select(
         selection.enemy_clicks += 1;
     }
 }
+type FillFilter = (Without<Root>, Without<Bar>);
 fn paint(
     model: Res<Model>,
-    mut roots: Query<(&Root, &mut Node, &mut PlateTarget), Without<Fill>>,
-    mut fills: Query<(&Fill, &mut Node), Without<Root>>,
-    mut names: Query<(&Name, &mut Text)>,
-    mut bars: Query<(&Bar, &mut BorderColor)>,
+    mut roots: Query<(&Root, &mut Node, &mut PlateTarget)>,
+    mut fills: Query<(&Fill, &mut Node), FillFilter>,
+    mut bars: Query<(&Bar, &mut Node, &mut BorderColor), Without<Root>>,
+    mut frames: Query<(&Frame, &mut ImageNode)>,
     mut metrics: ResMut<Metrics>,
 ) {
     metrics.visible = model.0.len();
@@ -353,7 +332,12 @@ fn paint(
         };
         let (left, top) = (
             px(plate.anchor.x - WIDTH * 0.5),
-            px(plate.anchor.y - HEIGHT),
+            px(plate.anchor.y
+                - if plate.mana.is_some() {
+                    HEIGHT
+                } else {
+                    HEALTH_HEIGHT
+                }),
         );
         if node.display != Display::Flex || node.left != left || node.top != top {
             node.display = Display::Flex;
@@ -361,31 +345,43 @@ fn paint(
             node.top = top;
         }
     }
-    for (slot, mut node) in &mut fills {
-        if let Some(plate) = model.0.get(slot.0) {
-            let width = percent(plate.fraction * 100.);
-            if node.width != width {
-                node.width = width;
-            }
-        }
-    }
-    for (slot, mut text) in &mut names {
-        if let Some(plate) = model.0.get(slot.0)
-            && text.0 != plate.name
-        {
-            text.0 = plate.name.into();
-        }
-    }
-    for (slot, mut border) in &mut bars {
-        if let Some(plate) = model.0.get(slot.0) {
-            let color = BorderColor::all(if plate.selected {
-                crate::fantasy_ui::GOLD
+    for (fill, mut node) in &mut fills {
+        let fraction = model.0.get(fill.0).and_then(|plate| {
+            if fill.1 {
+                plate.mana
             } else {
-                Color::BLACK
-            });
-            if *border != color {
-                *border = color;
+                Some(plate.fraction)
             }
+        });
+        let width = percent(fraction.unwrap_or(0.) * 100.);
+        if node.width != width {
+            node.width = width;
+        }
+    }
+    for (bar, mut node, mut border) in &mut bars {
+        let plate = model.0.get(bar.0);
+        let display = if plate.is_some_and(|p| !bar.1 || p.mana.is_some()) {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        if node.display != display {
+            node.display = display;
+        }
+        border.set_if_neq(BorderColor::all(if plate.is_some_and(|p| p.selected) {
+            crate::fantasy_ui::GOLD
+        } else {
+            Color::BLACK
+        }));
+    }
+    for (frame, mut image) in &mut frames {
+        let color = if model.0.get(frame.0).is_some_and(|plate| plate.selected) {
+            Color::WHITE
+        } else {
+            Color::srgb(0.76, 0.70, 0.63)
+        };
+        if image.color != color {
+            image.color = color;
         }
     }
 }
@@ -429,8 +425,8 @@ mod tests {
                 .map(|_| Plate {
                     key: None,
                     anchor: viewport * 0.5,
-                    name: "Wolf",
                     fraction: 1.,
+                    mana: None,
                     selected: false,
                 })
                 .collect();
@@ -550,8 +546,8 @@ mod tests {
         app.insert_resource(Model(vec![Plate {
             key: None,
             anchor: Vec2::new(200., 200.),
-            name: "Wolf",
             fraction: 0.57,
+            mana: Some(0.45),
             selected: true,
         }]))
         .add_systems(Update, paint);
@@ -567,13 +563,36 @@ mod tests {
             1
         );
         let mut fills = world.query::<(&Fill, &Node)>();
-        let fill = fills.iter(world).find(|(slot, _)| slot.0 == 0).unwrap().1;
+        let fill = fills
+            .iter(world)
+            .find(|(slot, _)| slot.0 == 0 && !slot.1)
+            .unwrap()
+            .1;
         assert!(matches!(fill.width,Val::Percent(v) if (v-57.).abs()<0.001));
         let mut bars = world.query::<(&Bar, &BorderColor)>();
         assert_eq!(
-            *bars.iter(world).find(|(slot, _)| slot.0 == 0).unwrap().1,
+            *bars
+                .iter(world)
+                .find(|(slot, _)| slot.0 == 0 && !slot.1)
+                .unwrap()
+                .1,
             BorderColor::all(crate::fantasy_ui::GOLD)
         );
+        let mut mana_fills = world.query::<(&Fill, &Node)>();
+        let (_, mana_fill) = mana_fills
+            .iter(world)
+            .find(|(slot, _)| slot.0 == 0 && slot.1)
+            .unwrap();
+        assert!(matches!(mana_fill.width, Val::Percent(v) if (v - 45.).abs() < 0.001));
+        world.resource_mut::<Model>().0[0].mana = None;
+        app.update();
+        let world = app.world_mut();
+        let mut bars = world.query::<(&Bar, &Node)>();
+        let (_, mana) = bars
+            .iter(world)
+            .find(|(slot, _)| slot.0 == 0 && slot.1)
+            .unwrap();
+        assert_eq!(mana.display, Display::None);
         world.resource_mut::<Model>().0.clear();
         app.update();
         let world = app.world_mut();

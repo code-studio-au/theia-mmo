@@ -1,12 +1,18 @@
 //! One bounded guide marker derived only from the owner's committed journal.
 //! This presentation never grants interaction entitlement or mutates progress.
 use avian3d::prelude::{SpatialQuery, SpatialQueryFilter};
-use bevy::{prelude::*, text::FontSize};
+use bevy::{
+    prelude::*,
+    text::{FontSize, FontWeight},
+};
 use theia_core::{coordinates::GlobalPosition, quests::lifecycle::Phase};
 
 const MAX_DISTANCE: f64 = 60.;
 const WIDTH: f32 = 224.;
-const HEIGHT: f32 = 68.;
+const HEIGHT: f32 = 86.;
+const BADGE_WIDTH: f32 = 48.;
+const BADGE_HEIGHT: f32 = 48.;
+const NAME_SPACE: f32 = crate::dialogue::names::HEIGHT + 5.;
 
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
@@ -30,6 +36,7 @@ pub(crate) fn install(app: &mut App) {
             PostUpdate,
             present
                 .after(crate::camera::sync_camera_global)
+                .after(crate::dialogue::names::LayoutReady)
                 .after(avian3d::prelude::PhysicsSystems::StepSimulation)
                 .before(bevy::ui::UiSystems::Layout),
         );
@@ -39,9 +46,14 @@ fn setup(mut commands: Commands) {
         commands.spawn((
             Marker(index),
             Text::new(""),
-            TextFont::default(),
+            TextFont::from_font_weight(FontWeight::BOLD),
             TextColor(Color::WHITE),
             TextLayout::justify(Justify::Center),
+            TextShadow {
+                offset: Vec2::splat(2.5),
+                color: Color::BLACK,
+            },
+            GlobalZIndex(2),
             Node {
                 position_type: PositionType::Absolute,
                 width: px(WIDTH),
@@ -219,13 +231,17 @@ pub(crate) fn guide_observations(
 
 fn anchor(position: GlobalPosition, frame: &crate::floating_origin::Frame) -> Option<Vec3> {
     let mut p = position.metres();
-    p[1] += 1.9;
+    p[1] += f64::from(crate::dialogue::names::ANCHOR_HEIGHT);
     Some(Vec3::from_array(
         frame.render.to_local(GlobalPosition::new(p)?)?.metres(),
     ))
 }
-fn font_size(distance: f64) -> f32 {
-    (25. - distance as f32 * 0.18).round().clamp(15., 24.)
+fn font_size(distance: f64, badge: bool) -> f32 {
+    if badge {
+        (38. - distance as f32 * 0.16).round().clamp(28., 38.)
+    } else {
+        (31. - distance as f32 * 0.17).round().clamp(21., 30.)
+    }
 }
 pub(crate) fn occluded(spatial: &SpatialQuery, eye: Vec3, point: Vec3) -> bool {
     let ray = point - eye;
@@ -264,6 +280,7 @@ fn present(
     mut labels: Query<MarkerLabel<'_>>,
     mut metrics: ResMut<Metrics>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
+    names: Option<Res<crate::dialogue::names::Layout>>,
 ) {
     metrics.visible_now = false;
     metrics.phase_now = None;
@@ -274,6 +291,7 @@ fn present(
         journal.as_ref().map(|d| d.0.as_ref()),
     );
     let scale = ui_scale.as_ref().map_or(1., |scale| scale.0);
+    let mut occupied = Vec::<Rect>::new();
     for (marker, mut text, mut font, mut color, mut node, mut visibility) in &mut labels {
         *visibility = Visibility::Hidden;
         let observed = observations.get(marker.0).copied();
@@ -283,13 +301,14 @@ fn present(
         let Some((index, caption, tint)) = appearance(phase) else {
             continue;
         };
-        let caption = if skin.is_some() {
-            caption.lines().next().unwrap_or(caption)
+        let badge = skin.is_some();
+        let caption = if badge {
+            ["!", "…", "?"][index]
         } else {
             caption
         };
-        let (width, height) = if skin.is_some() {
-            (40., 36.)
+        let (width, height) = if badge {
+            (BADGE_WIDTH, BADGE_HEIGHT)
         } else {
             (WIDTH, HEIGHT)
         };
@@ -310,13 +329,40 @@ fn present(
         ) else {
             continue;
         };
-        if screen.x < width * 0.5
-            || screen.x > viewport.x - width * 0.5
-            || screen.y < height
-            || screen.y > viewport.y
-        {
+        let key = state.guide.as_ref().and_then(|presence| {
+            presence
+                .guide
+                .into_iter()
+                .chain(presence.contacts.iter().map(|contact| contact.guide))
+                .find(|contact| contact.position == guide)
+                .map(|contact| contact.key)
+        });
+        let stack = names.as_ref().and_then(|names| {
+            names
+                .0
+                .iter()
+                .find(|(id, _)| Some(*id) == key)
+                .map(|(_, bounds)| *bounds)
+        });
+        let bottom = stack.map_or(screen - Vec2::Y * NAME_SPACE, |bounds| {
+            Vec2::new(bounds.center().x, bounds.min.y - 5.)
+        });
+        let ideal = Rect::from_corners(
+            bottom - Vec2::new(width * 0.5, height),
+            bottom + Vec2::X * width * 0.5,
+        );
+        let Some(rect) = crate::dialogue::names::clear_rect(ideal, viewport, |rect| {
+            occupied
+                .iter()
+                .chain(
+                    names
+                        .iter()
+                        .flat_map(|names| names.0.iter().map(|(_, r)| r)),
+                )
+                .any(|other| !rect.intersect(*other).is_empty())
+        }) else {
             continue;
-        }
+        };
         let eye = transform.translation();
         if occluded(&spatial, eye, point) {
             metrics.occluded_frames += 1;
@@ -328,15 +374,19 @@ fn present(
         if color.0 != tint {
             color.0 = tint;
         }
-        let size = font_size(distance);
+        let size = font_size(distance, badge);
         if !matches!(font.font_size, FontSize::Px(current) if current == size) {
             font.font_size = FontSize::Px(size);
         }
         metrics.last_font_px = size;
         node.width = px(width);
         node.height = px(height);
-        node.left = px(screen.x - width * 0.5);
-        node.top = px(screen.y - height);
+        occupied.push(rect);
+        node.left = px(rect.min.x);
+        node.top = px(rect.min.y);
+        if badge {
+            node.padding.top = px(((height - size * 1.15) * 0.5).max(0.));
+        }
         *visibility = Visibility::Inherited;
         metrics.visible_now = true;
         metrics.phase_now = Some(index);
@@ -549,8 +599,8 @@ mod tests {
         assert!(appearance(Phase::Active).unwrap().1.starts_with("..."));
         assert!(appearance(Phase::Ready).unwrap().1.starts_with('?'));
         assert!(appearance(Phase::TurnedIn).is_none());
-        assert_eq!(font_size(0.), 24.);
-        assert_eq!(font_size(60.), 15.);
+        assert_eq!(font_size(0., true), 38.);
+        assert_eq!(font_size(60., true), 28.);
     }
     #[test]
     fn anchor_preserves_large_global_coordinates_across_render_rebases() {
@@ -566,7 +616,7 @@ mod tests {
         );
         let second = anchor(p, &frame).unwrap();
         assert!((first - second - Vec3::new(128., 0., -128.)).length() < 0.0001);
-        assert!((first.y - 21.9).abs() < 0.00001);
+        assert!((first.y - (20. + crate::dialogue::names::ANCHOR_HEIGHT)).abs() < 0.00001);
     }
     #[test]
     fn expanded_marker_prioritizes_ready_then_available_and_uses_committed_history() {

@@ -1,13 +1,54 @@
 //! Friendly NPC overhead names and roles, anchored to the rendered contact.
 use super::*;
-use theia_core::content::ContentId;
+use theia_core::{content::ContentId, identity::EntityKey};
+
+pub(crate) const ANCHOR_HEIGHT: f32 = 1.15;
+pub(crate) const HEIGHT: f32 = 48.;
+const WIDTH: f32 = 232.;
 #[derive(Component)]
 struct Nameplate(ContentId);
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct LayoutReady;
+#[derive(Resource, Default)]
+pub(crate) struct Layout(pub Vec<(EntityKey, Rect)>);
+
+/// Prefer the projected position and use nearby horizontal lanes for crowded labels.
+pub(crate) fn clear_rect(
+    ideal: Rect,
+    viewport: Vec2,
+    occupied: impl Fn(Rect) -> bool,
+) -> Option<Rect> {
+    (0..=6)
+        .flat_map(|step| {
+            if step == 0 {
+                [0., 0.]
+            } else {
+                [32. * step as f32, -32. * step as f32]
+            }
+        })
+        .map(|x| Rect::from_corners(ideal.min + Vec2::X * x, ideal.max + Vec2::X * x))
+        .find(|rect| {
+            rect.min.x >= 4.
+                && rect.max.x <= viewport.x - 4.
+                && rect.min.y >= 0.
+                && rect.max.y <= viewport.y
+                && !occupied(*rect)
+        })
+}
+
+fn overlaps(a: Rect, b: Rect) -> bool {
+    let margin = Vec2::splat(3.);
+    !Rect::from_corners(a.min - margin, a.max + margin)
+        .intersect(b)
+        .is_empty()
+}
 pub(super) fn install(app: &mut App) {
-    app.add_systems(Startup, setup.after(super::setup));
+    app.init_resource::<Layout>()
+        .add_systems(Startup, setup.after(super::setup));
     app.add_systems(
         PostUpdate,
         present
+            .in_set(LayoutReady)
             .after(crate::camera::sync_camera_global)
             .before(bevy::ui::UiSystems::Layout),
     );
@@ -29,50 +70,93 @@ fn setup(
                 "Resident"
             },
         ));
-        commands.spawn((
-            Nameplate(contact.npc().clone()),
-            Text::new(format!("{name}\n<{role}>")),
-            TextFont {
-                font_size: FontSize::Px(16.),
-                ..default()
-            },
-            TextColor(Color::srgb(0.25, 1., 0.22)),
-            TextLayout::justify(Justify::Center),
-            TextShadow {
-                offset: Vec2::ONE,
-                color: Color::BLACK,
-            },
+        label(&mut commands, Nameplate(contact.npc().clone()), name, role);
+    }
+}
+
+fn label(commands: &mut Commands, marker: Nameplate, name: &str, role: &str) {
+    commands
+        .spawn((
+            marker,
             Node {
                 position_type: PositionType::Absolute,
-                width: px(220),
-                height: px(46),
+                width: px(WIDTH),
+                height: px(HEIGHT),
                 display: Display::None,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::End,
                 ..default()
             },
             Pickable::IGNORE,
             GlobalZIndex(1),
-        ));
-    }
+        ))
+        .with_children(|anchor| {
+            anchor
+                .spawn((
+                    Node {
+                        max_width: percent(100),
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    Pickable::IGNORE,
+                ))
+                .with_children(|plate| {
+                    plate.spawn((
+                        Text::new(name),
+                        TextFont::from_font_size(21.)
+                            .with_font_weight(bevy::text::FontWeight::BOLD),
+                        TextColor(Color::WHITE),
+                        TextLayout::justify(Justify::Center),
+                        TextShadow {
+                            offset: Vec2::splat(2.),
+                            color: Color::BLACK,
+                        },
+                        Pickable::IGNORE,
+                    ));
+                    plate.spawn((
+                        Text::new(role),
+                        TextFont::from_font_size(16.)
+                            .with_font_weight(bevy::text::FontWeight::BOLD),
+                        TextColor(Color::srgb(1., 0.86, 0.56)),
+                        TextLayout::justify(Justify::Center),
+                        TextShadow {
+                            offset: Vec2::splat(2.),
+                            color: Color::BLACK,
+                        },
+                        Pickable::IGNORE,
+                    ));
+                });
+        });
 }
+type Contact<'a> = (
+    &'a ContactDefinition,
+    &'a ContactKey,
+    &'a Transform,
+    &'a Visibility,
+);
+#[allow(clippy::too_many_arguments)]
 fn present(
     network: Res<Network>,
     scale: Res<bevy::ui::UiScale>,
     cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
-    contacts: Query<(&ContactDefinition, &Transform, &Visibility), With<GuideVisual>>,
+    contacts: Query<Contact<'_>, With<GuideVisual>>,
     spatial: avian3d::prelude::SpatialQuery,
-    mut names: Query<(&Nameplate, &mut Node)>,
+    mut names: Query<(Entity, &Nameplate, &Children, &mut Node)>,
+    computed: Query<&ComputedNode>,
+    mut layout: ResMut<Layout>,
 ) {
-    let camera = cameras.single().ok();
-    for (name, mut node) in &mut names {
+    layout.0.clear();
+    let camera = cameras.single().ok().filter(|_| network.connected());
+    let mut anchors = Vec::new();
+    for (entity, name, children, mut node) in &mut names {
         let anchor = camera.and_then(|(camera, transform)| {
-            if !network.connected() {
-                return None;
-            }
-            let (_, npc, visibility) = contacts.iter().find(|(d, _, _)| d.0 == name.0)?;
+            let (_, key, npc, visibility) = contacts.iter().find(|(d, _, _, _)| d.0 == name.0)?;
+            let key = key.0?;
             if *visibility == Visibility::Hidden {
                 return None;
             }
-            let world = npc.translation + Vec3::Y * 1.15;
+            let world = npc.translation + Vec3::Y * ANCHOR_HEIGHT;
             if crate::quest_marker::occluded(&spatial, transform.translation(), world) {
                 return None;
             }
@@ -81,20 +165,48 @@ fn present(
                 scale.0,
             )?;
             let viewport = camera.logical_viewport_size()? / scale.0;
-            (screen.x >= 110.
-                && screen.x <= viewport.x - 110.
-                && screen.y >= 46.
-                && screen.y <= viewport.y)
-                .then_some(screen)
+            if screen.x < 0. || screen.x > viewport.x || screen.y < HEIGHT || screen.y > viewport.y
+            {
+                return None;
+            }
+            let width = children
+                .first()
+                .and_then(|e| computed.get(*e).ok())
+                .map_or(160., |node| {
+                    (node.size().x * node.inverse_scale_factor()).clamp(100., WIDTH)
+                });
+            let ideal = Rect::from_corners(
+                screen - Vec2::new(width * 0.5, HEIGHT),
+                screen + Vec2::X * width * 0.5,
+            );
+            Some((
+                key,
+                ideal,
+                viewport,
+                transform.translation().distance_squared(world),
+            ))
         });
-        node.display = if anchor.is_some() {
-            Display::Flex
-        } else {
-            Display::None
+        if let Some((key, ideal, viewport, distance)) = anchor {
+            anchors.push((entity, key, ideal, viewport, distance));
+        } else if node.display != Display::None {
+            node.display = Display::None;
+        }
+    }
+    anchors.sort_by(|a, b| a.4.total_cmp(&b.4));
+    for (entity, key, ideal, viewport, _) in anchors {
+        let rect = clear_rect(ideal, viewport, |rect| {
+            layout.0.iter().any(|(_, other)| overlaps(rect, *other))
+        });
+        let Ok((_, _, _, mut node)) = names.get_mut(entity) else {
+            continue;
         };
-        if let Some(p) = anchor {
-            node.left = px(p.x - 110.);
-            node.top = px(p.y - 46.);
+        if let Some(rect) = rect {
+            layout.0.push((key, rect));
+            node.display = Display::Flex;
+            node.left = px(rect.center().x - WIDTH * 0.5);
+            node.top = px(rect.min.y);
+        } else {
+            node.display = Display::None;
         }
     }
 }

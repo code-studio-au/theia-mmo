@@ -398,6 +398,9 @@ impl Combat {
             .map_err(|_| "Player life refused damage")?;
         if damage.died {
             world.reset_life_controls(id, None)?;
+            if let Some(statuses) = &mut self.statuses {
+                statuses.remove_target(target.actor);
+            }
         }
         let actor = self.actors.get_mut(&id).unwrap();
         actor.life.as_mut().unwrap().state = next;

@@ -211,7 +211,8 @@ pub(in crate::combat) fn portrait(
         });
 }
 
-pub(in crate::combat) enum Pool {
+#[derive(Clone, Copy)]
+pub(crate) enum Pool {
     Health,
     Mana,
     Hostile,
@@ -230,7 +231,6 @@ pub(in crate::combat) fn bar(
     fill: impl Bundle,
     label: impl Bundle,
 ) {
-    use bevy::ui::{BackgroundGradient, ColorStop, LinearGradient};
     let height = match pool {
         Pool::Health | Pool::Hostile => 24.,
         Pool::Mana | Pool::TargetMana => 21.,
@@ -246,60 +246,7 @@ pub(in crate::combat) fn bar(
             Pickable::IGNORE,
         ))
         .with_children(|bar| {
-            bar.spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(5),
-                    right: px(5),
-                    top: px(3),
-                    bottom: px(3),
-                    overflow: Overflow::clip(),
-                    border_radius: BorderRadius::all(px(3)),
-                    ..default()
-                },
-                BackgroundColor(Color::srgba(0.015, 0.025, 0.04, 0.96)),
-                Pickable::IGNORE,
-            ))
-            .with_children(|track| {
-                let mut fill = track.spawn((
-                    fill,
-                    Node {
-                        width: percent(0),
-                        height: percent(100),
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                ));
-                match pool {
-                    Pool::Health => fill.insert(crate::ui_theme::Sprite("bar.fill-health")),
-                    Pool::Mana | Pool::TargetMana => {
-                        fill.insert(crate::ui_theme::Sprite("bar.fill-mana"))
-                    }
-                    Pool::Hostile => fill.insert(BackgroundGradient(vec![
-                        LinearGradient::new(
-                            LinearGradient::TO_BOTTOM,
-                            vec![
-                                ColorStop::percent(Color::srgb(1., 0.37, 0.33), 0),
-                                ColorStop::percent(Color::srgb(0.8, 0.035, 0.05), 40),
-                                ColorStop::percent(Color::srgb(0.44, 0.012, 0.055), 100),
-                            ],
-                        )
-                        .into(),
-                    ])),
-                };
-            });
-            let mut frame = bar.spawn((
-                crate::ui_theme::Sprite("bar.frame"),
-                Node {
-                    width: percent(100),
-                    height: percent(100),
-                    ..default()
-                },
-                Pickable::IGNORE,
-            ));
-            if matches!(pool, Pool::TargetMana) {
-                frame.insert((TargetManaFrame, crate::ui_theme::Muted));
-            }
+            pool_art(bar, pool, fill, ());
             bar.spawn((
                 Node {
                     position_type: PositionType::Absolute,
@@ -318,6 +265,72 @@ pub(in crate::combat) fn bar(
                 Pickable::IGNORE,
             ));
         });
+}
+
+/// The dark track, fill and gold frame shared by HUD and overhead vitals.
+pub(crate) fn pool_art(
+    bar: &mut ChildSpawnerCommands,
+    pool: Pool,
+    fill: impl Bundle,
+    frame_marker: impl Bundle,
+) {
+    use bevy::ui::{BackgroundGradient, ColorStop, LinearGradient};
+    bar.spawn((
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(5),
+            right: px(5),
+            top: px(3),
+            bottom: px(3),
+            overflow: Overflow::clip(),
+            border_radius: BorderRadius::all(px(3)),
+            ..default()
+        },
+        BackgroundColor(Color::srgba(0.015, 0.025, 0.04, 0.96)),
+        Pickable::IGNORE,
+    ))
+    .with_children(|track| {
+        let mut fill = track.spawn((
+            fill,
+            Node {
+                width: percent(0),
+                height: percent(100),
+                ..default()
+            },
+            Pickable::IGNORE,
+        ));
+        match pool {
+            Pool::Health => fill.insert(crate::ui_theme::Sprite("bar.fill-health")),
+            Pool::Mana | Pool::TargetMana => fill.insert((
+                crate::ui_theme::Sprite("bar.fill-mana"),
+                BackgroundColor(Color::srgb(0.14, 0.39, 0.87)),
+            )),
+            Pool::Hostile => fill.insert(BackgroundGradient(vec![
+                LinearGradient::new(
+                    LinearGradient::TO_BOTTOM,
+                    vec![
+                        ColorStop::percent(Color::srgb(1., 0.37, 0.33), 0),
+                        ColorStop::percent(Color::srgb(0.8, 0.035, 0.05), 40),
+                        ColorStop::percent(Color::srgb(0.44, 0.012, 0.055), 100),
+                    ],
+                )
+                .into(),
+            ])),
+        };
+    });
+    let mut frame = bar.spawn((
+        frame_marker,
+        crate::ui_theme::Sprite("bar.frame"),
+        Node {
+            width: percent(100),
+            height: percent(100),
+            ..default()
+        },
+        Pickable::IGNORE,
+    ));
+    if matches!(pool, Pool::TargetMana) {
+        frame.insert((TargetManaFrame, crate::ui_theme::Muted));
+    }
 }
 
 #[cfg(test)]

@@ -511,12 +511,8 @@ fn check(
     }
     if let Some(policy) = bytes.get("combat_membership") {
         crate::combat_membership_wire::Profile::from_json(policy)?;
-        if abilities
-            .abilities()
-            .iter()
-            .any(|a| !matches!(a.effect(), theia_core::abilities::Effect::Damage { .. }))
-        {
-            return Err("Membership requires typed damage-only abilities".into());
+        if !combat::membership::supports(&abilities) {
+            return Err("Membership requires typed damage for hostile abilities".into());
         }
     }
     if let Some(policy) = bytes.get("creature_credit") {

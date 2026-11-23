@@ -69,6 +69,25 @@
           "kind": "continue"
         }
       }
+    },
+    {
+      "id": "theia.dev.frost-armor",
+      "target": "self_alive",
+      "range_metres": 1.0,
+      "cast_ms": 0,
+      "cooldown_ms": 4000,
+      "cast_while_moving": true,
+      "uses_global_cooldown": true,
+      "mana_cost": 10,
+      "effect": {
+        "kind": "apply_status",
+        "status": "theia.dev.frost-armor"
+      },
+      "combat": {
+        "minimum_range_metres": 0.0,
+        "facing": { "kind": "any" },
+        "autoattack": { "kind": "continue" }
+      }
     }
   ]
 }

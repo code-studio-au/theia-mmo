@@ -27,6 +27,14 @@ pub fn identity_for_profile(
 ) -> [u8; 32] {
     identity(base, profile.hash())
 }
+/// Self buffs have no hostile impact. Hostile abilities still have to use
+/// typed direct damage so their impacts participate in membership and credit.
+pub(crate) fn supports(catalog: &theia_core::abilities::Catalog) -> bool {
+    use theia_core::abilities::{Effect, Target};
+    catalog.abilities().iter().all(|ability| {
+        ability.target() == Target::SelfAlive || matches!(ability.effect(), Effect::Damage { .. })
+    })
+}
 pub(super) struct Runtime {
     profile: Arc<crate::combat_membership_wire::Profile>,
     npcs: Vec<EntityKey>,
@@ -125,11 +133,7 @@ impl World {
             || (!combat.ordinary_target_ready() && !combat.population_physical_ready(self))
             || combat.ability_damage.is_none()
             || combat.white_melee.is_none()
-            || combat
-                .catalog
-                .abilities()
-                .iter()
-                .any(|a| !matches!(a.effect(), theia_core::abilities::Effect::Damage { .. }))
+            || !supports(&combat.catalog)
         {
             return Err("Membership requires checked typed-damage creature encounters".into());
         }
