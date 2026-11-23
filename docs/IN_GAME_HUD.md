@@ -102,3 +102,35 @@ water. See `build/reference-hud-native-ornate/hud-minimap.png` and
 `qualification.json` in the same directory. The three offscreen sizes
 also passed. Linux Vulkan llvmpipe reported zero diagnostics. Strict Clippy,
 formatting, the release build and 363 client tests passed, with five skips.
+
+## Matte slots and compact inventory
+
+P2-14 and P3-05 share a charcoal slot well and one narrow bronze edge for
+ability, bag, equipment, reward and status tiles. Empty slots have no icon.
+Occupied tiles sample the interiors of the approved v3 sprites and fit the
+artwork inside the frame. Stack counts, cooldowns, hover and selection stay
+visible and use live widget state.
+
+The skinned inventory is a four-by-four grid of the sixteen available bag
+slots with a 244-pixel outer width at default UI scale. Right-click a stack
+for its available actions. Splitting one, moving and unequipping use the
+existing destination selection. Destruction requires a second confirmation
+bound to the same slot and bag revision. Reading a document uses the existing
+authority and reader. Escape dismisses the context menu before the bag.
+
+The Character shortcut opens the existing main-hand equipment state in a
+separate panel. Trading accompanies the NPC interaction in its own panel.
+The bag has no categories, rewards controls, account reward claim, equipment
+row, currency footer or loading-status row. Item operation feedback appears
+outside the grid. The text-only development backpack retains its controls
+for the original qualification fixtures.
+
+The 1720×1000 native Millhaven test exercised a secondary click on an item
+while another item was selected, plus equip, unequip, split, destroy
+confirmation and Escape. See `build/compact-inventory-native-final/slot-context.png`
+and the adjacent qualification report. Captures at 1920×1080, 1720×700
+and 1280×720 use the same bag and equipment widgets with fixture items.
+Linux Vulkan llvmpipe (LLVM 21.1.8, Mesa 26.2.7) reported zero diagnostics.
+Strict Clippy, formatting, release build and 364 client tests pass, with five
+existing skips. A cached library link failure was resolved by rebuilding the
+affected dependency; the final checks use the standard release profile.

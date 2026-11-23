@@ -298,7 +298,7 @@ fn setup(
                 bevy::picking::Pickable::IGNORE,
             ))
             .with_children(|panel| {
-                if skin.is_some() {
+                if let Some(skin) = skin.as_deref() {
                     unit_frame::portrait(
                         panel,
                         crate::frontend::thumbnail_atlas(
@@ -317,7 +317,7 @@ fn setup(
                         PlayerHealthLabel,
                     );
                     unit_frame::bar(panel, unit_frame::Pool::Mana, (), ManaFill, ManaLabel);
-                    crate::status_effects::widgets(panel, true);
+                    crate::status_effects::widgets(panel, true, skin);
                 } else {
                     panel.spawn((PlayerHealthLabel, text("Waiting for health", 16.)));
                     legacy_pool(
@@ -468,8 +468,8 @@ fn setup(
                         ));
                         bar.spawn((
                             CastIcon,
-                            ImageNode::new(skin.icon("")),
-                            Node {
+                            skin.icon(""),
+                            crate::ui_theme::slot::frame(Node {
                                 position_type: PositionType::Absolute,
                                 left: px(-28),
                                 top: px(-6),
@@ -477,7 +477,7 @@ fn setup(
                                 height: px(44),
                                 display: Display::None,
                                 ..default()
-                            },
+                            }),
                             bevy::picking::Pickable::IGNORE,
                         ));
                     }
@@ -585,10 +585,8 @@ fn compact_actions(
                     let Some(ability) = layout.ability(&config.0, slot) else {
                         bar.spawn((
                             ActionSlot(slot),
-                            crate::ui_theme::Sprite("slot.empty.default"),
-                            node,
-                            BackgroundColor(Color::srgba(0.025, 0.022, 0.02, 0.96)),
-                            Outline::new(px(1), px(-1), GOLD),
+                            crate::ui_theme::slot::frame(node),
+                            Pickable::IGNORE,
                         ))
                         .with_child(slot_key(slot));
                         continue;
@@ -602,18 +600,12 @@ fn compact_actions(
                         crate::ui_theme::Style::Slot,
                         ActionSlot(slot),
                         AccessibleLabel::new(format!("Cast {name} ({})", key_label(slot))),
-                        node,
-                        BackgroundColor(PANEL),
-                        Outline::new(px(1), px(-1), GOLD),
+                        crate::ui_theme::slot::frame(node),
                     ))
                     .with_children(|button| {
                         button.spawn((
-                            Node {
-                                width: px(40),
-                                height: px(40.),
-                                ..default()
-                            },
-                            ImageNode::new(skin.icon(ability.id().as_str())),
+                            crate::ui_theme::slot::art(),
+                            skin.icon(ability.id().as_str()),
                             Pickable::IGNORE,
                         ));
                         button.spawn((
@@ -705,9 +697,9 @@ fn paint_cast(
             node.display = display;
         }
         if let (Some(mut image), Some(cast)) = (image, &model.cast_info) {
-            let handle = skin.icon(&cast.ability);
-            if image.image != handle {
-                image.image = handle;
+            let art = skin.icon(&cast.ability);
+            if image.image != art.image || image.rect != art.rect {
+                *image = art;
             }
         }
     }
@@ -986,21 +978,16 @@ fn paint(
                     }
                 }
             }
+            continue;
         }
         let value = if !model.connected || !model.has_target || model.life_blocked {
             Color::srgb(0.13, 0.14, 0.16)
+        } else if pressed {
+            Color::srgb(0.14, 0.36, 0.5)
+        } else if hovered.is_some_and(|h| h.0) {
+            Color::srgb(0.1, 0.24, 0.34)
         } else {
-            if pressed {
-                Color::srgb(0.14, 0.36, 0.5)
-            } else if hovered.is_some_and(|h| h.0) {
-                Color::srgb(0.1, 0.24, 0.34)
-            } else {
-                if skin.is_some() {
-                    crate::fantasy_ui::PANEL
-                } else {
-                    Color::srgb(0.07, 0.12, 0.19)
-                }
-            }
+            Color::srgb(0.07, 0.12, 0.19)
         };
         if colour.0 != value {
             colour.0 = value;
@@ -1332,7 +1319,8 @@ pub(super) mod tests {
             }
             app.update();
             let changed = *app.world().resource::<DirtyFrame>();
-            assert!(changed.0 > 0 && changed.1 > 0 && changed.2 > 0);
+            assert!(changed.0 > 0 && changed.1 > 0);
+            assert_eq!(changed.2 > 0, !skin);
             let world = app.world_mut();
             let mut health = world.query_filtered::<(&Text,), With<PlayerHealthLabel>>();
             assert_eq!(

@@ -130,18 +130,17 @@ pub(crate) fn reward_icons(
                         ..default()
                     },
                     BackgroundColor(PANEL),
-                    Outline::new(px(1), px(-1), GOLD),
                 ))
                 .with_children(|cell| {
                     cell.spawn((
-                        ImageNode::new(skin.item_icon(grant.item().as_str())),
+                        skin.item_icon(grant.item().as_str()),
                         Pickable::IGNORE,
-                        Node {
-                            width: px(28),
-                            height: px(28),
+                        crate::ui_theme::slot::frame(Node {
+                            width: px(32),
+                            height: px(32),
                             flex_shrink: 0.,
                             ..default()
-                        },
+                        }),
                     ));
                     cell.spawn((
                         Text::new(grant.count().to_string()),
@@ -344,11 +343,11 @@ pub(crate) enum Panel {
 #[derive(Resource)]
 pub(crate) struct Skin {
     pub(crate) wolf: Handle<Image>,
-    sword: Handle<Image>,
-    arcane: Handle<Image>,
-    fire: Handle<Image>,
-    fallback: Handle<Image>,
-    item_icons: [Handle<Image>; 6],
+    sword: ImageNode,
+    arcane: ImageNode,
+    fire: ImageNode,
+    fallback: ImageNode,
+    item_icons: [ImageNode; 6],
     title_font: Handle<Font>,
     body_font: Handle<Font>,
 }
@@ -368,7 +367,7 @@ impl Skin {
     }
     /// Presentation mapping only. Unknown authored items keep a generic icon.
     /// Pelt/leather, stone/shard and wand/crystal are provisional art, not item metadata.
-    pub(crate) fn item_icon(&self, id: &str) -> Handle<Image> {
+    pub(crate) fn item_icon(&self, id: &str) -> ImageNode {
         let index = match id {
             "theia.dev.training-stone" => 0,
             "theia.dev.training-token" => 1,
@@ -380,7 +379,7 @@ impl Skin {
         };
         self.item_icons[index].clone()
     }
-    pub(crate) fn icon(&self, id: &str) -> Handle<Image> {
+    pub(crate) fn icon(&self, id: &str) -> ImageNode {
         match id {
             "theia.dev.sword-slash" => self.sword.clone(),
             "theia.dev.arcane-bolt" => self.arcane.clone(),
@@ -529,39 +528,53 @@ pub(crate) fn load(app: &mut App) {
         ));
     let mut images = app.world_mut().resource_mut::<Assets<Image>>();
     let mut image = |bytes: &[u8]| images.add(crate::ui_theme::sprites::decode(bytes));
+    let wolf = image(include_bytes!("../../../content/ui/hud/wolf-portrait.png"));
+    // Sample the artwork inside these tiles. The slot supplies its own frame.
+    let mut tile = |bytes: &[u8], [left, top, right, bottom]: [f32; 4]| ImageNode {
+        rect: Some(Rect::new(left, top, right, bottom)),
+        ..ImageNode::new(image(bytes))
+    };
+    let book = tile(
+        include_bytes!("../../../content/ui/sprites-v3/sprites/icon/book.png"),
+        [7., 12., 177., 148.],
+    );
     let skin = Skin {
-        wolf: image(include_bytes!("../../../content/ui/hud/wolf-portrait.png")),
-        sword: image(include_bytes!(
-            "../../../content/ui/sprites-v3/sprites/ability/sword.png"
-        )),
-        arcane: image(include_bytes!(
-            "../../../content/ui/sprites-v3/sprites/ability/arcane-arrow.png"
-        )),
-        fire: image(include_bytes!(
-            "../../../content/ui/sprites-v3/sprites/ability/flame-burst.png"
-        )),
-        fallback: image(include_bytes!(
-            "../../../content/ui/sprites-v3/sprites/icon/book.png"
-        )),
+        wolf,
+        sword: tile(
+            include_bytes!("../../../content/ui/sprites-v3/sprites/ability/sword.png"),
+            [43., 39., 285., 281.],
+        ),
+        arcane: tile(
+            include_bytes!("../../../content/ui/sprites-v3/sprites/ability/arcane-arrow.png"),
+            [40., 38., 280., 278.],
+        ),
+        fire: tile(
+            include_bytes!("../../../content/ui/sprites-v3/sprites/ability/flame-burst.png"),
+            [32., 26., 300., 294.],
+        ),
+        fallback: book.clone(),
         item_icons: [
-            image(include_bytes!(
-                "../../../content/ui/sprites-v3/sprites/item/shard.png"
-            )),
-            image(include_bytes!(
-                "../../../content/ui/sprites-v3/sprites/icon/coins.png"
-            )),
-            image(include_bytes!(
-                "../../../content/ui/sprites-v3/sprites/item/sword-common.png"
-            )),
-            image(include_bytes!(
-                "../../../content/ui/sprites-v3/sprites/item/crystal.png"
-            )),
-            image(include_bytes!(
-                "../../../content/ui/sprites-v3/sprites/item/leather.png"
-            )),
-            image(include_bytes!(
-                "../../../content/ui/sprites-v3/sprites/icon/book.png"
-            )),
+            tile(
+                include_bytes!("../../../content/ui/sprites-v3/sprites/item/shard.png"),
+                [34., 46., 226., 238.],
+            ),
+            tile(
+                include_bytes!("../../../content/ui/sprites-v3/sprites/icon/coins.png"),
+                [14., 4., 162., 152.],
+            ),
+            tile(
+                include_bytes!("../../../content/ui/sprites-v3/sprites/item/sword-common.png"),
+                [38., 40., 278., 280.],
+            ),
+            tile(
+                include_bytes!("../../../content/ui/sprites-v3/sprites/item/crystal.png"),
+                [37., 45., 291., 299.],
+            ),
+            tile(
+                include_bytes!("../../../content/ui/sprites-v3/sprites/item/leather.png"),
+                [34., 41., 226., 233.],
+            ),
+            book,
         ],
         title_font,
         body_font,

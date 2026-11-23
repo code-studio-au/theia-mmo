@@ -317,10 +317,19 @@ fn selected(profile: &Profile, bag: &Bag, slot: u8) -> Option<u8> {
         .position(|d| d.id() == document.id())
         .and_then(|i| u8::try_from(i).ok())
 }
+type DocumentControls<'w, 's> = Query<
+    'w,
+    's,
+    (
+        Option<&'static Action>,
+        Option<&'static inventory::context_menu::Choice>,
+    ),
+    Or<(With<Action>, With<inventory::context_menu::Choice>)>,
+>;
 #[allow(clippy::too_many_arguments)]
 fn activate(
     event: On<Activate>,
-    actions: Query<&Action>,
+    actions: DocumentControls<'_, '_>,
     mut pending: ResMut<Pending>,
     mut ui: ResMut<Ui>,
     inventory: Res<inventory::Ui>,
@@ -328,14 +337,19 @@ fn activate(
     config: Res<Config>,
     windows: Query<&Window>,
 ) {
-    let Ok(action) = actions.get(event.entity) else {
+    let Ok((action, context)) = actions.get(event.entity) else {
         return;
     };
     if !windows.single().is_ok_and(|window| window.focused) {
         *pending = Pending::default();
         return;
     }
-    match action {
+    let context_slot =
+        context.and_then(|choice| choice.document_slot(&inventory, inventory.bag.as_ref()?));
+    if action.is_none() && context_slot.is_none() {
+        return;
+    }
+    match action.copied().unwrap_or(Action::Read) {
         Action::Read => {
             if !inventory.open
                 || inventory.pending
@@ -356,7 +370,7 @@ fn activate(
             let Some(bag) = inventory.bag.as_ref().filter(|b| **b == view.bag) else {
                 return;
             };
-            let Some(slot) = inventory.selected else {
+            let Some(slot) = context_slot.or(inventory.selected) else {
                 return;
             };
             let Some(document) = selected(&config.0, bag, slot) else {

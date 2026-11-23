@@ -1734,7 +1734,7 @@ fn input(
                     .documents
                     .as_ref()
                     .is_some_and(|u| u.open || u.closed_this_frame)
-                || mode.inventory.as_ref().is_some_and(|u| u.open)
+                || mode.inventory.as_ref().is_some_and(|u| u.panel_open())
                 || mode.loot.as_ref().is_some_and(|u| u.open));
     }
     if keys.just_pressed(KeyCode::Escape)
@@ -1748,7 +1748,7 @@ fn input(
             .as_ref()
             .is_some_and(|u| u.open || u.closed_this_frame)
         && !mode.loot.as_ref().is_some_and(|u| u.open)
-        && !mode.inventory.as_ref().is_some_and(|ui| ui.open)
+        && !mode.inventory.as_ref().is_some_and(|ui| ui.panel_open())
         && !camera_mode
             .as_ref()
             .is_some_and(|mode| mode.consumed_escape)

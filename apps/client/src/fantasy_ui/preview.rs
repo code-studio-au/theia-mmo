@@ -113,8 +113,15 @@ struct Layout<'w, 's> {
     reader_buttons: Query<'w, 's, AnchorGeometry<'static>, ReaderButtons>,
     bag_actions: Query<'w, 's, AnchorGeometry<'static>, BagActions>,
     bag_slots: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::SlotButton>>,
-    bag_icons:
-        Query<'w, 's, (&'static Node, &'static ComputedNode), With<crate::inventory::skin::Icon>>,
+    bag_icons: Query<
+        'w,
+        's,
+        (
+            &'static crate::inventory::skin::Icon,
+            &'static Node,
+            &'static ComputedNode,
+        ),
+    >,
     bag_tooltip: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::skin::Tooltip>>,
     plates: Query<
         'w,
@@ -409,11 +416,11 @@ fn capture(
         run.started.elapsed() < Duration::from_secs(90),
         "Offscreen UI preview timed out"
     );
-    for handle in [&skin.sword, &skin.arcane, &skin.fallback]
+    for art in [&skin.sword, &skin.arcane, &skin.fallback]
         .into_iter()
         .chain(skin.item_icons.iter())
     {
-        if !images.contains(handle.id()) {
+        if !images.contains(art.image.id()) {
             return;
         }
     }
@@ -683,11 +690,19 @@ fn capture(
     let visible_icons = layout
         .bag_icons
         .iter()
-        .filter(|(node, computed)| {
-            node.display != Display::None && computed.size().min_element() > 0.
+        .filter(|(slot, node, computed)| {
+            matches!(slot, crate::inventory::skin::Icon::Bag(_))
+                && node.display != Display::None
+                && computed.size().min_element() > 0.
         })
         .count();
     assert_eq!(visible_icons, 6, "Only occupied fixture slots show art");
+    assert!(layout.bag_icons.iter().any(|(slot, node, computed)| {
+        matches!(slot, crate::inventory::skin::Icon::MainHand)
+            && node.display != Display::None
+            && computed.size().min_element() > 0.
+    }));
+
     let (tooltip_node, tooltip_transform) = layout.bag_tooltip.single().unwrap();
     let tooltip_size = tooltip_node.size();
     let tooltip_centre = tooltip_transform.affine().translation;
@@ -739,23 +754,12 @@ fn capture(
             "Item tooltip must not cover bag slots"
         );
     }
-    let bag_actions: Vec<_> = layout
-        .bag_actions
-        .iter()
-        .map(|(node, transform)| {
-            let rect = Rect::from_center_size(transform.affine().translation, node.size());
-            assert!(
-                node.size().min_element() > 0.
-                    && rect.min.min_element() >= 0.
-                    && rect.max.x <= run.size.x as f32
-                    && rect.max.y <= run.size.y as f32,
-                "Backpack actions must fit the windowless fixture"
-            );
-            serde_json::json!([rect.min.to_array(), rect.max.to_array()])
-        })
-        .collect();
-    assert_eq!(bag_actions.len(), 5);
-    let backpack = serde_json::json!({"fixture":true, "slots":bag_slots,"actions":bag_actions,"visible_icons":visible_icons,"tooltip":{"centre":tooltip_centre.to_array(),"size":tooltip_size.to_array()}});
+    assert_eq!(
+        layout.bag_actions.iter().len(),
+        0,
+        "Skinned inventory routes item actions through the context menu"
+    );
+    let backpack = serde_json::json!({"fixture":true, "slots":bag_slots,"visible_icons":visible_icons,"tooltip":{"centre":tooltip_centre.to_array(),"size":tooltip_size.to_array()}});
     let mut reward_rows = Vec::<f32>::new();
     let reward_icons: Vec<_> = layout.reward_icons.iter().map(|(reward, node, transform, children)| {
         let rect = Rect::from_center_size(transform.affine().translation, node.size());

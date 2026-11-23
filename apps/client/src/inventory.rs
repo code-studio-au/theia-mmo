@@ -1,5 +1,6 @@
 //! Standard Bevy backpack widgets. Contents and outcomes come from the authority;
 //! selecting slots never changes the displayed bag optimistically.
+pub(crate) mod context_menu;
 pub(crate) mod ground;
 mod lifecycle_qualification;
 mod money;
@@ -25,6 +26,7 @@ struct Config(Profile);
 #[derive(Component, Clone, Copy)]
 enum Widget {
     Toggle,
+    ToggleEquipment,
     Slot(u8),
     Split,
     Destroy,
@@ -59,6 +61,12 @@ struct OfferLabel(u8);
 #[derive(Component)]
 pub(crate) struct Pane;
 #[derive(Component)]
+struct EquipmentPane;
+#[derive(Component)]
+struct VendorPane;
+#[derive(Component)]
+struct Feedback;
+#[derive(Component)]
 pub(crate) struct DocumentActions;
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum Phase {
@@ -77,6 +85,8 @@ struct EquipmentLabel;
 #[derive(Resource, Default)]
 struct Pending {
     toggle: bool,
+    toggle_equipment: bool,
+    context: Option<context_menu::Choice>,
     slot: Option<u8>,
     split: bool,
     destroy: bool,
@@ -89,6 +99,12 @@ struct Pending {
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Ui {
     pub open: bool,
+    pub equipment_open: bool,
+    pub equipment_enabled: bool,
+    #[serde(skip)]
+    menu: Option<context_menu::Selection>,
+    #[serde(skip)]
+    menu_dragged: bool,
     pub destroy_confirmation: Option<(u8, u64)>,
     pub selected: Option<u8>,
     pub split: bool,
@@ -117,6 +133,11 @@ pub(crate) struct Ui {
     #[serde(skip)]
     pub bag: Option<Bag>,
 }
+impl Ui {
+    pub(crate) fn panel_open(&self) -> bool {
+        self.open || self.equipment_open || self.vendor_open
+    }
+}
 fn activate(
     event: On<Activate>,
     widgets: Query<&Widget>,
@@ -131,6 +152,7 @@ fn activate(
         }
         match widget {
             Widget::Toggle => pending.toggle = true,
+            Widget::ToggleEquipment => pending.toggle_equipment = true,
             Widget::Slot(slot) => pending.slot = Some(*slot),
             Widget::Split => pending.split = true,
             Widget::Destroy => pending.destroy = true,
@@ -139,7 +161,7 @@ fn activate(
             Widget::Unequip => pending.unequip = true,
             Widget::Claim => pending.claim = true,
             Widget::Buy(index) => {
-                if ui.open && !ui.pending {
+                if (ui.open || ui.vendor_open) && !ui.pending {
                     pending.buy = ui.offers.get(usize::from(*index)).copied();
                 }
             }
@@ -156,32 +178,36 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
     if let Some(documents) = profile.documents() {
         crate::documents::install(app, documents.clone());
     }
-    app.insert_resource(Config(profile))
-        .init_resource::<Ui>()
-        .init_resource::<Pending>()
-        .add_observer(activate)
-        .add_systems(Update, collect.before(present))
-        .add_systems(Update, close_panel.before(present))
-        .add_systems(Startup, setup.in_set(Phase::Setup))
-        .add_systems(
-            Update,
+    app.insert_resource(Ui {
+        equipment_enabled: profile.catalog().equipment_enabled(),
+        ..default()
+    })
+    .insert_resource(Config(profile))
+    .init_resource::<Pending>()
+    .add_observer(activate)
+    .add_systems(Update, collect.before(present))
+    .add_systems(Update, close_panel.before(present))
+    .add_systems(Startup, setup.in_set(Phase::Setup))
+    .add_systems(
+        Update,
+        (
+            present.in_set(Phase::Present),
             (
-                present.in_set(Phase::Present),
-                (
-                    paint,
-                    paint_coins_and_offers,
-                    money::paint,
-                    paint_buttons,
-                    skin::present,
-                )
-                    .chain()
-                    .in_set(Phase::Paint),
-                scroll,
+                paint,
+                paint_coins_and_offers,
+                money::paint,
+                paint_buttons,
+                skin::present,
             )
                 .chain()
-                .after(crate::network::present),
-        );
+                .in_set(Phase::Paint),
+            scroll,
+        )
+            .chain()
+            .after(crate::network::present),
+    );
     qualification::install(app);
+    context_menu::install(app);
     vendor_qualification::install(app);
     zone_qualification::install(app);
     lifecycle_qualification::install(app);
@@ -242,6 +268,10 @@ pub(crate) fn spawn_toggle(commands: &mut Commands, skinned: bool) {
         })
         .with_child(text("Backpack [I]", 16.));
 }
+const SLOT_SIZE: f32 = 52.;
+const SLOT_GAP: f32 = 4.;
+const BAG_WIDTH: f32 = 4. * SLOT_SIZE + 3. * SLOT_GAP + 24.;
+
 fn spawn_slots(grid: &mut ChildSpawnerCommands, profile: &Profile, skinned: bool) {
     for slot in 0..16 {
         let height = if profile.vendor().is_some() {
@@ -258,15 +288,21 @@ fn spawn_slots(grid: &mut ChildSpawnerCommands, profile: &Profile, skinned: bool
             button(
                 Widget::Slot(slot),
                 &format!("Backpack slot {}", slot + 1),
-                if skinned { 52. } else { 76. },
-                if skinned { 52. } else { height },
+                if skinned { SLOT_SIZE } else { 76. },
+                if skinned { SLOT_SIZE } else { height },
             ),
         ));
         if skinned {
-            entity.insert((
+            entity.remove::<(Button, ActivateOnPress)>().insert((
                 crate::ui_theme::Style::Slot,
-                Outline::new(px(1), px(-1), crate::fantasy_ui::GOLD),
-                BackgroundColor(crate::fantasy_ui::PANEL),
+                crate::ui_theme::slot::frame(Node {
+                    width: px(SLOT_SIZE),
+                    height: px(SLOT_SIZE),
+                    flex_shrink: 0.,
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                }),
             ));
         }
         entity.with_children(|button| {
@@ -293,7 +329,7 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
                 position_type: PositionType::Absolute,
                 right: px(324),
                 bottom: px(52),
-                width: px(340),
+                width: px(if skin.is_some() { BAG_WIDTH } else { 340. }),
                 max_height: percent(75),
                 overflow: Overflow::scroll_y(),
                 padding: UiRect::all(px(12)),
@@ -314,95 +350,94 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
                 );
             }
 
-            if skin.is_some() {
-                panel
-                    .spawn(Node {
-                        column_gap: px(8),
-                        ..default()
-                    })
-                    .with_children(|tabs| {
-                        for (index, title, icon) in [
-                            (0, "All", 1),
-                            (1, "Equipment", 18),
-                            (2, "Consumables", 19),
-                            (3, "Crafting", 2),
-                        ] {
-                            let id = crate::fantasy_ui::kit::disabled(tabs, "");
-                            tabs.commands()
-                                .entity(id)
-                                .insert((
-                                    AccessibleLabel::new(title),
-                                    Node {
-                                        width: px(58),
-                                        height: px(34),
-                                        align_items: AlignItems::Center,
-                                        justify_content: JustifyContent::Center,
-                                        ..default()
-                                    },
-                                ))
-                                .with_children(|p| {
-                                    crate::fantasy_ui::kit::icon(p, icon, index != 0)
-                                });
-                            if index == 0 {
-                                tabs.commands()
-                                    .entity(id)
-                                    .remove::<bevy::ui::InteractionDisabled>()
-                                    .insert(crate::ui_theme::Selected);
-                            }
-                        }
-                    });
-            }
-            if config.0.catalog().equipment_enabled() {
+            if skin.is_none() && config.0.catalog().equipment_enabled() {
                 panel.spawn((EquipmentLabel, text("Main hand: loading...", 14.)));
             }
             panel
                 .spawn((Node {
                     width: percent(100),
                     flex_wrap: FlexWrap::Wrap,
-                    column_gap: px(4),
-                    row_gap: px(4),
+                    column_gap: px(SLOT_GAP),
+                    row_gap: px(SLOT_GAP),
                     ..default()
                 },))
-                .with_children(|grid| {
-                    spawn_slots(grid, &config.0, skin.is_some());
-                    if skin.is_some() {
-                        for _ in 0..4 {
-                            let id = crate::fantasy_ui::kit::disabled(grid, "");
-                            grid.commands()
-                                .entity(id)
-                                .insert((
-                                    AccessibleLabel::new("Locked inventory slot"),
-                                    Node {
-                                        width: px(52),
-                                        height: px(52),
-                                        justify_content: JustifyContent::Center,
-                                        align_items: AlignItems::Center,
-                                        ..default()
-                                    },
-                                ))
-                                .with_child((
-                                    crate::ui_theme::Icon(1),
-                                    crate::ui_theme::Muted,
-                                    Pickable::IGNORE,
-                                    Node {
-                                        width: px(20),
-                                        height: px(20),
-                                        ..default()
-                                    },
-                                ));
-                        }
-                    }
-                });
-            spawn_actions(panel, &config.0, "Loading backpack...");
-            if config.0.catalog().currency_enabled() {
-                panel.spawn(Node {
-                    height: px(44),
-                    flex_shrink: 0.,
-                    ..default()
-                });
-                money::row(panel, None, true);
+                .with_children(|grid| spawn_slots(grid, &config.0, skin.is_some()));
+            if skin.is_none() {
+                spawn_actions(panel, &config.0, "");
+                if config.0.catalog().currency_enabled() {
+                    panel.spawn(Node {
+                        height: px(44),
+                        flex_shrink: 0.,
+                        ..default()
+                    });
+                    money::row(panel, None, true);
+                }
             }
         });
+    if skin.is_some() {
+        if config.0.catalog().equipment_enabled() {
+            commands
+                .spawn((
+                    EquipmentPane,
+                    crate::ui_theme::Panel,
+                    GlobalZIndex(22),
+                    side_panel(236.),
+                ))
+                .with_children(|panel| {
+                    crate::fantasy_ui::window_header(
+                        panel,
+                        text("Character", 22.),
+                        button(Widget::ToggleEquipment, "Close character", 28., 28.),
+                        "Close character",
+                    );
+                    skin::equipment_slot(panel, "Main hand");
+                });
+        }
+        if let Some(vendor) = config.0.vendor() {
+            commands
+                .spawn((
+                    VendorPane,
+                    crate::ui_theme::Panel,
+                    GlobalZIndex(22),
+                    side_panel(306.),
+                ))
+                .with_children(|panel| {
+                    crate::ui_theme::heading(panel, "Trading");
+                    spawn_offers(panel, vendor.catalog());
+                    money::row(panel, None, false);
+                });
+        }
+        commands.spawn((
+            Feedback,
+            StatusLabel,
+            text("", 14.),
+            crate::fantasy_ui::hud_shadow(),
+            GlobalZIndex(24),
+            Node {
+                position_type: PositionType::Absolute,
+                right: px(324. + BAG_WIDTH + 12.),
+                bottom: px(100),
+                max_width: px(BAG_WIDTH),
+                display: Display::None,
+                ..default()
+            },
+        ));
+    }
+}
+fn side_panel(width: f32) -> Node {
+    Node {
+        position_type: PositionType::Absolute,
+        right: px(12),
+        bottom: px(64),
+        width: px(width),
+        max_height: percent(75),
+        overflow: Overflow::scroll_y(),
+        padding: UiRect::all(px(12)),
+        display: Display::None,
+        flex_direction: FlexDirection::Column,
+        row_gap: px(8),
+        ..default()
+    }
 }
 fn spawn_actions(panel: &mut ChildSpawnerCommands, profile: &Profile, status: &str) {
     if profile.catalog().equipment_enabled() {
@@ -475,44 +510,7 @@ fn spawn_actions(panel: &mut ChildSpawnerCommands, profile: &Profile, status: &s
         },
     ));
     if let Some(vendor) = profile.vendor() {
-        for (index, offer) in vendor.catalog().offers().enumerate() {
-            panel
-                .spawn((
-                    BuyButton(index as u8),
-                    button(
-                        Widget::Buy(index as u8),
-                        &format!(
-                            "{} {}",
-                            if offer.is_sale() { "Sell" } else { "Buy" },
-                            offer.name()
-                        ),
-                        316.,
-                        58.,
-                    ),
-                ))
-                .insert(Node {
-                    width: percent(100),
-                    min_height: px(64),
-                    flex_shrink: 0.,
-                    flex_direction: FlexDirection::Column,
-                    padding: UiRect::all(px(6)),
-                    ..default()
-                })
-                .with_children(|button| {
-                    button.spawn((
-                        OfferLabel(index as u8),
-                        text("Talk to a vendor to trade.", 13.),
-                    ));
-                    let price = if offer.is_sale() {
-                        offer.grant()
-                    } else {
-                        offer.cost()
-                    };
-                    if let theia_core::vendors::Amount::Coins { copper } = price {
-                        money::row(button, Some(*copper), false);
-                    }
-                });
-        }
+        spawn_offers(panel, vendor.catalog());
     }
     if profile.rewards().is_some() {
         panel
@@ -521,6 +519,46 @@ fn spawn_actions(panel: &mut ChildSpawnerCommands, profile: &Profile, status: &s
                 button(Widget::Claim, "Claim available reward", 316., 30.),
             ))
             .with_child((RewardLabel, text("Loading rewards...", 14.)));
+    }
+}
+fn spawn_offers(panel: &mut ChildSpawnerCommands, catalog: &theia_core::vendors::Catalog) {
+    for (index, offer) in catalog.offers().enumerate() {
+        panel
+            .spawn((
+                BuyButton(index as u8),
+                button(
+                    Widget::Buy(index as u8),
+                    &format!(
+                        "{} {}",
+                        if offer.is_sale() { "Sell" } else { "Buy" },
+                        offer.name()
+                    ),
+                    316.,
+                    58.,
+                ),
+            ))
+            .insert(Node {
+                width: percent(100),
+                min_height: px(64),
+                flex_shrink: 0.,
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(px(6)),
+                ..default()
+            })
+            .with_children(|button| {
+                button.spawn((
+                    OfferLabel(index as u8),
+                    text("Talk to a vendor to trade.", 13.),
+                ));
+                let price = if offer.is_sale() {
+                    offer.grant()
+                } else {
+                    offer.cost()
+                };
+                if let theia_core::vendors::Amount::Coins { copper } = price {
+                    money::row(button, Some(*copper), false);
+                }
+            });
     }
 }
 fn reason(reason: Reason) -> &'static str {
@@ -583,7 +621,17 @@ pub(crate) fn close_panel(
             .is_some_and(|u| u.open || u.closed_this_frame)
         && !loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame)
     {
-        ui.open = false;
+        if ui.menu.take().is_some() || ui.split || ui.unequip {
+            ui.selected = None;
+            ui.split = false;
+            ui.unequip = false;
+            ui.destroy_confirmation = None;
+            ui.status.clear();
+        } else if ui.open {
+            ui.open = false;
+        } else {
+            ui.equipment_open = false;
+        }
     }
 }
 
@@ -595,13 +643,17 @@ fn present(
     config: Res<Config>,
 ) {
     let input = std::mem::take(&mut *pending);
-    let input = if windows.single().is_ok_and(|window| window.focused) {
+    let mut input = if windows.single().is_ok_and(|window| window.focused) {
         input
     } else {
         Pending::default()
     };
     if input.toggle {
         ui.open = !ui.open;
+        ui.status.clear();
+    }
+    if input.toggle_equipment {
+        ui.equipment_open = !ui.equipment_open;
     }
     let state = network.state();
     if !ui.open {
@@ -609,7 +661,9 @@ fn present(
     }
     if !network.connected() {
         ui.destroy_confirmation = None;
-        ui.status = "Disconnected / loading".into();
+        ui.menu = None;
+        ui.vendor_open = false;
+        ui.status.clear();
         return;
     }
     let trading = config.0.vendor().is_some_and(|vendor| {
@@ -628,6 +682,7 @@ fn present(
     });
     if trading && !ui.vendor_open {
         ui.open = true;
+        ui.equipment_open = false;
     }
     ui.vendor_open = trading;
     let Some(view) = &state.inventory else {
@@ -636,7 +691,11 @@ fn present(
     };
     if ui.bag.as_ref() != Some(&view.bag) {
         ui.destroy_confirmation = None;
+        ui.menu = None;
         ui.bag = Some(view.bag.clone());
+    }
+    if ui.status == "Loading backpack..." {
+        ui.status.clear();
     }
     ui.revision = Some(view.bag.revision());
     ui.ready_frames += 1;
@@ -712,7 +771,10 @@ fn present(
         );
         return;
     }
-    if !ui.open {
+    if let Some(choice) = input.context.take() {
+        context_menu::apply(choice, &config, &view.bag, &mut ui, &mut input);
+    }
+    if !ui.open && !ui.vendor_open {
         return;
     }
     if input.slot.is_some()
@@ -883,12 +945,10 @@ fn present(
             }
         } else if view.bag.slots()[usize::from(slot)].is_some() {
             ui.selected = Some(slot);
-            ui.status = "Choose a destination, or Split one.".into();
+            ui.status = "Choose a destination.".into();
         } else {
             ui.status = "That slot is empty.".into();
         }
-    } else if ui.status.is_empty() {
-        ui.status = "Choose an item.".into();
     }
 }
 type Label<'a> = (
@@ -902,21 +962,39 @@ type Label<'a> = (
     Option<&'a OfferLabel>,
 );
 type ButtonView<'a> = (
+    Entity,
     &'a Widget,
     Has<Pressed>,
+    Has<crate::ui_theme::Selected>,
     Option<&'a Hovered>,
     &'a mut BackgroundColor,
 );
+type InventoryPanels<'w, 's> = Query<
+    'w,
+    's,
+    (
+        &'static mut Node,
+        Has<Pane>,
+        Has<VendorPane>,
+        Has<EquipmentPane>,
+    ),
+    Or<(
+        With<Pane>,
+        With<VendorPane>,
+        With<EquipmentPane>,
+        With<Feedback>,
+    )>,
+>;
 fn paint(
     config: Res<Config>,
     network: Res<Network>,
     mut ui: ResMut<Ui>,
-    mut panels: Query<&mut Node, With<Pane>>,
+    mut panels: InventoryPanels<'_, '_>,
     mut labels: Query<Label<'_>>,
 ) {
     let state = network.state();
     ui.offers.clear();
-    if ui.open
+    if (ui.open || ui.vendor_open)
         && !ui.pending
         && network.connected()
         && let (Some(vendor), Some(bag), Some(dialogue)) =
@@ -940,8 +1018,18 @@ fn paint(
             })
             .collect();
     }
-    for mut pane in &mut panels {
-        let display = if ui.open {
+    for (mut pane, bag, vendor, equipment) in &mut panels {
+        let visible = if bag {
+            ui.open
+        } else if vendor {
+            ui.vendor_open
+        } else if equipment {
+            ui.equipment_open && !ui.vendor_open
+        } else {
+            (ui.open || ui.equipment_open || ui.vendor_open)
+                && !matches!(ui.status.as_str(), "" | "Loading backpack...")
+        };
+        let display = if visible {
             Display::Flex
         } else {
             Display::None
@@ -1025,13 +1113,14 @@ fn paint(
             }
         } else if equipment.is_some() {
             ui.bag.as_ref().map_or_else(
-                || "Main hand: loading...".into(),
+                || "Main hand".into(),
                 |bag| {
-                    let name = bag
-                        .main_hand()
+                    bag.main_hand()
                         .and_then(|s| config.0.catalog().definition(s.item()))
-                        .map_or("Empty", |d| d.name());
-                    format!("Main hand: {name}")
+                        .map_or_else(
+                            || "Main hand".into(),
+                            |d| format!("Main hand: {}", d.name()),
+                        )
                 },
             )
         } else if status.is_some() {
@@ -1070,13 +1159,25 @@ fn paint_coins_and_offers(ui: Res<Ui>, mut offers: Query<&mut Node, With<BuyButt
 }
 
 fn paint_buttons(
+    mut commands: Commands,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
     ui: Res<Ui>,
     mut buttons: Query<ButtonView<'_>>,
 ) {
-    for (widget, pressed, hovered, mut background) in &mut buttons {
+    for (entity, widget, pressed, marked, hovered, mut background) in &mut buttons {
         let selected = matches!(widget,Widget::Slot(slot) if Some(*slot)==ui.selected)
             || matches!(widget, Widget::Unequip) && ui.unequip;
+        if skin.is_some() && matches!(widget, Widget::Slot(_)) {
+            if selected != marked {
+                let mut entity = commands.entity(entity);
+                if selected {
+                    entity.insert(crate::ui_theme::Selected);
+                } else {
+                    entity.remove::<crate::ui_theme::Selected>();
+                }
+            }
+            continue;
+        }
         let color = if ui.pending {
             Color::srgb(0.08, 0.09, 0.11)
         } else if matches!(widget, Widget::Destroy) && ui.destroy_confirmation.is_some() {
@@ -1088,17 +1189,7 @@ fn paint_buttons(
         } else {
             Color::srgb(0.08, 0.12, 0.16)
         };
-        let color = if skin.is_some() && matches!(widget, Widget::Slot(_)) {
-            if selected {
-                Color::srgb(0.30, 0.22, 0.10)
-            } else if ui.pending {
-                Color::srgb(0.08, 0.07, 0.06)
-            } else if pressed || hovered.is_some_and(|h| h.0) {
-                Color::srgb(0.22, 0.18, 0.12)
-            } else {
-                crate::fantasy_ui::PANEL
-            }
-        } else if skin.is_some() {
+        let color = if skin.is_some() {
             if !ui.pending && matches!(widget, Widget::Destroy) && ui.destroy_confirmation.is_some()
             {
                 Color::srgb(0.45, 0.08, 0.06)

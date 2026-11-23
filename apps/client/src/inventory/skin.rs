@@ -2,7 +2,10 @@
 //! the existing inventory widgets; this module never queues an operation.
 use super::*;
 #[derive(Component)]
-pub(crate) struct Icon(u8);
+pub(crate) enum Icon {
+    Bag(u8),
+    MainHand,
+}
 #[derive(Component)]
 struct Count(u8);
 #[derive(Component)]
@@ -13,17 +16,7 @@ struct TooltipText;
 pub(super) struct PreviewHover(u8);
 
 pub(super) fn slot_children(button: &mut ChildSpawnerCommands, slot: u8) {
-    button.spawn((
-        Icon(slot),
-        ImageNode::default(),
-        Pickable::IGNORE,
-        Node {
-            width: px(32),
-            height: px(32),
-            display: Display::None,
-            ..default()
-        },
-    ));
+    item_art(button, Icon::Bag(slot));
     button.spawn((
         Count(slot),
         text("", 13.),
@@ -38,6 +31,41 @@ pub(super) fn slot_children(button: &mut ChildSpawnerCommands, slot: u8) {
             color: Color::BLACK,
         },
     ));
+}
+fn item_art(parent: &mut ChildSpawnerCommands, icon: Icon) {
+    parent.spawn((
+        icon,
+        ImageNode::default(),
+        Pickable::IGNORE,
+        Node {
+            display: Display::None,
+            ..crate::ui_theme::slot::art()
+        },
+    ));
+}
+pub(super) fn equipment_slot(parent: &mut ChildSpawnerCommands, label: &str) {
+    parent
+        .spawn(Node {
+            align_items: AlignItems::Center,
+            column_gap: px(8),
+            ..default()
+        })
+        .with_children(|row| {
+            row.spawn((
+                crate::ui_theme::slot::frame(Node {
+                    width: px(36),
+                    height: px(36),
+                    flex_shrink: 0.,
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                }),
+                super::context_menu::MainHand,
+                AccessibleLabel::new("Main hand equipment"),
+            ))
+            .with_children(|slot| item_art(slot, Icon::MainHand));
+            row.spawn((EquipmentLabel, text(label, 14.)));
+        });
 }
 pub(super) fn spawn_tooltip(commands: &mut Commands) {
     commands
@@ -119,10 +147,13 @@ pub(super) fn present(
         return;
     };
     for (slot, mut image, mut node) in &mut views.icons {
-        let item = stack(&ui, slot.0);
-        let handle = item.map_or_else(Handle::default, |s| skin.item_icon(s.item().as_str()));
-        if image.image != handle {
-            image.image = handle;
+        let item = match slot {
+            Icon::Bag(slot) => stack(&ui, *slot),
+            Icon::MainHand => ui.bag.as_ref().and_then(Bag::main_hand),
+        };
+        let art = item.map_or_else(ImageNode::default, |s| skin.item_icon(s.item().as_str()));
+        if image.image != art.image || image.rect != art.rect {
+            *image = art;
         }
         let display = if item.is_some() {
             Display::Flex
@@ -262,7 +293,8 @@ pub(crate) fn install_preview(app: &mut App) {
             if index == 0 { 3 } else { 1 },
         );
     }
-    let bag = Bag::from_slots(profile.catalog(), 0, slots).unwrap();
+    let main_hand = slots[2].clone();
+    let bag = Bag::from_parts(profile.catalog(), 0, slots, main_hand).unwrap();
     app.insert_resource(PreviewHover(0))
         .insert_resource(Config(profile))
         .insert_resource(Ui {
@@ -270,45 +302,21 @@ pub(crate) fn install_preview(app: &mut App) {
             bag: Some(bag),
             ..default()
         })
-        .add_systems(Startup, preview_setup)
+        .add_systems(Startup, super::setup)
+        .add_systems(PostStartup, preview_setup)
         .add_systems(Update, (paint_buttons, present).chain());
 }
-fn preview_setup(mut commands: Commands, config: Res<Config>) {
-    spawn_toggle(&mut commands, true);
-    spawn_tooltip(&mut commands);
-    commands
-        .spawn((
-            crate::fantasy_ui::Panel::Standard,
-            Node {
-                position_type: PositionType::Absolute,
-                right: px(324),
-                bottom: px(52),
-                width: px(340),
-                padding: UiRect::all(px(12)),
-                flex_direction: FlexDirection::Column,
-                row_gap: px(8),
-                ..default()
-            },
-            BackgroundColor(crate::fantasy_ui::PANEL),
-        ))
-        .with_children(|panel| {
-            crate::fantasy_ui::window_header(
-                panel,
-                text("Backpack (fixture)", 18.),
-                button(Widget::Toggle, "Close fixture backpack", 28., 28.),
-                "Close fixture backpack",
-            );
-            panel
-                .spawn(Node {
-                    width: percent(100),
-                    flex_wrap: FlexWrap::Wrap,
-                    column_gap: px(4),
-                    row_gap: px(4),
-                    ..default()
-                })
-                .with_children(|grid| spawn_slots(grid, &config.0, true));
-            spawn_actions(panel, &config.0, "Fixture only; no item commands");
-        });
+type PreviewPanels = Or<(With<Pane>, With<EquipmentPane>)>;
+fn preview_setup(
+    mut panels: Query<&mut Node, PreviewPanels>,
+    mut equipment: Query<&mut Text, With<EquipmentLabel>>,
+) {
+    for mut panel in &mut panels {
+        panel.display = Display::Flex;
+    }
+    for mut label in &mut equipment {
+        **label = "Main hand: Training Sword".into();
+    }
 }
 
 #[cfg(test)]

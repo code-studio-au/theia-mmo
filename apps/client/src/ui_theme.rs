@@ -1,4 +1,5 @@
 //! Shared native Theia controls, decorated with the approved regenerated sprites.
+pub(crate) mod slot;
 pub(crate) mod sprites;
 use bevy::{
     input_focus::{InputFocus, tab_navigation::TabIndex},
@@ -137,8 +138,7 @@ fn family(style: Style) -> Option<&'static str> {
         Style::Input => "input.standard",
         Style::Roster | Style::Tab => "tab.chamfered",
         Style::Close => "control.close",
-        Style::Slot => "slot.empty",
-        Style::Link | Style::Icon => return None,
+        Style::Link | Style::Icon | Style::Slot => return None,
     })
 }
 fn state(
@@ -323,12 +323,13 @@ fn present(
         Has<Selected>,
         Option<&Children>,
         &mut BackgroundColor,
+        &mut BorderColor,
     )>,
     mut arts: Query<(&ButtonArt, &mut ImageNode)>,
     mut texts: Query<&mut TextColor, With<Text>>,
     mut commands: Commands,
 ) {
-    for (entity, style, hover, pressed, disabled, selected, children, mut background) in
+    for (entity, style, hover, pressed, disabled, selected, children, mut background, mut border) in
         &mut buttons
     {
         let focused = focus.as_ref().is_some_and(|f| f.get() == Some(entity));
@@ -348,6 +349,22 @@ fn present(
                 t.0 = color;
             }
         }
+        if matches!(style, Style::Slot) {
+            let (well, edge) = slot::colors(state(
+                disabled,
+                pressed,
+                selected,
+                focused,
+                hover.is_some_and(|h| h.0),
+            ));
+            if background.0 != well {
+                background.0 = well;
+            }
+            if *border != edge {
+                *border = edge;
+            }
+            continue;
+        }
         if matches!(style, Style::Link) && focused && !disabled {
             commands
                 .entity(entity)
@@ -358,12 +375,13 @@ fn present(
         if background.0 != Color::NONE {
             background.0 = Color::NONE;
         }
-        commands
-            .entity(entity)
-            .insert(BorderColor::all(Color::NONE));
+        if *border != BorderColor::all(Color::NONE) {
+            *border = BorderColor::all(Color::NONE);
+        }
     }
     for (parent, mut image) in &mut arts {
-        if let Ok((entity, style, hover, pressed, disabled, selected, _, _)) = buttons.get(parent.0)
+        if let Ok((entity, style, hover, pressed, disabled, selected, _, _, _)) =
+            buttons.get(parent.0)
         {
             let focused = focus.as_ref().is_some_and(|f| f.get() == Some(entity));
             let name = format!(

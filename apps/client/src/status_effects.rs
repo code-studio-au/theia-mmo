@@ -152,7 +152,11 @@ fn text(value: &str, size: f32) -> impl Bundle {
     )
 }
 
-pub(crate) fn widgets(parent: &mut ChildSpawnerCommands, owner: bool) {
+pub(crate) fn widgets(
+    parent: &mut ChildSpawnerCommands,
+    owner: bool,
+    skin: &crate::fantasy_ui::Skin,
+) {
     parent
         .spawn((
             EffectRow(if owner {
@@ -171,26 +175,21 @@ pub(crate) fn widgets(parent: &mut ChildSpawnerCommands, owner: bool) {
             for _ in 0..theia_network::simulation::combat::MAX_TARGET_STATUSES {
                 row.spawn((
                     EffectSlot,
-                    Node {
+                    crate::ui_theme::slot::frame(Node {
                         width: px(26),
                         height: px(26),
                         flex_shrink: 0.,
                         display: Display::None,
-                        border: UiRect::all(px(1)),
                         ..default()
-                    },
-                    BorderColor::all(Color::srgb(0.92, 0.36, 0.22)),
+                    }),
                     Hovered::default(),
                     AccessibleLabel::new("Status effect"),
                 ))
                 .with_children(|slot| {
                     slot.spawn((
-                        crate::ui_theme::Sprite("ability.flame-burst"),
-                        Node {
-                            width: percent(100),
-                            height: percent(100),
-                            ..default()
-                        },
+                        skin.icon("theia.dev.scorch"),
+                        crate::ui_theme::slot::art(),
+                        bevy::picking::Pickable::IGNORE,
                     ));
                     slot.spawn((
                         DurationLabel,

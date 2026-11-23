@@ -110,12 +110,12 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                     row.spawn((
                         EntryIcon(slot),
                         ImageNode::default(),
-                        Node {
+                        crate::ui_theme::slot::frame(Node {
                             width: px(32),
                             height: px(32),
                             flex_shrink: 0.,
                             ..default()
-                        },
+                        }),
                         Pickable::IGNORE,
                     ));
                     row.spawn((
@@ -269,7 +269,10 @@ fn present(
             Display::None
         };
         if let (Some(ability), Some(skin)) = (ability, skin.as_ref()) {
-            image.image = skin.icon(ability.id().as_str());
+            let art = skin.icon(ability.id().as_str());
+            if image.image != art.image || image.rect != art.rect {
+                *image = art;
+            }
         }
     }
     for (entry, mut text) in &mut entries {

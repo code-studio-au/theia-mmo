@@ -93,7 +93,7 @@ fn tiles(
                         "{}: {caption}",
                         theia_core::appearance::LABELS[field]
                     )),
-                    Node {
+                    crate::ui_theme::slot::frame(Node {
                         width: percent(if field == 0 { 46. } else { 30. }),
                         height: px(if field == 0 { 62. } else { 100. }),
                         padding: UiRect {
@@ -106,7 +106,7 @@ fn tiles(
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
-                    },
+                    }),
                 ));
                 if let Some(atlas) = atlas {
                     row.commands().entity(id).with_child((
@@ -148,12 +148,12 @@ fn swatches(parent: &mut ChildSpawnerCommands, field: usize, colours: &[[u8; 3]]
                             theia_core::appearance::LABELS[field],
                             value + 1
                         )),
-                        Node {
+                        crate::ui_theme::slot::frame(Node {
                             width: px(46),
                             height: px(46),
                             padding: UiRect::all(px(6)),
                             ..default()
-                        },
+                        }),
                     ))
                     .with_child((
                         Node {

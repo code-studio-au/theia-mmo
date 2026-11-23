@@ -17,6 +17,7 @@ pub(crate) fn owns_escape(state: Option<&State>) -> bool {
 #[derive(Component, Clone, Copy)]
 enum Action {
     Menu,
+    Character,
     Inventory,
     Skills,
     Quests,
@@ -85,7 +86,7 @@ fn setup(mut commands: Commands) {
         ))
         .with_children(|hud| {
             for (action, title, index) in [
-                (None, "Character", 0),
+                (Some(Action::Character), "Character", 0),
                 (Some(Action::Inventory), "Inventory", 1),
                 (Some(Action::Skills), "Skills", 5),
                 (Some(Action::Quests), "Quests", 3),
@@ -117,7 +118,7 @@ fn setup(mut commands: Commands) {
         .with_children(|menu| {
             ui_theme::heading(menu, "Main Menu");
             for (action, title, index) in [
-                (None, "Character", 0),
+                (Some(Action::Character), "Character", 0),
                 (Some(Action::Inventory), "Inventory", 1),
                 (Some(Action::Skills), "Skills", 2),
                 (Some(Action::Quests), "Quests", 3),
@@ -152,6 +153,14 @@ fn activate(
         Action::Menu => {
             state.open = !state.open;
             return;
+        }
+        Action::Character => {
+            if let Some(ref mut ui) = inventory
+                && ui.equipment_enabled
+                && !ui.vendor_open
+            {
+                ui.equipment_open = !ui.equipment_open;
+            }
         }
         Action::Inventory => {
             if let Some(ref mut ui) = inventory {
@@ -224,6 +233,9 @@ fn present(
     }
     for (e, action) in &buttons {
         let enabled = match action {
+            Action::Character => inventory
+                .as_ref()
+                .is_some_and(|ui| ui.equipment_enabled && !ui.vendor_open),
             Action::Inventory => inventory.is_some(),
             Action::Skills => skills.is_some(),
             Action::Quests => quests.is_some(),

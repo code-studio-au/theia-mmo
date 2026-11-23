@@ -183,7 +183,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                 );
                 crate::party::selection::widgets(panel);
                 crate::party::marks::target_widget(panel);
-                crate::status_effects::widgets(panel, false);
+                crate::status_effects::widgets(panel, false, &skin);
             });
         return;
     }

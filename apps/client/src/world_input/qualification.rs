@@ -414,6 +414,7 @@ fn os_trace(world: &mut World) {
         data["ui_geometry_units"] = serde_json::json!("window_logical_pixels");
         data["ui_scroll_units"] = serde_json::json!("ui_logical_pixels");
         data["inventory_layout"] = inventory_layout(world);
+        data["inventory_context"] = crate::inventory::context_menu::evidence(world);
         data["documents"] = world
             .get_resource::<crate::documents::Ui>()
             .map(|ui| serde_json::to_value(ui).unwrap())
