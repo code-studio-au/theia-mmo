@@ -166,27 +166,20 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
             ))
             .with_children(|panel| {
                 ui::unit_frame::portrait(panel, Some(skin.wolf.clone()), false);
-                panel.spawn((
-                    crate::targeting::TargetHud,
-                    Text::new(""),
-                    TextFont {
-                        font_size: FontSize::Px(22.),
-                        ..default()
-                    },
-                    TextColor(Color::WHITE),
-                    crate::fantasy_ui::hud_shadow(),
-                    Node {
-                        min_height: px(24),
-                        ..default()
-                    },
-                    bevy::picking::Pickable::IGNORE,
-                ));
+                ui::unit_frame::heading(panel, crate::targeting::TargetHud, "");
                 ui::unit_frame::bar(
                     panel,
                     ui::unit_frame::Pool::Hostile,
                     TargetVitals,
                     ui::HealthFill,
                     ui::TargetHealthLabel,
+                );
+                ui::unit_frame::bar(
+                    panel,
+                    ui::unit_frame::Pool::TargetMana,
+                    TargetVitals,
+                    ui::TargetManaFill,
+                    ui::TargetManaLabel,
                 );
                 crate::party::selection::widgets(panel);
                 crate::party::marks::target_widget(panel);
@@ -656,6 +649,15 @@ fn present(
         let health = combat.targets.iter().find(|h| Some(h.entity) == selected);
         panel.has_target = health.is_some_and(|h| h.current > 0);
         panel.target_is_wolf = health.is_some() && creature_visuals.is_some();
+        if let Some(health) = health {
+            panel.target_level = network.physical_profile().and_then(|profile| {
+                profile
+                    .stats()
+                    .creature(profile.creature_definition())
+                    .map(|stats| stats.level())
+            });
+            panel.target_mana = health.mana.map(|pool| [pool.current(), pool.maximum()]);
+        }
         panel.health = health.map_or(0., |h| h.current as f32 / h.maximum as f32);
         panel.target_health_text =
             health.map_or_else(|| "—".into(), |h| format!("{} / {}", h.current, h.maximum));

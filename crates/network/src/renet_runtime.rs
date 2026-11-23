@@ -2465,7 +2465,7 @@ async fn run_client_inner(
                             state.send_modify(|value| {value.autoattack=melee_state.clone();value.transport=Some(stats.clone());});
                             continue;
                         }
-                        if bytes.starts_with(crate::combat_wire::STATE_TAG) || bytes.starts_with(crate::combat_wire::RESOURCE_STATE_TAG) {
+                        if crate::combat_wire::is_state(&bytes) {
                             let mode=combat.as_ref().ok_or("Unexpected opt-in combat state")?;
                             let view=crate::combat_wire::State::decode(&bytes,&mode.catalog)?;
                             if view.epoch!=admission.as_ref().unwrap().epoch || view.reply.is_some_and(|r| r.sequence>cast_sequence) {

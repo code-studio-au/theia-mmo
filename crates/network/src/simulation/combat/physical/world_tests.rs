@@ -51,6 +51,48 @@ fn inactive(rate: TickRate, modern: bool) -> (World, EntityKey) {
     }
     (w, npc)
 }
+#[test]
+fn optional_creature_mana_is_bound_to_the_authoritative_profile() {
+    let (mut world, npc) = inactive(TickRate::Hz30, false);
+    let mut stats: serde_json::Value = serde_json::from_slice(DAMAGE_STATS).unwrap();
+    stats["creatures"][0]["maximum_mana"] = 0.into();
+    let identity = world.identity();
+    assert!(
+        world
+            .enable_physical_damage(DEFINITIONS, &serde_json::to_vec(&stats).unwrap(), ITEMS)
+            .is_err()
+    );
+    assert_eq!(world.identity(), identity);
+    stats["creatures"][0]["maximum_mana"] = 140.into();
+    world
+        .enable_physical_damage(DEFINITIONS, &serde_json::to_vec(&stats).unwrap(), ITEMS)
+        .unwrap();
+    assert_ne!(world.identity(), identity);
+    let actor = join(&mut world);
+    let snapshot = world.combat_snapshot(actor).unwrap();
+    assert_eq!(snapshot.targets[0].key, npc);
+    assert_eq!(
+        snapshot.targets[0].mana,
+        theia_core::resources::Pool::new(140, 140)
+    );
+    let target = &mut world.combat.as_mut().unwrap().creatures[0];
+    assert!(target.mana.as_mut().unwrap().spend(25));
+    assert_eq!(
+        world.combat_snapshot(actor).unwrap().targets[0]
+            .mana
+            .unwrap()
+            .current(),
+        115
+    );
+    world.combat.as_mut().unwrap().creatures[0].restore();
+    assert_eq!(
+        world.combat_snapshot(actor).unwrap().targets[0]
+            .mana
+            .unwrap()
+            .current(),
+        140
+    );
+}
 fn join(w: &mut World) -> u64 {
     let xz = [8008., 8002.];
     let position = GlobalPosition::new([xz[0], 0., xz[1]]).unwrap();

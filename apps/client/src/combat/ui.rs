@@ -24,6 +24,10 @@ pub(super) struct HealthFill;
 #[derive(Component)]
 pub(super) struct TargetHealthLabel;
 #[derive(Component)]
+pub(super) struct TargetManaFill;
+#[derive(Component)]
+pub(super) struct TargetManaLabel;
+#[derive(Component)]
 struct CastFill;
 #[derive(Component)]
 struct CooldownFill(usize);
@@ -109,6 +113,8 @@ pub(crate) struct Model {
     pub player_level: Option<u8>,
     pub player_appearance: Option<theia_core::appearance::Appearance>,
     pub target_health_text: String,
+    pub target_level: Option<u8>,
+    pub target_mana: Option<[u32; 2]>,
     pub target_is_wolf: bool,
     pub player_name: Option<String>,
     pub life_blocked: bool,
@@ -302,20 +308,7 @@ fn setup(
                         ),
                         true,
                     );
-                    panel.spawn((
-                        PlayerHeading,
-                        text("Player", 22.),
-                        Node {
-                            min_height: px(24),
-                            ..default()
-                        },
-                        crate::fantasy_ui::hud_shadow(),
-                        TextLayout {
-                            linebreak: bevy::text::LineBreak::NoWrap,
-                            ..default()
-                        },
-                        bevy::picking::Pickable::IGNORE,
-                    ));
+                    unit_frame::heading(panel, PlayerHeading, "Player");
                     unit_frame::bar(
                         panel,
                         unit_frame::Pool::Health,
@@ -760,7 +753,7 @@ type WolfPhoto = (
 );
 fn paint_portrait(
     model: Res<Model>,
-    mut badges: Query<(&Children, &mut Node), LevelBadge>,
+    mut badges: Query<(&unit_frame::Level, &Children, &mut Node), LevelBadge>,
     mut labels: Query<&mut Text>,
     mut photos: Query<(&mut Node, &mut ImageNode, &unit_frame::PlayerPortrait)>,
     images: Option<Res<Assets<Image>>>,
@@ -776,8 +769,12 @@ fn paint_portrait(
             node.display = display;
         }
     }
-    for (children, mut badge) in &mut badges {
-        let display = if model.player_level.is_some() {
+    for (kind, children, mut badge) in &mut badges {
+        let level = match kind {
+            unit_frame::Level::Player => model.player_level,
+            unit_frame::Level::Target => model.target_level,
+        };
+        let display = if level.is_some() {
             Display::Flex
         } else {
             Display::None
@@ -785,7 +782,7 @@ fn paint_portrait(
         if badge.display != display {
             badge.display = display;
         }
-        if let Some(level) = model.player_level {
+        if let Some(level) = level {
             let value = level.to_string();
             for child in children.iter() {
                 if let Ok(mut label) = labels.get_mut(child)
@@ -826,6 +823,7 @@ type FillComponents<'a> = (
     Option<&'a CooldownFill>,
     Option<&'a PlayerHealthFill>,
     Option<&'a ManaFill>,
+    Option<&'a TargetManaFill>,
 );
 type LabelComponents<'a> = (
     &'a mut Text,
@@ -836,12 +834,17 @@ type LabelComponents<'a> = (
     Option<&'a LifeLabel>,
     Option<&'a PlayerHeading>,
     Option<&'a TargetHealthLabel>,
+    Option<&'a TargetManaLabel>,
 );
 type ButtonComponents<'a> = (
     Has<Pressed>,
     Option<&'a Hovered>,
     &'a mut BackgroundColor,
     &'a ActionButton,
+);
+type PaintDecoration<'w, 's> = (
+    Query<'w, 's, (&'static ActionLabel, &'static mut Node), With<ActionLabel>>,
+    Query<'w, 's, &'static mut ImageNode, With<unit_frame::TargetManaFrame>>,
 );
 fn paint(
     (layout, model): (Res<super::action_bar::Layout>, Res<Model>),
@@ -850,9 +853,19 @@ fn paint(
     mut labels: Query<LabelComponents<'_>>,
     mut buttons: Query<ButtonComponents<'_>, With<ActionButton>>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
-    mut tooltips: Query<(&ActionLabel, &mut Node), With<ActionLabel>>,
+    (mut tooltips, mut mana_frames): PaintDecoration<'_, '_>,
 ) {
-    for (mut node, health, cast, cooldown, player_health, mana) in &mut fills {
+    let mana_frame_color = if model.target_mana.is_some() {
+        Color::WHITE
+    } else {
+        unit_frame::DISABLED_MANA
+    };
+    for mut image in &mut mana_frames {
+        if image.color != mana_frame_color {
+            image.color = mana_frame_color;
+        }
+    }
+    for (mut node, health, cast, cooldown, player_health, mana, target_mana) in &mut fills {
         let ratio = if health.is_some() {
             model.health
         } else if cast.is_some() {
@@ -866,6 +879,10 @@ fn paint(
             model.player_health
         } else if mana.is_some() {
             model.mana
+        } else if target_mana.is_some() {
+            model
+                .target_mana
+                .map_or(0., |[current, maximum]| current as f32 / maximum as f32)
         } else {
             continue;
         };
@@ -874,7 +891,8 @@ fn paint(
             node.width = width;
         }
     }
-    for (mut label, action, cast, player_health, mana, life, heading, target_health) in &mut labels
+    for (mut label, action, cast, player_health, mana, life, heading, target_health, target_mana) in
+        &mut labels
     {
         let value = if let Some(action) = action {
             let Some(ability) = layout.ability(&config.0, action.0) else {
@@ -924,6 +942,11 @@ fn paint(
                 )
         } else if target_health.is_some() {
             model.target_health_text.clone()
+        } else if target_mana.is_some() {
+            model.target_mana.map_or_else(
+                || "—".into(),
+                |[current, maximum]| format!("{current} / {maximum}"),
+            )
         } else if player_health.is_some() {
             pool_text(
                 &model.player_health_text,

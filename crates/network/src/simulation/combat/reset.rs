@@ -175,7 +175,7 @@ impl Authority {
                     .iter_mut()
                     .find(|c| c.key == npc)
                     .expect("Validated reset creature");
-                creature.current = creature.maximum;
+                creature.restore();
                 let removed = self
                     .statuses
                     .as_mut()

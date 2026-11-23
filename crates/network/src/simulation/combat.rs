@@ -337,7 +337,16 @@ pub struct Health {
     pub position: GlobalPosition,
     pub current: u32,
     pub maximum: u32,
+    pub mana: Option<Pool>,
     pub respawn_at: Option<u64>,
+}
+impl Health {
+    fn restore(&mut self) {
+        self.current = self.maximum;
+        self.mana = self
+            .mana
+            .and_then(|pool| Pool::new(pool.maximum(), pool.maximum()));
+    }
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct Snapshot {
@@ -619,6 +628,7 @@ impl Authority {
                     position: t.position,
                     current: health,
                     maximum: health,
+                    mana: None,
                     respawn_at: None,
                 })
                 .collect(),
@@ -1036,7 +1046,7 @@ impl Authority {
                 for threat in self.threat.iter_mut().chain(&mut self.population_threat) {
                     threat.respawned(previous, creature.key);
                 }
-                creature.current = creature.maximum;
+                creature.restore();
                 creature.respawn_at = None;
                 world.next_id = next;
                 world.targets.insert(

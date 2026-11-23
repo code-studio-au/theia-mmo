@@ -44,8 +44,67 @@ pub(in crate::combat) fn owner_identity(
 
 use bevy::{picking::Pickable, prelude::*};
 
+// The portrait draws above the tracks and covers their left end caps.
+const PORTRAIT_OVERLAP: f32 = 18.;
+const TRACK_OVERLAP: f32 = 5.;
+
+pub(in crate::combat) fn heading(
+    parent: &mut ChildSpawnerCommands,
+    marker: impl Bundle,
+    name: &str,
+) {
+    parent
+        .spawn((
+            Node {
+                min_height: px(30),
+                margin: UiRect::left(px(-PORTRAIT_OVERLAP)),
+                padding: UiRect::new(px(10. + PORTRAIT_OVERLAP), px(10), px(0), px(0)),
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            Pickable::IGNORE,
+        ))
+        .with_children(|heading| {
+            heading.spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(3),
+                    right: px(3),
+                    top: px(3),
+                    bottom: px(3),
+                    border_radius: BorderRadius::all(px(8)),
+                    ..default()
+                },
+                BackgroundColor(Color::BLACK),
+                Pickable::IGNORE,
+            ));
+            heading.spawn((
+                crate::ui_theme::Sprite("bar.frame"),
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(0),
+                    top: px(0),
+                    width: percent(100),
+                    height: percent(100),
+                    ..default()
+                },
+                Pickable::IGNORE,
+            ));
+            heading.spawn((
+                marker,
+                super::text(name, 19.),
+                crate::fantasy_ui::hud_shadow(),
+                TextLayout::no_wrap(),
+                Pickable::IGNORE,
+            ));
+        });
+}
+
 #[derive(Component)]
-pub(super) struct Level;
+pub(super) enum Level {
+    Player,
+    Target,
+}
 
 #[derive(Component)]
 pub(super) struct WolfPortrait;
@@ -128,29 +187,27 @@ pub(in crate::combat) fn portrait(
                 },
                 Pickable::IGNORE,
             ));
-            if player {
-                portrait
-                    .spawn((
-                        Level,
-                        Node {
-                            position_type: PositionType::Absolute,
-                            right: px(0),
-                            bottom: px(0),
-                            width: px(28),
-                            height: px(28),
-                            border_radius: BorderRadius::MAX,
-                            border: UiRect::all(px(1)),
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
-                            display: Display::None,
-                            ..default()
-                        },
-                        BackgroundColor(Color::srgb(0.03, 0.045, 0.067)),
-                        BorderColor::all(crate::fantasy_ui::GOLD),
-                        Pickable::IGNORE,
-                    ))
-                    .with_child((super::text("", 16.), Pickable::IGNORE));
-            }
+            portrait
+                .spawn((
+                    if player { Level::Player } else { Level::Target },
+                    Node {
+                        position_type: PositionType::Absolute,
+                        right: px(0),
+                        bottom: px(0),
+                        width: px(28),
+                        height: px(28),
+                        border_radius: BorderRadius::MAX,
+                        border: UiRect::all(px(1)),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        display: Display::None,
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.03, 0.045, 0.067)),
+                    BorderColor::all(crate::fantasy_ui::GOLD),
+                    Pickable::IGNORE,
+                ))
+                .with_child((super::text("", 16.), Pickable::IGNORE));
         });
 }
 
@@ -158,7 +215,13 @@ pub(in crate::combat) enum Pool {
     Health,
     Mana,
     Hostile,
+    TargetMana,
 }
+
+#[derive(Component)]
+pub(super) struct TargetManaFrame;
+
+pub(super) const DISABLED_MANA: Color = Color::srgb(0.37, 0.41, 0.46);
 
 pub(in crate::combat) fn bar(
     parent: &mut ChildSpawnerCommands,
@@ -170,13 +233,13 @@ pub(in crate::combat) fn bar(
     use bevy::ui::{BackgroundGradient, ColorStop, LinearGradient};
     let height = match pool {
         Pool::Health | Pool::Hostile => 24.,
-        Pool::Mana => 21.,
+        Pool::Mana | Pool::TargetMana => 21.,
     };
     parent
         .spawn((
             track,
             Node {
-                width: percent(100),
+                margin: UiRect::new(px(-PORTRAIT_OVERLAP), px(0), px(-TRACK_OVERLAP), px(0)),
                 height: px(height),
                 ..default()
             },
@@ -209,7 +272,9 @@ pub(in crate::combat) fn bar(
                 ));
                 match pool {
                     Pool::Health => fill.insert(crate::ui_theme::Sprite("bar.fill-health")),
-                    Pool::Mana => fill.insert(crate::ui_theme::Sprite("bar.fill-mana")),
+                    Pool::Mana | Pool::TargetMana => {
+                        fill.insert(crate::ui_theme::Sprite("bar.fill-mana"))
+                    }
                     Pool::Hostile => fill.insert(BackgroundGradient(vec![
                         LinearGradient::new(
                             LinearGradient::TO_BOTTOM,
@@ -223,7 +288,7 @@ pub(in crate::combat) fn bar(
                     ])),
                 };
             });
-            bar.spawn((
+            let mut frame = bar.spawn((
                 crate::ui_theme::Sprite("bar.frame"),
                 Node {
                     width: percent(100),
@@ -232,6 +297,9 @@ pub(in crate::combat) fn bar(
                 },
                 Pickable::IGNORE,
             ));
+            if matches!(pool, Pool::TargetMana) {
+                frame.insert((TargetManaFrame, crate::ui_theme::Muted));
+            }
             bar.spawn((
                 Node {
                     position_type: PositionType::Absolute,

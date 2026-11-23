@@ -215,6 +215,7 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             player_name: Some("Arden".into()),
             target_health_text: "57 / 100".into(),
             target_is_wolf: true,
+            target_level: Some(1),
             cast: 0.4,
             cast_info: Some(crate::combat::ui::Cast {
                 ability: "theia.dev.arcane-bolt".into(),

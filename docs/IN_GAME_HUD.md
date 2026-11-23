@@ -6,10 +6,25 @@ combat and progression observations, slot bindings, and verified cartography.
 
 The player frame uses the available body-and-face thumbnail from the private
 modular hero assets. Without the thumbnail atlas it displays a character glyph.
-A level medallion appears when committed progression is available. Health and
-mana show numeric values inside green and blue tracks. The selected hostile
-frame shows red health and the illustrated wolf portrait for the wolf profile.
-A friendly selection keeps its existing party or contact information.
+A level medallion appears when committed progression is available. The selected
+hostile uses the same badge with the level from the admitted physical stats
+profile. Millhaven's wolves are configured at level 1.
+
+Player name and target name sit on black plates with beveled gold trim. The
+name, health and mana tracks overlap vertically and extend behind the portrait.
+Player health is green and hostile health is red. An enemy with a configured
+mana pool shows its current and maximum mana in blue. The bar is dimmed and
+empty when the enemy has no pool. A friendly selection keeps its existing
+party or contact information.
+
+`physical_stats.json` accepts an optional `maximum_mana` on a creature row
+in the range 1–1,000,000. Setting it gives that creature a server-owned pool
+that starts full and refills on a combat reset or respawn. Combat observations
+with target mana use CS03 and fit the existing datagram budget. The existing
+combat snapshot formats still apply when all visible targets lack mana.
+This slice supplies the resource and displays it. Enemy spell selection,
+mana spending by enemy abilities and regeneration rules require a casting
+behavior. The existing wolves remain melee-only.
 
 Active effects use small icons with a countdown and a hover description. Slots
 only display effects that are current for the admitted owner or selected
@@ -66,3 +81,13 @@ llvmpipe reports zero diagnostics. Offscreen checks pass again at 1920×1080,
 1720×700 and 1280×720. See `build/reference-hud-native-round/qualification.json`
 and `build/reference-hud-round-preview-*/report.json`. All 363 client tests,
 five existing skips, strict Clippy, formatting and release build checks pass.
+
+The joined unit frames were captured in the 1720×1000 native account fixture
+on Linux Vulkan llvmpipe (LLVM 21.1.8, Mesa 26.2.7). The normal wolf showed
+level 1 and a disabled mana track. A separate profile with a 140-point pool
+showed 140 / 140. Both runs passed Vulkan diagnostics checks. See
+`build/character-name-refocus-fixed-{no-mana,mana}/wolf-profile.png`.
+The resource regression checks initialization, a server-side spend and
+restoration. Fourteen wire cases pass, including packing sixteen mana-enabled
+targets with sixty-four cooldowns into 1,194 bytes. The 363 client tests,
+strict Clippy, format and release checks pass.

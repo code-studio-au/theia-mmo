@@ -14,11 +14,17 @@ use theia_core::{
     content::ContentId,
     coordinates::GlobalPosition,
     identity::{EntityId, EntityKey, WorldEpoch},
-    resources::Vitals,
+    resources::{Pool, Vitals},
 };
 pub const REQUEST_TAG: &[u8; 4] = b"CA01";
 pub const STATE_TAG: &[u8; 4] = b"CS01";
 pub const RESOURCE_STATE_TAG: &[u8; 4] = b"CS02";
+pub const TARGET_MANA_STATE_TAG: &[u8; 4] = b"CS03";
+pub(crate) fn is_state(bytes: &[u8]) -> bool {
+    [STATE_TAG, RESOURCE_STATE_TAG, TARGET_MANA_STATE_TAG]
+        .iter()
+        .any(|tag| bytes.starts_with(*tag))
+}
 pub const EVENTS_TAG: &[u8; 4] = b"CE02";
 pub const OUTCOME_EVENTS_TAG: &[u8; 4] = b"CE03";
 pub const PROJECTILE_EVENTS_TAG: &[u8; 4] = b"CE04";
@@ -165,6 +171,10 @@ impl<'a> Read<'a> {
     }
     fn number(&mut self) -> Result<u32> {
         Ok(u32::from_le_bytes(self.take()?))
+    }
+    fn mana_value(&mut self) -> Result<u32> {
+        let [a, b, c] = self.take()?;
+        Ok(u32::from_le_bytes([a, b, c, 0]))
     }
     fn end(&self) -> Result<()> {
         if self.at == self.bytes.len() {
@@ -323,6 +333,7 @@ pub struct Health {
     pub entity: EntityId,
     pub current: u32,
     pub maximum: u32,
+    pub mana: Option<Pool>,
     pub respawn_at: Option<u64>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -355,6 +366,9 @@ impl State {
                 entity: t.key.entity,
                 current: t.current,
                 maximum: t.maximum,
+                mana: t
+                    .mana
+                    .and_then(|pool| Pool::new(pool.current(), pool.maximum())),
                 respawn_at: t.respawn_at,
             })
             .collect();
@@ -454,7 +468,10 @@ impl State {
     }
     pub fn encode(&self, catalog: &Catalog) -> Result<Vec<u8>> {
         self.validate(catalog)?;
-        let mut bytes = if self.vitals.is_some() {
+        let target_mana = self.targets.iter().any(|t| t.mana.is_some());
+        let mut bytes = if target_mana {
+            TARGET_MANA_STATE_TAG.to_vec()
+        } else if self.vitals.is_some() {
             RESOURCE_STATE_TAG.to_vec()
         } else {
             STATE_TAG.to_vec()
@@ -464,7 +481,8 @@ impl State {
         bytes.push(
             u8::from(self.reply.is_some())
                 | (u8::from(self.cast.is_some()) << 1)
-                | (u8::from(self.queued.is_some()) << 2),
+                | (u8::from(self.queued.is_some()) << 2)
+                | (u8::from(target_mana && self.vitals.is_some()) << 3),
         );
         word(&mut bytes, self.gcd_until);
         if let Some(reply) = self.reply {
@@ -487,6 +505,15 @@ impl State {
             number(&mut bytes, target.current);
             number(&mut bytes, target.maximum);
             word(&mut bytes, target.respawn_at.unwrap_or(0));
+            if target_mana {
+                bytes.push(u8::from(target.mana.is_some()));
+                if let Some(pool) = target.mana {
+                    // Checked pools fit in 24 bits. Keep the full target and
+                    // cooldown counts within the existing datagram budget.
+                    bytes.extend_from_slice(&pool.current().to_le_bytes()[..3]);
+                    bytes.extend_from_slice(&pool.maximum().to_le_bytes()[..3]);
+                }
+            }
         }
         if let Some(vitals) = self.vitals {
             for value in [
@@ -505,9 +532,12 @@ impl State {
     }
     pub fn decode(bytes: &[u8], catalog: &Catalog) -> Result<Self> {
         let resources = bytes.starts_with(RESOURCE_STATE_TAG);
+        let target_mana = bytes.starts_with(TARGET_MANA_STATE_TAG);
         let mut read = Read::new(
             bytes,
-            if resources {
+            if target_mana {
+                TARGET_MANA_STATE_TAG
+            } else if resources {
                 RESOURCE_STATE_TAG
             } else {
                 STATE_TAG
@@ -516,7 +546,8 @@ impl State {
         let epoch = read.word()?;
         let tick = read.word()?;
         let flags = read.byte()?;
-        if flags & !7 != 0 {
+        let allowed_flags = if target_mana { 15 } else { 7 };
+        if flags & !allowed_flags != 0 {
             return Err("Unknown combat state flags".into());
         }
         let gcd_until = read.word()?;
@@ -553,14 +584,30 @@ impl State {
             let current = read.number()?;
             let maximum = read.number()?;
             let at = read.word()?;
+            let mana = if target_mana {
+                match read.byte()? {
+                    0 => None,
+                    1 => Some(
+                        Pool::new(read.mana_value()?, read.mana_value()?)
+                            .ok_or("Invalid target mana bounds")?,
+                    ),
+                    _ => return Err("Unknown target mana flag".into()),
+                }
+            } else {
+                None
+            };
             targets.push(Health {
                 entity,
                 current,
                 maximum,
+                mana,
                 respawn_at: (at != 0).then_some(at),
             });
         }
-        let vitals = if resources {
+        if target_mana && targets.iter().all(|target| target.mana.is_none()) {
+            return Err("Target mana state requires a resource pool".into());
+        }
+        let vitals = if resources || flags & 8 != 0 {
             Some(
                 Vitals::new(
                     read.number()?,

@@ -60,6 +60,7 @@ fn largest(catalog: &Catalog) -> State {
                 entity: key(id).entity,
                 current: 100,
                 maximum: 100,
+                mana: None,
                 respawn_at: None,
             })
             .collect(),
@@ -377,6 +378,35 @@ fn resource_state_has_an_explicit_tag_and_checked_vitals_without_changing_legacy
     assert!(State::decode(&wrong, &catalog).is_err());
     resource.vitals = None;
     assert!(resource.encode(&catalog).is_err());
+}
+
+#[test]
+fn target_mana_preserves_absence_and_empty_pools_within_the_datagram_budget() {
+    use theia_core::resources::{Pool, Vitals};
+
+    let catalog = catalog(64);
+    let mut state = largest(&catalog);
+    state.vitals = Some(Vitals::new(100, 100, 25, 100).unwrap());
+    for target in &mut state.targets {
+        target.mana = Pool::new(200_000, 1_000_000);
+    }
+    let bytes = state.encode(&catalog).unwrap();
+    assert_eq!(bytes.len(), 1194);
+    assert!(bytes.starts_with(wire::TARGET_MANA_STATE_TAG));
+    assert_eq!(State::decode(&bytes, &catalog).unwrap(), state);
+    let first_pool = 1066 - 15 * 24;
+    for (offset, value) in [(0, 2), (3, 0xff), (6, 0xff)] {
+        let mut invalid = bytes.clone();
+        invalid[first_pool + offset] = value;
+        assert!(State::decode(&invalid, &catalog).is_err());
+    }
+    let previous = state.clone();
+    state.targets[0].mana = None;
+    state.targets[1].mana = Pool::new(0, 100);
+    assert!(!previous.same_view(&state));
+    let bytes = state.encode(&catalog).unwrap();
+    assert_eq!(State::decode(&bytes, &catalog).unwrap(), state);
+    assert!(State::decode(&bytes[..bytes.len() - 1], &catalog).is_err());
 }
 
 #[test]

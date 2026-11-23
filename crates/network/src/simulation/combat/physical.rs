@@ -357,8 +357,16 @@ impl World {
                 creature_maximum_health: combat.creatures[0].maximum,
             },
         )?;
+        let mana = profile
+            .stats()
+            .creature_maximum_mana(profile.creature_definition())
+            .and_then(|maximum| theia_core::resources::Pool::new(maximum, maximum));
         let runtime = Runtime::new(profile)?;
-        self.combat.as_mut().unwrap().physical = Some(runtime);
+        let combat = self.combat.as_mut().unwrap();
+        for creature in &mut combat.creatures {
+            creature.mana = mana;
+        }
+        combat.physical = Some(runtime);
         Ok(())
     }
     pub fn physical_damage_profile(&self) -> Option<&Arc<Profile>> {

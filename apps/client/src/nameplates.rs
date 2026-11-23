@@ -494,6 +494,7 @@ mod tests {
                         entity: key.entity,
                         current: 57,
                         maximum: 100,
+                        mana: None,
                         respawn_at: None,
                     }],
                 }),
