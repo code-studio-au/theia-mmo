@@ -1,3 +1,10 @@
+23 November 2026 — P6-09/P2-14/P3-01 standalone game launcher:
+The independent Linux AMD64 Debian package installs the launcher. The launcher
+installs and updates the client from trusted local exports, verifies its files,
+and can restore the previous release. Play opens the native game login with the
+matching development services. Hosted delivery and the Windows installer remain
+open. See GAME_LAUNCHER.md for setup and qualification.
+
 23 November 2026 — P2-14 Stoneford HUD reference:
 Rounded unit frames, saved portrait choices, authoritative vitals and effects,
 a framed minimap and world map, a gold skill dock and a violet XP strip now use

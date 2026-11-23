@@ -49,6 +49,11 @@ def version(value):
     return value
 
 
+def version_key(value):
+    parts = tuple(map(int, version(value).split('.')))
+    return parts + (0,) * (4 - len(parts))
+
+
 def relative(value):
     if (not isinstance(value, str) or len(value) > 240
             or not re.fullmatch(r'[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*', value)):
@@ -273,13 +278,18 @@ def installed(root, release_version):
     return directory, manifest, total
 
 
-def install(package, root, progress=None, cancelled=None):
+def install(package, root, progress=None, cancelled=None, *, offered_version=None):
     """Verify before switching the active version. Leave previous files intact."""
     package, root = package.resolve(strict=True), root.resolve()
     manifest, total = metadata(package)
     desired = manifest['version']
+    if offered_version is not None and desired != offered_version:
+        raise InstallError('The selected release changed. Check for updates again.')
     with install_lock(root):
         previous = active(root)
+        current = previous['current']
+        if offered_version is not None and current and version_key(desired) <= version_key(current):
+            raise InstallError('The installed version changed. Check for updates again.')
         versions = root / 'versions'
         versions.mkdir(exist_ok=True)
         dest = versions / desired
@@ -300,8 +310,8 @@ def install(package, root, progress=None, cancelled=None):
                 stage.rename(dest)
         if cancelled and cancelled():
             raise InstallError('Update cancelled')
-        if desired != previous['current']:
-            activate(root, desired, previous['current'])
+        if desired != current:
+            activate(root, desired, current)
     return desired
 
 

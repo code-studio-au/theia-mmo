@@ -101,6 +101,17 @@ class ClientInstaller(unittest.TestCase):
                 install(bundle, self.store)
         self.assertEqual(install(bundle, self.store), '0.1.0')
 
+    def test_desktop_offer_cannot_activate_a_changed_or_older_release(self):
+        first = self.package('0.1.0.1')
+        latest = self.package('0.1.0.2')
+        install(latest, self.store, offered_version='0.1.0.2')
+        with self.assertRaisesRegex(InstallError, 'selected release changed'):
+            install(first, self.store, offered_version='0.1.0.3')
+        with self.assertRaisesRegex(InstallError, 'installed version changed'):
+            install(first, self.store, offered_version='0.1.0.1')
+        self.assertEqual(active(self.store)['current'], '0.1.0.2')
+        self.assertFalse((self.store / 'versions' / '0.1.0.1').exists())
+
     def test_reinstallation_refuses_changed_content_in_an_existing_version(self):
         bundle = self.package('0.1.0', b'original-version')
         install(bundle, self.store)

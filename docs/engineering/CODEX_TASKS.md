@@ -2824,7 +2824,7 @@ For each task: inspect existing code first; write a short design and tests; impl
 - **Dependencies (initial):** P6-08, P3-16, P5-24.
 - **Codex task:** Implement and document installer/patcher using approved architecture; add automated tests and observability; avoid blocking simulation or leaking renderer dependencies into headless server.
 - **Acceptance:** Implementation demonstrated for installer/patcher; automated correctness/error-path test; metrics or logs captured; integration with authoritative server and relevant Bevy client verified; documentation updated.
-- **Status:** NOT STARTED / NOT VERIFIED.
+- **Status:** Standalone Linux launcher and trusted local full releases implemented and verified. Hosted signed delivery and Windows qualification remain open. See [Game launcher](../GAME_LAUNCHER.md).
 
 ### P6-10 — Closed alpha stabilization
 - **Primary wave:** W10; work may begin earlier when prerequisites permit.

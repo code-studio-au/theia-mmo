@@ -1,0 +1,53 @@
+window, headerbar { color: #f7ecce; background: #061626; }
+headerbar {
+  background-image: linear-gradient(to bottom, #102a40, #061626);
+  border-bottom: 1px solid #9f7136;
+  padding: 8px 20px;
+}
+headerbar button { margin: 1px 3px; }
+headerbar button label { font: 700 15px serif; }
+label.heading { font: 700 24px serif; color: #ffdb88; }
+label.section { font: 700 17px serif; color: #ffdb88; }
+label.detail { color: #d5dce8; }
+label.muted { color: #a6b4c7; }
+.surface, .status-card {
+  background-image: linear-gradient(to bottom, rgba(16, 40, 61, 0.96), rgba(6, 22, 38, 0.98));
+  padding: 20px;
+  border: 1px solid #ba8747;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px #182d3e, 0 4px 14px rgba(2, 9, 21, 0.54);
+}
+.status-card { padding: 14px 18px; }
+.footer { background: #061626; border-top: 1px solid #795830; padding: 16px 20px 13px; }
+button {
+  background-image: linear-gradient(to bottom, #163047, #07182a);
+  color: #f7ecce;
+  border: 1px solid #95713e;
+  border-radius: 4px;
+  box-shadow: inset 0 1px rgba(212, 163, 97, 0.33);
+  padding: 6px 14px;
+  text-shadow: 0 1px #000;
+}
+button:hover { background-image: linear-gradient(to bottom, #29485d, #112a41); border-color: #f0c774; }
+button:active, button.nav-active {
+  color: white;
+  background-image: linear-gradient(to bottom, #714d25, #36291d);
+  border-color: #edc36d;
+}
+button:disabled { color: #a0adba; border-color: #596471; background: #1a2938; box-shadow: none; }
+button.primary {
+  min-height: 55px;
+  min-width: 224px;
+  font: 700 24px serif;
+  background: transparent;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: 2px solid transparent;
+  color: white;
+  box-shadow: none;
+}
+button.primary:hover, button.primary:disabled { border-color: transparent; background-color: transparent; }
+button.primary:disabled { color: #a0adba; }
+progressbar trough { background: #081420; border: 1px solid #88704c; min-height: 10px; border-radius: 5px; }
+progressbar progress { background-image: linear-gradient(to bottom, #7cdefe, #1e83bc); border-radius: 5px; }
+separator { color: #755b38; background: #755b38; }

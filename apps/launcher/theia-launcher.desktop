@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Theia Online Launcher
+Comment=Install, update and play Theia Online
+Exec=theia-launcher
+Icon=theia-launcher
+Terminal=false
+Categories=Game;
+StartupNotify=true
