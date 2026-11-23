@@ -187,6 +187,8 @@ def prepare_profiles(args, repository, bundle=None):
         if not isinstance(chat_area,int) or isinstance(chat_area,bool) or not 1 <= chat_area <= 0xffffffff:
             raise ValueError('Chat area must be a nonzero u32')
         command.extend(['--chat-area', str(chat_area)])
+    if getattr(args, 'fullscreen', False):
+        command.append('--fullscreen')
     if getattr(args, 'parties', False):
         command.append('--parties')
     preferences = getattr(args, 'ui_preferences', None)
@@ -237,6 +239,7 @@ def main():
     parser.add_argument('--parties', action='store_true', help='Enable party membership controls in this account test')
     parser.add_argument('--test-window', help='Monitor tile INDEX/COUNT for this account client')
     parser.add_argument('--window-size', default='3440x1440')
+    parser.add_argument('--fullscreen', action='store_true', help='Open the game client fullscreen')
     parser.add_argument('--test-route', type=Path, help='Explicit paused test travel; frozen locally and checked by normal client preflight')
     parser.add_argument('--items', type=Path, help='Explicit item catalogue, paired with --reward-catalog')
     parser.add_argument('--reward-catalog', type=Path, help='Explicit rewards; per-life entries enable ordinary corpse pickup')

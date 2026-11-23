@@ -81,7 +81,6 @@ fn error(name: &str, email: &str, secrets: &[login::Secret; 2]) -> Option<&'stat
 }
 pub(super) struct Art {
     portrait: Handle<Image>,
-    mist: Handle<Image>,
 }
 pub(super) fn art(images: &mut Assets<Image>) -> Art {
     let mut load = |bytes: &[u8]| {
@@ -101,11 +100,34 @@ pub(super) fn art(images: &mut Assets<Image>) -> Art {
         portrait: load(include_bytes!(
             "../../../../content/ui/frontend/account-adventurer-v1.png"
         )),
-        mist: load(include_bytes!(
-            "../../../../content/ui/frontend/account-mist-v1.png"
-        )),
     }
 }
+fn portrait_glow() -> bevy::ui::BackgroundGradient {
+    use bevy::ui::{
+        BackgroundGradient, ColorStop, RadialGradient, RadialGradientShape, UiPosition,
+    };
+    let glow = |x, y, radius_x, radius_y, strength| {
+        RadialGradient::new(
+            UiPosition::TOP_LEFT.at(px(x), px(y)),
+            RadialGradientShape::Ellipse(px(radius_x), px(radius_y)),
+            vec![
+                ColorStop::percent(Color::srgba(0.82, 0.92, 1., strength), 0),
+                ColorStop::percent(Color::srgba(0.82, 0.92, 1., strength * 0.66), 36),
+                ColorStop::percent(Color::srgba(0.82, 0.92, 1., strength * 0.23), 68),
+                ColorStop::percent(Color::srgba(0.82, 0.92, 1., 0.), 100),
+            ],
+        )
+        .into()
+    };
+    // Soft fields overlap behind the hair and shoulders. Their rims fade before
+    // the bay's clip edge, so the glow has no visible rectangular boundary.
+    BackgroundGradient(vec![
+        glow(235., 170., 165., 166., 0.34),
+        glow(218., 334., 164., 220., 0.21),
+        glow(252., 245., 135., 113., 0.13),
+    ])
+}
+
 fn button(parent: &mut ChildSpawnerCommands, action: Action, text: &str) -> Entity {
     ui::button(parent, ui::Choice::Registration(action), text)
 }
@@ -166,17 +188,12 @@ pub(super) fn setup(root: &mut ChildSpawnerCommands, art: Art) {
             ))
             .with_children(|portrait| {
                 portrait.spawn((
-                    ImageNode {
-                        color: Color::srgba(1., 1., 1., 0.65),
-                        ..ImageNode::new(art.mist)
-                    },
+                    portrait_glow(),
                     Pickable::IGNORE,
                     Node {
                         position_type: PositionType::Absolute,
-                        left: px(0),
-                        top: px(0),
-                        width: px(400),
-                        height: px(678),
+                        width: percent(100),
+                        height: percent(100),
                         ..default()
                     },
                 ));
@@ -218,7 +235,7 @@ pub(super) fn setup(root: &mut ChildSpawnerCommands, art: Art) {
                 body.spawn((
                     Pickable::IGNORE,
                     Node {
-                        width: px(380),
+                        width: px(368),
                         flex_shrink: 0.,
                         ..default()
                     },
@@ -245,6 +262,7 @@ pub(super) fn setup(root: &mut ChildSpawnerCommands, art: Art) {
                     ]),
                 ));
                 body.spawn(Node {
+                    margin: UiRect::left(px(12)),
                     flex_grow: 1.,
                     flex_basis: px(0),
                     min_width: px(0),

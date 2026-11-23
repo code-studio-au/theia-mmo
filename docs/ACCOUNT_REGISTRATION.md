@@ -15,7 +15,7 @@ of the screen. A fine gold divider with faded ends
 separates the portrait and fields; the redundant existing-account login footer is
 removed as requested. The portrait covers its clipped left bay to the inner left
 and bottom frame edges, preserving its aspect ratio. The sword has been removed;
-a separate white mist swirl behind the portrait softly fades into the navy
+a cool white mist glow behind the portrait softly fades into the navy
 background at 65% opacity. Icon-bearing input text and
 placeholders share a 52-unit left inset in both login and registration. The existing Theia Online title
 and courtyard background retain the game's branding. The original illustration
