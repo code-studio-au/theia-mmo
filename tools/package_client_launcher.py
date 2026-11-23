@@ -3,12 +3,15 @@ import argparse
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 
 from client_install import version
 
 ROOT = Path(__file__).resolve().parent.parent
 APP = ROOT / 'apps/launcher'
+sys.path.insert(0, str(APP))
+from artwork import ASSET_SOURCES
 
 
 def package(output, release):
@@ -22,26 +25,12 @@ def package(output, release):
         application = staging / 'usr/lib/theia-launcher'
         assets = application / 'assets'
         assets.mkdir(parents=True)
-        for filename in ('launcher.py', 'state.py', 'launcher.css'):
+        for filename in ('launcher.py', 'state.py', 'launcher.css', 'chrome.py', 'artwork.py'):
             shutil.copyfile(APP / filename, application / filename)
         shutil.copyfile(ROOT / 'tools/client_install.py', application / 'client_install.py')
-        frontend = ROOT / 'content/ui/frontend'
-        icon = ROOT / 'content/ui/sprites-v3/sprites/crest/tree.png'
-        for name, source in {
-            'title': frontend / 'title.png',
-            'courtyard': frontend / 'character-courtyard-v1.png',
-            'hero': frontend / 'account-adventurer-v1.png',
-            'icon': icon,
-        }.items():
-            shutil.copyfile(source, assets / f'{name}.png')
-        for sprite in (
-            'icon/pointer', 'icon/book', 'icon/loading', 'icon/character', 'control/gear/default',
-            'button/primary/default', 'button/primary/hover', 'button/primary/disabled',
-        ):
-            relative = Path(sprite + '.png')
-            destination = assets / 'sprites' / relative
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(ROOT / 'content/ui/sprites-v3/sprites' / relative, destination)
+        icon = ROOT / ASSET_SOURCES['icon']
+        for name, source in ASSET_SOURCES.items():
+            shutil.copyfile(ROOT / source, assets / f'{name}.png')
         for source, destination in [
             (APP / 'theia-launcher', 'usr/bin/theia-launcher'),
             (APP / 'theia-launcher.desktop', 'usr/share/applications/theia-launcher.desktop'),
@@ -75,7 +64,7 @@ def package(output, release):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
-    parser.add_argument('--version', default='0.1.0')
+    parser.add_argument('--version', default='0.1.1')
     args = parser.parse_args()
     print(package(args.output, args.version))
 

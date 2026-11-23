@@ -1,10 +1,44 @@
 """Local release discovery and launcher settings, independent of the desktop UI."""
+import http.client
+import ipaddress
 import json
 import os
 from pathlib import Path
 import tempfile
+from urllib.parse import urlsplit
 
 import client_install
+
+DEFAULT_LOGIN_BIND = '127.0.0.1:5050'
+
+
+def login_address(value):
+    """Resolve the same numeric loopback address the development server accepts."""
+    try:
+        parsed = urlsplit('//' + value)
+        host = ipaddress.ip_address(parsed.hostname or '')
+        port = parsed.port
+    except ValueError as error:
+        raise ValueError('Use a numeric loopback login server address with a port') from error
+    if not host.is_loopback or not port or parsed.netloc != value:
+        raise ValueError('Use a numeric loopback login server address with a port')
+    canonical = f'[{host}]' if host.version == 6 else str(host)
+    if value != f'{canonical}:{port}':
+        raise ValueError('Use the canonical loopback address and port')
+    return str(host), port
+
+
+def login_ready(address):
+    """Check the account process without starting a login or sending credentials."""
+    connection = http.client.HTTPConnection(*address, timeout=2)
+    try:
+        connection.request('GET', '/ready', headers={'Connection': 'close'})
+        response = connection.getresponse()
+        return response.status == 200 and response.read(32) == b'theia-account-ready\n'
+    except (OSError, http.client.HTTPException):
+        return False
+    finally:
+        connection.close()
 
 
 def data_directory():

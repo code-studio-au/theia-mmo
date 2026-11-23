@@ -367,6 +367,7 @@ impl AccountService {
             fatal,
         });
         let router = Router::new()
+            .route("/ready", get(routes::ready))
             .route("/auth/start", post(routes::start))
             .route("/callback", get(routes::callback))
             .route("/auth/poll", post(routes::poll))

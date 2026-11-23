@@ -186,6 +186,11 @@ the account default is `74686569-6100-0000-0000-000000000007`, separate from leg
 fixture slots. The local provider needs an existing user. This development-only
 HTTP loopback mode does not provision a production provider or database.
 
+`GET /ready` returns `theia-account-ready` once the guarded account listener
+is serving. The desktop launcher uses this route to distinguish the account
+service from other listeners on the port. It performs no login, SQL query or
+identity-provider request.
+
 Build with the documented native SDK environment and
 `cargo build --release --locked --workspace`, then run
 `python3 tools/play.py --account-login` (optionally `--spell-feedback`). Signing

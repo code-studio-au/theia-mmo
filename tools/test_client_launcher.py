@@ -4,11 +4,13 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from client_install import InstallError, executable, export, target
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'apps/launcher'))
-from state import newest_release, read_settings, save_settings
+from state import DEFAULT_LOGIN_BIND, login_address, login_ready, newest_release, read_settings
+from state import save_settings
 
 
 class ClientLauncher(unittest.TestCase):
@@ -65,6 +67,36 @@ class ClientLauncher(unittest.TestCase):
         settings.write_text('{"install_root":"relative"}')
         with self.assertRaisesRegex(InstallError, 'Invalid launcher preferences'):
             read_settings(settings)
+
+
+class LoginReadiness(unittest.TestCase):
+    def test_address_matches_development_listener_contract(self):
+        self.assertEqual(login_address(DEFAULT_LOGIN_BIND), ('127.0.0.1', 5050))
+        self.assertEqual(login_address('[::1]:8244'), ('::1', 8244))
+        for bad in ('localhost:5050', '127.0.0.1:0', '192.0.2.1:5050', '127.0.0.1:5050/ready',
+                    'user@127.0.0.1:5050', '127.0.0.1:70000'):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                login_address(bad)
+
+    @patch('state.http.client.HTTPConnection')
+    def test_ready_requires_the_account_service_response(self, connect):
+        address = ('127.0.0.1', 5050)
+        connection = connect.return_value
+        response = connection.getresponse.return_value
+        response.status = 200
+        response.read.return_value = b'theia-account-ready\n'
+        self.assertTrue(login_ready(address))
+        connect.assert_called_with(*address, timeout=2)
+        connection.request.assert_called_with('GET', '/ready', headers={'Connection': 'close'})
+        connection.close.assert_called()
+
+        response.read.return_value = b'arbitrary-service'
+        self.assertFalse(login_ready(address))
+        response.read.return_value = b'theia-account-ready\n'
+        response.status = 503
+        self.assertFalse(login_ready(address))
+        connection.request.side_effect = ConnectionRefusedError
+        self.assertFalse(login_ready(address))
 
 
 if __name__ == '__main__':

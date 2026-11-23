@@ -1,5 +1,6 @@
 """The independent Theia Online desktop launcher for trusted local releases."""
 import argparse
+import os
 from pathlib import Path
 import sys
 import threading
@@ -11,21 +12,15 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
 from gi.repository import Gdk, GdkPixbuf, GLib, Gtk, Pango
 
-HERE = Path(__file__).resolve().parent
-REPOSITORY = HERE.parents[1]
-ASSETS = HERE / 'assets'
-SPRITES = ASSETS / 'sprites' if ASSETS.is_dir() else REPOSITORY / 'content/ui/sprites-v3/sprites'
-if ASSETS.is_dir():
-    assets = {name: ASSETS / (name + '.png') for name in ('title', 'courtyard', 'hero', 'icon')}
-else:
+from artwork import HERE, REPOSITORY, asset
+from chrome import Glyph, WindowFrame, load_skin, picture, resize_edge, style, title_art
+
+if not (HERE / 'assets').is_dir():
     sys.path.insert(0, str(REPOSITORY / 'tools'))
-    frontend = REPOSITORY / 'content/ui/frontend'
-    assets = dict(title=frontend / 'title.png', courtyard=frontend / 'character-courtyard-v1.png',
-                  hero=frontend / 'account-adventurer-v1.png',
-                  icon=REPOSITORY / 'content/ui/sprites-v3/sprites/crest/tree.png')
 
 import client_install
-from state import data_directory, newest_release, read_settings, save_settings
+from state import DEFAULT_LOGIN_BIND, data_directory, login_address, login_ready, newest_release
+from state import read_settings, save_settings
 
 
 def box(vertical=False, spacing=10):
@@ -33,19 +28,31 @@ def box(vertical=False, spacing=10):
     return Gtk.Box(orientation=direction, spacing=spacing)
 
 
-def label(text='', style=None):
+def label(text='', theme=None):
     widget = Gtk.Label(label=text, xalign=0)
     widget.set_line_wrap(True)
-    if style:
-        widget.get_style_context().add_class(style)
+    widget.set_max_width_chars(39)
+    if theme:
+        style(widget, theme)
     return widget
 
 
-def button(text, action, style=None):
-    widget = Gtk.Button.new_with_label(text)
+def button(text, action, theme='action', icon=None, icon_only=False):
+    widget = style(Gtk.Button(), theme)
     widget.connect('clicked', lambda _: action())
-    if style:
-        widget.get_style_context().add_class(style)
+    if icon is None:
+        widget.set_label(text)
+    else:
+        contents = box(spacing=8)
+        contents.set_halign(Gtk.Align.CENTER)
+        contents.pack_start(icon, False, False, 0)
+        if not icon_only:
+            widget.caption = Gtk.Label(label=text)
+            contents.pack_start(widget.caption, False, False, 0)
+        widget.add(contents)
+        widget.get_accessible().set_name(text)
+    if icon_only:
+        widget.set_tooltip_text(text)
     return widget
 
 
@@ -58,8 +65,8 @@ def size_text(amount):
 class Scene(Gtk.DrawingArea):
     def __init__(self):
         super().__init__()
-        self.background = GdkPixbuf.Pixbuf.new_from_file(str(assets['courtyard']))
-        self.hero = GdkPixbuf.Pixbuf.new_from_file(str(assets['hero']))
+        self.background = GdkPixbuf.Pixbuf.new_from_file(str(asset('landscape')))
+        self.hero = GdkPixbuf.Pixbuf.new_from_file(str(asset('hero')))
         self.connect('draw', self.paint)
 
     @staticmethod
@@ -77,21 +84,15 @@ class Scene(Gtk.DrawingArea):
         scale = max(width / image.get_width(), height / image.get_height())
         self.image(context, image, (width - image.get_width() * scale) / 2,
                    (height - image.get_height() * scale) / 2, scale)
-        context.set_source_rgba(.01, .035, .065, .19)
+        context.set_source_rgba(.01, .02, .045, .06)
         context.paint()
-        scale = height * .99 / self.hero.get_height()
-        self.image(context, self.hero, -width * .025, height - self.hero.get_height() * scale, scale)
+        scale = height / self.hero.get_height()
+        self.image(context, self.hero, -width * .014, 8, scale)
         return False
 
 
 class Launcher:
-    PAGES = {
-        'Play': 'icon/pointer',
-        'News': 'icon/book',
-        'Updates': 'icon/loading',
-        'Account': 'icon/character',
-        'Settings': 'control/gear/default',
-    }
+    PAGES = ('Play', 'News', 'Updates', 'Account', 'Settings')
 
     def __init__(self, args, game_args):
         self.prefs = args.settings_file.expanduser().resolve()
@@ -99,6 +100,9 @@ class Launcher:
         self.job = None
         self.game = None
         self.closing = False
+        self.feedback = None
+        self.probe_pending = False
+        self.login_server = args.login_server
         self.cancelled = threading.Event()
         self.game_args = game_args
         self.record = {'current': None, 'previous': None}
@@ -114,110 +118,263 @@ class Launcher:
         library = args.release_library or config.get('release_library')
         self.library = Path(library).expanduser().resolve() if library else None
 
-        css = Gtk.CssProvider()
-        css.load_from_path(str(HERE / 'launcher.css'))
-        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css,
-                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        artwork = Gtk.CssProvider()
-        art_rules = []
-        for selector, image in (('', 'default'), (':hover', 'hover'), (':disabled', 'disabled')):
-            path = (SPRITES / 'button/primary' / f'{image}.png').as_uri()
-            art_rules.append(f'button.primary{selector} {{ background-image: url("{path}"); }}')
-        artwork.load_from_data('\n'.join(art_rules).encode())
-        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), artwork,
-                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        load_skin(HERE / 'launcher.css')
         self.window = Gtk.Window(title='Theia Online Launcher')
-        self.window.set_icon_from_file(str(assets['icon']))
-        self.window.set_default_size(1230, 720)
-        self.window.set_size_request(880, 560)
+        self.window.set_icon_from_file(str(asset('icon')))
+        self.window.set_decorated(False)
+        self.window.set_default_size(1270, 720)
+        self.window.set_size_request(950, 590)
+        self.window.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.window.connect('button-press-event', self.window_drag)
         self.window.connect('delete-event', self.close)
         self.window.connect('destroy', Gtk.main_quit)
-        root = box(vertical=True, spacing=0)
-        self.window.add(root)
+        self.window.connect('window-state-event', self.window_state)
 
-        header = Gtk.HeaderBar(show_close_button=True)
-        logo = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(assets['title']), 159, 68, True)
-        header.pack_start(Gtk.Image.new_from_pixbuf(logo))
-        nav = box(spacing=5)
-        self.page_buttons = {}
-        for page, icon in self.PAGES.items():
-            control = button(page, lambda page=page: self.select_page(page))
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(SPRITES / (icon + '.png')),
-                                                             20, 20, True)
-            control.set_image(Gtk.Image.new_from_pixbuf(pixbuf))
-            control.set_always_show_image(True)
-            nav.pack_start(control, False, False, 0)
-            self.page_buttons[page] = control
-        header.set_custom_title(nav)
-        self.window.set_titlebar(header)
+        chrome = Gtk.Overlay()
+        self.window.add(chrome)
+        root = box(vertical=True, spacing=0)
+        chrome.add(root)
+        frame = WindowFrame()
+        chrome.add_overlay(frame)
+        chrome.set_overlay_pass_through(frame, True)
+        self.header = self.build_header()
+        root.pack_start(self.header, False, False, 0)
 
         overlay = Gtk.Overlay()
         overlay.add(Scene())
         root.pack_start(overlay, True, True, 0)
-        surface = box(vertical=True, spacing=13)
-        surface.set_size_request(360, -1)
+        surface = style(box(vertical=True), 'surface')
+        surface.set_size_request(406, -1)
         surface.set_halign(Gtk.Align.END)
         surface.set_valign(Gtk.Align.START)
-        surface.set_margin_top(28)
-        surface.set_margin_end(22)
-        surface.get_style_context().add_class('surface')
+        surface.set_margin_top(15)
+        surface.set_margin_end(17)
         overlay.add_overlay(surface)
         self.stack = Gtk.Stack()
         self.stack.set_hhomogeneous(True)
         self.stack.set_vhomogeneous(False)
         self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-        surface.pack_start(self.stack, True, True, 0)
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_propagate_natural_height(True)
+        scroll.set_propagate_natural_width(True)
+        scroll.add(self.stack)
+        surface.pack_start(scroll, True, True, 0)
+
+        def fit_panel(_, allocation):
+            height = max(100, allocation.height - 63)
+            if scroll.get_max_content_height() != height:
+                GLib.idle_add(scroll.set_max_content_height, height)
+
+        overlay.connect('size-allocate', fit_panel)
         self.build_pages()
-
-        footer = box(vertical=True, spacing=9)
-        footer.get_style_context().add_class('footer')
-        root.pack_start(footer, False, False, 0)
-        row = box(spacing=16)
-        footer.pack_start(row, False, False, 0)
-        status = box(vertical=True, spacing=8)
-        status.get_style_context().add_class('status-card')
-        row.pack_start(status, True, True, 0)
-        status_top = box()
-        status.pack_start(status_top, False, False, 0)
-        self.status = label('Checking local installation…', 'section')
-        status_top.pack_start(self.status, True, True, 0)
-        self.cancel_button = button('Cancel', self.cancel)
-        status_top.pack_end(self.cancel_button, False, False, 0)
-        self.progress = Gtk.ProgressBar()
-        self.progress.set_show_text(True)
-        status.pack_start(self.progress, False, False, 0)
-        self.primary_button = button('Install Game', self.primary, 'primary')
-        row.pack_end(self.primary_button, False, False, 0)
-
-        bottom = box()
-        footer.pack_start(bottom, False, False, 0)
-        bottom.pack_start(label('Server status  ·  Unknown', 'muted'), False, False, 0)
-        self.version_label = label('', 'muted')
-        bottom.pack_end(self.version_label, False, False, 0)
+        root.pack_start(self.build_footer(), False, False, 0)
         self.select_page('Play')
         self.window.show_all()
+        self.feedback = settings_error
         self.refresh_view()
-        if settings_error:
-            self.status.set_text(settings_error)
-        else:
+        if not settings_error:
             self.check()
         GLib.timeout_add(400, self.poll_game)
+        GLib.timeout_add_seconds(5, self.probe_login)
+        self.probe_login()
+
+    def build_header(self):
+        header = style(Gtk.Overlay(), 'app-header')
+        row = box(spacing=36)
+        header.add(row)
+        logo = title_art()
+        logo.set_margin_start(40)
+        logo.set_margin_top(12)
+        logo.set_margin_bottom(5)
+        row.pack_start(logo, False, False, 0)
+        navigation = style(box(spacing=5), 'navigation')
+        navigation.set_valign(Gtk.Align.END)
+        navigation.set_margin_bottom(5)
+        navigation.set_margin_end(70)
+        row.pack_start(navigation, True, True, 0)
+        icons = (Glyph('play', 25), picture('news-icon', 25, 25), Glyph('update', 25),
+                 picture('account-icon', 25, 25), picture('settings-icon', 25, 25))
+        self.page_buttons = {}
+        for page, icon in zip(self.PAGES, icons):
+            control = button(page, lambda page=page: self.select_page(page), 'nav', icon)
+            navigation.pack_start(control, True, True, 0)
+            self.page_buttons[page] = control
+
+        controls = box(spacing=2)
+        controls.set_halign(Gtk.Align.END)
+        controls.set_valign(Gtk.Align.START)
+        controls.set_margin_top(6)
+        controls.set_margin_end(12)
+        self.maximise_glyph = Glyph('maximise', 23)
+        self.maximise_button = button('Maximise', self.toggle_maximise, 'window-control',
+                                      self.maximise_glyph, icon_only=True)
+        for control in (
+            button('Minimise', self.window.iconify, 'window-control', Glyph('minimise', 23), icon_only=True),
+            self.maximise_button,
+            button('Close', self.window.close, 'window-control', Glyph('close', 23), icon_only=True),
+        ):
+            controls.pack_start(control, False, False, 0)
+        header.add_overlay(controls)
+
+        ornament = style(Gtk.Box(), 'header-ornament')
+        ornament.set_halign(Gtk.Align.CENTER)
+        ornament.set_valign(Gtk.Align.START)
+        ornament.set_size_request(160, 12)
+        header.add_overlay(ornament)
+        header.set_overlay_pass_through(ornament, True)
+        return header
+
+    def build_footer(self):
+        footer = style(box(vertical=True, spacing=10), 'footer')
+        row = box(spacing=16)
+        footer.pack_start(row, False, False, 0)
+        status = style(box(spacing=15), 'status-card')
+        row.pack_start(status, True, True, 0)
+        self.install_glyph = style(Glyph('install', 52), 'status-icon')
+        self.install_glyph.set_valign(Gtk.Align.CENTER)
+        status.pack_start(self.install_glyph, False, False, 0)
+        text = box(vertical=True, spacing=4)
+        text.set_valign(Gtk.Align.CENTER)
+        status.pack_start(text, True, True, 0)
+        self.status = label('Checking local installation…', 'section')
+        text.pack_start(self.status, False, False, 0)
+        self.progress_row = box(spacing=9)
+        self.progress = Gtk.ProgressBar()
+        self.progress.set_valign(Gtk.Align.CENTER)
+        self.progress_row.pack_start(self.progress, True, True, 0)
+        self.percent = label('0%', 'progress-value')
+        self.progress_row.pack_start(self.percent, False, False, 0)
+        text.pack_start(self.progress_row, False, False, 0)
+        self.detail = label('', 'detail')
+        self.detail.set_max_width_chars(84)
+        text.pack_start(self.detail, False, False, 0)
+        actions = box(spacing=6)
+        actions.set_valign(Gtk.Align.CENTER)
+        status.pack_end(actions, False, False, 0)
+        self.cancel_button = button('Cancel', self.cancel, 'action', Glyph('close', 20), icon_only=True)
+        actions.pack_start(self.cancel_button, False, False, 0)
+        actions.pack_start(button('Launcher Settings', lambda: self.select_page('Settings'), 'action',
+                                  picture('settings-icon', 22, 22), icon_only=True), False, False, 0)
+
+        self.primary_glyph = Glyph('install', 29)
+        self.primary_button = button('Install Game', self.primary, 'primary', self.primary_glyph)
+        row.pack_end(self.primary_button, False, False, 0)
+
+        bottom = style(box(spacing=8), 'footer-line')
+        footer.pack_start(bottom, False, False, 0)
+        self.login_dot = style(Gtk.Box(), 'login-dot')
+        self.login_dot.set_valign(Gtk.Align.CENTER)
+        bottom.pack_start(self.login_dot, False, False, 0)
+        login_label = label('Login Server Status', 'server-label')
+        host, port = self.login_server
+        login_label.set_tooltip_text(f'[{host}]:{port}' if ':' in host else f'{host}:{port}')
+        bottom.pack_start(login_label, False, False, 0)
+        self.login_label = label('Checking…', 'detail')
+        bottom.pack_start(self.login_label, False, False, 0)
+        self.version_label = label('', 'version')
+        bottom.pack_end(self.version_label, False, False, 0)
+        return footer
+
+    def toggle_maximise(self):
+        if self.window.is_maximized():
+            self.window.unmaximize()
+        else:
+            self.window.maximize()
+
+    def window_state(self, _, event):
+        maximised = bool(event.new_window_state & Gdk.WindowState.MAXIMIZED)
+        self.maximise_glyph.show_kind('restore' if maximised else 'maximise')
+        title = 'Restore' if maximised else 'Maximise'
+        self.maximise_button.get_accessible().set_name(title)
+        self.maximise_button.set_tooltip_text(title)
+        return False
+
+    def window_drag(self, widget, event):
+        if event.button != 1:
+            return False
+        target = Gtk.get_event_widget(event)
+        while target is not None and target is not widget:
+            if isinstance(target, Gtk.Button):
+                return False
+            target = target.get_parent()
+        origin_x, origin_y = widget.get_window().get_origin()[-2:]
+        x, y = event.x_root - origin_x, event.y_root - origin_y
+        edge = resize_edge(x, y, widget.get_allocated_width(), widget.get_allocated_height())
+        pointer = (event.button, int(event.x_root), int(event.y_root), event.time)
+        if edge is not None and not widget.is_maximized() and event.type == Gdk.EventType.BUTTON_PRESS:
+            widget.begin_resize_drag(edge, *pointer)
+            return True
+        if y < self.header.get_allocated_height():
+            if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
+                self.toggle_maximise()
+            elif event.type == Gdk.EventType.BUTTON_PRESS:
+                widget.begin_move_drag(*pointer)
+            return True
+        return False
+
+    def probe_login(self):
+        if not self.probe_pending:
+            self.probe_pending = True
+
+            def probe():
+                GLib.idle_add(self.login_state, login_ready(self.login_server))
+
+            threading.Thread(target=probe, daemon=True).start()
+        return GLib.SOURCE_CONTINUE
+
+    def login_state(self, online):
+        self.probe_pending = False
+        self.login_label.set_text('Online' if online else 'Unavailable')
+        for widget in (self.login_dot, self.login_label):
+            color = widget.get_style_context()
+            color.remove_class('online' if not online else 'unavailable')
+            color.add_class('online' if online else 'unavailable')
+        return GLib.SOURCE_REMOVE
 
     def page(self, name, title):
         page = box(vertical=True, spacing=12)
-        page.pack_start(label(title, 'heading'), False, False, 0)
+        heading = label(title, 'heading')
+        if name == 'Play':
+            lead = box(spacing=7)
+            lead.pack_start(label('✦', 'heading-star'), False, False, 0)
+            lead.pack_start(heading, False, False, 0)
+            page.pack_start(lead, False, False, 0)
+        else:
+            page.pack_start(heading, False, False, 0)
         page.pack_start(Gtk.Separator(), False, False, 1)
         self.stack.add_named(page, name)
         return page
 
     def build_pages(self):
         play = self.page('Play', 'Latest News')
-        self.summary = label('', 'detail')
-        play.pack_start(self.summary, False, False, 0)
-        play.pack_start(button('Release details', lambda: self.select_page('Updates')), False, False, 0)
+        story = style(Gtk.Button(), 'news-story')
+        story.connect('clicked', lambda _: self.select_page('News'))
+        story.get_accessible().set_name('Read Version 0.1.0.1 news')
+        row = box(spacing=12)
+        art = style(Gtk.Frame(), 'news-image')
+        art.set_shadow_type(Gtk.ShadowType.NONE)
+        art.add(picture('news', 125, 73))
+        row.pack_start(art, False, False, 0)
+        heading = box(vertical=True, spacing=3)
+        heading.set_valign(Gtk.Align.CENTER)
+        heading.pack_start(label('Version 0.1.0.1', 'news-title'), False, False, 0)
+        heading.pack_start(label('Theia Online client preview', 'detail'), False, False, 0)
+        row.pack_start(heading, True, True, 0)
+        arrow = Glyph('right', 23)
+        arrow.set_valign(Gtk.Align.CENTER)
+        row.pack_end(arrow, False, False, 0)
+        story.add(row)
+        play.pack_start(story, False, False, 0)
+        play.pack_start(Gtk.Separator(), False, False, 0)
 
-        news = self.page('News', 'News')
-        news.pack_start(label('No news feed is configured.', 'detail'), False, False, 0)
+        news = self.page('News', 'Version 0.1.0.1')
+        news.pack_start(picture('news', 345, 194), False, False, 0)
+        news.pack_start(label('Theia Online client preview', 'news-title'), False, False, 0)
+        news.pack_start(label(
+            'Install the client from a local release library, verify updates and restore the previous version. '
+            'Select Play to open the game, then sign in there.', 'detail'
+        ), False, False, 0)
 
         updates = self.page('Updates', 'Updates')
         self.release_label = label('', 'detail')
@@ -228,6 +385,8 @@ class Launcher:
         updates.pack_start(self.update_button, False, False, 0)
         self.rollback_button = button('Restore Previous Version', self.rollback)
         updates.pack_start(self.rollback_button, False, False, 0)
+        self.play_installed = button('Play Installed Version', self.play)
+        updates.pack_start(self.play_installed, False, False, 0)
 
         account = self.page('Account', 'Account')
         copy = label('Sign in and manage your characters in the game client.', 'detail')
@@ -268,7 +427,15 @@ class Launcher:
         busy = self.job is not None
         running = self.game is not None
         ready = not (busy or running)
-        self.primary_button.set_label('Play' if current else 'Install Game')
+        transferring = self.job == 'install'
+        update = bool(current and self.available)
+        action_name = 'Play' if transferring or (current and not update) else (
+            'Update Game' if update else 'Install Game'
+        )
+        self.primary_button.caption.set_text(action_name)
+        self.primary_button.get_accessible().set_name(action_name)
+        self.primary_glyph.show_kind({'Play': 'play', 'Update Game': 'update', 'Install Game': 'install'}[action_name])
+        self.install_glyph.show_kind('update' if update else 'ready' if current else 'install')
         self.primary_button.set_sensitive(ready)
         self.account_button.set_sensitive(ready and bool(current))
         self.check_button.set_sensitive(ready)
@@ -277,14 +444,17 @@ class Launcher:
         self.rollback_button.set_sensitive(ready and bool(previous))
         self.source_button.set_sensitive(ready)
         self.root_button.set_sensitive(ready)
-        self.cancel_button.set_visible(self.job == 'install')
+        self.cancel_button.set_visible(transferring)
         self.cancel_button.set_sensitive(not self.cancelled.is_set())
-        self.progress.set_visible(self.job == 'install')
+        self.progress_row.set_visible(transferring)
+        self.play_installed.set_visible(update)
+        self.play_installed.set_sensitive(ready)
+
         self.source_label.set_text(str(self.library) if self.library else 'No folder selected')
         self.source_label.set_tooltip_text(str(self.library) if self.library else None)
         self.root_label.set_text(str(self.install_root))
         self.root_label.set_tooltip_text(str(self.install_root))
-        self.version_label.set_text(f'Client {current}' if current else 'Client not installed')
+        self.version_label.set_text(f'Client v{current}' if current else 'Client not installed')
         if self.available:
             _, release, total = self.available
             offer = f'Version {release} available  ·  {size_text(total)}'
@@ -293,7 +463,19 @@ class Launcher:
         else:
             offer = 'Choose a release folder in Settings.'
         self.release_label.set_text(offer + (f'\nPrevious version {previous}' if previous else ''))
-        self.summary.set_text(offer)
+        if self.job is None:
+            if running:
+                title = 'Game is running'
+            elif update:
+                title = 'Update required'
+            elif current:
+                title = 'Game ready'
+            else:
+                title = 'Game not installed'
+            self.status.set_text(title)
+        if not transferring:
+            self.detail.set_text(self.feedback or offer)
+
 
     def pick_folder(self, title, folder):
         chooser = Gtk.FileChooserNative.new(title, self.window, Gtk.FileChooserAction.SELECT_FOLDER,
@@ -311,7 +493,8 @@ class Launcher:
         try:
             save_settings(self.prefs, root, library)
         except OSError as error:
-            self.status.set_text(str(error))
+            self.feedback = str(error)
+            self.refresh_view()
             return
         self.install_root, self.library = root, library
         self.record = {'current': None, 'previous': None}
@@ -332,6 +515,7 @@ class Launcher:
         if self.job is not None or self.game is not None:
             return
         self.job = job
+        self.feedback = None
         self.cancelled.clear()
         self.status.set_text(message)
         self.refresh_view()
@@ -352,7 +536,7 @@ class Launcher:
             self.window.destroy()
             return GLib.SOURCE_REMOVE
         if error:
-            self.status.set_text(error)
+            self.feedback = error
         else:
             done(result)
         self.refresh_view()
@@ -369,18 +553,15 @@ class Launcher:
 
         def checked(result):
             self.record, self.available, error = result
-            fallback = 'Ready to play' if self.record['current'] else (
-                'Ready to install' if self.available else 'Choose a client release'
-            )
-            self.status.set_text(error or message or fallback)
+            self.feedback = error or message
 
         self.start('check', 'Checking for releases…', discover, checked)
 
     def primary(self):
-        if self.record['current']:
-            self.play()
-        elif self.available:
+        if self.available:
             self.install()
+        elif self.record['current']:
+            self.play()
         else:
             self.choose_source()
 
@@ -389,7 +570,9 @@ class Launcher:
             return
         package, offered_version, _ = self.available
         self.progress.set_fraction(0)
-        self.progress.set_text('0%')
+        self.percent.set_text('0%')
+        self.detail.set_text(f'Preparing v{offered_version}…')
+        started = time.monotonic()
         last_draw = 0.
 
         def report(done, total):
@@ -397,7 +580,7 @@ class Launcher:
             now = time.monotonic()
             if done == total or now - last_draw >= .09:
                 last_draw = now
-                GLib.idle_add(self.draw_progress, done, total)
+                GLib.idle_add(self.draw_progress, done, total, now - started)
 
         def complete(release):
             self.check(f'Client {release} installed')
@@ -409,16 +592,27 @@ class Launcher:
         self.start('install', 'Installing game…' if not self.record['current'] else 'Updating game…',
                    apply_release, complete)
 
-    def draw_progress(self, done, total):
+    def draw_progress(self, done, total, elapsed):
         fraction = done / total
         self.progress.set_fraction(fraction)
-        self.progress.set_text(f'{fraction:.0%}   ·   {size_text(done)} / {size_text(total)}')
+        self.percent.set_text(f'{fraction:.0%}')
+        text = f'{size_text(done)} / {size_text(total)}'
+        if done and elapsed >= 1:
+            rate = done / elapsed
+            seconds = int((total - done) / rate)
+            text += f'  ·  {size_text(rate)}/s'
+            if seconds >= 60:
+                minutes, seconds = divmod(seconds, 60)
+                text += f'  ·  About {minutes}m {seconds}s left'
+            elif seconds:
+                text += f'  ·  About {seconds}s left'
+        self.detail.set_text(text)
         return GLib.SOURCE_REMOVE
 
     def cancel(self):
         self.cancelled.set()
         self.cancel_button.set_sensitive(False)
-        self.status.set_text('Cancelling installation…')
+        self.status.set_text('Cancelling…')
 
     def rollback(self):
         self.start('rollback', 'Verifying the previous version…',
@@ -433,14 +627,13 @@ class Launcher:
 
     def playing(self, process):
         self.game = process
-        self.status.set_text('Game is running')
 
     def poll_game(self):
         if self.game is not None:
             code = self.game.poll()
             if code is not None:
                 self.game = None
-                self.status.set_text('Ready to play' if code == 0 else f'Game exited with code {code}')
+                self.feedback = None if code == 0 else f'Game exited with code {code}'
                 self.refresh_view()
         return GLib.SOURCE_CONTINUE
 
@@ -456,6 +649,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--install-root', type=Path)
     parser.add_argument('--release-library', type=Path)
+    parser.add_argument('--login-server', type=login_address,
+                        default=os.environ.get('THEIA_ACCOUNT_BIND', DEFAULT_LOGIN_BIND),
+                        help='Numeric loopback address and port for the game login service')
     parser.add_argument('--settings-file', type=Path, default=data_directory() / 'launcher.json')
     args = sys.argv[1:]
     split = args.index('--') if '--' in args else len(args)

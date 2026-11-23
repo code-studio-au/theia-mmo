@@ -11,7 +11,7 @@ Build the standalone launcher package with `dpkg-deb` available on the build
 machine.
 
 ```sh
-python3 tools/package_client_launcher.py build/theia-launcher_0.1.0_amd64.deb
+python3 tools/package_client_launcher.py --version 0.1.1 build/theia-launcher_0.1.1_amd64.deb
 ```
 
 Install the Debian package through the system's package installer and open
@@ -23,12 +23,30 @@ The launcher saves its folder choices in `launcher.json` beside that default
 directory.
 
 **Install Game** stages and verifies the selected release, then enables **Play**.
-**Updates** shows the latest compatible version in the chosen library above the
-installed version. **Check for Updates** rescans the library, **Install Update**
-applies the new release, and **Restore Previous Version** rolls back the last
-switch. The main panel shows the available release, and the status bar displays
-the active game version. Progress shows bytes verified, with cancellation during
-install or update. News and server status are waiting for actual feeds.
+When a newer release is found, the main action becomes **Update Game**.
+**Updates** also offers **Check for Updates**, **Restore Previous Version** and
+**Play Installed Version** while a newer release is offered. Install and update
+show verified bytes, percentage and, after enough time to measure the transfer,
+a rate and estimated time left. Cancel stops the transfer. The bottom bar
+displays the active client version.
+
+The Play screen links to the bundled 0.1.0.1 client preview announcement.
+
+## Login server status
+
+The launcher probes the development account service's `GET /ready` every five
+seconds. Green **Online** requires the account service's readiness response.
+Other responses or connection failures show **Unavailable**. The default is
+`127.0.0.1:5050`. With a custom numeric loopback bind, set
+`THEIA_ACCOUNT_BIND` for the launcher or pass `--login-server 127.0.0.1:PORT`.
+Use the matching current account server build.
+
+The endpoint is available on the existing guarded account listener once
+startup has completed. The probe sends no credentials, starts no login session
+and does not test a complete identity-provider sign-in. Public realm
+monitoring remains separate.
+
+## Preparing a client release
 
 Export each validated build to a new version folder in the same library.
 
@@ -52,13 +70,15 @@ concurrent update or silently install a different version from the one offered.
 Launch verifies the installed files and starts the game from its active version
 directory. A running game can continue using its version files.
 
-Fourteen automated checks cover release selection, settings, concurrent and
-stale offers, cancellation, rollback, corruption and executable handoff. The
+Sixteen installer/launcher checks and 25 server library tests pass. The
 packaged app was exercised on Linux X11 with two distinct local client builds,
-a rejected corrupt update and rollback. The current installed client opened its
-native Login at 1280×720 and signed in to a fresh account roster using private
-playtest services. Linux Vulkan llvmpipe reported zero validation diagnostics.
-See `build/launcher-desktop-qualified-z5dig57a/qualification.json`.
+a rejected corrupt update and rollback. Captures cover game not installed,
+installing, update required, updating and game ready, with real byte progress.
+The 967×600 layout and top-right maximise, restore and minimise controls were
+checked. The launcher reported Online against the running private account
+service. The installed client then opened native Login at 1280×720 and signed
+in to a fresh account roster. Linux Vulkan llvmpipe reported zero validation
+diagnostics. See `build/launcher-theme-qualified-65dre1f2/qualification.json`.
 
 ## Distribution remains open
 

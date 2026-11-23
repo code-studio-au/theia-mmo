@@ -50,6 +50,10 @@ fn database(error: DatabaseError) -> ApiError {
         _ => ApiError::busy(),
     }
 }
+pub(super) async fn ready() -> &'static str {
+    // The listener only serves after provider discovery and database worker startup.
+    "theia-account-ready\n"
+}
 pub(super) async fn start(
     State(state): State<Shared>,
     body: std::result::Result<Json<Empty>, JsonRejection>,

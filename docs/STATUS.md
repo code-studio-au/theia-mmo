@@ -1,3 +1,11 @@
+23 November 2026 — P6-09/P2-14/P3-01 launcher reference refinement:
+The Linux launcher now uses the harbour artwork, highlighted gold frame,
+compact window controls and themed install/update states. The 0.1.0.1 news
+entry opens in the launcher. The status dot checks the existing loopback
+account service. Native GTK window controls, all five release states and
+installed-client sign-in pass, with 16 Python and 25 server tests. See
+GAME_LAUNCHER.md for setup and qualification.
+
 23 November 2026 — P6-09/P2-14/P3-01 standalone game launcher:
 The independent Linux AMD64 Debian package installs the launcher. The launcher
 installs and updates the client from trusted local exports, verifies its files,

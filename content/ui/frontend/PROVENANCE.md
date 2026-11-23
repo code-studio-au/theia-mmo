@@ -199,3 +199,16 @@ Final portrait refinement removes the entire sword and reconstructs the hair.
 `account-mist-v1.png` is a separate generated white/cool-blue swirl with its
 softly feathered alpha, composited behind the portrait at 65% opacity within
 the clipped portrait bay. Both exact prompts and hashes are in the same manifest.
+
+## Desktop launcher artwork — 23 November 2026
+
+`launcher-harbour-v1.png` was generated with built-in imagegen using the supplied
+`Theia Online Fantasy Game Launcher.png`. The launcher composites the existing
+transparent adventurer over this backdrop and renders the text and controls live.
+The standalone wordmark crops the subtitle from `title.png`. The gold trim uses
+the approved regenerated panel and corner sprites.
+
+> Use case: precise-object-edit. Asset type: wide opaque backdrop painting for the live Theia Online desktop launcher. Edit target: the attached Theia launcher reference. Reconstruct only the bright fantasy landscape behind its interface, with the same blue alpine harbour, cream stone castles on the right, bridges and waterfalls, flowering stone overlook and warm late-afternoon light. Continue the landscape naturally across all regions where the overlay used to be. Wide 21:9 panorama. The wide centre and right show the castle and blue water, with a dark tree and castle stonework framing the left foreground, where a separate character cutout will be composited later. Preserve the reference's rich painterly realism and strong cool blue/gold contrast. The delivered image must contain no person, character, sword, text, logo, graphics, frame, window controls, news panel, footer or UI of any kind.
+
+Source output `exec-3f9a6500-095c-453f-aa5c-13c8a4a56858.png`.
+SHA-256 `c647ac832c1e4fd358061459bfa21e78e743aa0dbf06d2dc78b4b8d7ab34f3db`.

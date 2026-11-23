@@ -1,3 +1,11 @@
+23 November 2026 — P6-09/P2-14/P3-01 launcher reference and login readiness:
+Build on the existing standalone GTK application, verified local installer and
+guarded account service. Reference artwork guides the shell and release states.
+A read-only loopback readiness response reports account listener startup
+without involving the simulation or a new service. Acceptance covers click,
+resize and keyboard-safe GTK controls, install/transfer/update/ready states,
+real account listener checks and installed-client sign-in. See GAME_LAUNCHER.md.
+
 23 November 2026 — P2-14 Stoneford HUD reference:
 Rounded unit frames, saved portrait choices, authoritative vitals and effects,
 a framed minimap and world map, a gold skill dock and a violet XP strip now use
