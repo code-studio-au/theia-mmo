@@ -178,8 +178,13 @@ fn setup(mut commands: Commands) {
                 content.spawn((Section::Graphics,Node{display:Display::None,..super::kit::column()})).with_children(|section| {
                     super::kit::section(section,"Graphics");
                     super::kit::graphics(section,|row,value|match value {
-                        super::kit::Value::FrameCap=> {for value in super::graphics::CAPS {let name=super::graphics::FrameCap(value).label();row.spawn(button(Control::FrameCap(value),&name)).with_child(label(&name));}},
-                        super::kit::Value::Distance=> {for value in ViewDistance::ALL {row.spawn(button(Control::ViewDistance(value),&format!("View distance: {}",value.label()))).with_child(label(value.label()));}}
+                        super::kit::Value::FrameCap => {for value in super::graphics::CAPS {
+                            super::kit::dropdown_option(row, Control::FrameCap(value), &super::graphics::FrameCap(value).label());
+                        }},
+                        super::kit::Value::Distance => {for value in ViewDistance::ALL {
+                            super::kit::dropdown_option(row, Control::ViewDistance(value), value.label())
+                                .insert(AccessibleLabel::new(format!("View distance: {}", value.label())));
+                        }},
                         _ => {}
                     });
                 });

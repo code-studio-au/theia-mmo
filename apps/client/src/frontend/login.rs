@@ -11,7 +11,7 @@ use bevy::{
     },
     tasks::{IoTaskPool, Task, futures::check_ready},
     text::EditableText,
-    ui_widgets::TextInput,
+    ui_widgets::{ActivateOnPress, TextInput},
 };
 #[derive(Component)]
 pub(super) struct Username;
@@ -133,9 +133,6 @@ impl Drop for Secret {
     fn drop(&mut self) {
         self.clear();
     }
-}
-fn button(parent: &mut ChildSpawnerCommands, action: Action, text: &str) {
-    ui::button(parent, ui::Choice::Account(action), text);
 }
 pub(super) fn panel(root: &mut ChildSpawnerCommands) {
     root.spawn((
@@ -345,8 +342,14 @@ pub(super) fn links(root: &mut ChildSpawnerCommands) {
                     content.spawn((SettingsBody,ui::column())).with_children(|settings| {
                         crate::fantasy_ui::kit::section(settings,"Graphics");
                         crate::fantasy_ui::kit::graphics(settings,|row,value| match value {
-                            crate::fantasy_ui::kit::Value::FrameCap=> {for value in crate::fantasy_ui::graphics::CAPS {button(row,Action::Cap(value),&crate::fantasy_ui::graphics::FrameCap(value).label());}},
-                            crate::fantasy_ui::kit::Value::Distance=>{for value in crate::fantasy_ui::graphics::ViewDistance::ALL {button(row,Action::Distance(value),value.label());}}
+                            crate::fantasy_ui::kit::Value::FrameCap => {for value in crate::fantasy_ui::graphics::CAPS {
+                                crate::fantasy_ui::kit::dropdown_option(row, ui::Choice::Account(Action::Cap(value)), &crate::fantasy_ui::graphics::FrameCap(value).label())
+                                    .insert((ActivateOnPress, TabIndex(0)));
+                            }},
+                            crate::fantasy_ui::kit::Value::Distance => {for value in crate::fantasy_ui::graphics::ViewDistance::ALL {
+                                crate::fantasy_ui::kit::dropdown_option(row, ui::Choice::Account(Action::Distance(value)), value.label())
+                                    .insert((ActivateOnPress, TabIndex(0)));
+                            }},
                             _ => {}
                         });
                     });

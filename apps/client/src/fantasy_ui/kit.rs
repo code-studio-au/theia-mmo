@@ -31,6 +31,10 @@ impl Value {
 #[derive(Component)]
 struct DropToggle(Entity, Value);
 #[derive(Component)]
+struct DropCaption(Entity);
+#[derive(Component)]
+struct DropChevron;
+#[derive(Component)]
 struct DropList;
 #[derive(Component, Default)]
 struct ResolutionRows(Vec<[u32; 2]>);
@@ -52,7 +56,13 @@ pub(crate) fn install(app: &mut App) {
         .add_observer(transaction_action)
         .add_systems(
             Update,
-            (present, fit_settings, display_options, scroll_resolutions),
+            (
+                present,
+                fit_settings,
+                display_options,
+                scroll_resolutions,
+                dropdown_colors,
+            ),
         )
         .add_systems(
             PostUpdate,
@@ -110,7 +120,7 @@ pub(crate) fn disabled(parent: &mut ChildSpawnerCommands, caption: &str) -> Enti
             },
             BackgroundColor(Color::NONE),
         ))
-        .with_child(text(caption, 16.))
+        .with_child(ui_theme::control_label(caption))
         .id()
 }
 pub(crate) fn disabled_link(parent: &mut ChildSpawnerCommands, caption: &str) {
@@ -200,7 +210,11 @@ pub(crate) fn section(parent: &mut ChildSpawnerCommands, caption: &str) {
         ))
         .with_child((text(caption, 22.), TextColor(ui_theme::GOLD)));
 }
-pub(crate) fn unsupported_row(parent: &mut ChildSpawnerCommands, caption: &str, value: &str) {
+fn dropdown_row(
+    parent: &mut ChildSpawnerCommands,
+    caption: &str,
+    field: impl FnOnce(&mut ChildSpawnerCommands, Entity),
+) {
     parent
         .spawn(Node {
             width: percent(100),
@@ -209,29 +223,21 @@ pub(crate) fn unsupported_row(parent: &mut ChildSpawnerCommands, caption: &str, 
             justify_content: JustifyContent::SpaceBetween,
             ..default()
         })
-        .with_children(|r| {
-            r.spawn((
-                text(caption, 14.),
-                TextColor(Color::srgb(0.45, 0.47, 0.50)),
-                Node {
-                    flex_grow: 1.,
-                    ..default()
-                },
-            ));
-            r.spawn((
-                Button,
-                InteractionDisabled,
-                Hovered::default(),
-                Style::Secondary,
-                AccessibleLabel::new(format!("{caption} — unavailable")),
-                dropdown_node(px(170)),
-                BackgroundColor(Color::NONE),
-            ))
-            .with_children(|p| {
-                p.spawn(text(value, 15.));
-                chevron(p, true);
-            });
+        .with_children(|row| {
+            let label = row.spawn(ui_theme::control_label(caption)).id();
+            field(row, label);
         });
+}
+fn unsupported_row(parent: &mut ChildSpawnerCommands, caption: &str, value: &str) {
+    dropdown_row(parent, caption, |row, label| {
+        dropdown_field(
+            row,
+            label,
+            format!("{caption} — unavailable"),
+            ui_theme::control_label(value),
+        )
+        .insert(InteractionDisabled);
+    });
 }
 pub(crate) fn unsupported_check(parent: &mut ChildSpawnerCommands, caption: &str) {
     parent
@@ -246,21 +252,21 @@ pub(crate) fn unsupported_check(parent: &mut ChildSpawnerCommands, caption: &str
                 ui_theme::checkbox_box(),
                 ui_theme::Sprite("checkbox.disabled"),
             ));
-            r.spawn((text(caption, 17.), TextColor(Color::srgb(0.48, 0.49, 0.49))));
+            r.spawn(ui_theme::control_label(caption))
+                .insert(TextColor(ui_theme::DISABLED_TEXT));
         });
 }
-pub(crate) fn unsupported_slider(parent: &mut ChildSpawnerCommands, caption: &str, value: &str) {
+fn unsupported_slider(parent: &mut ChildSpawnerCommands, caption: &str, value: &str) {
     parent
         .spawn(Node {
             column_gap: px(10),
             align_items: AlignItems::Center,
-            height: px(26),
+            min_height: px(32),
             ..default()
         })
         .with_children(|r| {
-            r.spawn((
-                text(caption, 14.),
-                TextColor(Color::srgb(0.45, 0.47, 0.50)),
+            r.spawn(ui_theme::control_label(caption)).insert((
+                TextColor(ui_theme::DISABLED_TEXT),
                 Node {
                     width: px(110),
                     ..default()
@@ -290,9 +296,8 @@ pub(crate) fn unsupported_slider(parent: &mut ChildSpawnerCommands, caption: &st
                 ui_theme::Sprite("slider.thumb"),
                 ui_theme::Muted,
             ));
-            r.spawn((
-                text(value, 14.),
-                TextColor(Color::srgb(0.45, 0.47, 0.50)),
+            r.spawn(ui_theme::control_label(value)).insert((
+                TextColor(ui_theme::DISABLED_TEXT),
                 Node {
                     width: px(50),
                     ..default()
@@ -300,8 +305,9 @@ pub(crate) fn unsupported_slider(parent: &mut ChildSpawnerCommands, caption: &st
             ));
         });
 }
-fn chevron(parent: &mut ChildSpawnerCommands, disabled: bool) {
+fn chevron(parent: &mut ChildSpawnerCommands) {
     parent.spawn((
+        DropChevron,
         Node {
             position_type: PositionType::Absolute,
             right: px(14),
@@ -315,37 +321,86 @@ fn chevron(parent: &mut ChildSpawnerCommands, disabled: bool) {
             },
             ..default()
         },
-        BorderColor::all(if disabled {
-            Color::srgb(0.40, 0.40, 0.38)
-        } else {
-            ui_theme::GOLD
-        }),
+        BorderColor::all(ui_theme::GOLD),
         UiTransform::from_rotation(Rot2::degrees(45.)),
         Pickable::IGNORE,
     ));
 }
-fn dropdown_node(width: Val) -> Node {
-    Node {
-        width,
-        height: px(32),
-        flex_shrink: 0.,
-        padding: UiRect {
-            left: px(14),
-            right: px(32),
+const DROPDOWN_WIDTH: f32 = 170.;
+const CONTROL_HEIGHT: f32 = 32.;
+
+fn dropdown_field<'a>(
+    parent: &'a mut ChildSpawnerCommands,
+    label: Entity,
+    caption: String,
+    value: impl Bundle,
+) -> EntityCommands<'a> {
+    let mut field = parent.spawn((
+        Button,
+        Hovered::default(),
+        Style::Secondary,
+        AccessibleLabel::new(caption),
+        Node {
+            width: px(DROPDOWN_WIDTH),
+            height: px(CONTROL_HEIGHT),
+            flex_shrink: 0.,
+            padding: UiRect {
+                left: px(14),
+                right: px(32),
+                ..default()
+            },
+            align_items: AlignItems::Center,
             ..default()
         },
-        align_items: AlignItems::Center,
-        ..default()
+        BackgroundColor(Color::NONE),
+    ));
+    field.with_children(|field| {
+        field.spawn(value);
+        chevron(field);
+    });
+    let field_id = field.id();
+    field.commands().entity(label).insert(DropCaption(field_id));
+    field
+}
+
+fn dropdown_colors(
+    buttons: Query<Has<InteractionDisabled>, With<Button>>,
+    mut captions: Query<(&DropCaption, &mut TextColor)>,
+    mut chevrons: Query<(&ChildOf, &mut BorderColor), With<DropChevron>>,
+) {
+    for (caption, mut text) in &mut captions {
+        let color = if buttons.get(caption.0).is_ok_and(|disabled| disabled) {
+            ui_theme::DISABLED_TEXT
+        } else {
+            ui_theme::CREAM
+        };
+        if text.0 != color {
+            text.0 = color;
+        }
+    }
+    for (parent, mut border) in &mut chevrons {
+        let color = if buttons.get(parent.parent()).is_ok_and(|disabled| disabled) {
+            ui_theme::DISABLED_TEXT
+        } else {
+            ui_theme::GOLD
+        };
+        let next = BorderColor::all(color);
+        if *border != next {
+            *border = next;
+        }
     }
 }
-pub(crate) fn dropdown(
+
+fn dropdown(
     parent: &mut ChildSpawnerCommands,
+    caption: &str,
     value: Value,
     options: impl FnOnce(&mut ChildSpawnerCommands),
 ) {
-    parent
-        .spawn(Node {
-            width: px(170),
+    dropdown_row(parent, caption, |row, label| {
+        row.spawn(Node {
+            width: px(DROPDOWN_WIDTH),
+            flex_shrink: 0.,
             ..column()
         })
         .with_children(|holder| {
@@ -375,59 +430,48 @@ pub(crate) fn dropdown(
                     Hovered::default(),
                 ));
             }
-            holder
-                .spawn((
-                    DropToggle(list, value),
-                    Button,
-                    Hovered::default(),
-                    Style::Secondary,
-                    dropdown_node(percent(100)),
-                    BackgroundColor(Color::NONE),
-                ))
-                .with_children(|p| {
-                    p.spawn((value, text("", 15.)));
-                    chevron(p, false);
-                });
+            dropdown_field(
+                holder,
+                label,
+                caption.into(),
+                (value, ui_theme::control_label("")),
+            )
+            .insert(DropToggle(list, value));
         });
+    });
 }
 
 fn display_row(parent: &mut ChildSpawnerCommands, label: &str, value: Value) {
-    parent
-        .spawn(Node {
-            justify_content: JustifyContent::SpaceBetween,
-            align_items: AlignItems::Center,
-            column_gap: px(8),
-            ..default()
-        })
-        .with_children(|row| {
-            row.spawn(text(label, 14.));
-            dropdown(row, value, |options| {
-                if value == Value::DisplayMode {
-                    for mode in display::Mode::ALL {
-                        options
-                            .spawn(display_option(DisplayOption::Mode(mode), mode.label()))
-                            .with_child(text(mode.label(), 15.));
-                    }
-                }
-            });
-        });
+    dropdown(parent, label, value, |options| {
+        if value == Value::DisplayMode {
+            for mode in display::Mode::ALL {
+                dropdown_option(options, DisplayOption::Mode(mode), mode.label());
+            }
+        }
+    });
 }
 
-fn display_option(option: DisplayOption, label: &str) -> impl Bundle {
-    (
-        option,
+pub(crate) fn dropdown_option<'a>(
+    parent: &'a mut ChildSpawnerCommands,
+    action: impl Component,
+    label: &str,
+) -> EntityCommands<'a> {
+    let mut option = parent.spawn((
+        action,
         Button,
         Hovered::default(),
         Style::Secondary,
         AccessibleLabel::new(label),
         Node {
-            min_height: px(30),
-            padding: UiRect::horizontal(px(10)),
+            min_height: px(CONTROL_HEIGHT),
+            padding: UiRect::horizontal(px(14)),
             align_items: AlignItems::Center,
             flex_shrink: 0.,
             ..default()
         },
-    )
+    ));
+    option.with_child(ui_theme::control_label(label));
+    option
 }
 
 fn display_options(
@@ -478,9 +522,7 @@ fn display_options(
                 .with_children(|options| {
                     for &size in &sizes {
                         let label = display::size_label(size);
-                        options
-                            .spawn(display_option(DisplayOption::Size(size), &label))
-                            .with_child(text(label, 15.));
+                        dropdown_option(options, DisplayOption::Size(size), &label);
                     }
                 });
         }
@@ -537,7 +579,7 @@ pub(crate) fn defaults(parent: &mut ChildSpawnerCommands) {
             },
             BackgroundColor(Color::NONE),
         ))
-        .with_child(text("Restore Defaults", 16.));
+        .with_child(ui_theme::control_label("Restore Defaults"));
 }
 #[allow(clippy::too_many_arguments)]
 fn activate(
@@ -721,19 +763,9 @@ pub(crate) fn graphics(
                                 ] {
                                     unsupported_row(quality, caption, "Unavailable");
                                 }
-                                quality
-                                    .spawn(Node {
-                                        justify_content: JustifyContent::SpaceBetween,
-                                        align_items: AlignItems::Center,
-                                        column_gap: px(8),
-                                        ..default()
-                                    })
-                                    .with_children(|row| {
-                                        row.spawn(text("View Distance", 14.));
-                                        dropdown(row, Value::Distance, |p| {
-                                            choices(p, Value::Distance)
-                                        });
-                                    });
+                                dropdown(quality, "View Distance", Value::Distance, |options| {
+                                    choices(options, Value::Distance)
+                                });
                             });
                             cols.spawn(Node {
                                 width: percent(47),
@@ -766,17 +798,12 @@ pub(crate) fn graphics(
                 .with_children(|performance| {
                     section(performance, "Performance");
                     ui_theme::vsync_control(performance);
-                    performance
-                        .spawn(Node {
-                            justify_content: JustifyContent::SpaceBetween,
-                            align_items: AlignItems::Center,
-                            column_gap: px(8),
-                            ..default()
-                        })
-                        .with_children(|r| {
-                            r.spawn(text("Frame Rate Limit", 14.));
-                            dropdown(r, Value::FrameCap, |p| choices(p, Value::FrameCap));
-                        });
+                    dropdown(
+                        performance,
+                        "Frame Rate Limit",
+                        Value::FrameCap,
+                        |options| choices(options, Value::FrameCap),
+                    );
                     unsupported_row(performance, "Background FPS", "30 FPS");
                     unsupported_check(performance, "Reduce CPU Load (Background)");
                     unsupported_check(performance, "Dynamic Resolution");
@@ -846,7 +873,7 @@ pub(crate) fn footer_button(
             },
             BackgroundColor(Color::NONE),
         ))
-        .with_child(text(caption, 18.))
+        .with_child(ui_theme::control_label(caption))
         .id()
 }
 #[allow(clippy::too_many_arguments)]
@@ -957,6 +984,56 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn graphics_controls_share_type_and_dropdown_dimensions_in_all_states() {
+        let mut app = App::new();
+        app.add_systems(Update, dropdown_colors);
+        app.world_mut()
+            .commands()
+            .spawn(Node::default())
+            .with_children(|parent| {
+                graphics(parent, |list, _| {
+                    dropdown_option(
+                        list,
+                        DisplayOption::Mode(display::Mode::Windowed),
+                        "Test choice",
+                    );
+                });
+            });
+        app.update();
+        let world = app.world_mut();
+        let labels: Vec<_> = world
+            .query::<(&DropCaption, &TextColor)>()
+            .iter(world)
+            .map(|(caption, color)| (caption.0, color.0))
+            .collect();
+        assert!(labels.len() >= 12);
+        for (field, color) in labels {
+            let node = world.get::<Node>(field).unwrap();
+            assert_eq!(node.width, px(DROPDOWN_WIDTH));
+            assert_eq!(node.height, px(CONTROL_HEIGHT));
+            assert!(matches!(world.get::<Style>(field), Some(Style::Secondary)));
+            let disabled = world.get::<InteractionDisabled>(field).is_some();
+            assert_eq!(
+                color,
+                if disabled {
+                    ui_theme::DISABLED_TEXT
+                } else {
+                    ui_theme::CREAM
+                }
+            );
+        }
+        let mut fonts = world.query::<(&Text, &TextFont)>();
+        for (text, font) in fonts.iter(world) {
+            let expected = match text.0.as_str() {
+                "Display" | "Graphics Preset" | "Advanced Graphics" | "Performance" => 22.,
+                _ => ui_theme::CONTROL_TEXT_SIZE,
+            };
+            assert_eq!(font.font_size, FontSize::Px(expected), "{}", text.0);
+        }
+    }
+
     #[test]
     fn disabled_reference_controls_do_not_change_settings_and_cancel_restores_last_apply() {
         let mut app = App::new();

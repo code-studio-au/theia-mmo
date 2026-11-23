@@ -336,7 +336,7 @@ fn present(
     {
         let focused = focus.as_ref().is_some_and(|f| f.get() == Some(entity));
         let color = if disabled {
-            Color::srgb(0.48, 0.49, 0.49)
+            DISABLED_TEXT
         } else if pressed || selected {
             Color::WHITE
         } else if hover.is_some_and(|h| h.0) {
@@ -459,10 +459,13 @@ pub(crate) fn input_box(leading_icon: bool, trailing_icon: bool) -> Node {
         ..default()
     }
 }
-fn label(value: &str) -> impl Bundle {
+pub(crate) const CONTROL_TEXT_SIZE: f32 = 16.;
+pub(crate) const DISABLED_TEXT: Color = Color::srgb(0.48, 0.49, 0.49);
+
+pub(crate) fn control_label(value: &str) -> impl Bundle {
     (
         Text::new(value),
-        TextFont::from_font_size(17.),
+        TextFont::from_font_size(CONTROL_TEXT_SIZE),
         TextColor(CREAM),
         Pickable::IGNORE,
     )
@@ -520,11 +523,11 @@ pub(crate) fn vsync_control(parent: &mut ChildSpawnerCommands) {
                     ..default()
                 },
             ));
-            row.spawn(label("Vertical synchronisation"));
+            row.spawn(control_label("Vertical synchronisation"));
         });
 }
 pub(crate) fn scale_control(parent: &mut ChildSpawnerCommands) {
-    parent.spawn((ScaleCaption, label("Interface size")));
+    parent.spawn((ScaleCaption, control_label("Interface size")));
     parent
         .spawn((
             Scale,

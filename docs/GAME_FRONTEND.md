@@ -139,6 +139,13 @@ diagnostic, above the usual threshold, and no other GPU diagnostics. The private
 X server lacked DRI3 for RADV presentation. Native hardware and Windows remain
 unverified for this feature. See `build/graphics-display-native-a6foawve/qualification.json`.
 
+Client 0.1.0.6 gives Graphics controls in both menus a shared body font and
+uses the same geometry and skin for all dropdown fields and options. Unavailable
+controls use the same proportions with a muted disabled state. The private X11
+title screen passed at 1600×900 and 1280×720 with Vulkan llvmpipe and zero GPU
+diagnostics. All 370 client tests passed with five existing ignores. See
+`build/graphics-style-native-m1wqct8o/qualification.json`.
+
 `tools/play.py --game-front-end` requires one Classic account client and excludes
 explicit character IDs and the old editor picker. Account population launch uses
 it by default; `--editor-character-picker` retains the earlier route. Public bounded
