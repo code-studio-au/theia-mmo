@@ -11,7 +11,7 @@ Build the standalone launcher package with `dpkg-deb` available on the build
 machine.
 
 ```sh
-python3 tools/package_client_launcher.py --version 0.1.1 build/theia-launcher_0.1.1_amd64.deb
+python3 tools/package_client_launcher.py build/theia-launcher_0.1.2_amd64.deb
 ```
 
 Install the Debian package through the system's package installer and open
@@ -23,6 +23,9 @@ The launcher saves its folder choices in `launcher.json` beside that default
 directory.
 
 **Install Game** stages and verifies the selected release, then enables **Play**.
+Play opens the game fullscreen by default and minimises the launcher. When the
+game closes, the launcher is available again. Forward `--window-size WIDTHxHEIGHT`
+after `--` for a windowed launch or use F11 to toggle fullscreen in the client.
 When a newer release is found, the main action becomes **Update Game**.
 **Updates** also offers **Check for Updates**, **Restore Previous Version** and
 **Play Installed Version** while a newer release is offered. Install and update
@@ -79,6 +82,10 @@ checked. The launcher reported Online against the running private account
 service. The installed client then opened native Login at 1280×720 and signed
 in to a fresh account roster. Linux Vulkan llvmpipe reported zero validation
 diagnostics. See `build/launcher-theme-qualified-65dre1f2/qualification.json`.
+
+The 0.1.2 package opened installed client 0.1.0.4 fullscreen at 1440×900 on
+Linux X11 with Vulkan llvmpipe. The launcher minimised on Play and restored
+when the client closed. All 19 installer and launcher checks passed.
 
 ## Distribution remains open
 

@@ -9,7 +9,7 @@ from unittest.mock import patch
 from client_install import InstallError, executable, export, target
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'apps/launcher'))
-from state import DEFAULT_LOGIN_BIND, login_address, login_ready, newest_release, read_settings
+from state import DEFAULT_LOGIN_BIND, game_launch_args, login_address, login_ready, newest_release, read_settings
 from state import save_settings
 
 
@@ -67,6 +67,32 @@ class ClientLauncher(unittest.TestCase):
         settings.write_text('{"install_root":"relative"}')
         with self.assertRaisesRegex(InstallError, 'Invalid launcher preferences'):
             read_settings(settings)
+
+
+class GameLaunchMode(unittest.TestCase):
+    @patch.dict(os.environ, {}, clear=True)
+    def test_normal_play_and_account_sessions_default_to_fullscreen(self):
+        fullscreen = ['--fullscreen', '--window-size', '1280x720']
+        self.assertEqual(game_launch_args([]), fullscreen)
+        session = ['--game-front-end', '/tmp/account-session']
+        self.assertEqual(game_launch_args(session), [*session, *fullscreen])
+
+    @patch.dict(os.environ, {'THEIA_WINDOW_SIZE': '1600x900'})
+    def test_preserves_configured_window_size_when_toggling_fullscreen(self):
+        self.assertEqual(game_launch_args([]), ['--fullscreen'])
+
+    def test_explicit_window_modes_config_reports_and_utilities_are_forwarded(self):
+        for options in (
+            ['--window-size', '1600x900'],
+            ['--test-window', '1/2'],
+            ['--window-size', '1600x900', '--fullscreen'],
+            ['--configuration-report'],
+            ['--preview-fantasy-ui', 'assets'],
+            ['--inspect-asset', 'example.glb'],
+            ['--chunk-smoke'],
+        ):
+            with self.subTest(options=options):
+                self.assertEqual(game_launch_args(options), options)
 
 
 class LoginReadiness(unittest.TestCase):

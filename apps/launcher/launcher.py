@@ -19,7 +19,7 @@ if not (HERE / 'assets').is_dir():
     sys.path.insert(0, str(REPOSITORY / 'tools'))
 
 import client_install
-from state import DEFAULT_LOGIN_BIND, data_directory, login_address, login_ready, newest_release
+from state import DEFAULT_LOGIN_BIND, data_directory, game_launch_args, login_address, login_ready, newest_release
 from state import read_settings, save_settings
 
 
@@ -104,7 +104,7 @@ class Launcher:
         self.probe_pending = False
         self.login_server = args.login_server
         self.cancelled = threading.Event()
-        self.game_args = game_args
+        self.game_args = game_launch_args(game_args)
         self.record = {'current': None, 'previous': None}
         config = {}
         settings_error = None
@@ -627,6 +627,7 @@ class Launcher:
 
     def playing(self, process):
         self.game = process
+        self.window.iconify()
 
     def poll_game(self):
         if self.game is not None:
@@ -635,6 +636,8 @@ class Launcher:
                 self.game = None
                 self.feedback = None if code == 0 else f'Game exited with code {code}'
                 self.refresh_view()
+                if self.window.get_window().get_state() & Gdk.WindowState.ICONIFIED:
+                    self.window.present()
         return GLib.SOURCE_CONTINUE
 
     def close(self, *_):

@@ -12,6 +12,20 @@ import client_install
 DEFAULT_LOGIN_BIND = '127.0.0.1:5050'
 
 
+def game_launch_args(arguments):
+    """Start in fullscreen unless a caller chose a window size or a test mode."""
+    explicit_mode = {'--fullscreen', '--window-size', '--test-window', '--configuration-report'}
+    utilities = {'--preview-fantasy-ui', '--inspect-asset', '--chunk-smoke'}
+    if explicit_mode.intersection(arguments) or (arguments and arguments[0] in utilities):
+        return arguments
+    options = [*arguments, '--fullscreen']
+    if 'THEIA_WINDOW_SIZE' not in os.environ:
+        # The client derives its minimum window dimensions from this size.
+        # Keep that minimum below the display size on smaller monitors.
+        options.extend(['--window-size', '1280x720'])
+    return options
+
+
 def login_address(value):
     """Resolve the same numeric loopback address the development server accepts."""
     try:
