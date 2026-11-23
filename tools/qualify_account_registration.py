@@ -65,6 +65,7 @@ def run(out, once=False):
                             click('Registration(Open)');wait(lambda:menu()['page']=='Register')
                             shot('registration-empty.png')
                             assert not menu()['preview_visible']
+                            assert not menu()['registration']['matching_row']
                             back = menu()['widgets']['Registration(Back)']
                             submit = menu()['widgets']['Registration(Submit)']
                             assert back[0] + back[2] < submit[0], 'Back must sit outside the panel on the left'
@@ -74,12 +75,23 @@ def run(out, once=False):
                             type_field('RegistrationField(0)','new-adventurer')
                             type_field('RegistrationField(1)','adventurer@example.invalid')
                             type_field('Registration(Password(0))','TestAccount123!')
+                            click('Registration(Submit)')
+                            wait(lambda:menu()['registration']['matching_row'] and menu()['registration']['matching_text']=='Confirm your password')
+                            assert menu()['registration']['status']==''
                             type_field('Registration(Password(1))','Different123!')
                             click('Registration(Submit)');wait(lambda:'do not match' in menu()['message'])
                             assert json.loads((session/'runtime/frontend-state.json').read_text())['serial']==0
+                            wait(lambda:menu()['registration']['matching_row'] and menu()['registration']['matching_text']=='Passwords do not match')
+                            assert menu()['registration']['status']==''
                             shot('registration-mismatch.png')
                             type_field('Registration(Password(1))','TestAccount123!')
-                            click('Registration(Reveal(0))');click('Registration(Reveal(0))')
+                            wait(lambda:menu()['message']=='')
+                            wait(lambda:menu()['registration']['matching_text']=='Passwords match')
+                            type_field('Registration(Password(1))','');wait(lambda:not menu()['registration']['matching_row'])
+                            type_field('Registration(Password(1))','TestAccount123!')
+                            wait(lambda:menu()['registration']['matching_text']=='Passwords match')
+                            click('Registration(Reveal(0))');wait(lambda:'Hide password' in menu()['registration']['eyes'])
+                            click('Registration(Reveal(0))');wait(lambda:'Show password' in menu()['registration']['eyes'])
                             for name,width,height in [('quarter',1720,700),('half',1720,1000)]:
                                 subprocess.run(['wmctrl','-i','-r',hex(window),'-e',f'0,0,0,{width},{height}'],check=True)
                                 wait(lambda:abs(state()['window'][1]-height)<2,20);time.sleep(2);shot(f'registration-{name}.png')

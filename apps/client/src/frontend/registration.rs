@@ -29,6 +29,10 @@ pub(super) struct Rule(usize);
 #[derive(Component)]
 pub(super) struct RuleTick(usize);
 #[derive(Component)]
+pub(super) struct MatchRow;
+#[derive(Component)]
+pub(super) struct MatchCross;
+#[derive(Component)]
 pub(super) struct Status;
 #[derive(Component)]
 pub(super) struct Frame;
@@ -36,6 +40,7 @@ pub(super) struct Frame;
 pub(super) struct Form {
     secrets: [login::Secret; 2],
     task: Option<Task<Result<(), String>>>,
+    validation_error: Option<&'static str>,
 }
 fn rules(password: &[char]) -> [bool; 3] {
     [
@@ -361,27 +366,55 @@ pub(super) fn setup(root: &mut ChildSpawnerCommands, art: Art) {
                             "8–128 characters",
                             "Includes a letter and a number",
                             "No spaces",
+                            "Passwords match",
                         ]
                         .into_iter()
                         .enumerate()
                         {
-                            r.spawn(Node {
+                            let mut line = r.spawn(Node {
                                 column_gap: px(8),
                                 align_items: AlignItems::Center,
                                 ..default()
-                            })
-                            .with_children(|row| {
-                                row.spawn((
-                                    RuleTick(i),
-                                    crate::ui_theme::Sprite("checkbox.tick"),
-                                    Visibility::Hidden,
-                                    Pickable::IGNORE,
-                                    Node {
-                                        width: px(18),
-                                        height: px(18),
-                                        ..default()
-                                    },
-                                ));
+                            });
+                            if i == 3 {
+                                line.insert(MatchRow);
+                            }
+                            line.with_children(|row| {
+                                row.spawn(Node {
+                                    width: px(18),
+                                    height: px(18),
+                                    flex_shrink: 0.,
+                                    ..default()
+                                })
+                                .with_children(|glyph| {
+                                    glyph.spawn((
+                                        RuleTick(i),
+                                        crate::ui_theme::Sprite("checkbox.tick"),
+                                        Visibility::Hidden,
+                                        Pickable::IGNORE,
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            width: px(18),
+                                            height: px(18),
+                                            ..default()
+                                        },
+                                    ));
+                                    if i == 3 {
+                                        glyph.spawn((
+                                            MatchCross,
+                                            Text::new("×"),
+                                            TextFont::from_font_size(20.),
+                                            Pickable::IGNORE,
+                                            TextColor(Color::srgb(1., 0.35, 0.3)),
+                                            Visibility::Hidden,
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                top: px(-3),
+                                                ..default()
+                                            },
+                                        ));
+                                    }
+                                });
                                 row.spawn((Rule(i), ui::text(t, 17.)));
                             });
                         }
@@ -506,6 +539,23 @@ pub(super) fn actions(world: &mut World) {
                 secret.clear();
             }
         }
+        if let Some(previous) = form.validation_error {
+            let mut values = [String::new(), String::new()];
+            for (field, value) in world.query::<(&Field, &EditableText)>().iter(world) {
+                values[field.0] = value.value().to_string();
+            }
+            let current = error(&values[0], &values[1], &form.secrets);
+            let mut menu = world.resource_mut::<Menu>();
+            // Clear only the client validation message we own. Provider failures
+            // stay visible; a later submit reports any remaining invalid field.
+            if menu.page != Page::Register || menu.message != previous || current != Some(previous)
+            {
+                if menu.message == previous {
+                    menu.message.clear();
+                }
+                form.validation_error = None;
+            }
+        }
         let Some(ui::Choice::Registration(action)) = world.resource::<Menu>().action else {
             return;
         };
@@ -560,9 +610,11 @@ pub(super) fn actions(world: &mut World) {
                     values[field.0] = value.value().to_string();
                 }
                 if let Some(error) = error(&values[0], &values[1], &form.secrets) {
+                    form.validation_error = Some(error);
                     world.resource_mut::<Menu>().message = error.into();
                     return;
                 }
+                form.validation_error = None;
                 let password = form.secrets[0].password.iter().collect();
                 for secret in &mut form.secrets {
                     secret.clear();
@@ -600,8 +652,30 @@ pub(super) fn present(
     windows: Query<&Window>,
     scale: Res<UiScale>,
     mut frames: Query<&mut UiTransform, With<Frame>>,
-    mut ticks: Query<(&RuleTick, &mut Visibility)>,
+    mut ticks: Query<(&RuleTick, &mut Visibility, Option<&mut ImageNode>), Without<MatchCross>>,
+    mut matches: Query<&mut Node, With<MatchRow>>,
+    mut crosses: Query<&mut Visibility, (With<MatchCross>, Without<RuleTick>)>,
+    accessible: Query<(Entity, &ui::Choice, &AccessibleLabel)>,
+    mut commands: Commands,
 ) {
+    for (entity, choice, label) in &accessible {
+        if let ui::Choice::Registration(Action::Reveal(i)) = choice
+            && let Some(secret) = form.secrets.get(*i)
+        {
+            let next = format!(
+                "{} {}",
+                if secret.revealed { "Hide" } else { "Show" },
+                if *i == 0 {
+                    "password"
+                } else {
+                    "confirm password"
+                },
+            );
+            if label.0 != next {
+                commands.entity(entity).insert(AccessibleLabel::new(next));
+            }
+        }
+    }
     if let Ok(window) = windows.single() {
         let size = Vec2::new(window.width(), window.height()) / scale.0;
         let fit = ((size.x - 32.) / 1040.)
@@ -611,8 +685,37 @@ pub(super) fn present(
             *frame = UiTransform::from_scale(Vec2::splat(fit));
         }
     }
-    let valid = rules(&form.secrets[0].password);
-    for (tick, mut visibility) in &mut ticks {
+    let password_rules = rules(&form.secrets[0].password);
+    let confirmed = !form.secrets[1].password.is_empty();
+    let passwords_match = confirmed && form.secrets[0].password == form.secrets[1].password;
+    let show_confirmation =
+        confirmed || form.validation_error == Some("Your passwords do not match.");
+    let valid = [
+        password_rules[0],
+        password_rules[1],
+        password_rules[2],
+        passwords_match,
+    ];
+    for mut node in &mut matches {
+        node.display = if show_confirmation {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+    for mut visibility in &mut crosses {
+        *visibility = if show_confirmation && !passwords_match {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
+    }
+    for (tick, mut visibility, image) in &mut ticks {
+        if tick.0 == 3
+            && let Some(mut image) = image
+        {
+            image.color = Color::srgb(0.15, 1., 0.15);
+        }
         *visibility = if valid[tick.0] {
             Visibility::Inherited
         } else {
@@ -652,18 +755,55 @@ pub(super) fn present(
                 "8–128 characters",
                 "Includes a letter and a number",
                 "No spaces",
+                if !confirmed {
+                    "Confirm your password"
+                } else if passwords_match {
+                    "Passwords match"
+                } else {
+                    "Passwords do not match"
+                },
             ][*i]
                 .into();
             colour.0 = if valid[*i] {
                 Color::srgb(0.45, 0.9, 0.4)
+            } else if *i == 3 {
+                Color::srgb(1., 0.35, 0.3)
             } else {
                 ui::CREAM
             };
         }
         if status {
-            **text = menu.message.clone();
+            **text = if menu.message == "Your passwords do not match." {
+                String::new()
+            } else {
+                menu.message.clone()
+            };
         }
     }
+}
+/// Opt-in native qualification reports only presentation state, never field values.
+pub(super) fn evidence(world: &mut World) -> serde_json::Value {
+    let matching_row = world
+        .query_filtered::<&Node, With<MatchRow>>()
+        .iter(world)
+        .any(|node| node.display != Display::None);
+    let matching_text = world
+        .query::<(&Rule, &Text)>()
+        .iter(world)
+        .find(|(rule, _)| rule.0 == 3)
+        .map(|(_, text)| text.0.clone());
+    let status = world
+        .query_filtered::<&Text, With<Status>>()
+        .iter(world)
+        .next()
+        .map(|text| text.0.clone());
+    let eyes: Vec<_> = world
+        .query::<(&ui::Choice, &AccessibleLabel)>()
+        .iter(world)
+        .filter(|(choice, _)| matches!(choice, ui::Choice::Registration(Action::Reveal(_))))
+        .map(|(_, label)| label.0.clone())
+        .collect();
+    serde_json::json!({"matching_row":matching_row,"matching_text":matching_text,"status":status,"eyes":eyes})
 }
 #[cfg(test)]
 mod tests {

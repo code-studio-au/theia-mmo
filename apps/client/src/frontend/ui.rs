@@ -871,7 +871,8 @@ pub(super) fn evidence(world: &mut World) {
         .map(|c| format!("{c:?}"))
         .collect();
     let ready = world.resource::<preview::Preview>().ready;
-    let value = serde_json::json!({"page":page,"appearance":appearance,"message":message,"invalid_name":invalid_name,"preview_yaw":preview_yaw,"preview_zoom":preview_zoom,"preview_ready":ready,"preview_visible":preview_visible,"character_count":character_count,"disabled":disabled,"widgets":geometry,"theme":crate::ui_theme::snapshot(world)});
+    let registration = registration::evidence(world);
+    let value = serde_json::json!({"registration":registration,"page":page,"appearance":appearance,"message":message,"invalid_name":invalid_name,"preview_yaw":preview_yaw,"preview_zoom":preview_zoom,"preview_ready":ready,"preview_visible":preview_visible,"character_count":character_count,"disabled":disabled,"widgets":geometry,"theme":crate::ui_theme::snapshot(world)});
     let temporary = path.with_extension("tmp");
     if std::fs::write(&temporary, serde_json::to_vec(&value).unwrap()).is_ok() {
         let _ = std::fs::rename(temporary, path);

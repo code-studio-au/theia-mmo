@@ -24,7 +24,12 @@ to fit the actual client window; inputs share the standard 48-unit height.
 
 Account names use 3–32 ASCII letters, digits, dots, underscores or hyphens.
 Passwords use 8–128 characters, including an ASCII letter and digit, without
-spaces/control characters. Password confirmation stays in the client. Both
+spaces/control characters. Password matching is a fourth inline rule: a red cross
+for mismatch, a green tick for a match, and hidden while confirmation is empty.
+Submitting without confirmation shows an inline prompt in that same row. The
+mismatch message is not repeated below Create Account. Correcting a client-side
+validation problem clears its stale message without hiding a provider refusal.
+Both password eyes announce Show/Hide and identify their respective fields. Password confirmation stays in the client. Both
 password buffers clear after submission or leaving the page, and lose their
 revealed state on focus loss. Credentials travel through the existing bounded,
 capability-authenticated loopback socket, never the JSON menu-command file.
@@ -83,6 +88,14 @@ a deployed public registration service.
   diagnostic; resumed run counts zero. The final v7 resize check counts two of that
   exact diagnostic, within the existing explicit qualifier bound. No other GPU
   diagnostics are accepted.
+
+The inline-confirmation follow-up passes 358 client tests (five existing skips),
+strict lint/build/format checks and
+`build/account-registration-native-v11/qualification.json`. Native checks cover
+missing confirmation, red mismatch row with no footer duplicate, green match row,
+hiding after clearing, eye Show/Hide labels and successful registration/character
+creation. Screenshots were reviewed at the same three window sizes. This run
+counts two of the same known surface-resize diagnostic, and no others.
 
 ## Source and artwork
 

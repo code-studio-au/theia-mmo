@@ -1,3 +1,12 @@
+23 November 2026 — P3-01/P2-14 inline account confirmation checks:
+Password mismatch now belongs to the live validation list: red cross on mismatch,
+green tick on match, hidden when empty, with an inline prompt after empty submit.
+No duplicate error below Create Account. Corrected client errors clear; provider
+refusals remain. Eye accessibility labels track Show/Hide. 358 client tests (five
+skips), strict lint/build/format and isolated native v11 pass; two counted known
+surface-resize diagnostics. See ACCOUNT_REGISTRATION.md. Next: preserve preview
+visibility while changing cosmetic selections without permitting early Create/Enter.
+
 23 November 2026 — P3-01/P2-14 native Create Account:
 Implemented the reference-style Bevy form through the owned Keycloak provider and
 existing code/PKCE account flow. Registration opens an empty roster; character
