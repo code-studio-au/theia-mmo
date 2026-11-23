@@ -3,11 +3,12 @@
 Messages are synthetic. Evidence records channel/name/length/outcome, not bodies.
 The caller owns the window, identity provider, database and server lifecycle.
 """
+import ctypes as c
 import time
 from qualify_world_input_os import wait
 
 
-def qualify(desktop, window, state, screenshot, saved_name):
+def qualify(desktop, window, state, screenshot, saved_name, bubbles=False):
     def chat():
         return state()['chat']
 
@@ -60,6 +61,10 @@ def qualify(desktop, window, state, screenshot, saved_name):
     assert chat()['history'][-1]['channel'] == 'Say'
     assert chat()['history'][-1]['sender'] == saved_name
     assert chat()['history'][-1]['bytes'] == len('hello local')
+    if bubbles:
+        wait(lambda:chat()['bubbles']['visible']==1,15)
+        assert chat()['bubbles']['entries'][0]['bytes']==len('hello local')
+        screenshot('chat-say-bubble.png')
     click('channel')
     wait(lambda: chat()['channel'] == 'Area')
     # Switching channel focuses the field; send with the Send button this time.
@@ -69,7 +74,13 @@ def qualify(desktop, window, state, screenshot, saved_name):
     wait(lambda: chat()['submitted'] == 2 and not chat()['pending'] and chat()['reply'] == 'Accepted')
     assert chat()['history'][-1]['channel'] == 'Area'
     assert chat()['history'][-1]['bytes'] == len('hello area')
+    if bubbles:
+        area_serial=chat()['history'][-1]['serial']
+        assert all(b['serial']!=area_serial for b in chat()['bubbles']['entries'])
     screenshot('chat-say-area.png')
+    if bubbles:
+        wait(lambda:chat()['bubbles']['visible']==0 and not chat()['bubbles']['entries'],10)
+        screenshot('chat-bubble-expired.png')
     # Start a fresh budget window, then deliberately exceed it without retries.
     time.sleep(5.1)
     for _ in range(3):
@@ -86,12 +97,28 @@ def qualify(desktop, window, state, screenshot, saved_name):
     wait(lambda: chat()['draft_bytes'] == 48)
     assert chat()['widgets'] == geometry, 'Long draft changed composer geometry'
     screenshot('chat-long-draft.png')
-    desktop.x.XSetInputFocus(desktop.display, 0, 2, 0)
-    desktop.x.XFlush(desktop.display)
-    wait(lambda: not state()['cursor']['focused'])
-    wait(lambda: not chat()['typing'] and chat()['draft_bytes'] == 0)
-    desktop.focus(window)
-    wait(lambda: state()['cursor']['focused'])
+    # A real owned peer window keeps window managers from immediately restoring
+    # the sole client's focus. Never activate an unrelated user's application.
+    x = desktop.x
+    x.XCreateSimpleWindow.argtypes = [c.c_void_p, c.c_ulong, c.c_int, c.c_int,
+                                     c.c_uint, c.c_uint, c.c_uint, c.c_ulong, c.c_ulong]
+    x.XCreateSimpleWindow.restype = c.c_ulong
+    x.XMapWindow.argtypes = [c.c_void_p, c.c_ulong]
+    x.XDestroyWindow.argtypes = [c.c_void_p, c.c_ulong]
+    peer = x.XCreateSimpleWindow(desktop.display, desktop.root, 10, 10, 160, 80, 0, 0, 0)
+    assert peer, 'Cannot create owned focus fixture'
+    try:
+        x.XMapWindow(desktop.display, peer)
+        x.XFlush(desktop.display)
+        time.sleep(.3)
+        desktop.focus(peer)
+        wait(lambda: not state()['cursor']['focused'])
+        wait(lambda: not chat()['typing'] and chat()['draft_bytes'] == 0)
+        desktop.focus(window)
+        wait(lambda: state()['cursor']['focused'])
+    finally:
+        x.XDestroyWindow(desktop.display, peer)
+        x.XFlush(desktop.display)
     assert chat()['submitted'] == 6
     desktop.key_state('w', True)
     try:
@@ -118,6 +145,7 @@ def run(args):
     from qualify_world_input_os import Desktop, owned_window, capture_ready
     from gpu_validation import check_gpu_diagnostics
 
+    os.environ['DISPLAY'] = args.display
     out = args.output.resolve()
     out.mkdir(mode=0o700, parents=True, exist_ok=False)
     with Identity(out/'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True) as identity, \
@@ -126,13 +154,14 @@ def run(args):
         game.mkdir()
         session = out/'session'
         env = {k: v for k, v in build_environment(os.environ).items() if not k.startswith('THEIA_')}
-        env.update(DISPLAY=':0', XDG_RUNTIME_DIR='/run/user/1000', WGPU_BACKEND='vulkan',
+        env.update(DISPLAY=args.display, XDG_RUNTIME_DIR='/run/user/1000', WGPU_BACKEND='vulkan',
                    VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', WGPU_VALIDATION='1', RUST_LOG='info',
                    THEIA_DATABASE_URL=cluster.test_environment()['THEIA_TEST_DATABASE_URL'],
                    THEIA_ACCOUNT_SESSION_SECONDS='1800', THEIA_OIDC_ISSUER=identity.issuer,
                    THEIA_OIDC_CLIENT_ID=identity.client_id,
                    THEIA_ACCOUNT_BIND=urllib.parse.urlsplit(identity.redirect).netloc,
                    BROWSER='/bin/false', THEIA_WORLD_INPUT_OS_QUALIFY=str(game))
+        if args.software_vulkan:env['VK_ICD_FILENAMES']='/usr/share/vulkan/icd.d/lvp_icd.json'
         command = [sys.executable, 'tools/account_population_playtest.py', '--package', str(args.package.resolve()),
                    '--players', str(args.players.resolve()), '--binaries', str(Path('target/release').resolve()),
                    '--output', str(session), '--parties', '--chat-area', '7', '--window-size', '1920x1080',
@@ -156,7 +185,7 @@ def run(args):
 
                 first = wait(state, 120)
                 window = wait(lambda: owned_window(first['pid']), 60)
-                desktop = Desktop()
+                desktop = Desktop(args.display)
                 desktop.focus(window)
                 wait(lambda: menu()['page'] == 'Login')
 
@@ -198,8 +227,9 @@ def run(args):
                 click('Enter')
                 wait(lambda: state()['connected'] and state()['loading']['phase'] == 'Playing', 120)
                 print('Native account world entry passed', flush=True)
-                result = qualify(desktop, window, state, screenshot, saved_name)
+                result = qualify(desktop, window, state, screenshot, saved_name, args.bubbles)
                 result['adapter'] = state()['adapter']
+                result['say_bubbles'] = args.bubbles
                 screenshot('chat-complete.png')
                 print(json.dumps(result), flush=True)
             finally:
@@ -224,4 +254,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--package', type=Path, default=Path('build/modular-hero-v1/native-final-v2/fresh/package'))
     parser.add_argument('--players', type=Path, default=Path('build/modular-hero-v1/art-v3'))
+    parser.add_argument('--display', default=':0')
+    parser.add_argument('--software-vulkan', action='store_true')
+    parser.add_argument('--bubbles', action='store_true')
     run(parser.parse_args())

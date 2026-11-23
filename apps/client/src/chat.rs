@@ -1,7 +1,19 @@
 //! Explicit opt-in to the qualified, server-owned Say/Area chat profile.
 use theia_core::chat::Area;
+mod bubbles;
 mod composer;
-pub(crate) use composer::{Ui, install, row, snapshot};
+pub(crate) use composer::{Ui, row};
+pub(crate) fn install(app: &mut bevy::prelude::App) {
+    composer::install(app);
+    bubbles::install(app);
+}
+pub(crate) fn snapshot(world: &mut bevy::prelude::World) -> serde_json::Value {
+    let mut snapshot = composer::snapshot(world);
+    if !snapshot.is_null() {
+        snapshot["bubbles"] = bubbles::snapshot(world);
+    }
+    snapshot
+}
 
 pub(crate) fn parse(
     args: &mut Vec<String>,

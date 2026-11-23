@@ -328,3 +328,40 @@ the supplied reference layout, with one category navigation (no duplicate tabs),
 a central live character, adjacent appearance controls and bottom actions. Keep
 presets omitted, retain drag rotation/foot arrows/zoom, and disable unsupported
 choices. This supersedes the earlier request to retain only the compact layout.
+
+## Say speech bubbles — implemented and locally qualified
+
+P4-12/P2-14, 23 November 2026. The existing verified Say inbox now drives a
+bounded native Bevy overlay. Area messages never produce bubbles. One bubble per
+speaker replaces their previous message; at most eight remain, each for six real
+seconds. These count/lifetime choices are provisional presentation policy, not
+Classic formula claims. Duplicate delivery observation cannot extend a lifetime.
+
+Bubbles require an already instantiated, visible player presentation, membership
+in the current authoritative movement snapshot, an on-screen head anchor and an
+unobstructed camera ray using the existing solid/terrain occlusion query. Missing,
+hidden, off-screen, occluded or retired actors produce no bubble. Losing that
+visibility drops the bubble; returning cannot replay it from history. Disconnect,
+world/owner changes and first attachment discard prior history. Chat history and
+server delivery are unaffected by this cosmetic filtering.
+
+The overlay uses the shared navy/gold palette, plain wrapped white text and a
+small pointer. It has no clickable target or gameplay component. Text remains the
+validated original Unicode line; no markup interpretation or message-body logging
+is added. Opt-in evidence reports only count, actor ID, serial and text byte length.
+The native chat qualifier accepts an explicitly chosen display and software Vulkan
+for isolated tests without taking over the user's open game.
+
+Acceptance: 361 client tests pass (five ignored), including initial-history
+suppression, duplicate/expiry handling, per-speaker replacement, capacity,
+visibility and world/epoch rejection. Release build, formatting and denied-warning
+Clippy pass. `build/bubbles-native-v2/qualification.json` verifies normal account
+login/character creation/world admission, authenticated Say overhead text, Area
+exclusion, six-second expiry and existing composer/input/rate-limit checks.
+Screenshots inspected. Linux Vulkan on llvmpipe LLVM 21.1.8 / Mesa 26.2.7, zero GPU
+diagnostics. V1 reached bubble checks but failed a focus-loss fixture; V2 uses an
+owned peer window instead of requesting no focus under a window manager.
+
+This is one native account and local server, not proof of remote-player bubble
+presentation, discrete-GPU performance, Windows or MMO capacity. Two native
+accounts/remote presentation are the next bounded qualification slice.

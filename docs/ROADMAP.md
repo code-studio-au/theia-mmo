@@ -1,3 +1,12 @@
+23 November 2026 — P4-12/P2-14 Say speech bubbles:
+Confirmed Say delivery now renders bounded, noninteractive overhead bubbles on
+visible player models; Area stays in history. One per speaker, eight maximum,
+six-second lifetime; hidden/off-screen/occluded actors and old history cannot
+produce bubbles. 361 client tests (five skips), strict checks and native normal-
+account self-Say/Area/expiry/input checks pass. Linux Vulkan llvmpipe, zero GPU
+diagnostics. See LOCAL_CHAT.md for evidence and limits. Next: two-client remote
+presentation qualification; no new chat authority or channels.
+
 23 November 2026 — P3-03/P2-14 preview continuity:
 Cosmetic changes retain the last complete visible model while new appearance
 readiness settles; Create/Enter remain gated. Empty rosters still show no model.
