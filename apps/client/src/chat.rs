@@ -11,6 +11,7 @@ pub(crate) fn snapshot(world: &mut bevy::prelude::World) -> serde_json::Value {
     let mut snapshot = composer::snapshot(world);
     if !snapshot.is_null() {
         snapshot["bubbles"] = bubbles::snapshot(world);
+        snapshot["scrollback"] = crate::combat::log::snapshot(world);
     }
     snapshot
 }

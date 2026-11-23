@@ -114,6 +114,7 @@ def qualify(desktop, window, state, screenshot, saved_name, bubbles=False):
         desktop.focus(peer)
         wait(lambda: not state()['cursor']['focused'])
         wait(lambda: not chat()['typing'] and chat()['draft_bytes'] == 0)
+        assert chat()['status'] != 'Chat unavailable', 'Window focus was mistaken for connection loss'
         desktop.focus(window)
         wait(lambda: state()['cursor']['focused'])
     finally:

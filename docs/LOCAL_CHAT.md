@@ -398,3 +398,29 @@ Visual follow-up: that long message still escapes the separate history panel,
 and an unfocused connected client temporarily displays “Chat unavailable”. Those
 are the next focused UI corrections; the peer qualification does not claim they
 are fixed.
+
+
+## Chat history containment and background status
+
+P4-12/P2-14, 23 November 2026. The shared General/Combat Log text now has an
+explicit viewport width and word-or-character wrapping. Its scrolling viewport
+clips horizontally as well as vertically, so long URLs or unbroken messages
+cannot paint across the world. Existing tail following and manual scroll remain.
+
+Window focus governs draft input, not transport availability. Focus loss still
+clears the draft and releases UI focus, but retains pending submission tracking
+and continues processing authoritative replies. Only an unavailable connection
+reports “Chat unavailable”. No retries or optimistic history are introduced.
+
+Native qualification now checks the actual laid-out text/node width against its
+viewport, overflow clipping, wrapped height/tail following and connected status
+while the other owned client has focus. No message bodies enter this geometry
+telemetry.
+
+`build/chat-layout-v1/qualification.json` passes the full two-account check.
+The owner history viewport is 356px wide and the 200-byte message's actual laid-out
+text is 354px wide, with 253px of wrapped content and correct tail scroll inside
+its 104px-high viewport. Screenshots inspected; both clients keep connected status
+while unfocused. 362 client tests (five skips), formatting, strict Clippy and release
+build pass. Linux Vulkan llvmpipe LLVM 21.1.8 / Mesa 26.2.7, zero GPU diagnostics
+in both clients. Hardware performance and Windows remain outside this evidence.

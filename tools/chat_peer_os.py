@@ -159,6 +159,16 @@ def qualify(desktop, first_window, first_state, first_capture, session, env, use
             # Long unbroken text must wrap rather than expanding the bubble.
             _, sent_at = send(1, 'Say', 'w'*200)
             wait(lambda: shown(1), 10)
+            def wrapped(read):
+                history = read()['chat']['scrollback']
+                viewport, text = history['viewport'], history['text']
+                return (viewport and text and viewport['clip_x'] and viewport['following']
+                        and viewport['scroll_y'] > 0 and text['glyph_count'] >= 200
+                        and text['layout_size'][0] <= viewport['size'][0] + 1
+                        and text['node_size'][0] <= viewport['size'][0] + 1
+                        and text['layout_size'][1] > viewport['size'][1])
+            wait(lambda: all(wrapped(read) for read in states), 3)
+            assert all(read()['chat']['status'] != 'Chat unavailable' for read in states)
             desktop.focus(first_window); first_capture('chat-remote-long.png')
             # Actor retirement removes even an unexpired bubble; history stays.
             retired = actors[1]
@@ -174,7 +184,7 @@ def qualify(desktop, first_window, first_state, first_capture, session, env, use
             result = dict(native_accounts=2, first_client_age_before_peer_seconds=first_age,
                           distinct_saved_bodies=True, bidirectional_say=True, area_delivery_without_bubble=True,
                           long_text_bytes=200, actor_retirement=True, retirement_seconds=retirement_seconds,
-                          history_preserved=True,
+                          history_preserved=True, history_wrap_and_clip=True, background_status_connected=True,
                           adapter=first_state()['adapter'])
     finally:
         stopped.set()

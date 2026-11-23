@@ -1,3 +1,12 @@
+23 November 2026 — P4-12/P2-14 contained chat history:
+Long unbroken messages now wrap within the history viewport, with horizontal
+clipping as a fallback. Losing window focus cancels drafts while preserving
+submission/receipt tracking and connected status. 362 client tests (five skips),
+strict checks and two native accounts pass; actual text width is checked against
+the viewport. Linux Vulkan llvmpipe, zero GPU diagnostics in both clients. See
+../LOCAL_CHAT.md. Next: P3-01/P3-03 return from character selection to native login,
+revoking the current account session and clearing the roster before switching.
+
 23 November 2026 — P4-12/P2-08/P2-09 late join and remote speech:
 Fixed the shared startup timeout that could terminate an established client when
 a new remote character spawned. Each visual now has its own bounded instantiation

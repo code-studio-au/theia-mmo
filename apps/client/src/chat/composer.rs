@@ -302,11 +302,16 @@ fn finish(
     let Ok((entity, mut input)) = inputs.single_mut() else {
         return;
     };
-    if !available(network.as_deref()) || !windows.single().is_ok_and(|w| w.focused) {
+    if !available(network.as_deref()) {
         discard(&mut input, &mut ui, &mut focus, entity);
         ui.queued = None;
         ui.status = "Chat unavailable";
         return;
+    }
+    if !windows.single().is_ok_and(|w| w.focused) {
+        // Losing input focus cancels only the draft. The connection and any
+        // already submitted message still receive authoritative acknowledgements.
+        discard(&mut input, &mut ui, &mut focus, entity);
     }
     if ui.status == "Chat unavailable" {
         ui.status = "Enter to chat";

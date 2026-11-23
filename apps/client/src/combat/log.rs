@@ -350,7 +350,10 @@ fn setup(
                         flex_grow: 1.,
                         min_height: px(0),
                         width: percent(100),
-                        overflow: Overflow::scroll_y(),
+                        overflow: Overflow {
+                            x: OverflowAxis::Clip,
+                            y: OverflowAxis::Scroll,
+                        },
                         ..default()
                     },
                 ))
@@ -363,7 +366,10 @@ fn setup(
                         ..default()
                     },
                     TextColor(crate::ui_theme::CREAM),
+                    TextLayout::new(Justify::Left, bevy::text::LineBreak::WordOrCharacter),
                     Node {
+                        width: percent(100),
+                        min_width: px(0),
                         flex_shrink: 0.,
                         ..default()
                     },
@@ -518,6 +524,34 @@ fn paint(
             text.0 = value.clone();
         }
     }
+}
+
+/// Opt-in layout evidence only; no message bodies or additional history copy.
+pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
+    let viewport = world
+        .query_filtered::<(&Node, &ComputedNode, &ScrollPosition, &Scrollback), With<Scrollback>>()
+        .iter(world)
+        .next()
+        .map(|(node, computed, position, state)| {
+            serde_json::json!({
+                "size": computed.size().to_array(),
+                "clip_x": node.overflow.x == OverflowAxis::Clip,
+                "following": state.following,
+                "scroll_y": position.y,
+            })
+        });
+    let text = world
+        .query_filtered::<(&ComputedNode, &bevy::text::TextLayoutInfo), With<Lines>>()
+        .iter(world)
+        .next()
+        .map(|(node, layout)| {
+            serde_json::json!({
+                "node_size": node.size().to_array(),
+                "layout_size": layout.size.to_array(),
+                "glyph_count": layout.glyphs.len(),
+            })
+        });
+    serde_json::json!({"viewport": viewport, "text": text})
 }
 
 #[cfg(test)]
