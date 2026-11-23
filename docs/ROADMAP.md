@@ -1,3 +1,13 @@
+23 November 2026 — P3-01/P2-14 native Create Account:
+Implemented the reference-style Bevy form through the owned Keycloak provider and
+existing code/PKCE account flow. Registration opens an empty roster; character
+creation and restart/sign-in restore the same saved account character. Unsupported
+terms/privacy/news stay disabled. Portrait has no sword, a feathered mist backing,
+subtle divider, full-height crop and external bottom-left Back to Login. Shared
+icon inputs have extra text padding. 358 client tests (five skips), 12 Python tests,
+strict lint/build and isolated native/provider checks pass. See ACCOUNT_REGISTRATION.md for exact
+evidence, counted resize diagnostic and local-provider/deployment limits.
+
 23 November 2026 — P3-03/P2-14 character reference layout accepted:
 Single category navigation, body/skin panel, actual cosmetic thumbnails, live
 central preview and fixed footer replace the compact form. No presets or duplicate

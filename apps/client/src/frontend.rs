@@ -2,6 +2,7 @@
 mod creation;
 mod login;
 mod preview;
+mod registration;
 mod ui;
 use bevy::prelude::*;
 use serde::Deserialize;
@@ -16,6 +17,7 @@ pub(crate) type WorldCamera = (With<Camera3d>, Without<PreviewCamera>);
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Page {
     Login,
+    Register,
     Characters,
     Create,
     Entering,
@@ -35,6 +37,8 @@ struct Snapshot {
     serial: u64,
     phase: String,
     busy: bool,
+    #[serde(default)]
+    registration: bool,
     message: String,
     characters: Vec<Character>,
 }
@@ -51,6 +55,7 @@ pub(crate) struct Menu {
     message: String,
     serial: u64,
     pending: bool,
+    registration: bool,
     last_snapshot: Vec<u8>,
     elapsed: f32,
     action: Option<ui::Choice>,
@@ -97,19 +102,23 @@ pub(crate) fn install(app: &mut App, directory: PathBuf) {
         message: "Welcome to Theia Online".into(),
         serial: 0,
         pending: false,
+        registration: false,
         last_snapshot: Vec::new(),
         elapsed: 0.,
         action: None,
     })
     .init_resource::<login::Login>()
+    .init_resource::<registration::Form>()
     .add_systems(Startup, ui::setup)
     .add_observer(ui::choose)
     .add_observer(ui::rotate_drag)
     .add_systems(
         Update,
         (
+            registration::keyboard,
             login::keyboard,
             login::actions,
+            registration::actions,
             tick,
             preview::tick,
             ui::anchor,
@@ -119,6 +128,7 @@ pub(crate) fn install(app: &mut App, directory: PathBuf) {
             ui::rotate_keyboard,
             ui::focus,
             login::present,
+            registration::present,
         )
             .chain()
             .before(crate::loading::observe),
@@ -195,9 +205,12 @@ fn tick(
                     menu.message = data.message;
                     menu.serial = data.serial;
                     menu.pending = data.busy;
+                    menu.registration = data.registration;
                     if data.phase == "entering" {
                         menu.page = Page::Entering;
-                    } else if data.phase == "characters" && (menu.page == Page::Login || changed) {
+                    } else if data.phase == "characters"
+                        && (matches!(menu.page, Page::Login | Page::Register) || changed)
+                    {
                         menu.page = Page::Characters;
                         menu.selected = menu.characters.len().checked_sub(1);
                         if let Some(i) = menu.selected {
@@ -373,6 +386,7 @@ mod tests {
             message: String::new(),
             serial: 0,
             pending: false,
+            registration: false,
             last_snapshot: vec![],
             elapsed: 0.,
             action: None,

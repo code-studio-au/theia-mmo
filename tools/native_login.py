@@ -11,9 +11,11 @@ import hmac
 import ipaddress
 import json
 import os
+import re
 import secrets
 import socket
 import struct
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -57,9 +59,14 @@ class Credentials:
                 value = json.loads(read(size))
                 if not isinstance(value, dict) or not isinstance(value.get('token'), str) or not hmac.compare_digest(value.pop('token'), self.token):
                     return None
-                if set(value) != {'serial', 'action', 'username', 'password'} or value['action'] != 'credentials':
+                fields = {'serial', 'action', 'username', 'password'}
+                if value.get('action') == 'register':
+                    fields.add('email')
+                if set(value) != fields or value['action'] not in ('credentials', 'register'):
                     return None
                 if not all(isinstance(value[k], str) and 0 < len(value[k]) <= limit for k, limit in [('username', 256), ('password', 1024)]):
+                    return None
+                if value['action'] == 'register' and (not isinstance(value['email'], str) or len(value['email']) > 254):
                     return None
                 connection.sendall(bytes([1]))
                 return value
@@ -68,16 +75,37 @@ class Credentials:
 
 
 class LoginForm(HTMLParser):
-    def __init__(self):
+    def __init__(self, registration=False):
         super().__init__()
+        self.form_id = "kc-register-form" if registration else "kc-form-login"
         self.actions = []
     def handle_starttag(self, tag, attrs):
         values = dict(attrs)
-        if tag == 'form' and values.get('id') == 'kc-form-login':
+        if tag == 'form' and values.get('id') == self.form_id:
             self.actions.append(values.get('action'))
 
 
-def authorize(url, base, username, password):
+def registration_error(username, email, password):
+    if not isinstance(username, str) or not re.fullmatch(r'[A-Za-z0-9_.-]{3,32}', username):
+        return 'Use 3–32 letters, numbers, dots, underscores or hyphens for your account name.'
+    if not isinstance(email, str) or len(email) > 254 or not re.fullmatch(r'[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+', email):
+        return 'Enter a valid email address.'
+    if (not isinstance(password, str) or not 8 <= len(password) <= 128
+            or not any(c.isascii() and c.isalpha() for c in password)
+            or not any(c.isascii() and c.isdigit() for c in password)
+            or any(c.isspace() or unicodedata.category(c) == 'Cc' for c in password)):
+        return 'Use 8–128 characters, including a letter and a number, with no spaces.'
+    return None
+
+
+def authorize(url, base, username, password, *, email=None):
+    registration = email is not None
+    if registration:
+        if os.environ.get('THEIA_NATIVE_REGISTRATION') != '1':
+            raise AccountError('Account creation is unavailable for this provider.')
+        error = registration_error(username, email, password)
+        if error:
+            raise AccountError(error)
     issuer = urllib.parse.urlsplit(os.environ.get('THEIA_OIDC_ISSUER', ''))
     target = urllib.parse.urlsplit(url)
     try:
@@ -89,6 +117,8 @@ def authorize(url, base, username, password):
     origin = (issuer.scheme, issuer.netloc)
     if (target.scheme, target.netloc, target.path) != (*origin, issuer.path+'/protocol/openid-connect/auth'):
         raise AccountError('The sign-in provider is unavailable.')
+    if registration:
+        url = urllib.parse.urlunsplit(target._replace(path=issuer.path+'/protocol/openid-connect/registrations'))
     jar = CookieJar(DefaultCookiePolicy(secure_protocols=('http', 'https', 'wss')))
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), urllib.request.HTTPCookieProcessor(jar), _NoRedirect())
     try:
@@ -96,20 +126,24 @@ def authorize(url, base, username, password):
             html = response.read(1024*1024+1)
         if len(html) > 1024*1024:
             raise AccountError('The sign-in provider is unavailable.')
-        form = LoginForm(); form.feed(html.decode('utf-8'))
+        form = LoginForm(registration); form.feed(html.decode('utf-8'))
         if len(form.actions) != 1 or not form.actions[0]:
             raise AccountError('This account requires verification that is not supported in this preview.')
         action = urllib.parse.urlsplit(form.actions[0])
-        if (action.scheme, action.netloc, action.path) != (*origin, issuer.path+'/login-actions/authenticate') or action.username or action.fragment:
+        if (action.scheme, action.netloc, action.path) != (*origin, issuer.path+('/login-actions/registration' if registration else '/login-actions/authenticate')) or action.username or action.fragment:
             raise AccountError('The sign-in provider is unavailable.')
-        request = urllib.request.Request(form.actions[0], data=urllib.parse.urlencode(dict(username=username, password=password)).encode())
+        fields = dict(username=username, password=password)
+        if registration:
+            fields.update(email=email, **{'password-confirm': password})
+        request = urllib.request.Request(form.actions[0], data=urllib.parse.urlencode(fields).encode())
+        refused = ('Account creation was refused. The account name or email may already be in use.' if registration else 'Sign-in failed. Check your username and password.')
         try:
             with opener.open(request, timeout=7):
-                raise AccountError('Sign-in failed. Check your username and password.')
+                raise AccountError(refused)
         except urllib.error.HTTPError as error:
             with error:
                 if error.code not in (302, 303):
-                    raise AccountError('Sign-in failed. Check your username and password.') from None
+                    raise AccountError(refused) from None
                 callback = error.headers.get('Location', '')
         actual = urllib.parse.urlsplit(callback)
         expected = urllib.parse.urlsplit(base+'/callback')

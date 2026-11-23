@@ -110,6 +110,8 @@ def environment(source, identity, cluster, output, seconds, root=ROOT):
                THEIA_PARTICLE_EDITOR_DATA_DIR=str(output/'particle-data'),
                BROWSER=shlex.join([sys.executable, str(root/'tools/qualify_account_launcher.py'),
                                    '--owned-browser', '%s']))
+    if getattr(identity, 'registration', False):
+        env['THEIA_NATIVE_REGISTRATION'] = '1'
     env.setdefault('DISPLAY', ':0')
     native = str(root/'build/native-sdk/usr/lib/x86_64-linux-gnu')
     env['LD_LIBRARY_PATH'] = native+':'+env.get('LD_LIBRARY_PATH', '')
@@ -133,7 +135,7 @@ def run(args):
             print('Starting local sign-in service...', flush=True)
             identity = services.enter_context(Identity(
                 output/'provider', ROOT/'build/identity-sdk',
-                token_seconds=args.session_seconds, interactive=True))
+                token_seconds=args.session_seconds, interactive=True, registration=True))
             print('Starting local account database...', flush=True)
             cluster = services.enter_context(Cluster(
                 output/'cluster', ROOT/'build/postgres-sdk', isolate_process=True))

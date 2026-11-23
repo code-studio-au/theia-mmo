@@ -12,6 +12,7 @@ pub(super) const CREAM: Color = crate::ui_theme::CREAM;
 pub(super) enum Choice {
     Login,
     Account(login::Action),
+    Registration(registration::Action),
     New,
     Back,
     Select(usize),
@@ -133,6 +134,7 @@ pub(super) fn setup(
         .filter(|r| r.directory.join("appearance-thumbnails.png").is_file())
         .and(server.as_ref())
         .map(|s| s.load("players://appearance-thumbnails.png"));
+    let registration_art = registration::art(&mut images);
     let preview = preview::setup(&mut commands, &mut images);
     let camera = commands
         .spawn((
@@ -258,6 +260,7 @@ pub(super) fn setup(
                 },
             ));
             login::panel(root);
+            registration::setup(root, registration_art);
             root.spawn((
                 Screen(Page::Characters),
                 crate::ui_theme::Panel,
@@ -547,13 +550,15 @@ pub(super) fn sync(
             let login = menu.page == Page::Login;
             let height = if login {
                 art.y * 0.34
+            } else if menu.page == Page::Register {
+                100.
             } else if menu.page == Page::Create {
                 (art.y * 0.12).clamp(64., 120.)
             } else {
                 (art.y * 0.17).clamp(80., 160.)
             };
             node.position_type = PositionType::Absolute;
-            node.left = px(if login {
+            node.left = px(if login || menu.page == Page::Register {
                 (size.x - height * (1752. / 897.)) * 0.5
             } else {
                 24.
@@ -667,14 +672,18 @@ pub(super) fn sync(
                         art.x * 0.71
                     });
                     if matches!(placement, Placement::Links) {
-                        node.display = if menu.page == Page::Create {
+                        node.display = if matches!(menu.page, Page::Create | Page::Register) {
                             Display::None
                         } else {
                             Display::Flex
                         };
                     }
                     if matches!(placement, Placement::Status) {
-                        node.display = if login { Display::None } else { Display::Flex };
+                        node.display = if login || menu.page == Page::Register {
+                            Display::None
+                        } else {
+                            Display::Flex
+                        };
                         if menu.page == Page::Create {
                             node.left = px(art.x * 0.30);
                             node.bottom = px(110.);
@@ -753,6 +762,8 @@ pub(super) fn sync(
         );
         let disabled = !always_available
             && (menu.pending
+                || matches!(choice, Choice::Registration(registration::Action::Open))
+                    && !menu.registration
                 || matches!(choice, Choice::Enter) && (menu.selected.is_none() || !preview.ready)
                 || matches!(choice, Choice::Create) && !preview.ready
                 || matches!(choice, Choice::Zoom(true)) && menu.zoom >= 1.3
@@ -822,32 +833,37 @@ pub(super) fn evidence(world: &mut World) {
             Has<NameInput>,
             Has<login::Username>,
             Has<login::MenuLink>,
+            Option<&registration::Field>,
         )>()
         .iter(world)
-        .filter_map(|(node, transform, choice, name, username, login_link)| {
-            if node.size().min_element() <= 0. || (dialog_open && login_link) {
-                return None;
-            }
-            let label = if username {
-                "Username".to_string()
-            } else if name {
-                "Name".to_string()
-            } else {
-                format!("{:?}", choice?)
-            };
-            let factor = crate::fantasy_ui::window_factor(node, scale);
-            let centre = transform.affine().translation * factor;
-            let size = node.size() * factor;
-            Some((
-                label,
-                serde_json::json!([
-                    centre.x - size.x / 2.,
-                    centre.y - size.y / 2.,
-                    size.x,
-                    size.y
-                ]),
-            ))
-        })
+        .filter_map(
+            |(node, transform, choice, name, username, login_link, registration_field)| {
+                if node.size().min_element() <= 0. || (dialog_open && login_link) {
+                    return None;
+                }
+                let label = if let Some(registration::Field(i)) = registration_field {
+                    format!("RegistrationField({i})")
+                } else if username {
+                    "Username".to_string()
+                } else if name {
+                    "Name".to_string()
+                } else {
+                    format!("{:?}", choice?)
+                };
+                let factor = crate::fantasy_ui::window_factor(node, scale);
+                let centre = transform.affine().translation * factor;
+                let size = node.size() * factor * transform.affine().matrix2.x_axis.length();
+                Some((
+                    label,
+                    serde_json::json!([
+                        centre.x - size.x / 2.,
+                        centre.y - size.y / 2.,
+                        size.x,
+                        size.y
+                    ]),
+                ))
+            },
+        )
         .collect();
     let disabled: Vec<_> = world
         .query_filtered::<&Choice, With<bevy::ui::InteractionDisabled>>()
@@ -867,6 +883,7 @@ pub(super) fn focus(
     mut previous: Local<Option<Page>>,
     mut focus: ResMut<bevy::input_focus::InputFocus>,
     names: Query<Entity, With<NameInput>>,
+    registration_fields: Query<(Entity, &registration::Field)>,
     choices: Query<(Entity, &Choice)>,
 ) {
     if *previous == Some(menu.page) {
@@ -883,6 +900,10 @@ pub(super) fn focus(
         Page::Characters => choices
             .iter()
             .find(|(_, c)| **c == Choice::New)
+            .map(|(e, _)| e),
+        Page::Register => registration_fields
+            .iter()
+            .find(|(_, f)| f.0 == 0)
             .map(|(e, _)| e),
         Page::Entering => None,
     };

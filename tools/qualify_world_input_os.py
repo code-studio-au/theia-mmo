@@ -44,7 +44,7 @@ def capture_ready(path):
 
 
 class Desktop:
-    def __init__(self):
+    def __init__(self, display=':0'):
         self.held_keys=set()
         self.held_buttons=set()
         self.window=None
@@ -52,7 +52,7 @@ class Desktop:
         self.x=c.CDLL(ctypes.util.find_library('X11'))
         self.t=c.CDLL(ctypes.util.find_library('Xtst'))
         self.x.XOpenDisplay.argtypes=[c.c_char_p];self.x.XOpenDisplay.restype=c.c_void_p
-        self.display=self.x.XOpenDisplay(b':0')
+        self.display=self.x.XOpenDisplay(display.encode('ascii'))
         assert self.display,'No owned desktop display'
         for name,args in [('XRaiseWindow',[c.c_void_p,c.c_ulong]),('XSetInputFocus',[c.c_void_p,c.c_ulong,c.c_int,c.c_ulong]),('XFlush',[c.c_void_p]),('XCloseDisplay',[c.c_void_p])]:
             getattr(self.x,name).argtypes=args

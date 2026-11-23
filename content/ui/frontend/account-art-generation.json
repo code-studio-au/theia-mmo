@@ -1,0 +1,34 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "User-provided Theia Fantasy Account Creation Gateway.png",
+  "portrait_chain": [
+    "exec-52f402b2-8dcd-4fe0-8e32-470e950d725a.png",
+    "exec-66c7509d-10ba-4c80-99ea-c203d11dc851.png",
+    "exec-faba1577-6287-40f9-af5d-994c93698b7e.png",
+    "exec-54c2f4a0-73e0-4104-886d-595f1162f0bb.png"
+  ],
+  "processing": "Authorized deterministic alpha export for portrait and mail: alpha <8 removed; alpha >=248 made opaque. Portrait size preserved; mail cropped to alpha bounds, Lanczos fit to 224px inside 256px transparent canvas. The generator preview displayed hidden RGB as haze; compositing actual alpha confirmed clean silhouettes. The opaque navy trial was rejected. Final portrait edit removes the sword. Mist is translated 180px right and 80px up within its original 1024x1536 canvas; alpha is multiplied by a 90px smoothstep outer-edge feather, without thresholding. It is drawn behind the portrait at 65% opacity and clipped to the portrait bay.",
+  "assets": [
+    {
+      "file": "account-adventurer-v1.png",
+      "generated_id": "exec-54c2f4a0-73e0-4104-886d-595f1162f0bb.png",
+      "prompt": "Use case: precise-object-edit. Edit target: attached transparent fantasy account portrait. Remove the ENTIRE sword: pommel, handle, guard, blade and any sheath or straps belonging to it visible behind her left shoulder. Reconstruct natural flowing hair/cape where it was. Preserve exactly the same woman, face, expression, pose, framing, ornate blue and gold armour, embroidered blue cloak, and lighting. Preserve genuine transparent background and clean alpha silhouette. No weapon at all, no added items, no text. Keep portrait vertical 2:3.",
+      "source_sha256": "86cbadc174d6c6ae700b978c80c45b81fdf1ed2bb399fd7f58d8e0e935c4c0e1",
+      "export_sha256": "8dfd66c6ca5d0c68d5c836a7f5a99e6d501684bac27133d5194a467dd7e60225"
+    },
+    {
+      "file": "../theme/standalone-v3/mail.png",
+      "generated_id": "exec-181f62cb-42eb-4b71-9b82-01e37d3cd615.png",
+      "prompt": "A single standalone sealed envelope icon for a polished fantasy MMORPG UI, centered gold envelope, crisp simple silhouette, warm metallic gold bevels, same restrained style as a small gold user/account glyph. Envelope occupies 75 percent of square canvas. No button, square frame, border, backdrop, glow, blur, text, ornament or shadow outside the envelope. Transparent background, clean alpha. The only object is the gold envelope with diagonal folded-flap lines.",
+      "source_sha256": "ec2b8adbf163ca68dcb3757f7a461141fc3251d51a771a4737eaae5898eb8b5a",
+      "export_sha256": "33c542d3f10fea7809b17153e8d8eca3501fb204483e50638478173410b8b99b"
+    },
+    {
+      "file": "account-mist-v1.png",
+      "generated_id": "exec-21b15460-cf75-4ee4-91cd-373bb9f3380b.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mist overlay behind a fantasy game account portrait. Generate ONLY a soft delicate white mist swirl, tinted slightly cool blue, one graceful broad curved S ribbon of vapor rising vertically with sparse wispy tendrils. All mist translucently feathered, fading to complete transparency at all outer edges with wide empty transparent margins. Vertical 2:3 composition. Restrained ethereal atmosphere, soft diffuse light, fine airy detail. No person, no objects, no text, no symbols, no hard ring, no border, no dark background, no solid white cloud mass. Genuinely transparent RGBA background.",
+      "source_sha256": "56145767fac01b047030f25fc158eca9f35d46015e0f7967c42f4e1b74dab092",
+      "export_sha256": "a9719a1d5a93e9367783e210ca4da1c39667361a9e58d32d1cc67af1780ee849"
+    }
+  ]
+}

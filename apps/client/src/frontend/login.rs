@@ -52,23 +52,27 @@ enum Dialog {
 }
 #[derive(Resource, Default)]
 pub(super) struct Login {
-    password: Vec<char>,
+    secret: Secret,
     attempted: bool,
-    cursor: usize,
-    select_all: bool,
-    revealed: bool,
     dialog: Option<Dialog>,
     task: Option<Task<Result<(), String>>>,
 }
-impl Login {
-    fn clear(&mut self) {
+#[derive(Default)]
+pub(super) struct Secret {
+    pub(super) password: Vec<char>,
+    pub(super) cursor: usize,
+    pub(super) select_all: bool,
+    pub(super) revealed: bool,
+}
+impl Secret {
+    pub(super) fn clear(&mut self) {
         self.password.fill('\0');
         self.password.clear();
         self.cursor = 0;
         self.select_all = false;
         self.revealed = false;
     }
-    fn edit(&mut self, key: &Key, control: bool) {
+    pub(super) fn edit(&mut self, key: &Key, control: bool) {
         if control {
             if matches!(key, Key::Character(c) if c.eq_ignore_ascii_case("a")) {
                 self.select_all = true;
@@ -117,7 +121,7 @@ impl Login {
         }
     }
 }
-impl Drop for Login {
+impl Drop for Secret {
     fn drop(&mut self) {
         self.clear();
     }
@@ -180,7 +184,7 @@ pub(super) fn panel(root: &mut ChildSpawnerCommands) {
                     ui::text("Account Name", 20.),
                     Node {
                         position_type: PositionType::Absolute,
-                        left: px(44),
+                        left: px(crate::ui_theme::INPUT_ICON_TEXT_INSET),
                         top: px(10),
                         ..default()
                     },
@@ -257,7 +261,11 @@ pub(super) fn panel(root: &mut ChildSpawnerCommands) {
             align_items: AlignItems::Center,
             ..default()
         });
-        let create = crate::fantasy_ui::kit::disabled(panel, "Create Account");
+        let create = ui::button(
+            panel,
+            ui::Choice::Registration(registration::Action::Open),
+            "Create Account",
+        );
         panel.commands().entity(create).insert(Node {
             min_height: px(44),
             align_items: AlignItems::Center,
@@ -368,7 +376,7 @@ pub(super) fn keyboard(
     let password = focus.get().and_then(|e| choices.get(e).ok())
         == Some(&ui::Choice::Account(Action::Password));
     if !menu.active() || !windows.single().is_ok_and(|w| w.focused) {
-        login.revealed = false;
+        login.secret.revealed = false;
         input.clear();
         return;
     }
@@ -379,13 +387,13 @@ pub(super) fn keyboard(
     for event in input.read().filter(|e| e.state == ButtonState::Pressed) {
         if event.logical_key == Key::Escape {
             login.dialog = None;
-            login.revealed = false;
+            login.secret.revealed = false;
             focus.clear();
             continue;
         }
         if event.logical_key == Key::F10 {
             login.dialog = Some(Dialog::Settings);
-            login.revealed = false;
+            login.secret.revealed = false;
             continue;
         }
         if menu.page != Page::Login || menu.pending || login.dialog.is_some() {
@@ -395,7 +403,7 @@ pub(super) fn keyboard(
             if event.logical_key == Key::Enter {
                 menu.action = Some(ui::Choice::Login);
             } else {
-                login.edit(&event.logical_key, control);
+                login.secret.edit(&event.logical_key, control);
             }
         }
     }
@@ -414,7 +422,7 @@ pub(super) fn actions(world: &mut World) {
             }
         }
         if world.resource::<Menu>().page != Page::Login {
-            login.clear();
+            login.secret.clear();
         }
         let Some(choice) = world.resource::<Menu>().action else {
             return;
@@ -446,13 +454,13 @@ pub(super) fn actions(world: &mut World) {
                     .single(world)
                     .map(|u| u.value().to_string())
                     .unwrap_or_default();
-                if username.trim().is_empty() || login.password.is_empty() {
+                if username.trim().is_empty() || login.secret.password.is_empty() {
                     world.resource_mut::<Menu>().message =
                         "Enter your username and password.".into();
                     return;
                 }
-                let password: String = login.password.iter().collect();
-                login.clear();
+                let password: String = login.secret.password.iter().collect();
+                login.secret.clear();
                 let mut menu = world.resource_mut::<Menu>();
                 let path = menu.directory.join("frontend-credentials.json");
                 menu.serial += 1;
@@ -461,7 +469,7 @@ pub(super) fn actions(world: &mut World) {
                 menu.message = "Signing in…".into();
                 login.task = Some(
                     IoTaskPool::get()
-                        .spawn(async move { submit(path, serial, username, password) }),
+                        .spawn(async move { submit(path, serial, username, password, None) }),
                 );
                 return;
             }
@@ -481,18 +489,18 @@ pub(super) fn actions(world: &mut World) {
                 }
             }
             Action::Reveal => {
-                login.revealed = !login.revealed;
+                login.secret.revealed = !login.secret.revealed;
             }
             Action::Interface => {
                 login.dialog = Some(Dialog::Interface);
-                login.revealed = false;
+                login.secret.revealed = false;
             }
             Action::Settings => {
-                login.revealed = false;
+                login.secret.revealed = false;
                 login.dialog = Some(Dialog::Settings);
             }
             Action::Support => {
-                login.revealed = false;
+                login.secret.revealed = false;
                 login.dialog = Some(Dialog::Support);
             }
             Action::Close => {
@@ -528,11 +536,12 @@ pub(super) fn actions(world: &mut World) {
         }
     });
 }
-fn submit(
+pub(super) fn submit(
     path: PathBuf,
     serial: u64,
     username: String,
     mut password: String,
+    email: Option<String>,
 ) -> Result<(), String> {
     #[derive(Deserialize)]
     #[serde(deny_unknown_fields)]
@@ -554,9 +563,13 @@ fn submit(
         )?;
         stream.set_write_timeout(Some(std::time::Duration::from_secs(2)))?;
         stream.set_read_timeout(Some(std::time::Duration::from_secs(2)))?;
-        let mut bytes = serde_json::to_vec(
-            &serde_json::json!({"serial":serial,"action":"credentials","username":username,"password":password,"token":endpoint.token}),
-        )?;
+        let mut payload = serde_json::json!({"serial":serial,"action":"credentials","username":username,"password":password,"token":endpoint.token});
+        if let Some(email) = email {
+            payload["action"] = "register".into();
+            payload["email"] = email.into();
+        }
+        let mut bytes = serde_json::to_vec(&payload)?;
+        drop(payload);
         let written = (|| -> std::io::Result<()> {
             stream.write_all(&(bytes.len() as u32).to_be_bytes())?;
             stream.write_all(&bytes)
@@ -617,15 +630,16 @@ pub(super) fn present(
             };
         }
         if password {
-            let start = login.cursor.saturating_sub(28);
+            let start = login.secret.cursor.saturating_sub(28);
             **text = login
+                .secret
                 .password
                 .iter()
                 .skip(start)
                 .take(36)
-                .map(|c| if login.revealed { *c } else { '•' })
+                .map(|c| if login.secret.revealed { *c } else { '•' })
                 .collect();
-            if login.password.is_empty() && !focused {
+            if login.secret.password.is_empty() && !focused {
                 text.push_str("Password");
             }
             if focused {
@@ -661,7 +675,7 @@ pub(super) fn present(
         if *choice == ui::Choice::Account(Action::Reveal) {
             commands
                 .entity(entity)
-                .insert(AccessibleLabel::new(if login.revealed {
+                .insert(AccessibleLabel::new(if login.secret.revealed {
                     "Hide password"
                 } else {
                     "Show password"
@@ -706,23 +720,29 @@ pub(super) fn present(
     }
 }
 
+pub(super) fn dialog_open(login: &Login) -> bool {
+    login.dialog.is_some()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn password_editing_bounds_cursor_and_clears_selection_without_plaintext_ui() {
         let mut login = Login::default();
-        login.edit(&Key::Character("sëcret".into()), false);
-        login.edit(&Key::ArrowLeft, false);
-        login.edit(&Key::Backspace, false);
-        assert_eq!(login.password.iter().collect::<String>(), "sëcrt");
-        login.edit(&Key::Character("a".into()), true);
-        login.edit(&Key::Character("new".into()), false);
-        assert_eq!(login.password.iter().collect::<String>(), "new");
-        login.edit(&Key::Character("x".repeat(1100).into()), false);
-        assert_eq!(login.password.len(), 1024);
-        login.clear();
-        assert!(login.password.is_empty());
-        assert!(!login.revealed);
+        login.secret.edit(&Key::Character("sëcret".into()), false);
+        login.secret.edit(&Key::ArrowLeft, false);
+        login.secret.edit(&Key::Backspace, false);
+        assert_eq!(login.secret.password.iter().collect::<String>(), "sëcrt");
+        login.secret.edit(&Key::Character("a".into()), true);
+        login.secret.edit(&Key::Character("new".into()), false);
+        assert_eq!(login.secret.password.iter().collect::<String>(), "new");
+        login
+            .secret
+            .edit(&Key::Character("x".repeat(1100).into()), false);
+        assert_eq!(login.secret.password.len(), 1024);
+        login.secret.clear();
+        assert!(login.secret.password.is_empty());
+        assert!(!login.secret.revealed);
     }
 }

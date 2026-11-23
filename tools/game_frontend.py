@@ -31,7 +31,8 @@ def _run(account, directory, ticket, stopped, credentials):
 
     def state(message='', busy=False):
         publish(directory, 'frontend-state.json', dict(schema=1, serial=serial,
-                phase=phase, busy=busy, message=message, characters=characters))
+                phase=phase, busy=busy, message=message, characters=characters,
+                registration=os.environ.get('THEIA_NATIVE_REGISTRATION') == '1'))
 
     state('Sign in to choose your adventurer.')
     while not stopped():
@@ -59,11 +60,11 @@ def _run(account, directory, ticket, stopped, credentials):
             serial = data['serial']
             action = data.get('action')
             fields = {'serial', 'action'}
-            if native_credentials and action == 'credentials' and phase == 'login' and set(data) == fields | {'username', 'password'}:
+            if native_credentials and action in ('credentials', 'register') and phase == 'login' and set(data) == fields | {'username', 'password'} | ({'email'} if action == 'register' else set()):
                 from native_login import authorize
-                state('Signing in…', busy=True)
+                state('Creating account…' if action == 'register' else 'Signing in…', busy=True)
                 try:
-                    account.login(lambda url: authorize(url, account._base, data['username'], data['password']))
+                    account.login(lambda url: authorize(url, account._base, data['username'], data['password'], **({'email': data['email']} if action == 'register' else {})))
                 finally:
                     data.clear()
                 state('Retrieving character list…', busy=True)

@@ -183,3 +183,19 @@ source/export hashes are in `category-generation.json`; authorized deterministic
 cleanup removes alpha below 8 and fits the glyph into a transparent 256px canvas.
 Actual cosmetic thumbnails are rendered from private player meshes by
 `tools/render_character_thumbnails.py` and stay under build beside those assets.
+
+## Native registration illustration — 23 November 2026
+
+`account-adventurer-v1.png` derives from the user's Create Account gateway reference
+using the built-in image generator. It is an illustration only; all labels, fields,
+validation and actions are live Bevy UI. The generated cutout uses its actual alpha channel; faint alpha debris is
+removed and near-opaque surfaces are made opaque. A separate opaque navy trial
+was rejected after comparing the correctly composited cutout. The accompanying standalone mail glyph has no button frame;
+its generated alpha is preserved with the same authorised deterministic cleanup as
+the earlier standalone icons. Prompts, source IDs and hashes are recorded in
+`account-art-generation.json`. The existing Theia Online branding remains in use.
+
+Final portrait refinement removes the entire sword and reconstructs the hair.
+`account-mist-v1.png` is a separate generated white/cool-blue swirl with its
+softly feathered alpha, composited behind the portrait at 65% opacity within
+the clipped portrait bay. Both exact prompts and hashes are in the same manifest.

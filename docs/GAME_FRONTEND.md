@@ -21,9 +21,16 @@ an ephemeral loopback listener using a private capability. The adapter accepts o
 the configured local issuer's expected sign-in form and callback; it retains the
 existing authorization-code, PKCE, state/nonce and server token validation. Other
 providers or MFA steps fail with an in-game message. This does not claim production
-native authentication, registration, recovery or a deployed account service. The
+native authentication, recovery or a deployed account service. The
 local wrapper still owns its temporary provider/database lifetime. Historical
 editor/console account routes retain their separate browser-based qualification.
+
+Native Create Account now uses that same owned provider and code/PKCE callback.
+Its separate reference-style screen includes confirmation, password rules and an
+illustrated portrait; successful registration opens an empty account roster.
+Availability is advertised by new local sessions; unsupported legal/news controls
+remain disabled. See [ACCOUNT_REGISTRATION.md](ACCOUNT_REGISTRATION.md) for the
+provider policy, artwork, qualification and deployment limits.
 
 The user adopted a future launcher that updates/starts the client, with login
 remaining inside the game. An update distribution service/patching launcher has

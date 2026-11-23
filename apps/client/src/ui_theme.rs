@@ -94,6 +94,7 @@ pub(crate) fn install(app: &mut App) {
     icon!("zoom-in", 33);
     icon!("hair", 34);
     icon!("face", 35);
+    icon!("mail", 36);
     let art = Art {
         standalone,
         preview: load(include_bytes!(
@@ -420,6 +421,8 @@ fn icon_hover(
 }
 /// Shared text-field defaults. Width follows its containing form; icons reserve
 /// inset space without changing the field's outer size.
+pub(crate) const INPUT_ICON_TEXT_INSET: f32 = 52.;
+
 pub(crate) fn input_box(leading_icon: bool, trailing_icon: bool) -> Node {
     Node {
         width: percent(100),
@@ -428,7 +431,11 @@ pub(crate) fn input_box(leading_icon: bool, trailing_icon: bool) -> Node {
         min_height: px(48),
         flex_shrink: 0.,
         padding: UiRect {
-            left: px(if leading_icon { 44 } else { 14 }),
+            left: px(if leading_icon {
+                INPUT_ICON_TEXT_INSET
+            } else {
+                14.
+            }),
             right: px(if trailing_icon { 48 } else { 14 }),
             top: px(10),
             bottom: px(10),
