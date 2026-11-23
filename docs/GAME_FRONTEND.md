@@ -42,9 +42,10 @@ Evidence: `build/account-switch-v1/qualification.json`. Linux Vulkan llvmpipe
 (LLVM 21.1.8, Mesa 26.2.7), zero GPU diagnostics. 25 Python and 362 client
 tests pass, with five existing client skips.
 
-The user adopted a future launcher that updates/starts the client, with login
-remaining inside the game. An update distribution service/patching launcher has
-not been implemented by this UI slice.
+The launcher design follows the user’s navy-and-gold reference. The first
+planned slice installs and starts a verified local build, with login remaining
+inside the game. Signed distribution follows the local install and update
+checks. See [GAME_LAUNCHER.md](GAME_LAUNCHER.md).
 
 Character selection has its own courtyard background, right-side account roster,
 selected live hero, rotation controls and Enter World. An empty account has no
