@@ -53,6 +53,12 @@ Status: agreed direction, 24 November 2026. Detailed implementation design pendi
 - One hosted game environment and one active server release initially; two channels do not imply two live worlds. Validate client/server compatibility before Play and clearly report mismatches. Preserve prior release artifacts for rollback, subject to database/schema compatibility.
 - No requirement to publish a Stable release during Phase 1; qualify the promotion mechanism without exposing unapproved builds as Stable.
 
+## CI/CD trigger policy (creator-approved)
+- Automatic CI validation on pushes and pull requests; automatic release-candidate builds on pushes to main. Detect affected server, client, launcher and asset packages using dependency-aware change detection, including shared crates, lockfiles, toolchain and build configuration; fall back to full builds when uncertain.
+- Separate reusable server, client and launcher build workflows, CI validation, manual publish and manual AWS deploy workflows; provide a manually triggered combined release workflow. Build candidates are immutable and traceable to commit, with compatible artifact sets and retained rollback candidates.
+- Publishing to GitHub Pages, Stable promotion and AWS deployment remain explicitly manual. No successful build or push may automatically change a live release or restart the server. Failed or incomplete builds cannot publish. Serialize publication/deployment, cancel superseded unneeded builds safely, and verify compatibility and health before activation.
+- Future idle-window automatic Development publishing/deployment is deferred pending explicit approval and lifecycle safeguards.
+
 ## Phase 2 — On-demand lifecycle and reporting
 - Independently available Theia Gateway using API Gateway and Lambda. Authenticated player wake/status requests; admin permissions separate. Rate limit and make wake requests idempotent. No gameplay traffic through gateway.
 - Launcher Play requests wake automatically if stopped, polls status and launches client only after application readiness. States: offline, starting, ready, draining/shutting down, failed; distinguish EC2 running from game/database readiness. Return validated connection endpoint. Provide timeout/retry and useful errors.
