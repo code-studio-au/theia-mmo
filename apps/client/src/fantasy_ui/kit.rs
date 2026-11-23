@@ -391,7 +391,11 @@ fn graphics_section(parent: &mut ChildSpawnerCommands, caption: &str) {
             Node {
                 width: percent(100),
                 height: px(32),
-                padding: UiRect::horizontal(px(19)),
+                padding: UiRect {
+                    left: px(26),
+                    right: px(19),
+                    ..default()
+                },
                 align_items: AlignItems::Center,
                 border: UiRect::vertical(px(1)),
                 ..default()
@@ -405,17 +409,15 @@ fn graphics_section(parent: &mut ChildSpawnerCommands, caption: &str) {
         ))
         .with_children(|bar| {
             bar.spawn((
+                ui_theme::Sprite("ornament.corner-fine-left"),
                 Node {
                     position_type: PositionType::Absolute,
-                    left: px(1),
-                    top: px(11),
-                    width: px(8),
-                    height: px(8),
-                    border: UiRect::left(px(1)).with_bottom(px(1)),
+                    left: px(-3),
+                    top: px(2),
+                    width: px(26),
+                    height: px(26),
                     ..default()
                 },
-                BorderColor::all(ui_theme::CREAM),
-                UiTransform::from_rotation(Rot2::degrees(45.)),
                 Pickable::IGNORE,
             ));
             highlight(bar, px(0), 62., false);
