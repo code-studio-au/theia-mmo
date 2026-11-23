@@ -11,7 +11,7 @@ Build the standalone launcher package with `dpkg-deb` available on the build
 machine.
 
 ```sh
-python3 tools/package_client_launcher.py build/theia-launcher_0.1.2_amd64.deb
+python3 tools/package_client_launcher.py build/theia-launcher_0.1.3_amd64.deb
 ```
 
 Install the Debian package through the system's package installer and open
@@ -34,6 +34,22 @@ a rate and estimated time left. Cancel stops the transfer. The bottom bar
 displays the active client version.
 
 The Play screen links to the bundled 0.1.0.1 client preview announcement.
+
+## Launcher updates
+
+Install the 0.1.3 launcher package once to enable checks for future launcher
+releases. At startup and on **Updates → Check for Updates**, the launcher looks
+in the `launcher/` subfolder of the selected trusted release library for Debian
+packages named `theia-launcher_VERSION_amd64.deb`. It checks the package name,
+version and architecture, then offers the newest compatible version above the
+running version. The Updates tab displays launcher and game client versions
+independently, and Play shows a link to any available launcher update.
+
+Select **Update Launcher** to install the offered package with the system APT
+installer and desktop administrator approval. **Restart Launcher** becomes
+available after the system confirms the offered version is installed. The app
+keeps its settings, game installation and launch arguments across the restart.
+Publish packages only to a library you trust. This path uses local files.
 
 ## Login server status
 
@@ -86,6 +102,12 @@ diagnostics. See `build/launcher-theme-qualified-65dre1f2/qualification.json`.
 The 0.1.2 package opened installed client 0.1.0.4 fullscreen at 1440×900 on
 Linux X11 with Vulkan llvmpipe. The launcher minimised on Play and restored
 when the client closed. All 19 installer and launcher checks passed.
+
+For 0.1.3, all 22 checks passed with an APT upgrade simulation. On private
+Linux X11, the packaged GTK app detected a newer launcher on startup and on
+manual check, installed it into an isolated Debian package root and restarted
+into the updated app with game 0.1.0.4 still active. The test substituted the
+isolated Debian install for the live desktop administrator prompt.
 
 ## Distribution remains open
 

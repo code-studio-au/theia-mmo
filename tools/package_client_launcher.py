@@ -25,8 +25,9 @@ def package(output, release):
         application = staging / 'usr/lib/theia-launcher'
         assets = application / 'assets'
         assets.mkdir(parents=True)
-        for filename in ('launcher.py', 'state.py', 'launcher.css', 'chrome.py', 'artwork.py'):
+        for filename in ('launcher.py', 'state.py', 'launcher_update.py', 'launcher.css', 'chrome.py', 'artwork.py'):
             shutil.copyfile(APP / filename, application / filename)
+        (application / 'VERSION').write_text(release + '\n', encoding='utf-8')
         shutil.copyfile(ROOT / 'tools/client_install.py', application / 'client_install.py')
         icon = ROOT / ASSET_SOURCES['icon']
         for name, source in ASSET_SOURCES.items():
@@ -49,7 +50,7 @@ def package(output, release):
             'Priority: optional\n'
             'Architecture: amd64\n'
             'Maintainer: Theia Online\n'
-            'Depends: python3 (>= 3.10), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0\n'
+            'Depends: apt, pkexec, python3 (>= 3.10), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0\n'
             'Description: Theia Online client installer and launcher\n'
             ' Install and update the game client separately from this application.\n',
             encoding='utf-8',
@@ -64,7 +65,7 @@ def package(output, release):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
-    parser.add_argument('--version', default='0.1.2')
+    parser.add_argument('--version', default=(APP / 'VERSION').read_text(encoding='utf-8').strip())
     args = parser.parse_args()
     print(package(args.output, args.version))
 

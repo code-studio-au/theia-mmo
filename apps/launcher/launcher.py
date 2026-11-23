@@ -19,6 +19,7 @@ if not (HERE / 'assets').is_dir():
     sys.path.insert(0, str(REPOSITORY / 'tools'))
 
 import client_install
+from launcher_update import SYSTEM_LAUNCHER, VERSION, install_launcher_update, newest_launcher_release
 from state import DEFAULT_LOGIN_BIND, data_directory, game_launch_args, login_address, login_ready, newest_release
 from state import read_settings, save_settings
 
@@ -97,6 +98,9 @@ class Launcher:
     def __init__(self, args, game_args):
         self.prefs = args.settings_file.expanduser().resolve()
         self.available = None
+        self.launcher_update = None
+        self.launcher_installed = None
+        self.launcher_feedback = None
         self.job = None
         self.game = None
         self.closing = False
@@ -367,6 +371,8 @@ class Launcher:
         story.add(row)
         play.pack_start(story, False, False, 0)
         play.pack_start(Gtk.Separator(), False, False, 0)
+        self.launcher_notice = button('Launcher Update Available', lambda: self.select_page('Updates'))
+        play.pack_start(self.launcher_notice, False, False, 0)
 
         news = self.page('News', 'Version 0.1.0.1')
         news.pack_start(picture('news', 345, 194), False, False, 0)
@@ -377,10 +383,17 @@ class Launcher:
         ), False, False, 0)
 
         updates = self.page('Updates', 'Updates')
-        self.release_label = label('', 'detail')
-        updates.pack_start(self.release_label, False, False, 0)
         self.check_button = button('Check for Updates', self.check)
         updates.pack_start(self.check_button, False, False, 0)
+        updates.pack_start(label('Launcher', 'section'), False, False, 0)
+        self.launcher_release_label = label('', 'detail')
+        updates.pack_start(self.launcher_release_label, False, False, 0)
+        self.launcher_update_button = button('Update Launcher', self.update_launcher)
+        updates.pack_start(self.launcher_update_button, False, False, 0)
+        updates.pack_start(Gtk.Separator(), False, False, 0)
+        updates.pack_start(label('Game Client', 'section'), False, False, 0)
+        self.release_label = label('', 'detail')
+        updates.pack_start(self.release_label, False, False, 0)
         self.update_button = button('Install Update', self.install)
         updates.pack_start(self.update_button, False, False, 0)
         self.rollback_button = button('Restore Previous Version', self.rollback)
@@ -449,6 +462,23 @@ class Launcher:
         self.progress_row.set_visible(transferring)
         self.play_installed.set_visible(update)
         self.play_installed.set_sensitive(ready)
+        self.launcher_notice.set_visible(bool(self.launcher_installed or self.launcher_update))
+        self.launcher_notice.set_label('Launcher Update Installed' if self.launcher_installed else 'Launcher Update Available')
+        self.launcher_update_button.set_label('Restart Launcher' if self.launcher_installed else 'Update Launcher')
+        self.launcher_update_button.set_sensitive(ready and bool(self.launcher_installed or self.launcher_update))
+        if self.job == 'launcher-update':
+            launcher_status = 'Waiting for the system installer…'
+        elif self.launcher_feedback:
+            launcher_status = self.launcher_feedback
+        elif self.launcher_installed:
+            launcher_status = f'Version {self.launcher_installed} installed. Restart to finish.'
+        elif self.launcher_update:
+            launcher_status = f'Version {self.launcher_update[1]} is available.'
+        elif self.library:
+            launcher_status = 'No launcher update in the selected library.'
+        else:
+            launcher_status = 'Choose a release folder in Settings.'
+        self.launcher_release_label.set_text(f'Running version {VERSION}\n{launcher_status}')
 
         self.source_label.set_text(str(self.library) if self.library else 'No folder selected')
         self.source_label.set_tooltip_text(str(self.library) if self.library else None)
@@ -499,10 +529,11 @@ class Launcher:
         self.install_root, self.library = root, library
         self.record = {'current': None, 'previous': None}
         self.available = None
+        self.launcher_update = None
         self.check()
 
     def choose_source(self):
-        chosen = self.pick_folder('Choose a local client package or release library', self.library)
+        chosen = self.pick_folder('Choose a local release library', self.library)
         if chosen is not None:
             self.set_paths(self.install_root, chosen)
 
@@ -531,12 +562,16 @@ class Launcher:
         threading.Thread(target=work).start()
 
     def finished(self, done, result, error):
+        job = self.job
         self.job = None
         if self.closing:
             self.window.destroy()
             return GLib.SOURCE_REMOVE
         if error:
-            self.feedback = error
+            if job == 'launcher-update':
+                self.launcher_feedback = error
+            else:
+                self.feedback = error
         else:
             done(result)
         self.refresh_view()
@@ -548,14 +583,39 @@ class Launcher:
             try:
                 available = newest_release(self.library, record['current'])
             except (OSError, client_install.InstallError) as error:
-                return record, None, str(error)
-            return record, available, None
+                available, client_error = None, str(error)
+            else:
+                client_error = None
+            try:
+                launcher = newest_launcher_release(self.library, VERSION)
+            except OSError as error:
+                return record, available, client_error, None, str(error)
+            return record, available, client_error, launcher, None
 
         def checked(result):
-            self.record, self.available, error = result
+            self.record, self.available, error, self.launcher_update, self.launcher_feedback = result
             self.feedback = error or message
 
         self.start('check', 'Checking for releases…', discover, checked)
+
+    def update_launcher(self):
+        if self.launcher_installed:
+            try:
+                os.execv(SYSTEM_LAUNCHER, [str(SYSTEM_LAUNCHER), *sys.argv[1:]])
+            except OSError as error:
+                self.launcher_feedback = str(error)
+                self.refresh_view()
+            return
+        offer = self.launcher_update
+        if offer is None:
+            return
+        self.launcher_feedback = None
+
+        def complete(release):
+            self.launcher_installed = release
+            self.launcher_update = None
+
+        self.start('launcher-update', 'Updating launcher…', lambda: install_launcher_update(offer), complete)
 
     def primary(self):
         if self.available:

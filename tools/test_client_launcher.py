@@ -1,6 +1,7 @@
 """Regression checks for release selection and standalone launcher preferences."""
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -9,6 +10,7 @@ from unittest.mock import patch
 from client_install import InstallError, executable, export, target
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'apps/launcher'))
+from launcher_update import install_launcher_update, newest_launcher_release
 from state import DEFAULT_LOGIN_BIND, game_launch_args, login_address, login_ready, newest_release, read_settings
 from state import save_settings
 
@@ -93,6 +95,69 @@ class GameLaunchMode(unittest.TestCase):
         ):
             with self.subTest(options=options):
                 self.assertEqual(game_launch_args(options), options)
+
+
+@unittest.skipUnless(Path('/usr/bin/dpkg-deb').is_file(), 'Debian packaging tools required')
+class LauncherRelease(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.library = Path(temporary.name)
+        self.releases = self.library / 'launcher'
+        self.releases.mkdir()
+        self.control = self.library / 'staging' / 'DEBIAN' / 'control'
+        self.control.parent.mkdir(parents=True)
+
+    def publish(self, release, package='theia-launcher', architecture='amd64', filename=None):
+        self.control.write_text(
+            f'Package: {package}\nVersion: {release}\nArchitecture: {architecture}\n'
+            'Maintainer: Tests\nDescription: Launcher test package\n', encoding='utf-8',
+        )
+        path = self.releases / f'theia-launcher_{filename or release}_amd64.deb'
+        subprocess.run(['/usr/bin/dpkg-deb', '--build', str(self.control.parent.parent), str(path)],
+                       check=True, capture_output=True)
+        return path
+
+    def test_accepts_only_newer_launcher_packages_with_matching_metadata(self):
+        newest = self.publish('0.1.10')
+        self.publish('0.1.9')
+        self.publish('0.1.11', architecture='arm64')
+        self.publish('0.1.12', package='other-package')
+        self.publish('0.1.13', filename='0.1.14')
+        (self.releases / 'theia-launcher_0.1.15_amd64.deb').symlink_to(newest)
+        self.assertEqual(newest_launcher_release(self.library, '0.1.3'), (newest, '0.1.10'))
+        self.assertIsNone(newest_launcher_release(self.library, '0.1.10'))
+        self.assertIsNone(newest_release(self.library, '0.1.0.4'))
+
+    def test_revalidates_staged_version_before_asking_for_administrator_approval(self):
+        mismatched = self.publish('0.1.3', filename='0.1.4')
+        with self.assertRaisesRegex(InstallError, 'package changed'):
+            install_launcher_update((mismatched, '0.1.4'))
+
+    def test_requires_installed_version_confirmation_and_handles_cancel(self):
+        package = self.publish('0.1.4')
+        actual_run = subprocess.run
+
+        def run(command, **options):
+            if command[0] == '/usr/bin/pkexec':
+                self.assertEqual(command[1:6], [
+                    '--disable-internal-agent', '/usr/bin/apt-get', '--assume-yes', '--no-remove', 'install',
+                ])
+                self.assertEqual(Path(command[-1]).read_bytes(), package.read_bytes())
+                return subprocess.CompletedProcess(command, result, '', '')
+            if command[0] == '/usr/bin/dpkg-query':
+                return subprocess.CompletedProcess(command, 0, f'install ok installed\t{installed}'.encode(), b'')
+            return actual_run(command, **options)
+
+        with patch('launcher_update.subprocess.run', side_effect=run), patch('launcher_update.SYSTEM_LAUNCHER', package):
+            result, installed = 126, '0.1.3'
+            with self.assertRaisesRegex(InstallError, 'cancelled'):
+                install_launcher_update((package, '0.1.4'))
+            result = 0
+            with self.assertRaisesRegex(InstallError, 'did not confirm'):
+                install_launcher_update((package, '0.1.4'))
+            installed = '0.1.4'
+            self.assertEqual(install_launcher_update((package, '0.1.4')), installed)
 
 
 class LoginReadiness(unittest.TestCase):
