@@ -274,7 +274,7 @@ pub(crate) fn tooltip_state(world: &mut World) -> serde_json::Value {
 pub(crate) fn install_preview(app: &mut App) {
     app.init_resource::<bevy::ui::UiScale>();
     let profile = Profile::from_json(include_bytes!(
-        "../../../../content/gameplay/development-document-items.json"
+        "../../../../content/gameplay/development-coin-items.json"
     ))
     .unwrap();
     let items = [
@@ -294,7 +294,14 @@ pub(crate) fn install_preview(app: &mut App) {
         );
     }
     let main_hand = slots[2].clone();
-    let bag = Bag::from_parts(profile.catalog(), 0, slots, main_hand).unwrap();
+    let bag = Bag::from_parts_with_copper(
+        profile.catalog(),
+        0,
+        slots,
+        main_hand,
+        profile.catalog().starting_copper(),
+    )
+    .unwrap();
     app.insert_resource(PreviewHover(0))
         .insert_resource(Config(profile))
         .insert_resource(Ui {
@@ -304,7 +311,7 @@ pub(crate) fn install_preview(app: &mut App) {
         })
         .add_systems(Startup, super::setup)
         .add_systems(PostStartup, preview_setup)
-        .add_systems(Update, (paint_buttons, present).chain());
+        .add_systems(Update, (paint_buttons, present, money::paint).chain());
 }
 type PreviewPanels = Or<(With<Pane>, With<EquipmentPane>)>;
 fn preview_setup(

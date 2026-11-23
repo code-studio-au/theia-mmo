@@ -158,7 +158,7 @@ fn setup(
                 padding: UiRect::all(px(if skin.is_some() { 0. } else { 8. })),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
-                row_gap: px(4),
+                row_gap: px(if skin.is_some() { 0. } else { 4. }),
                 display: Display::None,
                 ..default()
             },
@@ -237,10 +237,11 @@ fn setup(
                         BorderGradient::from(LinearGradient::new(
                             LinearGradient::TO_BOTTOM,
                             vec![
-                                ColorStop::percent(Color::srgb(1., 0.91, 0.65), 0.),
-                                ColorStop::percent(Color::srgb(0.64, 0.32, 0.09), 44.),
-                                ColorStop::percent(Color::srgb(0.95, 0.72, 0.31), 72.),
-                                ColorStop::percent(Color::srgb(0.46, 0.25, 0.08), 100.),
+                                ColorStop::percent(Color::srgb(1., 0.93, 0.66), 0.),
+                                ColorStop::percent(Color::srgb(0.99, 0.79, 0.25), 26.),
+                                ColorStop::percent(Color::srgb(0.92, 0.58, 0.10), 55.),
+                                ColorStop::percent(Color::srgb(1., 0.83, 0.27), 78.),
+                                ColorStop::percent(Color::srgb(0.80, 0.53, 0.10), 100.),
                             ],
                         )),
                         Outline::new(px(1), px(0), Color::srgb(0.16, 0.09, 0.035)),
@@ -271,7 +272,7 @@ fn setup(
                     });
                 }
             });
-            root.spawn((
+            let mut caption = root.spawn((
                 Node {
                     width: if skin.is_some() {
                         px(DISPLAY + 8.)
@@ -280,27 +281,20 @@ fn setup(
                     },
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    min_height: px(44),
+                    padding: UiRect::axes(px(15), px(4)),
+                    margin: UiRect::top(px(if skin.is_some() { -5. } else { 0. })),
                     row_gap: px(1),
                     ..default()
                 },
                 Pickable::IGNORE,
-            ))
-            .with_children(|lines| {
-                let mut plate = lines.spawn((
-                    Node {
-                        width: percent(100),
-                        min_height: px(26),
-                        padding: UiRect::axes(px(15), px(4)),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                ));
-                if skin.is_some() {
-                    plate.insert(crate::ui_theme::Plate);
-                }
-                plate.with_child((
+            ));
+            if skin.is_some() {
+                caption.insert((crate::ui_theme::Plate, ZIndex(4)));
+            }
+            caption.with_children(|lines| {
+                lines.spawn((
                     MapCaption::Heading,
                     label("Local Area", 15.),
                     TextLayout::justify(Justify::Center),

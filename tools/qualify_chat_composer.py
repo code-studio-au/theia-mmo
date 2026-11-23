@@ -13,6 +13,8 @@ def qualify(desktop, window, state, screenshot, saved_name, bubbles=False):
         return state()['chat']
 
     def click(action):
+        # Let the next layout settle after a menu or delivery status changes.
+        time.sleep(.2)
         item = wait(lambda: next((w for w in chat()['widgets'] if w['action'] == action), None))
         desktop.click(window, item['point'], 1, 1)
         time.sleep(.15)
@@ -37,6 +39,8 @@ def qualify(desktop, window, state, screenshot, saved_name, bubbles=False):
     wait(lambda: 'submitted' in chat())
     wait(lambda: {w['action'] for w in chat()['widgets']} == {'channel', 'input'})
     assert chat()['status'] == ''
+    heights = {w['action']: w['size'][1] for w in chat()['widgets']}
+    assert abs(heights['input'] - heights['channel']) <= 1., heights
     click('input')
     wait(lambda: chat()['typing'])
     desktop.key_state('w', True)

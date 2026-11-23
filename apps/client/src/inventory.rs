@@ -364,14 +364,16 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
                 .with_children(|grid| spawn_slots(grid, &config.0, skin.is_some()));
             if skin.is_none() {
                 spawn_actions(panel, &config.0, "");
-                if config.0.catalog().currency_enabled() {
+            }
+            if config.0.catalog().currency_enabled() {
+                if skin.is_none() {
                     panel.spawn(Node {
                         height: px(44),
                         flex_shrink: 0.,
                         ..default()
                     });
-                    money::row(panel, None, true);
                 }
+                money::row(panel, None, skin.is_none());
             }
         });
     if skin.is_some() {

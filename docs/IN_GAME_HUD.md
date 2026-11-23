@@ -121,9 +121,11 @@ authority and reader. Escape dismisses the context menu before the bag.
 The Character shortcut opens the existing main-hand equipment state in a
 separate panel. Trading accompanies the NPC interaction in its own panel.
 The bag has no categories, rewards controls, account reward claim, equipment
-row, currency footer or loading-status row. Item operation feedback appears
-outside the grid. The text-only development backpack retains its controls
-for the original qualification fixtures.
+row or loading-status row. Item operation feedback appears outside the grid.
+Currency-enabled worlds show the confirmed balance under the slots as gold,
+silver and copper, using the same ledger and denomination rules as Trading.
+The text-only development backpack retains its controls for the original
+qualification fixtures.
 
 The 1720×1000 native Millhaven test exercised a secondary click on an item
 while another item was selected, plus equip, unequip, split, destroy
@@ -140,20 +142,22 @@ affected dependency; the final checks use the standard release profile.
 P2-14 and P4-12 reuse the approved navy panel sprite on Inventory, Chat and
 Journal. Chat draws at 60% opacity while idle, including its tabs, composer and
 text. Input focus or the open channel chooser restores full opacity. The speech
-bubble opens Say and Area. Enter opens the composer from the world and submits
-while the field has focus. A delivery or validation status occupies space only
-when it has something to show. The journal title is plain text. J and the Journal
-shortcut toggle the expanded view. Hovering or focusing the journal shows the
-full-strength navy background, text and controls.
+bubble opens Say and Area. The single-line input matches the 37-pixel height of
+the channel button. Enter opens the composer from the world and submits while
+the field has focus. Delivery and validation statuses take up space when they
+appear. The journal title is plain text. J and the Journal shortcut toggle the
+expanded view. Hovering or focusing the journal shows the full-strength navy
+background, text and controls.
 
 One continuous framed rail encloses the twelve matte skill slots. Its tapered
 gold ends use the approved ornate plate sprite. The shortcuts wrap into two
 rows when there is insufficient inline space. The XP strip is 614 by 20 logical
 pixels when space permits, with its exact progress centred inside on hover.
 
-The minimap rim uses only the shaded circular frame and the north badge sits
-inside the map. The zone caption uses a compact gold-edged plate above the
-coordinates. Quest markers come from the map data.
+The minimap rim uses a shaded gold circle matched to the skill bar, with the
+north badge inside the map. One gold-edged plate overlaps the bottom of the
+circle. It shows the zone name with the coordinates directly below. Quest
+markers come from the map data.
 
 The 1280×720 native account fixture confirmed Say and Area submission with
 Enter, channel-menu dismissal, the idle and focused opacity states, J and
@@ -161,3 +165,10 @@ XP hover. See `build/hud-final-native-verified/qualification.json`.
 Offscreen captures passed at 1920×1080, 1720×700 and 1280×720. Linux Vulkan
 llvmpipe (LLVM 21.1.8, Mesa 26.2.7) reported zero diagnostics. Strict Clippy,
 formatting, the release build and 365 client tests passed, with five skips.
+
+The follow-up native recording verified the matched chat control heights,
+Enter submission, the attached bright-gold minimap caption and the inventory
+balance. The fixture shows 5 gold, 25 silver and 50 copper. See
+`build/bright-minimap-native/qualification.json` and `inventory-coins.png`
+in the same directory. The three offscreen sizes, strict Clippy, release build
+and 365 client tests passed again, with five skips and zero Vulkan diagnostics.

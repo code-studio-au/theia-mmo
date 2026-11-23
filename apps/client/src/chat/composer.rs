@@ -12,6 +12,8 @@ use std::{collections::HashSet, time::Instant};
 use theia_core::chat::{Channel, MAX_TEXT_BYTES, Text as ChatText, TextError};
 use theia_network::{chat_client::Compose, chat_wire::Outcome};
 
+const CONTROL_HEIGHT: f32 = 37.;
+
 #[derive(Component)]
 struct Input;
 #[derive(Component)]
@@ -114,8 +116,8 @@ pub(crate) fn row(parent: &mut ChildSpawnerCommands) {
                         crate::ui_theme::Style::Secondary,
                         AccessibleLabel::new("Choose chat channel"),
                         Node {
-                            width: px(37),
-                            height: px(37),
+                            width: px(CONTROL_HEIGHT),
+                            height: px(CONTROL_HEIGHT),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
                             ..default()
@@ -146,6 +148,9 @@ pub(crate) fn row(parent: &mut ChildSpawnerCommands) {
                             width: px(0),
                             flex_basis: px(0),
                             flex_grow: 1.,
+                            height: px(CONTROL_HEIGHT),
+                            min_height: px(CONTROL_HEIGHT),
+                            padding: UiRect::axes(px(14), px(6)),
                             ..crate::ui_theme::input_box(false, false)
                         },
                         BackgroundColor(crate::ui_theme::PANEL),
@@ -160,7 +165,7 @@ pub(crate) fn row(parent: &mut ChildSpawnerCommands) {
                         Node {
                             position_type: PositionType::Absolute,
                             left: px(14),
-                            top: px(12),
+                            top: px(8),
                             ..default()
                         },
                     ));
@@ -184,7 +189,7 @@ fn channel_menu(row: &mut ChildSpawnerCommands) {
         Node {
             position_type: PositionType::Absolute,
             left: px(0),
-            bottom: px(50),
+            bottom: px(CONTROL_HEIGHT + 5.),
             width: px(132),
             padding: UiRect::all(px(7)),
             row_gap: px(4),
