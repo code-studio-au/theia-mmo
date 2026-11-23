@@ -69,6 +69,15 @@ impl Menu {
     pub(crate) fn active(&self) -> bool {
         self.page != Page::Entering
     }
+    fn clear_account(&mut self) {
+        self.page = Page::Login;
+        self.characters.clear();
+        self.selected = None;
+        self.appearance = Appearance::default();
+        self.category = creation::Category::Hair;
+        self.yaw = 0.;
+        self.zoom = 1.;
+    }
 }
 pub(crate) fn active(world: &World) -> bool {
     world.get_resource::<Menu>().is_some_and(Menu::active)
@@ -149,6 +158,7 @@ fn snapshot(bytes: &[u8]) -> Result<Snapshot, String> {
     let data: Snapshot = serde_json::from_slice(bytes).map_err(|_| "Invalid account response")?;
     if data.schema != 1
         || data.characters.len() > 8
+        || data.phase == "login" && !data.characters.is_empty()
         || data.message.len() > 512
         || !matches!(data.phase.as_str(), "login" | "characters" | "entering")
     {
@@ -190,7 +200,15 @@ fn send(menu: &mut Menu, mut command: serde_json::Value) -> Result<(), String> {
 fn tick(
     mut menu: ResMut<Menu>,
     time: Res<Time>,
-    mut names: Query<&mut bevy::text::EditableText, With<ui::NameInput>>,
+    mut names: Query<
+        &mut bevy::text::EditableText,
+        (With<ui::NameInput>, Without<login::Username>),
+    >,
+    mut usernames: Query<
+        &mut bevy::text::EditableText,
+        (With<login::Username>, Without<ui::NameInput>),
+    >,
+    mut login: ResMut<login::Login>,
     mut exit: MessageWriter<AppExit>,
 ) {
     menu.elapsed += time.delta_secs();
@@ -206,7 +224,16 @@ fn tick(
                     menu.serial = data.serial;
                     menu.pending = data.busy;
                     menu.registration = data.registration;
-                    if data.phase == "entering" {
+                    if data.phase == "login" && !matches!(menu.page, Page::Login | Page::Register) {
+                        menu.clear_account();
+                        login.clear_account();
+                        for mut input in &mut names {
+                            input.clear();
+                        }
+                        for mut input in &mut usernames {
+                            input.clear();
+                        }
+                    } else if data.phase == "entering" {
                         menu.page = Page::Entering;
                     } else if data.phase == "characters"
                         && (matches!(menu.page, Page::Login | Page::Register) || changed)
@@ -261,6 +288,9 @@ fn tick(
             menu.zoom = 1.;
             menu.yaw = 0.;
             Ok(())
+        }
+        Choice::SignOut if menu.page == Page::Characters => {
+            send(&mut menu, serde_json::json!({"action":"logout"}))
         }
         Choice::Back => {
             menu.page = Page::Characters;
@@ -363,6 +393,9 @@ mod tests {
         let row = serde_json::json!({"id":"12345678-1234-4234-8234-123456789abc", "name":"Arden", "appearance":Appearance::default()});
         let mut value = serde_json::json!({"schema":1,"serial":0,"phase":"characters","busy":false,"message":"Ready","characters":[row.clone()]});
         assert!(snapshot(&serde_json::to_vec(&value).unwrap()).is_ok());
+        value["phase"] = "login".into();
+        assert!(snapshot(&serde_json::to_vec(&value).unwrap()).is_err());
+        value["phase"] = "characters".into();
         value["characters"] = serde_json::json!([row.clone(), row]);
         assert!(snapshot(&serde_json::to_vec(&value).unwrap()).is_err());
         value["characters"] = serde_json::json!([]);
@@ -404,7 +437,14 @@ mod tests {
         assert!(!menu.preview_visible());
         menu.selected = Some(0);
         assert!(menu.preview_visible());
-        menu.page = Page::Login;
+        menu.yaw = 2.;
+        menu.zoom = 1.3;
+        menu.clear_account();
+        assert_eq!(menu.page, Page::Login);
+        assert!(menu.characters.is_empty());
+        assert!(menu.selected.is_none());
+        assert_eq!(menu.appearance, Appearance::default());
+        assert_eq!((menu.yaw, menu.zoom), (0., 1.));
         assert!(!menu.preview_visible());
         menu.page = Page::Entering;
         assert!(!menu.preview_visible());

@@ -71,6 +71,12 @@ def _run(account, directory, ticket, stopped, credentials):
                 characters = account.characters()
                 phase = 'characters'
                 state('Choose your adventurer.' if characters else 'Create your first adventurer.')
+            elif action == 'logout' and phase == 'characters' and set(data) == fields:
+                state('Signing out…', busy=True)
+                account.logout()
+                characters = []
+                phase = 'login'
+                state()
             elif action == 'create' and phase == 'characters' and set(data) == fields | {'name', 'appearance'}:
                 if len(characters) >= 8:
                     raise ValueError('Your account already has eight characters.')

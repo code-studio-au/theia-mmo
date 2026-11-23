@@ -15,6 +15,7 @@ pub(super) enum Choice {
     Registration(registration::Action),
     New,
     Back,
+    SignOut,
     Select(usize),
     Category(creation::Category),
     Appearance(usize, u8),
@@ -68,6 +69,7 @@ pub(super) struct FrontCamera;
 pub(super) enum Placement {
     Backdrop(bool),
     Entry,
+    ReturnToLogin,
     Rotation,
     DragArea,
     Feet,
@@ -329,6 +331,10 @@ Create your first adventurer to begin your story.",
                         crate::fantasy_ui::kit::disabled(body, "Delete Character");
                     });
             });
+            let back = button(root, Choice::SignOut, "Back to Login");
+            root.commands()
+                .entity(back)
+                .insert((Screen(Page::Characters), Placement::ReturnToLogin));
             creation::setup(root, atlas);
             // Shared live model, never shown for an empty account or on Login.
             root.spawn((
@@ -637,6 +643,13 @@ pub(super) fn sync(
                     node.left = px(stage.x - stage.z * 0.5);
                     node.top = px(art.y * 0.11);
                 }
+                Placement::ReturnToLogin => {
+                    node.position_type = PositionType::Absolute;
+                    node.left = px(24.);
+                    node.bottom = px(24.);
+                    node.width = px(220.);
+                    node.height = px(44.);
+                }
                 Placement::Feet => {
                     node.width = px(300.);
                     node.height = px(56.);
@@ -665,7 +678,13 @@ pub(super) fn sync(
                 Placement::Status | Placement::Links => {
                     let login = menu.page == Page::Login;
                     node.position_type = PositionType::Absolute;
-                    node.bottom = px(24.);
+                    node.bottom = px(
+                        if matches!(placement, Placement::Links) && menu.page == Page::Characters {
+                            84.
+                        } else {
+                            24.
+                        },
+                    );
                     node.left = px(if matches!(placement, Placement::Links) {
                         52.
                     } else {

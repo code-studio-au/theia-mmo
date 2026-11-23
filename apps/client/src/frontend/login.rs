@@ -57,6 +57,14 @@ pub(super) struct Login {
     dialog: Option<Dialog>,
     task: Option<Task<Result<(), String>>>,
 }
+impl Login {
+    pub(super) fn clear_account(&mut self) {
+        self.secret.clear();
+        self.attempted = false;
+        self.dialog = None;
+        self.task = None;
+    }
+}
 #[derive(Default)]
 pub(super) struct Secret {
     pub(super) password: Vec<char>,

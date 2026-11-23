@@ -1,3 +1,11 @@
+23 November 2026 — P3-01/P3-03 native account switching:
+Back to Login revokes the session before clearing the roster and preview.
+A failed sign-out keeps the current account available for retry. 25 Python
+tests, 362 client tests (five skips), strict checks and native two-account
+sign-out, empty roster, restored roster and world entry pass. Linux Vulkan
+llvmpipe, zero GPU diagnostics. See GAME_FRONTEND.md. The next user-directed
+P2-14 slice is the in-game HUD reference pass.
+
 23 November 2026 — P4-12/P2-14 contained chat history:
 Long unbroken messages now wrap within the history viewport, with horizontal
 clipping as a fallback. Losing window focus cancels drafts while preserving

@@ -90,6 +90,22 @@ class Accounts(unittest.TestCase):
             self.assertEqual(calls[-1], '/auth/logout')
             self.assertIsNone(client._session)
 
+    def test_live_logout_requires_confirmation_and_preserves_retry_credential(self):
+        for refusal in (200, 503):
+            calls = []
+            def reply(path, body):
+                calls.append((path, body))
+                return (refusal, {}, b'{}') if len(calls) == 1 else (204, {}, b'')
+            with self.subTest(refusal=refusal), service(reply) as base:
+                client = AccountClient(base)
+                client._session = 'f'*64
+                with self.assertRaises(AccountError): client.logout()
+                self.assertEqual(client._session, 'f'*64)
+                client.logout()
+                self.assertIsNone(client._session)
+                client.close()
+                self.assertEqual(calls, [('/auth/logout', {}), ('/auth/logout', {})])
+
     def test_owner_cancellation_during_admission_never_writes_a_ticket(self):
         stopped = threading.Event()
         character = '74686569-6100-0000-0000-000000000123'

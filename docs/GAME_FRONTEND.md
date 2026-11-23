@@ -32,6 +32,16 @@ Availability is advertised by new local sessions; unsupported legal/news control
 remain disabled. See [ACCOUNT_REGISTRATION.md](ACCOUNT_REGISTRATION.md) for the
 provider policy, artwork, qualification and deployment limits.
 
+Back to Login on character selection uses the existing account logout route.
+After the service confirms success, the client clears the roster, preview,
+account name and pending character edits. A refused sign-out preserves the
+current roster and credential for retry. The native two-account check creates
+separate characters, verifies the second account opens without a preview,
+restores the first account's original roster, then enters the world.
+Evidence: `build/account-switch-v1/qualification.json`. Linux Vulkan llvmpipe
+(LLVM 21.1.8, Mesa 26.2.7), zero GPU diagnostics. 25 Python and 362 client
+tests pass, with five existing client skips.
+
 The user adopted a future launcher that updates/starts the client, with login
 remaining inside the game. An update distribution service/patching launcher has
 not been implemented by this UI slice.

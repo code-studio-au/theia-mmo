@@ -242,10 +242,17 @@ class AccountClient:
             file.write(bytes(data))
         return address
 
-    def close(self):
+    def logout(self):
+        """Confirm revocation before a live frontend switches accounts."""
         if self._session is not None:
-            try:
-                self.request('/auth/logout', {})
-            except AccountError:
-                pass
+            _, status = self.request('/auth/logout', {})
+            if status != 204:
+                raise AccountError('Sign out was not confirmed; please try again')
+            self._session = None
+
+    def close(self):
+        try:
+            self.logout()
+        except AccountError:
+            # Shutdown still discards the local credential if the service is gone.
             self._session = None

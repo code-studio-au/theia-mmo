@@ -72,6 +72,65 @@ class FrontEnd(unittest.TestCase):
             finally:
                 stopped.set(); thread.join(2)
 
+    def test_logout_retry_and_new_account_never_reuse_the_previous_roster(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            first = dict(id='12345678-1234-4234-8234-123456789abc', name='Arden', appearance=DEFAULT)
+            second = dict(id='22345678-1234-4234-8234-123456789abc', name='Birch', appearance=DEFAULT)
+            account = Mock()
+            account.characters.side_effect = [[first], [], [second]]
+            account.logout.side_effect = [AccountError('Try sign out again'), None]
+            account.enter.return_value = '127.0.0.1:12345'
+            stopped, errors = threading.Event(), []
+            def worker():
+                try: run(account, root, root/'ticket', stopped.is_set)
+                except KeyboardInterrupt: pass
+                except Exception as error: errors.append(error)
+            thread = threading.Thread(target=worker)
+            thread.start()
+            def wait(serial):
+                end = time.monotonic()+3
+                while time.monotonic() < end:
+                    try:
+                        state = json.loads((root/'frontend-state.json').read_text())
+                        if state['serial'] == serial and not state['busy']: return state
+                    except (FileNotFoundError, json.JSONDecodeError): pass
+                    time.sleep(.01)
+                self.fail('Timed out waiting for account switch')
+            def command(serial, action, **fields):
+                if action == 'credentials':
+                    endpoint = json.loads((root/'frontend-credentials.json').read_text())
+                    raw = json.dumps(dict(serial=serial, action=action, username='fixture',
+                                          password='test-only', token=endpoint['token'])).encode()
+                    host, port = endpoint['address'].split(':')
+                    with socket.create_connection((host, int(port))) as connection:
+                        connection.sendall(struct.pack('!I', len(raw))+raw)
+                        self.assertEqual(connection.recv(1), bytes([1]))
+                else: publish(root, 'frontend-command.json', dict(serial=serial, action=action, **fields))
+            try:
+                wait(0)
+                command(1, 'credentials'); self.assertEqual(wait(1)['characters'], [first])
+                command(2, 'logout'); failed = wait(2)
+                self.assertEqual(failed['phase'], 'characters')
+                self.assertEqual(failed['characters'], [first])
+                self.assertIn('Try sign out again', failed['message'])
+                command(3, 'logout'); logged_out = wait(3)
+                self.assertEqual(logged_out['phase'], 'login')
+                self.assertEqual(logged_out['characters'], [])
+                command(4, 'credentials'); self.assertEqual(wait(4)['characters'], [])
+                command(5, 'enter', id=first['id']); self.assertIn('this account', wait(5)['message'])
+                account.enter.assert_not_called()
+                command(6, 'create', name='Birch', appearance=DEFAULT)
+                self.assertEqual(wait(6)['characters'], [second])
+                command(7, 'enter', id=second['id']); self.assertEqual(wait(7)['phase'], 'entering')
+                thread.join(2)
+                self.assertFalse(thread.is_alive())
+                account.enter.assert_called_once_with(second['id'], root/'ticket')
+                self.assertEqual(account.logout.call_count, 2)
+                self.assertFalse(errors)
+            finally:
+                stopped.set(); thread.join(2)
+
     def test_closed_game_cancels_without_account_action(self):
         with tempfile.TemporaryDirectory() as tmp:
             account=Mock()

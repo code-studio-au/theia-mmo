@@ -149,7 +149,7 @@ def run(args):
     os.environ['DISPLAY'] = args.display
     out = args.output.resolve()
     out.mkdir(mode=0o700, parents=True, exist_ok=False)
-    with Identity(out/'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True, users=2 if args.peer_check else 1) as identity, \
+    with Identity(out/'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True, users=2 if args.peer_check or args.switch_account else 1) as identity, \
             Cluster(out/'cluster', Path('build/postgres-sdk')) as cluster:
         game = out/'game'
         game.mkdir()
@@ -225,6 +225,34 @@ def run(args):
                 click('Create')
                 wait(lambda: menu()['page'] == 'Characters' and menu()['preview_ready'], 45)
                 saved_name = json.loads((session/'runtime/frontend-state.json').read_text())['characters'][0]['name']
+                if args.switch_account:
+                    def roster():
+                        return json.loads((session/'runtime/frontend-state.json').read_text())['characters']
+                    original = roster()
+                    click('SignOut')
+                    wait(lambda: menu()['page'] == 'Login' and menu()['character_count'] == 0
+                         and not menu()['preview_visible'], 30)
+                    screenshot('account-signed-out.png')
+                    type_field('Username', identity.users[1][0])
+                    type_field('Account(Password)', identity.users[1][1])
+                    click('Login')
+                    wait(lambda: menu()['page'] == 'Characters', 60)
+                    assert roster() == [] and not menu()['preview_visible']
+                    screenshot('account-second-empty.png')
+                    click('New')
+                    wait(lambda: menu()['page'] == 'Create' and menu()['preview_ready'], 45)
+                    type_field('Name', 'Herobirch')
+                    click('Create')
+                    wait(lambda: menu()['page'] == 'Characters' and menu()['preview_ready'], 45)
+                    assert len(roster()) == 1 and roster()[0]['id'] != original[0]['id']
+                    click('SignOut')
+                    wait(lambda: menu()['page'] == 'Login' and menu()['character_count'] == 0, 30)
+                    type_field('Username', identity.users[0][0])
+                    type_field('Account(Password)', identity.users[0][1])
+                    click('Login')
+                    wait(lambda: menu()['page'] == 'Characters' and menu()['preview_ready'], 60)
+                    assert roster() == original, 'Account switch mixed character rosters'
+                    screenshot('account-first-restored.png')
                 click('Enter')
                 wait(lambda: state()['connected'] and state()['loading']['phase'] == 'Playing', 120)
                 print('Native account world entry passed', flush=True)
@@ -235,6 +263,7 @@ def run(args):
                                                        env, identity.users[1], out)
                 result['adapter'] = state()['adapter']
                 result['say_bubbles'] = args.bubbles
+                result['account_switch'] = args.switch_account
                 screenshot('chat-complete.png')
                 print(json.dumps(result), flush=True)
             finally:
@@ -262,5 +291,7 @@ if __name__ == '__main__':
     parser.add_argument('--display', default=':0')
     parser.add_argument('--software-vulkan', action='store_true')
     parser.add_argument('--bubbles', action='store_true')
-    parser.add_argument('--peer-check', action='store_true', help='Two native accounts, remote Say/Area and retirement')
+    extra = parser.add_mutually_exclusive_group()
+    extra.add_argument('--peer-check', action='store_true', help='Two native accounts, remote Say/Area and retirement')
+    extra.add_argument('--switch-account', action='store_true', help='Sign out and switch accounts twice in one game window')
     run(parser.parse_args())
