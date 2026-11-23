@@ -107,6 +107,31 @@ impl Menu {
         self.yaw = 0.;
         self.zoom = 1.;
     }
+    fn apply_character_list(&mut self, characters: Vec<Character>) {
+        let changed = self.characters.len() != characters.len();
+        let added = (self.page == Page::Create && characters.len() > self.characters.len())
+            .then(|| {
+                characters
+                    .iter()
+                    .position(|row| !self.characters.iter().any(|previous| row.id == previous.id))
+            })
+            .flatten();
+        let retained = self
+            .selected
+            .and_then(|index| self.characters.get(index))
+            .and_then(|previous| characters.iter().position(|row| row.id == previous.id));
+        self.characters = characters;
+        self.selected = added.or(retained);
+        if changed || matches!(self.page, Page::Login | Page::Register) {
+            self.page = Page::Characters;
+            self.selected = self
+                .selected
+                .or_else(|| self.characters.len().checked_sub(1));
+            if let Some(index) = self.selected {
+                self.appearance = self.characters[index].appearance;
+            }
+        }
+    }
 }
 pub(crate) fn active(world: &World) -> bool {
     world.get_resource::<Menu>().is_some_and(Menu::active)
@@ -247,8 +272,6 @@ fn tick(
             Ok(bytes) => match snapshot(&bytes) {
                 Ok(data) if data.serial >= menu.serial && bytes != menu.last_snapshot => {
                     menu.last_snapshot = bytes;
-                    let changed = menu.characters.len() != data.characters.len();
-                    menu.characters = data.characters;
                     menu.message = data.message;
                     menu.serial = data.serial;
                     menu.pending = data.busy;
@@ -264,14 +287,8 @@ fn tick(
                         }
                     } else if data.phase == "entering" {
                         menu.page = Page::Entering;
-                    } else if data.phase == "characters"
-                        && (matches!(menu.page, Page::Login | Page::Register) || changed)
-                    {
-                        menu.page = Page::Characters;
-                        menu.selected = menu.characters.len().checked_sub(1);
-                        if let Some(i) = menu.selected {
-                            menu.appearance = menu.characters[i].appearance;
-                        }
+                    } else if data.phase == "characters" {
+                        menu.apply_character_list(data.characters);
                     }
                 }
                 Ok(_) => (),
@@ -359,16 +376,21 @@ fn tick(
             }
         }
         Choice::Create if menu.page == Page::Create => {
-            let name = names
-                .single()
-                .map(|n| n.value().to_string())
-                .unwrap_or_default();
-            match theia_core::character_name::CharacterName::parse(name.trim()) {
-                Ok(_) => {
+            let Ok(input) = names.single() else {
+                return;
+            };
+            // Bevy applies queued text edits after Update.
+            if !input.pending_edits.is_empty() || input.pending_paste.is_some() {
+                menu.action = Some(Choice::Create);
+                return;
+            }
+            let draft = input.value().to_string();
+            match theia_core::character_name::CharacterName::parse(draft.trim()) {
+                Ok(name) => {
                     let appearance = menu.appearance;
                     send(
                         &mut menu,
-                        serde_json::json!({"action":"create","name":name,"appearance":appearance}),
+                        serde_json::json!({"action":"create","name":name.as_str(),"appearance":appearance}),
                     )
                 }
                 Err(_) => {

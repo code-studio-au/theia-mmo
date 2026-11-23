@@ -221,10 +221,29 @@ def run(args):
                 assert menu()['character_count'] == 0
                 click('New')
                 wait(lambda: menu()['page'] == 'Create' and menu()['preview_ready'], 45)
-                type_field('Name', 'Heroarden')
+                refocus_check = getattr(args, 'creation_focus', False)
+                type_field('Name', 'Zed' if refocus_check else 'Heroarden')
                 click('Create')
                 wait(lambda: menu()['page'] == 'Characters' and menu()['preview_ready'], 45)
                 saved_name = json.loads((session/'runtime/frontend-state.json').read_text())['characters'][0]['name']
+                if refocus_check:
+                    click('New')
+                    wait(lambda: menu()['page'] == 'Create' and menu()['preview_ready'], 45)
+                    click('Category(Face)')
+                    click('Appearance(1, 2)')
+                    wait(lambda: menu()['appearance']['face'] == 2 and menu()['preview_ready'], 45)
+                    for _ in range(3):
+                        click('Zoom(true)')
+                    type_field('Name', 'steve')
+                    screenshot('name-after-customising.png')
+                    click('Create')
+                    wait(lambda: menu()['page'] == 'Characters' and menu()['character_count'] == 2
+                         and menu()['preview_ready'], 45)
+                    roster = json.loads((session/'runtime/frontend-state.json').read_text())['characters']
+                    assert [row['name'] for row in roster] == ['steve', 'Zed'], roster
+                    assert roster[0]['appearance']['face'] == 2, roster
+                    saved_name = 'steve'
+                    screenshot('new-name-selected.png')
                 if args.switch_account:
                     def roster():
                         return json.loads((session/'runtime/frontend-state.json').read_text())['characters']
@@ -264,6 +283,8 @@ def run(args):
                 result['adapter'] = state()['adapter']
                 result['say_bubbles'] = args.bubbles
                 result['account_switch'] = args.switch_account
+                if refocus_check:
+                    result['creation_focus'] = True
                 screenshot('chat-complete.png')
                 print(json.dumps(result), flush=True)
             finally:
@@ -293,5 +314,7 @@ if __name__ == '__main__':
     parser.add_argument('--bubbles', action='store_true')
     extra = parser.add_mutually_exclusive_group()
     extra.add_argument('--peer-check', action='store_true', help='Two native accounts, remote Say/Area and retirement')
+    extra.add_argument('--creation-focus', action='store_true',
+                       help='Refocus the name field after cosmetic changes and enter with the exact saved name')
     extra.add_argument('--switch-account', action='store_true', help='Sign out and switch accounts twice in one game window')
     run(parser.parse_args())

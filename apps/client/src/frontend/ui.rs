@@ -335,6 +335,7 @@ Create your first adventurer to begin your story.",
             // Shared live model, never shown for an empty account or on Login.
             root.spawn((
                 Screen(Page::Entering),
+                Pickable::IGNORE,
                 Node {
                     position_type: PositionType::Absolute,
                     width: percent(34),

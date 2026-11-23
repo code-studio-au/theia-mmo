@@ -5,6 +5,15 @@ implemented account service, PostgreSQL appearance migration, modular hero
 catalogue and standard Bevy UI. Login, character selection, creation and gameplay
 share one native client/window.
 
+The live preview is noninteractive outside its rotation controls. Clicking the
+name field after customizing or zooming restores text focus. Create waits for
+queued text edits before submitting the validated spelling. When the account
+roster is returned, the newly added character is selected by its ID, including
+when it sorts before existing entries. The native qualification created
+`Zed`, changed the second character's face, zoomed three times, entered
+`steve` after refocusing the field and verified the exact name in the game.
+See `build/character-name-refocus-fixed-no-mana`.
+
 The Login screen restores the painted cloaked adventurer and illustrated Theia
 Online title. Username and masked password are live native inputs. Settings,
 Support and Exit are native controls; no browser login button or browser fallback
