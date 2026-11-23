@@ -1,3 +1,11 @@
+23 November 2026 — P4-12 native composer accepted; P3-03 next:
+Normal-account Say/Area opt-in, focused composition and server-confirmed history
+are implemented and natively qualified; see LOCAL_CHAT.md. Remaining chat work
+includes speech bubbles, broader moderation and cross-area lifecycle. User directs
+return to character customisation now: closely follow the supplied layout without
+duplicate tabs or presets, retaining model drag/foot arrows/zoom and visibly
+disabling unsupported options. This supersedes the compact-layout-only direction.
+
 23 November 2026 — P3-03/P2-14 frontend and sprite refinement:
 Approved v3 sprites now decorate the existing native frontend and game windows.
 Login, roster and compact creation fill each allocated client window. Preview

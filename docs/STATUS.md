@@ -1,3 +1,16 @@
+23 November 2026 — P4-12 / P2-14 native Say/Area composer:
+Explicit --chat-area opt-in now connects normal Classic account admission to the
+qualified chat router/worker. General has Say/Area, editable input and Send;
+Enter submits, Escape/focus loss discard, gameplay keys stay isolated and only
+server-confirmed messages enter history. Long drafts clip without moving controls.
+Fixed world-entry readiness timeout incorrectly counting character-menu time.
+355 client tests (five skips), 38 launcher tests, server CLI refusals, fmt, strict
+Clippy, release builds and focused native account/SQL/encrypted chat checks pass.
+Linux RX 7900 XTX / RADV / Mesa 26.2.7 / Vulkan, zero GPU diagnostics. See
+LOCAL_CHAT.md for exact evidence and limits. Next, as requested: reference-layout
+character customisation with one category navigation, adjacent controls, central
+model and bottom actions; no presets. Speech bubbles remain separate backlog.
+
 23 November 2026 — P3-03/P2-14 approved sprites and responsive game UI:
 Integrated the approved v3 artwork across native login, roster/customisation,
 settings and existing HUD windows. Inputs share 48px sizing with visible typed

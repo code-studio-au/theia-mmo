@@ -40,6 +40,7 @@ def run(args):
                 '--fantasy-ui','/home/steven/Downloads/Synty Models/HUDs','--ui-preferences',str(folder/'interface.json'),
                 '--gameplay-manifest',str(args.package.resolve()/'world/gameplay/gameplay.manifest.json')]
             if resumed: command += ['--test-window', '4/4']
+            if args.chat_check: command += ['--chat-area', '7']
             desktop=None
             with (folder/'launcher.log').open('w') as log:
                 process=subprocess.Popen(command,env=env,stdin=subprocess.PIPE,stdout=log,stderr=log)
@@ -234,8 +235,8 @@ def run(args):
                         desktop.focus(window);desktop.hold_key('q',.4)
                         screenshot('world.png')
                         w,h,scale=state()['window']
-                        desktop.click(window,[60,h/scale-288],scale,1);time.sleep(.4);screenshot('world-chat.png')
-                        desktop.click(window,[158,h/scale-288],scale,1);time.sleep(.4)
+                        desktop.click(window,[60,h/scale-340],scale,1);time.sleep(.4);screenshot('world-chat.png')
+                        desktop.click(window,[158,h/scale-340],scale,1);time.sleep(.4)
                         desktop.key('F10');time.sleep(.7);screenshot('world-settings.png')
                         graphics=next(b for b in state()['interface']['buttons'] if b['action']=='graphics')
                         desktop.click(window,graphics['point'],1,1);time.sleep(.5);screenshot('world-graphics.png')
@@ -250,7 +251,12 @@ def run(args):
                             desktop.key(key);time.sleep(.2)
                         desktop.click(window,[w/scale-35,h/scale-34],scale,1);time.sleep(.5);screenshot('world-menu.png')
                         desktop.key('Escape')
+                        if args.chat_check:
+                            from qualify_chat_composer import qualify
+                            saved_name=next(c['name'] for c in json.loads((session/'runtime/frontend-state.json').read_text())['characters'] if c['name'].casefold()=='heroarden')
+                            chat_result=qualify(desktop,window,state,screenshot,saved_name)
                     results.append(dict(sprite_package='sprites-v3',native_password_login=True,settings_apply_cancel=True,roster_count=8,resumed=resumed,pid=pid,window=window,same_window=True,appearance=expected,playing=not args.frontend_only,layout_check=args.layout_check))
+                    if args.chat_check: results[-1]['chat']=chat_result
                     print(json.dumps(results[-1]),flush=True)
                 finally:
                     if desktop:desktop.close()
@@ -272,4 +278,8 @@ if __name__=='__main__':
     p.add_argument('--players',type=Path,default=Path('build/modular-hero-v1/art-v3'))
     p.add_argument('--layout-check',action='store_true')
     p.add_argument('--frontend-only',action='store_true',help='Qualify menus/preview without entering the world')
-    p.add_argument('--once',action='store_true');run(p.parse_args())
+    p.add_argument('--chat-check',action='store_true',help='Exercise real account Say/Area composer after world entry')
+    p.add_argument('--once',action='store_true')
+    args=p.parse_args()
+    if args.chat_check and args.frontend_only: p.error('--chat-check requires world entry')
+    run(args)

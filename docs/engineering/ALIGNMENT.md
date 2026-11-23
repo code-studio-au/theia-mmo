@@ -1,3 +1,14 @@
+23 November 2026 — P4-12 normal-account native chat accepted:
+Prerequisites: qualified chat router/worker, Classic account admission, native
+frontend and shared Bevy UI. Explicit area profile wraps complete Classic identity
+before party identity on both endpoints and prediction. Bounded composer queues
+validated text to the existing worker; only authenticated inbox facts render.
+No new service, simulation I/O or gameplay authority. Acceptance passes account/
+SQL entry, encrypted Say/Area self-echo, saved names, refusal, typing isolation,
+cancel/focus/held-key handling and stable input layout. See ../LOCAL_CHAT.md.
+Next P3-03/P2-14 slice: reference character layout over existing cosmetic catalogue;
+no presets, duplicated category tabs or invented supported appearance capabilities.
+
 23 November 2026 — P3-03/P2-14 responsive frontend and preview controls:
 Prerequisites: approved v3 art, native account flow, standard Bevy UI and isolated
 preview camera. Cover-cropped backgrounds fill actual window allocations; controls

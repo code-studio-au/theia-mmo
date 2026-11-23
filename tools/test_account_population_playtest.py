@@ -11,6 +11,31 @@ import account_population_playtest as launcher
 
 
 class AccountPopulation(unittest.TestCase):
+    def test_chat_area_opt_in_reaches_account_launch_and_frozen_report(self):
+        for area in [None, 7, 0xffffffff]:
+            with tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                args = self.fixture(root)
+                args.chat_area = area
+                command = launcher.prepare(args, root)
+                report = json.loads((args.output/'launch.json').read_text())
+                self.assertEqual(report['chat_area'], area)
+                if area is None:
+                    self.assertNotIn('--chat-area', command)
+                else:
+                    self.assertEqual(command[command.index('--chat-area')+1], str(area))
+                    self.assertIn('--account-login', command)
+                    self.assertIn('--classic', command)
+
+    def test_invalid_chat_areas_never_launch(self):
+        for area in [0, -1, 0x100000000, True, '7']:
+            with tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                args = self.fixture(root)
+                args.chat_area = area
+                with self.assertRaises(ValueError):
+                    launcher.prepare(args, root)
+
     def fixture(self, root):
         for name in ['package/population.json', 'package/world/authored.world.json',
                      'package/creature.glb', 'players/character.glb']:

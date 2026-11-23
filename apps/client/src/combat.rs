@@ -1,7 +1,7 @@
 //! Small standard Bevy presentation of server combat; never computes damage.
 pub(crate) mod action_bar;
 pub(crate) mod book;
-mod log;
+pub(crate) mod log;
 pub(crate) mod ui;
 use crate::network::Network;
 use bevy::{prelude::*, text::FontSize};

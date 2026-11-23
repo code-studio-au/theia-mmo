@@ -1,3 +1,14 @@
+23 November 2026 — P4-12 chat followed by P3-03/P2-14 character layout:
+The user authorized autonomous implementation, native mouse/display checks and
+local commits. Finish the Say/Area composer slice, then return to character
+creation and closely follow the supplied character-customisation reference.
+This supersedes the earlier compact-layout-only decision below. Remove duplicated
+category navigation, omit presets, preserve the central live model, drag rotation,
+curved foot arrows and zoom, and keep unsupported options disabled. Use the
+approved regenerated art; the rejected early ZIP/contact sheet remain excluded.
+Chat retains explicit server-authored area selection and existing authority/rate
+policy; decorative controls do not imply new channels or public moderation.
+
 23 November 2026 — P3-03/P2-14 full-window frontend refinement:
 Login, character selection and customisation fill each client window, including
 single/two/four-player test allocations. Preserve artwork proportions with centred

@@ -11,6 +11,24 @@ import play
 
 
 class AuthoredPlay(unittest.TestCase):
+    def test_chat_area_cli_retains_explicit_account_profile(self):
+        signature = inspect.signature(play.play)
+        observed = {}
+        with patch.object(play, 'play', lambda *a, **k: observed.update(signature.bind(*a, **k).arguments)):
+            play.main(['--authored-world', 'valley', '--classic', '--account-login', '--chat-area', '7'])
+        self.assertEqual(observed['chat_area'], 7)
+        self.assertTrue(observed['account_login'])
+
+    def test_chat_profile_refuses_invalid_area_or_anonymous_launch_before_children(self):
+        with patch.object(play.subprocess, 'Popen') as child:
+            for extra in [dict(chat_area=0, classic=True, account_login=True),
+                          dict(chat_area=7, classic=False, account_login=True),
+                          dict(chat_area=7, classic=True, account_login=False),
+                          dict(chat_area=True, classic=True, account_login=True)]:
+                with self.assertRaisesRegex(ValueError, 'Chat requires'):
+                    play.play(None, Path('players'), 1, Path('bin'), **extra)
+            child.assert_not_called()
+
     def test_route_cli_reaches_launcher_as_client_only_selection(self):
         signature = inspect.signature(play.play)
         observed = {}

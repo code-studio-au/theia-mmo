@@ -265,3 +265,66 @@ Final full network regression: 747 passing cases, 10 explicit skips across
 cases; the final Classic-worker and extra queue/exhaustion additions are covered
 by the subsequent18-test `worker-v3.log`. No production behavior changed after
 that full run's source except formatting. All checks pass; changes are local.
+
+## Native composer and normal account profile — 23 November 2026
+
+P4-12 / P2-14. The user resumed autonomous implementation and authorized desktop
+input, local commits and continued slices. The current change enables explicit
+`--chat-area <nonzero u32>` selection in the client, server, `tools/play.py` and
+`tools/account_population_playtest.py`. The launcher requires Classic account
+admission. Both endpoints wrap the complete Classic gameplay identity with the
+chat profile before the optional party profile; prediction uses the same ordering.
+This remains one server-authored area for the whole local world. It does not infer
+membership from render chunks or implement cross-zone area changes. Defaults
+without the flag retain their previous compatibility identity.
+
+The General tab now has a standard Bevy editable field, Say/Area switch, Send
+button and private submission status when chat is enabled. Enter opens/submits,
+Escape cancels, and losing focus discards the unsubmitted draft. Gameplay keys
+are consumed while composing, including menu/ability shortcuts; held keys stay
+suppressed until released. Classic movement is also disabled during composition,
+including mouse-button forward movement. Input is bounded to 256 characters;
+the existing stricter 256 UTF-8 byte/plain-line policy validates before queueing,
+without truncation or markup parsing. Multibyte text may therefore hit the byte
+limit before the character limit.
+
+A capacity-one producer queue and local submission latch bridge the asynchronous
+worker view. Only the existing worker assigns sequences. The HUD never appends an
+optimistic message: its at-most-64 messages come from the validated server inbox.
+Refusals and unknown-delivery timeouts are separate from history, and nothing
+resubmits automatically. The scroll area follows the latest line until the player
+scrolls upward; scrolling back to the bottom resumes following. Disabled profiles
+retain the prior unavailable composer. Diagnostics expose counts, channel, saved
+name and text length, never draft/message bodies.
+
+Validation: 355 client tests pass (five existing skips), 38 Python launcher tests,
+five actual server CLI refusal cases, formatting, denied-warning all-target Clippy
+and matched release client/server builds. Evidence is under
+`build/chat-composer-20261123`: `client-tests-entry-fix.log`, `launcher-tests.log`,
+`server-cli.json`, `clippy-bounded-input.log` and `build-bounded-input.log`.
+
+The final focused native run `native-v5/qualification.json` passes normal password
+login/SQL character admission, real encrypted server echo for Say/Area, saved-name
+stamping, rate refusal without optimistic echo, typing/input ownership, held-key
+release, Escape, window-focus loss and long-draft clipping. Captured screenshots
+were inspected. Zero GPU diagnostics on Linux AMD Radeon RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.7 / Vulkan at 1920×1080. This is one normal account against the actual
+local server; earlier multi-peer routing evidence retains its synthetic-lease
+scope. No public moderation, account-wide reconnect flood control, speech bubbles,
+Windows execution or MMO capacity is claimed.
+
+The longer frontend run exposed an authored-scene readiness timer counting time
+spent in character menus before world admission. Its deadline now starts only
+when the scene is required; real preparation remains bounded to 120 seconds.
+The deadline regression and subsequent native entry after extended menu use pass.
+Native v1–v4 are incomplete diagnostic attempts, not final qualification: they
+exposed that timer, a fixture name-case expectation, moving composer controls and
+an X11 focus-loss fixture issue. The final composer reserves status space and
+constrains its editable width, so acknowledgements and long drafts cannot move
+its controls.
+
+User-directed next slice: return to character customisation and closely follow
+the supplied reference layout, with one category navigation (no duplicate tabs),
+a central live character, adjacent appearance controls and bottom actions. Keep
+presets omitted, retain drag rotation/foot arrows/zoom, and disable unsupported
+choices. This supersedes the earlier request to retain only the compact layout.

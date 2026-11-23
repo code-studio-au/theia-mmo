@@ -99,6 +99,7 @@ async fn real_encrypted_cast_after_book_drop_and_bar_swap_keeps_original_server_
         None,
         None,
         None,
+        None,
     )
     .unwrap();
     std::fs::remove_file(path).unwrap();

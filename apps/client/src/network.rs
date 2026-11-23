@@ -14,6 +14,7 @@ use tokio::sync::watch;
 
 #[derive(Resource)]
 pub struct Network {
+    chat_actions: Option<tokio::sync::mpsc::Sender<theia_network::chat_client::Compose>>,
     party_actions: Option<tokio::sync::mpsc::Sender<theia_network::party_client::Intent>>,
     pub(crate) avatar_pose_resets: u64,
     avatar_life_events:
@@ -460,6 +461,21 @@ impl Network {
     pub(crate) fn state(&self) -> State {
         self.state.borrow().clone()
     }
+    pub(crate) fn chat_action(&self, compose: theia_network::chat_client::Compose) -> bool {
+        let state = self.state.borrow();
+        if self.loading_blocked
+            || state.error.is_some()
+            || state
+                .chat
+                .as_ref()
+                .is_none_or(|view| view.pending || view.exhausted)
+        {
+            return false;
+        }
+        self.chat_actions
+            .as_ref()
+            .is_some_and(|actions| actions.try_send(compose).is_ok())
+    }
     pub(crate) fn party_action(&self, intent: theia_network::party_client::Intent) -> bool {
         if self.loading_blocked {
             return false;
@@ -503,6 +519,7 @@ impl Network {
         dodge_profile: Option<std::sync::Arc<theia_network::dodging::Profile>>,
         classic: bool,
         parties: bool,
+        chat_area: Option<theia_core::chat::Area>,
         melee_catalog: Option<std::sync::Arc<theia_core::melee::Catalog>>,
         physical_profile: Option<
             std::sync::Arc<theia_network::simulation::combat::physical::Profile>,
@@ -573,6 +590,8 @@ impl Network {
                 theia_network::dodging::profile_identity(source_world, p)
             })
         };
+        let chat_source = expected_world;
+        let expected_world = crate::chat::world_identity(expected_world, chat_area);
         let party_source = expected_world;
         let expected_world = crate::party::world_identity(expected_world, parties);
         let dodge_input = dodge_profile
@@ -705,6 +724,7 @@ impl Network {
         let (quest_actions, quest_queue) = tokio::sync::mpsc::channel(4);
         let (dialogue_actions, dialogue_queue) = tokio::sync::mpsc::channel(4);
         let (items, item_queue) = tokio::sync::mpsc::channel(1);
+        let (chat_actions, chat_queue) = tokio::sync::mpsc::channel(1);
         let (party_actions, party_queue) = tokio::sync::mpsc::channel(4);
         let (pickups, pickup_queue) = tokio::sync::mpsc::channel(1);
         let loot_enabled = inventory_profile
@@ -746,7 +766,7 @@ impl Network {
                             expected_world,
                             theia_network::renet_runtime::GameplayClient {
                                 party: if parties { Some(theia_network::party_client::Client::new(party_source, party_queue)?) } else { None },
-                                chat: None,
+                                chat: chat_area.map(|area| theia_network::chat_client::Client::new(chat_source, area, chat_queue)).transpose()?,
                                 avatar_life: public_avatar_profile.map(|profile| {
                                     theia_network::renet_runtime::avatar_life::Client {
                                         profile,
@@ -898,6 +918,7 @@ impl Network {
                 }
             })?;
         Ok(Self {
+            chat_actions: chat_area.map(|_| chat_actions),
             party_actions: parties.then_some(party_actions),
             physical_profile: physical_presentation,
             white_profile: white_presentation,
@@ -928,7 +949,7 @@ impl Network {
                     theia_network::prediction_driver::Driver::with_classic_social(
                         source_world,
                         life_enabled,
-                        None,
+                        chat_area,
                         parties,
                     )
                     .with_development_speed(

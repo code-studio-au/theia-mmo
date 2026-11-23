@@ -116,11 +116,12 @@ fn prepare(world: &mut World, scene: &mut Scene) -> Result<(), String> {
         .get_resource::<crate::network::Network>()
         .and_then(|n| n.state().authority_focus())
         .is_none_or(|p| scene.required_at(p));
-    if needed {
-        readiness_deadline(scene.ready(), &mut scene.waiting_since, Instant::now())?;
-    } else {
-        scene.waiting_since = None;
-    }
+    readiness_deadline(
+        scene.ready(),
+        &mut scene.waiting_since,
+        Instant::now(),
+        needed && !crate::frontend::active(world),
+    )?;
     if !server.is_loaded_with_dependencies(asset.id()) {
         scene.cpu_ready = false;
         return Ok(());
@@ -235,8 +236,9 @@ fn readiness_deadline(
     ready: bool,
     waiting_since: &mut Option<Instant>,
     now: Instant,
+    required: bool,
 ) -> Result<(), String> {
-    if ready {
+    if ready || !required {
         *waiting_since = None;
     } else if now
         .duration_since(*waiting_since.get_or_insert(now))
@@ -333,16 +335,23 @@ mod tests {
         let start = Instant::now();
         let at = |seconds| start + Duration::from_secs(seconds);
         let mut waiting = Some(start);
-        assert!(readiness_deadline(false, &mut waiting, at(121)).is_err());
+        assert!(readiness_deadline(false, &mut waiting, at(121), true).is_err());
+
+        // Menus have no admitted render origin. Time spent there must not
+        // consume the world-entry budget, even if CPU assets loaded already.
+        assert!(readiness_deadline(false, &mut waiting, at(600), false).is_ok());
+        assert!(waiting.is_none());
+        assert!(readiness_deadline(false, &mut waiting, at(1200), true).is_ok());
+        assert!(readiness_deadline(false, &mut waiting, at(1321), true).is_err());
 
         // A scene that loaded successfully may need to prepare again hours later.
-        assert!(readiness_deadline(true, &mut waiting, at(122)).is_ok());
-        assert!(readiness_deadline(false, &mut waiting, at(7200)).is_ok());
-        assert!(readiness_deadline(false, &mut waiting, at(7319)).is_ok());
-        assert!(readiness_deadline(true, &mut waiting, at(7320)).is_ok());
-        assert!(readiness_deadline(false, &mut waiting, at(14400)).is_ok());
+        assert!(readiness_deadline(true, &mut waiting, at(1322), true).is_ok());
+        assert!(readiness_deadline(false, &mut waiting, at(7200), true).is_ok());
+        assert!(readiness_deadline(false, &mut waiting, at(7319), true).is_ok());
+        assert!(readiness_deadline(true, &mut waiting, at(7320), true).is_ok());
+        assert!(readiness_deadline(false, &mut waiting, at(14400), true).is_ok());
         // Recovery is still bounded; repeated checks must not extend its deadline.
-        assert!(readiness_deadline(false, &mut waiting, at(14521)).is_err());
+        assert!(readiness_deadline(false, &mut waiting, at(14521), true).is_err());
     }
     #[test]
     #[ignore = "requires THEIA_AUTHORED_WORLD, offscreen Vulkan GPU and optional THEIA_AUTHORED_CAPTURE"]

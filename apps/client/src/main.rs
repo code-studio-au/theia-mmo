@@ -3,6 +3,7 @@ mod asset_preview;
 mod authored_scene;
 mod camera;
 mod capture_ready;
+mod chat;
 mod chunk_scene;
 mod chunk_world;
 #[path = "../../common/classic_controls.rs"]
@@ -184,6 +185,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let classic_controller = classic_controls::Controller::from_args(&mut args, classic)?;
     let parties = party::parse(&mut args, classic)?;
+    let chat_area = chat::parse(&mut args, classic)?;
     let test_controller = test_controller::from_args(&mut args, classic && graybox, &source)?;
     if classic && !prediction {
         return Err("Classic controls require predicted terrain".into());
@@ -1192,8 +1194,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             serde_json::to_string_pretty(&serde_json::json!({
                 "schema": 1,
                 "scope": "Client content configuration only; no network, renderer or saved admission",
-                "world": party::world_identity(theia_network::classic::profile_identity(content_identity), parties),
+                "world": party::world_identity(chat::world_identity(theia_network::classic::profile_identity(content_identity), chat_area), parties),
                 "parties": parties,
+                "chat_area": chat_area.map(theia_core::chat::Area::value),
                 "classic_source": content_identity,
                 "test_controller":test_controller.as_ref().map(|run|run.description()),
                 "inventory_profile": inventory_profile.as_ref().map(|p|p.hash()),
@@ -1243,6 +1246,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             dodge_profile.clone(),
             classic,
             parties,
+            chat_area,
             melee_profile.as_ref().map(|(_, catalog)| catalog.clone()),
             physical_profile.clone(),
             white_profile.clone(),
@@ -1254,6 +1258,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     if membership_profile.is_some() && net.is_none() {
         return Err("Combat membership requires network admission".into());
+    }
+    if chat_area.is_some() && net.is_none() {
+        return Err("Chat requires a connected account client".into());
     }
     if parties && net.is_none() {
         return Err("Parties require a connected account client".into());
@@ -1517,6 +1524,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if parties {
         party::install(&mut app);
     }
+    if chat_area.is_some() {
+        chat::install(&mut app);
+        combat::log::install(&mut app);
+    }
     if let Some(profile) = dodge_profile {
         app.insert_resource(dodge::animation::Policy(profile))
             .init_resource::<dodge::animation::State>()
@@ -1651,6 +1662,7 @@ fn toggle_fullscreen(
 
 #[derive(bevy::ecs::system::SystemParam)]
 struct InputMode<'w> {
+    chat: Option<Res<'w, chat::Ui>>,
     zone_map: Option<Res<'w, zone_map::Ui>>,
     loading: Option<Res<'w, loading::State>>,
     party: Option<Res<'w, party::Ui>>,
@@ -1780,6 +1792,7 @@ fn input(
             .and_then(|n| n.state().correction.map(|c| c.state));
         classic.sync(correction);
         let allowed = !talking
+            && !mode.chat.as_ref().is_some_and(|c| c.typing)
             && mode
                 .network
                 .as_ref()

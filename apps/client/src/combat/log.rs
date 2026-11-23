@@ -231,6 +231,10 @@ fn ordinary(
 struct Panel;
 #[derive(Component)]
 struct Lines;
+#[derive(Component)]
+struct Scrollback {
+    following: bool,
+}
 #[derive(Component, Clone, Copy, Default, PartialEq, Eq)]
 enum Tab {
     Chat,
@@ -239,12 +243,17 @@ enum Tab {
 }
 #[derive(Resource, Default)]
 struct ActiveTab(Tab);
-pub(super) fn install(app: &mut App) {
-    app.init_resource::<History>()
+pub(crate) fn install(app: &mut App) {
+    if app.world().contains_resource::<ActiveTab>() {
+        return;
+    }
+    app.add_message::<bevy::input::mouse::MouseWheel>()
+        .init_resource::<History>()
         .init_resource::<ActiveTab>()
         .add_observer(select_tab)
         .add_systems(Startup, setup)
-        .add_systems(Update, paint.after(super::Presentation));
+        .add_systems(Update, (paint.after(super::Presentation), scroll))
+        .add_systems(Last, follow_tail);
 }
 fn select_tab(
     event: On<bevy::ui_widgets::Activate>,
@@ -255,7 +264,11 @@ fn select_tab(
         active.0 = *tab;
     }
 }
-fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
+fn setup(
+    mut commands: Commands,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
+    chat: Option<Res<crate::chat::Ui>>,
+) {
     if skin.is_none() {
         return;
     }
@@ -269,7 +282,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                 bottom: px(96),
                 width: px(380),
                 max_width: percent(32),
-                height: px(220),
+                height: px(270),
                 padding: UiRect::all(px(12)),
                 flex_direction: FlexDirection::Column,
                 row_gap: px(10),
@@ -329,12 +342,18 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                     }
                 });
             panel
-                .spawn(Node {
-                    flex_grow: 1.,
-                    width: percent(100),
-                    overflow: Overflow::scroll_y(),
-                    ..default()
-                })
+                .spawn((
+                    Scrollback { following: true },
+                    ScrollPosition::default(),
+                    bevy::picking::hover::Hovered::default(),
+                    Node {
+                        flex_grow: 1.,
+                        min_height: px(0),
+                        width: percent(100),
+                        overflow: Overflow::scroll_y(),
+                        ..default()
+                    },
+                ))
                 .with_child((
                     Lines,
                     Pickable::IGNORE,
@@ -344,6 +363,10 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                         ..default()
                     },
                     TextColor(crate::ui_theme::CREAM),
+                    Node {
+                        flex_shrink: 0.,
+                        ..default()
+                    },
                 ));
             panel
                 .spawn(Node {
@@ -352,6 +375,10 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                     ..default()
                 })
                 .with_children(|r| {
+                    if chat.is_some() {
+                        crate::chat::row(r);
+                        return;
+                    }
                     crate::fantasy_ui::kit::icon(r, 23, true);
                     r.spawn((
                         bevy::ui_widgets::TextInput,
@@ -376,15 +403,62 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                 });
         });
 }
+
+fn scroll(
+    mut events: MessageReader<bevy::input::mouse::MouseWheel>,
+    windows: Query<&Window>,
+    mut panes: Query<(
+        &bevy::picking::hover::Hovered,
+        &ComputedNode,
+        &mut ScrollPosition,
+        &mut Scrollback,
+    )>,
+) {
+    let delta: f32 = events
+        .read()
+        .map(|e| {
+            -e.y * if e.unit == bevy::input::mouse::MouseScrollUnit::Line {
+                24.
+            } else {
+                1.
+            }
+        })
+        .sum();
+    if delta == 0. || !windows.single().is_ok_and(|w| w.focused) {
+        return;
+    }
+    for (hover, node, mut position, mut state) in &mut panes {
+        if !hover.0 {
+            continue;
+        }
+        let maximum =
+            ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
+        position.y = (position.y + delta).clamp(0., maximum);
+        state.following = position.y >= maximum - 1.;
+    }
+}
+fn follow_tail(mut panes: Query<(&ComputedNode, &mut ScrollPosition, &Scrollback)>) {
+    for (node, mut position, state) in &mut panes {
+        if state.following {
+            position.y =
+                ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
+        }
+    }
+}
+#[allow(clippy::too_many_arguments)]
 fn paint(
     mut commands: Commands,
     history: Res<History>,
-    active: Res<ActiveTab>,
+    mut active: ResMut<ActiveTab>,
+    chat: Option<Res<crate::chat::Ui>>,
     network: Option<Res<crate::network::Network>>,
     tabs: Query<(Entity, &Tab)>,
     mut panels: Query<&mut Node, With<Panel>>,
     mut labels: Query<&mut Text, With<Lines>>,
 ) {
+    if chat.as_ref().is_some_and(|c| c.typing) {
+        active.0 = Tab::Chat;
+    }
     let state = (active.0 == Tab::Chat)
         .then(|| network.as_ref().map(|n| n.state()))
         .flatten();
@@ -426,7 +500,11 @@ fn paint(
         }
     }
     for mut node in &mut panels {
-        let display = if history.context.is_some() {
+        let display = if history.context.is_some()
+            || network
+                .as_ref()
+                .is_some_and(|n| !n.loading_blocked && n.connected() && n.state().chat.is_some())
+        {
             Display::Flex
         } else {
             Display::None

@@ -25,6 +25,7 @@ async fn main() -> Result<()> {
     let mut predicted = false;
     let mut classic = false;
     let mut parties = false;
+    let mut chat_area = None;
     let mut dodge_profile = None;
     let mut melee_weapons = None;
     let mut physical_definitions = None;
@@ -88,6 +89,11 @@ async fn main() -> Result<()> {
             "--dev-relays" => dev_relays=Some(args.next().ok_or("Missing relay endpoints")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?),
             "--prediction" => predicted=true,
             "--classic" => classic=true,
+            "--chat-area" => {
+                if chat_area.is_some() { return Err("Choose chat area once".into()); }
+                let id = args.next().ok_or("Missing chat area")?.parse()?;
+                chat_area = Some(theia_core::chat::Area::new(id).ok_or("Chat area must be nonzero")?);
+            }
             "--parties" => {
                 if std::mem::replace(&mut parties, true) { return Err("Choose party mode once".into()); }
             }
@@ -364,6 +370,12 @@ async fn main() -> Result<()> {
             return Err("Classic controls require secure Renet admission".into());
         }
         world.enable_classic()?;
+    }
+    if let Some(area) = chat_area {
+        if !account_login || !classic {
+            return Err("Chat requires Classic account admission".into());
+        }
+        world.enable_local_chat(area)?;
     }
     if parties {
         if !account_login || !classic {

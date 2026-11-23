@@ -163,7 +163,7 @@ fn install_input(app: &mut App) {
 }
 // Clear keyboard state while entry owns input. Keys held across entry must be
 // released and pressed again; they cannot open panels, steer or trigger a spell.
-fn shield_keyboard(
+pub(crate) fn shield_keyboard(
     mut state: ResMut<State>,
     frontend: Option<Res<crate::frontend::Menu>>,
     mut keys: ResMut<ButtonInput<KeyCode>>,

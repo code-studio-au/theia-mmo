@@ -1,3 +1,11 @@
+23 November 2026 — P4-12 native chat composition accepted:
+Normal-account explicit Say/Area opt-in and standard Bevy composer pass client,
+launcher, CLI, strict Clippy/build and native account/SQL/encrypted-echo checks.
+See ../LOCAL_CHAT.md for precise scope and evidence. Next user-directed slice is
+P3-03/P2-14 character customisation reference layout, using existing saved cosmetic
+choices, single category navigation, central preview, bottom actions and no presets.
+Keep unavailable controls disabled. Continue local commits; no push.
+
 16 November 2026 — P4-11 shared-marker presentation accepted:
 The Unit marks palette, eight shared overhead symbols and selected-target icons
 now use the private authoritative protocol from cda0608a. Exact selection/revision
