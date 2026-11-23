@@ -13,7 +13,7 @@ def qualify(desktop, window, state, screenshot, saved_name, bubbles=False):
         return state()['chat']
 
     def click(action):
-        item = next(w for w in chat()['widgets'] if w['action'] == action)
+        item = wait(lambda: next((w for w in chat()['widgets'] if w['action'] == action), None))
         desktop.click(window, item['point'], 1, 1)
         time.sleep(.15)
 
@@ -35,6 +35,8 @@ def qualify(desktop, window, state, screenshot, saved_name, bubbles=False):
         return chat()['reply']
 
     wait(lambda: 'submitted' in chat())
+    wait(lambda: {w['action'] for w in chat()['widgets']} == {'channel', 'input'})
+    assert chat()['status'] == ''
     click('input')
     wait(lambda: chat()['typing'])
     desktop.key_state('w', True)
@@ -66,11 +68,13 @@ def qualify(desktop, window, state, screenshot, saved_name, bubbles=False):
         assert chat()['bubbles']['entries'][0]['bytes']==len('hello local')
         screenshot('chat-say-bubble.png')
     click('channel')
+    wait(lambda: chat()['channel_menu'])
+    click('channel_area')
     wait(lambda: chat()['channel'] == 'Area')
-    # Switching channel focuses the field; send with the Send button this time.
+    # Switching channel focuses the field, ready to send with Enter.
     type_text('hello area')
     wait(lambda: chat()['draft_bytes'] == len('hello area'))
-    click('send')
+    desktop.key('Return')
     wait(lambda: chat()['submitted'] == 2 and not chat()['pending'] and chat()['reply'] == 'Accepted')
     assert chat()['history'][-1]['channel'] == 'Area'
     assert chat()['history'][-1]['bytes'] == len('hello area')

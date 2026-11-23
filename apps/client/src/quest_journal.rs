@@ -42,9 +42,7 @@ struct Tracker;
 #[derive(Component)]
 struct ExpandedOnly;
 #[derive(Component)]
-struct JournalToggle;
-#[derive(Component)]
-struct JournalToggleLabel;
+struct JournalHeading;
 #[derive(Component)]
 struct Scroll;
 #[derive(Component)]
@@ -92,6 +90,9 @@ fn setup(
             Scroll,
             GlobalZIndex(10),
             crate::fantasy_ui::Panel::QuestTracker,
+            crate::ui_theme::Panel,
+            crate::ui_theme::fade::Pane::Journal,
+            bevy::input_focus::tab_navigation::TabIndex(0),
             Hovered::default(),
             ScrollPosition::default(),
             Node {
@@ -106,23 +107,11 @@ fn setup(
                 overflow: Overflow::scroll_y(),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.02, 0.04, 0.07, 0.9)),
+            BackgroundColor(crate::ui_theme::PANEL),
         ))
         .with_children(|root| {
             root.spawn((
-                JournalToggle,
-                Button,
-                Hovered::default(),
-                AccessibleLabel::new("Expand or collapse quest journal"),
-                Node {
-                    width: percent(100),
-                    padding: UiRect::axes(px(6), px(5)),
-                    ..default()
-                },
-                BackgroundColor(crate::fantasy_ui::PANEL),
-            ))
-            .with_child((
-                JournalToggleLabel,
+                JournalHeading,
                 Text::new("Objectives   ·   Journal [J]"),
                 TextFont {
                     font_size: FontSize::Px(18.),
@@ -248,14 +237,9 @@ fn journal_keys(keys: Res<ButtonInput<KeyCode>>, windows: Query<&Window>, mut ui
 fn activate(
     event: On<Activate>,
     buttons: Query<&ActionButton>,
-    toggles: Query<(), With<JournalToggle>>,
     mut ui: ResMut<Ui>,
     mut pending: ResMut<Pending>,
 ) {
-    if toggles.contains(event.entity) {
-        ui.expanded = !ui.expanded;
-        return;
-    }
     let Ok(button) = buttons.get(event.entity) else {
         return;
     };
@@ -492,14 +476,14 @@ type LabelFilter = Or<(
     With<ActionLabel>,
     With<Tracker>,
     With<StatusLabel>,
-    With<JournalToggleLabel>,
+    With<JournalHeading>,
 )>;
 type LabelView<'a> = (
     &'a mut Text,
     Option<&'a ActionLabel>,
     Has<Tracker>,
     Has<StatusLabel>,
-    Has<JournalToggleLabel>,
+    Has<JournalHeading>,
 );
 type ButtonView<'a> = (
     &'a ActionButton,
@@ -534,14 +518,14 @@ fn present(
             }
         }
     }
-    for (mut label, quest, tracker, status, toggle) in &mut labels {
+    for (mut label, quest, tracker, status, heading) in &mut labels {
         let next = if tracker {
             if ui.expanded {
                 journal_text(profile, &state)
             } else {
                 journal_content(profile, &state, false)
             }
-        } else if toggle {
+        } else if heading {
             if ui.expanded {
                 "Quest journal   ·   Close [J]"
             } else {

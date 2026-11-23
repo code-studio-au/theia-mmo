@@ -16,6 +16,8 @@ pub(crate) struct ActionButton(pub(crate) usize);
 #[derive(Component)]
 pub(crate) struct ActionSlot(pub(crate) usize);
 #[derive(Component)]
+pub(crate) struct HotbarFrame;
+#[derive(Component)]
 struct ActionBar(u64);
 #[derive(Component)]
 pub(crate) struct ActionLabel(pub(crate) usize);
@@ -525,7 +527,7 @@ fn compact_actions(
     layout: &super::action_bar::Layout,
     skin: &crate::fantasy_ui::Skin,
 ) {
-    use crate::fantasy_ui::{ACTION_WIDTH, GOLD, PANEL, SLOT, SLOTS};
+    use crate::fantasy_ui::{ACTION_END_OUTSET, ACTION_WIDTH, GOLD, PANEL, SLOT, SLOTS, XP_HEIGHT};
     use bevy::picking::Pickable;
     commands
         .spawn((
@@ -533,116 +535,111 @@ fn compact_actions(
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0),
-                bottom: px(20),
+                bottom: px(XP_HEIGHT + 10.),
                 width: percent(100),
+                padding: UiRect::horizontal(px(ACTION_END_OUTSET + 6.)),
                 justify_content: JustifyContent::Center,
                 ..default()
             },
             Pickable::IGNORE,
         ))
         .with_children(|root| {
-            root.spawn((
-                Node {
-                    max_width: percent(96),
-                    width: px(ACTION_WIDTH),
-                    padding: UiRect::new(px(8), px(8), px(6), px(13)),
-                    border: UiRect::all(px(1)),
-                    column_gap: px(4),
-                    row_gap: px(4),
-                    flex_wrap: FlexWrap::Wrap,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                crate::ui_theme::Panel,
-                BackgroundColor(PANEL),
-                BorderColor::all(GOLD),
-            ))
-            .with_children(|bar| {
-                for (right, sprite) in [(false, "hotbar.end-left"), (true, "hotbar.end-right")] {
-                    let mut node = Node {
-                        position_type: PositionType::Absolute,
-                        top: px(8),
-                        width: px(45),
-                        height: px(45),
-                        ..default()
-                    };
-                    if right {
-                        node.right = px(-34);
-                    } else {
-                        node.left = px(-34);
-                    }
-                    bar.spawn((crate::ui_theme::Sprite(sprite), node, Pickable::IGNORE));
-                }
-                for slot in 0..SLOTS {
-                    let node = Node {
-                        width: px(SLOT),
-                        height: px(SLOT),
-                        min_width: px(SLOT),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    };
-                    let Some(ability) = layout.ability(&config.0, slot) else {
-                        bar.spawn((
-                            ActionSlot(slot),
-                            crate::ui_theme::slot::frame(node),
-                            Pickable::IGNORE,
-                        ))
-                        .with_child(slot_key(slot));
-                        continue;
-                    };
-                    let name = ability_name(ability.id().as_str());
+            root.spawn((Node {
+                max_width: percent(100),
+                width: px(ACTION_WIDTH),
+                padding: UiRect::new(px(8), px(8), px(6), px(13)),
+                border: UiRect::all(px(1)),
+                column_gap: px(4),
+                row_gap: px(18),
+                flex_wrap: FlexWrap::Wrap,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },))
+                .with_children(|bar| {
                     bar.spawn((
-                        Button,
-                        ActivateOnPress,
-                        Hovered::default(),
-                        ActionButton(slot),
-                        crate::ui_theme::Style::Slot,
-                        ActionSlot(slot),
-                        AccessibleLabel::new(format!("Cast {name} ({})", key_label(slot))),
-                        crate::ui_theme::slot::frame(node),
-                    ))
-                    .with_children(|button| {
-                        button.spawn((
-                            crate::ui_theme::slot::art(),
-                            skin.icon(ability.id().as_str()),
-                            Pickable::IGNORE,
-                        ));
-                        button.spawn((
-                            CooldownFill(slot),
-                            Node {
-                                position_type: PositionType::Absolute,
-                                left: px(0),
-                                bottom: px(4),
-                                width: percent(0),
-                                height: px(5),
-                                ..default()
-                            },
-                            BackgroundColor(Color::srgb(0.92, 0.68, 0.2)),
-                            Pickable::IGNORE,
-                        ));
-                        button.spawn(slot_key(slot));
-                        button.spawn((
-                            ActionLabel(slot),
-                            text("Waiting for server", 16.),
-                            Pickable::IGNORE,
-                            Node {
-                                position_type: PositionType::Absolute,
-                                bottom: px(54),
-                                left: px(ACTION_WIDTH + 12. - slot as f32 * (SLOT + 4.)),
-                                width: px(280),
-                                padding: UiRect::all(px(10)),
-                                border: UiRect::all(px(1)),
-                                display: Display::None,
-                                ..default()
-                            },
-                            BackgroundColor(PANEL),
-                            BorderColor::all(GOLD),
-                            GlobalZIndex(70),
-                        ));
-                    });
-                }
-            });
+                        HotbarFrame,
+                        crate::ui_theme::Sprite("title.ornate"),
+                        Node {
+                            position_type: PositionType::Absolute,
+                            top: px(-1),
+                            bottom: px(-1),
+                            left: px(-ACTION_END_OUTSET),
+                            right: px(-ACTION_END_OUTSET),
+                            ..default()
+                        },
+                        ZIndex(-1),
+                        Pickable::IGNORE,
+                    ));
+                    for slot in 0..SLOTS {
+                        let node = Node {
+                            width: px(SLOT),
+                            height: px(SLOT),
+                            min_width: px(SLOT),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        };
+                        let Some(ability) = layout.ability(&config.0, slot) else {
+                            bar.spawn((
+                                ActionSlot(slot),
+                                crate::ui_theme::slot::frame(node),
+                                Pickable::IGNORE,
+                            ))
+                            .with_child(slot_key(slot));
+                            continue;
+                        };
+                        let name = ability_name(ability.id().as_str());
+                        bar.spawn((
+                            Button,
+                            ActivateOnPress,
+                            Hovered::default(),
+                            ActionButton(slot),
+                            crate::ui_theme::Style::Slot,
+                            ActionSlot(slot),
+                            AccessibleLabel::new(format!("Cast {name} ({})", key_label(slot))),
+                            crate::ui_theme::slot::frame(node),
+                        ))
+                        .with_children(|button| {
+                            button.spawn((
+                                crate::ui_theme::slot::art(),
+                                skin.icon(ability.id().as_str()),
+                                Pickable::IGNORE,
+                            ));
+                            button.spawn((
+                                CooldownFill(slot),
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(0),
+                                    bottom: px(4),
+                                    width: percent(0),
+                                    height: px(5),
+                                    ..default()
+                                },
+                                BackgroundColor(Color::srgb(0.92, 0.68, 0.2)),
+                                Pickable::IGNORE,
+                            ));
+                            button.spawn(slot_key(slot));
+                            button.spawn((
+                                ActionLabel(slot),
+                                text("Waiting for server", 16.),
+                                Pickable::IGNORE,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    bottom: px(54),
+                                    left: px(ACTION_WIDTH + 12. - slot as f32 * (SLOT + 4.)),
+                                    width: px(280),
+                                    padding: UiRect::all(px(10)),
+                                    border: UiRect::all(px(1)),
+                                    display: Display::None,
+                                    ..default()
+                                },
+                                BackgroundColor(PANEL),
+                                BorderColor::all(GOLD),
+                                GlobalZIndex(70),
+                            ));
+                        });
+                    }
+                });
         });
 }
 fn slot_key(slot: usize) -> impl Bundle {

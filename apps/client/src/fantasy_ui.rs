@@ -159,6 +159,9 @@ pub(crate) const PAPER_MAX_HEIGHT: f32 = 600.;
 pub(crate) const SLOT: f32 = 44.;
 pub(crate) const SLOTS: usize = 12;
 pub(crate) const ACTION_WIDTH: f32 = SLOT * SLOTS as f32 + 4. * (SLOTS - 1) as f32 + 18.;
+pub(crate) const ACTION_END_OUTSET: f32 = 44.;
+pub(crate) const XP_WIDTH: f32 = ACTION_WIDTH + 24.;
+pub(crate) const XP_HEIGHT: f32 = 20.;
 #[derive(Component)]
 pub(crate) struct UnitFrame(pub bool);
 pub(crate) fn hud_shadow() -> bevy::ui::widget::TextShadow {

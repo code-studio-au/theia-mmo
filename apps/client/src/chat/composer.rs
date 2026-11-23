@@ -17,18 +17,28 @@ struct Input;
 #[derive(Component)]
 struct Status;
 #[derive(Component)]
-struct ChannelLabel;
+struct ChannelMenu;
 #[derive(Component)]
 struct Placeholder;
 #[derive(Component, Clone, Copy)]
 enum Action {
     Channel,
-    Send,
+    Choose(Channel),
+}
+impl Action {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Channel => "channel",
+            Self::Choose(Channel::Say) => "channel_say",
+            Self::Choose(Channel::Area) => "channel_area",
+        }
+    }
 }
 #[derive(Resource)]
 pub(crate) struct Ui {
     pub(crate) typing: bool,
     channel: Channel,
+    channel_menu: bool,
     submit: bool,
     queued: Option<(u64, Instant)>,
     status: &'static str,
@@ -39,11 +49,17 @@ impl Default for Ui {
         Self {
             typing: false,
             channel: Channel::Say,
+            channel_menu: false,
             submit: false,
             queued: None,
-            status: "Enter to chat",
+            status: "",
             held: default(),
         }
+    }
+}
+impl Ui {
+    pub(crate) fn active(&self) -> bool {
+        self.typing || self.channel_menu
     }
 }
 pub(crate) fn install(app: &mut App) {
@@ -96,13 +112,25 @@ pub(crate) fn row(parent: &mut ChildSpawnerCommands) {
                         bevy::input_focus::tab_navigation::TabIndex(0),
                         Hovered::default(),
                         crate::ui_theme::Style::Secondary,
-                        AccessibleLabel::new("Switch Say or Area chat"),
+                        AccessibleLabel::new("Choose chat channel"),
                         Node {
-                            padding: UiRect::all(px(7)),
+                            width: px(37),
+                            height: px(37),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
                             ..default()
                         },
                     ))
-                    .with_child((ChannelLabel, label("Say")));
+                    .with_child((
+                        crate::ui_theme::Icon(29),
+                        Node {
+                            width: px(24),
+                            height: px(24),
+                            ..default()
+                        },
+                        Pickable::IGNORE,
+                    ));
+                    channel_menu(row);
                     row.spawn((
                         Input,
                         TextInput,
@@ -136,34 +164,55 @@ pub(crate) fn row(parent: &mut ChildSpawnerCommands) {
                             ..default()
                         },
                     ));
-                    row.spawn((
-                        Action::Send,
-                        Button,
-                        bevy::input_focus::tab_navigation::TabIndex(0),
-                        Hovered::default(),
-                        crate::ui_theme::Style::Secondary,
-                        AccessibleLabel::new("Send chat message"),
-                        Node {
-                            padding: UiRect::all(px(7)),
-                            ..default()
-                        },
-                    ))
-                    .with_child(label("Send"));
                 });
-            // Keep composer controls anchored when acknowledgement text clears.
-            // Two lines also accommodate validation feedback in smaller tiles.
             column.spawn((
                 Status,
-                label("Enter to chat"),
+                label(""),
                 Node {
-                    height: px(34),
-                    min_height: px(34),
+                    display: Display::None,
                     flex_shrink: 0.,
-                    overflow: Overflow::clip(),
                     ..default()
                 },
             ));
         });
+}
+fn channel_menu(row: &mut ChildSpawnerCommands) {
+    row.spawn((
+        ChannelMenu,
+        crate::ui_theme::Panel,
+        GlobalZIndex(72),
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(0),
+            bottom: px(50),
+            width: px(132),
+            padding: UiRect::all(px(7)),
+            row_gap: px(4),
+            flex_direction: FlexDirection::Column,
+            display: Display::None,
+            ..default()
+        },
+        BackgroundColor(crate::ui_theme::PANEL),
+    ))
+    .with_children(|menu| {
+        for (channel, title) in [(Channel::Say, "Say"), (Channel::Area, "Area")] {
+            menu.spawn((
+                Action::Choose(channel),
+                Button,
+                Hovered::default(),
+                bevy::input_focus::tab_navigation::TabIndex(0),
+                crate::ui_theme::Style::Secondary,
+                AccessibleLabel::new(title),
+                Node {
+                    min_height: px(30),
+                    padding: UiRect::horizontal(px(8)),
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+            ))
+            .with_child(label(title));
+        }
+    });
 }
 fn available(network: Option<&crate::network::Network>) -> bool {
     network.is_some_and(|n| !n.loading_blocked && n.connected() && n.state().chat.is_some())
@@ -173,6 +222,7 @@ fn discard(input: &mut EditableText, ui: &mut Ui, focus: &mut InputFocus, entity
     input.pending_paste = None;
     input.editor.set_text("");
     ui.typing = false;
+    ui.channel_menu = false;
     ui.submit = false;
     if focus.get() == Some(entity) {
         focus.clear();
@@ -224,10 +274,23 @@ fn keyboard(
         return;
     };
     let owned = focus.get() == Some(entity);
-    let was_typing = ui.typing || owned;
+    let was_typing = ui.active() || owned;
     let allowed = available(network.as_deref())
         && windows.single().is_ok_and(|w| w.focused)
         && !settings.is_some_and(|s| s.open);
+    if ui.channel_menu {
+        if !allowed || !focus.get().is_some_and(|e| actions.contains(e)) {
+            ui.channel_menu = false;
+        } else if keys.just_pressed(KeyCode::Escape) {
+            ui.channel_menu = false;
+            keys.reset(KeyCode::Escape);
+            if ui.typing {
+                focus.set(entity, FocusCause::Navigated);
+            } else {
+                focus.clear();
+            }
+        }
+    }
     if !allowed || (ui.typing && !owned && !focus.get().is_some_and(|e| actions.contains(e))) {
         discard(&mut input, &mut ui, &mut focus, entity);
     } else if owned {
@@ -241,7 +304,7 @@ fn keyboard(
         focus.set(entity, FocusCause::Navigated);
         ui.typing = true;
     }
-    let typing = was_typing || ui.typing;
+    let typing = was_typing || ui.active();
     shield(&mut keys, &mut ui.held, typing);
 }
 fn activate(
@@ -264,13 +327,20 @@ fn activate(
     };
     match action {
         Action::Channel => {
-            ui.channel = match ui.channel {
-                Channel::Say => Channel::Area,
-                Channel::Area => Channel::Say,
+            ui.channel_menu = !ui.channel_menu;
+            if ui.channel_menu {
+                focus.set(event.entity, FocusCause::Navigated);
+                return;
+            }
+            if !ui.typing {
+                focus.clear();
+                return;
             }
         }
-        Action::Send => ui.submit = true,
+        Action::Choose(channel) if ui.channel_menu => ui.channel = *channel,
+        Action::Choose(_) => return,
     }
+    ui.channel_menu = false;
     focus.set(input, FocusCause::Navigated);
     ui.typing = true;
 }
@@ -314,7 +384,7 @@ fn finish(
         discard(&mut input, &mut ui, &mut focus, entity);
     }
     if ui.status == "Chat unavailable" {
-        ui.status = "Enter to chat";
+        ui.status = "";
     }
     let network = network.unwrap();
     let state = network.state();
@@ -370,31 +440,56 @@ fn paint(
     ui: Res<Ui>,
     network: Option<Res<crate::network::Network>>,
     inputs: Query<(Entity, &EditableText), With<Input>>,
-    actions: Query<Entity, With<Action>>,
-    mut status: Query<&mut Text, With<Status>>,
-    mut channels: Query<&mut Text, (With<ChannelLabel>, Without<Status>)>,
+    actions: Query<(Entity, &Action, Has<crate::ui_theme::Selected>)>,
+    mut status: Query<(&mut Text, &mut Node), With<Status>>,
+    mut menu: Query<&mut Node, (With<ChannelMenu>, Without<Status>)>,
     mut placeholder: Query<&mut Visibility, With<Placeholder>>,
 ) {
     let enabled = available(network.as_deref());
-    for entity in inputs.iter().map(|(e, _)| e).chain(actions.iter()) {
+    for entity in inputs
+        .iter()
+        .map(|(e, _)| e)
+        .chain(actions.iter().map(|(e, _, _)| e))
+    {
         if enabled {
             commands.entity(entity).remove::<InteractionDisabled>();
         } else {
             commands.entity(entity).insert(InteractionDisabled);
         }
     }
-    for mut text in &mut status {
+    for (mut text, mut node) in &mut status {
         if text.0 != ui.status {
             text.0 = ui.status.into();
         }
+        let display = if ui.status.is_empty() {
+            Display::None
+        } else {
+            Display::Flex
+        };
+        if node.display != display {
+            node.display = display;
+        }
     }
-    let title = match ui.channel {
-        Channel::Say => "Say",
-        Channel::Area => "Area",
+    let menu_display = if enabled && ui.channel_menu {
+        Display::Flex
+    } else {
+        Display::None
     };
-    for mut text in &mut channels {
-        if text.0 != title {
-            text.0 = title.into();
+    for mut node in &mut menu {
+        if node.display != menu_display {
+            node.display = menu_display;
+        }
+    }
+    for (entity, action, marked) in &actions {
+        let selected = matches!(action, Action::Choose(channel) if *channel == ui.channel);
+        if selected != marked {
+            if selected {
+                commands.entity(entity).insert(crate::ui_theme::Selected);
+            } else {
+                commands
+                    .entity(entity)
+                    .remove::<crate::ui_theme::Selected>();
+            }
         }
     }
     let empty = inputs
@@ -414,7 +509,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let Some(ui) = world.get_resource::<Ui>() else {
         return serde_json::Value::Null;
     };
-    let mut result = serde_json::json!({"typing":ui.typing,"channel":format!("{:?}",ui.channel),"status":ui.status,"queued":ui.queued.is_some()});
+    let mut result = serde_json::json!({"typing":ui.typing,"channel_menu":ui.channel_menu,"channel":format!("{:?}",ui.channel),"status":ui.status,"queued":ui.queued.is_some()});
     if let Some(view) = world
         .get_resource::<crate::network::Network>()
         .and_then(|n| n.state().chat)
@@ -436,7 +531,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let scale = world.resource::<bevy::ui::UiScale>().0;
     let widgets: Vec<_> = world.query::<(Option<&Input>,Option<&Action>,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world)
         .filter(|(input,action,node,_)| (input.is_some()||action.is_some()) && node.size().min_element()>0.)
-        .map(|(input,action,node,transform)|serde_json::json!({"action":if input.is_some(){"input"}else{match action.unwrap(){Action::Channel=>"channel",Action::Send=>"send"}},"point":(transform.affine().translation * crate::fantasy_ui::window_factor(node, scale)).to_array(),"size":node.size().to_array()})).collect();
+        .map(|(input,action,node,transform)|serde_json::json!({"action":if input.is_some(){"input"}else{action.unwrap().name()},"point":(transform.affine().translation * crate::fantasy_ui::window_factor(node, scale)).to_array(),"size":node.size().to_array()})).collect();
     result["widgets"] = widgets.into();
     result
 }

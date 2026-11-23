@@ -37,10 +37,10 @@ server-tick progress. The violet XP strip shows committed experience
 under the skill bar and gives the exact values on hover.
 
 The circular minimap has a region title, fixed north badge and sapphire player
-arrow. The compass button opens the framed world map when matching cartography
-is available. The M and Escape shortcuts, map projection, landmarks and
-boundary hover still use the same admitted map. Map painting remains a bounded
-presentation operation.
+arrow. Press M or use the Map item in the HUD to open the framed world map when
+matching cartography is available. The Escape shortcut, map projection,
+landmarks and boundary hover still use the same admitted map. Map painting
+remains a bounded presentation operation.
 
 ## Verification
 
@@ -134,3 +134,30 @@ Linux Vulkan llvmpipe (LLVM 21.1.8, Mesa 26.2.7) reported zero diagnostics.
 Strict Clippy, formatting, release build and 364 client tests pass, with five
 existing skips. A cached library link failure was resolved by rebuilding the
 affected dependency; the final checks use the standard release profile.
+
+## HUD layout and idle visibility
+
+P2-14 and P4-12 reuse the approved navy panel sprite on Inventory, Chat and
+Journal. Chat draws at 60% opacity while idle, including its tabs, composer and
+text. Input focus or the open channel chooser restores full opacity. The speech
+bubble opens Say and Area. Enter opens the composer from the world and submits
+while the field has focus. A delivery or validation status occupies space only
+when it has something to show. The journal title is plain text. J and the Journal
+shortcut toggle the expanded view. Hovering or focusing the journal shows the
+full-strength navy background, text and controls.
+
+One continuous framed rail encloses the twelve matte skill slots. Its tapered
+gold ends use the approved ornate plate sprite. The shortcuts wrap into two
+rows when there is insufficient inline space. The XP strip is 614 by 20 logical
+pixels when space permits, with its exact progress centred inside on hover.
+
+The minimap rim uses only the shaded circular frame and the north badge sits
+inside the map. The zone caption uses a compact gold-edged plate above the
+coordinates. Quest markers come from the map data.
+
+The 1280×720 native account fixture confirmed Say and Area submission with
+Enter, channel-menu dismissal, the idle and focused opacity states, J and
+XP hover. See `build/hud-final-native-verified/qualification.json`.
+Offscreen captures passed at 1920×1080, 1720×700 and 1280×720. Linux Vulkan
+llvmpipe (LLVM 21.1.8, Mesa 26.2.7) reported zero diagnostics. Strict Clippy,
+formatting, the release build and 365 client tests passed, with five skips.

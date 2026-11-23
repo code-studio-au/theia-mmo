@@ -12,6 +12,9 @@ pub(crate) fn snapshot(world: &mut bevy::prelude::World) -> serde_json::Value {
     if !snapshot.is_null() {
         snapshot["bubbles"] = bubbles::snapshot(world);
         snapshot["scrollback"] = crate::combat::log::snapshot(world);
+        snapshot["opacity"] =
+            crate::ui_theme::fade::background_opacity(world, crate::ui_theme::fade::Pane::Chat)
+                .into();
     }
     snapshot
 }

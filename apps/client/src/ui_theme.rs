@@ -1,4 +1,5 @@
 //! Shared native Theia controls, decorated with the approved regenerated sprites.
+pub(crate) mod fade;
 pub(crate) mod slot;
 pub(crate) mod sprites;
 use bevy::{
@@ -102,6 +103,7 @@ pub(crate) fn install(app: &mut App) {
             "../../../content/ui/frontend/character-courtyard-v1.png"
         )),
     };
+    fade::install(app);
     app.insert_resource(sprites)
         .insert_resource(art)
         .add_observer(change_vsync)

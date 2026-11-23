@@ -30,6 +30,12 @@ enum Action {
 struct Hud;
 #[derive(Component)]
 struct Pane;
+const HUD_RIGHT: f32 = 14.;
+const HUD_WIDTH: f32 = 8. * 42. + 7. * 5.;
+const HUD_WRAPPED_WIDTH: f32 = 4. * 42. + 3. * 5.;
+const HUD_CLEARANCE: f32 = 8.;
+const HUD_BASE: f32 = 14.;
+const HUD_RAISED: f32 = 108.;
 pub(super) fn install(app: &mut App) {
     app.init_resource::<State>()
         .add_observer(activate)
@@ -77,9 +83,11 @@ fn setup(mut commands: Commands) {
             GlobalZIndex(45),
             Node {
                 position_type: PositionType::Absolute,
-                right: px(14),
-                bottom: px(14),
+                right: px(HUD_RIGHT),
+                bottom: px(HUD_BASE),
                 column_gap: px(5),
+                row_gap: px(5),
+                flex_wrap: FlexWrap::Wrap,
                 display: Display::None,
                 ..default()
             },
@@ -214,6 +222,7 @@ fn present(
     quests: Option<Res<crate::quest_journal::Ui>>,
     map: Option<Res<crate::zone_map::Ui>>,
     settings: Option<Res<super::super::settings::Ui>>,
+    (windows, scale): (Query<&Window>, Res<bevy::ui::UiScale>),
 ) {
     let active = frontend.as_ref().is_none_or(|m| !m.active())
         && network.as_ref().is_some_and(|n| n.state().id.is_some());
@@ -221,7 +230,36 @@ fn present(
     if !active || keys.just_pressed(KeyCode::Escape) {
         state.open = false;
     }
+    let width = windows
+        .single()
+        .map_or(f32::INFINITY, |window| window.width() / scale.0);
+    let available = (width - super::super::ACTION_WIDTH) / 2.
+        - super::super::ACTION_END_OUTSET
+        - HUD_RIGHT
+        - HUD_CLEARANCE;
+    let wrapped = available < HUD_WIDTH;
+    let bottom = if available < HUD_WRAPPED_WIDTH {
+        HUD_RAISED
+    } else {
+        HUD_BASE
+    };
     for (mut node, pane) in &mut nodes {
+        let dock_bottom = px(if pane {
+            bottom + if wrapped { 103. } else { 58. }
+        } else {
+            bottom
+        });
+        if node.bottom != dock_bottom {
+            node.bottom = dock_bottom;
+        }
+        let dock_width = px(if wrapped {
+            HUD_WRAPPED_WIDTH
+        } else {
+            HUD_WIDTH
+        });
+        if !pane && node.width != dock_width {
+            node.width = dock_width;
+        }
         let display = if active && (!pane || state.open) {
             Display::Flex
         } else {

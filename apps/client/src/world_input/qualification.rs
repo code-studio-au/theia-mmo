@@ -308,6 +308,9 @@ fn os_trace(world: &mut World) {
             .unwrap_or_default();
         data["loading"] = crate::loading::snapshot(world);
         data["chat"] = crate::chat::snapshot(world);
+        data["journal_opacity"] =
+            crate::ui_theme::fade::background_opacity(world, crate::ui_theme::fade::Pane::Journal)
+                .into();
         data["ready_chunks"] = serde_json::json!(state.chunk_report);
         data["loot"] = crate::loot::qualification(world);
         data["combat_targets"] = state

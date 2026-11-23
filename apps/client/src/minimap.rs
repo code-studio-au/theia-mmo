@@ -114,7 +114,6 @@ fn setup(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
-    overview: Option<Res<crate::zone_map::Ui>>,
 ) {
     let handle = images.add(image(PIXELS, vec![0; PIXELS * PIXELS * 4]));
     let mut arrow = vec![0; 16 * 16 * 4];
@@ -159,7 +158,7 @@ fn setup(
                 padding: UiRect::all(px(if skin.is_some() { 0. } else { 8. })),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
-                row_gap: px(if skin.is_some() { 8. } else { 4. }),
+                row_gap: px(4),
                 display: Display::None,
                 ..default()
             },
@@ -248,36 +247,11 @@ fn setup(
                         Pickable::IGNORE,
                         ZIndex(2),
                     ));
-                    let centre = Vec2::splat(DISPLAY * 0.5);
-                    for step in 1u8..8 {
-                        let cardinal = step % 2 == 0;
-                        let size = if cardinal { 16. } else { 8. };
-                        let angle = f32::from(step) * std::f32::consts::FRAC_PI_4;
-                        let offset = Rot2::radians(angle) * Vec2::NEG_Y * (centre.x + 2.);
-                        let position = centre + offset - Vec2::splat(size * 0.5);
-                        wrap.spawn((
-                            Node {
-                                position_type: PositionType::Absolute,
-                                left: px(position.x),
-                                top: px(position.y),
-                                width: px(size),
-                                height: px(size),
-                                ..default()
-                            },
-                            crate::ui_theme::Sprite(if cardinal {
-                                "marker.diamond-blue"
-                            } else {
-                                "marker.diamond-gold"
-                            }),
-                            Pickable::IGNORE,
-                            ZIndex(3),
-                        ));
-                    }
                     wrap.spawn((
                         Node {
                             position_type: PositionType::Absolute,
                             left: px(DISPLAY * 0.5 - 11.),
-                            top: px(-5),
+                            top: px(4),
                             width: px(22),
                             height: px(22),
                             border: UiRect::all(px(1)),
@@ -299,72 +273,47 @@ fn setup(
             });
             root.spawn((
                 Node {
-                    width: percent(100),
+                    width: if skin.is_some() {
+                        px(DISPLAY + 8.)
+                    } else {
+                        percent(100)
+                    },
+                    flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    column_gap: px(6),
+                    row_gap: px(1),
                     ..default()
                 },
                 Pickable::IGNORE,
             ))
-            .with_children(|footer| {
-                let mut caption = footer.spawn((
+            .with_children(|lines| {
+                let mut plate = lines.spawn((
                     Node {
-                        flex_direction: FlexDirection::Column,
+                        width: percent(100),
+                        min_height: px(26),
+                        padding: UiRect::axes(px(15), px(4)),
                         align_items: AlignItems::Center,
                         justify_content: JustifyContent::Center,
-                        flex_grow: 1.,
-                        min_width: px(0),
-                        min_height: px(42),
-                        padding: UiRect::axes(px(8), px(4)),
                         ..default()
                     },
                     Pickable::IGNORE,
                 ));
                 if skin.is_some() {
-                    caption.insert(crate::ui_theme::Sprite("panel.compact-navy"));
+                    plate.insert(crate::ui_theme::Plate);
                 }
-                caption.with_children(|lines| {
-                    lines.spawn((
-                        MapCaption::Heading,
-                        label("Local Area", 16.),
-                        TextLayout::justify(Justify::Center),
-                    ));
-                    lines
-                        .spawn((MapCaption::Coordinates, label("", 12.)))
-                        .insert(TextColor(Color::srgb(0.78, 0.84, 0.9)));
-                });
-                if skin.is_some() {
-                    let mut toggle = footer.spawn((
-                        bevy::ui_widgets::Button,
-                        AccessibleLabel::new("Open world map [M]"),
-                        crate::zone_map::Control::Toggle,
-                        crate::ui_theme::Style::Secondary,
-                        Node {
-                            width: px(29),
-                            height: px(25),
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
-                            ..default()
+                plate.with_child((
+                    MapCaption::Heading,
+                    label("Local Area", 15.),
+                    TextLayout::justify(Justify::Center),
+                ));
+                lines
+                    .spawn((MapCaption::Coordinates, label("", 12.)))
+                    .insert((
+                        TextColor(Color::srgb(0.87, 0.91, 0.95)),
+                        TextShadow {
+                            offset: Vec2::ONE,
+                            color: Color::BLACK,
                         },
                     ));
-                    if overview.is_none() {
-                        toggle.insert(bevy::ui::InteractionDisabled);
-                    }
-                    toggle.with_children(|button| {
-                        let mut icon = button.spawn((
-                            crate::ui_theme::Icon(23),
-                            Node {
-                                width: px(17),
-                                height: px(17),
-                                ..default()
-                            },
-                        ));
-                        if overview.is_none() {
-                            icon.insert(crate::ui_theme::Muted);
-                        }
-                    });
-                }
             });
         });
 }
@@ -836,21 +785,28 @@ fn observe(
 mod tests {
     use super::*;
     #[test]
-    fn skinned_minimap_builds_the_compass_and_map_control_without_duplicate_components() {
+    fn skinned_minimap_keeps_navigation_labels_and_undecorated_rim() {
         let mut app = App::new();
         app.init_resource::<Assets<Image>>()
             .insert_resource(crate::fantasy_ui::Skin::fixture())
             .add_systems(Startup, setup);
         app.update();
         let world = app.world_mut();
-        let mut controls = world.query::<(
-            &crate::zone_map::Control,
-            Has<bevy::ui::InteractionDisabled>,
-        )>();
-        assert!(matches!(
-            controls.single(world),
-            Ok((crate::zone_map::Control::Toggle, true))
-        ));
+        assert_eq!(
+            world
+                .query::<&crate::zone_map::Control>()
+                .iter(world)
+                .count(),
+            0
+        );
+        assert!(world.query::<&Text>().iter(world).any(|text| text.0 == "N"));
+        assert_eq!(world.query::<&MapCaption>().iter(world).count(), 2);
+        assert!(
+            !world
+                .query::<&crate::ui_theme::Sprite>()
+                .iter(world)
+                .any(|sprite| sprite.0.starts_with("marker.diamond"))
+        );
     }
 
     #[test]

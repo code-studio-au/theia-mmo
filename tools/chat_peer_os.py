@@ -122,6 +122,10 @@ def qualify(desktop, first_window, first_state, first_capture, session, env, use
                 if chat['channel'] != channel:
                     button = next(w for w in chat['widgets'] if w['action'] == 'channel')
                     desktop.click(target, button['point'], 1, 1)
+                    choice = wait(lambda: next(
+                        (w for w in read()['chat']['widgets']
+                         if w['action'] == 'channel_' + channel.lower()), None))
+                    desktop.click(target, choice['point'], 1, 1)
                     wait(lambda: read()['chat']['channel'] == channel and read()['chat']['typing'])
                 else:
                     desktop.key('Return')

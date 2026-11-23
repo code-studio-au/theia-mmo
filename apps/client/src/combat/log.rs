@@ -276,10 +276,11 @@ fn setup(
         .spawn((
             Panel,
             crate::ui_theme::Panel,
+            crate::ui_theme::fade::Pane::Chat,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(14),
-                bottom: px(96),
+                bottom: px(104),
                 width: px(380),
                 max_width: percent(32),
                 height: px(270),
@@ -289,7 +290,7 @@ fn setup(
                 display: Display::None,
                 ..default()
             },
-            BackgroundColor(crate::fantasy_ui::PANEL),
+            BackgroundColor(crate::ui_theme::PANEL),
             GlobalZIndex(10),
         ))
         .with_children(|panel| {
@@ -405,7 +406,6 @@ fn setup(
                         TextColor(Color::srgb(0.4, 0.4, 0.4)),
                         Pickable::IGNORE,
                     ));
-                    crate::fantasy_ui::kit::disabled_link(r, ">");
                 });
         });
 }
@@ -462,7 +462,7 @@ fn paint(
     mut panels: Query<&mut Node, With<Panel>>,
     mut labels: Query<&mut Text, With<Lines>>,
 ) {
-    if chat.as_ref().is_some_and(|c| c.typing) {
+    if chat.as_ref().is_some_and(|c| c.active()) {
         active.0 = Tab::Chat;
     }
     let state = (active.0 == Tab::Chat)

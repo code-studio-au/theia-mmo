@@ -68,6 +68,8 @@ type BagActions = Or<(
 struct Layout<'w, 's> {
     windows: Query<'w, 's, &'static Window>,
     buttons: Query<'w, 's, ButtonGeometry<'static>>,
+    slots: Query<'w, 's, AnchorGeometry<'static>, With<crate::combat::ui::ActionSlot>>,
+    hotbar_frame: Query<'w, 's, AnchorGeometry<'static>, With<crate::combat::ui::HotbarFrame>>,
     text: Query<'w, 's, &'static bevy::text::TextLayoutInfo>,
     feedback: Query<'w, 's, FeedbackGeometry<'static>>,
     anchor: Query<'w, 's, AnchorGeometry<'static>, With<ProjectedAnchor>>,
@@ -557,6 +559,24 @@ fn capture(
     }
     let feedback = serde_json::json!({"cast":[cast.min.to_array(),cast.max.to_array()],"tooltips":tooltips.iter().map(|r| [r.min.to_array(),r.max.to_array()]).collect::<Vec<_>>()});
     let viewport = Rect::from_corners(Vec2::ZERO, run.size.as_vec2());
+    let (node, transform) = layout
+        .hotbar_frame
+        .single()
+        .expect("One continuous hotbar frame");
+    let hotbar_frame = Rect::from_center_size(transform.affine().translation, node.size());
+    assert!(
+        viewport.contains(hotbar_frame.min) && viewport.contains(hotbar_frame.max),
+        "Hotbar frame must fit the viewport"
+    );
+    let inset = Vec2::new(super::ACTION_END_OUTSET * run.ui_scale - 2., 0.);
+    let usable = Rect::from_corners(hotbar_frame.min + inset, hotbar_frame.max - inset);
+    for (slot, transform) in &layout.slots {
+        let rect = Rect::from_center_size(transform.affine().translation, slot.size());
+        assert!(
+            usable.contains(rect.min) && usable.contains(rect.max),
+            "Slot must fit between the tapered ends"
+        );
+    }
     let centre_x = run.size.x as f32 * 0.5;
     let interface: Vec<_> = layout
         .interface
@@ -631,6 +651,7 @@ fn capture(
         xp_rect.intersect(cast).is_empty(),
         "XP must not obscure casting feedback"
     );
+    assert!((xp_node.size().y - super::XP_HEIGHT * run.ui_scale).abs() <= 1.);
     let xp =
         serde_json::json!({"rect":[xp_rect.min.to_array(),xp_rect.max.to_array()],"fixture":true});
     let (dock_node, dock_transform) = layout.dock.single().expect("Actual backpack toggle widget");
@@ -851,7 +872,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"xp_popup":xp_popup,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"reader":reader,"map_objectives":map_objectives,"interface":interface,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"hotbar_frame":[hotbar_frame.min.to_array(),hotbar_frame.max.to_array()],"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"xp_popup":xp_popup,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"reader":reader,"map_objectives":map_objectives,"interface":interface,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);
