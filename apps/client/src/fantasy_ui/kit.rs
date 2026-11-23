@@ -1121,7 +1121,6 @@ pub(crate) fn graphics(
                                     "Depth of Field",
                                     "Volumetric Clouds",
                                     "Weather Effects",
-                                    "Ray Tracing (High End)",
                                 ] {
                                     unsupported_check(effects, caption);
                                 }
@@ -1131,7 +1130,6 @@ pub(crate) fn graphics(
             bottom
                 .spawn(Node {
                     width: percent(37),
-                    margin: UiRect::top(px(34)),
                     ..column()
                 })
                 .with_children(|performance| {
