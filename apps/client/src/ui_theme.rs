@@ -92,6 +92,8 @@ pub(crate) fn install(app: &mut App) {
     icon!("rotate", 31);
     icon!("zoom-out", 32);
     icon!("zoom-in", 33);
+    icon!("hair", 34);
+    icon!("face", 35);
     let art = Art {
         standalone,
         preview: load(include_bytes!(

@@ -1,4 +1,5 @@
 //! P3-01/P3-03: native title, owned roster and cosmetic creation in one window.
+mod creation;
 mod login;
 mod preview;
 mod ui;
@@ -44,6 +45,7 @@ pub(crate) struct Menu {
     characters: Vec<Character>,
     selected: Option<usize>,
     appearance: Appearance,
+    category: creation::Category,
     yaw: f32,
     zoom: f32,
     message: String,
@@ -89,6 +91,7 @@ pub(crate) fn install(app: &mut App, directory: PathBuf) {
         characters: vec![],
         selected: None,
         appearance: Appearance::default(),
+        category: creation::Category::Hair,
         yaw: 0.,
         zoom: 1.,
         message: "Welcome to Theia Online".into(),
@@ -111,6 +114,7 @@ pub(crate) fn install(app: &mut App, directory: PathBuf) {
             preview::tick,
             ui::anchor,
             ui::sync,
+            creation::sync,
             ui::name_validation,
             ui::rotate_keyboard,
             ui::focus,
@@ -228,6 +232,9 @@ fn tick(
             menu.page = Page::Create;
             menu.message.clear();
             menu.appearance = Appearance::default();
+            menu.category = creation::Category::Hair;
+            menu.yaw = 0.;
+            menu.zoom = 1.;
             if let Ok(mut name) = names.single_mut() {
                 name.clear();
             }
@@ -254,8 +261,21 @@ fn tick(
             menu.appearance = menu.characters[i].appearance;
             Ok(())
         }
-        Choice::Cycle(i, forward) if menu.page == Page::Create => {
-            menu.appearance = menu.appearance.cycle(i, forward);
+        Choice::Category(category) if menu.page == Page::Create => {
+            menu.category = category;
+            Ok(())
+        }
+        Choice::Randomize if menu.page == Page::Create => {
+            menu.appearance = creation::randomized(
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_nanos() as u64,
+            );
+            Ok(())
+        }
+        Choice::Appearance(field, value) if menu.page == Page::Create => {
+            menu.appearance = creation::select(menu.appearance, field, value);
             Ok(())
         }
         Choice::Enter => {
@@ -347,6 +367,7 @@ mod tests {
             characters: vec![],
             selected: None,
             appearance: Appearance::default(),
+            category: creation::Category::Hair,
             yaw: 0.,
             zoom: 1.,
             message: String::new(),

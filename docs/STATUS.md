@@ -1,3 +1,13 @@
+23 November 2026 — P3-03/P2-14 reference character customisation:
+Replaced compact cycling rows with one category rail, persistent body/skin controls,
+central live model, direct option tiles and fixed name/action footer. Actual model
+thumbnails and gold category icons support the approved style. Presets are absent;
+unavailable options remain disabled. 357 client tests (five skips), fmt, strict
+Clippy/build, native fresh/restarted account entry and final single/half/quarter
+visual checks pass. Zero GPU diagnostics on Linux RX 7900 XTX / RADV / Vulkan.
+See CHARACTER_CUSTOMISATION.md for exact evidence and limits. User now requests
+full-screen launch of this build, then Create Account matching the gateway image.
+
 23 November 2026 — P4-12 / P2-14 native Say/Area composer:
 Explicit --chat-area opt-in now connects normal Classic account admission to the
 qualified chat router/worker. General has Say/Area, editable input and Send;

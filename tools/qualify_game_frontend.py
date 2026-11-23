@@ -98,44 +98,45 @@ def run(args):
                             desktop.key({'-':'minus','_':'minus'}.get(char,char.lower()))
                             if shifted:desktop.key_state('Shift_L',False)
                             time.sleep(.025)
-                    assert menu()['theme']['sprite_package']=='sprites-v3'
-                    screenshot('login.png')
-                    layout_matrix('login')
-                    user_rect=menu()['widgets']['Username']; password_rect=menu()['widgets']['Account(Password)']
-                    assert all(abs(user_rect[i]-password_rect[i])<1 for i in [2,3]), 'Login field sizes differ'
-                    for label,filename in [('Account(Settings)','settings-link-hover.png'),('Account(Support)','support-link-hover.png'),('Exit','exit-link-hover.png'),('Account(Reveal)','eye-hover.png')]:
-                        rect=menu()['widgets'][label]
-                        desktop.move(window,[rect[0]+rect[2]/2,rect[1]+rect[3]/2],1);time.sleep(.2)
-                        screenshot(filename)
-                    click('Account(Settings)')
-                    screenshot('settings-open.png')
-                    footer_points={c['name']:c['point'] for c in menu()['theme']['kit']['footer']}
-                    wait(lambda:any(c['name']=='vsync' for c in menu()['theme']['controls']),10)
-                    def control(name):
-                        item=wait(lambda:next((c for c in menu()['theme']['controls']+menu()['theme']['kit']['dropdowns']+menu()['theme']['kit']['footer'] if c['name']==name),None),10)
-                        desktop.move(window,item['point'],1);time.sleep(.1);desktop.owned_focus(pointer=True)
-                        desktop.button(1,True);time.sleep(.08);desktop.button(1,False);time.sleep(.4)
-                    original_vsync=menu()['theme']['vsync']
-                    control('vsync');wait(lambda:menu()['theme']['vsync']!=original_vsync)
-                    desktop.key('space');wait(lambda:menu()['theme']['vsync']==original_vsync)
-                    click('Account(Interface)')
-                    control('scale');desktop.key('Home');wait(lambda:abs(menu()['theme']['scale']-.75)<.001)
-                    desktop.key('End');wait(lambda:abs(menu()['theme']['scale']-1.5)<.001)
-                    desktop.key('Home');time.sleep(.2)
-                    for _ in range(5):desktop.key('Right');time.sleep(.1)
-                    wait(lambda:abs(menu()['theme']['scale']-1.)<.001)
-                    screenshot('settings.png')
-                    for c in menu()['theme']['kit']['footer']:
-                        assert max(abs(a-b) for a,b in zip(c['point'],footer_points[c['name']]))<1, 'Settings footer moved between tabs'
-                    click('Account(Settings)');screenshot('graphics.png')
-                    control('fps-menu');click('Account(Cap(120))');control('apply')
-                    control('fps-menu');click('Account(Cap(30))');control('cancel')
-                    wait(lambda:menu()['theme']['frame_cap']==120)
-                    click('Account(Settings)');control('fps-menu');click('Account(Cap(60))')
-                    control('view-menu');click('Account(Distance(Nearby))');control('ok')
-                    click('Account(Support)');screenshot('support.png');click('Account(Close)')
+                    if not args.creation_only:
+                        assert menu()['theme']['sprite_package']=='sprites-v3'
+                        screenshot('login.png')
+                        layout_matrix('login')
+                        user_rect=menu()['widgets']['Username']; password_rect=menu()['widgets']['Account(Password)']
+                        assert all(abs(user_rect[i]-password_rect[i])<1 for i in [2,3]), 'Login field sizes differ'
+                        for label,filename in [('Account(Settings)','settings-link-hover.png'),('Account(Support)','support-link-hover.png'),('Exit','exit-link-hover.png'),('Account(Reveal)','eye-hover.png')]:
+                            rect=menu()['widgets'][label]
+                            desktop.move(window,[rect[0]+rect[2]/2,rect[1]+rect[3]/2],1);time.sleep(.2)
+                            screenshot(filename)
+                        click('Account(Settings)')
+                        screenshot('settings-open.png')
+                        footer_points={c['name']:c['point'] for c in menu()['theme']['kit']['footer']}
+                        wait(lambda:any(c['name']=='vsync' for c in menu()['theme']['controls']),10)
+                        def control(name):
+                            item=wait(lambda:next((c for c in menu()['theme']['controls']+menu()['theme']['kit']['dropdowns']+menu()['theme']['kit']['footer'] if c['name']==name),None),10)
+                            desktop.move(window,item['point'],1);time.sleep(.1);desktop.owned_focus(pointer=True)
+                            desktop.button(1,True);time.sleep(.08);desktop.button(1,False);time.sleep(.4)
+                        original_vsync=menu()['theme']['vsync']
+                        control('vsync');wait(lambda:menu()['theme']['vsync']!=original_vsync)
+                        desktop.key('space');wait(lambda:menu()['theme']['vsync']==original_vsync)
+                        click('Account(Interface)')
+                        control('scale');desktop.key('Home');wait(lambda:abs(menu()['theme']['scale']-.75)<.001)
+                        desktop.key('End');wait(lambda:abs(menu()['theme']['scale']-1.5)<.001)
+                        desktop.key('Home');time.sleep(.2)
+                        for _ in range(5):desktop.key('Right');time.sleep(.1)
+                        wait(lambda:abs(menu()['theme']['scale']-1.)<.001)
+                        screenshot('settings.png')
+                        for c in menu()['theme']['kit']['footer']:
+                            assert max(abs(a-b) for a,b in zip(c['point'],footer_points[c['name']]))<1, 'Settings footer moved between tabs'
+                        click('Account(Settings)');screenshot('graphics.png')
+                        control('fps-menu');click('Account(Cap(120))');control('apply')
+                        control('fps-menu');click('Account(Cap(30))');control('cancel')
+                        wait(lambda:menu()['theme']['frame_cap']==120)
+                        click('Account(Settings)');control('fps-menu');click('Account(Cap(60))')
+                        control('view-menu');click('Account(Distance(Nearby))');control('ok')
+                        click('Account(Support)');screenshot('support.png');click('Account(Close)')
                     type_field('Username',identity.users[0][0])
-                    if not resumed:
+                    if not resumed and not args.creation_only:
                         type_field('Account(Password)','incorrect-password')
                         click('Account(Reveal)');screenshot('password-eye.png');click('Account(Reveal)')
                         click('Login')
@@ -162,7 +163,18 @@ def run(args):
                     screenshot('characters.png')
                     if not resumed:
                         click('New');wait(lambda:menu()['page']=='Create')
-                        for i in [0,1,2,4,5,6]:click(f'Cycle({i}, true)')
+                        click('Randomize')
+                        click('Appearance(0, 0)')
+                        click('Category(Features)');click('Appearance(3, 2)')
+                        assert menu()['appearance']['facial_hair']==2
+                        click('Appearance(0, 1)')
+                        assert menu()['appearance']['facial_hair']==0
+                        assert 'Appearance(3, 2)' in menu()['disabled']
+                        click('Appearance(4, 1)')
+                        click('Category(Face)');click('Appearance(1, 1)');screenshot('face-options.png')
+                        click('Category(Outfit)');click('Appearance(6, 1)');screenshot('outfit-options.png')
+                        click('Category(Hair)');click('Appearance(2, 2)');click('Appearance(5, 1)')
+                        assert menu()['appearance']==dict(schema=1,body=1,face=1,hair=2,facial_hair=0,skin=1,hair_colour=1,outfit=1)
                         rect=menu()['widgets']['Rotate'];point=[rect[0]+rect[2]/2,rect[1]+rect[3]/2]
                         initial_yaw=menu()['preview_yaw']
                         desktop.move(window,point,1);desktop.owned_focus(pointer=True);desktop.button(1,True)
@@ -255,7 +267,7 @@ def run(args):
                             from qualify_chat_composer import qualify
                             saved_name=next(c['name'] for c in json.loads((session/'runtime/frontend-state.json').read_text())['characters'] if c['name'].casefold()=='heroarden')
                             chat_result=qualify(desktop,window,state,screenshot,saved_name)
-                    results.append(dict(sprite_package='sprites-v3',native_password_login=True,settings_apply_cancel=True,roster_count=8,resumed=resumed,pid=pid,window=window,same_window=True,appearance=expected,playing=not args.frontend_only,layout_check=args.layout_check))
+                    results.append(dict(sprite_package='sprites-v3',native_password_login=True,settings_apply_cancel=not args.creation_only,roster_count=8,resumed=resumed,pid=pid,window=window,same_window=True,appearance=expected,playing=not args.frontend_only,layout_check=args.layout_check))
                     if args.chat_check: results[-1]['chat']=chat_result
                     print(json.dumps(results[-1]),flush=True)
                 finally:
@@ -280,6 +292,7 @@ if __name__=='__main__':
     p.add_argument('--frontend-only',action='store_true',help='Qualify menus/preview without entering the world')
     p.add_argument('--chat-check',action='store_true',help='Exercise real account Say/Area composer after world entry')
     p.add_argument('--once',action='store_true')
+    p.add_argument('--creation-only',action='store_true',help='Skip unchanged login/settings matrix for focused creation refinement')
     args=p.parse_args()
     if args.chat_check and args.frontend_only: p.error('--chat-check requires world entry')
     run(args)

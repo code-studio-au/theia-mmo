@@ -1,3 +1,13 @@
+23 November 2026 — P3-03/P2-14 character reference layout accepted:
+Existing seven-field appearance and authoritative account persistence remain the
+source of truth. Standard Bevy UI selects catalogue values directly; an optional
+private offline-rendered thumbnail atlas adds no live render cameras. One category
+rail, persistent body/skin controls, bounded preview drag and fixed actions follow
+the user reference without presets. Invalid combinations remain impossible.
+357 client tests, strict checks and native account/restart/layout checks pass; see
+../CHARACTER_CUSTOMISATION.md. Next: P3-01 native registration through the account
+provider, with masked bounded inputs and no browser login or invented legal text.
+
 23 November 2026 — P4-12 normal-account native chat accepted:
 Prerequisites: qualified chat router/worker, Classic account admission, native
 frontend and shared Bevy UI. Explicit area profile wraps complete Classic identity

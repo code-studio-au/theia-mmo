@@ -1,3 +1,10 @@
+23 November 2026 — P3-03/P2-14 character reference layout accepted:
+Single category navigation, body/skin panel, actual cosmetic thumbnails, live
+central preview and fixed footer replace the compact form. No presets or duplicate
+tabs. See CHARACTER_CUSTOMISATION.md for qualification. Next user-directed slice:
+P3-01/P2-14 native account registration matching the supplied gateway reference;
+retain disabled presentation where terms/privacy/news services are unavailable.
+
 23 November 2026 — P4-12 native composer accepted; P3-03 next:
 Normal-account Say/Area opt-in, focused composition and server-confirmed history
 are implemented and natively qualified; see LOCAL_CHAT.md. Remaining chat work

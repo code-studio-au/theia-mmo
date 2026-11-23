@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "processing": "Authorized deterministic export: alpha below 8 removed; crop to alpha >=32 bounds plus 3px; Lanczos fit to 224px inside a transparent 256px canvas. Original artwork preserved.",
+  "assets": [
+    {
+      "name": "hair",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Create ONE standalone Hair category icon for the Theia fantasy MMORPG character-customisation sidebar. The attached image is a STYLE reference only: match its warm polished gold, amber bevels, dark brown defining edge and restrained cream highlights. Subject: a simple recognizable swept hairstyle silhouette, with a few clear curved strands and a ponytail; only the hair shape, no head or face. Bold clean silhouette readable at 32 pixels. Flat front-facing UI glyph, centered, symmetric visual weight, consistent 10 percent transparent margin. Genuine RGBA transparency outside the glyph and through open gaps. No square, frame, button, disc, background, label, glow, swirl, shadow outside the shape, extra objects or watermark. Gold material should match the supplied user/account icon.",
+      "reference": "content/ui/sprites-v3/sprites/icon/character.png",
+      "generated_id": "exec-46ccc154-0bae-497b-9164-35fc8846c936.png",
+      "source_sha256": "eccb93accc65a327385c7fa60d8a617139ae77415f95b57bfb5f6357da4e6a56",
+      "file": "hair.png",
+      "export_sha256": "740afbb672fd2e06b3c0f355f8245d5ffeb7cbea61017910e1babe55855f6d86"
+    },
+    {
+      "name": "face",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Create ONE standalone Face category icon for the Theia fantasy MMORPG character-customisation sidebar. The attached user/account image is a STYLE reference only: match its warm polished gold, amber bevels, dark brown defining edge and restrained cream highlights. Subject: a simple front-facing oval human face silhouette with clear small eyes, nose and mouth incised into the gold; no hair, neck, shoulders or torso. Neutral adult face, neither a theatre mask nor emoji. Bold simple outline readable at 32 pixels. Flat front-facing UI glyph, centered, equal visual weight to the reference account icon, consistent 10 percent transparent margin. Genuine RGBA transparency outside glyph. No square, frame, button, disc, background, labels, glow, swirl, external shadow, extra objects or watermark.",
+      "reference": "content/ui/sprites-v3/sprites/icon/character.png",
+      "generated_id": "exec-b370825d-d293-4ade-9ffd-82912baed0de.png",
+      "source_sha256": "0c44e9fdeb49acb2e21b9ba46bde00af3e00cf6d7d60081ee4189190801218be",
+      "file": "face.png",
+      "export_sha256": "ddf0ab30ef8939865f861b325eb371db668531fd3a08549e97c87ef1a8d772cb"
+    }
+  ]
+}

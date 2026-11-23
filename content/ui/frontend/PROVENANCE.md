@@ -175,3 +175,11 @@ low-alpha haze, preserves the opaque painted silhouette and downsamples with
 transparent margins. Exact final prompts, source/export hashes and processing
 are recorded in that directory's `preview-generation.json`. The rejected zoom-in
 with a pale backing is not used.
+
+23 November character categories: built-in image_gen produced standalone
+`../theme/standalone-v3/hair.png` and `face.png`, matched to the approved account
+icon. Other category symbols reuse approved v3 sprites. Exact prompts and
+source/export hashes are in `category-generation.json`; authorized deterministic
+cleanup removes alpha below 8 and fits the glyph into a transparent 256px canvas.
+Actual cosmetic thumbnails are rendered from private player meshes by
+`tools/render_character_thumbnails.py` and stay under build beside those assets.

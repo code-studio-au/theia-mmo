@@ -31,10 +31,10 @@ not been implemented by this UI slice.
 
 Character selection has its own courtyard background, right-side account roster,
 selected live hero, rotation controls and Enter World. An empty account has no
-hero and cannot enter. New Character opens the existing seven-option creation
-form. Back discards the draft; Save durably creates a server-owned character.
-The roster and creation panels are capped at 460 and 480 logical pixels
-respectively, with 24-pixel horizontal name padding. Selected rows use an amber
+hero and cannot enter. New Character opens the native cosmetic creation screen;
+its latest reference-layout pass is described in CHARACTER_CUSTOMISATION.md. Back
+discards the draft; Create durably creates a server-owned character. The roster
+panel is capped at 460 logical pixels, with 24-pixel horizontal name padding. Selected rows use an amber
 fill and the regenerated chamfered frame instead of an external square focus outline.
 The roster supports eight saved entries and selects actual returned records;
 no invented classes, levels or locations appear. Enter World obtains the existing
@@ -44,7 +44,8 @@ show the default preview character.
 
 The preview uses standard Bevy glTF, skeletal animation, materials and a transparent
 render-to-texture viewport on an isolated render layer. Its ground origin is
-anchored at 40% of courtyard width and 81% of height across window/UI scale changes.
+anchored at 40% of courtyard width and 81% of height on the roster. Creation
+centres its ground point between the appearance panels, above the fixed footer.
 Once a preview has settled, unrelated shader compilation cannot hide it. Page and
 appearance changes still reset readiness. Gameplay camera queries exclude the
 preview. Waiting at Login does not consume the gameplay loading timeout.
@@ -71,10 +72,10 @@ Party management, invitation, member frames and member menus use the shared gold
 trim. The illustrated reference portraits/levels/roles are not invented game data.
 The lower-left HUD has General and Combat Log tabs. Combat history remains bounded
 and server-sourced; tab switching preserves it and disconnect clears it. The General
-tab can present an admitted inbox, but normal client chat activation/composition
-remains pending: current playtests explicitly show that chat is not enabled.
-Trade/Guild/Party tabs and the message composer/send control are disabled until
-client chat integration is available; no fake messages or voice functionality are added.
+tab supports real Say/Area composition when explicitly admitted with --chat-area.
+Enter opens/submits; Escape and focus loss discard drafts. Only server-confirmed
+messages enter history; refusals remain separate. Trade/Guild/Party tabs remain
+disabled. See LOCAL_CHAT.md for qualification and remaining chat scope.
 
 Both front-end and game settings expose the same accessible VSync checkbox and
 interface-size slider (75–150%). They update existing persisted preferences, not a

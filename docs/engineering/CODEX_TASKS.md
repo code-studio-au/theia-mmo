@@ -1,3 +1,10 @@
+23 November 2026 — P3-03/P2-14 reference creation layout accepted:
+Actual cosmetic choice tiles, private model thumbnails, one category navigation,
+central preview and fixed name/actions pass 357 client tests (five skips), strict
+checks, native account persistence/restart and final allocation-size visual checks.
+See ../CHARACTER_CUSTOMISATION.md. User requests full-screen launch now and next
+P3-01/P2-14 Create Account from the supplied reference. Continue locally; no push.
+
 23 November 2026 — P4-12 native chat composition accepted:
 Normal-account explicit Say/Area opt-in and standard Bevy composer pass client,
 launcher, CLI, strict Clippy/build and native account/SQL/encrypted-echo checks.

@@ -4,7 +4,7 @@ use bevy::{
     picking::hover::Hovered,
     text::EditableText,
     ui::widget::ViewportNode,
-    ui_widgets::{Activate, ActivateOnPress, Button, TextInput},
+    ui_widgets::{Activate, ActivateOnPress, Button},
 };
 pub(super) const GOLD: Color = crate::ui_theme::GOLD;
 pub(super) const CREAM: Color = crate::ui_theme::CREAM;
@@ -15,7 +15,9 @@ pub(super) enum Choice {
     New,
     Back,
     Select(usize),
-    Cycle(usize, bool),
+    Category(creation::Category),
+    Appearance(usize, u8),
+    Randomize,
     Rotate,
     Zoom(bool),
     ResetView,
@@ -71,6 +73,7 @@ pub(super) enum Placement {
     Status,
     Links,
     EmptyRoster,
+    Creation,
 }
 #[derive(Component)]
 pub(super) struct SelectedName;
@@ -119,7 +122,17 @@ pub(super) fn column() -> Node {
         ..default()
     }
 }
-pub(super) fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+pub(super) fn setup(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    server: Option<Res<AssetServer>>,
+    references: Option<Res<crate::reference_scene::Config>>,
+) {
+    let atlas = references
+        .as_ref()
+        .filter(|r| r.directory.join("appearance-thumbnails.png").is_file())
+        .and(server.as_ref())
+        .map(|s| s.load("players://appearance-thumbnails.png"));
     let preview = preview::setup(&mut commands, &mut images);
     let camera = commands
         .spawn((
@@ -313,83 +326,7 @@ Create your first adventurer to begin your story.",
                         crate::fantasy_ui::kit::disabled(body, "Delete Character");
                     });
             });
-            root.spawn((
-                Screen(Page::Create),
-                crate::ui_theme::Panel,
-                Node {
-                    width: px(960),
-                    max_width: percent(96),
-                    padding: UiRect::all(px(20)),
-                    border: UiRect::all(px(1)),
-                    ..column()
-                },
-                BackgroundColor(crate::ui_theme::PANEL),
-                BorderColor::all(GOLD),
-            ))
-            .with_children(|body| {
-                crate::fantasy_ui::kit::section(body, "Create Character");
-                for (i, label) in theia_core::appearance::LABELS.iter().enumerate() {
-                    body.spawn(Node {
-                        column_gap: px(8),
-                        align_items: AlignItems::Center,
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        button(row, Choice::Cycle(i, false), "‹");
-                        row.spawn((
-                            Label(i),
-                            text(label, 17.),
-                            Node {
-                                flex_grow: 1.,
-                                justify_content: JustifyContent::Center,
-                                ..default()
-                            },
-                        ));
-                        button(row, Choice::Cycle(i, true), "›");
-                    });
-                }
-                body.spawn(Node {
-                    column_gap: px(6),
-                    align_items: AlignItems::Center,
-                    ..default()
-                })
-                .with_children(|row| {
-                    row.spawn(text("Character name", 16.));
-                    row.spawn((NameError, text("", 14.)))
-                        .insert(TextColor(Color::srgb(1., 0.42, 0.32)));
-                });
-                body.spawn((
-                    NameInput,
-                    TabIndex(0),
-                    TextInput,
-                    EditableText {
-                        max_characters: Some(20),
-                        allow_newlines: false,
-                        ..default()
-                    },
-                    crate::ui_theme::input_box(false, false),
-                    BorderColor::all(GOLD),
-                    BackgroundColor(Color::srgba(0., 0., 0., 0.7)),
-                    TextFont {
-                        font_size: bevy::text::FontSize::Px(19.),
-                        ..default()
-                    },
-                    TextColor(CREAM),
-                    TextLayout::no_wrap(),
-                    bevy::text::TextCursorStyle {
-                        color: CREAM,
-                        ..default()
-                    },
-                ));
-                body.spawn(Node {
-                    column_gap: px(12),
-                    ..default()
-                })
-                .with_children(|row| {
-                    button(row, Choice::Back, "Back");
-                    button(row, Choice::Create, "Save Character");
-                });
-            });
+            creation::setup(root, atlas);
             // Shared live model, never shown for an empty account or on Login.
             root.spawn((
                 Screen(Page::Entering),
@@ -601,6 +538,7 @@ pub(super) fn sync(
         .map(|w| Vec2::new(w.width(), w.height()) / scale.0)
         .unwrap_or(Vec2::new(1600., 900.));
     let art = size;
+    let stage = creation::stage(size, menu.page);
     for (entity, mut node, screen, row, root, title, roster, placement) in &mut nodes {
         if roster {
             node.row_gap = px(if size.y < 800. { 4. } else { 10. });
@@ -609,6 +547,8 @@ pub(super) fn sync(
             let login = menu.page == Page::Login;
             let height = if login {
                 art.y * 0.34
+            } else if menu.page == Page::Create {
+                (art.y * 0.12).clamp(64., 120.)
             } else {
                 (art.y * 0.17).clamp(80., 160.)
             };
@@ -672,6 +612,13 @@ pub(super) fn sync(
                         Display::None
                     };
                 }
+                Placement::Creation => {
+                    node.position_type = PositionType::Absolute;
+                    node.left = px(0);
+                    node.top = px(0);
+                    node.width = percent(100);
+                    node.height = percent(100);
+                }
                 Placement::EmptyRoster => {
                     node.display = if menu.characters.is_empty() {
                         Display::Flex
@@ -680,21 +627,21 @@ pub(super) fn sync(
                     };
                 }
                 Placement::DragArea => {
-                    node.width = px(art.x * 0.28);
-                    node.height = px(art.y * 0.70);
-                    node.left = px(art.x * 0.26);
+                    node.width = px(stage.z);
+                    node.height = px(stage.y - art.y * 0.11);
+                    node.left = px(stage.x - stage.z * 0.5);
                     node.top = px(art.y * 0.11);
                 }
                 Placement::Feet => {
                     node.width = px(300.);
                     node.height = px(56.);
-                    node.left = px(art.x * 0.40 - 150.);
-                    node.top = px(art.y * 0.81 - 48.);
+                    node.left = px(stage.x - 150.);
+                    node.top = px(stage.y - 48.);
                 }
                 Placement::Entry | Placement::Rotation => {
                     node.position_type = PositionType::Absolute;
                     node.width = px(300.);
-                    node.left = px(art.x * 0.40 - 150.);
+                    node.left = px(stage.x - 150.);
                     node.top = px(art.y
                         * if matches!(placement, Placement::Entry) {
                             0.83
@@ -702,7 +649,11 @@ pub(super) fn sync(
                             0.94
                         });
                     if matches!(placement, Placement::Rotation) {
-                        node.top = px((art.y * 0.94).min(art.y - 60.));
+                        node.top = px(if menu.page == Page::Create {
+                            stage.y + 12.
+                        } else {
+                            (art.y * 0.94).min(art.y - 60.)
+                        });
                     }
                     node.row_gap = px(4.);
                 }
@@ -715,8 +666,19 @@ pub(super) fn sync(
                     } else {
                         art.x * 0.71
                     });
+                    if matches!(placement, Placement::Links) {
+                        node.display = if menu.page == Page::Create {
+                            Display::None
+                        } else {
+                            Display::Flex
+                        };
+                    }
                     if matches!(placement, Placement::Status) {
                         node.display = if login { Display::None } else { Display::Flex };
+                        if menu.page == Page::Create {
+                            node.left = px(art.x * 0.30);
+                            node.bottom = px(110.);
+                        }
                         node.max_width = if login {
                             percent(85)
                         } else {
@@ -796,7 +758,7 @@ pub(super) fn sync(
                 || matches!(choice, Choice::Zoom(true)) && menu.zoom >= 1.3
                 || matches!(choice, Choice::Zoom(false)) && menu.zoom <= 0.75
                 || matches!(choice, Choice::New) && menu.characters.len() >= 8
-                || matches!(choice, Choice::Cycle(3, _)) && menu.appearance.values()[0] == 1);
+                || matches!(choice, Choice::Appearance(3, _)) && menu.appearance.values()[0] == 1);
         if disabled {
             commands
                 .entity(entity)
@@ -806,7 +768,10 @@ pub(super) fn sync(
                 .entity(entity)
                 .remove::<bevy::ui::InteractionDisabled>();
         }
-        if matches!(choice,Choice::Select(i) if Some(*i)==menu.selected) {
+        let selected = matches!(choice,Choice::Select(i) if Some(*i)==menu.selected)
+            || matches!(choice, Choice::Category(c) if *c == menu.category)
+            || matches!(choice, Choice::Appearance(field, value) if menu.appearance.values().get(*field) == Some(value));
+        if selected {
             commands.entity(entity).insert(crate::ui_theme::Selected);
         } else {
             commands
@@ -817,7 +782,7 @@ pub(super) fn sync(
             Color::NONE
         } else if disabled {
             Color::srgb(0.08, 0.08, 0.08)
-        } else if matches!(choice,Choice::Select(i) if Some(*i)==menu.selected) {
+        } else if selected {
             Color::srgb(0.30, 0.19, 0.07)
         } else {
             Color::srgba(0.025, 0.11, 0.15, 0.96)
@@ -958,7 +923,8 @@ pub(super) fn anchor(world: &mut World) {
     let Ok(window) = window else {
         return;
     };
-    let position = ledge_anchor(window, size, feet.truncate());
+    let stage = creation::stage(window, world.resource::<Menu>().page);
+    let position = stage.truncate() - size * Vec2::new((feet.x + 1.) * 0.5, (1. - feet.y) * 0.5);
     let zoom = world.resource::<Menu>().zoom;
     let art = window;
     for (screen, mut node) in world
@@ -972,10 +938,6 @@ pub(super) fn anchor(world: &mut World) {
             node.width = px(art.x * 0.34 * zoom);
         }
     }
-}
-fn ledge_anchor(window: Vec2, viewport: Vec2, feet_ndc: Vec2) -> Vec2 {
-    window * Vec2::new(0.40, 0.81)
-        - viewport * Vec2::new((feet_ndc.x + 1.) * 0.5, (1. - feet_ndc.y) * 0.5)
 }
 
 fn background_size(window: Vec2) -> Vec2 {
