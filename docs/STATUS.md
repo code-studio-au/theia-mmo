@@ -1,3 +1,21 @@
+23 November 2026 — P2-14/P6-09 shutdown handoff:
+The current local client release is 0.1.0.11 in `build/launcher-client-exports`.
+Graphics is the approved style for subsequent Settings pages. Interface, Support
+and Developer now share its title and section styling. The display controls
+support Windowed, Borderless and Fullscreen with Keep Changes and timed revert.
+The work is committed locally through `246145d0`. The last client suite passed
+370 tests with five existing ignores. Private Linux X11 verified Interface and
+Support at 1600×900 and 1280×720. The offscreen Interface preview has a known
+combat-feedback overlap assertion, reproduced on 0.1.0.10. See [Game frontend](GAME_FRONTEND.md).
+
+The local Millhaven server and login service need to be started again after
+shutdown. The `build/headless-p9xrexyf/open-launcher` helper is tied to its
+live service processes. Prepare a fresh handoff when restarting and reuse the
+existing local playtest database and provider if the same characters are needed.
+Launcher 0.1.3 checks the local release library on startup and offers **Update
+Game** for newer client releases. Its separate launcher update flow is documented
+in [Game launcher](GAME_LAUNCHER.md). Server deployment is on hold.
+
 23 November 2026 — P6-09/P2-14/P3-01 launcher reference refinement:
 The Linux launcher now uses the harbour artwork, highlighted gold frame,
 compact window controls and themed install/update states. The 0.1.0.1 news
