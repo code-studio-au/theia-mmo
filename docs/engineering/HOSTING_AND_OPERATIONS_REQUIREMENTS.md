@@ -94,3 +94,9 @@ Status: agreed direction, 24 November 2026. Detailed implementation design pendi
 3. Phase 3: authorized admin can inspect health, manage lifecycle and releases, correlate errors and triage reports; unauthorized users cannot perform privileged operations.
 - Review exact ports, database engine, authentication, release manifest schema, asset packaging, AWS CDK state/bootstrap, DNS/TLS, IAM, idle policy, telemetry schema/retention, budget and dashboard technology during detailed phase design.
 - No AWS resources or workflows are provisioned by this requirements document. Implement only after phase-specific review.
+
+## AWS CDK bootstrap preflight (pending user verification)
+- Before provisioning, inspect the existing AWS account in ap-southeast-2 (Sydney) for the CloudFormation CDKToolkit stack and its S3 deployment asset bucket (standard name begins cdk-hnb659fds-assets).
+- Verify account/region, bootstrap version, qualifier, deployment roles, trust and permissions, bucket security/encryption and compatibility with Theia's CDK synthesizer. Reuse the existing bootstrap resources if suitable; otherwise bootstrap only after review and approval. Do not modify or delete shared Projex assets.
+- Generate deployment assets from version-controlled source as needed; retain assets referenced by deployed stacks or required for rollback. Review safe garbage collection of obsolete assets, including versions, without disrupting other projects. No separate Terraform state bucket or game-data bucket is required.
+- Status: not yet verified in AWS; check when creator returns to computer.
