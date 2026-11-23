@@ -356,7 +356,11 @@ fn highlight(parent: &mut ChildSpawnerCommands, top: Val, width: f32, diamond: b
     }
 }
 
-pub(crate) fn graphics_heading(parent: &mut ChildSpawnerCommands) {
+pub(crate) fn settings_page_heading(
+    parent: &mut ChildSpawnerCommands,
+    caption: &str,
+    icon_index: usize,
+) {
     parent
         .spawn((
             Node {
@@ -375,9 +379,9 @@ pub(crate) fn graphics_heading(parent: &mut ChildSpawnerCommands) {
             ])),
         ))
         .with_children(|row| {
-            icon(row, 9, false);
+            icon(row, icon_index, false);
             row.spawn((
-                text("Graphics", 27.),
+                text(caption, 27.),
                 TextColor(ui_theme::CREAM),
                 title_shadow(),
             ));
@@ -385,7 +389,7 @@ pub(crate) fn graphics_heading(parent: &mut ChildSpawnerCommands) {
         });
 }
 
-fn graphics_section(parent: &mut ChildSpawnerCommands, caption: &str) {
+pub(crate) fn settings_section(parent: &mut ChildSpawnerCommands, caption: &str) {
     parent
         .spawn((
             Node {
@@ -416,6 +420,33 @@ fn graphics_section(parent: &mut ChildSpawnerCommands, caption: &str) {
                 title_shadow(),
             ));
         });
+}
+
+pub(crate) fn settings_columns(
+    parent: &mut ChildSpawnerCommands,
+    left: impl FnOnce(&mut ChildSpawnerCommands),
+    right: impl FnOnce(&mut ChildSpawnerCommands),
+) {
+    parent
+        .spawn(Node {
+            width: percent(100),
+            column_gap: px(20),
+            ..default()
+        })
+        .with_children(|row| {
+            let column = Node {
+                flex_grow: 1.,
+                flex_basis: px(0),
+                ..column()
+            };
+            row.spawn(column.clone()).with_children(left);
+            row.spawn(column).with_children(right);
+        });
+}
+
+pub(crate) fn settings_scale(parent: &mut ChildSpawnerCommands) {
+    settings_section(parent, "UI Scale");
+    ui_theme::scale_control(parent);
 }
 
 pub(crate) fn settings_sidebar() -> impl Bundle {
@@ -1028,7 +1059,7 @@ pub(crate) fn graphics(
                 ..column()
             })
             .with_children(|display| {
-                graphics_section(display, "Display");
+                settings_section(display, "Display");
                 display_row(display, "Display Mode", Value::DisplayMode);
                 display_row(display, "Resolution", Value::Resolution);
                 for (label, value) in [("Refresh Rate", "Desktop"), ("Monitor", "Primary")] {
@@ -1047,7 +1078,7 @@ pub(crate) fn graphics(
                 ..column()
             })
             .with_children(|preset| {
-                graphics_section(preset, "Graphics Preset");
+                settings_section(preset, "Graphics Preset");
                 preset
                     .spawn(Node {
                         column_gap: px(8),
@@ -1094,7 +1125,7 @@ pub(crate) fn graphics(
                     ..column()
                 })
                 .with_children(|advanced| {
-                    graphics_section(advanced, "Advanced Graphics");
+                    settings_section(advanced, "Advanced Graphics");
                     advanced
                         .spawn(Node {
                             column_gap: px(18),
@@ -1148,7 +1179,7 @@ pub(crate) fn graphics(
                     ..column()
                 })
                 .with_children(|performance| {
-                    graphics_section(performance, "Performance");
+                    settings_section(performance, "Performance");
                     ui_theme::vsync_control(performance);
                     dropdown(
                         performance,

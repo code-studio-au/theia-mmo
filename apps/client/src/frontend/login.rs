@@ -344,7 +344,7 @@ pub(super) fn links(root: &mut ChildSpawnerCommands) {
                 });
                 crate::fantasy_ui::kit::settings_content(body).with_children(|content| {
                     content.spawn((SettingsBody,ui::column())).with_children(|settings| {
-                        crate::fantasy_ui::kit::graphics_heading(settings);
+                        crate::fantasy_ui::kit::settings_page_heading(settings, "Graphics", 9);
                         crate::fantasy_ui::kit::graphics(settings,|row,value| match value {
                             crate::fantasy_ui::kit::Value::FrameCap => {for value in crate::fantasy_ui::graphics::CAPS {
                                 crate::fantasy_ui::kit::dropdown_option(row, ui::Choice::Account(Action::Cap(value)), &crate::fantasy_ui::graphics::FrameCap(value).label())
@@ -358,13 +358,19 @@ pub(super) fn links(root: &mut ChildSpawnerCommands) {
                         });
                     });
                     content.spawn((InterfaceBody,ui::column())).with_children(|settings| {
-                        crate::ui_theme::heading(settings,"Interface");
-                        crate::ui_theme::scale_control(settings);
+                        crate::fantasy_ui::kit::settings_page_heading(settings, "Interface", 13);
+                        settings.spawn(Node { width: percent(48), ..ui::column() })
+                            .with_children(crate::fantasy_ui::kit::settings_scale);
                     });
                     content.spawn((SupportBody,ui::column())).with_children(|support| {
-                        crate::ui_theme::heading(support,"Support");
-                        support.spawn(ui::text("Check your username and password, then try Log In again. Passwords are case-sensitive.",17.));
-                        support.spawn(ui::text("For account access or password recovery, contact your game administrator. This preview uses local development accounts.",16.));
+                        crate::fantasy_ui::kit::settings_page_heading(support, "Support", 24);
+                        crate::fantasy_ui::kit::settings_columns(support, |signin| {
+                            crate::fantasy_ui::kit::settings_section(signin, "Sign-in");
+                            signin.spawn(crate::ui_theme::control_label("Check your username and password, then try Log In again. Passwords are case-sensitive."));
+                        }, |account| {
+                            crate::fantasy_ui::kit::settings_section(account, "Account Help");
+                            account.spawn(crate::ui_theme::control_label("For account access or password recovery, contact your game administrator. This preview uses local development accounts."));
+                        });
                     });
                 });
             });

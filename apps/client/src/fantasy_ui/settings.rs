@@ -151,69 +151,243 @@ fn setup(mut commands: Commands) {
             },
         ))
         .with_child(label("Interface [F10]"));
-    commands.spawn((Pane, super::kit::SettingsSurface, GlobalZIndex(90), Node {position_type:PositionType::Absolute,left:px(0),top:px(0),width:percent(100),height:percent(100),align_items:AlignItems::Center,justify_content:JustifyContent::Center,display:Display::None,..default()}))
-    .with_children(|overlay| {overlay.spawn((crate::ui_theme::Panel,super::kit::SettingsFrame,UiTransform::default(),Node{width:px(1440),height:px(940),flex_shrink:0.,padding:UiRect::all(px(24)),..super::kit::column()},BackgroundColor(super::PANEL))).with_children(|pane| {
-        super::kit::settings_panel_gradient(pane);
-        super::kit::settings_header(pane, Control::Close);
-        pane.spawn(super::kit::settings_body()).with_children(|body| {
-            body.spawn(super::kit::settings_sidebar()).with_children(|nav| {
-                for (index,title,action) in [(9,"Graphics",Some(Control::Graphics)),(10,"Audio",None),(2,"Gameplay",None),(11,"Controls",None),(12,"Key Bindings",None),(13,"Interface",Some(Control::Back)),(14,"HUD",None),(15,"Social",None),(16,"Accessibility",None),(17,"Language",None),(7,"Developer",Some(Control::Developer))] {
-                    super::kit::settings_tab(nav, title, index, action);
-                }
-                super::kit::settings_watermark(nav);
-            });
-            super::kit::settings_content(body).with_children(|content| {
-            content.spawn((Section::Interface, Node { flex_direction: FlexDirection::Column, row_gap: px(6), ..default() }, Pickable::IGNORE)).with_children(|section| {
-            section.spawn((Text::new("Interface"),TextFont{font_size:FontSize::Px(22.),..default()},TextColor(super::GOLD),Pickable::IGNORE));
-            section.spawn((Summary,label("")));
-            section.spawn((PersistenceHint,label("")));
-            crate::ui_theme::scale_control(section);
-            section.spawn((Node{flex_wrap:FlexWrap::Wrap,column_gap:px(8),row_gap:px(8),..default()},Pickable::IGNORE)).with_children(|row| {
-                for value in [75,100,125,150] {row.spawn(button(Control::Scale(value),&format!("UI size {value}%"))).with_child(label(&format!("{value}%")));}
-            });
-            section.spawn(label("The interface fits smaller windows and restores your preferred size when space returns."));
-            section.spawn(button(Control::Abilities,"Open ability book [P]")).with_child(label("Abilities [P]"));
-            section.spawn(button(Control::Debug,"Toggle debug statistics")).with_child(label("Show / hide debug statistics"));
-            });
+    commands
+        .spawn((
+            Pane,
+            super::kit::SettingsSurface,
+            GlobalZIndex(90),
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(0),
+                top: px(0),
+                width: percent(100),
+                height: percent(100),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::None,
+                ..default()
+            },
+        ))
+        .with_children(|overlay| {
+            overlay
+                .spawn((
+                    crate::ui_theme::Panel,
+                    super::kit::SettingsFrame,
+                    UiTransform::default(),
+                    Node {
+                        width: px(1440),
+                        height: px(940),
+                        flex_shrink: 0.,
+                        padding: UiRect::all(px(24)),
+                        ..super::kit::column()
+                    },
+                    BackgroundColor(super::PANEL),
+                ))
+                .with_children(|pane| {
+                    super::kit::settings_panel_gradient(pane);
+                    super::kit::settings_header(pane, Control::Close);
+                    pane.spawn(super::kit::settings_body())
+                        .with_children(|body| {
+                            body.spawn(super::kit::settings_sidebar())
+                                .with_children(|nav| {
+                                    for (index, title, action) in [
+                                        (9, "Graphics", Some(Control::Graphics)),
+                                        (10, "Audio", None),
+                                        (2, "Gameplay", None),
+                                        (11, "Controls", None),
+                                        (12, "Key Bindings", None),
+                                        (13, "Interface", Some(Control::Back)),
+                                        (14, "HUD", None),
+                                        (15, "Social", None),
+                                        (16, "Accessibility", None),
+                                        (17, "Language", None),
+                                        (7, "Developer", Some(Control::Developer)),
+                                    ] {
+                                        super::kit::settings_tab(nav, title, index, action);
+                                    }
+                                    super::kit::settings_watermark(nav);
+                                });
+                            super::kit::settings_content(body).with_children(|content| {
+                                content
+                                    .spawn((
+                                        Section::Interface,
+                                        super::kit::column(),
+                                        Pickable::IGNORE,
+                                    ))
+                                    .with_children(interface_content);
 
-                content.spawn((Section::Graphics,Node{display:Display::None,..super::kit::column()})).with_children(|section| {
-                    super::kit::graphics_heading(section);
-                    super::kit::graphics(section,|row,value|match value {
-                        super::kit::Value::FrameCap => {for value in super::graphics::CAPS {
-                            super::kit::dropdown_option(row, Control::FrameCap(value), &super::graphics::FrameCap(value).label());
-                        }},
-                        super::kit::Value::Distance => {for value in ViewDistance::ALL {
-                            super::kit::dropdown_option(row, Control::ViewDistance(value), value.label())
-                                .insert(AccessibleLabel::new(format!("View distance: {}", value.label())));
-                        }},
-                        _ => {}
-                    });
+                                content
+                                    .spawn((
+                                        Section::Graphics,
+                                        Node {
+                                            display: Display::None,
+                                            ..super::kit::column()
+                                        },
+                                    ))
+                                    .with_children(|section| {
+                                        super::kit::settings_page_heading(section, "Graphics", 9);
+                                        super::kit::graphics(section, |row, value| match value {
+                                            super::kit::Value::FrameCap => {
+                                                for value in super::graphics::CAPS {
+                                                    super::kit::dropdown_option(
+                                                        row,
+                                                        Control::FrameCap(value),
+                                                        &super::graphics::FrameCap(value).label(),
+                                                    );
+                                                }
+                                            }
+                                            super::kit::Value::Distance => {
+                                                for value in ViewDistance::ALL {
+                                                    super::kit::dropdown_option(
+                                                        row,
+                                                        Control::ViewDistance(value),
+                                                        value.label(),
+                                                    )
+                                                    .insert(AccessibleLabel::new(format!(
+                                                        "View distance: {}",
+                                                        value.label()
+                                                    )));
+                                                }
+                                            }
+                                            _ => {}
+                                        });
+                                    });
+                                content
+                                    .spawn((
+                                        Section::Developer,
+                                        Node {
+                                            display: Display::None,
+                                            ..super::kit::column()
+                                        },
+                                        Pickable::IGNORE,
+                                    ))
+                                    .with_children(developer_content);
+                            });
+                        });
+                    pane.spawn(super::kit::settings_footer())
+                        .with_children(|footer| {
+                            super::kit::defaults(footer);
+                            footer
+                                .spawn(Node {
+                                    column_gap: px(12),
+                                    ..default()
+                                })
+                                .with_children(|r| {
+                                    let apply = super::kit::footer_button(
+                                        r,
+                                        super::kit::Footer::Apply,
+                                        "Apply",
+                                    );
+                                    r.commands()
+                                        .entity(apply)
+                                        .insert(crate::ui_theme::Style::Gold);
+                                    let ok = super::kit::footer_button(
+                                        r,
+                                        super::kit::Footer::Accept,
+                                        "OK",
+                                    );
+                                    r.commands()
+                                        .entity(ok)
+                                        .insert((Control::Close, crate::ui_theme::Style::Primary));
+                                    let cancel = super::kit::footer_button(
+                                        r,
+                                        super::kit::Footer::Cancel,
+                                        "Cancel",
+                                    );
+                                    r.commands().entity(cancel).insert(Control::Close);
+                                });
+                        });
                 });
-            content.spawn((Section::Developer, Node {display:Display::None,flex_direction:FlexDirection::Column,row_gap:px(8),..default()},Pickable::IGNORE)).with_children(|section| {
-                section.spawn((Text::new("Developer"),TextFont{font_size:FontSize::Px(22.),..default()},TextColor(super::GOLD),Pickable::IGNORE));
-                section.spawn((super::developer::Summary,label("Running speed")));
-                section.spawn((Node{flex_wrap:FlexWrap::Wrap,column_gap:px(8),row_gap:px(8),..default()},Pickable::IGNORE)).with_children(|row| {
-                    for value in theia_network::development::SPEEDS {
-                        row.spawn(button(Control::DeveloperSpeed(value),&format!("Running speed: {value}x"))).with_child(label(&format!("{value}×")));
+        });
+}
+
+fn interface_content(parent: &mut ChildSpawnerCommands) {
+    use super::kit;
+    use crate::ui_theme::control_label;
+
+    kit::settings_page_heading(parent, "Interface", 13);
+    kit::settings_columns(
+        parent,
+        |scale| {
+            kit::settings_scale(scale);
+            scale.spawn((Summary, control_label("")));
+            scale.spawn((PersistenceHint, control_label("")));
+            scale
+                .spawn(Node {
+                    flex_wrap: FlexWrap::Wrap,
+                    column_gap: px(8),
+                    row_gap: px(8),
+                    ..default()
+                })
+                .with_children(|row| {
+                    for value in [75, 100, 125, 150] {
+                        row.spawn(button(Control::Scale(value), &format!("UI size {value}%")))
+                            .with_child(control_label(&format!("{value}%")));
                     }
                 });
-                section.spawn(label("Changes running speed for this local walkthrough. Walking and jumping stay unchanged. Resets to 1× for a new session."));
-                section.spawn(button(Control::DeveloperReset,"Reset position to starting point")).with_child(label("Reset position"));
-                section.spawn((super::developer::ResetSummary,label("Returns to your starting point and clears falling movement.")));
-                section.spawn(button(Control::Exit,"Exit game")).with_child(label("Exit game"));
-                section.spawn(button(Control::Back,"Back from developer settings")).with_child(label("Back [Esc]"));
-            });
-            });
-        });
-        pane.spawn(super::kit::settings_footer()).with_children(|footer| {
-            super::kit::defaults(footer);
-            footer.spawn(Node{column_gap:px(12),..default()}).with_children(|r| {
-                let apply=super::kit::footer_button(r,super::kit::Footer::Apply,"Apply");r.commands().entity(apply).insert(crate::ui_theme::Style::Gold);
-                let ok=super::kit::footer_button(r,super::kit::Footer::Accept,"OK");r.commands().entity(ok).insert((Control::Close,crate::ui_theme::Style::Primary));
-                let cancel=super::kit::footer_button(r,super::kit::Footer::Cancel,"Cancel");r.commands().entity(cancel).insert(Control::Close);
-            });
-        });
-    });});
+            scale.spawn(control_label("The interface fits smaller windows and restores your preferred size when space returns."));
+        },
+        |tools| {
+            kit::settings_section(tools, "Interface Tools");
+            tools
+                .spawn(button(Control::Abilities, "Open ability book [P]"))
+                .with_child(control_label("Abilities [P]"));
+            tools
+                .spawn(button(Control::Debug, "Toggle debug statistics"))
+                .with_child(control_label("Show / hide debug statistics"));
+        },
+    );
+}
+
+fn developer_content(parent: &mut ChildSpawnerCommands) {
+    use super::kit;
+    use crate::ui_theme::control_label;
+
+    kit::settings_page_heading(parent, "Developer", 7);
+    kit::settings_columns(
+        parent,
+        |movement| {
+            kit::settings_section(movement, "Movement");
+            movement.spawn((super::developer::Summary, control_label("Running speed")));
+            movement
+                .spawn(Node {
+                    flex_wrap: FlexWrap::Wrap,
+                    column_gap: px(8),
+                    row_gap: px(8),
+                    ..default()
+                })
+                .with_children(|row| {
+                    for value in theia_network::development::SPEEDS {
+                        row.spawn(button(
+                            Control::DeveloperSpeed(value),
+                            &format!("Running speed: {value}x"),
+                        ))
+                        .with_child(control_label(&format!("{value}×")));
+                    }
+                });
+            movement.spawn(control_label("Changes running speed for this local walkthrough. Walking and jumping stay unchanged. Resets to 1× for a new session."));
+        },
+        |session| {
+            kit::settings_section(session, "Position");
+            session
+                .spawn(button(
+                    Control::DeveloperReset,
+                    "Reset position to starting point",
+                ))
+                .with_child(control_label("Reset position"));
+            session.spawn((
+                super::developer::ResetSummary,
+                control_label("Returns to your starting point and clears falling movement."),
+            ));
+            kit::settings_section(session, "Session");
+            session
+                .spawn(button(Control::Exit, "Exit game"))
+                .with_child(control_label("Exit game"));
+            session
+                .spawn(button(Control::Back, "Back from developer settings"))
+                .with_child(control_label("Back [Esc]"));
+        },
+    );
 }
 
 pub(crate) fn keyboard(

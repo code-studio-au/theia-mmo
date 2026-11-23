@@ -148,6 +148,16 @@ verified all four dropdowns and the header close action at 1600×900 and
 1280×720 with Vulkan llvmpipe and zero GPU diagnostics. See
 `build/graphics-reference-native-xwt92vw2/qualification.json`.
 
+Client 0.1.0.11 shares the Graphics page heading, gradient section bars and
+control typography with Interface, Support and Developer. Interface groups
+its scaling controls and tools, Support groups sign-in and account guidance,
+and Developer groups movement, position and session controls. Private Linux
+X11 checks exercised Interface scaling and Support at 1600×900 and 1280×720
+with Vulkan llvmpipe and zero GPU diagnostics. The 370 client tests passed,
+including Developer actions, with five existing ignores. The offscreen
+Interface preview's combat-feedback overlap assertion also fails on 0.1.0.10.
+See `build/settings-pages-native-ekpv67tl/qualification.json`.
+
 `tools/play.py --game-front-end` requires one Classic account client and excludes
 explicit character IDs and the old editor picker. Account population launch uses
 it by default; `--editor-character-picker` retains the earlier route. Public bounded
