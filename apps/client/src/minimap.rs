@@ -10,7 +10,8 @@ use bevy::{
     picking::Pickable,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
-    text::FontSize,
+    text::{FontSize, Justify},
+    ui::{BorderGradient, ColorStop, LinearGradient},
 };
 pub(crate) use projection::heading_rotation;
 use projection::{DISPLAY, HeightTile, PIXELS, View};
@@ -65,7 +66,7 @@ struct Guide(usize);
 #[derive(Component)]
 enum MapCaption {
     Heading,
-    Extent,
+    Coordinates,
 }
 
 pub(crate) fn install(app: &mut App) {
@@ -104,6 +105,10 @@ fn label(value: &str, size: f32) -> impl Bundle {
         TextColor(Color::WHITE),
         Pickable::IGNORE,
     )
+}
+fn coordinates(position: GlobalPosition) -> String {
+    let [x, _, z] = position.metres();
+    format!("X {} · Z {} m", x.round() as i64, z.round() as i64)
 }
 fn setup(
     mut commands: Commands,
@@ -154,7 +159,7 @@ fn setup(
                 padding: UiRect::all(px(if skin.is_some() { 0. } else { 8. })),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
-                row_gap: px(if skin.is_some() { 9. } else { 4. }),
+                row_gap: px(if skin.is_some() { 8. } else { 4. }),
                 display: Display::None,
                 ..default()
             },
@@ -165,23 +170,6 @@ fn setup(
             }),
         ))
         .with_children(|root| {
-            if skin.is_some() {
-                root.spawn((
-                    crate::ui_theme::Plate,
-                    Node {
-                        width: percent(100),
-                        height: px(30),
-                        padding: UiRect::axes(px(24), px(0)),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                ))
-                .with_child((MapCaption::Heading, label("Local Area", 16.)));
-            } else {
-                root.spawn((MapCaption::Heading, label("N  |  Local area", 14.)));
-            }
             let mut body = root.spawn((
                 Node {
                     width: px(DISPLAY),
@@ -239,34 +227,48 @@ fn setup(
                     wrap.spawn((
                         Node {
                             position_type: PositionType::Absolute,
-                            left: px(-2),
-                            top: px(-2),
-                            width: px(DISPLAY + 4.),
-                            height: px(DISPLAY + 4.),
+                            left: px(-4),
+                            top: px(-4),
+                            width: px(DISPLAY + 8.),
+                            height: px(DISPLAY + 8.),
                             border_radius: BorderRadius::MAX,
-                            border: UiRect::all(px(2)),
+                            border: UiRect::all(px(4)),
                             ..default()
                         },
-                        BorderColor::all(crate::fantasy_ui::GOLD),
-                        Outline::new(px(1), px(0), Color::srgb(0.23, 0.14, 0.065)),
+                        BorderGradient::from(LinearGradient::new(
+                            LinearGradient::TO_BOTTOM,
+                            vec![
+                                ColorStop::percent(Color::srgb(1., 0.91, 0.65), 0.),
+                                ColorStop::percent(Color::srgb(0.64, 0.32, 0.09), 44.),
+                                ColorStop::percent(Color::srgb(0.95, 0.72, 0.31), 72.),
+                                ColorStop::percent(Color::srgb(0.46, 0.25, 0.08), 100.),
+                            ],
+                        )),
+                        Outline::new(px(1), px(0), Color::srgb(0.16, 0.09, 0.035)),
                         Pickable::IGNORE,
                         ZIndex(2),
                     ));
-                    for (x, y) in [
-                        (0., DISPLAY * 0.5),
-                        (DISPLAY, DISPLAY * 0.5),
-                        (DISPLAY * 0.5, DISPLAY),
-                    ] {
+                    let centre = Vec2::splat(DISPLAY * 0.5);
+                    for step in 1u8..8 {
+                        let cardinal = step % 2 == 0;
+                        let size = if cardinal { 16. } else { 8. };
+                        let angle = f32::from(step) * std::f32::consts::FRAC_PI_4;
+                        let offset = Rot2::radians(angle) * Vec2::NEG_Y * (centre.x + 2.);
+                        let position = centre + offset - Vec2::splat(size * 0.5);
                         wrap.spawn((
                             Node {
                                 position_type: PositionType::Absolute,
-                                left: px(x - 5.),
-                                top: px(y - 5.),
-                                width: px(10),
-                                height: px(10),
+                                left: px(position.x),
+                                top: px(position.y),
+                                width: px(size),
+                                height: px(size),
                                 ..default()
                             },
-                            crate::ui_theme::Sprite("marker.diamond-gold"),
+                            crate::ui_theme::Sprite(if cardinal {
+                                "marker.diamond-blue"
+                            } else {
+                                "marker.diamond-gold"
+                            }),
                             Pickable::IGNORE,
                             ZIndex(3),
                         ));
@@ -297,18 +299,41 @@ fn setup(
             });
             root.spawn((
                 Node {
+                    width: percent(100),
                     align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
                     column_gap: px(6),
                     ..default()
                 },
                 Pickable::IGNORE,
             ))
             .with_children(|footer| {
-                footer.spawn((
-                    MapCaption::Extent,
-                    label("256 m", 12.),
-                    crate::fantasy_ui::hud_shadow(),
+                let mut caption = footer.spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        flex_grow: 1.,
+                        min_width: px(0),
+                        min_height: px(42),
+                        padding: UiRect::axes(px(8), px(4)),
+                        ..default()
+                    },
+                    Pickable::IGNORE,
                 ));
+                if skin.is_some() {
+                    caption.insert(crate::ui_theme::Sprite("panel.compact-navy"));
+                }
+                caption.with_children(|lines| {
+                    lines.spawn((
+                        MapCaption::Heading,
+                        label("Local Area", 16.),
+                        TextLayout::justify(Justify::Center),
+                    ));
+                    lines
+                        .spawn((MapCaption::Coordinates, label("", 12.)))
+                        .insert(TextColor(Color::srgb(0.78, 0.84, 0.9)));
+                });
                 if skin.is_some() {
                     let mut toggle = footer.spawn((
                         bevy::ui_widgets::Button,
@@ -407,7 +432,7 @@ fn seed_preview(
         if let Some(caption) = caption {
             **text = match caption {
                 MapCaption::Heading => "Millhaven (preview)",
-                MapCaption::Extent => "256 m",
+                MapCaption::Coordinates => "X 5391 · Z 2748 m",
             }
             .into();
         } else if guide {
@@ -598,14 +623,17 @@ fn present_inner(world: &mut World) {
     let update = map.epoch != Some(epoch) || now - map.updated >= 0.25;
     if update {
         let started = Instant::now();
-        if world.contains_resource::<crate::fantasy_ui::Skin>() {
-            let title = crate::zone_map::area_title(world, position)
-                .unwrap_or("Local Area")
-                .to_owned();
-            for (caption, mut label) in world.query::<(&MapCaption, &mut Text)>().iter_mut(world) {
-                if matches!(caption, MapCaption::Heading) && label.0 != title {
-                    label.0.clone_from(&title);
-                }
+        let title = crate::zone_map::area_title(world, position)
+            .unwrap_or("Local Area")
+            .to_owned();
+        let coords = coordinates(position);
+        for (caption, mut label) in world.query::<(&MapCaption, &mut Text)>().iter_mut(world) {
+            let value = match caption {
+                MapCaption::Heading => &title,
+                MapCaption::Coordinates => &coords,
+            };
+            if label.0 != *value {
+                label.0.clone_from(value);
             }
         }
         let view = View {

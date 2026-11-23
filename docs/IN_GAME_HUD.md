@@ -91,3 +91,14 @@ The resource regression checks initialization, a server-side spend and
 restoration. Fourteen wire cases pass, including packing sixteen mana-enabled
 targets with sixty-four cooldowns into 1,194 bytes. The 363 client tests,
 strict Clippy, format and release checks pass.
+
+The minimap caption below the circle uses the mapped zone name and the
+player's current world X and Z coordinates, rounded to metres. The gold rim
+is four pixels wide at default UI scale, with sapphire and gold accents
+from the existing sprite kit. The raster itself remains 176×176.
+The 1720×1000 native Millhaven run verified the caption, the map key and
+button, Escape, seven boundary highlights and clearing the highlight over
+water. See `build/reference-hud-native-ornate/hud-minimap.png` and
+`qualification.json` in the same directory. The three offscreen sizes
+also passed. Linux Vulkan llvmpipe reported zero diagnostics. Strict Clippy,
+formatting, the release build and 363 client tests passed, with five skips.
