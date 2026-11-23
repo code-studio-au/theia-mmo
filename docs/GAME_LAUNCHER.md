@@ -33,3 +33,32 @@ version, launch to native Login, stage the second and show real progress.
 Activate it, launch to native Login again, and verify preferences survive.
 Reject wrong platform, invalid paths, corrupted files and refused activation.
 Confirm that a failed update leaves the first verified build available.
+
+## Local installer implemented
+
+`tools/client_install.py` exports a prepared client tree, stages an update
+with SHA-256 and size verification, switches the current version atomically,
+and retains the previous version for rollback. Progress reports actual bytes
+verified. The version directories are separate from user preferences. The
+installer operates on trusted local exports.
+
+```sh
+python3 tools/client_install.py export build/launcher-staging build/client-release --version 0.1.0.12
+python3 tools/client_install.py install build/client-release build/local-client-install
+python3 tools/client_install.py status build/local-client-install
+python3 tools/client_install.py play build/local-client-install -- --window-size 1280x720
+```
+
+Use a staging directory containing the built `theia-client` (or the Windows
+`theia-client.exe`) and its release assets. Pass the same game arguments the
+installed build normally receives. The desktop launcher is the next slice.
+
+Nine installer tests cover update, rollback, cancellation, corrupt files,
+invalid paths, concurrent update refusal and the actual executable handoff.
+Two distinct Linux release binaries, 283,873,240 and 283,846,888 bytes after
+stripping debug information, installed and rendered from their respective
+version directories, with zero Vulkan diagnostics. A corrupted third release
+failed before activation. Rollback restored the earlier active version, and
+preferences outside the release directory retained their bytes. This was an
+offscreen Linux Vulkan llvmpipe check. See
+`build/launcher-local-update-v2/qualification.json`.
