@@ -332,12 +332,12 @@ def run(output,binaries,sizes=None,production=False,abilities=False,physical=Fal
                             if engagement_only:
                                 wait(lambda:state()['combat']['in_combat'] is True and state()['combat_layout']['combat_label_frames']>0)
                             else:
-                                wait(lambda:state()['combat']['in_combat'] is False and state()['combat_layout']['peace_label_frames']>0)
+                                wait(lambda:state()['combat']['in_combat'] is False and state()['combat_layout']['peace_hidden_frames']>0)
                             final_membership=state();combat=final_membership['combat'];layout=final_membership['combat_layout']
                             assert combat['membership_events']>0 and combat['combat_entries']>0 and layout['combat_label_frames']>0
                             if not engagement_only:assert combat['combat_exits']>0 and combat['membership_opponents']==0
                             proof['combat']=combat
-                            proof['membership']={'authoritative':True,'in_combat':combat['in_combat'],'entries':combat['combat_entries'],'exits':combat['combat_exits'],'combat_glyph_frames':layout['combat_label_frames'],'peace_glyph_frames':layout['peace_label_frames'],'status':final_membership['combat_ui']['life_status']}
+                            proof['membership']={'authoritative':True,'in_combat':combat['in_combat'],'entries':combat['combat_entries'],'exits':combat['combat_exits'],'combat_glyph_frames':layout['combat_label_frames'],'peace_hidden_frames':layout['peace_hidden_frames'],'status':final_membership['combat_ui']['life_status']}
                             (folder/'classic-melee.json').write_text(json.dumps(proof,indent=2)+'\n')
                         (folder/'capture.request').write_text('capture owned classic window\n');wait(lambda:capture_ready(folder/'input-os.png'))
                         final=state()

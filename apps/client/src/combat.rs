@@ -161,6 +161,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
             .spawn((
                 crate::fantasy_ui::unit_frame(false),
                 crate::fantasy_ui::UnitFrame(false),
+                GlobalZIndex(crate::fantasy_ui::UNIT_LAYER),
                 bevy::picking::Pickable::IGNORE,
             ))
             .with_children(|panel| {
@@ -841,7 +842,7 @@ fn present(
             } else if let Some(windup) = value.windup {
                 format!("Incoming attack {:.1}s", seconds(windup.completes))
             } else {
-                "Alive".into()
+                String::new()
             };
             if value.health > 0
                 && !panel.life_blocked
@@ -849,12 +850,13 @@ fn present(
             {
                 let active = summary.in_combat();
                 panel.membership = Some(active);
-                let status = if active { "In combat" } else { "Out of combat" };
-                panel.life_status = if let Some(windup) = value.windup {
-                    format!("{status} | attack {:.1}s", seconds(windup.completes))
-                } else {
-                    status.into()
-                };
+                if active {
+                    panel.life_status = if let Some(windup) = value.windup {
+                        format!("In combat | attack {:.1}s", seconds(windup.completes))
+                    } else {
+                        "In combat".into()
+                    };
+                }
             }
         } else {
             panel.vitals_ready = false;

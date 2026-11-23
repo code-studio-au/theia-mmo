@@ -20,11 +20,25 @@ pub(crate) fn face_thumbnail(appearance: Appearance) -> Rect {
 pub(crate) fn thumbnail_atlas(
     server: Option<&AssetServer>,
     references: Option<&crate::reference_scene::Config>,
+    portrait: bool,
 ) -> Option<Handle<Image>> {
+    let references = references?;
+    let basename = if portrait
+        && references
+            .directory
+            .join("appearance-portraits.png")
+            .is_file()
+    {
+        "appearance-portraits.png"
+    } else {
+        "appearance-thumbnails.png"
+    };
+    let server = server?;
     references
-        .filter(|r| r.directory.join("appearance-thumbnails.png").is_file())
-        .and(server)
-        .map(|s| s.load("players://appearance-thumbnails.png"))
+        .directory
+        .join(basename)
+        .is_file()
+        .then(|| server.load(format!("players://{basename}")))
 }
 #[derive(Component)]
 pub(crate) struct PreviewCamera;

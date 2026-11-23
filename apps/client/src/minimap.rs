@@ -141,6 +141,7 @@ fn setup(
     commands
         .spawn((
             Root,
+            GlobalZIndex(crate::fantasy_ui::UNIT_LAYER),
             Node {
                 position_type: PositionType::Absolute,
                 right: px(12),
@@ -236,18 +237,40 @@ fn setup(
                 });
                 if skin.is_some() {
                     wrap.spawn((
-                        crate::ui_theme::Sprite("minimap.frame"),
-                        Pickable::IGNORE,
-                        ZIndex(2),
                         Node {
                             position_type: PositionType::Absolute,
-                            left: px(-18),
-                            top: px(-14),
-                            width: px(DISPLAY + 36.),
-                            height: px(DISPLAY + 28.),
+                            left: px(-2),
+                            top: px(-2),
+                            width: px(DISPLAY + 4.),
+                            height: px(DISPLAY + 4.),
+                            border_radius: BorderRadius::MAX,
+                            border: UiRect::all(px(2)),
                             ..default()
                         },
+                        BorderColor::all(crate::fantasy_ui::GOLD),
+                        Outline::new(px(1), px(0), Color::srgb(0.23, 0.14, 0.065)),
+                        Pickable::IGNORE,
+                        ZIndex(2),
                     ));
+                    for (x, y) in [
+                        (0., DISPLAY * 0.5),
+                        (DISPLAY, DISPLAY * 0.5),
+                        (DISPLAY * 0.5, DISPLAY),
+                    ] {
+                        wrap.spawn((
+                            Node {
+                                position_type: PositionType::Absolute,
+                                left: px(x - 5.),
+                                top: px(y - 5.),
+                                width: px(10),
+                                height: px(10),
+                                ..default()
+                            },
+                            crate::ui_theme::Sprite("marker.diamond-gold"),
+                            Pickable::IGNORE,
+                            ZIndex(3),
+                        ));
+                    }
                     wrap.spawn((
                         Node {
                             position_type: PositionType::Absolute,

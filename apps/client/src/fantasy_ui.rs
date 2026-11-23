@@ -168,6 +168,8 @@ pub(crate) fn hud_shadow() -> bevy::ui::widget::TextShadow {
         color: Color::BLACK,
     }
 }
+/// Gameplay readouts sit above projected overhead names but below menus.
+pub(crate) const UNIT_LAYER: i32 = 5;
 pub(crate) const UNIT_WIDTH: f32 = 326.;
 pub(crate) const UNIT_INSET: f32 = 84.;
 

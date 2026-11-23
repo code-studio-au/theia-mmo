@@ -19,7 +19,7 @@ pub(super) fn setup(mut commands: Commands) {
             Node {
                 position_type: PositionType::Absolute,
                 right: px(DISPLAY + 65.),
-                top: px(40),
+                top: px(126),
                 width: px(280),
                 padding: UiRect::all(px(10)),
                 display: Display::None,

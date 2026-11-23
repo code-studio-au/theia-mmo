@@ -95,3 +95,10 @@ created; before/after screenshots were reviewed. Linux Vulkan / llvmpipe LLVM
 21.1.8 / Mesa 26.2.7, isolated X display; two counted known surface-resize
 `VUID-VkSwapchainCreateInfoKHR-pNext-07781` diagnostics and no others. This is not a
 discrete-GPU performance claim or proof against every possible driver flicker.
+
+For a full-colour HUD face atlas, run the same local Blender tool with
+`--portraits`. It writes `appearance-portraits.png` and provenance next to the
+private player assets, using the eight body/face combinations with their
+default portrait palette. The original appearance option atlas remains
+separate. The client uses the colour atlas when available and retains the
+original thumbnails or generic icon as fallbacks.

@@ -51,3 +51,18 @@ The embedded wolf medallion art comes from built-in image generation. The
 prompt, input dimensions and file hashes are in
 `content/ui/hud/wolf-portrait.json`. No other part of the HUD uses baked
 screenshot text or values.
+
+The follow-up uses a square 176×176 map surface with a two-pixel gold rim
+and three small compass accents. Out-of-combat state has an empty life label.
+Combat and urgent life messages still draw when applicable. HUD unit frames
+draw over world names, and the minimap tooltip starts below the unit frames.
+The optional full-colour portrait atlas uses the same body and face choices
+as the saved character, with the default outfit and palette for those tiles.
+
+The final Linux native check starts directly at 1280×720 and passes account
+entry, target selection, the map controls and boundary hover. It observes
+the square map surface and no peaceful-status glyphs. Vulkan validation on
+llvmpipe reports zero diagnostics. Offscreen checks pass again at 1920×1080,
+1720×700 and 1280×720. See `build/reference-hud-native-round/qualification.json`
+and `build/reference-hud-round-preview-*/report.json`. All 363 client tests,
+five existing skips, strict Clippy, formatting and release build checks pass.

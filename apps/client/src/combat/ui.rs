@@ -133,7 +133,7 @@ pub(crate) struct Model {
 pub(crate) struct Metrics {
     pub button_layout_samples: u64,
     pub combat_label_frames: u64,
-    pub peace_label_frames: u64,
+    pub peace_hidden_frames: u64,
     pub health_samples: u64,
     pub player_health_samples: u64,
     pub mana_samples: u64,
@@ -279,6 +279,11 @@ fn setup(
                     }
                 },
                 crate::fantasy_ui::UnitFrame(true),
+                GlobalZIndex(if skin.is_some() {
+                    crate::fantasy_ui::UNIT_LAYER
+                } else {
+                    0
+                }),
                 BackgroundColor(if skin.is_some() {
                     Color::NONE
                 } else {
@@ -290,7 +295,11 @@ fn setup(
                 if skin.is_some() {
                     unit_frame::portrait(
                         panel,
-                        crate::frontend::thumbnail_atlas(server.as_deref(), references.as_deref()),
+                        crate::frontend::thumbnail_atlas(
+                            server.as_deref(),
+                            references.as_deref(),
+                            true,
+                        ),
                         true,
                     );
                     panel.spawn((
@@ -443,7 +452,7 @@ fn setup(
                 .with_children(|bar| {
                     bar.spawn((
                         CastFill,
-                        crate::ui_theme::Sprite("bar.fill-progress"),
+                        crate::ui_theme::Sprite("bar.fill-experience"),
                         Node {
                             position_type: PositionType::Absolute,
                             left: px(0),
@@ -999,17 +1008,18 @@ fn observe(
     life_labels: Query<LifeLayout<'_>, With<LifeLabel>>,
 ) {
     for (label, node, visible, glyphs) in &life_labels {
-        if model.connected
-            && visible.get()
-            && node.size().min_element() > 0.
-            && glyphs.is_some_and(|g| !g.glyphs.is_empty())
-            && label.0 == model.life_status
-        {
-            metrics.combat_label_frames +=
-                u64::from(model.membership == Some(true) && label.0.starts_with("In combat"));
-            metrics.peace_label_frames +=
-                u64::from(model.membership == Some(false) && label.0.starts_with("Out of combat"));
+        if !model.connected || !visible.get() || label.0 != model.life_status {
+            continue;
         }
+        let paints_glyphs = glyphs.is_some_and(|g| !g.glyphs.is_empty());
+        metrics.combat_label_frames += u64::from(
+            model.membership == Some(true)
+                && node.size().min_element() > 0.
+                && paints_glyphs
+                && label.0.starts_with("In combat"),
+        );
+        metrics.peace_hidden_frames +=
+            u64::from(model.membership == Some(false) && label.0.is_empty() && !paints_glyphs);
     }
     for (node, visible) in &buttons {
         if visible.get() && node.size().min_element() > 0. {
