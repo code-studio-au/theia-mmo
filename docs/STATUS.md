@@ -1,3 +1,13 @@
+23 November 2026 — P3-03/P2-14 preview continuity:
+Cosmetic changes retain the last complete visible model while new appearance
+readiness settles; Create/Enter remain gated. Empty rosters still show no model.
+358 client tests (five skips), strict checks and native body/face/hair/outfit/
+palette changes pass: 478 frames, 60 pending, zero visibility gaps or early actions.
+Final applied appearance and character creation verified. Linux Vulkan llvmpipe;
+two counted known surface-resize diagnostics. See CHARACTER_CUSTOMISATION.md for scope and evidence.
+Next backlog slice: bounded Say-only speech bubbles from confirmed chat delivery,
+without revealing actors that are not already rendered.
+
 23 November 2026 — P3-01/P2-14 inline account confirmation checks:
 Password mismatch now belongs to the live validation list: red cross on mismatch,
 green tick on match, hidden when empty, with an inline prompt after empty submit.

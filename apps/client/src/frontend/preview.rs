@@ -13,11 +13,34 @@ pub(super) struct Preview {
     root: Option<Entity>,
     graph: Option<(Handle<AnimationGraph>, AnimationNodeIndex)>,
     pub(super) ready: bool,
+    pub(super) visible: bool,
     settled: u32,
     appearance: Option<Appearance>,
     pub(super) error: Option<String>,
 }
 impl Preview {
+    fn request(&mut self, appearance: Appearance) {
+        if self.appearance != Some(appearance) {
+            self.appearance = Some(appearance);
+            self.settled = 0;
+            self.ready = false;
+            self.error = None;
+        }
+    }
+    fn hide(&mut self) {
+        self.ready = false;
+        self.visible = false;
+        self.settled = 0;
+    }
+    pub(super) fn model_visible(&self, world: &World) -> bool {
+        world
+            .get::<Camera>(self.camera)
+            .is_some_and(|camera| camera.is_active)
+            && self
+                .root
+                .and_then(|root| world.get::<Visibility>(root))
+                .is_some_and(|visibility| *visibility != Visibility::Hidden)
+    }
     fn observe_ready(&mut self, model_ready: bool, pipelines_ready: bool) {
         self.settled = if model_ready && pipelines_ready {
             self.settled.saturating_add(1)
@@ -27,6 +50,9 @@ impl Preview {
         // Page/appearance transitions reset this latch. Global renderer work
         // must never blank a character that has already finished loading.
         self.ready |= self.settled >= 8;
+        // Keep the previous complete appearance visible during the next load.
+        // `ready` still gates Create/Enter for the newly requested appearance.
+        self.visible |= self.ready;
     }
 }
 pub(super) fn setup(commands: &mut Commands, images: &mut Assets<Image>) -> Entity {
@@ -71,6 +97,7 @@ pub(super) fn setup(commands: &mut Commands, images: &mut Assets<Image>) -> Enti
         root: None,
         graph: None,
         ready: false,
+        visible: false,
         settled: 0,
         appearance: None,
         error: None,
@@ -84,18 +111,13 @@ pub(super) fn tick(world: &mut World) {
     world.resource_scope(|world, mut preview: Mut<Preview>| {
         world.get_mut::<Camera>(preview.camera).unwrap().is_active = show;
         if !show {
-            preview.ready = false;
-            preview.settled = 0;
+            preview.hide();
             if let Some(root) = preview.root {
                 world.entity_mut(root).insert(Visibility::Hidden);
             }
             return;
         }
-        if preview.appearance != Some(appearance) {
-            preview.appearance = Some(appearance);
-            preview.settled = 0;
-            preview.ready = false;
-        }
+        preview.request(appearance);
         match prepare(world, &mut preview, appearance, yaw) {
             Ok(ready) => {
                 let pipelines_ready = world
@@ -186,7 +208,7 @@ fn prepare(
     let ready = crate::modular_hero::apply(world, root, appearance, "players")?;
     world.entity_mut(root).insert((
         Transform::from_rotation(Quat::from_rotation_y(yaw)),
-        if ready {
+        if ready || preview.visible {
             Visibility::Inherited
         } else {
             Visibility::Hidden
@@ -199,13 +221,14 @@ fn prepare(
 mod tests {
     use super::*;
     #[test]
-    fn unrelated_shader_work_does_not_hide_a_ready_character() {
+    fn ready_model_stays_visible_during_shader_work_and_cosmetic_loading() {
         let mut preview = Preview {
             camera: Entity::PLACEHOLDER,
             model: None,
             root: None,
             graph: None,
             ready: false,
+            visible: false,
             settled: 0,
             appearance: None,
             error: None,
@@ -220,9 +243,29 @@ mod tests {
             preview.observe_ready(true, false);
             assert!(preview.ready);
         }
-        preview.ready = false;
-        preview.settled = 0;
+        let next = Appearance::default().cycle(4, true);
+        preview.request(next);
+        assert!(!preview.ready);
+        assert!(preview.visible);
+        for _ in 0..20 {
+            preview.observe_ready(false, true);
+            assert!(!preview.ready);
+            assert!(preview.visible);
+        }
+        for _ in 0..7 {
+            preview.observe_ready(true, true);
+            assert!(!preview.ready);
+            assert!(preview.visible);
+        }
+        preview.observe_ready(true, true);
+        assert!(preview.ready);
+        preview.request(next); // Repeated selection must not restart the wait.
+        assert!(preview.ready);
+        preview.hide();
+        assert!(!preview.ready);
+        assert!(!preview.visible);
         preview.observe_ready(false, true);
         assert!(!preview.ready);
+        assert!(!preview.visible);
     }
 }

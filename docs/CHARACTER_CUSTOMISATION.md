@@ -66,3 +66,32 @@ Next user request: native Create Account matching the supplied gateway reference
 with actual account-service integration, bounded masked inputs, validation and
 unsupported links/options disabled. Open the qualified current build full screen
 for the user while implementing that follow-up.
+
+## Preview continuity follow-up — 23 November 2026
+
+A new cosmetic selection now resets only readiness for that requested appearance.
+The last complete model remains visible while the new palette loads and the
+preview settles. The shared modular-hero apply path already waits for a palette
+before changing meshes/materials, so this retains a complete previous appearance.
+Create/Enter still require the newly requested appearance to be ready. Leaving
+preview-bearing pages resets both visibility and readiness, preserving an empty
+account roster with no model. Successful new requests clear stale preview errors.
+
+Opt-in native evidence counts every visible-session frame, hidden root/viewport
+gaps, pending appearance frames and prematurely enabled Create/Enter actions.
+`tools/qualify_account_registration.py --preview-check` exercises body, face,
+hair, outfit and cold skin/hair palette changes, then checks the applied model and
+creates the character. This is a client presentation change, not a gameplay,
+account or appearance-protocol change.
+
+Acceptance: 358 client tests (five existing skips), strict release all-target
+Clippy, formatting/diff checks and client/server builds pass. The readiness
+regression covers initial settling, unrelated pipeline work, a pending new
+appearance, repeated selection and hiding on page exit. Native evidence:
+`build/account-registration-native-preview-v1/qualification.json` reports 478
+observed frames, 60 pending frames, zero hidden root/viewport gaps and zero early
+Create/Enter enables. The final applied appearance was checked and the character
+created; before/after screenshots were reviewed. Linux Vulkan / llvmpipe LLVM
+21.1.8 / Mesa 26.2.7, isolated X display; two counted known surface-resize
+`VUID-VkSwapchainCreateInfoKHR-pNext-07781` diagnostics and no others. This is not a
+discrete-GPU performance claim or proof against every possible driver flicker.

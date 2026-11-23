@@ -527,7 +527,7 @@ pub(super) fn sync(
     mut cameras: Query<&mut Camera, With<FrontCamera>>,
 ) {
     for mut visibility in &mut viewports {
-        *visibility = if preview.ready && menu.preview_visible() {
+        *visibility = if preview.visible && menu.preview_visible() {
             Visibility::Inherited
         } else {
             Visibility::Hidden
@@ -800,6 +800,52 @@ pub(super) fn sync(
         };
     }
 }
+#[derive(Resource, Default)]
+struct PreviewContinuity {
+    seen: bool,
+    frames: u64,
+    gaps: u64,
+    pending: u64,
+    premature_actions: u64,
+}
+fn preview_continuity(world: &mut World, wanted: bool) -> serde_json::Value {
+    let preview = world.resource::<preview::Preview>();
+    let ready = preview.ready;
+    let model_visible = preview.model_visible(world);
+    let viewport_visible = world
+        .query_filtered::<&Visibility, With<ViewportNode>>()
+        .iter(world)
+        .any(|v| *v != Visibility::Hidden);
+    let page = world.resource::<Menu>().page;
+    let premature = !ready
+        && world
+            .query::<(&Choice, Has<bevy::ui::InteractionDisabled>)>()
+            .iter(world)
+            .any(|(choice, disabled)| {
+                !disabled
+                    && match page {
+                        Page::Create => matches!(choice, Choice::Create),
+                        Page::Characters => matches!(choice, Choice::Enter),
+                        _ => false,
+                    }
+            });
+    world.init_resource::<PreviewContinuity>();
+    let mut evidence = world.resource_mut::<PreviewContinuity>();
+    if !wanted {
+        evidence.seen = false;
+    } else {
+        evidence.seen |= ready;
+        if evidence.seen {
+            evidence.frames += 1;
+            evidence.gaps += u64::from(!model_visible || !viewport_visible);
+            evidence.pending += u64::from(!ready);
+            evidence.premature_actions += u64::from(premature);
+        }
+    }
+    serde_json::json!({"frames":evidence.frames,"gaps":evidence.gaps,"pending":evidence.pending,
+        "premature_actions":evidence.premature_actions,"model_visible":model_visible,
+        "viewport_visible":viewport_visible})
+}
 pub(super) fn evidence(world: &mut World) {
     if std::env::var_os("THEIA_WORLD_INPUT_OS_QUALIFY").is_none() {
         return;
@@ -872,7 +918,8 @@ pub(super) fn evidence(world: &mut World) {
         .collect();
     let ready = world.resource::<preview::Preview>().ready;
     let registration = registration::evidence(world);
-    let value = serde_json::json!({"registration":registration,"page":page,"appearance":appearance,"message":message,"invalid_name":invalid_name,"preview_yaw":preview_yaw,"preview_zoom":preview_zoom,"preview_ready":ready,"preview_visible":preview_visible,"character_count":character_count,"disabled":disabled,"widgets":geometry,"theme":crate::ui_theme::snapshot(world)});
+    let continuity = preview_continuity(world, preview_visible);
+    let value = serde_json::json!({"preview_continuity":continuity,"registration":registration,"page":page,"appearance":appearance,"message":message,"invalid_name":invalid_name,"preview_yaw":preview_yaw,"preview_zoom":preview_zoom,"preview_ready":ready,"preview_visible":preview_visible,"character_count":character_count,"disabled":disabled,"widgets":geometry,"theme":crate::ui_theme::snapshot(world)});
     let temporary = path.with_extension("tmp");
     if std::fs::write(&temporary, serde_json::to_vec(&value).unwrap()).is_ok() {
         let _ = std::fs::rename(temporary, path);

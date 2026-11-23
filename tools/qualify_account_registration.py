@@ -15,7 +15,7 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 from gpu_validation import check_gpu_diagnostics
 
 
-def run(out, once=False):
+def run(out, once=False, preview_check=False):
     root=Path(__file__).resolve().parents[1];os.chdir(root)
     out=out.resolve();out.mkdir(parents=True,exist_ok=False,mode=0o700)
     readfd,writefd=os.pipe();x=None;wm=None;results=[]
@@ -102,6 +102,20 @@ def run(out, once=False):
                             click('New');wait(lambda:menu()['page']=='Create')
                             type_field('Name','Gatewayarden')
                             wait(lambda:menu()['preview_ready'],90)
+                            if preview_check:
+                                shot('preview-before.png')
+                                before=menu()['preview_continuity']['pending']
+                                for label in ['Appearance(0, 1)','Appearance(4, 1)','Appearance(5, 2)','Appearance(2, 3)',
+                                              'Category(Face)','Appearance(1, 2)','Category(Outfit)','Appearance(6, 1)',
+                                              'Appearance(4, 3)','Category(Hair)','Appearance(5, 3)']:
+                                    click(label);wait(lambda:menu()['preview_ready'],60)
+                                    observed=menu()['preview_continuity']
+                                    assert observed['gaps']==0 and observed['premature_actions']==0, observed
+                                    assert observed['model_visible'] and observed['viewport_visible']
+                                assert menu()['preview_continuity']['pending']>before, 'No pending appearance frames exercised'
+                                expected=menu()['appearance']
+                                wait(lambda:any(hero['appearance']==expected for hero in state().get('modular_heroes',[])),30)
+                                shot('preview-after.png')
                             click('Create');wait(lambda:menu()['page']=='Characters' and menu()['character_count']==1,30)
                             shot('registration-created.png')
                         else:
@@ -117,6 +131,7 @@ def run(out, once=False):
                             assert rows[0]['name']=='Gatewayarden'
                             shot('registration-resumed.png')
                         results.append(dict(resumed=resumed,character_count=menu()['character_count'],gpu=state()['adapter'],isolated_display=True))
+                        if preview_check:results[-1]['preview_continuity']=menu()['preview_continuity']
                         print(json.dumps(results[-1]),flush=True)
                     finally:
                         if desktop:desktop.close()
@@ -138,4 +153,4 @@ def run(out, once=False):
                 except subprocess.TimeoutExpired:process.kill();process.wait()
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--once',action='store_true');args=p.parse_args();run(args.output,args.once)
+    p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--once',action='store_true');p.add_argument('--preview-check',action='store_true');args=p.parse_args();run(args.output,args.once,args.preview_check)

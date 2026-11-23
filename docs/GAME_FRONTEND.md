@@ -54,7 +54,9 @@ render-to-texture viewport on an isolated render layer. Its ground origin is
 anchored at 40% of courtyard width and 81% of height on the roster. Creation
 centres its ground point between the appearance panels, above the fixed footer.
 Once a preview has settled, unrelated shader compilation cannot hide it. Page and
-appearance changes still reset readiness. Gameplay camera queries exclude the
+appearance changes still reset readiness, but a complete previous appearance
+remains visible during a cosmetic load; Create/Enter stay gated until the requested
+appearance settles. Leaving preview pages hides the model. Gameplay camera queries exclude the
 preview. Waiting at Login does not consume the gameplay loading timeout.
 
 The shared skin, installed with the existing `--fantasy-ui` presentation option,
