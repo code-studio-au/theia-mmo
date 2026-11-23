@@ -408,24 +408,7 @@ fn graphics_section(parent: &mut ChildSpawnerCommands, caption: &str) {
             ])),
         ))
         .with_children(|bar| {
-            // Offset the transparent sprite margin so the gold meets the bar border.
-            for (top, bottom, vertical_scale) in [(px(-3), Val::Auto, 1.), (Val::Auto, px(-3), -1.)]
-            {
-                bar.spawn((
-                    ui_theme::Sprite("ornament.corner-fine-left"),
-                    Node {
-                        position_type: PositionType::Absolute,
-                        left: px(-3),
-                        top,
-                        bottom,
-                        width: px(22),
-                        height: px(22),
-                        ..default()
-                    },
-                    UiTransform::from_scale(Vec2::new(1., vertical_scale)),
-                    Pickable::IGNORE,
-                ));
-            }
+            border_corners(bar, false, 22.);
             highlight(bar, px(0), 62., false);
             bar.spawn((
                 text(caption, 22.),
@@ -517,8 +500,35 @@ pub(crate) fn settings_watermark(parent: &mut ChildSpawnerCommands) {
     ));
 }
 
-pub(crate) fn settings_content() -> impl Bundle {
-    (
+fn border_corners(parent: &mut ChildSpawnerCommands, right_edge: bool, size: f32) {
+    // Offset the transparent sprite margin so the gold meets the border.
+    let inset = px(-(size * 0.135).round());
+    let (left, right, horizontal_scale) = if right_edge {
+        (Val::Auto, inset, -1.)
+    } else {
+        (inset, Val::Auto, 1.)
+    };
+    for (top, bottom, vertical_scale) in [(inset, Val::Auto, 1.), (Val::Auto, inset, -1.)] {
+        parent.spawn((
+            ui_theme::Sprite("ornament.corner-fine-left"),
+            Node {
+                position_type: PositionType::Absolute,
+                left,
+                right,
+                top,
+                bottom,
+                width: px(size),
+                height: px(size),
+                ..default()
+            },
+            UiTransform::from_scale(Vec2::new(horizontal_scale, vertical_scale)),
+            Pickable::IGNORE,
+        ));
+    }
+}
+
+pub(crate) fn settings_content<'a>(parent: &'a mut ChildSpawnerCommands) -> EntityCommands<'a> {
+    let mut content = parent.spawn((
         Node {
             flex_grow: 1.,
             flex_basis: px(0),
@@ -533,7 +543,12 @@ pub(crate) fn settings_content() -> impl Bundle {
             Color::srgba(0.028, 0.086, 0.139, 0.42).into(),
             Color::srgba(0.01, 0.034, 0.052, 0.53).into(),
         ])),
-    )
+    ));
+    content.with_children(|panel| {
+        border_corners(panel, false, 32.);
+        border_corners(panel, true, 32.);
+    });
+    content
 }
 fn dropdown_row(
     parent: &mut ChildSpawnerCommands,

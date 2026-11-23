@@ -162,7 +162,7 @@ fn setup(mut commands: Commands) {
                 }
                 super::kit::settings_watermark(nav);
             });
-            body.spawn(super::kit::settings_content()).with_children(|content| {
+            super::kit::settings_content(body).with_children(|content| {
             content.spawn((Section::Interface, Node { flex_direction: FlexDirection::Column, row_gap: px(6), ..default() }, Pickable::IGNORE)).with_children(|section| {
             section.spawn((Text::new("Interface"),TextFont{font_size:FontSize::Px(22.),..default()},TextColor(super::GOLD),Pickable::IGNORE));
             section.spawn((Summary,label("")));

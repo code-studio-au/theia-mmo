@@ -342,7 +342,7 @@ pub(super) fn links(root: &mut ChildSpawnerCommands) {
                     }
                     crate::fantasy_ui::kit::settings_watermark(nav);
                 });
-                body.spawn(crate::fantasy_ui::kit::settings_content()).with_children(|content| {
+                crate::fantasy_ui::kit::settings_content(body).with_children(|content| {
                     content.spawn((SettingsBody,ui::column())).with_children(|settings| {
                         crate::fantasy_ui::kit::graphics_heading(settings);
                         crate::fantasy_ui::kit::graphics(settings,|row,value| match value {
