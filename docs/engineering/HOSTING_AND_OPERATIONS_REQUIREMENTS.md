@@ -46,6 +46,13 @@ Status: agreed direction, 24 November 2026. Detailed implementation design pendi
 - Launcher compares installed package inventory with approved manifest, downloads only missing/changed packages, verifies signatures and hashes, stages and validates a complete compatible release before atomic activation. Preserve previous playable release on interruption/failure; handle removed packages, disk space, concurrent launch/update and rollback. No administrator privileges for routine updates.
 - Package-level replacement first; binary delta patching deferred until justified. Acceptance: clean install, executable-only update, single terrain-package update, launcher self-update, corrupted/interrupted download rejection and rollback, compatible remote multiplayer on Mint 22. No unrelated assets should be downloaded for an isolated package change.
 
+## Release versioning and channels (creator-approved)
+- Development is the active channel and default for initial testing; Stable is reserved for explicitly approved known-good releases and may remain empty for an extended period. Stable does not imply production readiness.
+- Independently version launcher, client, server and asset packages; record immutable build identifiers and Git commit SHA. Track network protocol and content/schema compatibility separately. A signed release manifest identifies the exact compatible artifact set.
+- Maintain separate channel manifests and launcher channel selection; handle unavailable Stable gracefully. Promote the exact tested immutable artifacts from Development to Stable without rebuilding. Manual publishing, promotion and server deployment via GitHub Actions initially.
+- One hosted game environment and one active server release initially; two channels do not imply two live worlds. Validate client/server compatibility before Play and clearly report mismatches. Preserve prior release artifacts for rollback, subject to database/schema compatibility.
+- No requirement to publish a Stable release during Phase 1; qualify the promotion mechanism without exposing unapproved builds as Stable.
+
 ## Phase 2 — On-demand lifecycle and reporting
 - Independently available Theia Gateway using API Gateway and Lambda. Authenticated player wake/status requests; admin permissions separate. Rate limit and make wake requests idempotent. No gameplay traffic through gateway.
 - Launcher Play requests wake automatically if stopped, polls status and launches client only after application readiness. States: offline, starting, ready, draining/shutting down, failed; distinguish EC2 running from game/database readiness. Return validated connection endpoint. Provide timeout/retry and useful errors.
