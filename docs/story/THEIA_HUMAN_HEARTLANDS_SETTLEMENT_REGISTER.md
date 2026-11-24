@@ -112,3 +112,14 @@ Returning players should see changes appropriate to their progress, but core mer
 8. Determine shared-world phasing and NPC schedule constraints.
 
 **Next step:** Use the established settlement/cast identities and current quest sequence to resolve remaining service layouts, inventories and schedules. Do not restart the settled naming or campaign-design work.
+
+## Level 1–20 zone briefs
+
+The atlas briefs pair terrain and field routes with this register’s service and settlement coverage.
+
+- [Millhaven](Theia/Atlas/Places/Millhaven.md)
+- [Stoneford](Theia/Atlas/Places/Stoneford.md)
+- [Greyfall Quarry](Theia/Atlas/Places/Greyfall%20Quarry.md)
+- [Valecrown](Theia/Atlas/Places/Valecrown.md)
+
+[Parallel Aelari settlement and service register](THEIA_AELARI_HOMELAND_SETTLEMENT_REGISTER.md)

@@ -37,3 +37,9 @@ Historical source: [Approved recurring humans: complete launch movements](https:
 Text references from this account; these links do not establish additional relationships.
 
 [Millhaven](../../Atlas/Places/Millhaven.md)
+
+## Approved cross-race campaign boundaries — 12 November 2026
+
+**Creator-locked scope:** Elara remains the human player's Millhaven mentor and local authority, not a universal childhood acquaintance for all Covenant races. The Cassian case ends locally before Q035. Q184's human variant returns to Elara in Millhaven; other races have their own familiar homeland contacts. Her local service and responsibilities continue after the human player's departure.
+
+**Scope:** This is a continuity application of existing approved roles, not approval of new racial 1–20 quest plots or dialogue.

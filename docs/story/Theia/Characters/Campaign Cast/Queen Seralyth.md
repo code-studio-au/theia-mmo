@@ -26,3 +26,9 @@ Historical source: [Allied and Kel'vari cast](https://github.com/code-studio-au/
 Text references from this account; these links do not establish additional relationships.
 
 [Aelari](../../Lore/Peoples/Aelari.md)
+
+## Approved cross-race campaign boundaries — 12 November 2026
+
+**Creator-locked cross-race continuity:** Seralyth remains the sovereign Aelari queen. The shared Covenant investigation requires her own bounded permission in Q058; Corven's alliance authority does not override her control of Aelari restricted sites. Do not assume all races have personally met her in their starting campaigns.
+
+**Scope:** This is a continuity application of existing approved roles, not approval of new racial 1–20 quest plots or dialogue.

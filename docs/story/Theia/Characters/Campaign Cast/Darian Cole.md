@@ -29,3 +29,9 @@ Historical source: [Approved recurring humans: complete launch movements](https:
 Text references from this account; these links do not establish additional relationships.
 
 [Millhaven](../../Atlas/Places/Millhaven.md) · [Elara Fenwick](Elara%20Fenwick.md)
+
+## Creator-locked character review — 12 November 2026
+
+Darian remains in the human military on temporary assignment to Commander Nessa's integrated Northwatch garrison, serving in supply, rescue and extraction rather than becoming an elite battlefield champion. His arc moves from enthusiastic Millhaven recruit to dependable soldier and eventual mentor to new recruits. He survives the launch campaign. Human players retain their Q002/Q033 history with him; other races meet him as a Northwatch soldier. He is unrelated to Brenna Holt.
+
+**Scope:** This section supersedes conflicting earlier proposed-development wording only where specified. Existing quest IDs, unapproved sentencing, exact dialogue and other open details remain unchanged. See [decision ledger](../../../DECISIONS.md).

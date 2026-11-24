@@ -39,7 +39,7 @@
 | **Q181 The Shattering of Nhal** | Protect correction → verify alignment holds → Oth'varen physically dies → final inversion → Nhal's coherent identity shatters → turn in to Sera | **Resolved in the working manifest:** `q181.objective.othvaren_death` records the physical death between alignment hold and inversion. Rust support remains planned; do not add a duplicate stage |
 | **Q182 Silence After** | Confirm surviving Seven and teams → record memorial → document fragment uncertainty | Essence survives; no determination of fragment destination or new identity |
 | **Q183 A World Unbound** | Report to Kel'vari and Covenant separately → verify Shroud fade began at Q156 → war remains | No instant peace treaty, no renewed Binding, no delayed start of Shroud dissipation |
-| **Q184 The Road Home** | Return by ordinary travel → revisit Elara and companions → close personal arc | Final contact and closure should be idempotent; optional regional work may remain available |
+| **Q184 The Road Home** | Return to own racial homeland by ordinary travel → revisit race-specific familiar NPCs (Elara and companions for humans) → close personal arc | Final contact and closure should be idempotent; optional regional work may remain available |
 
 ## Canonical finale transition requirements
 
@@ -48,7 +48,7 @@
 3. **Q176** ends with Thes'var physically dead; **Q177** proves deliberate sabotage and ordinary correction failure.
 4. **Q178–Q179** Oth'varen learns of fatal exposure only after sabotage, chooses the correction, tells Sera/player, and prepares the teams.
 5. **Q180–Q181** the Seven participate freely; Oth'varen completes correction, **sees alignment hold, then physically dies**. The final inversion shatters Nhal's unified memory and will, not his divine essence.
-6. **Q182–Q184** preserve survivor reports, uncertain divine fragments, continued faction war and Millhaven homecoming.
+6. **Q182–Q184** preserve survivor reports, uncertain divine fragments, continued faction war and race-specific homeland homecoming (Millhaven for humans).
 
 These are **server-authoritative, per-character story facts** requiring atomic or recoverable transitions; a cinematic played on the client is not sufficient evidence. No duplicate world catastrophe or resurrection can occur on reconnect/retry.
 
@@ -59,7 +59,7 @@ These are **server-authoritative, per-character story facts** requiring atomic o
 - Q181's explicit death transition is already present in the working manifest. **OPEN:** implement and validate its future authoritative story-fact capability separately; no gameplay-code change is authorized by this documentation cleanup.
 - Keep Q161–Q162 essence interpretation carefully uncertain about fragments.
 - Separate Thes'var's defeat, discovered sabotage, correction failure and Oth'varen's voluntary choice into non-skippable authoritative facts.
-- Define Q184's final giver/turn-in and one-time closure, while allowing independent optional quests to remain playable.
+- Define Q184's race-specific final giver/turn-in and one-time shared closure, while allowing independent optional quests to remain playable.
 
 ## LOCKED: completion contacts after permanent deaths
 

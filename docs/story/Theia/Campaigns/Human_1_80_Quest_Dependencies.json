@@ -512,7 +512,9 @@
       "objective": "Return recovered goods and inform affected households without disclosing protected witnesses.",
       "type": "regional_optional",
       "minLevel": 15,
-      "prerequisites": [],
+      "prerequisites": [
+        "HUMAN_Q031_DONE"
+      ],
       "completionFlag": "HUMAN_Q032_DONE",
       "rewardXP": null,
       "mapId": null,
@@ -527,7 +529,9 @@
       "objective": "Lead a local patrol and protect a newly reopened road without a mandatory escort timer.",
       "type": "regional_optional",
       "minLevel": 15,
-      "prerequisites": [],
+      "prerequisites": [
+        "HUMAN_Q031_DONE"
+      ],
       "completionFlag": "HUMAN_Q033_DONE",
       "rewardXP": null,
       "mapId": null,
@@ -542,7 +546,9 @@
       "objective": "Choose a local relief priority and complete the delivery; the royal case ends but village life continues.",
       "type": "regional_optional",
       "minLevel": 15,
-      "prerequisites": [],
+      "prerequisites": [
+        "HUMAN_Q031_DONE"
+      ],
       "completionFlag": "HUMAN_Q034_DONE",
       "rewardXP": null,
       "mapId": null,
@@ -551,27 +557,26 @@
     },
     {
       "id": 35,
-      "title": "A Ledger Reaches the Sea",
-      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
-      "contact": "Mara",
-      "objective": "Trace the passage ledger's shipping reference to Tidehold; register the case with alliance customs through the human warrant.",
+      "title": "The Covenant Calls",
+      "location": "Covenant racial capitals and Tidehold",
+      "contact": "Local summons bearer / Corven's office",
+      "objective": "Receive the universal summons after completing the player's racial 1–20 campaign; travel to Tidehold; register with Corven's office",
       "type": "main_story",
       "minLevel": 20,
-      "prerequisites": [
-        "HUMAN_Q031_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q035_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "race_specific_prerequisite_policy": "Requires completion of the active character's own racial 1–20 campaign. Race-specific completion flags not yet assigned; do not interpret empty legacy prerequisites as unconditional availability."
     },
     {
       "id": 36,
       "title": "Four Peoples, One Harbour",
       "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
       "contact": "Corven",
-      "objective": "Attend the alliance briefing and distinguish the human commission from alliance authority; obtain a bounded inspection permit.",
+      "objective": "Attend Corven's first shared Covenant briefing; recognise four sovereign peoples; obtain limited permission for Tidehold provision-depot investigation",
       "type": "main_story",
       "minLevel": 20,
       "prerequisites": [
@@ -689,7 +694,7 @@
       "id": 43,
       "title": "Keep the Evidence Safe",
       "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
-      "contact": "Sera / Grey Surveyor",
+      "contact": "Sera / Father",
       "objective": "Measure instability and preserve an independent copy of the technical measurements before choosing sample preservation or destruction; Choose secure preservation or controlled destruction; Carry out selected safety procedure; Record evidence and choice in case journal",
       "type": "main_story",
       "minLevel": 20,
@@ -856,8 +861,8 @@
       "id": 53,
       "title": "The King's Correspondence",
       "location": "Kar Durn royal court → Sylvaren",
-      "contact": "High King",
-      "objective": "Present authenticated engineering report and request introduction; Receive High King's letter; Travel to Aelari capital by established routes; Present letter and report to Caelith",
+      "contact": "High Thane Bromund / Caelith",
+      "objective": "Present authenticated engineering report and request introduction; Receive High Thane's letter; Travel to Aelari capital by established routes; Present letter and report to Caelith",
       "type": "main_story",
       "minLevel": 25,
       "prerequisites": [
@@ -1094,7 +1099,7 @@
       "id": 67,
       "title": "The Instruction Without Its Diagram",
       "location": "Drom Kar, freight works, mainland Chainworks",
-      "contact": "Grey Surveyor",
+      "contact": "Father",
       "objective": "Compare the Regional Anchor plan with Halden's incomplete shutdown order; obtain the missing stability material.",
       "type": "main_story",
       "minLevel": 30,
@@ -1145,7 +1150,7 @@
       "id": 70,
       "title": "Copies for the People at Risk",
       "location": "Drom Kar, freight works, mainland Chainworks",
-      "contact": "Grey Surveyor",
+      "contact": "Father",
       "objective": "Receive and distribute full safety instructions to the cleared team; lodge the measured evidence independently.",
       "type": "main_story",
       "minLevel": 30,
@@ -1162,7 +1167,7 @@
       "id": 71,
       "title": "Make the Measure Small",
       "location": "Drom Kar, freight works, mainland Chainworks",
-      "contact": "Grey Surveyor / Brynja",
+      "contact": "Father / Brynja",
       "objective": "Inspect isolation; Fit cutoff; Verify limits; Authorize trial",
       "type": "main_story",
       "minLevel": 30,
@@ -1179,7 +1184,7 @@
       "id": 72,
       "title": "A Brief Reversal",
       "location": "Drom Kar, freight works, mainland Chainworks",
-      "contact": "Grey Surveyor",
+      "contact": "Father",
       "objective": "Start bounded inversion; Measure polarity; Stop on threshold; Archive result",
       "type": "main_story",
       "minLevel": 30,
@@ -2924,7 +2929,8 @@
       "mapId": null,
       "npcId": null,
       "encounterId": null,
-      "eligibilityNote": "Canonical level-80 cap applies to final finale authorization, not an inferred Q174 acceptance gate. minLevel remains historical planning pace; runtime realization unresolved."
+      "eligibilityNote": "Canonical level-80 cap applies to final finale authorization, not an inferred Q174 acceptance gate. minLevel remains historical planning pace; runtime realization unresolved.",
+      "finale_authorization_gate": "CREATOR LOCKED: Q174 authorization cannot complete and unlock Q175 before character level 80; minLevel=75 is a historical planning annotation, not an override. Requires server-authoritative implementation."
     },
     {
       "id": 175,
@@ -3085,9 +3091,9 @@
     {
       "id": 184,
       "title": "The Road Home",
-      "location": "Thes'var central facility, distributed network, Oth'irun, Valecrown, Millhaven",
-      "contact": "Elara",
-      "objective": "Post-finale epilogue: revisit Millhaven, close local relationships and record the cost and consequence of victory.",
+      "location": "Race-specific Covenant homeland (Millhaven for humans)",
+      "contact": "Race-specific familiar contact (Elara for humans)",
+      "objective": "Return to the character's own homeland; reconnect with familiar local characters; complete a shared epilogue outcome with race-specific NPC/location/dialogue variants",
       "type": "main_story",
       "minLevel": 80,
       "prerequisites": [
@@ -3097,9 +3103,18 @@
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "race_variant_policy": "One editorial Q184 and shared completion, race-specific homeland and contacts; non-human actor/location bindings unresolved."
     }
   ],
   "classificationPolicy": "Critical plot evidence and permission on main path; independent local adventures optional. Explicit regional access checks to be authored. This is a derived dependency/classification reference, not a second authoring inventory. minLevel is historical planning pace, not eligibility; approved eligibility belongs to the sole manifest. The 156/28 classification remains provisional.",
-  "authority": "Human_1_80_Current_Quest_Authoring_Manifest.json"
+  "authority": "Human_1_80_Current_Quest_Authoring_Manifest.json",
+  "shared_campaign_migration_warning_2026_11_12": {
+    "status": "BLOCKING_NOT_EXECUTABLE",
+    "scope": "Q035 onward Covenant shared campaign",
+    "legacy_completion_aliases": "HUMAN_Q035_DONE through HUMAN_Q184_DONE are legacy historical labels, not approved human-only runtime gates. Do not bind shared quests to human-only flags.",
+    "race_specific_entry": "Q035 requires completion of the active character's own racial 1–20 campaign; specific stable runtime identifiers remain unapproved.",
+    "common_progression": "After race-aware Q035 completion, Q036 onward uses shared Covenant progression independent of starting race; preserve legacy aliases only as migration provenance until stable IDs and journal migration are approved.",
+    "runtime_action": "Allocate stable cross-race IDs and migration mappings, validate accepted/completed journals against exact catalogue bytes, and test all four racial entry paths before import."
+  }
 }

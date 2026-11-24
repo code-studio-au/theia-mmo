@@ -210,7 +210,7 @@ Sera has knowingly concealed a restricted Guardian gate, but she is not a secret
 
 **In progress:** “Finish the agreed work and bring back what you can verify. Our permission and safety limits still apply.”
 
-## Q097 — Grey Surveyor (identity revealed during scene)
+## Q097 — Father (identity revealed during scene)
 
 **Offer / opening:** “I hoped to remain useful without becoming the story myself. You have made that impossible.”
 

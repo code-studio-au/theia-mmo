@@ -26,3 +26,7 @@ Historical source: [Allied and Kel'vari cast](https://github.com/code-studio-au/
 Text references from this account; these links do not establish additional relationships.
 
 [Korrath](../../Lore/Peoples/Korrath.md)
+
+## Creator-locked character development — 12 November 2026
+
+Tarek is a practical, questioning Korrath Passage surveyor willing to test old prohibitions through bounded evidence and controlled safeguards. He sometimes clashes with Urodan's older protective tradition, but does not advocate reckless gate activation or unrestricted Passage travel. His role remains field surveys, careful measurements, and safe return routes. Exact personal history and dialogue remain WORKING until independently verified.

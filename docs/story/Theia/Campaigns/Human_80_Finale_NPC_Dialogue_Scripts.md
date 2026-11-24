@@ -169,7 +169,11 @@
 
 **Persistence / skip:** The two acknowledgement facts are independent, durable and idempotent. Skipping dialogue or reconnecting must not erase a completed report or award completion before both reports. Q184 homecoming remains a separate follow-up.
 
-## Q184 — Elara
+## Q184 — The Road Home (race-specific shared epilogue)
+
+**Creator-locked structure:** One Q184 completion and reward structure, with different homeland and familiar NPCs for each Covenant race. Select the variant for the player's race. The Human and Aelari homecoming structures are approved. Dwarf and Korrath variants remain WORKING.
+
+### Human variant — Elara in Millhaven
 
 **Opening:** “When you first came here, I sent you to speak to three people and learn what the village needed. I never imagined where that road would take you.”
 
@@ -180,6 +184,26 @@
 **Completion / aftermath:** “Brenna has a wagon to unload. Anwen needs supplies. Darian says the road is safe. For today, that's enough.”
 
 **In-progress:** “Complete the agreed task and return with the result. We still have work ahead.”
+
+### Aelari variant — Talan in Boughstead
+
+**Creator-approved structure (19 November 2026):** Unlock after Q183 and both required reports. Return to Talan at Maerin’s orchard fence. The conversation at the fence completes Q184 and uses the shared reward structure. The orchard walk is optional after turn-in.
+
+**Talan, opening:** “There you are. I told you the next time an apprentice walked these rows, you’d take them. This one’s been asking when we can go into the woods.”
+
+**Apprentice:** “I’ve been ready since dawn.”
+
+**Talan, quietly:** “Maerin asked how many of your crew made it home. I told her she’d have to ask you.”
+
+**Player choice A:** “We brought people home. I’m still thinking about the ones we couldn’t.”
+
+**Player choice B:** “I’ll tell her over supper, if there’s room.”
+
+**Talan, completion:** “There’s room. Come in when you’re ready.”
+
+**Optional orchard walk:** Take the apprentice from the orchard fence to the woodland edge. Follow fresh boar tracks both ways and let the apprentice notice where the animals stopped to feed. At the wardstone fork, the apprentice helps turn the footpath marker so it’s readable from the cottages. Back at the orchard, the apprentice sets down their bow and helps Maerin lift the rail. Keep the walk independent of Q184 completion and rewards.
+
+**Dialogue status:** Review draft. The homecoming stays with the player’s local relationships. Confidential finale details remain private.
 
 ## Mandatory final-scene sequencing
 

@@ -26,3 +26,9 @@ Historical source: [Allied and Kel'vari cast](https://github.com/code-studio-au/
 Text references from this account; these links do not establish additional relationships.
 
 [Aelari](../../Lore/Peoples/Aelari.md)
+
+## Creator-locked review — 12 November 2026
+
+**Creator-approved:** Veylan is an Aelari who sympathises with some Vaelari positions. He sold restricted information and concealed the risks, but the buyer's identity is **not established to the player** in Q057. Do not imply he knowingly sold to the Unmade, or reveal a buyer prematurely. His ideological grievance does not excuse the sale; exact recipient and subsequent legal outcome remain open.
+
+This scoped decision supersedes conflicting older *working* descriptions; other details remain governed by [the decision ledger](../../../DECISIONS.md) and current campaign.

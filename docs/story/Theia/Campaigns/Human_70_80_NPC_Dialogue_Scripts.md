@@ -134,6 +134,26 @@
 
 **In-progress:** “Complete the agreed task and return with the result. We still have work ahead.”
 
+## Q169 — What the Shroud Concealed (replacement dialogue; WORKING wording, LOCKED story beats)
+
+**Tarek, offer:** “The receding boundary has uncovered a site none of our surviving surveys describe. There are signs of an older occupation, but I won't assign it a name from the road. Will you investigate and bring back evidence we can authenticate?”
+
+**Player:** “What should I look for?”
+
+**Tarek:** “A record with a clear provenance. If the place is under someone's care, ask permission. We need to know what was there, not claim it.”
+
+**After journal authentication, player to Oth'varen:** “This journal belonged to Thes'var. Its last surviving entries stop before the Sundering. You knew him.”
+
+**Oth'varen:** “I did. We worked together when our disagreements still allowed us to listen. These pages are his words, from before the choices that followed. They cannot absolve what he later did, and they do not tell us everything that happened.”
+
+**Player:** “Will you help us preserve them?”
+
+**Oth'varen:** “Yes. Keep the original with those entitled to guard it. Let the copies show what can be proved, and leave the missing pages missing.”
+
+**Completion:** “The record is authenticated, the original is in proper custody, and Oth'varen's bounded recollection has been recorded. We have recovered history, not a verdict.”
+
+**Availability (LOCKED):** This optional quest opens after Q156 with normal regional access and restricted-site permission as needed; it does not require Q157 or Q181. Once Q181 records Oth'varen's death, new acceptance is unavailable. Accepted quests lacking the Oth'varen conversation expire with a clear explanation, while completed quests remain completed. Handling of a player who has spoken to him but not finished custody is still OPEN; do not invent an automatic outcome.
+
 ## Q169 — Tarek
 
 **SUPERSEDED dialogue: former transport survey.** The lines below are retained only as historical drafting evidence from [the prior version](https://github.com/code-studio-au/theia-mmo/blob/8151a4aaac1ec3a5e7fd972ac5951642f59bf938/docs/story/Theia/Campaigns/Human_70_80_NPC_Dialogue_Scripts.md#q169--tarek), not active Q169 dialogue or objectives. Q169 is now **What the Shroud Concealed** under the [creator decision](../../DECISIONS.md#2026-11-04--locked-q169-what-the-shroud-concealed-replaces-transport-survey); follow the [canonical campaign](Human_1_80_Canonical_Campaign.md) for journal recovery, authentication and Oth'varen's interpretation. Replacement speech remains to be authored and is WORKING; these old route-confirmation lines must not be used as completion evidence for the new quest.

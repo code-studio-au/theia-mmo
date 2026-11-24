@@ -26,3 +26,7 @@ Historical source: [Allied and Kel'vari cast](https://github.com/code-studio-au/
 Text references from this account; these links do not establish additional relationships.
 
 [Korrath](../../Lore/Peoples/Korrath.md)
+
+## Creator-locked character development — 12 November 2026
+
+Urodan is an older, wise and deeply traditional Korrath custodian. He believes preservation, caution and restrictions exist to keep his people safe. His views should be sympathetic and intellectually serious, not caricatured as blind obstruction. He clashes at times with Tarek Oss over the acceptable risks of recovering and testing dangerous knowledge; both share concern for their community. Exact dialogue remains WORKING.

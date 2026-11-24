@@ -10,7 +10,10 @@
     "Original optional quest identifiers outside the H-series table require separate reconciliation.",
     "All 24 HS-series original optional quests are now preserved as structured provenance; none is silently equated with a current optional quest.",
     "28 unmatched H-series quests now have candidate dispositions; all remain unapproved and original source facts preserved.",
-    "24 optional HS-series quests have thematic candidates only; several map to a single Q and may represent omitted standalone content."
+    "24 optional HS-series quests have thematic candidates only; several map to a single Q and may represent omitted standalone content.",
+    "2026-11-12 creator lock: Q035 is now 'The Covenant Calls' (universal four-race summons). Historical H2-01 'A Ledger Reaches the Sea' is retained solely as source provenance, NOT an exact-title migration or active Q035 objective. Review any prior H2-01 mapping manually.",
+    "2026-11-12 creator lock: Q184 has race-specific homecomings under one quest ID; original human H-series ending is only the human variant. Do not infer other races' contacts or locations from the human source.",
+    "2026-11-12 creator lock: Grey Surveyor and High King strings in historical source rows remain verbatim provenance, not current player-facing titles; current terms are Father and High Thane Bromund."
   ],
   "legacy_quest_rows": [
     {
@@ -4106,5 +4109,22 @@
       "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     }
   ],
-  "source_status": "original H/HS source preserved in this crosswalk; no superseded story decision is authoritative"
+  "source_status": "original H/HS source preserved in this crosswalk; no superseded story decision is authoritative",
+  "creator_approved_migration_constraints_2026_11_12": {
+    "Q035": {
+      "canonical_title": "The Covenant Calls",
+      "legacy_H2_01": "superseded_human_only_historical_source",
+      "mapping": "not_an_exact_title_match; manual objective migration required",
+      "entry_gate": "completion of active character's own racial 1–20 campaign; runtime IDs unresolved"
+    },
+    "Q036": {
+      "canonical_title": "Four Peoples, One Harbour",
+      "mapping": "shared Covenant briefing; no human royal warrant dependency"
+    },
+    "Q184": {
+      "canonical_title": "The Road Home",
+      "mapping": "one shared ID; race-specific homeland/contact; human historical material applies only to human variant"
+    },
+    "source_preservation": "Historical source rows are immutable evidence, not active canon."
+  }
 }

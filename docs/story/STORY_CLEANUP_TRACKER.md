@@ -88,3 +88,128 @@ All boxes remain open until final current-main verification, even where substant
 - [ ] Temporary tracker deleted with incoming references repaired.
 
 After completion, stop cleanup cycles and maintain the established sources rather than create competing ones.
+
+
+## 2026-11-12 — Full conversation-to-repository reconciliation audit (IN PROGRESS)
+
+**Authority:** Creator-approved decisions recorded in [DECISIONS.md](DECISIONS.md#2026-11-12--covenant-racial-openings-tidehold-handoff-and-cast-review--creator-locked-documentation) and the current canonical campaign. **Do not treat this audit as approval of unmade racial 1–20 plots or as permission to invent missing biographies.** Review only the scope of approved details; preserve stable quest IDs and prior outcomes.
+
+### Initial verified findings on `main`
+
+- [x] Decision ledger includes the new Covenant racial handoff, human cast, Bromund, Oth'varen/Father, and race-history direction.
+- [x] Canonical campaign Q035 is `The Covenant Calls`, Q036 is the shared Tidehold briefing, Q184 has a race-specific homecoming, and Q053 names the High Thane.
+- [x] Individual character notes updated for Darian, Brenna, Anwen, Aldren, Cassian, Corven, Veylan, Bromund and Oth'varen; Dwarves, Aelari, Vaelari and Korrath people notes updated.
+- [ ] **BLOCKING — Structured quest inventory:** `Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json` still contains old Q035 title and legacy `Grey Surveyor` / `High King` strings. Reconcile Q035 race-aware prerequisites, Q036 briefing and Q184 branches carefully, preserving all stages/evidence semantics.
+- [ ] **BLOCKING — Quest dependency inventory:** `Theia/Campaigns/Human_1_80_Quest_Dependencies.json` still contains old Q035 title and legacy titles. Verify Q035 is not gated by human Q031 or Cassian's ledger and has a correct per-race completion gate.
+- [ ] **Dialogue:** `Theia/Campaigns/Human_20_30_NPC_Dialogue_Scripts.md` still has old Q035 Cassian-ledger introduction and old `Grey Surveyor` / `High King` references. Review later dialogue packs and spoiler timing before replacements.
+- [ ] **Canon consistency:** `Theia/Campaigns/Human_1_80_Canonical_Campaign.md` still contains older `Grey Surveyor` and `High King` references beyond the Q053 change. Determine each reference's context (historical vs current player-facing) before editing.
+- [ ] **Race/culture review:** Reconcile reciprocal Aelari/Vaelari and Korrath/Vorrath ancestral directions with the World Bible, Chronicle, race profiles and historic schism timing. Neither modern alliance existed at the ancient schisms. Review Vorrath note specifically.
+- [ ] **Character coverage:** Check remaining cast files and scene scripts for approved motivations, dialogue and relationships from the conversation. Avoid inventing details not actually recoverable.
+- [ ] **Narrative and reveal timing:** Confirm Guardians' secrecy, Father alias, Oth'varen's hidden transformation, Harbinger name timing, incremental resonator discovery, forgotten Kel'vari, divine absence, Shattered Delegation accounts and race-specific dialogue across all relevant files.
+- [ ] **Final validation:** Cross-check quest IDs, prerequisites, dialogue, old/new names and later epilogues; report anything not fully committed or implemented. Only mark complete after concrete verification.
+
+**Audit scope note:** The current project conversation includes many spoken approvals. A full assertion of 100% coverage requires comparing all available approval records and their detailed source conversations, not just this initial targeted file scan. This tracker records confirmed gaps rather than asserting completeness.
+
+### Reconciliation progress — 12 November 2026
+
+- [x] Q035/Q036 canonical, dependency reference, structured authoring manifest and 20–30 dialogue now use the universal Tidehold summons and shared Corven briefing. Human Q031 no longer gates Q035 in the derived dependency reference or authoring manifest. **Per-race completion flags remain unassigned** because the three other racial campaigns are not yet authored; this is a design/implementation dependency, not a claim of executable readiness.
+- [x] Q032–Q034 optional human aftermath now require Q031 in the structured reference and manifest without gating Q035.
+- [x] Q053 uses High Thane terminology in the canonical register, derived reference, authoring manifest and 20–30 dialogue.
+- [x] Q097 and pre-reveal Guardian references use Father instead of Grey Surveyor in the current canonical register and structured inventories. Historical archives may retain the superseded label as provenance.
+- [x] Q184 has race-specific homeland/contacts in the canonical register and structured inventories, with the shared quest ID preserved. Exact non-human NPC bindings remain OPEN.
+- [x] Vorrath ancestry note updated to complement Korrath and Aelari/Vaelari reciprocal origin directions without placing modern factions in the ancient past.
+- [x] Re-fetched and JSON-parsed both updated inventories; both retain 184 quest records and Q035's new title.
+- [ ] **Unresolved: all older narrative/dialogue references.** Other dialogue packs, Chronicle, World Bible, character cross-links, legacy registers and archival sources require context-aware checks. Do not globally replace historical quotations or turn unapproved interpretations into canon.
+- [ ] **Unresolved: exact spoken-approval coverage.** Earlier character-by-character discussion contains approvals beyond those summarized in the ledger; verify source details before asserting all individual backgrounds, motivations and dialogues are fully reflected.
+- [ ] **Unresolved: engine and race integration.** Implement real race-specific Q035 eligibility, Q184 actors/locations, quest catalogue migration, dialogue branching and end-to-end tests when the other racial campaigns and engine bindings exist.
+
+### Further source and narrative audit — 12 November 2026
+
+- [x] World Bible now explicitly carries the approved racial campaign boundary, reciprocal schisms, Guardian secrecy, Father alias, player reveal timing, political leadership and race-specific epilogue.
+- [x] Current 10–20 and 70–80 NPC dialogue packs were fetched and checked for the exact superseded labels `Grey Surveyor` and `High King`; neither label appears in those two packs.
+- [ ] **Chronicle intentionally not modified:** `THEIA_INTERWOVEN_CHRONICLE.md` still has 28 `Grey Surveyor` and six `High King` occurrences. The creator previously asked not to edit the Chronicle yet; a separate prose review is required before touching it. This is a documented exception, not a completed reconciliation.
+- [ ] **Source approval fidelity:** Specific character-by-character spoken approvals earlier in this conversation must still be checked against the complete available conversation, not inferred from the limited recap. Do not invent detailed character motivations or mark these verified.
+- [ ] **Additional dialogue locations:** The expected filenames `Human_30_40_NPC_Dialogue_Scripts.md`, `Human_40_50_NPC_Dialogue_Scripts.md`, `Human_50_60_NPC_Dialogue_Scripts.md` and `Human_60_70_NPC_Dialogue_Scripts.md` were not present at those exact paths; discover their actual locations before claiming comprehensive dialogue coverage.
+- [ ] **Runtime readiness:** Per-race Q035 completion flags and Q184 contact/location bindings cannot be finalized until dwarf, Aelari and Korrath starting campaigns are approved. Structured manifests are editorial, not executable.
+
+### Continued audit — 12 November 2026 (Korrath cast and actual dialogue packs)
+
+- [x] Located the actual dialogue packs `Human_30_35_NPC_Dialogue_Scripts.md`, `Human_35_45_NPC_Dialogue_Scripts.md`, `Human_45_55_NPC_Dialogue_Scripts.md`, and `Human_55_70_NPC_Dialogue_Scripts.md`. Earlier 'missing dialogue' finding resulted from assuming incorrect level-band filenames; these packs do exist.
+- [x] Verified the 30–35, 45–55 and 55–70 packs have no exact `Grey Surveyor` / `High King` labels; updated the Q097 heading in 35–45 to `Father` and updated the engine-independent story invariant likewise.
+- [x] Updated individual Urodan and Tarek Oss profiles with their approved wise-traditional versus questioning-safety-conscious tension, while leaving exact personal biographies and dialogue open.
+- [ ] Remaining Chronicle editing is explicitly deferred per prior creator instruction; the old narrative labels are known discrepancies, not yet reconciled.
+- [ ] Broader full-conversation acceptance still requires checking the entire spoken approval source and all related cast files. Do not equate a file scan with complete semantic verification.
+
+### Cross-race cast pass — 12 November 2026
+
+- [x] Updated Elara, Commander Nessa Ward, Caelith Rowan, Irielle Mossward, Queen Seralyth and First Elder Dromak character notes to respect distinct 1–20 racial histories and independent sovereign authority in the shared campaign.
+- [x] Reconfirmed that the missing mid-level dialogue packs exist under actual bands 30–35, 35–45, 45–55 and 55–70; earlier missing-path assumption is closed.
+- [ ] Character-by-character details beyond the approved summaries remain subject to full original voice-transcript comparison. These cross-race notes do not establish new personal backstories.
+- [ ] Chronicle remains deferred by explicit creator instruction; runtime gate/actor binding remains dependent on future racial campaigns.
+
+### Historical migration and dialogue guardrail pass — 12 November 2026
+
+- [x] Historical `Human_Quest_Editorial_ID_Crosswalk_Draft.json` retains original H2-01 `A Ledger Reaches the Sea` source wording, but now explicitly marks it superseded as a live Q035 mapping; universal summons and race-aware Q184 migration constraints are recorded without rewriting historical evidence.
+- [x] `Human_1_80_Key_Scenes_Branching_Dialogue.md` now explicitly guards Q035–Q036 shared authority, Q184 race-specific history, cross-race knowledge, Guardian secrecy and Q097/Q143 reveal timing.
+- [ ] Verify other historical crosswalks and legacy dialogue references as **provenance**, not as active canonical quest definitions; avoid indiscriminate replacements.
+- [ ] Audit remains OPEN pending full spoken-approval verification, deliberately deferred Chronicle revision, and unapproved racial campaign/runtime bindings.
+
+### Late-campaign quest continuity audit — 12 November 2026
+
+- [x] Compared canonical Q156, Q157, Q159, Q168, Q169, Q181 and Q183 against both 184-quest JSON inventories.
+- [x] Q159 and Q168 both use Q156 as their sole quest prerequisite, with approved access notes; neither wrongly requires Q157 or Q181 or imposes an extra level gate.
+- [x] Q169 is correctly titled `What the Shroud Concealed`, has a post-Q156 journal investigation and Oth'varen conversation, and its authoring metadata explicitly records the Q181 death-event availability cutoff. The derived dependency reference records expiry for accepted quests that have not completed the conversation; exact runtime handling remains pending.
+- [x] Q181's authoring objectives preserve Oth'varen's physical death **after** verifying alignment and **before** final inversion. Nhal's unified will and memory are shattered; divine essence is not annihilated.
+- [x] Q183 has both the Sel'ora/Aru'ven Kel'vari response and separate Mara/Corven Covenant report in canonical and structured authoring content.
+- [ ] Q169 post-conversation but pre-custody completion remains an explicitly open edge case; do not silently decide it.
+- [ ] The runtime still needs to implement Q169 expiration, Q159/Q168 regional permissions and Q183 dual-report evidence. JSON authoring notes are not proof of engine support.
+
+### Optional journal and homecoming dialogue pass — 12 November 2026
+
+- [x] Added WORKING replacement Q169 dialogue to the 70–80 pack: Tarek's historical site assignment, authenticated pre-Sundering Thes'var journal, Oth'varen's bounded recollection, original custody and explicit no-exoneration/no-finale-spoiler boundaries. The former transport-survey dialogue remains clearly marked SUPERSEDED as provenance.
+- [x] The Q169 dialogue note preserves the creator-approved Q181 death cutoff and explicitly leaves post-conversation unfinished custody unresolved.
+- [x] Scoped Q184's existing Elara/Millhaven finale dialogue explicitly to the HUMAN variant of the shared epilogue. Dwarf/Aelari/Korrath variants remain open rather than receiving invented NPCs.
+- [ ] Replacement Q169 dialogue is a working draft, not creator-approved final wording or executable script.
+- [ ] Non-human Q184 dialogue and actor binding require completion of the three separate 1–20 racial campaigns.
+
+### Q031–Q037 authoring and dialogue reconciliation — 12 November 2026
+
+- [x] Found a remaining active contradiction in `Human_Q035_Q062_Rust_Authoring_Review.md`: it still required Cassian's ledger and a human warrant for Q035. Replaced this with the creator-locked universal summons, racial campaign completion gate, common Corven briefing and limited depot investigation; corrected High Thane terminology in the review.
+- [x] Revised Q031 human-only dialogue to make Aldren's commission explicitly limited to the human crown, and to close the Cassian story with Elara without making Q035 dependent on that commission. Q032–Q034 remain optional.
+- [ ] Continue auditing all other current authoring reviews and quest contracts for human-only assumptions in shared Q035+ content; historical sources remain archival.
+
+### Quest authoring review sweep — 12 November 2026
+
+- [x] Inspected current Q063–Q079, Q080–Q103, Q104–Q128, Q129–Q157 and Q158–Q184 Rust authoring reviews for the exact superseded `Grey Surveyor`, `High King` and human-warrant wording; none of those five files contains the searched strings.
+- [x] Corrected Q018–Q034 Rust review's stale claim that Q032–Q034 lack prerequisites. The structured references now require Q031; these optional human quests do not gate Q035.
+- [x] Corrected Q158–Q184 Rust review's human-only Q184 completion language to the creator-approved shared quest with race-specific homeland/NPC variants.
+- [ ] The five-file terminology sweep is not a semantic audit of every scene; race-aware dialogue and engine actor bindings remain to be implemented.
+
+### Shared completion-alias safety audit — 12 November 2026
+
+- [x] Found a further runtime migration hazard: the derived quest reference still labels Q035 and every later shared Covenant completion `HUMAN_Q###_DONE`, and Q036–Q037 still reference those legacy aliases. This does **not** change editorial story order, but could accidentally become a human-only implementation gate if imported uncritically.
+- [x] Added an explicit BLOCKING migration warning to the derived JSON reference, preserving the old labels as provenance rather than silently renaming persistent completion facts.
+- [x] Added cross-race acceptance criteria to the Rust quest authoring contract: race-specific Q035 unlock; no human Q031 gate; shared Q036+ progression; optional Q032–Q034; race-specific Q184; catalogue/journal migration checks.
+- [ ] Stable cross-race runtime IDs, saved-progress migrations and engine tests remain to be designed and implemented; do not mark them complete from documentation alone.
+
+### Cinematic and repository-wide reference sweep — 12 November 2026
+
+- [x] Found and corrected `Human_1_80_Encounter_Barks_and_Cinematic_Timing.md`: Elara's Q184 homecoming bark was not explicitly scoped to humans. It now states that the shared epilogue requires race-specific homelands and familiar NPCs.
+- [x] Searched the repository for Q035, Q184, `HUMAN_Q035_DONE` and the superseded title `A Ledger Reaches the Sea`. Historical quest registers, decision recovery, legacy comparisons and Chronicle retain historical title strings as provenance; those are not automatically active quest definitions.
+- [ ] Repository search is keyword-based and may miss semantic contradictions without the exact searched terms. Continue context-aware review of active production-facing files.
+- [ ] The Chronicle remains intentionally untouched pending explicit creator authorization.
+
+### Level-80 finale authorization audit — 12 November 2026
+
+- [x] Found that Q174's narrative stage explicitly required reaching level 80, but the authoring manifest still had `minimum_level: null` and `level_gate_approved: false`, and the derived reference had a historical `minLevel: 75`. Without a separate authorization check, an implementation could unlock the finale prematurely.
+- [x] Recorded a **creator-locked, non-executable level-80 authorization gate** on Q174 in both structured inventories: readiness work can precede level 80, but Q174 cannot complete and unlock Q175 until the character reaches level 80. Preserved historical planning pace rather than falsely changing every level annotation.
+- [ ] Rust quest engine must implement authoritative character-level evidence and gate Q174 completion/Q175 availability; documentation alone is not a tested runtime rule.
+
+## 16 November — Millhaven starter-zone design checkpoint
+
+- **APPROVED:** Millhaven is a small farming village, smaller than Stoneford; Valecrown is a larger royal city, with the High City encountered later. Preserve the established Human levels 1–20 story and NPC roles.
+- **APPROVED for all racial starter zones:** geography encloses three sides with only one traversable exit. The exit is never locked by level or quest completion; normal quest eligibility still applies.
+- **WORKING, not canon:** Millhaven valley concept has wooded/rugged north, west and south boundaries and one eastward road to Stoneford; village centre, western militia grounds, central healing house, southern farms and eastward stream, eastern merchant yard/caravan route and wagon site, northern woods and bandit hideout. Exact placements, dimensions, population and encounters require review.
+- **WORKING:** The bandits occupy a cave complex in the northern woodland; exterior lookout/camp and interior stolen cargo and leader quarters are proposed, as is open-world rather than instanced access. No exact room plan or mechanics approved.
+- **OPEN by explicit creator decision:** Whether the cave complex has older or later-revealed historical significance. Do not imply a Conclave/Sundering connection or seal a backstory until separately approved.
+- This checkpoint records design status only; it does not amend the protected campaign, World Bible or quest manifest, and is not approval of proposed details.

@@ -25,3 +25,9 @@ trolls co-created by Keeper + Ascendant; chiefly Keeper-worshipping; elders' cou
 ## Related notes
 
 [The Keeper](../../Characters/Divine/The%20Keeper.md) · [The Ascendant](../../Characters/Divine/The%20Ascendant.md)
+
+## Creator-locked review — 12 November 2026
+
+**Creator-approved historical direction:** The ancestral troll tradition is associated with the people who ultimately aligned with Dominion; the Korrath are a divergent branch that ultimately joined Covenant, in contrast to the reciprocal Aelari/Vaelari pattern. This does **not** mean either modern alliance existed at the time of the ancient schism. The Korrath value safety, restraint and Keeper-linked preservation, sometimes at the cost of restrictive customs. Urodan remains an older, wise traditionalist and clashes constructively with Tarek's more questioning approach. The level 1–20 Korrath homeland story is distinct and resolves before Tidehold; exact plot remains open.
+
+This scoped decision supersedes conflicting older *working* descriptions; other details remain governed by [the decision ledger](../../../DECISIONS.md) and current campaign.

@@ -37,3 +37,9 @@ Historical source: [Approved recurring humans: complete launch movements](https:
 Text references from this account; these links do not establish additional relationships.
 
 [Valecrown](../../Atlas/Places/Valecrown.md) · [Lord Cassian Veyr](Lord%20Cassian%20Veyr.md) · [Covenant](../../Lore/Institutions/Covenant.md)
+
+## Creator-locked character review — 12 November 2026
+
+Aldren is the human monarch in Valecrown, not Covenant High Ruler. Edric represented the Human Crown within a Covenant-authorised Shattered Delegation; his murder left Aldren vulnerable to Cassian's manipulation. Aldren remains responsible for his decisions and accepts correction through verified evidence. His relationship with High Ruler Corven is generally respectful and cooperative, with underlying tension over Dominion policy but no open feud. The Cassian Q018–Q031 story concludes within the human 1–20 racial campaign.
+
+**Scope:** This section supersedes conflicting earlier proposed-development wording only where specified. Existing quest IDs, unapproved sentencing, exact dialogue and other open details remain unchanged. See [decision ledger](../../../DECISIONS.md).

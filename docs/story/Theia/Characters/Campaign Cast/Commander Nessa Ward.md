@@ -29,3 +29,9 @@ Historical source: [New human and expedition cast](https://github.com/code-studi
 Text references from this account; these links do not establish additional relationships.
 
 [Northwatch Landing](../../Atlas/Places/Northwatch%20Landing.md)
+
+## Approved cross-race campaign boundaries — 12 November 2026
+
+**Creator-locked campaign interface:** Nessa commands the integrated Northwatch garrison and introduces all four Covenant races to its procedures in Q038. Darian Cole remains a human soldier temporarily attached to her supply/rescue unit; this does not transfer his permanent allegiance or imply he is a hero of every racial starting story. Her orders must respect the sovereignty of the member peoples and the military's bounded mission.
+
+**Scope:** This is a continuity application of existing approved roles, not approval of new racial 1–20 quest plots or dialogue.

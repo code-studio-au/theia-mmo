@@ -37,3 +37,9 @@ Historical source: [Approved recurring humans: complete launch movements](https:
 Text references from this account; these links do not establish additional relationships.
 
 [Tidehold](../../Atlas/Places/Tidehold.md) · [Kel'vari](../../Lore/Peoples/Kel%27vari.md)
+
+## Creator-locked review — 12 November 2026
+
+**Creator-approved:** Corven's office issues the same formal Q035 Covenant summons to all four playable Covenant races after their independent level 1–20 campaigns. He welcomes them at Tidehold in Q036 and grants a limited investigation permit, not military enlistment or blanket royal authority. He respects King Aldren, with occasional tension over Dominion policy, not an open feud.
+
+This scoped decision supersedes conflicting older *working* descriptions; other details remain governed by [the decision ledger](../../../DECISIONS.md) and current campaign.

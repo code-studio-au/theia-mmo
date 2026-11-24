@@ -52,13 +52,13 @@
 
 **Shared:** The player is registered as a visitor; access limits persist. No sovereignty transfer.
 
-## SCENE H40-097 — The Grey Surveyor is Oth'varen
+## SCENE H40-097 — The Elder is Oth'varen
 
-**Prerequisites:** Q094–Q096 verifier evidence collected. **Location:** Oth'irun private research chamber. **Participants:** Grey Surveyor, Sel'ora, player.
+**Prerequisites:** Q094–Q096 verifier evidence collected. **Location:** Oth'irun private research chamber. **Participants:** Elder, Sel'ora, player.
 
 **Player:** “The verifier's mark on the original project is yours.”
 
-**Grey Surveyor:** “I hoped that would remain a question longer.”
+**Elder:** “I hoped that would remain a question longer.”
 
 **Player A — accusation:** “You watched us search for you.” → **Surveyor:** “I did. I was afraid of what my answer would make you ask next.”
 
@@ -70,7 +70,7 @@
 
 **Sel'ora:** “His mark is independently verified. His account still requires scrutiny.”
 
-**Flags:** `OTHVAREN_REVEAL_TONE=ACCUSATION|CURIOSITY|TRUST`. Player-facing speaker label changes from **Grey Surveyor** to **Oth'varen** only after the shared reveal.
+**Flags:** `OTHVAREN_REVEAL_TONE=ACCUSATION|CURIOSITY|TRUST`. Player-facing speaker label changes from **Elder** to **Oth'varen** only after the shared reveal.
 
 ## SCENE H60-140 — Vaer'uun's invitation
 
@@ -183,7 +183,7 @@
 |---|---|---|---|
 | Q001–Q034 | Caravan theft, administrative corruption, Cassian's betrayal | Kel'vari, Nhal, Binding, Conclave | Elara and Mara treat evidence seriously; Cassian credible before exposure |
 | Q035–Q062 | Resonators, suspicious alterations, Guardians' technical role | Guardians' surviving Passage, Oth'varen identity, Nhal | Sera is careful; allied authorities remain independent |
-| Q063–Q079 | First inversion, Oma'vira, destroyed Shroud Passage | Living Kel'vari, hidden Guardian gate, Sixth Scholar identity | Grey Surveyor remains unidentified |
+| Q063–Q079 | First inversion, Oma'vira, destroyed Shroud Passage | Living Kel'vari, hidden Guardian gate, Sixth Scholar identity | Elder remains unidentified |
 | Q080–Q091 | Guardians' secret restricted gate, living Kel'vari at Q086 | Oth'varen's true identity before Q097 | Sera accepts criticism; Kel'vari consent required |
 | Q092–Q103 | Six scholars; Oth'varen identity at Q097; ancient project sabotage | Full Keeper/Binding history; Nhal's name | Oth'varen acknowledges limited knowledge |
 | Q104–Q118 | Su'vareth sabotaged peace; Veilbreaker recovered in Q118 | Veilbreaker's complete mechanism, Nhal name | No friendly Dominion authority; Oth'varen learns modern operation from recovered orders |
@@ -197,7 +197,7 @@
 ## First-pass audit findings
 
 1. **Early foreshadowing:** Q003 and Q008 mention anomalous healing, but must not attribute it to the same six-field mechanism the Guardians have not yet characterized. Keep observation separate from theory.
-2. **Grey Surveyor attribution:** Q071–Q072 dialogue speaker labels can reveal Oth'varen's name to a reader or player before Q097. In-game speaker labels must say **Grey Surveyor**, even if internal metadata uses a stable character ID.
+2. **Elder attribution:** Q071–Q072 dialogue speaker labels can reveal Oth'varen's name to a reader or player before Q097. In-game speaker labels must say **Elder**, even if internal metadata uses a stable character ID.
 3. **Kel'vari revelation:** Q084 custodial dialogue must not reveal the name Kel'vari before Q086 to the player. Use “custodian beyond the gate” and withhold speaker race until Q086.
 4. **Guardian disclosure:** Q081 acknowledges a gate; Q082 provides historical context. Do not present Sera's concealment as a simple misunderstanding or absolve her automatically.
 5. **Shattered Delegation:** Q107 must preserve the High Ruler's brother's anti-peace position and reluctant attendance as an official delegate; Q108 must be hostile infiltration only.
@@ -217,3 +217,13 @@
 - Author combat phase barks and cutscene timing for Cassian, Oma'vira, Su'vareth, Vaer'uun, Khor'vun, Thes'var and Oth'varen.
 - Use a content validator to flag forbidden names and concepts in quests before their reveal gates; manual editorial review remains essential.
 - Do not assert voice-ready or engine-integrated status before full localization and scene QA.
+
+## Creator-locked racial handoff and return boundaries — 12 November 2026
+
+**Q035–Q036:** Q035 `The Covenant Calls` is the same formal summons issued by Corven's office to every Covenant playable race after its completed independent 1–20 story. The local messenger may acknowledge race-specific prior deeds; the summons itself has identical authority. Q036 `Four Peoples, One Harbour` is the first shared Tidehold briefing. Corven recognises competent service without claiming the player is famous or enlisted, explains independent sovereignty and grants a limited provision-depot inspection permit. Cassian's human-only case and Edric's royal records must not be treated as universal prerequisite knowledge.
+
+**Q184:** The homecoming is one shared editorial quest and common completion, with the character returning to their own racial homeland and familiar local contacts. Human players revisit Elara and Millhaven; non-human contacts and dialogue require approval of their separate starting stories. Never write a non-human player as having grown up under Elara.
+
+**Cross-race voice rule:** NPC reactions can depend on race, prior quest history and local knowledge, but should not create friendly cross-faction diplomacy or give public NPCs knowledge of the clandestine Guardians. Do not introduce Nhal's authenticated name before Q143, or Oth'varen's identity before Q097.
+
+**Status:** Locked boundaries; full race-specific dialogue branches and actor bindings are not yet authored.
