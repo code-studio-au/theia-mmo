@@ -19,7 +19,7 @@ impl Sandbox {
             std::process::id()
         ));
         std::fs::create_dir(&path).unwrap();
-        Self(path)
+        Self(path.canonicalize().unwrap())
     }
 }
 impl Drop for Sandbox {

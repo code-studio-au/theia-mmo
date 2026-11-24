@@ -996,6 +996,7 @@ mod tests {
         let root = std::env::temp_dir().join(format!("theia-ui-header-{}", std::process::id()));
         let path = root.join(SWORD);
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let root = root.canonicalize().unwrap();
         std::fs::write(
             &path,
             b"version https://git-lfs.github.com/spec/v1\noid sha256:missing\n",

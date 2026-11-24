@@ -678,7 +678,7 @@ mod tests {
                     .as_nanos()
             ));
             std::fs::create_dir(&path).unwrap();
-            Self(path)
+            Self(path.canonicalize().unwrap())
         }
     }
     impl Drop for Scratch {
