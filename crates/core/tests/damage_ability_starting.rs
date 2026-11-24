@@ -265,22 +265,13 @@ fn references_categories_duplicates_and_missing_coverage_are_checked() {
         assert!(parse(&d).is_err());
     }
     let (w, a, _) = contexts();
-    let mut abilities: Value = serde_json::from_slice(include_bytes!(
-        "../../../content/gameplay/development-classic-abilities.json"
+    // Use the legacy fixture: the current catalogue also contains schema-7-only abilities.
+    let legacy = abilities::Catalog::from_json(include_bytes!(
+        "../../../content/gameplay/development-projectile-abilities.json"
     ))
     .unwrap();
-    abilities["schema"] = json!(6);
-    for a in abilities["abilities"].as_array_mut().unwrap() {
-        a.as_object_mut().unwrap().remove("combat");
-    }
-    assert!(
-        Catalog::from_json(
-            DATA,
-            &w,
-            &abilities::Catalog::from_json(&serde_json::to_vec(&abilities).unwrap()).unwrap()
-        )
-        .is_err()
-    );
+    assert_eq!(legacy.schema(), 6);
+    assert!(Catalog::from_json(DATA, &w, &legacy).is_err());
     assert_eq!(a.schema(), 7);
 }
 #[test]
