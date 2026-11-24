@@ -106,8 +106,9 @@ class AccountClient:
                     detail = json.loads(raw)
                 except (ValueError, UnicodeDecodeError):
                     detail = None
-                if detail == {'error': incompatible}:
-                    raise AccountError(incompatible, status, retryable=False)
+                expired = 'Join reservation expired; launch the game again'
+                if detail in ({'error': incompatible}, {'error': expired}):
+                    raise AccountError(detail['error'], status, retryable=False)
             if status not in (200, 202, 204):
                 raise AccountError('Account operation was refused; sign in again or wait for your previous character to leave', status)
             return (json.loads(raw) if raw else None), status
@@ -116,8 +117,9 @@ class AccountClient:
         except (OSError, ValueError, urllib.error.URLError):
             raise AccountError('Could not complete the account operation') from None
 
-    def use_access_token(self, token):
-        result, _ = self.request('/auth/hosted', {}, access_token=token)
+    def use_access_token(self, token, reservation=None):
+        body = {} if reservation is None else {'reservation': reservation}
+        result, _ = self.request('/auth/hosted', body, access_token=token)
         session = result.get('session') if isinstance(result, dict) else None
         if not isinstance(session, str) or not re.fullmatch(r'[0-9a-f]{64}', session):
             raise AccountError('Invalid account session')

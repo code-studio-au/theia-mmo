@@ -258,7 +258,18 @@ pub(super) async fn cancel(
     Ok(StatusCode::NO_CONTENT)
 }
 
-pub(super) async fn hosted(State(state): State<Shared>, headers: HeaderMap) -> Result<Response> {
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct Hosted {
+    #[serde(default)]
+    reservation: Option<String>,
+}
+pub(super) async fn hosted(
+    State(state): State<Shared>,
+    headers: HeaderMap,
+    body: std::result::Result<Json<Hosted>, JsonRejection>,
+) -> Result<Response> {
+    let Hosted { reservation } = json(body)?;
     let verifier = state.cognito.as_ref().ok_or_else(ApiError::unauthorized)?;
     let identity = verifier
         .verify(bearer(&headers)?)
@@ -269,6 +280,35 @@ pub(super) async fn hosted(State(state): State<Shared>, headers: HeaderMap) -> R
         .resolve_owner(identity.issuer(), identity.subject())
         .await
         .map_err(database)?;
+    if state.lifecycle {
+        let id = reservation
+            .filter(|id| {
+                id.len() == 36
+                    && id.bytes().enumerate().all(|(i, b)| {
+                        if [8, 13, 18, 23].contains(&i) {
+                            b == b'-'
+                        } else {
+                            b.is_ascii_hexdigit()
+                        }
+                    })
+            })
+            .ok_or_else(ApiError::bad)?;
+        let game = state
+            .game
+            .lock()
+            .map_err(|_| ApiError::internal())?
+            .clone()
+            .ok_or_else(ApiError::busy)?;
+        let join = crate::admissions::HostedJoin {
+            id,
+            subject: identity.subject().into(),
+        };
+        if !crate::authenticated::lifecycle::allows(&join) {
+            return Err(ApiError::busy());
+        }
+        game.hosted_join(owner, join)
+            .map_err(|_| ApiError::busy())?;
+    }
     let secret = state
         .sessions()?
         .issue(&identity, owner)
@@ -398,6 +438,18 @@ pub(super) async fn enter(
         ),
         _ => ApiError::busy(),
     };
+    if state.lifecycle
+        && !gate
+            .pending_hosted_join(binding.owner)
+            .map_err(admission_error)?
+            .as_ref()
+            .is_some_and(crate::authenticated::lifecycle::allows)
+    {
+        return Err(ApiError(
+            StatusCode::CONFLICT,
+            "Join reservation expired; launch the game again",
+        ));
+    }
     let reservation = gate.reserve(context, binding).map_err(admission_error)?;
     let selected = state
         .publisher

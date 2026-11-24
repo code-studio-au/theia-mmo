@@ -1,0 +1,22 @@
+[Unit]
+Description=Theia Sydney realm lifecycle
+Wants=network-online.target
+After=network-online.target systemd-tmpfiles-setup.service
+
+[Service]
+Type=simple
+Environment=AWS_REGION=ap-southeast-2
+Environment=THEIA_REALM_TABLE=TheiaDevelopmentRealm
+Environment=THEIA_REALM_LIFECYCLE_DIR=/run/theia-realm
+Environment=THEIA_REALM_RELEASE_FILE=/opt/theia/current/realm-release.json
+ExecStart=/opt/theia/bin/theia-realm-host run
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/run/theia-realm
+
+[Install]
+WantedBy=multi-user.target

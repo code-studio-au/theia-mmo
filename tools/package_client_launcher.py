@@ -27,7 +27,7 @@ def package(output, release, public_keys=()):
         assets = application / 'assets'
         assets.mkdir(parents=True)
         for filename in ('launcher.py', 'state.py', 'launcher_update.py', 'launcher.css', 'chrome.py',
-                         'artwork.py', 'hosted_release.py', 'browser_sign_in.py', 'hosted_realm.py'):
+                         'artwork.py', 'hosted_release.py', 'browser_sign_in.py', 'hosted_realm.py', 'realm_gateway.py'):
             shutil.copyfile(APP / filename, application / filename)
         if public_keys:
             trust = application / 'release-keys'
