@@ -381,6 +381,8 @@ impl Store {
 mod tests {
     use super::*;
     use serde_json::json;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static NEXT_FOLDER: AtomicU64 = AtomicU64::new(0);
     struct Folder(std::path::PathBuf);
     impl Drop for Folder {
         fn drop(&mut self) {
@@ -392,12 +394,13 @@ mod tests {
     }
     fn spawn_fixture(origin: [f64; 3], roof: bool, empty: bool) -> (Folder, Anchor) {
         let root = std::env::temp_dir().join(format!(
-            "theia-authored-{}-{}",
+            "theia-authored-{}-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
-                .as_nanos()
+                .as_nanos(),
+            NEXT_FOLDER.fetch_add(1, Ordering::Relaxed)
         ));
         std::fs::create_dir(&root).unwrap();
         let visual = b"Synthetic visual snapshot; no rendered acceptance";

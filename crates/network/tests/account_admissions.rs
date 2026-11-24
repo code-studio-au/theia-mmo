@@ -827,11 +827,12 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
     }
     let patch = Patch::build(ChunkId { x: 120, z: 100 });
     let (stop, shutdown) = watch::channel(false);
+    let (owner_stop, owner_shutdown) = watch::channel(false);
     let (release_a, waiting) = watch::channel(false);
     let (_release_b, ready) = watch::channel(true);
     let (items_a, task_a, received_a) =
-        synthetic_items_with_profile(13, waiting, shutdown.clone(), true);
-    let (items_b, task_b, _) = synthetic_items_with_profile(7, ready, shutdown.clone(), true);
+        synthetic_items_with_profile(13, waiting, owner_shutdown.clone(), true);
+    let (items_b, task_b, _) = synthetic_items_with_profile(7, ready, owner_shutdown, true);
     let policies: [Arc<Policy>; 2] = std::array::from_fn(|i| {
         let policy = Arc::new(Policy::default());
         policy.live.store(true, Ordering::SeqCst);
@@ -1136,6 +1137,8 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
     assert!(stats.appearance_states_sent >= 4);
     assert_eq!(stats.max_players, 2);
     assert!(stats.max_event_queue_bytes <= 8192);
+    // Keep synthetic owners alive until the server has released their streams.
+    owner_stop.send_replace(true);
     task_a.await.unwrap();
     task_b.await.unwrap();
     relay_stop.send_replace(true);
@@ -1421,11 +1424,12 @@ async fn melee_delivery(miss: bool, projectile: bool) {
     let identity = world.identity();
     let patch = Patch::build(ChunkId { x: 120, z: 100 });
     let (stop, shutdown) = watch::channel(false);
+    let (owner_stop, owner_shutdown) = watch::channel(false);
     let (release_a, waiting) = watch::channel(false);
     let (_release_b, ready) = watch::channel(true);
     let (items_a, task_a, received_a) =
-        synthetic_items_with_profile(13, waiting, shutdown.clone(), true);
-    let (items_b, task_b, _) = synthetic_items_with_profile(7, ready, shutdown.clone(), true);
+        synthetic_items_with_profile(13, waiting, owner_shutdown.clone(), true);
+    let (items_b, task_b, _) = synthetic_items_with_profile(7, ready, owner_shutdown, true);
     let policies: [Arc<Policy>; 2] = std::array::from_fn(|i| {
         let policy = Arc::new(Policy::default());
         policy.live.store(true, Ordering::SeqCst);
@@ -1701,6 +1705,7 @@ async fn melee_delivery(miss: bool, projectile: bool) {
         assert_eq!(travel.impacts, 1);
         assert_eq!(travel.peak_active, 1);
     }
+    owner_stop.send_replace(true);
     task_a.await.unwrap();
     task_b.await.unwrap();
 }
