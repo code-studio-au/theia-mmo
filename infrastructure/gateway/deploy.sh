@@ -23,11 +23,9 @@ case "${1:-}" in
     changes=$(aws cloudformation create-change-set --stack-name "$stack" \
       --change-set-name "theia-gateway-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}" \
       --change-set-type "$type" --role-arn "${THEIA_GATEWAY_EXECUTION_ROLE:?}" \
-      --template-body "file://$template" --capabilities CAPABILITY_NAMED_IAM \
-      --parameters "ParameterKey=InstanceId,ParameterValue=${THEIA_INSTANCE_ID:?}" \
-        "ParameterKey=CognitoIssuer,ParameterValue=${THEIA_COGNITO_ISSUER:?}" \
+      --template-body "file://$template" \
+      --parameters "ParameterKey=CognitoIssuer,ParameterValue=${THEIA_COGNITO_ISSUER:?}" \
         "ParameterKey=CognitoClientId,ParameterValue=${THEIA_COGNITO_CLIENT:?}" \
-        "ParameterKey=ArtifactBucket,ParameterValue=$THEIA_GATEWAY_BUCKET" \
         "ParameterKey=ArtifactKey,ParameterValue=$object" \
         "ParameterKey=ArtifactVersion,ParameterValue=$version" --query Id --output text)
     aws cloudformation wait change-set-create-complete --stack-name "$stack" --change-set-name "$changes"

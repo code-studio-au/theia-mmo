@@ -43,6 +43,8 @@ jobs:
         working-directory: infrastructure/aws
       - run: npm run check && npm test && npm run synth -- --app 'node bin/theia-realm-gateway.ts' --quiet
         working-directory: infrastructure/aws
+      - run: npm run synth -- --app 'node bin/theia-realm-gateway-identity.ts' --output cdk.out/realm-identity --quiet
+        working-directory: infrastructure/aws
       - run: rustup show active-toolchain && rustup target add x86_64-unknown-linux-musl
       - run: sudo apt-get update && sudo apt-get install -y musl-tools
       - run: cargo fmt --manifest-path infrastructure/gateway/Cargo.toml --check
@@ -56,6 +58,7 @@ jobs:
           path: |
             build/realm-gateway/*
             infrastructure/aws/cdk.out/TheiaDevelopmentRealmGateway.template.json
+            infrastructure/aws/cdk.out/realm-identity/TheiaRealmGatewayIdentity.template.json
           if-no-files-found: error
 
   aws:
@@ -73,7 +76,6 @@ jobs:
       THEIA_AWS_ACCOUNT_ID: ${{ vars.THEIA_AWS_ACCOUNT_ID }}
       THEIA_GATEWAY_EXECUTION_ROLE: ${{ vars.THEIA_GATEWAY_EXECUTION_ROLE }}
       THEIA_GATEWAY_BUCKET: ${{ vars.THEIA_GATEWAY_BUCKET }}
-      THEIA_INSTANCE_ID: ${{ vars.THEIA_GATEWAY_INSTANCE_ID }}
       THEIA_COGNITO_ISSUER: ${{ vars.THEIA_GATEWAY_COGNITO_ISSUER }}
       THEIA_COGNITO_CLIENT: ${{ vars.THEIA_GATEWAY_COGNITO_CLIENT_ID }}
       THEIA_CHANGE_SET: ${{ inputs.change_set_arn }}

@@ -22,36 +22,49 @@ workflow uploads the artifacts and the template even when deployment is disabled
 
 ## AWS rollout
 
-Reuse the Sydney EC2 instance and the two enrolled Cognito testers, issuer and
-public launcher app client. Keep the existing Cognito play scope and the HTTPS
-and Renet listeners. The separate gateway stack adds a scoped HTTP API, Lambda,
-and one on-demand table. It adds a policy for the existing instance role to
-read and conditionally update the single realm item. The function can describe
-EC2 instances (AWS requires resource `*` for that operation) and can start only
-the reviewed instance. It has no AWS StopInstances or termination permission.
+Reuse the Sydney EC2 instance and the existing Cognito tester pool and app
+client. Keep the existing Cognito scope and the HTTPS and Renet listeners.
 
-The existing `TheiaDevelopmentDeployer` role and its CloudFormation execution
-role are scoped to `TheiaDevelopmentHost`. Do not substitute the shared CDK
-bootstrap admin role. Set up a separate reviewed gateway OIDC deploy role
-trusted only by this repository's protected `theia-infrastructure` environment.
-Grant it change-set prepare/describe/execute and stack read/termination-protection
-operations for `TheiaDevelopmentRealmGateway`, PassRole only for a gateway
-CloudFormation execution role, and PutObject only for the versioned artifact
-bucket prefix `theia/realm-gateway/`. The CloudFormation role needs to manage
-only the gateway template's API Gateway, Lambda, named table, and IAM resources
-(including the one named inline policy on the existing host role), and read the
-versioned artifact. Review the rendered template when granting these permissions.
-Restrict API Gateway management to Sydney and the project-created API as soon
-as its ID is known. No administrative IAM credentials belong in the launcher.
+An AWS administrator first creates the separate
+`TheiaRealmGatewayIdentity` stack. The existing host deployer remains scoped to
+`TheiaDevelopmentHost`. The identity stack owns the gateway roles and a single
+Sydney HTTP API without any routes or stage. This lets the gateway CloudFormation
+role manage authorizers, integrations, routes and stages on exactly that API.
+The CloudFormation role can pass only the gateway Lambda runtime role and cannot
+edit IAM policies, delete the realm table or start EC2. Only the runtime role
+can start the designated instance. The identity stack also attaches the single
+realm-item policy to the existing EC2 instance role.
 
-Set protected environment variables `THEIA_AWS_ACCOUNT_ID`,
-`THEIA_GATEWAY_DEPLOY_ROLE`, `THEIA_GATEWAY_EXECUTION_ROLE`,
-`THEIA_GATEWAY_BUCKET` (private, versioned, Sydney), `THEIA_GATEWAY_INSTANCE_ID`,
-`THEIA_GATEWAY_COGNITO_ISSUER`, and `THEIA_GATEWAY_COGNITO_CLIENT_ID`. Dispatch
-**Theia realm gateway** on main in `prepare` mode. Review the printed change set
-and the artifact digest. Only then dispatch `execute` with the full change-set
-ARN. Both jobs use the protected environment. Record the GatewayOrigin and
-RealmTable outputs. Keep the prior Lambda package version for rollback.
+Synthesize and prepare an identity change set from `infrastructure/aws`.
+Use the reviewed EC2 instance ID and an existing same-account, private, versioned
+artifact bucket in Sydney with SSE-S3 encryption. These scoped roles do not
+grant access to a customer-managed KMS key.
+
+```sh
+npm run synth -- --app 'node bin/theia-realm-gateway-identity.ts' \
+  --output cdk.out/realm-identity --quiet
+aws cloudformation deploy --region ap-southeast-2 \
+  --stack-name TheiaRealmGatewayIdentity \
+  --template-file cdk.out/realm-identity/TheiaRealmGatewayIdentity.template.json \
+  --capabilities CAPABILITY_NAMED_IAM --no-execute-changeset \
+  --parameter-overrides "InstanceId=$THEIA_INSTANCE_ID" "ArtifactBucket=$THEIA_GATEWAY_BUCKET"
+```
+
+Inspect the change set before executing it with the administrator identity.
+Copy `DeploymentRoleArn` and `ExecutionRoleArn` from the identity stack outputs
+to `THEIA_GATEWAY_DEPLOY_ROLE` and `THEIA_GATEWAY_EXECUTION_ROLE` in the protected
+`theia-infrastructure` GitHub environment. Also set `THEIA_AWS_ACCOUNT_ID`,
+`THEIA_GATEWAY_BUCKET` (the same reviewed bucket), `THEIA_GATEWAY_COGNITO_ISSUER`
+and `THEIA_GATEWAY_COGNITO_CLIENT_ID`. The workflow scopes uploads to
+`theia/realm-gateway/*.zip` and passes only the gateway CloudFormation role.
+
+Dispatch **Theia realm gateway** on main in `prepare` mode. Review the printed
+change set and artifact digest, then dispatch `execute` with the full change-set ARN.
+This creates the Lambda, on-demand realm table and JWT-protected routes on the
+approved API. The application stack imports the API, instance, bucket and
+runtime role from the identity stack. Keep the identity stack and its exports
+while the gateway stack uses them. Record the GatewayOrigin and RealmTable
+outputs and keep the prior artifact version for rollback.
 
 ## Host and launcher
 
