@@ -61,12 +61,22 @@ impl Imported {
             journal: vec![],
             edited: None,
         };
-        result.load_from(store)?;
+        result.load_from(&store)?;
         Ok(result)
     }
     pub fn hydrate(&mut self) -> Result<()> {
         self.validate_descriptor()?;
         let store = Store::open(Path::new(&self.package)).map_err(|e| e.to_string())?;
+        self.load_from(&store)?;
+        self.replay()
+    }
+
+    pub(crate) fn hydrate_export(&mut self, store: &Store) -> Result<()> {
+        self.package = store
+            .root()
+            .to_str()
+            .ok_or("Terrain path must be UTF-8")?
+            .into();
         self.load_from(store)?;
         self.replay()
     }
@@ -90,7 +100,7 @@ impl Imported {
             "Imported authoring supports up to 8192 m per axis",
         )
     }
-    fn load_from(&mut self, store: Store) -> Result<()> {
+    fn load_from(&mut self, store: &Store) -> Result<()> {
         self.validate_descriptor()?;
         require(
             store.identity() == self.identity

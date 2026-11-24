@@ -410,25 +410,36 @@ impl Zone {
             .checked_add(1)
     }
     pub fn from_json(bytes: &[u8]) -> Result<Self> {
+        Self::from_json_with_ground(bytes, None)
+    }
+    fn from_json_with_ground(bytes: &[u8], ground: Option<&height_tiles::Store>) -> Result<Self> {
         require(
             bytes.len() as u64 <= MAX_DOCUMENT_BYTES,
             "Zone file too large",
         )?;
         let mut zone: Self = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
         if let Some(imported) = &mut zone.imported_terrain {
-            imported.hydrate()?;
+            if let Some(ground) = ground.filter(|ground| ground.identity() == imported.identity) {
+                imported.hydrate_export(ground)?;
+            } else {
+                imported.hydrate()?;
+            }
         }
         zone.validate()?;
         Ok(zone)
     }
     pub fn load(path: &Path) -> Result<Self> {
+        Self::load_with_ground(path, None)
+    }
+    /// Runtime exports can reuse their exact validated ground across machines.
+    pub fn load_with_ground(path: &Path, ground: Option<&height_tiles::Store>) -> Result<Self> {
         let mut bytes = Vec::new();
         fs::File::open(path)
             .map_err(|e| e.to_string())?
             .take(MAX_DOCUMENT_BYTES + 1)
             .read_to_end(&mut bytes)
             .map_err(|e| e.to_string())?;
-        Self::from_json(&bytes)
+        Self::from_json_with_ground(&bytes, ground)
     }
     /// Same-directory, synced temporary file then rename. A failed replacement
     /// leaves the previous file intact; Windows replacement needs native qualification.

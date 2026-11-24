@@ -77,7 +77,10 @@ def read_json(path, limit):
         raw = stream.read(limit + 1)
     if len(raw) > limit:
         raise InstallError('Release metadata exceeds its size limit')
+    return decode_json(raw)
 
+
+def decode_json(raw):
     def unique(fields):
         value = dict(fields)
         if len(value) != len(fields):
@@ -92,6 +95,10 @@ def read_json(path, limit):
 
 def metadata(directory):
     data = read_json(directory / MANIFEST, MAX_MANIFEST_BYTES)
+    return validate_metadata(data)
+
+
+def validate_metadata(data):
     if (not isinstance(data, dict) or set(data) != {'schema', 'version', 'target', 'files'}
             or type(data['schema']) is not int or data['schema'] != 1):
         raise InstallError('Unknown release metadata format')
@@ -282,6 +289,13 @@ def install(package, root, progress=None, cancelled=None, *, offered_version=Non
     """Verify before switching the active version. Leave previous files intact."""
     package, root = package.resolve(strict=True), root.resolve()
     manifest, total = metadata(package)
+    return install_release(root, manifest, total, lambda stage: verify(
+        package, manifest, total, stage, progress, cancelled),
+        progress, cancelled, offered_version=offered_version)
+
+
+def install_release(root, manifest, total, populate, progress=None, cancelled=None, *, offered_version):
+    """Populate a staging directory while holding the existing installation lock."""
     desired = manifest['version']
     if offered_version is not None and desired != offered_version:
         raise InstallError('The selected release changed. Check for updates again.')
@@ -302,7 +316,7 @@ def install(package, root, progress=None, cancelled=None, *, offered_version=Non
             with tempfile.TemporaryDirectory(prefix='.update-', dir=versions) as folder:
                 stage = Path(folder) / 'release'
                 stage.mkdir()
-                verify(package, manifest, total, stage, progress, cancelled)
+                populate(stage)
                 write_json(stage / MANIFEST, manifest)
                 entry = stage / 'payload' / executable(manifest['target'])
                 if sys.platform != 'win32':
@@ -327,15 +341,17 @@ def rollback(root):
         return old['previous']
 
 
-def launch(root, args):
+def launch(root, args, *, env=None, required_version=None):
     root = root.resolve()
     release_version = active(root)['current']
     if release_version is None:
         raise InstallError('Install a client build first')
+    if required_version is not None and release_version != required_version:
+        raise InstallError(f'Install client {required_version} to play this realm')
     directory, manifest, total = installed(root, release_version)
     verify(directory, manifest, total)
     payload = directory / 'payload'
-    return subprocess.Popen([str(payload / executable(manifest['target'])), *args], cwd=payload)
+    return subprocess.Popen([str(payload / executable(manifest['target'])), *args], cwd=payload, env=env)
 
 
 def main(argv=None):

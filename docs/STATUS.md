@@ -1,3 +1,24 @@
+24 November 2026 — P3-01/P5-23/P6-09 Sydney tester launcher:
+Cognito Essentials managed login and an administrator-enrolled two-user group
+are live. `0.1.0-cognito.7adf68f925d5` verifies signed scoped access tokens and
+creates realm sessions. Public TLS and encrypted Renet use TCP 443 and UDP
+5000. On Linux X11, the launcher 0.1.6 flow with client 0.1.0.12 passed live
+Cognito PKCE, native roster, character admission and movement in Millhaven.
+This covers one tester. API Gateway, Lambda wake and simultaneous two-tester
+play remain pending. See [Sydney development realm](GAME_LAUNCHER.md#sydney-development-realm).
+
+24 November 2026 — P5-23 first Sydney server deployment:
+The headless Millhaven release `0.1.0-main.43b891f4-r2` runs as
+`theia-development.service` on the Ubuntu 24.04 development host. A locked
+local build was transferred through Systems Manager and verified by SHA-256.
+The deployed world uses its bundled heightfield and retains its exported
+identity. The service loads five NPCs, listens on `127.0.0.1:5000`, and passed
+a graceful restart. PostgreSQL 16.15 listens on loopback. The server applied
+15 migrations and restored eight test records after restart in the isolated
+verification database. Formatting, denied-warning server Clippy and 25 server
+tests passed. Hosted Cognito admission, remote client access and CI deployment
+automation remain pending.
+
 23 November 2026 — P2-14/P6-09 shutdown handoff:
 The current local client release is 0.1.0.11 in `build/launcher-client-exports`.
 Graphics is the approved style for subsequent Settings pages. Interface, Support

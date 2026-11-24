@@ -70,7 +70,7 @@ pub(super) async fn start(
             "Please wait before starting another login",
         ));
     }
-    let attempt = state.provider.begin();
+    let attempt = state.provider.as_ref().ok_or_else(ApiError::bad)?.begin();
     let authorization_url = attempt.authorization_url().to_string();
     let csrf = attempt
         .authorization_url()
@@ -256,6 +256,25 @@ pub(super) async fn cancel(
         .cancelled_flows
         .fetch_add(1, Ordering::Relaxed);
     Ok(StatusCode::NO_CONTENT)
+}
+
+pub(super) async fn hosted(State(state): State<Shared>, headers: HeaderMap) -> Result<Response> {
+    let verifier = state.cognito.as_ref().ok_or_else(ApiError::unauthorized)?;
+    let identity = verifier
+        .verify(bearer(&headers)?)
+        .await
+        .map_err(|_| ApiError::unauthorized())?;
+    let owner = state
+        .publisher
+        .resolve_owner(identity.issuer(), identity.subject())
+        .await
+        .map_err(database)?;
+    let secret = state
+        .sessions()?
+        .issue(&identity, owner)
+        .map_err(|_| ApiError::unauthorized())?;
+    state.counters.logins.fetch_add(1, Ordering::Relaxed);
+    Ok(Json(serde_json::json!({"session": secret.expose_secret()})).into_response())
 }
 pub(super) async fn list(
     State(state): State<Shared>,

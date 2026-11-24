@@ -1,0 +1,70 @@
+import { Aws, CfnOutput, CfnParameter, RemovalPolicy, Stack, Tags, aws_cognito as cognito } from 'aws-cdk-lib';
+import type { StackProps } from 'aws-cdk-lib';
+import type { Construct } from 'constructs';
+import { PROJECT } from './names.ts';
+
+export const COGNITO_STACK = 'TheiaDevelopmentCognito';
+export const CALLBACK = 'http://127.0.0.1:38691/callback';
+export const TESTER_GROUP = 'theia-testers';
+const RESOURCE = 'theia-development';
+const SCOPE = 'play';
+
+export class TheiaCognitoStack extends Stack {
+  constructor(scope: Construct, id: string, props: StackProps) {
+    super(scope, id, props);
+    Tags.of(this).add('Project', PROJECT);
+    Tags.of(this).add('Environment', 'development');
+    Tags.of(this).add('ManagedBy', 'CDK');
+
+    const prefix = new CfnParameter(this, 'DomainPrefix', {
+      type: 'String', allowedPattern: '^[a-z0-9][a-z0-9-]{2,61}[a-z0-9]$',
+    });
+    const pool = new cognito.CfnUserPool(this, 'UserPool', {
+      userPoolName: 'Theia development testers',
+      userPoolTier: 'ESSENTIALS',
+      deletionProtection: 'ACTIVE',
+      usernameConfiguration: { caseSensitive: false },
+      adminCreateUserConfig: { allowAdminCreateUserOnly: true },
+      accountRecoverySetting: { recoveryMechanisms: [{ name: 'admin_only', priority: 1 }] },
+      policies: {
+        passwordPolicy: {
+          minimumLength: 16, requireLowercase: true, requireUppercase: true,
+          requireNumbers: true, requireSymbols: true, temporaryPasswordValidityDays: 7,
+        },
+        signInPolicy: { allowedFirstAuthFactors: ['PASSWORD'] },
+      },
+    });
+    pool.applyRemovalPolicy(RemovalPolicy.RETAIN);
+    const resource = new cognito.CfnUserPoolResourceServer(this, 'PlayScope', {
+      userPoolId: pool.ref, identifier: RESOURCE, name: 'Theia development realm',
+      scopes: [{ scopeName: SCOPE, scopeDescription: 'Join the Theia development realm' }],
+    });
+    const client = new cognito.CfnUserPoolClient(this, 'Launcher', {
+      userPoolId: pool.ref, clientName: 'Theia Linux launcher', generateSecret: false,
+      supportedIdentityProviders: ['COGNITO'],
+      allowedOAuthFlowsUserPoolClient: true, allowedOAuthFlows: ['code'],
+      allowedOAuthScopes: ['openid', `${RESOURCE}/${SCOPE}`], callbackUrLs: [CALLBACK],
+      explicitAuthFlows: ['ALLOW_REFRESH_TOKEN_AUTH'],
+      preventUserExistenceErrors: 'ENABLED', enableTokenRevocation: true,
+      accessTokenValidity: 1, idTokenValidity: 1, refreshTokenValidity: 1,
+      tokenValidityUnits: { accessToken: 'hours', idToken: 'hours', refreshToken: 'days' },
+    });
+    client.addResourceDependency(resource);
+    const domain = new cognito.CfnUserPoolDomain(this, 'ManagedDomain', {
+      userPoolId: pool.ref, domain: prefix.valueAsString, managedLoginVersion: 2,
+    });
+    const branding = new cognito.CfnManagedLoginBranding(this, 'LauncherBranding', {
+      userPoolId: pool.ref, clientId: client.ref, useCognitoProvidedValues: true,
+    });
+    branding.addResourceDependency(domain);
+    new cognito.CfnUserPoolGroup(this, 'Testers', {
+      userPoolId: pool.ref, groupName: TESTER_GROUP,
+    });
+
+    new CfnOutput(this, 'PoolId', { value: pool.ref });
+    new CfnOutput(this, 'LauncherClientId', { value: client.ref });
+    new CfnOutput(this, 'Issuer', { value: `https://cognito-idp.${Aws.REGION}.${Aws.URL_SUFFIX}/${pool.ref}` });
+    new CfnOutput(this, 'ManagedLogin', { value: `https://${domain.ref}.auth.${Aws.REGION}.amazoncognito.com` });
+    new CfnOutput(this, 'RedirectUri', { value: CALLBACK });
+  }
+}

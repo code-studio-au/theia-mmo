@@ -1,4 +1,4 @@
-"""The independent Theia Online desktop launcher for trusted local releases."""
+"""Theia Online desktop launcher for signed downloads and local releases."""
 import argparse
 import os
 from pathlib import Path
@@ -19,9 +19,12 @@ if not (HERE / 'assets').is_dir():
     sys.path.insert(0, str(REPOSITORY / 'tools'))
 
 import client_install
+from hosted_release import DEFAULT_URL, HostedLibrary, HostedRelease
 from launcher_update import SYSTEM_LAUNCHER, VERSION, install_launcher_update, newest_launcher_release
 from state import DEFAULT_LOGIN_BIND, data_directory, game_launch_args, login_address, login_ready, newest_release
 from state import read_settings, save_settings
+from browser_sign_in import SignInConfig, rehearse_sign_in
+from hosted_realm import HostedRealm
 
 
 def box(vertical=False, spacing=10):
@@ -107,8 +110,11 @@ class Launcher:
         self.feedback = None
         self.probe_pending = False
         self.login_server = args.login_server
+        self.realm = args.realm
         self.cancelled = threading.Event()
         self.game_args = game_launch_args(game_args)
+        self.test_login = args.test_login
+        self.test_login_status = 'Use the browser to sign in to the test identity provider.'
         self.record = {'current': None, 'previous': None}
         config = {}
         settings_error = None
@@ -121,6 +127,8 @@ class Launcher:
         )).expanduser().resolve()
         library = args.release_library or config.get('release_library')
         self.library = Path(library).expanduser().resolve() if library else None
+        keys = sorted((HERE / 'release-keys').glob('*.der'))
+        self.hosted = HostedLibrary(DEFAULT_URL, keys) if keys else None
 
         load_skin(HERE / 'launcher.css')
         self.window = Gtk.Window(title='Theia Online Launcher')
@@ -322,7 +330,8 @@ class Launcher:
             self.probe_pending = True
 
             def probe():
-                GLib.idle_add(self.login_state, login_ready(self.login_server))
+                online = self.realm.ready() if self.realm else login_ready(self.login_server)
+                GLib.idle_add(self.login_state, online)
 
             threading.Thread(target=probe, daemon=True).start()
         return GLib.SOURCE_CONTINUE
@@ -407,12 +416,20 @@ class Launcher:
         account.pack_start(copy, False, False, 0)
         self.account_button = button('Open Game', self.play)
         account.pack_start(self.account_button, False, False, 0)
+        if self.test_login:
+            self.test_login_label = label(self.test_login_status, 'detail')
+            account.pack_start(self.test_login_label, False, False, 0)
+            self.test_login_button = button('Test Sign-in', self.start_test_login)
+            account.pack_start(self.test_login_button, False, False, 0)
 
         settings = self.page('Settings', 'Settings')
         settings.pack_start(label('Release library', 'section'), False, False, 0)
         self.source_label = self.path_label(settings)
         self.source_button = button('Choose Release Folder…', self.choose_source)
         settings.pack_start(self.source_button, False, False, 0)
+        self.hosted_button = button('Use Online Releases', self.use_hosted)
+        self.hosted_button.set_no_show_all(True)
+        settings.pack_start(self.hosted_button, False, False, 0)
         settings.pack_start(label('Game installation', 'section'), False, False, 0)
         self.root_label = self.path_label(settings)
         self.root_button = button('Choose Game Folder…', self.choose_install_root)
@@ -451,11 +468,18 @@ class Launcher:
         self.install_glyph.show_kind('update' if update else 'ready' if current else 'install')
         self.primary_button.set_sensitive(ready)
         self.account_button.set_sensitive(ready and bool(current))
+        if self.test_login:
+            signing_in = self.job == 'test-login'
+            self.test_login_label.set_text(self.test_login_status)
+            self.test_login_button.set_label('Cancel Sign-in' if signing_in else 'Test Sign-in')
+            self.test_login_button.set_sensitive(ready or (signing_in and not self.cancelled.is_set()))
         self.check_button.set_sensitive(ready)
         self.update_button.set_sensitive(ready and self.available is not None)
         self.update_button.set_label('Install Update' if current else 'Install Game')
         self.rollback_button.set_sensitive(ready and bool(previous))
         self.source_button.set_sensitive(ready)
+        self.hosted_button.set_visible(bool(self.hosted and self.library))
+        self.hosted_button.set_sensitive(ready)
         self.root_button.set_sensitive(ready)
         self.cancel_button.set_visible(transferring)
         self.cancel_button.set_sensitive(not self.cancelled.is_set())
@@ -476,20 +500,26 @@ class Launcher:
             launcher_status = f'Version {self.launcher_update[1]} is available.'
         elif self.library:
             launcher_status = 'No launcher update in the selected library.'
+        elif self.hosted:
+            launcher_status = 'Launcher packages are available on the Theia Online website.'
         else:
             launcher_status = 'Choose a release folder in Settings.'
         self.launcher_release_label.set_text(f'Running version {VERSION}\n{launcher_status}')
 
-        self.source_label.set_text(str(self.library) if self.library else 'No folder selected')
+        self.source_label.set_text(str(self.library) if self.library else (
+            'Theia Online · Development' if self.hosted else 'No folder selected'))
         self.source_label.set_tooltip_text(str(self.library) if self.library else None)
         self.root_label.set_text(str(self.install_root))
         self.root_label.set_tooltip_text(str(self.install_root))
         self.version_label.set_text(f'Client v{current}' if current else 'Client not installed')
         if self.available:
-            _, release, total = self.available
-            offer = f'Version {release} available  ·  {size_text(total)}'
+            package, release, total = self.available
+            size = f'{size_text(total)} download' if isinstance(package, HostedRelease) else size_text(total)
+            offer = f'Version {release} available  ·  {size}'
         elif self.library:
             offer = 'No newer release in the selected folder.' if current else 'No compatible release found.'
+        elif self.hosted:
+            offer = 'No newer client release.' if current else 'Check for a client release.'
         else:
             offer = 'Choose a release folder in Settings.'
         self.release_label.set_text(offer + (f'\nPrevious version {previous}' if previous else ''))
@@ -537,6 +567,9 @@ class Launcher:
         if chosen is not None:
             self.set_paths(self.install_root, chosen)
 
+    def use_hosted(self):
+        self.set_paths(self.install_root, None)
+
     def choose_install_root(self):
         chosen = self.pick_folder('Choose the game installation folder', self.install_root)
         if chosen is not None:
@@ -570,6 +603,8 @@ class Launcher:
         if error:
             if job == 'launcher-update':
                 self.launcher_feedback = error
+            elif job == 'test-login':
+                self.test_login_status = error
             else:
                 self.feedback = error
         else:
@@ -581,7 +616,10 @@ class Launcher:
         def discover():
             record = client_install.active(self.install_root)
             try:
-                available = newest_release(self.library, record['current'])
+                if not self.library and self.hosted:
+                    available = self.hosted.newest(record['current'], VERSION, install_root=self.install_root)
+                else:
+                    available = newest_release(self.library, record['current'])
             except (OSError, client_install.InstallError) as error:
                 available, client_error = None, str(error)
             else:
@@ -622,8 +660,26 @@ class Launcher:
             self.install()
         elif self.record['current']:
             self.play()
+        elif not self.library and self.hosted:
+            self.check()
         else:
             self.choose_source()
+
+    def start_test_login(self):
+        if self.job == 'test-login':
+            self.cancelled.set()
+            self.test_login_status = 'Cancelling test sign-in…'
+            self.refresh_view()
+            return
+        if not self.test_login or self.job or self.game:
+            return
+        self.test_login_status = 'Finish signing in in your browser.'
+
+        def complete(_subject):
+            self.test_login_status = 'Test sign-in succeeded.'
+
+        self.start('test-login', 'Signing in…',
+                   lambda: rehearse_sign_in(self.test_login, self.cancelled.is_set), complete)
 
     def install(self):
         if not self.available:
@@ -646,6 +702,9 @@ class Launcher:
             self.check(f'Client {release} installed')
 
         def apply_release():
+            if isinstance(package, HostedRelease):
+                return package.install(self.install_root, report, self.cancelled.is_set,
+                                       offered_version=offered_version)
             return client_install.install(package, self.install_root, report, self.cancelled.is_set,
                                           offered_version=offered_version)
 
@@ -682,6 +741,11 @@ class Launcher:
     def play(self):
         if not self.record['current']:
             return
+        if self.realm:
+            self.start('play', 'Sign in with your browser…',
+                       lambda: self.realm.launch(self.install_root, self.game_args, self.cancelled.is_set),
+                       self.playing)
+            return
         self.start('play', 'Verifying installed client…',
                    lambda: client_install.launch(self.install_root, self.game_args), self.playing)
 
@@ -693,14 +757,19 @@ class Launcher:
         if self.game is not None:
             code = self.game.poll()
             if code is not None:
+                error = getattr(self.game, 'theia_hosted_error', None)
                 self.game = None
-                self.feedback = None if code == 0 else f'Game exited with code {code}'
+                self.feedback = error or (None if code == 0 else f'Game exited with code {code}')
                 self.refresh_view()
                 if self.window.get_window().get_state() & Gdk.WindowState.ICONIFIED:
                     self.window.present()
         return GLib.SOURCE_CONTINUE
 
     def close(self, *_):
+        if self.job == 'test-login' or (self.realm and self.job == 'play'):
+            self.closing = True
+            self.cancelled.set()
+            return True
         if self.job == 'install':
             self.closing = True
             self.cancel()
@@ -716,9 +785,19 @@ def main():
                         default=os.environ.get('THEIA_ACCOUNT_BIND', DEFAULT_LOGIN_BIND),
                         help='Numeric loopback address and port for the game login service')
     parser.add_argument('--settings-file', type=Path, default=data_directory() / 'launcher.json')
+    parser.add_argument('--test-login-config', type=Path,
+                        help='Opt in to an isolated browser sign-in rehearsal')
+    parser.add_argument('--realm-config', type=Path, help='Connect Play to the configured hosted realm')
     args = sys.argv[1:]
     split = args.index('--') if '--' in args else len(args)
     options = parser.parse_args(args[:split])
+    try:
+        options.realm = HostedRealm(options.realm_config.resolve(strict=True)) if options.realm_config else None
+        if options.realm and options.test_login_config:
+            parser.error('Choose a hosted realm or the test sign-in rehearsal')
+        options.test_login = SignInConfig.load(options.test_login_config) if options.test_login_config else None
+    except (OSError, client_install.InstallError) as error:
+        parser.error(f'Could not load the launcher sign-in configuration: {error}')
     if not Gtk.init_check()[0]:
         parser.exit(1, 'Theia Launcher needs a desktop display.\n')
     Launcher(options, args[split + 1:])

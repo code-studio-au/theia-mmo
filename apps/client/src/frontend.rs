@@ -411,6 +411,7 @@ fn tick(
 pub(crate) async fn admission(
     directory: &Path,
     ticket: &Path,
+    hosted_address: Option<std::net::SocketAddr>,
     mut stop: tokio::sync::watch::Receiver<bool>,
 ) -> Result<(std::net::SocketAddr, Vec<u8>), Box<dyn std::error::Error + Send + Sync>> {
     #[derive(Deserialize)]
@@ -425,7 +426,12 @@ pub(crate) async fn admission(
         match read(&directory.join("frontend-admission.json"), 256) {
             Ok(bytes) => {
                 let data: Admission = serde_json::from_slice(&bytes)?;
-                if !data.address.ip().is_loopback() || data.address.port() == 0 {
+                if data.address.port() == 0
+                    || !hosted_address.map_or_else(
+                        || data.address.ip().is_loopback(),
+                        |expected| data.address == expected,
+                    )
+                {
                     return Err("Invalid game endpoint".into());
                 }
                 return Ok((data.address, read(ticket, 2048)?));
@@ -504,7 +510,13 @@ mod tests {
     #[tokio::test]
     async fn deferred_admission_honours_stop_without_a_ticket() {
         let (_, stop) = tokio::sync::watch::channel(true);
-        let result = admission(Path::new("/missing"), Path::new("/missing/ticket"), stop).await;
+        let result = admission(
+            Path::new("/missing"),
+            Path::new("/missing/ticket"),
+            None,
+            stop,
+        )
+        .await;
         assert!(result.unwrap_err().to_string().contains("cancelled"));
     }
     #[test]

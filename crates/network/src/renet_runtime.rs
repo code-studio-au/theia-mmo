@@ -35,7 +35,9 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use theia_core::time::{TickMetrics, TickRate};
-pub use tickets::{IssuedTicket, TicketIssuer, secure_issuer};
+pub use tickets::{
+    IssuedTicket, TicketIssuer, is_hosted_endpoint, secure_hosted_issuer, secure_issuer,
+};
 use tokio::{
     sync::{Semaphore, mpsc, oneshot, watch},
     time::{Instant, MissedTickBehavior},
@@ -78,8 +80,15 @@ pub fn issue_local_advertised(
 }
 
 pub fn read_ticket(bytes: &[u8], address: SocketAddr) -> Result<ConnectToken> {
-    if !address.ip().is_loopback() || bytes.len() > 2048 {
+    if !address.ip().is_loopback() {
         return Err("Invalid local ticket/address".into());
+    }
+    read_admission_ticket(bytes, address)
+}
+
+fn read_admission_ticket(bytes: &[u8], address: SocketAddr) -> Result<ConnectToken> {
+    if bytes.len() > 2048 || (!address.ip().is_loopback() && !is_hosted_endpoint(address)) {
+        return Err("Invalid game admission ticket/address".into());
     }
     let mut cursor = std::io::Cursor::new(bytes);
     let token = ConnectToken::read(&mut cursor)?;
@@ -2263,8 +2272,10 @@ async fn run_client_inner(
     {
         return Err("Melee requires classic prediction and targeting".into());
     }
-    let token = read_ticket(ticket, address)?;
-    let bind = if address.is_ipv4() {
+    let token = read_admission_ticket(ticket, address)?;
+    let bind = if !address.ip().is_loopback() {
+        "0.0.0.0:0"
+    } else if address.is_ipv4() {
         "127.0.0.1:0"
     } else {
         "[::1]:0"

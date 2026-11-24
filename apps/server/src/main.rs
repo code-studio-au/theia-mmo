@@ -756,8 +756,16 @@ async fn main() -> Result<()> {
             );
         }
     }
-    if !bind.ip().is_loopback() {
-        return Err("Local prototype only: bind must be loopback".into());
+    let account_issuer = account_login
+        .then(|| std::env::var("THEIA_OIDC_ISSUER"))
+        .transpose()
+        .map_err(|_| "Account login requires THEIA_OIDC_ISSUER")?;
+    if !bind.ip().is_loopback()
+        && !account_issuer
+            .as_deref()
+            .is_some_and(|issuer| issuer.starts_with("https://"))
+    {
+        return Err("Non-loopback game binding requires hosted account admission".into());
     }
     if creature_loot && reward_catalog.is_none() {
         return Err("Creature loot requires a reward catalog".into());
@@ -1105,13 +1113,23 @@ async fn main() -> Result<()> {
             listen: std::env::var("THEIA_ACCOUNT_BIND")
                 .unwrap_or_else(|_| "127.0.0.1:5050".into())
                 .parse()?,
-            issuer: std::env::var("THEIA_OIDC_ISSUER")
-                .map_err(|_| "Account login requires THEIA_OIDC_ISSUER")?,
+            issuer: account_issuer.ok_or("Account login requires THEIA_OIDC_ISSUER")?,
             client_id: std::env::var("THEIA_OIDC_CLIENT_ID")
                 .map_err(|_| "Account login requires THEIA_OIDC_CLIENT_ID")?,
         };
         let socket = std::net::UdpSocket::bind(bind)?;
-        let addresses = dev_relays.unwrap_or_else(|| vec![socket.local_addr().unwrap()]);
+        let addresses = if config.hosted() {
+            if dev_relays.is_some() {
+                return Err("Hosted account admission excludes development relays".into());
+            }
+            vec![
+                std::env::var("THEIA_HOSTED_GAME_ADDRESS")
+                    .map_err(|_| "Hosted account login requires THEIA_HOSTED_GAME_ADDRESS")?
+                    .parse()?,
+            ]
+        } else {
+            dev_relays.unwrap_or_else(|| vec![socket.local_addr().unwrap()])
+        };
         let (stop, shutdown) = tokio::sync::watch::channel(false);
         tokio::spawn(async move {
             let _ = tokio::signal::ctrl_c().await;

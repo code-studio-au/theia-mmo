@@ -109,9 +109,105 @@ manual check, installed it into an isolated Debian package root and restarted
 into the updated app with game 0.1.0.4 still active. The test substituted the
 isolated Debian install for the live desktop administrator prompt.
 
-## Distribution remains open
+## Development downloads on GitHub Pages
 
-P6-09 began with trusted local full releases. Hosted delivery needs signed
-release metadata, HTTPS, verified resumable downloads and a published realm
-configuration. Windows still needs its own launcher installer and native
-qualification. Measure full package downloads before selecting a delta format.
+P6-09 adds an online release source for Linux AMD64. A launcher package built
+with an Ed25519 public key checks the Development feed on the game repository's
+GitHub Pages project. It verifies the signed metadata before offering **Install
+Game** or **Update Game**. The feed versions the executable, UI, character,
+equipment, animation, objects, audio, gameplay and each terrain zone independently
+using hashes of their file entries. Organize an export under `ui/`, `characters/`,
+`equipment/`, `animations/`, `objects/`, `audio/` and `terrain/<zone>/`, optionally
+under `assets/` or `content/`. Other files belong to the gameplay package.
+The launcher estimates only missing bytes and downloads files by hash. It reuses
+verified installed files even if their paths moved. Partial downloads can resume
+when the server supports byte ranges. A failed signature, failed hash check,
+cancelled download or incomplete package leaves the active version in place.
+Local folders are still selectable in Settings.
+
+The separate Pages project keeps packages available while `theia-website`
+publishes news and site updates. The website's Linux button uses the approved
+`LINUX_LAUNCHER_VERSION` setting. It stays unavailable until a package and feed
+have been published. The launcher uses the website for newer online launcher
+installers. Existing local launcher updates still use the package installer.
+
+Prepare and inspect an artifact locally with a disposable testing key:
+
+```sh
+python3 tools/stage_hosted_release.py path/to/client-export build/game-pages-preview \
+  --launcher-version 0.1.5 --signing-key /private/path/test-ed25519.pem
+```
+
+This produces a Pages directory with the `.deb`, its checksum, a signed
+`downloads/development.json` and the referenced client files. Use a new directory
+for each rehearsal. Keep signing keys outside the repo and use the production key
+only in the protected publishing environment. The command also supports
+`--retain-client` for previously reviewed client exports whose files must stay
+available. Use new launcher and client versions for changed packages.
+
+For publication, prepare a Linux client export containing the executable and
+the redistribution-approved assets and configuration needed to launch it on a
+clean Ubuntu 24.04 or Linux Mint 22 system. The existing local development export
+contains only the executable and relies on the developer's separate playtest
+setup for normal realm entry. Review redistribution rights, then verify native
+launch and game entry from the exact staged package. Retain the export as the
+`theia-linux-client-release` artifact of a successful `main` build. Enable the
+game repository's GitHub Pages Actions source and protect the
+`game-downloads-release` environment with the `THEIA_RELEASE_SIGNING_KEY` secret.
+Dispatch **Publish Linux downloads to GitHub Pages** with the approved run and
+versions. Verify the live feed and package, then set the website version and
+dispatch its deployment.
+
+Local HTTPS tests cover install, partial transfer resume, executable-only and
+single-zone updates, corruption rejection and rollback. The update tests assert
+that no unrelated UI, settings or terrain bytes are requested. A public download candidate and
+hosted realm configuration remain to be qualified. Windows needs its own
+installer and native qualification.
+
+## Test sign-in without a game server
+
+P3-01 adds an opt-in launcher sign-in rehearsal. The Account tab opens the
+system browser and completes the authorization-code exchange with PKCE through
+a loopback callback. The provider confirms the account using the access token.
+The launcher reports success without retaining the token, waking a realm or
+launching a game session.
+
+Run the two-account check against the existing owned Keycloak SDK:
+
+```sh
+python3 tools/qualify_launcher_test_sign_in.py
+```
+
+Add `--desktop` to open the launcher and select **Account → Test Sign-in**.
+The command prints the path of a private file with two temporary test accounts.
+The provider and credentials are removed when the rehearsal closes.
+
+A future Cognito test app can be used with `--test-login-config path/to/sign-in.json`.
+The JSON fields are `issuer`, `authorization_endpoint`, `token_endpoint`,
+`userinfo_endpoint`, `client_id` and `redirect_uri`. Register the exact
+loopback callback and enable the authorization-code grant with `openid` and
+PKCE for a public app client. Use HTTPS for provider endpoints outside the
+owned loopback fixture. Hosted realm admission and live Cognito qualification
+remain separate from the local rehearsal.
+
+## Sydney development realm
+
+Launcher 0.1.6 accepts `--realm-config`. **Play** checks for client 0.1.0.12,
+opens Cognito managed login in the browser, and exchanges the scoped access
+token for an in-memory realm session. The native client opens at the account's
+character roster. Character entry uses a short-lived Renet admission ticket.
+
+On the development machine, open the prepared launcher with:
+
+```sh
+./build/hosted-development-launch/open-launcher
+```
+
+The client export and launcher Debian package are in `build/launcher-client-exports/`.
+A tester using the installed launcher needs the client export, `realm.json`, and
+the adjacent `realm-ca.crt`. Start the launcher with `--release-library` pointing
+to the client export and `--realm-config` pointing to the JSON file, then install
+the client. Provision accounts through Cognito and distribute credentials privately.
+The launcher uses the bundled CA certificate for the realm's HTTPS endpoint.
+The only public game ports are TCP 443 and UDP 5000. PostgreSQL and the account
+backend are bound to loopback. Automatic wake and idle stop are pending.

@@ -1,0 +1,86 @@
+name: Publish Linux downloads to GitHub Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run:
+        description: Successful main-branch run containing the approved Linux client export
+        required: true
+        type: string
+      client_version:
+        description: Approved client version in that export
+        required: true
+        type: string
+      launcher_version:
+        description: New immutable version for the Linux launcher package
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: game-downloads-pages
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: game-downloads-release
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Verify candidate run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run }}
+        run: |
+          [[ "$CANDIDATE_RUN" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" |
+            jq -e --arg repo "$GITHUB_REPOSITORY" '
+              .conclusion == "success" and .head_branch == "main" and .head_repository.full_name == $repo'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.candidate_run }}
+          name: theia-linux-client-release
+          path: ${{ runner.temp }}/client-export
+      - name: Sign and stage approved Linux downloads
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.THEIA_RELEASE_SIGNING_KEY }}
+          CLIENT_VERSION: ${{ inputs.client_version }}
+          LAUNCHER_VERSION: ${{ inputs.launcher_version }}
+        run: |
+          jq -e --arg version "$CLIENT_VERSION" '.version == $version' "$RUNNER_TEMP/client-export/client-release.json"
+          test -n "$RELEASE_SIGNING_KEY"
+          umask 077
+          key=$(mktemp "$RUNNER_TEMP/theia-key.XXXXXX")
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$RELEASE_SIGNING_KEY" > "$key"
+          unset RELEASE_SIGNING_KEY
+          umask 022
+          python3 tools/stage_hosted_release.py "$RUNNER_TEMP/client-export" "$RUNNER_TEMP/game-pages" \
+            --launcher-version "$LAUNCHER_VERSION" --signing-key "$key"
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: ${{ runner.temp }}/game-pages
+
+  deploy:
+    needs: stage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
+        id: pages
