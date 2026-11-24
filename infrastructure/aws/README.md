@@ -71,7 +71,8 @@ The separate `TheiaDeploymentIdentity` stack defines two roles under
 `/theia/`. `TheiaDevelopmentDeployer` can prepare and execute changes to
 `TheiaDevelopmentHost` and pass only `TheiaDevelopmentExecution`. The deployer
 trusts GitHub OIDC for this repository's `theia-infrastructure` environment.
-That environment permits `main` and requires the owner's approval. The
+The trust condition uses GitHub's immutable owner and repository IDs. That
+environment permits `main` and requires the owner's approval. The
 execution role trusts CloudFormation and scopes writes to project-tagged host
 resources, the reviewed AMI, Theia's runtime role and the named budget. It
 cannot grant public ingress or attach a different policy to the runtime role.

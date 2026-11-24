@@ -9,4 +9,4 @@ export const HOST_PROFILE = 'TheiaDevelopmentHostProfile';
 export const DEPLOY_ROLE = 'TheiaDevelopmentDeployer';
 export const EXECUTION_ROLE = 'TheiaDevelopmentExecution';
 export const GITHUB_ENVIRONMENT = 'theia-infrastructure';
-export const GITHUB_REPOSITORY = 'code-studio-au/theia-mmo';
+export const GITHUB_SUBJECT_REPOSITORY = 'code-studio-au@187219708/theia-mmo@1421547475';

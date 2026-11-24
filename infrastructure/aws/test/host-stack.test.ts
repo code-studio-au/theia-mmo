@@ -64,6 +64,7 @@ test('budget alerts watch the project tag and require an explicit amount and rec
     Budget: {
       BudgetLimit: { Amount: { Ref: 'MonthlyBudgetUsd' }, Unit: 'USD' },
       FilterExpression: { Tags: { Key: 'user:Project', Values: ['TheiaMMO'] } },
+      Metrics: ['NetUnblendedCost'],
       TimeUnit: 'MONTHLY',
     },
     NotificationsWithSubscribers: [50, 80, 100].map((threshold) => ({
@@ -75,5 +76,5 @@ test('budget alerts watch the project tag and require an explicit amount and rec
     })),
   });
   template.hasParameter('MonthlyBudgetUsd', { Type: 'Number', Default: Match.absent() });
-  template.hasParameter('BudgetAlertEmail', { Type: 'String', Default: Match.absent() });
+  template.hasParameter('BudgetAlertEmail', { Type: 'String', NoEcho: true, Default: Match.absent() });
 });

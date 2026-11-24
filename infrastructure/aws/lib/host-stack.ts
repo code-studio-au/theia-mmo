@@ -30,6 +30,7 @@ export class TheiaHostStack extends Stack {
     });
     const email = new CfnParameter(this, 'BudgetAlertEmail', {
       type: 'String',
+      noEcho: true,
       allowedPattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
       description: 'Recipient for Theia development budget alerts.',
     });
@@ -118,7 +119,7 @@ export class TheiaHostStack extends Stack {
         timeUnit: 'MONTHLY',
         budgetLimit: { amount: amount.valueAsNumber, unit: 'USD' },
         filterExpression: { tags: { key: 'user:Project', values: [PROJECT] } },
-        metrics: ['NET_UNBLENDED_COST'],
+        metrics: ['NetUnblendedCost'],
       },
       notificationsWithSubscribers: [50, 80, 100].map((threshold) => ({
         notification: {

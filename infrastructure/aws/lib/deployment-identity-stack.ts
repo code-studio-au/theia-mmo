@@ -2,7 +2,7 @@ import { Aws, CfnOutput, CfnParameter, Stack, Tags, aws_iam as iam } from 'aws-c
 import type { StackProps } from 'aws-cdk-lib';
 import type { Construct } from 'constructs';
 import {
-  BUDGET_NAME, DEPLOY_ROLE, EXECUTION_ROLE, GITHUB_ENVIRONMENT, GITHUB_REPOSITORY,
+  BUDGET_NAME, DEPLOY_ROLE, EXECUTION_ROLE, GITHUB_ENVIRONMENT, GITHUB_SUBJECT_REPOSITORY,
   HOST_PROFILE, HOST_ROLE, HOST_STACK, PROJECT, ROLE_PATH,
 } from './names.ts';
 
@@ -115,6 +115,9 @@ export class TheiaDeploymentIdentityStack extends Stack {
               ...projectResource,
               StringEqualsIfExists: projectInRequest,
             }),
+            // IAM resolves the supplied name at the root path when the resource does not yet exist.
+            allow('CheckRuntimeRoleBeforeCreation', ['iam:GetRole'], iamArn(`role/${HOST_ROLE}`)),
+            allow('CheckRuntimeProfileBeforeCreation', ['iam:GetInstanceProfile'], iamArn(`instance-profile/${HOST_PROFILE}`)),
             allow('ManageRuntimeRole', [
               'iam:CreateRole', 'iam:GetRole', 'iam:DeleteRole',
               'iam:TagRole', 'iam:UntagRole', 'iam:ListAttachedRolePolicies', 'iam:ListRolePolicies',
@@ -153,7 +156,7 @@ export class TheiaDeploymentIdentityStack extends Stack {
           Condition: {
             StringEquals: {
               [`${oidc}:aud`]: 'sts.amazonaws.com',
-              [`${oidc}:sub`]: `repo:${GITHUB_REPOSITORY}:environment:${GITHUB_ENVIRONMENT}`,
+              [`${oidc}:sub`]: `repo:${GITHUB_SUBJECT_REPOSITORY}:environment:${GITHUB_ENVIRONMENT}`,
             },
           },
         }],

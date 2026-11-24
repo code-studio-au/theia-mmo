@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { App, BootstraplessSynthesizer } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { TheiaDeploymentIdentityStack } from '../lib/deployment-identity-stack.ts';
-import { DEPLOY_ROLE, EXECUTION_ROLE, GITHUB_ENVIRONMENT, GITHUB_REPOSITORY, REGION } from '../lib/names.ts';
+import { DEPLOY_ROLE, EXECUTION_ROLE, HOST_PROFILE, HOST_ROLE, REGION } from '../lib/names.ts';
 
 const template = Template.fromStack(new TheiaDeploymentIdentityStack(
   new App({ analyticsReporting: false }), 'TestIdentity',
@@ -19,7 +19,7 @@ test('identity setup creates only two dedicated IAM roles', () => {
       Action: 'sts:AssumeRoleWithWebIdentity',
       Condition: { StringEquals: {
         'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-        'token.actions.githubusercontent.com:sub': `repo:${GITHUB_REPOSITORY}:environment:${GITHUB_ENVIRONMENT}`,
+        'token.actions.githubusercontent.com:sub': 'repo:code-studio-au@187219708/theia-mmo@1421547475:environment:theia-infrastructure',
       } },
     }] },
   });
@@ -45,4 +45,24 @@ test('the deployer can prepare only the Theia stack with the dedicated executor'
     ArnEquals: { 'cloudformation:RoleArn': { 'Fn::GetAtt': ['CloudFormationExecution', 'Arn'] } },
   });
   assert.ok(!statements.flatMap((statement: { Action: string[] }) => statement.Action).includes('cloudformation:DeleteStack'));
+});
+
+test('CloudFormation can check for the named runtime identities before creating them', () => {
+  const roles = template.findResources('AWS::IAM::Role');
+  const executor = Object.values(roles).find((entry) => entry.Properties.RoleName === EXECUTION_ROLE)!;
+  const statements = executor.Properties.Policies[0].PolicyDocument.Statement;
+  for (const [sid, action, resource] of [
+    ['CheckRuntimeRoleBeforeCreation', 'iam:GetRole', `role/${HOST_ROLE}`],
+    ['CheckRuntimeProfileBeforeCreation', 'iam:GetInstanceProfile', `instance-profile/${HOST_PROFILE}`],
+  ]) {
+    assert.deepEqual(statements.find((statement: { Sid: string }) => statement.Sid === sid), {
+      Sid: sid,
+      Effect: 'Allow',
+      Action: [action],
+      Resource: {
+        'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, ':iam::',
+          { Ref: 'AWS::AccountId' }, `:${resource}`]],
+      },
+    });
+  }
 });
