@@ -40,3 +40,59 @@ its published 0.5.0 C++ comparison test, plus
 [Landmass 0.9.3](https://docs.rs/landmass/0.9.3/landmass/). Both packages are
 MIT OR Apache-2.0; exact registry checksums are in Cargo.lock. The libraries are
 unmodified. [Scope, measured proof and remaining work](../../docs/CREATURE_AI_FOUNDATION.md).
+
+The authored adapter also bakes admitted editor terrain/model collision:
+
+```sh
+target/debug/theia-nav-bake bake-authored build/starter-valley-village-world-v2 build/starter-valley-navigation-v1 content/navigation/starter-valley-west-patrol.json
+target/debug/theia-nav-bake verify-authored build/starter-valley-village-world-v2 build/starter-valley-navigation-v1
+```
+
+For a passive population without a patrol, bake the bounded area directly:
+
+```sh
+target/debug/theia-nav-bake bake-authored-area WORLD NEW_NAVIGATION CENTRE_X CENTRE_Z
+```
+
+The centre is an integer 128 m chunk coordinate. This uses the same collision,
+clearance erosion, tile bounds and verification; it emits no patrol routes.
+Placement still needs `spawns-zone` or the runtime population preparation checks.
+
+For the dressed valley, offline input allows 32,768 vertices / 65,536 triangles
+per clipped tile (measured maximum 24,272 / 45,146). Runtime limits remain nine
+tiles, 8,192 vertices / 4,096 polygons per tile, and 256 route points. Nine tiles
+around this route cover the village and groves, not the whole 512 m enclosure.
+
+An adapter supplies Recast's missing contour hole-joining step before calling
+Rerecast's polygon builder; the registry library remains unmodified. It preserves
+excluded areas rather than discarding holes or their source collision. See
+[provenance and bounds](RECAST-PROVENANCE.md). Synthetic tests check hole area,
+obstacle exclusion and malformed input; opt-in local tests bake the dense hut/
+grove tiles and run an authoritative patrol. Full publication verifies 0.2 m
+sampled capsule clearance along the requested route. This is not proof that
+every navigable polygon is traversable or that multiplayer quest gameplay works.
+
+## Read-only authored route inspection
+
+```sh
+target/debug/theia-nav-bake route-authored build/starter-valley-contact-world-v3 build/starter-valley-contact-navigation-v3 content/navigation/starter-valley-quest-trail.json
+```
+
+The request uses the same logical ID and 2..256 global f64 waypoints as a patrol
+request (32 KiB maximum). Existing navigation/source identity and tile hashes must
+match. The command prints grounded route points after strict layer sampling and
+0.2 m sampled capsule clearance (8,192 samples maximum); it writes no package and
+moves no actor. Samples do not prove continuous swept clearance. Long chords over
+curved terrain can fail strict height checks: supply supported intermediate points,
+never relax floor/clearance checks to make a test pass. The example western trail is
+qualified against the contact-v3 valley only; it is not a new published NPC patrol.
+The direct shortcut near a cottage and a southward slope alternative currently fail
+these checks. Native traversal and broader navigation coverage are separate checks.
+Opt-in integration test `actual_authored_route_cli` uses absolute paths in
+THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_ROUTE; it verifies the
+positive route, wrong-floor rejection and unchanged source/request manifests.
+
+Route-free area baking may omit empty or unwalkable tiles within its bounded
+nine-tile region; it reports these IDs as `empty_tiles`. Invalid geometry, budget
+violations and backend failures still refuse. An area with no walkable tiles
+refuses without publication. Patrol baking keeps its nonempty-tile requirement.

@@ -46,12 +46,15 @@ impl State {
                 return false;
             };
             let timing = definition.timing(self.rate);
+            let periodic = definition.effect().periodic();
             if status.source.epoch.value() != self.epoch
                 || status.target.epoch.value() != self.epoch
-                || status.source == status.target
+                || periodic == (status.source == status.target)
                 || status.expires_at <= self.tick
                 || status.expires_at - self.tick > timing.duration_ticks
-                || (status.next_tick.is_none()
+                || (!periodic && status.next_tick.is_some())
+                || (periodic
+                    && status.next_tick.is_none()
                     && status.expires_at - self.tick >= timing.interval_ticks)
                 || status.next_tick.is_some_and(|at| {
                     at <= self.tick

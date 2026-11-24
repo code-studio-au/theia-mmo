@@ -18,7 +18,7 @@ def properties(rows):
     return result
 
 
-def standard_material(fields):
+def standard_material(fields, normal_map=False):
     shader = fields['m_Shader']
     if shader.get('guid') != '0000000000000000f000000000000000' or shader.get('fileID') != 46:
         raise ValueError('Expected explicitly identified built-in Standard shader')
@@ -30,7 +30,7 @@ def standard_material(fields):
             or fields.get('disabledShaderPasses') or fields.get('m_DoubleSidedGI', 0)):
         raise ValueError('Only opaque default-pass Standard material is qualified')
     keywords = set(fields.get('m_ShaderKeywords', '').split())
-    if keywords - {'_EMISSION'}:
+    if keywords - ({'_EMISSION','_NORMALMAP'} if normal_map else {'_EMISSION'}):
         raise ValueError('Unsupported Standard shader keyword')
     if floats.get('_SpecularHighlights', 1) != 1 or floats.get('_GlossyReflections', 1) != 1:
         raise ValueError('Disabled Standard reflection features are unsupported')
@@ -42,7 +42,7 @@ def standard_material(fields):
     if colors.get('_Color') != dict(r=1, g=1, b=1, a=1):
         raise ValueError('Nonwhite Standard tint needs qualified colour conversion')
     for key, texture in textures.items():
-        if texture['m_Texture'].get('fileID', 0) and key not in ('_MainTex', '_EmissionMap'):
+        if texture['m_Texture'].get('fileID', 0) and key not in (('_MainTex', '_EmissionMap', '_BumpMap') if normal_map else ('_MainTex', '_EmissionMap')):
             raise ValueError(f'Unsupported active Standard texture: {key}')
     def texture(key, required):
         value = textures.get(key)
@@ -68,11 +68,17 @@ def standard_material(fields):
             raise ValueError('Tinted/HDR emission needs qualified colour conversion')
         emission = [color[k] for k in ('r', 'g', 'b')]
         emissive_texture = texture('_EmissionMap', False)
-    return {'profile': 'unity-standard-opaque-v1',
+    normal = texture('_BumpMap', True) if normal_map else None
+    amount = floats.get('_BumpScale') if normal_map else None
+    if normal_map and ('_NORMALMAP' not in keywords or isinstance(amount,bool) or not isinstance(amount,(float,int)) or not math.isfinite(amount) or not 0 <= amount <= 1):
+        raise ValueError('Standard normal profile needs an active map and finite 0..1 strength')
+    return {'profile': 'unity-standard-normal-v1' if normal_map else 'unity-standard-opaque-v1',
+            'normal_texture': normal, 'normal_amount': amount,
             'base_color': texture('_MainTex', True), 'base_color_factor': [1., 1., 1., 1.],
             'metallic': metallic, 'roughness': 1. - smoothness,
             'emissive': emissive_texture, 'emissive_factor': emission,
-            'scope': 'source scalar/albedo/emission adaptation; no Unity BRDF, lightmap or shader equivalence'}
+            'scope': ('source scalar/albedo/emission' + ('/normal' if normal_map else '')
+                      + ' adaptation; no Unity BRDF, lightmap or shader equivalence')}
 
 
 def glass_material(fields):

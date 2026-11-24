@@ -1,3 +1,2813 @@
+23 November 2026 — P2-14 Stoneford HUD reference:
+Rounded unit frames, saved portrait choices, authoritative vitals and effects,
+a framed minimap and world map, a gold skill dock and a violet XP strip now use
+the approved theme. 363 client tests, 29 Python tests, strict checks and release
+build pass. Three offscreen allocation sizes pass. Native selected Wolf and
+seven-zone map hover pass on Linux Vulkan llvmpipe with zero GPU diagnostics.
+See IN_GAME_HUD.md for exact scope and the native resize limitation.
+
+23 November 2026 — P3-01/P3-03 native account switching:
+Back to Login revokes the session before clearing the roster and preview.
+A failed sign-out keeps the current account available for retry. 25 Python
+tests, 362 client tests (five skips), strict checks and native two-account
+sign-out, empty roster, restored roster and world entry pass. Linux Vulkan
+llvmpipe, zero GPU diagnostics. See GAME_FRONTEND.md. The next user-directed
+P2-14 slice is the in-game HUD reference pass.
+
+23 November 2026 — P4-12/P2-14 contained chat history:
+Long unbroken messages now wrap within the history viewport, with horizontal
+clipping as a fallback. Losing window focus cancels drafts while preserving
+submission/receipt tracking and connected status. 362 client tests (five skips),
+strict checks and two native accounts pass; actual text width is checked against
+the viewport. Linux Vulkan llvmpipe, zero GPU diagnostics in both clients. See
+LOCAL_CHAT.md. Next: P3-01/P3-03 return from character selection to native login,
+revoking the current account session and clearing the roster before switching.
+
+23 November 2026 — P4-12/P2-08/P2-09 late join and remote speech:
+Fixed the shared startup timeout that could terminate an established client when
+a new remote character spawned. Each visual now has its own bounded instantiation
+timer. 362 client tests (five skips), strict checks and two native accounts pass:
+distinct saved bodies, bidirectional Say, Area exclusion, long bubble wrapping and
+retirement before expiry. Linux Vulkan llvmpipe, zero GPU diagnostics in both.
+See LOCAL_CHAT.md and REFERENCE_SCENE.md. Next: contain long history text and preserve
+correct chat status while the connected game window is unfocused.
+
+23 November 2026 — P4-12/P2-14 Say speech bubbles:
+Confirmed Say delivery now renders bounded, noninteractive overhead bubbles on
+visible player models; Area stays in history. One per speaker, eight maximum,
+six-second lifetime; hidden/off-screen/occluded actors and old history cannot
+produce bubbles. 361 client tests (five skips), strict checks and native normal-
+account self-Say/Area/expiry/input checks pass. Linux Vulkan llvmpipe, zero GPU
+diagnostics. See LOCAL_CHAT.md for evidence and limits. Next: two-client remote
+presentation qualification; no new chat authority or channels.
+
+23 November 2026 — P3-03/P2-14 preview continuity:
+Cosmetic changes retain the last complete visible model while new appearance
+readiness settles; Create/Enter remain gated. Empty rosters still show no model.
+358 client tests (five skips), strict checks and native body/face/hair/outfit/
+palette changes pass: 478 frames, 60 pending, zero visibility gaps or early actions.
+Final applied appearance and character creation verified. Linux Vulkan llvmpipe;
+two counted known surface-resize diagnostics. See CHARACTER_CUSTOMISATION.md for scope and evidence.
+Next backlog slice: bounded Say-only speech bubbles from confirmed chat delivery,
+without revealing actors that are not already rendered.
+
+23 November 2026 — P3-01/P2-14 native Create Account:
+Implemented the reference-style Bevy form through the owned Keycloak provider and
+existing code/PKCE account flow. Registration opens an empty roster; character
+creation and restart/sign-in restore the same saved account character. Unsupported
+terms/privacy/news stay disabled. Portrait has no sword, a feathered mist backing,
+subtle divider, full-height crop and external bottom-left Back to Login. Shared
+icon inputs have extra text padding. 358 client tests (five skips), 12 Python tests,
+strict lint/build and isolated native/provider checks pass. See ACCOUNT_REGISTRATION.md for exact
+evidence, counted resize diagnostic and local-provider/deployment limits.
+
+23 November 2026 — P3-03/P2-14 character reference layout accepted:
+Single category navigation, body/skin panel, actual cosmetic thumbnails, live
+central preview and fixed footer replace the compact form. No presets or duplicate
+tabs. See CHARACTER_CUSTOMISATION.md for qualification. Next user-directed slice:
+P3-01/P2-14 native account registration matching the supplied gateway reference;
+retain disabled presentation where terms/privacy/news services are unavailable.
+
+23 November 2026 — P4-12 native composer accepted; P3-03 next:
+Normal-account Say/Area opt-in, focused composition and server-confirmed history
+are implemented and natively qualified; see LOCAL_CHAT.md. Remaining chat work
+includes speech bubbles, broader moderation and cross-area lifecycle. User directs
+return to character customisation now: closely follow the supplied layout without
+duplicate tabs or presets, retaining model drag/foot arrows/zoom and visibly
+disabling unsupported options. This supersedes the compact-layout-only direction.
+
+23 November 2026 — P3-03/P2-14 frontend and sprite refinement:
+Approved v3 sprites now decorate the existing native frontend and game windows.
+Login, roster and compact creation fill each allocated client window. Preview
+rotation uses an invisible drag area with curved foot arrows; zoom/reset controls
+stay below the model. Active text is white, inputs share sizing, section titles
+have reduced padding and settings actions remain bottom anchored. See
+UI_SPRITE_INTEGRATION.md and STATUS for final evidence and remaining limits.
+Next suitable playable slice: P4-12 normal-account Say/Area profile opt-in and
+focused chat composition, building on the qualified encrypted chat worker.
+
+22 November 2026 — P3-03/P2-14 reference-kit surfaces:
+Shared textured navy/gold panel art, bevelled button states, category icons,
+reference settings and main-menu layouts extend the native frontend/game HUD.
+Unsupported controls/tabs/links are visible but disabled. Full chat composition,
+character stats/equipment, collections, the remaining graphics/audio/accessibility
+features and production account services remain separate work; decorative UI does
+not establish those capabilities. See GAME_FRONTEND.md and STATUS for evidence.
+
+22 November 2026 — Native entry refinement and P2-14 shared Theia controls:
+Client-only username/password sign-in for the local development provider, separate
+courtyard character selection, empty-account state and shared gold/blue controls
+are implemented. Shared checkbox/slider bind actual saved graphics/UI preferences.
+Pending: production native account integration (including MFA, registration and
+recovery), launcher update delivery, expanded cosmetics and equipped armour visuals.
+The launcher-updates/game-login split is adopted, not a claim of working patch
+infrastructure. See GAME_FRONTEND.md; older browser/ledge descriptions are history.
+
+22 November 2026 — P3-01/P3-03 native game entry completed:
+The account population launcher now opens a native title, saved-character roster
+and animated creation screen before entering Millhaven in the same game window.
+Illustrated title art, ledge-positioned live preview and the new gold-lettered
+Millhaven loading image are integrated. Fresh/restarted account and normal/small
+window native checks pass. Remaining: deployed account/service lifecycle,
+registration/recovery, richer cosmetic catalogue and equipped armour visuals.
+Browser OIDC is retained; this supersedes the standalone-title deferral below.
+See GAME_FRONTEND.md for exact implemented scope and evidence.
+
+22 November 2026 — P2-08/P2-09, P3-03 playable modular hero slice:
+Implemented curated hero conversion, native creation/selection preview, persistent
+cosmetic choices and authoritative public appearance for local/remote players.
+Actual two-account Millhaven entry and database-restart checks pass. Appearance is
+cosmetic; equipment still owns gameplay stats. Future work: richer catalogue,
+equipped armour visual mapping and a standalone title/character launcher. Current
+entry is the editor's account population playtest; see MODULAR_HERO.md.
+
+22 November 2026 — P5-17 asset group transforms:
+Use transient viewport selection over existing placement IDs and the standard
+Bevy handles/outline rendering. Move preserves offsets; yaw and uniform scale
+share the bounds-centre pivot in checked global f64 coordinates. Preview commits
+as one validated transaction and supports exact undo; the bounded edit budget
+covers every supported asset in a document. Terrain and guide/volume authoring
+remain separate. CPU regressions and isolated native RX 7900 XTX input/render/save
+checks pass; see STATUS and ZONE_EDITOR for controls, evidence and limitations.
+No runtime protocol or persisted selection-group format was added.
+
+22 November 2026 — P2-08 imported Millhaven manual performance:
+Manual editor/imported playtest launchers now default to matching release builds.
+Nearby was already reducing residency to 81 tiles; the slow session used debug
+binaries. Same stationary imported village, Nearby and 3440x1400 with editor closed:
+39.96 FPS / 25.02 ms debug versus 496.86 FPS / 2.01 ms release, uncapped, no input
+injection or quality reduction. Matching optimized editor is reopened with its local
+services. Build/launcher/strict checks pass; see STATUS and build/mhp-20261122b/report.json
+for device, exact scope and limits. No route or Windows performance claim.
+
+22 November 2026 — P5-17 large smoothing and centre-height area flattening:
+Smooth radius now reaches 160 m (5x). New Flatten area holds the exact initial
+centre height, with an adjustable outer transition and optional deterministic
+Perlin bumps controlled by height/width sliders. Imported schema-18 journals retain
+undo/cancel/save and shared samples. Native rendering identified and resolved a
+coarse-mesh/brush overlay mismatch: the existing bounded 25-tile fine region follows
+the active brush. Zone/editor suites, focused final regressions, strict lint/build
+and native RX 7900 XTX rendering/save/reload checks pass; see STATUS and ZONE_EDITOR.
+Runtime publishing and Windows execution remain separate; all changes stay local.
+
+17 November 2026 — P2-04 / P2-14 reset recovery and P3-15 gentler pass 2:
+F10 Developer Reset position uses trusted local-owner controls and server collision-
+prepared teleport to the original spawn, clearing fall/prediction state while
+preserving speed. Single-surface local walkthroughs automatically recover below
+terrain; ordinary/account/cave behavior is unchanged. Disconnected sessions require
+relaunch. This safeguards recovery without claiming the original CCD bug is fixed.
+The user-approved second smoothing/60% scaling pass is available separately as
+build/covenant-seven-gentle-v2, with original and v1 sources retained. See STATUS
+for source metrics, tests, native Reset proof and exact limits.
+
+17 November 2026 — P5-17 / P3-15 / P2-14 gentle regional terrain and maps:
+The seven-zone 7296 x 8192 m editor and separate 2 m walkthrough are ready locally.
+Whole-master smoothing/60% height scaling preserve originals and shared samples.
+Map M, seven hover boundaries, Graphics/Developer HUD and the larger-view minimap
+fix pass focused suites and Linux native checks; see STATUS for exact scope/evidence.
+The editor and normal playtest are open. Further terrain design, publishing editor
+journals, native Windows and whole-continent capacity remain separate work.
+
+17 November 2026 — P2-04 / P2-14 / P3-15 original Covenant H1/H2 walkthrough:
+Original archive Millhaven and Stoneford are available in one continuous saved-
+terrain walkthrough, with HUD Graphics and an explicitly local F10 Developer
+running-speed control. Server authority/prediction, bounded codec/UI guards and
+Linux native menu/terrain checks pass; see STATUS and IMPORTED_HEIGHTFIELDS.
+Manual walkthrough is open. Editor combined-width support, authored population
+integration and Windows execution remain separate; no World Machine edits adopted.
+
+17 November 2026 — P2-06 / P2-08 / P2-14 Graphics view distance:
+Saved live Nearby/Far/Maximum terrain controls are available in F10 → Graphics.
+Linux native menu, restart, 460/289/81-tile transitions, GPU cleanup and camera
+restoration pass; see STATUS and UI_FANTASY_WARRIOR for limits and evidence.
+This completes the requested control; the earlier terrain-design work remains
+set aside. No editor, object-streaming, server-interest or Windows scope added.
+
+17 November 2026 — P5-17 / P3-15 imported terrain editing:
+Full-zone Raise, Lower, Flatten, Smooth and surface-colour painting now share the
+existing stroke/history/save workflow. A schema-17 journal preserves the immutable
+source and restores edited samples on load. See ZONE_EDITOR and STATUS for controls,
+bounds and validation. Publishing this edited layer into a runtime terrain package
+is still a separate slice; the original walkthrough package remains unchanged.
+
+17 November 2026 — P5-17 / P3-15 full imported-zone editor:
+The editor now accepts the complete Millhaven height-tile package as an immutable
+base for scene navigation and object authoring. Whole-zone framing, bounded near
+detail and independent saved placements replace the old patch-size restriction
+for these documents. See ZONE_EDITOR and STATUS for usage and validation.
+Imported height sculpting/painting and runtime publication of authored objects
+remain separate follow-up slices; the existing terrain walkthrough still works.
+
+17 November 2026 — navigation direction correction:
+The map overview follow-up corrects reflected east/west when keeping +Z north.
+The editor follow-up makes perspective WASD navigation follow the camera after
+orbiting. See STATUS, ZONE_OVERVIEW and ZONE_EDITOR for evidence and scope.
+
+17 November 2026 — P2-14 / P3-15 Millhaven overview map:
+M opens the full-zone terrain/roads/watercourses overview with live player facing
+and position, seven landmark sites and selection distances. See ZONE_OVERVIEW.md
+and STATUS for exact package binding, input ownership and Linux qualification.
+This supports manual walkthrough review before bridge/water/scenery work. The
+larger quest log, continent hierarchy, zoom/pan and map authoring remain separate.
+
+17 November 2026 — full imported Millhaven terrain walkthrough:
+P1-10 / P2-06/07/08 / P3-13/15 now include a bounded saved-terrain import path
+for the supplied 4,096 x 3,072 m zone with 1 m source detail. See STATUS and
+IMPORTED_HEIGHTFIELDS.md for acceptance and launch instructions. Next content
+work is manual terrain/route review, explicit bridge and water decisions, then
+scenery and gameplay integration. Stoneford remains a reviewed neighbouring
+source; its shared edge matches but it is not part of this runtime package.
+Whole-zone editing and native Windows qualification remain separate work.
+
+16 November 2026 — P4-11 shared-marker presentation accepted:
+The Unit marks palette, eight shared overhead symbols and selected-target icons
+now use the private authoritative protocol from cda0608a. Exact selection/revision
+and leader/pending guards apply. All 295 client tests (four skips), strict client
+Clippy, fmt and build pass. Native two-account paired and quadrant v4 checks pass
+fresh/restart: 27 actions each, no player-frame overlap, no scene-readiness drops
+or GPU diagnostics. See PARTIES.md and build/party-marks-ui-*-v4/qualification.json.
+Next: genuine loading/readiness presentation, then title/character-selection UI.
+Continue locally until Stop; no push or four-account/native Windows claim.
+
+16 November 2026 — P4-11 shared unit-mark authority accepted:
+Party profile v5 / PQ02 / PS03 carries eight bounded, party-private symbols.
+Leaders can assign, clear a unit or clear all; reassignment preserves one symbol
+per unit and one unit per symbol. Requests validate exact current members or
+relevant living enemies/available NPCs, with existing revision, rate and replay
+guards. Marking changes no selection, movement, facing or attack. Marks survive
+interest loss, promotion and member death/respawn; creature death, NPC retirement,
+member departure and party dissolution clear the affected marks. Creature respawn
+uses a fresh identity. Leader-only permissions and range policy are explicit
+Theia decisions, not claimed Classic rules. No extra positions or stats replicate.
+407 core, 905 network (36 skips) and 292 client tests (four skips) pass. Actual
+three-peer encrypted flows prove sharing, outsider isolation, permissions,
+reassignment/clear and unchanged poses/selection. World tests cover lifecycle at
+20/30/60 Hz. Strict all-target core/network/client/server/editor Clippy, fmt and
+matching client/server/editor builds pass: build/party-marks-checks.json and
+party-marks-*-tests.log. The inventory admission test now stops its synthetic
+owners after the server, fixing a fixture-only shutdown race exposed by the suite.
+This is the protocol prerequisite; no palette or rendered symbols yet, and no new
+native GPU or Windows claim. Next: marker controls, overhead and target-frame
+symbols, with native two-account checks at both tile heights. Editor playtests
+inherit the matched protocol. Continue locally until Stop; no push.
+
+16 November 2026 — P4-11 selected-member presentation accepted:
+Left-click an exact current member frame to select that member through TG02.
+The selected frame shows the trusted name and authoritative health/mana, and the
+compact frame gains a white selection border. Member widgets stay separate from
+hostile ability eligibility and enemy health; NPC selection replaces the member
+presentation. Latest requested target identity blocks an old hostile observation
+from receiving an action-bar spell while a newer selection/clear is in flight.
+Right-click menus and UI drag ownership remain intact. Promotion retains the
+selection; Escape/Backspace and membership departure clear it. No invented member
+portrait, level or status, no remote-player mesh-click targeting, no shared marks.
+292 client tests pass (four skips), including epoch/membership/identity guards,
+partial/zero/unavailable resource repaint and the old-hostile intent race. Strict
+all-target client Clippy, fmt, matching build and Python compilation pass:
+build/party-target-ui-checks.json. Network authority remains qualified by 77052381.
+Native two-account mouse/keyboard controls pass at 1720x1400 and 1720x700, both
+fresh and after PostgreSQL/server restart: eight member selections and all 13
+membership actions per flow, real rendered names/bars, NPC replacement without
+dialogue, no implicit movement/facing/cast, clear/promotion/removal lifecycle,
+unchanged quests/bags and zero scene-readiness retractions/GPU diagnostics.
+Evidence: build/party-target-ui-paired-v3/qualification.json (178.84s),
+build/party-target-ui-quadrants-v4/qualification.json (171.95s).
+Both accepted selected-member captures were visually inspected. Linux RX 7900
+XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; no native Windows run. Quadrant evidence
+uses two accounts in two quarter-screen tiles, not four-account gameplay.
+Earlier attempts stopped at harness focus/fixture/output mistakes or an NPC click
+covered by the target HUD. The final harness chooses a visible unobscured NPC.
+Editor account playtests inherit these controls without additional options.
+Next: party-scoped authoritative shared unit marks, then the adopted title,
+character-selection and loading flow. Continue locally until Stop; no push.
+
+16 November 2026 — P4-11 friendly party-selection authority accepted:
+Targeting profile v2 / TG02 separates selected-member identity from selected
+hostile identity and its candidate list. Exact current other party members can
+be selected throughout the bounded world, without publishing extra positions or
+stats. This party-wide range policy is a Theia extension, not a verified Classic
+range rule. No player enters hostile search/mesh/combat lists. Selection changes
+stop previous autoattack without changing pose/facing; spell/melee authority still
+rejects player targets. Death/respawn and leadership changes retain selection;
+leave, kick, dissolution and disconnect clear it, and old incarnations cannot be
+selected. Legacy TG01 and ambiguous friendly/hostile frames are rejected.
+The complete network suite passes 903 tests (36 skips), including 544
+library tests, actual encrypted three-peer selection/switch/clear/outsider refusal,
+private views, no-cost hostile-spell refusal, disconnect/leave cleanup, bounded
+codec checks, and 20/30/60 Hz real death/respawn and autoattack cancellation.
+The strengthened distant-request/kick lifecycle test also passes separately.
+289 client tests pass (four skips); matching client/server/editor build, fmt and
+strict all-target network/client/server/editor Clippy pass. See
+build/party-selection-checks.json, party-selection-*-tests.log and
+party-selection-distance-test.log. No rendering change or new native GPU/Windows
+claim in this prerequisite. Frame selection/target presentation follows next;
+shared marks and the adopted title/selection/loading flow remain later work.
+Continue locally under the user's until-Stop authorization. No push authorized.
+
+16 November 2026 — P4-11 member context menus accepted:
+Right-click a compact member frame for its trusted name, role, Manage and Close.
+Only the current leader sees Promote/Remove; these reuse existing server commands,
+painted owner/revision/member guards and the shared pending reservation. Resource
+updates keep the menu; membership/revision changes, disconnection and focus loss
+retire it. Escape closes context before Party. Outside dismissal and frame drags
+retain UI ownership without steering, facing changes or world actions.
+289 client tests pass (four skips), including authority-derived stale/role guards,
+keyboard ordering and both viewport clamps. Build, fmt, denied-warning all-target
+client Clippy and Python compilation pass; build/party-menu-checks.json.
+Native two-account controls at 1720x1400 and 1720x700 pass all 13 membership actions
+through fresh and PostgreSQL/server-restored accounts, with actual context-menu
+promotion/removal, nonleader permissions, Manage/Close, Escape/outside/focus
+dismissal, unchanged progression and zero readiness retractions/GPU diagnostics.
+Evidence: build/party-menu-paired-v2/qualification.json (160.22 seconds) and
+build/party-menu-quadrants-v2/qualification.json (156.95 seconds).
+Both menu captures were visually inspected. Linux RX 7900 XTX / RADV NAVI31 /
+Vulkan / Mesa 26.2.6; no Windows run. Quadrant checks use two accounts in the
+first two tiles, not four-account gameplay. V1 stopped at a test-harness variable
+collision after promotion; v2 fixes the harness and is the acceptance run.
+Editor account playtests inherit the client controls with no extra options.
+Next P4-11 prerequisite: distinguish authoritative friendly party selection from
+hostile targets before enabling frame selection and shared unit marks. The
+adopted title/selection/loading flow remains subsequent work. Continue locally;
+no push authorized.
+
+16 November 2026 — P4-11 compact party member frames accepted:
+Upper-left frames show other members' trusted names, leader labels and actual
+health/mana, with initial badges until remote portraits are available. The header
+opens existing Party controls. Resource changes repaint in place; leave/removal/
+connection loss retires frames. No player targeting or context menu yet.
+286 client tests pass (four skips), including five-member lifecycle and partial/
+zero/unavailable repainting. Native two-account membership controls, rendered
+names/leader labels/bar widths, frame retirement, Manage shortcut, drag ownership,
+unchanged progression and PostgreSQL/server restart pass at both tile heights:
+build/party-frames-paired-v2/qualification.json (147.80 seconds) and
+build/party-frames-quadrants-v2/qualification.json (149.06 seconds).
+Captures inspected; frames are 268x73 paired, 260x72 with quadrant UI scaling.
+Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6; zero GPU diagnostics and
+scene-readiness retractions, no Windows run. Native checks use two accounts and
+full starting pools; maximum membership and partial/unavailable values are covered
+headlessly, with changing spell costs also proven by the preceding encrypted
+network slice. The v1 collapsed-name layout was fixed before acceptance.
+Build, fmt, strict all-target client Clippy and Python compilation pass; see
+build/party-frames-checks.json. Editor account playtests inherit the client UI.
+Next slice: member context menus using existing promotion/removal authority,
+painted revision/identity guards and native mouse/Escape checks. Continue locally;
+no push authorized.
+
+16 November 2026 — P4-11 private party vitals foundation accepted:
+Party profile v4 / PS02 now carries checked authoritative health/mana for exact
+current party membership. Names remain same-world, stats remain party-private;
+missing resource profiles are explicit unavailable values. Updates coalesce under
+the existing bounded channel reserve without changing membership revisions.
+541 network tests pass (18 skips): actual encrypted spell-cost delivery to a party
+member, outsider isolation, departure cleanup, codec rejection, queue pressure,
+and damage/death/respawn at 20/30/60 Hz. 284 client tests pass (four skips).
+Matching client/server/editor build, fmt and denied-warning all-target Clippy pass;
+see build/party-vitals-checks.json and logs. No rendering change or new native GPU
+claim in this prerequisite. Continue with compact member frames and their native
+paired/quadrant layout checks. No level/status icons or targeting/marks yet.
+No push authorized.
+
+16 November 2026 — invitation prompt accepted; next P4-11 member vitals:
+Top-centre Accept/Decline passes actual two-account controls and restart at both
+1720x1400 and 1720x700. See STATUS for evidence; expiry/stale guards also pass.
+Next prerequisite for compact member frames: bounded authoritative health/mana
+observations for current party members, with explicit unavailable values, private
+party scope, membership/disconnect cleanup and versioned protocol binding. Reuse
+existing combat vitals rather than deriving or predicting bars in the client.
+Require codec rejection/coalescing, real encrypted party isolation and resource/
+life changes before adopting the data in visible frames. Level/status icons,
+member targeting and shared marks remain separate where data is not yet available.
+Continue local commits and editor integration; no push authorized.
+
+16 November 2026 — tiled playtests accepted; continue P4-11 invitation UI:
+Two panel-preserving 1720x1400 views and four 1720x700 quadrants pass actual
+native geometry, four encrypted admissions and two-account shared-escort/restart
+at the new size. Four editor slots/export and server spawn ownership pass; see
+STATUS for exact evidence and Linux-only native scope. Next: top-centre incoming
+invite with Accept/Decline while Party is closed, reusing existing authoritative
+identity/expiry/revision/pending guards. Prerequisites are the qualified party
+transport and standard Bevy UI input ownership. Acceptance: native decline,
+cancel, accept and no world-click leakage at both tile heights, stale/expired
+invitations, unchanged progression, format/strict Clippy and relevant tests.
+Continue recommended implementation/editor slices with local commits until Stop;
+no push authorized. Title/selection/loading/member stats/marks remain later slices.
+
+16 November 2026 — active local window-layout slice (P1-06 / P5-17):
+Implement two half-monitor views and four quarter-monitor views with no overlap,
+including four editor test slots and checked per-slot server admission. Acceptance:
+actual native sizes/positions, four encrypted peers with distinct spawns and
+cleanup, plus the existing two-account quest/escort flow at 1720x1400.
+Title/character/loading and party invite/stats/marking references are recorded in
+CHARACTER_LAUNCHER_MENU and PARTIES as planned work, not implemented screens.
+
+16 November 2026 — authored-world preparation correction accepted:
+P2-02 / P2-08 now prepares all 116 world-mesh pipelines before movement, retaining
+normal culling and genuine missing-asset safety. Native two-account first-quest
+approaches, shared escort handoff and restart pass with zero readiness retractions;
+see STATUS. A startup loading screen was discussed but remains unimplemented.
+Continue with user-reported issues before the previously recorded party UI pass.
+
+16 November 2026 — shared active party escorts accepted:
+P4-11 / P4-03 passes the native two-account range handoff, everyone-away wait,
+background rendered movement, individual arrival/turn-in and durable restart.
+Fresh network/fmt/strict Clippy checks pass; see STATUS/PARTIES for scope and
+exact evidence. Shared XP/loot/general quest credit remain open. The user's
+party frames, collapsible group panel and member context-menu screenshots are
+recorded as presentation reference in PARTIES; implementation remains pending.
+
+15 November 2026 — editor party launch accepted:
+Owned account Start now enables parties. Native export/create/select, movement,
+all three travel quests, Stop and durable restart pass; see STATUS/PARTIES.
+Continue P4-11/P4-03 shared active escorts under the user's any-member-in-range
+rule, with explicit participation/lifecycle and individual turn-in checks.
+
+15 November 2026 — native party controls pass:
+Two OIDC accounts exercise all member/leader/invitation controls at 1920x1440,
+retain quests/bags/XP and rejoin solo after server/database restart. See STATUS
+and PARTIES for evidence. Next: enable the qualified party mode in the editor's
+owned account-playtest launch and verify its normal Start/Stop flow.
+
+15 November 2026 — party encrypted transport prerequisite passes:
+Private state, named admission, bounded client waits and actual three-worker
+Classic/chat integration pass; see STATUS. Next: opt-in account launch integration,
+standard Party controls, UI ownership and real native two-account qualification.
+Shared escort/reward/quest behavior remains a later slice.
+
+15 November 2026 — party authority prerequisite passes:
+P4-11 bounded membership and World lifecycle pass core/network/format/strict Clippy
+checks; see STATUS. Continue with bounded encrypted party requests/private state,
+authenticated names and standard client controls, then real two-account native
+acceptance. This foundation is not yet a playable party system; shared escorts
+remain a subsequent eligibility/credit slice.
+
+15 November 2026 — escort overview passes:
+The editor now frames both escort locations while retaining the NPC inspector;
+local/far-coordinate, stale/busy, native input and GPU checks pass. See STATUS.
+Next P4-11: bounded authoritative party invitations and membership, followed by
+transport/client integration. Shared escort progress remains a later consumer.
+
+15 November 2026 — route banner UI passes:
+Top-centred AI controls clear dialogue at both requested sizes and retain clickable
+travel/F7 controls; native two-account/restart and GPU checks pass. See STATUS.
+Continue P4-03 / P5-17 with an editor action that frames the NPC and escort
+destination together without dropping the selected NPC or quest inspector.
+
+15 November 2026 — running compass and two-account travel accepted:
+Both directions use normal run input; actual native compass legs take about 14.2
+seconds. Two authenticated players complete independent travel quests and retain
+exact progress after database/server restart in 4m54s. See STATUS for evidence.
+No further automatic slice is started following the user's Stop. Shared escorts
+remain deferred until party implementation, with the rule recorded below.
+
+15 November 2026 — party escort follow-up deferred:
+After the party system is implemented, share the ranger journey among participating
+party members, with any member in range permitting travel. Keep private solo
+escorts for now. User explicitly requested deferral; no party implementation is
+part of the compass AI running change. See DECISIONS.
+
+15 November 2026 — named patrol authoring passes:
+Previous/next/clear assignment and guide framing pass native editor/export checks,
+with exact Undo and source preservation. See STATUS. Next integration review:
+two-player quest isolation, using the existing private per-character escort and
+collection authority and real account/transport qualification helpers.
+
+15 November 2026 — population movement presentation passes:
+Authored populations now use target interpolation and authoritative gait samples.
+Native walking has zero run switches versus 121 in the baseline; client regressions
+and GPU checks pass. Loading/frame stalls remain a measured limit. Next P4-03 /
+P5-17: select saved Patrol guides by name from spawn-group inspector controls,
+retain numeric entry and shared Undo, and frame the assigned guide for inspection.
+
+15 November 2026 — authored population patrols pass:
+Saved Patrol guide assignment, strict export/runtime preparation, real 20/30/60 Hz
+out-and-back movement and native editor/client integration pass; see STATUS.
+Next P3-07/P4-03: enable the existing target interpolation for authored populations.
+Native walk/run churn and startup inspection show only singleton patrols currently
+receive it. Preserve authoritative targeting/ranges and verify animation stability
+with the same exported two-point patrol. Named inspector choices can follow.
+
+15 November 2026 — interrupted population roaming resumes correctly:
+Combat return retains the current excursion waypoint instead of cutting directly
+home from the captured anchor. Reproduction and corrected 20/30/60 Hz terrain
+movement pass, along with all network library tests. Next P3-07/P4-03/P5-17 slice:
+explicit saved Patrol guide assignments for spawn groups, prepared outside ticks
+and exposed through existing editor validation/history/export paths.
+
+15 November 2026 — named account AI roads pass:
+Manual/default, previous/next named road choices, export, full quest travel and
+PostgreSQL restart pass in the native editor/account workflow. Both client runs
+render at exactly 3440x1440. Next: verify interrupted population roaming resumes
+from the captured return anchor before expanding authored patrol assignments.
+
+15 November 2026 — collection location guides pass:
+The NPC inspector now frames and visibly marks authored collection locations using
+bounded shared standard meshes. Native deselection and source preservation pass.
+Next: choose account AI test roads by their authored names in the export dialog,
+keeping blank/manual play the default and the existing export preflight.
+
+15 November 2026 — collection location navigation passes:
+NPC quest cards focus the camera directly on their checked ground reward positions,
+with stale/busy guards and unchanged source/history. Native and editor regression
+checks pass; see STATUS. Next: make the exact collection point visible as a
+read-only editor guide while inspecting the linked NPC.
+
+15 November 2026 — explicit account AI road integration passes:
+The editor can export an optional checked Road as a paused F7 return-trip test.
+The compass remains two authored points; manual play is the default. Full native
+editor Start/play/Stop/PostgreSQL restart passes with all three starter travel
+quests retained. See STATUS. Next: make collection locations directly viewable
+from the read-only NPC quest inspector, alongside escort destination selection.
+
+15 November 2026 — moving contact and collection export checks:
+Contact presentation now interpolates authoritative NPC poses; actual escort
+wait/arrival/turn-in and PostgreSQL restart pass. Population export also rejects
+unsupported ground collection placements before publication; restoring the valid
+compass location succeeds without source mutation. See STATUS for evidence.
+Next editor integration: explicitly select a paused AI test road for an account
+playtest, keeping manual play the default and reusing the existing checked follower.
+
+15 November 2026 — NPC travel inspection implemented:
+The inspector now exposes escort destination/speed/range, ground collection and
+Ready wording, with direct selection of the destination marker. Native input and
+source-preservation checks pass; see STATUS. Next: continue runtime/editor
+integration and examine moving NPC presentation against the smooth player clock.
+
+15 November 2026 — escort editor validation passes:
+Population export checks exact NPC/destination references and the same supported,
+collision-checked navmesh route as server startup before publication. Native
+Delete → refusal → Undo → successful export preserves source and reports the
+11-point ancient-tree route. See STATUS for checks and Linux limits. Next: expose
+travel bindings and destination selection in the NPC quest inspector.
+
+14 November 2026 — starter quest/HUD continuation:
+The opt-in starter economy slice now implements named contacts, coin presentation,
+slot-anchored item descriptions, target cycling/conditional enemy bars and optional
+Interface debug statistics. Rowan's compass uses ground collection then consumed
+delivery; its separate test path has two authored endpoints. Elowen runs within
+follow range along a destination-only navmesh route to the ancient tree, waits
+when the player falls behind, and requires conversation turn-in. The client now
+samples movement from the continuous prediction clock to correct compass-test
+whole-character stutter. Unit/SQL/route checks pass; final native acceptance and
+limitations are recorded in STATUS. Further NPC art, shared escorts and persistent
+partial escort progress remain separate work.
+
+14 November 2026 continuation: multiple contacts are now playable through the
+editor, authoritative server, encrypted presence and native client. Guide-to-steward
+acceptance/report/turn-in, fixed item reward, bound guide vendor and durable restart
+pass in `multi-contact-native-v2`; legacy single-guide content remains supported.
+See STATUS for precise checks, final UI refinement and evidence. Next authoring gap: deliberate
+patrol-route assignments for spawn groups, beyond the qualified bounded roaming.
+Earlier same-day prerequisite/single-guide notes below describe historical stages.
+
+14 November 2026: playtest feedback now drives the current playable slice:
+loot motes, readable enemy crowds/target labels, Synty quest presentation, road
+clearance and editable bounded idle roaming. Spawn spacing and roaming radius are
+independent. Source/export checks and the native four-quest, loot and PostgreSQL
+restart flow pass (playtest-feedback-native-v9); see STATUS for exact scope. Next: human
+movement/UI feel review, then resume bounded multiple-contact runtime integration.
+Hand-authored patrol assignments per grouped enemy remain a separate authoring slice.
+
+14 November 2026: bounded multi-contact content prerequisite passes core tests.
+Schema-2 contact collections resolve different quest giver/turn-in IDs and exact
+NPC choice ownership; duplicate/unknown definitions and budgets are checked.
+Normal gameplay still rejects this schema. Next: authored placement/World session
+identities, replicated presence/selection and editor export. See NPC_DIALOGUE_FOUNDATION
+and STATUS for implemented boundaries; no playable multi-contact claim yet.
+
+14 November 2026: disposable manual editor/account launcher and prefilled access
+road pass native dressed-valley export/create/Stop/re-export/select. Source copies,
+frozen binaries, all 22 roles and absence of gameplay drivers/test routes are checked.
+The user has the running session for usability feedback. See ZONE_EDITOR for launch
+instructions and STATUS for evidence. Next: bounded multiple-contact content and
+runtime integration; current playable still has one guide.
+
+14 November 2026: combat-earned first-kill reward claim and normal guide purchase
+pass twice in the exported populated valley. Three kills, two Completed quests,
+125 XP, 99 tokens and 31 stones; exact bag and both transaction receipts survive
+PostgreSQL restart/rejoin without duplicate grants. Journal-aware reward counters
+and real commit/replay/refusal regression pass. See STATUS for evidence and limits.
+Next authorized work: repeatable manual editor/account playtest, then bounded
+multiple authored quest/vendor contacts with distinct giver and turn-in identities.
+
+14 November 2026: ordinary vendor purchase at the exported population guide and
+PostgreSQL restart pass: one token for three stones, exact bag/latest receipt, no
+repeat purchase. Journal-aware vendor commit/replay/refusal counters now match the
+legacy worker, with real SQL regression coverage. Next: earned first-kill reward
+claim and trade through the same journal-aware path. See STATUS for evidence/limits.
+
+14 November 2026: the quest tracker lists Active/Ready objectives before completed
+history, with stable catalogue order inside each group. Native 720p overlook/pelt
+text is fully visible; the full four-quest loop and exact PostgreSQL restart pass
+again (250 XP, journal 24, bag 7). Next: guide vendor purchase in the exported valley.
+See STATUS for evidence and limits; local commits only.
+
+14 November 2026: all four dressed-population quests pass through ordinary UI,
+checked travel, normal probabilistic loot, corpse pickup and turn-in. Nine kills,
+one ordinary death/respawn, 250 capped XP, journal revision 25 and bag revision 6;
+four Completed quests, exact bag and saved rolls survive PostgreSQL restart.
+Next: unfinished quests first in the tracker, whose current 720p scroll viewport
+buries the fourth active quest behind completed entries. See STATUS for limits.
+
+14 November 2026: fix cooldown expiry for dead/interrupted actors before their
+early returns. A normal pelt fight exposed a server exit before player respawn;
+the World/wire regression reproduces the exact error and passes after the fix.
+511 network tests and strict workspace Clippy pass. Native full pelt completion
+with ordinary death/respawn and restart is being rerun; no completion claim yet.
+
+14 November 2026: the dressed population valley now passes all three introduction,
+kill/training and authored overlook quests through ordinary UI and checked travel.
+150 XP/revision 14 and the newly unlocked pelt offer survive PostgreSQL restart.
+Escape uses the current dialogue revision when presentation lags a server response.
+Next: normal conditional pelt pickup and consumption/turn-in in this same valley.
+Native Linux evidence and limits are in STATUS; local commits only.
+
+Dressed valley population hunt, 14 November 2026: checked outward/return travel,
+three independent kills with normal controls and zero player deaths, guide follow-up
+and durable 125 XP/revision 11 rejoin pass. Explicit account test routes are paused,
+frozen and preflight-checked. Next: authored overlook and conditional pelt quests in
+this populated valley. See STATUS for debug/device and remaining scope.
+
+Owned launcher shutdown, 14 November 2026: SIGINT with an open editor lifetime
+pipe now exits cleanly; real-pipe regressions and two native valley account sessions
+with database restart pass. Next: checked population travel/combat/quest completion
+in the dressed valley. See STATUS for signal/platform and gameplay scope.
+
+Dressed valley population, 14 November 2026: explicit checked access-road export
+now places five independent wolves in the western grove while preserving village
+spawn/scenery/guide. Native editor export and authenticated guide introduction with
+all 22 profile copies and durable restart pass. Next: fix the observed SIGINT
+launcher shutdown crash, then qualify population travel/combat/quests in the valley.
+See STATUS for exact tests, native evidence and remaining balance/platform scope.
+
+Editor population gameplay selection, 14 November 2026: export and account Start
+now expose an optional loaded/clearable gameplay template and launch its published
+snapshot. Native quest completion, all 22 profile copies, Stop and durable rejoin
+pass; the individual item/reward path also passes. Next: integrate the independent
+population into the dressed starter valley. See STATUS for fixture/platform limits.
+
+Population complete snapshot launch, 14 November 2026: the account wrapper now
+validates/freezes every applicable role from an explicit exported gameplay manifest.
+Native 22-role admission, authored quest/map/loot and durable rejoins pass. Next:
+explicit template selection in the editor account population dialog. See STATUS
+for optional-profile and platform evidence limits.
+
+Population authored quest export, 14 November 2026: headless --population plus
+an explicit gameplay template now publishes checked quest/contact/area snapshots
+with matching static world/navigation. Native world-bound guide acceptance,
+quest-map lifecycle, kill/item credit, turn-in and durable rejoins pass. Next:
+complete snapshot selection in the account wrapper and explicit editor dialog
+integration. See STATUS for exact scope, tests and fixture/platform limits.
+
+Population kill-journal update, 14 November 2026: native authenticated accepted
+kill credit now passes before corpse pickup (kill 1/1, possession 0/1), followed by
+pickup, visible turn-in and durable restart. Next: checked authored contact/quest
+snapshot export with populations. See STATUS for exact fixture/platform evidence.
+
+Population account journal packaging, 14 November 2026: explicit quest/dialogue
+files and guide position now freeze alongside all account combat profiles. Native
+20-profile admission, denial/eligible pickup, visible turn-in and two durable
+rejoins pass. Next: population kill-objective journal credit, then authored contact/
+quest integration; no implicit editor quest attachment. See STATUS for evidence.
+
+Population quest-required loot update, 14 November 2026: normal explicit
+population launches now share inventory-bound conditional loot. Native owned
+account tests pass pre-acceptance denial, later eligible pickup, visible quest
+turn-in/consumption and two PostgreSQL restarts; final Completed/75 XP/revision 6
+is preserved. Editor exports remain explicit and unchanged. Next: frozen quest
+profiles in the account population wrapper. See STATUS and LOOT_TABLES for exact
+fixture, input, test and platform limits.
+
+Native population competition update, 14 November 2026: two authenticated native
+clients now pass normal threat transfer, first-tag XP, private corpse pickup and
+exact PostgreSQL restart/rejoin. Next: normal population quest-only loot integration
+with existing journal/eligibility rules. See STATUS for exact evidence and limits.
+
+Population durable competition update, 14 November 2026: actual authored World
+victim transfer, matched public/private windups and unchanged first-tag SQL receipts
+pass at 20/30/60 Hz with PostgreSQL restart. Retained passive/singleton receipts pass.
+Next: competing authenticated native clients with normal durable grants and loot.
+See STATUS for fixture boundaries; no new gameplay rule or renderer change.
+
+Public population presentation update, 14 November 2026: pursuing editor account
+launches now enable bounded public NPC attack timing and standard Bevy animation.
+Two native clients pass simultaneous/remote-victim playback at 20/30/60 Hz; normal
+account kill/loot and durable restart pass. Next: competing attackers with shared
+threat and durable first-tag receipts. See STATUS for exact evidence and limits.
+
+Population threat/editor update, 13 November 2026: pursuing editor account
+populations now automatically select shared reset and damage-threat profiles.
+Independent typed-cast tables and actual encrypted competing-player victim transfer
+pass at 20/30/60 Hz. Native 18-profile admission, damage accounting, kill, corpse loot
+and durable restart pass. Next: public multi-NPC windup/attack presentation and
+contested durable grants with threat active. See STATUS for exact scope/limits.
+
+Population return reset update, 13 November 2026: pursuing editor account
+populations now automatically select the existing shared development health/effect
+reset profile. Independent damaged return, unaffected neighbours and fresh lives
+pass at 20/30/60 Hz; native profile admission, combat, corpse loot and durable
+restart pass. Next: shared per-NPC threat transfer and public attack presentation.
+See STATUS for headless/native evidence boundaries.
+
+Population gameplay/editor update, 13 November 2026: configured spawn-group NPCs
+now use shared perception, chase, collision-checked movement, melee facing, return
+and fresh-life respawn. Native exported-account chase/kill/corpse pickup and durable
+restart pass; multi-enemy return/kill/credit/respawn passes on the authored map at
+20/30/60 Hz. Next: per-creature evade/reset, threat transfer and public attack
+presentation, then competing live attackers. General content/AI authoring and
+broader navigation coverage remain separate. See STATUS for exact evidence/limits.
+
+Checked-travel quest acceptance, 13 November 2026: the full authored introduction,
+three-kill follow-up, checked outward/return legs, turn-in and durable restart/rejoin
+pass natively without step-spin camera steering. Endpoint input is now life-bound;
+five tests cover death/fast-respawn cancellation and precise key timing. Native
+success had zero deaths. Area-quest traversal, broader navigation and production
+player auto-pathing remain separate. Evidence: authored-quests-checked-travel-native-v4.
+
+Test-travel combat follow-up, 13 November 2026: native checked approach, ordinary
+selection/casts, independent passive death/fresh-ID respawn and checked return
+pass. Full quest orchestration and interaction/range binding remain outstanding.
+
+Test-travel editor integration, 13 November 2026: assign authored patrol paths
+through Test Player property actions, then Start population playtest to export,
+preflight and run the checked per-player route. Native assignment/undo, two-client
+Start, authoritative arrival and Stop pass. Remaining full quest/kill migration
+needs interaction/range binding and moving-target/death handling.
+
+Test-travel update, 13 November 2026: normal play launcher support, automatic
+input release, optional paused activation and explicit checked return legs now pass
+native server/client checks. Remaining quest migration needs interaction/range and
+moving-target/death handling; static travel alone is not the full quest/kill flow.
+
+Test-travel progress: managed per-player route assignment and native rolling-valley
+travel are now qualified (13 November 2026). The approximately 49-second grove
+approach uses ordinary input without OS mouse corrections. Remaining requested
+flow: interaction/target range binding, target invalidation and full quest/kill
+orchestration; editor route authoring remains a separate convenience follow-up.
+
+Test-travel progress, 13 November 2026: explicit client --test-route now follows
+startup-checked static navigation through normal Classic input. Actual native
+28 m/two-corner travel completes without OS mouse steering or repeated full spins.
+See STATUS for evidence and limits. Remaining work for the request below: managed
+per-player route selection, native obstacle-route acceptance, interaction/target
+range binding and the full quest travel/kill flow with target invalidation.
+
+Requested future improvement — navigation-driven gameplay test travel, 13 November 2026:
+The user observed automated quest travel repeatedly alternating a few steps with
+several camera rotations and requested a better pathing approach. Track this as a
+future test-controller improvement under P4-03 navigation and the existing gameplay
+qualification work; it is not implemented and does not interrupt the active MMO/
+editor population slices. Reuse checked world/navigation routes and normal Classic
+movement/facing commands, with bounded turn rate, waypoint tolerance, progress
+monitoring and cancellation. Camera presentation should not be the navigation sensor
+or require repeated OS mouse corrections. Authority still owns collision, speed,
+positions, targeting, facing validation and combat; no teleport or authority bypass.
+Prerequisites: exact source/navigation identity, a checked route to the interaction/
+combat range, and existing prediction/correction and test-controller channels.
+Acceptance: repeat the walk-to-NPC / quest / approach-enemy / kill flow using real
+server commands, without step-spin cycles; stop cleanly on no route, stalled
+progress, invalidated target, death or manual takeover. Record arrival/range and
+server results separately from UI input tests. Keep a small dedicated native mouse/
+keyboard smoke test for controls; ordinary travel automation uses the controller.
+This is test-only path following, not a decision to add player auto-run-to-target,
+automatic combat facing or action-camera behavior to the adopted playable controls.
+
+P5-17 / P2-13 closeout scope, 12 November 2026: integrated authoring and
+bounded Linux world playback are implemented. Finish native preference
+save/relaunch and an instrumented editor memory soak, then return to playable
+MMO slices. Additional particle features require an actual authored effect;
+production budgets, combat-cue protection and Windows remain separate release
+requirements. See [current checklist](SPRINKLES_INTEGRATION.md#current-closeout-scope--12-november-2026).
+
+P5-17 gradient point and particle-delete investigation, 11 November 2026:
+a deliberate gradient-point click can open its nested color picker, while drag
+and post-drag clicks do not; a new press clears a stale drag marker. Headless
+tests also cover deleting an unassigned particle through the command, key,
+explorer and properties menus. A user-reported native deletion failure remains
+unreproduced, and native gradient retesting remains open. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 menu/divider ownership, 11 November 2026: both native menus and
+Sprinkles popovers own pointer gestures above dock dividers, and top-bar menus
+render above the divider. Focused headless menu and divider tests pass; native
+visual retesting remains pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 popup/divider input repair, 11 November 2026: floating Sprinkles
+popups take precedence over dock divider gestures, preventing gradient-point
+drags from resizing either panel split. Five dock tests, formatting and strict
+workspace Clippy pass. Native interaction retesting remains pending. See
+[integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 live gradient editing, 11 November 2026: original Sprinkles gradient
+change events update the live effect before final commit; unchanged follow-up
+events do not restart it again. Sixty-three particle-editor tests, formatting
+and strict workspace Clippy pass. Native drag behavior needs retesting. See
+[integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 curve drag guard, 11 November 2026: Sprinkles curve-point dragging
+refuses invalid neighbor or value ranges instead of panicking when points overlap
+at an endpoint. A focused headless regression covers overlapping and reversed
+ranges; native curve interaction remains to be retested. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 gradient point deletion repair, 11 November 2026: committing a
+Sprinkles gradient replaces its full live value so removed points stay removed;
+endpoint drags and stale delete indices are guarded. Focused tests exercise
+actual effect binding and menu-driven row removal. All 61 particle-editor
+tests, formatting and strict workspace Clippy pass. First-open latency and
+native interactive retesting remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 inline popup input repair, 11 November 2026: opening presses no longer
+immediately dismiss Sprinkles popups, and floating popup gestures block world
+selection through release. A second color-swatch lifetime race is guarded.
+Fifty-seven particle-editor and 143 zone-editor tests and strict workspace
+Clippy pass; user interaction retesting is underway.
+See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 inline popup repair, 11 November 2026: embedded Sprinkles popovers
+are no longer hidden behind the workspace gate and receive global stacking;
+a gradient color-picker removal race is guarded. Headless regression tests and
+strict workspace Clippy pass. Native interaction retesting is in progress.
+See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle texture-reference foundation, 11 November 2026: the VFX helper
+checks original Sprinkles standard-material references against cataloged
+role-specific texture names, rejects editor/local paths and unused descriptors,
+and rebases cloned effects to the package asset root. Both VFX tests pass;
+this does not verify file bytes or admit, export or play particle packages.
+See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 selected particle auto-open, 11 November 2026: selecting a local
+particle opens its original Sprinkles project into the shared inspector after
+pending field edits and project operations settle. Unsaved projects block the
+switch; local files are checked for presence and size. Focused headless tests
+cover dirty and focused-field guards, retry suppression and non-UTF-8 paths.
+All 53 particle-editor and 143 zone-editor tests, formatting and strict
+workspace/all-target Clippy pass. No display or mouse was used; native interaction and GPU qualification remain
+pending, as do world export and client playback. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 shared inline particle inspector, 11 November 2026: a selected
+reference whose local effect is already open moves the original Sprinkles
+inspector into the zone dock, starts its preview, supports emitter stepping and
+explicit Save. Fifty-two particle-editor and 142 zone-editor tests pass, plus
+focused tests after the final scheduling guard; fmt and strict workspace/all-
+target Clippy pass. No display or mouse was used; native layout, popups and GPU
+behavior remain unqualified. Automatic opening and client playback remain open.
+See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 original particle binding test, 11 November 2026: a headless test
+confirms that an original Sprinkles field binding updates its live asset, dirty
+state and respawn event while the full workspace is inactive. Fmt and strict
+workspace/all-target Clippy pass. Inline layout, focus and save routing remain
+unfinished. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 selected effect identity, 11 November 2026: match the selected zone
+particle to the open Sprinkles project by its existing validated local library
+path, and report that match in preview status. Seven focused preview tests, fmt
+and strict workspace/all-target Clippy pass. Project switching and the inline
+inspector remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 scoped live particle editing, 11 November 2026: original Sprinkles
+inspector edits restart only systems using the edited asset, with per-emitter
+seeds; structural edit events rebuild matching zone previews. Forty-nine particle
+editor tests and six focused zone-preview tests, fmt and strict workspace/all-
+target Clippy pass. No native display or mouse was used; visual qualification and
+the actual inline inspector remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 reusable Sprinkles inspector schedule, 11 November 2026: the original
+inspector and widgets can update independently of the full particle workspace;
+inline mode is not yet wired into the zone UI. Forty-seven particle-editor and
+139 zone-editor tests pass, plus focused real-checkbox and workspace-transition
+tests; fmt and strict workspace/all-target Clippy pass. Native interactive GPU
+qualification was interrupted when the user requested no display or mouse. See
+[integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle texture loading foundation, 11 November 2026: a client-side
+helper requests verified, package-relative PNG variants through Bevy's standard
+image loader with explicit sRGB/linear settings. A real-file Bevy test confirms
+format and handle reuse; fmt and strict workspace/all-target Clippy pass. World
+loading and Sprinkles playback do not yet use this helper. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 external particle texture drafts, 11 November 2026: export preflight
+rewrites PNG references in cloned effect snapshots to bounded hash-derived
+package-relative sRGB/linear variants. Eighteen particle-focused editor tests,
+fmt and strict workspace/all-target Clippy pass; the snapshot regression was
+repeated after its final assertions. Drafts are discarded: client path
+resolution, role-aware loading, image decoding and export remain pending. See
+[integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle texture descriptors, 11 November 2026: the preliminary
+catalog can bind bounded PNG files by hash and sRGB/linear role. Three focused
+catalog tests and sixteen package/shared-image regressions pass, with one
+private staged-world test ignored; fmt and strict workspace/all-target Clippy
+pass. Effect-reference matching, image decoding, role-aware loading and client
+playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle mesh preflight, 11 November 2026: reject non-finite mesh
+dimensions in local export preflight and preset snapshots. Six focused editor
+tests, fmt and strict workspace/all-target Clippy pass. This does not validate
+all effect parameters or establish an allocation budget. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 preset-only particle snapshots, 11 November 2026: draft catalogs now
+hash deterministic RON snapshots with editor asset-folder metadata removed.
+External textures and custom shaders cannot enter this snapshot; their package
+handling remains pending. Five focused editor tests, fmt and strict workspace/
+all-target Clippy pass. No particle package is published or played by clients
+yet. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle manifest identity, 11 November 2026: schema 4 binds the
+particle catalog length and hash into a new world identity. Headless collision
+loading recognizes the identity; both client visual verification paths reject
+it until particle playback exists. Nineteen package/shared-image/material tests,
+fmt and strict workspace/all-target Clippy pass; one private staged-world test
+was ignored. No exporter publishes schema 4 yet. See [contract](CONTENT_PACKAGES.md).
+
+P2-13 particle placement allocation estimates, 11 November 2026: export
+preflight aggregates checked counts across placed effect instances and reports
+invalid arithmetic. Four focused editor tests, fmt and strict workspace/all-
+target Clippy pass. Mesh sharing and additional renderer/texture costs mean these
+are not a memory budget or capacity claim. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle allocation counts, 11 November 2026: the Sprinkles runtime
+exposes checked per-emitter mesh, particle-slot and trail-history counts for
+future admission. All 18 particle-runtime tests, fmt and strict workspace/all-
+target Clippy pass. A 3440×1440 RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan run
+created the local preview's emitters with Khronos validation and zero GPU
+diagnostics. Counts are not a complete memory budget or capacity claim. See
+[integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 draft particle catalog, 11 November 2026: export preflight hashes
+unique local effects and validates a deterministic in-memory catalog using
+checked global-to-local placement conversion. Three focused editor tests, fmt
+and strict workspace/all-target Clippy pass. The draft is discarded; world
+packaging, textures and client playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle catalog foundation, 11 November 2026: a separate headless
+decoder validates bounded local placements and effect descriptors, and checks
+effect file lengths and hashes. Two focused tests, fmt and strict workspace/
+all-target Clippy pass. This is not yet a world-manifest format or client
+feature; asset parsing, texture dependencies, resource budgets, export and
+playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 local particle export preflight, 11 November 2026: before refusing
+particle-bearing world exports, inspect bounded local effect files and all five
+standard texture slots, reporting missing assets or unsupported custom shaders.
+Texture existence alone does not establish portability or image validity. All
+134 zone-editor tests, fmt and strict workspace/all-target Clippy pass; the
+preflight tests were repeated after improving diagnostics. Packaging and client
+playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 local particle ID preview, 11 November 2026: a selected placement can
+load its saved local Effect ID independently of the open project, with reload,
+missing-file and malformed-file handling. The short-window action menu stays
+within bounds. All 132 zone-editor tests, fmt and strict workspace/all-target
+Clippy pass. A 3440×1440 native RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan run
+created the saved asset's emitters with a different project open and zero GPU
+diagnostics; its captured frame was between bursts. Packaging, client playback,
+physical menu activation and Windows qualification remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 bind local particle effect ID, 11 November 2026: the selected reference
+menu explicitly saves the open project to its local effect ID and relays save
+results to the zone status bar. 131 zone-editor tests, fmt and strict workspace/
+all-target Clippy pass. A fresh-data native RX 7900 XTX / RADV / Mesa 26.2.6
+Vulkan run created the intended library file, preserved its bundled source, and
+reported zero GPU diagnostics. Library loading, packaging and client playback
+remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 local particle library save foundation, 11 November 2026: an explicit
+save event writes the open project under a validated content ID using the existing
+asynchronous atomic save flow. New bindings cannot overwrite another project;
+the project can update its own library file. Forty-six particle-editor tests, fmt
+and strict workspace/all-target Clippy pass. Inspector wiring, ID resolution,
+portable texture packaging and client playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 first-run particle demo, 11 November 2026: load the bundled explosion
+from the configured examples directory rather than the process working directory,
+and cache its actual path. Forty-four particle-editor tests, fmt and strict
+workspace/all-target Clippy pass. A fresh-data 3440×1440 native RX 7900 XTX /
+RADV / Mesa 26.2.6 Vulkan run renders the demo at a zone anchor with Khronos
+validation and zero unexpected GPU diagnostics. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 temporary particle placement preview, 11 November 2026: the inspector
+can preview the currently open Sprinkles project at a selected zone anchor,
+without linking its effect ID or changing the zone. The preview uses the original
+asset and shared one-shot loop logic, follows transforms, and suspends for the
+particle workspace and playtest. Forty-three particle-editor and 130 zone-editor
+tests, fmt and strict workspace/all-target Clippy pass; final preview regressions
+were repeated. Native 3440×1440 RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan
+captures visibly render rain and a looping burst with Khronos validation and no
+unexpected GPU diagnostics. Persistent ID resolution, packaging, client playback
+and MMO budgets remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle viewport anchors, 11 November 2026: unresolved references use
+a selectable editor-only badge at their checked local position, update selection
+colour and disappear in playtest. 127 zone-editor tests, fmt and strict
+workspace/all-target Clippy pass. A 3440×1440 RX 7900 XTX / RADV / Mesa 26.2.6
+Vulkan capture with Khronos validation reports zero GPU diagnostics. Native
+mouse picking, effect resolution, packaging and client playback remain pending
+qualification. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle reference controls, 11 November 2026: Add creates an unresolved
+reference at spawn; the left explorer filters/selects it and the inspector edits
+its content ID, name and exact transforms inline. Shared duplicate, ground, frame,
+delete and undo work. 126 zone-editor tests, fmt and strict workspace/all-target
+Clippy pass. Native 3440×1440 RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan capture
+with Khronos validation reports zero GPU diagnostics. A viewport anchor, effect
+resolution, packaging and client playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle shared authoring commands, 11 November 2026: particle
+placements support the existing rename, translate, duplicate and ground
+transactions, including checked IDs and undo/redo. Fifty-nine zone tests, fmt
+and strict workspace/all-target Clippy pass. Editor controls, packaging and
+client rendering remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle placement data, 11 November 2026: zone schema 8 stores bounded
+renderer-independent effect references, checked f64 global anchors and
+transactional edits with undo/redo. The existing exporter rejects placements
+until packaging is implemented, preventing silent loss. Fifty-eight zone tests,
+123 zone-editor tests, fmt and strict workspace/all-target Clippy pass. Editor
+placement controls, actual effect packaging and client rendering remain pending.
+See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 particle example switching, 11 November 2026: unchanged bundled
+examples no longer trigger the discard prompt even though Save still requires a
+new path; edited examples remain protected. Forty-three particle-editor tests,
+fmt and strict workspace/all-target Clippy pass headlessly. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 particle New dialog routing, 11 November 2026: Create responds only to
+its own dialog and cannot start a form over an existing modal. Forty-two particle
+editor tests, fmt and strict workspace/all-target Clippy pass headlessly. See
+[integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 particle project switching, 11 November 2026: Open and New commit a
+valid focused field and request confirmation before replacing unsaved work;
+cancel and stale-project checks preserve the current asset. An active save blocks
+switching, and dialog actions are scoped to their operation. Forty-one particle
+editor and 122 zone-editor tests, fmt and strict workspace/all-target Clippy pass.
+Offscreen 512×384 confirmation layout and particle runtime checks on RX 7900 XTX /
+RADV / Mesa 26.2.6 Vulkan with Khronos validation report zero unexpected GPU
+diagnostics. No physical display or mouse; visual assessment and Windows remain
+unqualified. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle prism and cuboid arithmetic, 11 November 2026: runtime mesh
+admission checks prism geometry and cuboid replication for integer overflow.
+Sixteen runtime and 14 loader tests, fmt and strict workspace/all-target Clippy
+pass; windowless RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan with Khronos
+validation reports zero unexpected GPU diagnostics through rejection and recovery.
+Checks are not memory limits or general input validation. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle trail mesh arithmetic, 11 November 2026: tube and ribbon
+geometry and replication reject integer overflow before construction. Fifteen
+runtime and 14 loader tests, fmt and strict workspace/all-target Clippy pass;
+windowless RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan with Khronos validation
+reports zero unexpected GPU diagnostics through rejection and recovery. Prism,
+cuboid and memory budgets remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle cylinder arithmetic, 11 November 2026: checked side and
+optional cap geometry and replicated counts reject overflow before construction.
+Fourteen runtime and 14 loader tests, fmt and strict workspace/all-target Clippy
+pass; windowless RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan with Khronos
+validation reports zero unexpected GPU diagnostics through rejection and recovery.
+Other mesh types and memory budgets remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle sphere arithmetic, 11 November 2026: checked Bevy UV-sphere
+counts and particle replication reject integer overflow before construction.
+Thirteen runtime and 14 loader tests, fmt and strict workspace/all-target Clippy
+pass; windowless RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan with Khronos
+validation reports zero unexpected GPU diagnostics through rejection and recovery.
+Other mesh types and memory budgets remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle quad arithmetic, 11 November 2026: overflowing subdivision,
+index-count and replicated-vertex calculations are rejected before mesh creation;
+invalid live edits suppress rendering and recover after repair. Twelve runtime and
+14 loader tests, fmt and strict workspace/all-target Clippy pass. Windowless RX
+7900 XTX / RADV / Mesa 26.2.6 Vulkan with Khronos validation reports zero
+unexpected GPU diagnostics. Other mesh types and memory budgets remain open. See
+[integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle sphere geometry, 11 November 2026: zero-radius spheres retain
+finite normals and zero resolution uses at least three segments and two rings.
+Eleven runtime, 14 loader and 36 particle-editor tests, fmt and strict workspace/
+all-target Clippy pass. Windowless RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan
+with Khronos validation reports zero unexpected GPU diagnostics. Arbitrary mesh
+parameters and VFX memory budgets remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle mesh normals, 11 November 2026: flat or very thin cylinders
+and degenerate prisms retain finite normals; subdivided-prism index integrity is
+regressed. Ten particle-runtime, 14 loader and 36 particle-editor tests, fmt and
+strict workspace/all-target Clippy pass. Windowless RX 7900 XTX / RADV / Mesa
+26.2.6 Vulkan with Khronos validation reports zero unexpected GPU diagnostics.
+Arbitrary mesh-parameter validation and memory budgets remain open. See
+[integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 particle allocation arithmetic, 11 November 2026: checked slot,
+trail-history and platform-sized sub-emitter counts reject arithmetic overflow
+before allocation or render extraction. Invalid live emitters are suppressed and
+recover after repair. Eight runtime, 14 loader, 36 particle-editor and 122 zone
+editor tests, fmt and strict workspace/all-target Clippy pass. A windowless RX
+7900 XTX / RADV / Mesa 26.2.6 Vulkan run with Khronos validation reports zero
+unexpected GPU diagnostics. This is not a memory cap, mesh validation or MMO VFX
+budget. See [integration](SPRINKLES_INTEGRATION.md).
+
+P2-13 / P5-17 runtime material admission, 11 November 2026: unsupported
+custom shaders are rejected by the Bevy loader and cannot panic a programmatic
+system; live emitters stop rendering and recover after valid material/buffer
+updates. Actual loader and multi-emitter regressions, 6 runtime, 14 loader,
+36 particle-editor and 122 zone-editor tests, fmt and strict workspace/all-target
+Clippy pass. Windowless RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan with
+Khronos validation reports no unexpected GPU diagnostics; no display or mouse
+was used. Windows, visual parity, zone placement and gameplay VFX remain pending.
+See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 particle exit recovery, 11 November 2026: when a project switch and
+normal exit happen in the same frame, preserve both committed project snapshots.
+A failed outgoing write is retried if storage recovers before exit. Headless
+schedule and failure regressions, particle-editor tests, fmt and strict
+workspace/all-target Clippy pass. Exit flushing remains bounded; uncommitted text,
+forced termination, storage failure and Windows remain unqualified. See
+[particle integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 particle draft recovery, 11 November 2026: separate periodic and
+transition snapshots, a bounded exit flush and guarded restore/discard are in
+place. Explicit Save still owns project-file writes. 34 particle-editor tests,
+122 zone-editor tests, fmt and strict workspace/all-target Clippy pass. Input-free
+far-origin llvmpipe Vulkan startup has zero GPU diagnostics. The recovery dialog
+has not been visually or interactively qualified on native hardware; Windows is
+unverified. Recovery remains best-effort for uncommitted fields, abrupt process
+termination and storage failures. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 particle transition drafts, 11 November 2026: leaving the particle
+workspace or switching projects queues the last committed snapshot, including
+edits since the periodic capture; headless transition, particle-editor, fmt and
+strict workspace/all-target Clippy checks pass. Shutdown and user-facing draft
+disposal remain pending; queued work is not durable until its write completes.
+See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 periodic particle drafts, 11 November 2026: committed changes in an
+active particle workspace are captured to separate draft files every five seconds
+using the bounded background writer. Explicit Save still writes the project.
+33 particle-editor tests, 122 zone-editor tests, fmt and strict workspace/all-target
+Clippy pass; input-free far-origin llvmpipe Vulkan startup has zero GPU diagnostics.
+Quick switches, shutdown and visible draft removal remain pending; native dialog
+interaction and Windows are not qualified. See [integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 particle recovery list, 11 November 2026: the Sprinkles project menu
+lists separately stored drafts with background loading and guarded restore as a
+dirty, pathless project. Storage and restore tests, 30 particle-editor tests,
+122 zone-editor tests, fmt and strict workspace/all-target Clippy pass. A far
+origin input-free llvmpipe Vulkan startup capture has zero GPU diagnostics; it
+does not exercise the recovery dialog. Native interaction remains unqualified.
+Automatic snapshots and visible discard remain pending, so crash recovery is not
+complete. See [particle integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 particle Save integrity, 11 November 2026: explicit Save commits a valid
+focused field, serializes writes and keeps the project dirty until a successful
+replacement; intervening edits, failed writes, migration and existing new-project
+targets are protected. Headless save regressions, fmt, strict workspace/all-target
+Clippy and the runtime/editor suites pass. An input-free far-origin virtual-X
+startup capture on llvmpipe Vulkan reports zero GPU diagnostics; native interaction
+and Windows remain unqualified. Separate recoverable drafts remain pending. See
+[particle integration](SPRINKLES_INTEGRATION.md).
+
+P5-17 property action popover, 11 November 2026: a Sprinkles more icon opens
+one unclipped native popover over shared selection actions; guide point controls
+appear only for guides. Guard document/revision/selection/point, including the
+explorer row menu, and commit a focused field before opening. All 122 editor
+tests, fmt and strict workspace/all-target Clippy pass. Input-free virtual-X
+captures of the far spawn and open popup pass on llvmpipe Vulkan with zero GPU
+diagnostics. Actual RX 7900 XTX/native input checks remain pending while the user
+reserves mouse and keyboard. See [record](EDITOR_UI_REFINEMENT.md).
+
+P5-17 inline player spawn, 11 November 2026: explorer selection and Zone → Edit
+spawn show permanent exact X/Y/Z fields in the left inspector; shared validation,
+undo and explicit Save apply. All 114 editor tests, fmt and strict workspace/
+all-target Clippy pass. Isolated virtual-X startup renders on llvmpipe Vulkan pass
+at local/far origins with zero GPU diagnostics and no OS input. RX 7900 XTX could
+not present to virtual X without DRI3; selected-spawn native/hardware interaction
+checks remain pending while the user reserves mouse and keyboard. Action-popup
+refinement remains. See [record](EDITOR_UI_REFINEMENT.md).
+
+P5-17 permanent content names, 11 November 2026: Name joins numeric attributes
+in the left inspector. F8/menu Rename focuses it; Enter/blur/Tab use one validated
+shared command, Escape restores source and explicit Save commits valid focused
+text first. Keep exact f64 values/history. All 113 editor tests plus the added
+name-to-numeric Tab check, fmt and strict workspace/all-target Clippy pass;
+native local/far naming/numeric/category checks pass on RX 7900 XTX / RADV
+NAVI31 / Vulkan, zero GPU diagnostics. Spawn/action-popup refinement remains.
+See [record](EDITOR_UI_REFINEMENT.md).
+
+P5-17 selected-content viewport toolbar, 11 November 2026: shared Move/Rotate/
+Scale/Frame/Ground actions use Sprinkles icons beside the left dock. Guard the
+whole strip and retain left/middle/right gesture ownership through release,
+including when the pointer leaves it. All 112 editor tests, fmt and strict
+workspace/all-target Clippy pass; native local/far tool and camera/source/history
+isolation checks pass on RX 7900 XTX / RADV NAVI31 / Vulkan with zero diagnostics.
+Inline name/spawn workflows and popup refinement remain. See [record](EDITOR_UI_REFINEMENT.md).
+
+P5-17 property categories, 11 November 2026: the stacked left inspector now
+uses Sprinkles icon tabs for Attributes, Tools and View. Hide inactive controls
+from layout/focus, retain manual tab choice across edits, preserve explorer scroll
+and open/focus existing attributes with F9. All 111 editor tests, fmt and strict
+workspace/all-target Clippy pass; native local/far checks pass category switching,
+pending numeric edits and exact source/history preservation on RX 7900 XTX /
+RADV NAVI31 / Vulkan, zero GPU diagnostics. Toolbar, inline name/spawn and popup
+refinement remain follow-on work. See [record](EDITOR_UI_REFINEMENT.md).
+
+P5-17 permanent numeric attributes, 10 November 2026: selected objects/plants/
+markers/guides use always-visible textboxes with one aligned frame/background.
+No click-to-reveal or Apply panel; Enter/blur applies one validated exact edit,
+Escape cancels, Tab advances and explicit Save commits valid focused text first.
+Keep f64/history and reject stale/replaced-document drafts. All 110 zone-editor
+tests, fmt and strict workspace/all-target Clippy pass; local/far native checks
+pass on RX 7900 XTX / RADV NAVI31 / Vulkan with zero diagnostics. Further P5-17
+refinement remains active. See [record](EDITOR_UI_REFINEMENT.md).
+
+P5-17 dock/status checkpoint, 10 November 2026: implement the stacked left
+explorer/properties dock, independent folding and width/split resizing, type
+filter dropdown and compact full-width status bar. Remove repeated explorer/help
+text and the companion launcher. All 107 zone-editor tests, fmt and strict
+workspace/all-target Clippy pass; native local/far checks pass with zero GPU
+diagnostics on RX 7900 XTX / RADV NAVI31 / Vulkan. Inline edits, category tabs,
+viewport toolbar and popup refinement remain active work, not completed behavior.
+See [refinement record](EDITOR_UI_REFINEMENT.md).
+
+P5-17 current execution, 10 November 2026: refine the integrated editor again
+under the user's direct feedback. Target inline auto-applied values (explicit
+Save writes disk), explorer/attributes stacked with a horizontal divider and
+independent collapsible/resizable panels, dropdown filtering, meaningful property
+sections, Sprinkles-style popovers and correctly aligned input text. Remove the
+separate companion launch option. These are current requirements, not completed
+behavior; earlier close-enough acceptance remains historical. Preserve exact
+f64/validation/history. See [adoption](DECISIONS.md).
+
+P5-17 upstream Sprinkles audit, 10 November 2026: reviewed all 28 issues
+against the imported source. Fix obsolete curve/gradient/mesh cache retention,
+apply authored bounds to every emitter and move the preview culling toggle onto
+meshes. Guard unsupported custom-shader project loads/menu choices to prevent
+shared-host panics. Regressions cover reclamation, sharing, bounds, rejected-load
+preservation and 0.2 save/reload stamping. Validation and remaining priorities (draft recovery,
+long idle memory investigation, per-instance
+controls and gameplay integration) are recorded in the
+[issue review](SPRINKLES_UPSTREAM_REVIEW.md). No full idle-leak/Windows/MMO qualification claim.
+
+P5-17 same-window Sprinkles authoring accepted on Linux, 10 November 2026:
+File → Particles workspace opens the actual upstream UI inside Theia; Zone in
+its top bar returns. Original editing/playback/save, project/pause retention and
+exclusive input/camera/render-layer ownership pass native local/far checks with
+exact zone/source/revision/history preservation and zero Vulkan diagnostics on
+RX 7900 XTX / RADV NAVI31. All 177 focused tests, three doctests, fmt and strict
+workspace/all-target Clippy pass. The original standalone host remains qualified.
+The direct editor-integration slice is complete at this scope. Asset placement/
+world export/client VFX, full P2-13, Windows and MMO budgets remain separate.
+See [SPRINKLES_INTEGRATION](SPRINKLES_INTEGRATION.md) for use and exact evidence.
+
+P5-17 direct Sprinkles source integration, 10 November 2026: the original
+runtime and editor are imported at the reviewed pin and ported to exact Bevy
+0.20.0. File → Particle editor opens the retained UI/preview/RON authoring tool
+in one companion window. Native editing/save and host launch/return checks pass
+on RX 7900 XTX / RADV NAVI31 / Vulkan with zero diagnostics and exact zone/source/
+history preservation. All 172 focused tests plus three runtime doctests, fmt and
+denied-warning workspace/all-target Clippy pass. Source and asset licenses/hashes
+are retained. This completes the first direct-reuse slice; same-window hosting,
+asset placement/client integration, Windows and full P2-13 remain pending.
+See [SPRINKLES_INTEGRATION.md](SPRINKLES_INTEGRATION.md) for exact evidence.
+
+P5-17 current direction, 10 November 2026: the user accepts close-enough
+Sprinkles styling and usability; finish native functional/GPU acceptance without
+pixel-perfect comparison. Desktop input is authorized again. Then begin a direct
+Sprinkles runtime/editor source integration slice, adapting to Bevy 0.20 rather
+than recreating compatible functionality. Full gameplay VFX P2-13 remains separate.
+Keep work local and do not push.
+
+P5-17 current execution, 10 November 2026: continue the adopted Sprinkles UI
+migration headlessly across local commits while the user needs the desktop.
+Implemented slices and their checks are in STATUS/ZONE_EDITOR. Native checks
+remain pending for changes after the last desktop qualification; earlier runs
+only qualify their recorded binaries. No push is authorized.
+
+## 10 November 2026 — adopted Sprinkles editor UI direction (P5-17)
+
+The user adopts Sprinkles as the concrete look, feel and interaction reference
+for the full Theia editor. Adapt its native Bevy UI components where practical;
+create matching controls for Theia-specific functions. Keep the existing validated
+command/history, exact f64 fields, source schemas, agent interface and offline
+playtest underneath the presentation. Continue local implementation and commits
+until stopped; mouse, keyboard and display use are authorized. Do not push.
+
+Reviewed upstream: `doceazedo/sprinkles` commit
+`0e978f5a9afc6b456b3693c8761e73a6c7e155bd` (Bevy 0.19). Adapt to Theia's
+existing Bevy 0.20 pin; no engine downgrade. MIT-selected UI provenance is in
+`third_party/sprinkles/`. Particle runtime remains a candidate requiring its own
+P2-13 compatibility, rebasing, budget and native GPU qualification.
+
+Initial UI prerequisites are the retained editor command/history, standard Bevy
+widgets and existing 3440 x 1440 layout. First slice: shared Sprinkles tokens,
+button states and Inter typography across workspaces, palette, outliner,
+properties and dialogs. Follow with resizable panels and section/inspector
+interaction. Acceptance: formatting, denied-warning Clippy, retained focused
+Rust tests, CPU layout and actual Linux 3440 x 1440 input/GPU checks. Planned
+migration is not a claim of completed UI or particle adoption.
+
+Placement hints and renderer guards, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Properties explains refused candidates. The renderer hides cached ghosts during
+forms/playtest or when the tool no longer matches, independently of pointer order.
+All 127 focused Rust tests, formatting, strict Clippy and build pass; long-name/
+refusal layout fits. Native local/far Find/playtest/preview checks pass at
+3440 x 1440 with zero Vulkan diagnostics. See [the record](ZONE_EDITOR.md#placement-refusal-hints-and-renderer-guards--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
+Read-only primitive placement preview, 9 November 2026 (P5-17 / P3-15 / P1-10):
+A standard Bevy ghost shows the prospective stamp: blue for valid, red for a
+refused candidate. It shares pose/object construction and command validation
+with actual placement while preserving source, history, redo and IDs. All 127
+focused Rust tests, formatting, strict Clippy and build pass. Native local/far
+3440 x 1440 preview/stamp equality, panel hiding and refused-click isolation
+pass with zero Vulkan diagnostics. See [the record](ZONE_EDITOR.md#read-only-primitive-placement-preview--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
+Workspace slider focus cue, 9 November 2026 (P5-17 / P3-15 / P1-10):
+A pale thumb identifies the focused slider; the footer explains its keys.
+All 124 focused Rust tests, strict Clippy, formatting and build pass. Native
+local-origin 3440 x 1440 rendering/keys/placement pass with zero Vulkan diagnostics;
+app captures were inspected. See [the record](ZONE_EDITOR.md#workspace-slider-focus-cue--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
+Workspace slider keyboard ownership, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Workspace sliders now take focus on click. Left/Right/Home/End adjust that widget
+without also editing the selection through raw keyboard polling; ordinary nudges
+resume when focus clears. All 124 focused Rust tests, formatting, strict Clippy
+and build pass. Native grid/size keys preserve selected source and redo at local/
+far origins, 3440 x 1440, with zero Vulkan diagnostics. See [the record](ZONE_EDITOR.md#workspace-slider-keyboard-ownership--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
+Primitive placement dimensions, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Properties has quarter-step size sliders for new box X/Y/Z, cylinder diameter/
+height and sphere diameter. Preferences preserve source/history; stamps use
+checked snapping/surface support and one shared edit. All 123 focused Rust tests,
+formatting, strict Clippy and build pass. Native local/far shape controls,
+placement, full-document command oracles, undo/redo and Save pass at 3440 x 1440
+with zero Vulkan diagnostics. See [the record](ZONE_EDITOR.md#primitive-placement-dimensions--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
+Application shortcuts, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Ctrl+N invokes shared New; Ctrl+F opens content search without framing. Modal,
+preview, playtest and focus guards remain. All 119 focused Rust tests, strict
+Clippy, formatting and build pass; native key delivery and full New/save/play
+workflow pass at 3440 x 1440 from local/far origins with zero Vulkan diagnostics.
+See [the record](ZONE_EDITOR.md#application-document-and-search-shortcuts--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
+Native application controls accepted, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Content paging/wheel, filters, search, double-click framing and yaw/scale/radius/
+guide-width sliders pass native 3440 x 1440 checks at local/far origins, including
+Reset, Home/End, exact source/oracle equality and undo/redo. Vulkan validation is
+active with zero diagnostics. The earlier wheel-delivery gap is closed for these
+accepted runs after pre-launch synthetic-device creation. See [the record](ZONE_EDITOR.md#native-application-controls-acceptance--9-november-2026).
+Continue after local commits; desktop access authorized; no push. Historical
+headless records below retain their original execution limitations.
+
+New untitled zones, 9 November 2026 (P5-17 / P3-15 / P1-10):
+New zone creates an undoable empty document. Its first Save chooses a filename;
+cancel/failed writes preserve untitled state and the prior file is never written.
+All 118 focused Rust tests, formatting, strict Clippy and the editor build pass.
+Native New/save/playtest checks pass at 3440 x 1440 from local/far origins,
+with active Vulkan validation and zero GPU diagnostics.
+See [the zone record](ZONE_EDITOR.md#new-untitled-zones--9-november-2026).
+Desktop access is authorized again for native 3440 x 1440 checks; continue after
+local commits and do not push. Historical headless limits below remain historical.
+
+Reset transform fields, 9 November 2026 (P5-17 / P3-15 / P1-10):
+A Reset fields button restores the open form’s exact original numbers and
+sliders, retaining the form, original revision and pending redo. Apply/Cancel
+remain the transaction boundary. Headless behavior/layout checks pass; native
+UI/input/GPU acceptance remains pending. See [the zone record](ZONE_EDITOR.md#reset-transform-fields--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
+Property keyboard routing, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Headless real input/focus/visibility tests cover Tab/Shift-Tab and slider keys
+without OS input. They caught and fixed a yaw +180/-180 thumb jump. All 115
+focused Rust tests pass; native key delivery/UI/GPU acceptance remains pending.
+See [the zone record](ZONE_EDITOR.md#property-keyboard-routing-and-yaw-endpoints--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
+Bounded property sliders, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Plant scale, marker radius and whole/point-guide width now use quarter-step
+sliders in the retained exact form. Shared controlled-widget handling preserves
+precision, validation and one-entry undo. All 113 focused Rust tests and CPU
+layout pass; native UI/input/GPU acceptance remains pending. See [the zone record](ZONE_EDITOR.md#bounded-property-sliders--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
+Transform yaw slider, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Object/plant/marker properties now expose a standard Bevy yaw slider alongside
+exact fields. It edits the pending form; Apply remains one shared validated undo
+entry. Precision, no-op/redo, cancellation and 3440 x 1440 CPU layout pass;
+native UI/input/GPU acceptance remains pending. See [the zone record](ZONE_EDITOR.md#transform-yaw-slider--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
+Content double-click framing, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Double-clicking an entry selects and frames it through the existing checked
+Frame helpers. Single-click behavior, view preset, source and redo are preserved.
+Actual headless Bevy event checks cover every content kind at local/far origins;
+native input/GPU acceptance remains pending. See [the zone record](ZONE_EDITOR.md#content-double-click-framing--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
+Content search, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Find/Clear search use the retained Bevy text form for bounded name/kind/#ID
+matching within the chosen type filter. Search, including a pending form, leaves
+source/save state/history unchanged. Headless behavior/layout checks pass;
+native UI/input/GPU acceptance remains pending. See [the zone record](ZONE_EDITOR.md#content-search--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
+Content-type filters, 9 November 2026 (P5-17 / P3-15 / P1-10):
+All/Objects/Guides/Markers/Plants/Terrain buttons narrow the content list while
+preserving source, selection and pending redo. Actual Bevy observer/sync and
+CPU font/layout checks pass; native UI/input/GPU acceptance remains pending.
+See [the zone record](ZONE_EDITOR.md#content-type-filter-buttons--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
+Content-list paging, native acceptance pending, 9 November 2026
+(P5-17 / P3-15 / P1-10): the row pool reserves space above Properties; wheel
+paging and disabled boundary buttons have headless Bevy-system coverage.
+Standard Bevy CPU font/layout checks also verify all row/footer bounds at 3440 x 1440.
+The earlier native wheel check timed out; do not claim GPU/input acceptance.
+See [the zone record](ZONE_EDITOR.md#content-list-paging-headless-coverage--9-november-2026).
+Continue headlessly after local commits; no mouse, keyboard/display use or push.
+
+Piped structured commands, 9 November 2026 (P5-17 / P3-15 / P1-10):
+--commands - reads bounded JSONL from stdin through EOF using the same command
+validation/history path as files and the viewport. Headless output is written
+only after all commands succeed; read-only playtest preflight accepts the same
+stream. See [the zone record](ZONE_EDITOR.md#piped-structured-commands--9-november-2026).
+Continue headless after local commits; no desktop input/display use; no push.
+
+Structured entry translation, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The shared translate edit offsets primitive/plant/marker anchors or every point
+of a whole guide, preserving identity and metadata. Mixed Apply batches retain
+whole-candidate validation and one-entry undo. CLI/preflight and mailbox paths
+are qualified headlessly; see [the zone record](ZONE_EDITOR.md#structured-entry-translation--9-november-2026).
+Continue headless after local commits; no desktop input/display use; no push.
+
+Headless playtest preflight, 9 November 2026 (P5-17 / P3-15 / P1-10):
+--check-playtest builds the actual offline collision scene and resolves the
+requested capsule spawn, returning JSON/readiness and a nonzero refusal status.
+It opens no window, writes no source, and supports in-memory command validation.
+See [the zone record](ZONE_EDITOR.md#headless-playtest-preflight--9-november-2026).
+Continue headless after local commits; no desktop input/display use; no push.
+
+Placement/move grid presets, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Properties now exposes a discrete 0.125/0.25/0.5/1/2/4/8 m step slider. Shared
+zone-origin snapping covers placement and primitive move/body gestures; nudges
+use the chosen increment. Settings preserve history/redo; rotation and scale
+snapping retain their contracts. See [the zone record](ZONE_EDITOR.md#placement-and-move-grid-presets--9-november-2026).
+Continue after each local commit; no push.
+
+Pointer viewport panning, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Middle-mouse drags now pan in the current view plane with projection/zoom-aware
+logical cursor tracking. Pans must begin inside the viewport; panels, Escape,
+focus loss, editing gestures, modals and playtest cancel/refuse them. Source and
+history stay unchanged. See [the zone record](ZONE_EDITOR.md#pointer-viewport-panning--9-november-2026).
+Continue after each local commit; no push.
+
+Exact spawn properties, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Edit spawn opens three exact world-coordinate fields in the existing docked
+properties form. Apply uses shared SetSpawn validation and one-entry undo;
+unchanged values preserve redo. Existing placement actions remain available.
+See [the zone record](ZONE_EDITOR.md#exact-spawn-properties--9-november-2026).
+Continue after each local commit; no push.
+
+Active document context, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The footer now persistently identifies the active save path and saved/unsaved
+state; the window title identifies the zone/file and marks dirty content. Older
+terrain/vegetation shortcut hints now distinguish Open from Reload. See
+[the zone record](ZONE_EDITOR.md#active-document-context--9-november-2026).
+Continue after each local commit; no push.
+
+View-plane reference grids, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Front/Right now expose adaptive vertical reference grids; zones without terrain
+also use an adaptive ground grid. The standard Grid checkbox controls references
+and retained terrain surface lines, shows metre spacing, and preserves history.
+See [the zone record](ZONE_EDITOR.md#view-plane-reference-grids--9-november-2026)
+for acceptance and limitations. Continue after each local commit; no push.
+
+Zone file browser, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The command bar now exposes Open and Save As with a standard Bevy folder/file
+browser, filename input, paging and explicit overwrite confirmation. Open uses
+validated document replacement with undo; Save As changes the active path only
+after success and preserves history. Ctrl+O opens, Ctrl+Shift+S saves as and
+Ctrl+Shift+O reloads the active file. See [the zone record](ZONE_EDITOR.md#zone-file-browser--9-november-2026)
+for acceptance and limitations. Continue after each local commit; no push.
+
+Shared body-drag previews, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Selected-body XZ dragging now shares the same validated gesture path as axis,
+yaw and scale handles. Relative local deltas preserve original f64 values on a
+stationary click, with unchanged Y/yaw/size. Invalid candidates never replace the
+last valid preview, live source or undo/redo. See [the zone record](ZONE_EDITOR.md#validated-body-plane-drag--9-november-2026) for acceptance.
+Continue after each local commit until stopped; no push.
+
+Canonical authoring views, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Standard Bevy orthographic Top/Front/Right views and a Perspective control now
+support terrain and greybox authoring. Canonical pan/zoom, stable orthographic
+camera distance, projection-aware handle sizing and camera locking during drags
+are implemented; playtest retains its perspective camera and restores the editor
+view. See [the zone record](ZONE_EDITOR.md#canonical-authoring-views--9-november-2026) for acceptance.
+Continue after each local commit until stopped; no push.
+
+Primitive uniform scale handle, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Scale uniformly joins Move/Rotate Y in the application toolbar. A standard Bevy
+cube/stem scales all dimensions by one factor, with optional 10% snapping, keeping
+position/yaw exact and preserving sphere/cylinder constraints. Changed previews and
+release share existing whole-candidate Transform validation and one-entry undo.
+See [the zone record](ZONE_EDITOR.md#primitive-uniform-scale-handle--9-november-2026) for acceptance.
+Continue after local commits until stopped; no push.
+
+Primitive yaw rotation handles, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The application toolbar now chooses Move or Rotate Y. A standard Bevy torus
+provides a yaw ring, with 15-degree snapping and unsnapped editing; angle unwrapping
+supports crossing the ±180-degree seam and full turns. Position and size remain
+exact. Both tools share validated previews and one-entry Transform history.
+See [the zone record](ZONE_EDITOR.md#primitive-yaw-rotation-ring--9-november-2026) for acceptance.
+Continue after local commits until stopped; no push.
+
+Primitive move handles, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Selected primitives now expose standard Bevy red X / green Y / blue Z move arrows.
+Axis drags preview through shared Transform validation and commit once on release;
+Escape, focus loss and release over panels cancel. A Move XYZ checkbox controls
+visibility. Exact f64 coordinates on the other axes remain untouched. See [the zone record](ZONE_EDITOR.md#primitive-world-axis-move-handles--9-november-2026)
+for constraints and acceptance. Continue after each local commit; no push.
+
+Guide properties and point controls, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The docked properties form now exposes whole-guide width or selected-point XYZ
+and width, through existing validated PutPath commands. Mouse Previous/Next point,
+Whole guide, Insert and Remove controls expose point selection/topology directly.
+Undo/redo and pending/modal/playtest isolation remain shared. See [the zone record](ZONE_EDITOR.md#guide-properties-and-point-controls--9-november-2026)
+for prerequisites and acceptance. Continue after local commits until stopped; no push.
+
+Plant and marker properties, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The docked Transform form now edits plants and NPC/quest authoring markers as
+well as primitives. Five relevant fields expose position/yaw and scale or radius;
+shared candidate commands preserve names, kinds and marker definition keys.
+Apply/Cancel, exact f64 values, modal input isolation and one-entry history remain.
+The primitive form still exposes all seven fields. See [the zone record](ZONE_EDITOR.md#plant-and-marker-transform-properties--9-november-2026)
+for prerequisites, acceptance and evidence. Continue locally; no push.
+
+Vegetation properties, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The application properties area now exposes contextual scatter radius (1..32 m)
+and integer plants-per-click (1..64) sliders for tree/shrub scatter tools.
+Presets remain editor-local; a ground click uses the existing seeded shared
+ScatterVegetation edit, with whole-candidate validation and one-entry undo.
+Source schema, gameplay and engine/plugin pins are unchanged. Native local/far
+3440x1440 acceptance and exact evidence are in [the zone record](ZONE_EDITOR.md#vegetation-scatter-properties--9-november-2026).
+Continue local implementation and commits; no push.
+
+Application-style editor work resumed, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The user chooses to continue the in-repository editor and prioritizes Blender-like
+application workflows: direct sliders, buttons, toggles and a properties area,
+rather than larger controls or additional shortcut-driven features. Standard Bevy
+widgets now provide workspace buttons, a command bar, a snap checkbox and
+contextual terrain sliders. The right column splits a 24-row outliner from a
+properties area; exact transform editing docks there with existing transactional
+Apply/Cancel validation. Pending previews and modal/playtest isolation remain
+protected. The first shell slice has 77 focused Rust checks and native actual
+3440x1440 local/far evidence; see the zone record for exact scope. Keep changes
+local and do not push. The earlier safe-stop record below is historical.
+
+Safe stop, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
+The user requested stopping after the current slice. Terrain-conforming brush
+feedback, accepted stroke counts/cap feedback, 2 m spatial drag sampling,
+surface-supported cursor spawn placement and a clearer spawn marker are complete.
+Unrelated document edits also preserve resident terrain meshes. The current
+77 focused Rust cases, formatting, strict Clippy and native 3440x1440 checks pass;
+exact contracts/evidence are in the zone record. Work is committed locally; no
+push. No further autonomous slices begin until the user resumes work.
+
+Zone authoring workspace, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
+H and structured `project_to_surface` now ground selected objects, plants,
+markers and guide points through shared candidate validation and undo. Primitive
+centres account for half-height; foot anchors use the exact terrain support.
+Whole guides are one undo entry. The summary also distinguishes saved content
+from unsaved visual/agent edits and pending drafts. This grounds anchors rather than prop stacks
+or full slope footprints. Tab/Shift-Tab also cycle hidden/distant objects; F
+frames objects, plants, markers and the existing guide/point selection without
+changing history. Committed guides also insert/remove points through Insert /
+Backspace and narrow shared commands; structural changes clear stale point
+selection while visual edits explicitly select the new/next point. A standard-Bevy
+right-side content browser also selects named entries across modes through a
+fixed 40-row pool and paging, without changing document/history. Both side
+panels are excluded from world mouse actions; the list hides in playtest. F8 /
+Shift-F8 also rename selected content / the zone through standard Bevy TextInput
+and narrow shared commands, with modal input isolation and one-entry undo. Names
+retain existing UTF-8 byte validation; geometry/definitions are unchanged.
+Local/far/reopen name-dialog native checks pass with zero GPU diagnostics.
+F9 also edits exact f64 primitive position/yaw/size through standard Bevy fields
+and modal tab navigation, applying one existing validated Transform transaction.
+All six local/far primitive edits match headless commands exactly; native
+save/reopen and zero-GPU-diagnostic checks also pass. Both forms clear stale
+error messages on text edits while retaining validation on Apply.
+Terrain brush feedback also conforms to the exact surface triangles and temporary
+stroke preview, sharing sculpt/paint falloff and locked-border rules. One resident
+standard Bevy mesh shows potential sample influence without source/history changes.
+Held strokes also show accepted stamp counts and an explicit 128-stamp limit
+message, preserving the existing bounded commit/cancel behavior. Fast drags
+also interpolate 2 m stamps, breaking continuity across panels/outside terrain.
+Both grids pass native sculpt/paint command equivalence, undo/redo and save.
+P also places a surface-supported playtest spawn from Sculpt/Paint, respecting
+snapping and pending-stroke/modal isolation through the existing SetSpawn edit.
+The view-centre button shares checked conversion and surface sampling.
+An unlit downward spawn marker also replaces the small sphere and hides during
+playtest. Unrelated edits retain the unchanged terrain mesh instead of rebuilding it.
+Flatten also samples the surface with I and adjusts its local
+level in 1 m / 0.1 m steps, sharing exact visual/headless stamp output.
+Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh
+shared IDs, bounded names/offsets and one-entry history. Local/far/empty native
+copy/framing and positive/negative flatten cases pass. Raise/lower strength also
+halves/doubles within 0.05..8 m, with exact visual/headless 0.125 m stamp checks
+on both grids. Brackets also adjust independent sculpt/paint blends within
+5..100%, retaining 50% / 100% defaults and exact 12.5% command equivalence.
+`python3 tools/edit_zone.py --example` now opens/reopens a separate
+Wayfarer Hollow draft from an original four-transaction recipe. F also frames
+the terrain patch. Its graded walking route and shelter pass actual Avian checks;
+local/far 3440x1440 editor runs and two real Renet client pairs pass with zero GPU
+diagnostics, including far origin Y=20. Markers remain authoring notes and the
+stream remains a visual guide. 77 focused Rust cases, seven launcher cases, formatting
+and strict workspace/all-target Clippy pass. The full native 3440x1440 walkthrough also passes
+with Vulkan validation active and zero GPU diagnostics; [contract and evidence](ZONE_EDITOR.md#wayfarer-hollow-example-and-terrain-framing--8-november-2026).
+Local commits only; no push. Chat composer/bubbles remain deferred.
+
+Zone-authoring focus, 8 November 2026 (P5-17 / P3-15 / P1-10):
+The user authorizes ongoing terrain/greybox/zone-editor work, recommended local
+implementation decisions, desktop use and local commits; no push. Chat composer
+and speech bubbles are deferred. A bounded standard-Bevy primitive editor and shared
+validated command/undo foundation now pass eight focused Rust checks, strict
+workspace Clippy, headless CLI and four native Linux walkthroughs through actual
+3440x1440, with zero GPU diagnostics. The opt-in live agent mailbox now also
+passes mixed agent/visual undo/redo and playtest refusal natively at 1280x720,
+with 12 focused Rust cases and strict Clippy. Schema-2 terrain brushes now add
+shared validated stroke previews/undo, actual Avian surface queries and three-size
+native sculpt/save/load/playtest checks: 17 focused Rust cases, strict Clippy and
+zero GPU diagnostics. Standard GLB/schema-4 export now also passes 22 focused
+Rust cases, Khronos validation, actual encrypted admission and four native
+two-client cases (including hillside and far-frame traversal). Default gameplay
+content is unchanged. Schema-3 road/stream guides now share visual/agent validation,
+undo, save/load and render-only export (27 focused Rust cases). The current user
+requires the editor at 3440x1440 only: primary-display fullscreen is now the
+default and future editor qualification targets that viewport. Earlier smaller
+checks below retain their historical scope. Schema-4 NPC/quest authoring markers
+now add shared validated placement/transforms/history and source-only export
+preservation (31 focused Rust cases); live catalogue publication remains separate.
+Schema-5 tree/shrub proxies now add bounded seeded scatter, shared history and
+render-only export (35 focused Rust cases and the full 3440x1440 native editor
+walkthrough). General vegetation assets/behavior and broader terrain tools remain
+future work. Guide-driven terrain grading now shares visual/agent history and
+passes 39 focused Rust cases, including actual Avian graded-surface traversal.
+Individual guide-point commands/picking/focus now add two domain checks (41 total);
+visual and agent point moves share whole-candidate validation and history.
+Schema-6 terrain colour painting adds shared stroke previews/history and standard
+Bevy/glTF vertex colours, with normalized weights and unchanged collision
+(45 focused Rust cases). The one-command editor launcher now reopens saved
+drafts, prepares the local build SDK and defers new-file writes until Save;
+46 Rust / four Python cases and actual 3440x1440 save/reopen checks pass.
+Schema-7 optional 2 m terrain refinement/coarsening now shares validated history,
+sculpt/paint/grading and existing export: 50 focused Rust plus sixteen retained
+terrain/procedural/saved-terrain regression cases pass.
+Runtime multiplayer remains
+Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
+acceptance checks and implementation evidence are tracked in [the zone record](ZONE_EDITOR.md).
+Earlier stop/chat-first queue entries are historical; P3-17/18 stay unspecified.
+
+Safe stop after chat client-worker slice, 8 November 2026 (P4-12 / P2-14 / P5-13):
+The user requested stopping after the current slice. Finished the opt-in real
+Renet worker's bounded chat producer/receipt view, reply pacing and local timeout
+without gameplay disconnect. 747 full network cases pass (10 explicit skips),
+with18 final focused chat checks,231 ordinary client cases and strict Clippy/
+formatting. Actual baseline/Classic encrypted worker fixtures pass. Normal chat
+activation, composer and speech bubbles remain pending; no new UI work begins.
+The action bar is separately native-qualified at three sizes plus SQL rejoin.
+Local commits only; no push. Desktop permission remains available as needed on
+future authorized work; it does not override this stop.
+[Scope and resume boundary](LOCAL_CHAT.md#real-client-worker-integration--8-november-2026).
+
+Chat inbox prerequisite, 8 November 2026 (P4-12 / P2-14 / P5-13):
+A64-message client inbox and checked world delivery serial bound history/replay
+state across actor churn. Fourteen focused tests pass, including actual encrypted
+frames through the inbox and10,000 actor IDs; strict Clippy/formatting pass.
+The chat candidate profile is v3/CD02; default worlds/protocol13 remain unchanged.
+Normal client worker/UI and bubbles remain next. Desktop access is allowed as
+needed; continue local implementation/commits, no push.
+[Scope and evidence](LOCAL_CHAT.md#bounded-client-inbox-and-world-delivery-serial--8-november-2026).
+
+Chat replies prerequisite, 8 November 2026 (P4-12 / P2-14 / P5-13):
+The opt-in server candidate has private bounded submission replies and reserves
+half the reliable queue against chat use. Ten focused tests pass, including
+actual encrypted replies/refusals/forged uploads and queue-pressure recovery;
+strict Clippy/formatting pass. Default protocol13 and normal chat activation are
+unchanged. Receipt/history/composer/bubbles remain pending. Native action-bar
+editing is separately qualified at three sizes plus SQL rejoin.
+Continue implementation/local commits; mouse, keyboard and display may be used
+as needed per latest permission. No push. [Scope and evidence](LOCAL_CHAT.md#private-replies-and-gameplay-queue-reserve--8-november-2026).
+
+Native action-bar qualification, 8 November 2026 (P2-14 / P3-06 / P5-13):
+Four Linux starts pass at1280×720,1920×1200,3440×1440 and SQL restart/rejoin.
+Actual book-copy, empty/occupied swaps, invalid drop, focus cancellation and
+copied '=' binding casts pass;119 positive duplicate cooldown samples match.
+Normal quest/combat/progression remains intact with zero RX7900XTX/RADV Vulkan
+GPU diagnostics. Session-local bindings reset on login; persistence remains open.
+[Evidence and limits](ABILITY_BOOK_ACTION_BAR.md#native-action-bar-qualification--8-november-2026).
+Continue implementation/local commits; desktop access is allowed as needed. No push.
+
+Opt-in chat runtime candidate, 8 November 2026 (P4-12 / P2-14 / P5-13):
+Authorized named leases and checked server poses now feed bounded Say/Area routing
+in the Renet owner loop under an explicit world compatibility profile. Three
+actual encrypted clients pass; disabled/malformed/forged uploads fail closed.
+738 network regression cases (ten explicit skips),231 client cases and strict
+Clippy pass, with three final focused runtime cases. Normal chat UI/launcher
+activation, submission replies and bubbles remain pending.
+**Latest permission: mouse, keyboard and display may be used as needed. Continue
+implementation and local commits; no push.** Earlier desktop bans are historical.
+[Evidence and limits](LOCAL_CHAT.md#opt-in-encrypted-owner-loop-candidate--8-november-2026).
+
+Local-chat prerequisite, 8 November 2026 (P4-12 / P2-14 / P5-13):
+Bounded Unicode text, server-context local/area delivery policy, replay/mute/flood
+gate and exact CQ01/CD01 codecs pass 378 core and two focused wire cases plus
+strict Clippy/formatting. This standalone foundation does not enable runtime
+chat, composer or speech bubbles; protocol13 remains unchanged. Continue
+headlessly with local commits only, no mouse/keyboard/display or push.
+[Policy, actual prerequisites and acceptance](LOCAL_CHAT.md).
+
+Action-bar candidate, 8 November 2026 (P2-14 / P3-06 / P5-13):
+Session-local ability-ID bindings, book-copy/bar-swap drag handlers and bound
+cooldown/tooltips are implemented headlessly. 231 client tests and strict
+Clippy pass, including encrypted loopback cast/damage/cooldown refusal and
+synthetic widget/drag/focus checks. New rendering and actual pointer interaction
+remain unqualified: no mouse, keyboard or display access per current instruction.
+Persistent layouts and learned-skill policy remain pending. Local commits only;
+no push. [Evidence and limits](ABILITY_BOOK_ACTION_BAR.md#action-bar-binding-candidate--8-november-2026).
+
+Ability book checkpoint, 8 November 2026 (P2-14 / P3-06 / P5-13):
+The opt-in P-key/Interface ability book shows configured icons and metric details
+with bounded paging. 225 ordinary client tests, strict Clippy, formatting and
+four native Linux starts pass; no casts or learning requests are sent. Dragging
+and action-bar rearrangement remain pending. [Evidence and scope](ABILITY_BOOK_ACTION_BAR.md).
+**Latest instruction: continue implementation and local commits only, with no
+mouse, keyboard or display access. No push.** Earlier permissions are historical.
+
+Implementation resumed, 8 November 2026 (P2-03 / P3-01 / P2-14 / P5-13):
+The user restored ongoing implementation, local commits and desktop access.
+SQL-selected player names now cross the authorized lease and reliable Renet view;
+client admission/snapshot validation gates the owner frame. Protocol13 is the
+qualified path; frozen protocol12/v5 remains preserved. Actual OIDC/SQL lease
+checks, 731 network cases (ten explicit skips), 224 client cases including local
+art, formatting and strict Clippy pass. Six final native starts cover three
+resolutions and optimized rejoin with zero RX7900XTX/RADV Vulkan diagnostics.
+Long-name wrapping, committed levels and disconnect clearing pass. Continue
+bounded UI work and local commits only; no push.
+[Scope and evidence](PLAYER_DISPLAY_IDENTITY.md). Earlier stop entries are historical; no push.
+
+Safe stop, 7 November 2026 (P2-03 / P3-01 / P2-14):
+Stopped at the user's request after saving the standalone bounded player-name
+codec prerequisite. Its six focused tests, formatting and strict workspace/
+all-target Clippy pass. Runtime publishing, receiving and name UI remain pending;
+gameplay protocol12 is unchanged. The qualified optimized v5 playtest pack is
+preserved. Changes are committed locally only; no push. Earlier continuation
+instructions below are historical. [Scope and acceptance](PLAYER_DISPLAY_IDENTITY.md).
+
+Player-identity prerequisite, 7 November 2026 (P2-03 / P3-01 / P2-14):
+The existing player-name validator is now a pure core value re-exported by
+persistence. 385 core/persistence cases pass (73 service skips); the actual
+PostgreSQL name/quota/ownership/selection contract additionally passes. Formatting
+and strict workspace/all-target Clippy pass. No gameplay name metadata or protocol
+change is implemented yet. [Scope and next acceptance](PLAYER_DISPLAY_IDENTITY.md).
+The qualified v5 UI pack remains available. Continue locally; no push.
+
+General UI checkpoint, 7 November 2026 (P2-02/05/11/14 / P3-06 / P5-13/19):
+Saved Interface size and failed-save retry, configured metric ability tooltips,
+bounded combat history, focused fresh input and live committed XP cues are
+implemented. Current-source reader/loot/backpack/32-offer/reward flows pass at
+1280×720, 1920×1200 and 3440×1440 with PostgreSQL restart/fresh login. The optimized
+1920×1200 replay/rejoin also passes. Twenty-eight accepted native starts across
+these consecutive slices have zero RX 7900 XTX / RADV Vulkan GPU diagnostics.
+The preserved optimized `build/local-play-release-20261107-v5` contains client
+runtime source `b412e74`, copied qualified local model art and binary hashes.
+222 full client cases, 53 launcher checks, ten core ability cases, formatting,
+strict Clippy and builds are the recorded source prerequisites; later focused
+native/XP checks retain their exact scope. [Evidence and limits](UI_FANTASY_WARRIOR.md#optimized-playtest-checkpoint--7-november-2026).
+Windows, non-unit monitor DPI, capacity/crowd/FPS qualification and complete theme
+adoption remain open; the skin stays opt-in. A visible Interface Exit control now
+passes native three-size shutdown and durable rejoin checks, and optimized
+1280×720 saved-size, real-timeout and Exit checks. It is included in frozen v5.
+The owner-level heading passes gain/rejoin/disconnect in debug 1280×720 and
+optimized 3440×1440 sessions and is included in v5. Server-owned gameplay name
+replication is the next bounded follow-up; it remains unimplemented.
+**Continue implementation and local commits only; no push. Mouse, keyboard and
+display access are authorized by the latest user instruction.**
+
+
+Connected general UI checks, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
+Desktop access was restored by the user. Saved Interface size, ability tooltip,
+resize fitting, combat/quest flow and PostgreSQL restart/fresh login pass at
+1920×1200 and 3440×1440, with three native starts and zero GPU diagnostics.
+This qualifies the copied `9957e7d` debug client in a controlled journal fixture;
+optimized contrast and background-input checks are in progress. Windows and DPI
+remain pending. [Evidence and scope](UI_FANTASY_WARRIOR.md#connected-ui-qualification--7-november-2026).
+Continue implementation and local commits only; no push.
+
+Headless general UI continuation, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
+Implemented optional saved interface size, configured metric ability tooltips,
+a six-message received combat log and focused-window guards for ability, world-
+click, backpack, corpse-loot, reader and Interface input. The actual Interface buttons/painter/I/O save-and-fit flow passes
+headlessly. 218 client cases, 53 launcher checks, ten core ability cases,
+formatting, strict workspace/all-target Clippy and builds pass. Nine actual
+client configuration preflights pass with unchanged gameplay identity and no
+App/network/renderer startup.
+An optimized Linux candidate is frozen at `build/local-play-release-20261107-v1`
+(source `d9df562`), including copied qualified local model art and binary hashes.
+That frozen pack predates later panel-focus guards; its source is retained.
+Its nine real CLI preflights also pass; the previous pack remains unchanged.
+This is a prepared build, not native UI/playability or FPS evidence. Native
+expanded tooltip/combat-log layout, input/focus/DPI/resize and Windows checks
+remain pending. The skin stays opt-in.
+**Current permission, updated 7 November 2026: continue implementation and commit
+locally only; no push. The user restored mouse, keyboard and display access.**
+Connected native UI qualification is in progress; the headless checkpoint above
+did not launch a game or services. Earlier restrictions below are historical.
+
+Headless development resumed, 7 November 2026 (P2-14):
+The user has resumed implementation with local commits only and explicitly
+forbidden mouse, keyboard and display use. This supersedes earlier desktop
+permission/stop entries. Optional `--ui-preferences FILE` now loads a bounded,
+versioned local scale preference. In-game changes save off-thread; explicit
+`--ui-scale` overrides the saved value on launch. Five persistence/error cases
+pass in the 198-case client suite; 53 launcher checks and strict all-target
+workspace Clippy pass. UI/native visual checks remain deferred. No game launched.
+
+Safe stop checkpoint, 6 November 2026 (P2-14 / P5-13 / P5-19):
+Stopped at the user's request after completing floating XP feedback. One reusable
+standard Bevy label presents positive committed owner XP deltas, coalesces nearby
+gains and fades after 1.5 seconds. Login/rejoin progress is a baseline, not an
+award. Invalid/replayed snapshots cannot create duplicate feedback. No gameplay
+or protocol changes. 193 client cases, formatting, strict workspace/all-target
+Clippy and client build pass. Six windowless Linux GPU fixture layouts through
+3840×2160 pass; live connected XP presentation remains unverified. No desktop
+input or new play session. Local commit only; no push. No play session running.
+
+Longer local playtest sessions, 6 November 2026 (P2-02 / P3-01 / P3-03):
+An explicit bounded server lifetime can now extend an intentionally configured
+local session beyond five minutes, capped by signed identity expiry. The default
+remains 300 seconds; renewal is separate. 40 auth/server Rust cases, 14 focused
+Python checks and actual Keycloak/PostgreSQL HTTP login/logout pass; strict
+workspace/all-target Clippy and builds pass. No desktop input was sent.
+[Policy and exact evidence](AUTHENTICATED_ADMISSION.md).
+Local commits only, no push. The user's earlier frozen play session has closed.
+
+General UI reference candidate, 6 November 2026 (P2-14 / P5-13 / P5-19):
+The optional Fantasy Warrior skin now follows the user's AntonilzUI reference:
+compact lower-centre player/target frames, twelve 44-pixel primary slots,
+cast feedback, a centred XP strip, circular minimap and shared pane headers.
+It uses standard Bevy UI with nine local PNG icons and two fonts; source assets
+remain outside Git. Preferred UI scale fits/restores the 1280×720 logical layout.
+193 client cases, formatting, strict workspace/all-target Clippy and build pass.
+Windowless cases through 3840×2160 check combat/XP/dock separation and
+projected anchors; earlier circle-corner pixel checks remain valid. Earlier 51 launcher cases remain valid.
+Connected OIDC/Renet/PostgreSQL quest/minimap walkthroughs now pass at
+1280×720, 1920×1200 and 3440×1440 plus genuine restart/rejoin. They confirm the
+fixed panel layering, bag dock and hidden themed terrain diagnostics in a
+controlled fixture. Passive enemy nameplates now pass six GPU layouts and a
+1280×720 connected health/death/rejoin check, including separated damage text.
+Left-side parchment dialogue and full-height reward rows now also pass the
+32-offer/note/item-reward walkthrough at all three sizes plus restart/rejoin.
+Themed target/status/quest-marker hints are now contextual and compact, with
+an additional 1280×720 connected health/death/rejoin check.
+Backpack slots now show item icons, confirmed stack counts and real hover
+tooltips. The inventory/document/reward flow passes all three native sizes plus
+restart; final tooltip placement has six GPU cases and a 1280×720 native replay.
+Read-only UI coordinate exports now preserve UI enlargement while removing
+window DPI; headless geometry/scroll checks pass. Native enlarged-UI input
+now passes the 1920×1200 / 125% document/reward/32-offer flow and restart.
+Backpack action colours now match the dark red theme. Six windowless cases
+include the five shared inventory actions; the 125% native panel flow now passes.
+Fixed quest offers now include decorative icons/counts from their bound reward
+metadata. Headless binding/legacy checks and six narrow-cell GPU layouts pass;
+normal offer-list interaction with the taller rows now passes at 125% UI scale.
+The reader now uses a compact left parchment panel with top page controls;
+six windowless cases verify text, controls and clear lower combat frames;
+the current reader also passes the 125% native panel/rejoin flow.
+Minimap shading follows validated active goals, with explicit objective-to-area
+metadata for kill/collection and related goals. 385 core/persistence and 27 focused
+network cases pass; the prior six overlay GPU layouts remain raster evidence.
+Existing content is unchanged; authored spawn/collection regions and native
+replay remain separate. Minimap hover descriptions now have six windowless
+GPU layouts and 1280×720 connected contact and reach-area hover/rejoin passes.
+Walking into the region clears shading; turn-in/rejoin retains revision 14 /
+XP 150. Enlarged panels pass at 1920×1200 / 125%.
+Combat frames now spread on wide logical viewports, preserving small layouts;
+six GPU layouts and a 3440×1440 / 125% native contact/completion/rejoin pass.
+The skin now includes an Interface [F10] panel with session-only size presets,
+preferred/fitted scale feedback and top-priority Escape. 189 headless cases and
+six windowless settings layouts pass; native pointer/resize checks remain pending.
+The skin remains opt-in; clickable plates, portrait art, chat/game-menu systems,
+broader scale/DPI/resize traces and complete-theme qualification
+remain separate work. [Scope, reference, assets and evidence](UI_FANTASY_WARRIOR.md).
+**Historical permission (6 November): desktop/mouse tests were authorized.**
+Commit locally only; no push. Earlier permission restrictions below are historical.
+
+Bounded quest offers/wheel ownership qualified, 6 November 2026:
+P3-11 / P3-12 / P3-15: the last of 32 guide offers is reachable through a bounded
+standard Bevy scroll area. Wheel input belongs to the hovered panel. All three
+Linux sizes pass last-offer acceptance, normal note/fixed rewards and SQL restart/
+rejoin; the older two-quest dialogue flow also passes at 1280×720 and after restart.
+154 client tests, formatting, strict workspace/all-target Clippy and optimized
+build pass. [Fixtures and exact scope](QUEST_ENGINE.md#bounded-quest-offers-and-wheel-ownership--6-november-2026).
+Catalogue limits and canonical content remain unchanged. Local commits, no push;
+desktop use remains authorized while the user is away.
+
+Single-click reader/shared UI recovery qualified, 6 November 2026:
+P2-14 / P3-05 / P3-11 / P3-12: the reader's ignored second-open click is fixed
+by one shared standard-Bevy button release recovery. Two opens now require two
+pointer clicks at all three Linux sizes; completion survives SQL restart/rejoin.
+The small-window full-bag refusal/free-space retry remains qualified. 154 client tests,
+formatting, strict workspace/all-target Clippy and optimized build pass.
+[Measured defect, fixtures and limits](QUEST_DOCUMENTS.md#single-click-reader-and-shared-button-release--6-november-2026).
+Local commits only, no push; desktop remains authorized while the user is away.
+
+Fixed quest reward UI qualified locally, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: offers and unfinished journals show fixed item
+names/counts; full bags retain Ready/holdings/XP and give clear retry guidance.
+Native refusal, free-space retry, atomic whole bundles and SQL restart/rejoin
+pass at 1280×720, 1920×1200 and 3440×1440. A discovered stale backpack press after
+panel reflow is fixed with a ButtonPlugin event regression. 153 client tests,
+formatting, strict workspace/all-target Clippy and optimized builds pass.
+[Exact fixtures/evidence/limits](QUEST_ITEM_REWARDS.md#fixed-reward-ui-qualified--6-november-2026).
+The user restored desktop/mouse authorization while away. Local commits, no push;
+earlier headless-only entries describe historical permission/checkpoints.
+
+Actual client/server reward configuration identities match, 6 November 2026:
+The client now has an explicit CLI configuration report that returns before
+networking or renderer/window creation. Its content identity matches the real
+headless server for both sealed schema-21 bundles, with real OIDC/SQL HTTP ticket
+preflight. 150 client tests, four Linux CLI groups (twelve cases), formatting and
+strict Clippy pass. [Scope/evidence](QUEST_ITEM_REWARDS.md#actual-clientserver-configuration-identities-agree-headlessly). No game ticket is consumed and no
+reward UI/native proof is claimed. Continue headless only; local commits, no push.
+
+Positive normal reward server configuration qualified, 6 November 2026:
+Both schema-21 bundles start the actual headless server with sealed 25-role
+content, real OIDC/PostgreSQL and HTTP admission preflight. Unauthenticated and
+duplicate ticket requests refuse; a fresh authorised character receives a private
+ticket. No game client consumes it or creates economy/quest state. Owned services
+and snapshots clean up. [Exact scope/evidence](QUEST_ITEM_REWARDS.md#normal-server-startup-and-ticket-preflight-qualified-headlessly). UI/native work remains
+pending; continue headless only, local commits and no push.
+
+Fixed reward authoring handoff, 6 November 2026 (P3-11 / P3-15):
+The read-only document/quest checker now accepts optional fixed reward references,
+with known quest/item, bounded file and area/document namespace checks. Nine Linux
+tests plus actual CLI ordering/refusal/unchanged-source checks pass; omitting the
+option preserves the earlier report exactly. Formatting and strict Clippy pass.
+[Command and limits](QUEST_PACK_AUTHORING.md#optional-fixed-turn-in-reward-references). Normal reward UI/native proof remains pending.
+Continue headless only; user is using desktop/mouse. Local commits, no push.
+
+Fixed quest reward normal configuration prerequisite, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in schema 21 seals 25 exact roles, adding
+`quest_item_rewards` to the document bundle. Both binaries accept the bounded
+`--quest-item-rewards` catalogue; server World, stored policy and retained owner
+bind the same bytes before quest-only loot. 62 validator, 45 bundle, three Linux
+CLI tests (eight cases), 24 server and 150 client tests, formatting and strict Clippy pass.
+[Scope/evidence](QUEST_ITEM_REWARDS.md#implemented-normal-configuration-prerequisite). Four legacy manifest reports exactly match the preserved
+reader validator. Reward/capacity UI and combined native qualification remain
+pending; the qualified note-reader binary remains available. No desktop/mouse
+tests while the user works. Continue headless and commit locally only; no push.
+
+Fixed quest reward World/encrypted bridge qualified locally, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit reward World installation now checks
+exact inventory/XP context, inactive exclusive setup and installed namespaces.
+Real encrypted two-peer game commands at 20/30/60 Hz pass under packet impairment:
+capacity refusal, held success, deletion after completion, original retry and
+private projections. [Scope/evidence](QUEST_ITEM_REWARDS.md#implemented-explicit-world-and-encrypted-bridge). 379 network library, nine wire and
+22 server library tests, formatting and strict Clippy pass. Transport commit
+publications are synthetic; real SQL/retained ownership is qualified separately.
+Normal manifest/CLI and reward UI remain next. Continue headless only while the
+user uses the desktop; local commits, no push.
+
+Fixed quest reward retained owner qualified locally, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit exact stored/wire reward context now
+connects the retained item/progression owners to atomic turn-in. Real OIDC,
+encrypted ticket and PostgreSQL prove nonfatal full-bag refusal, same-intent retry,
+COMMIT-before-publication, queued item movement during retirement and rejoin
+without another grant. Existing document-owner regression also passes.
+[Scope/evidence](QUEST_ITEM_REWARDS.md#implemented-retained-owner-adoption). 377 network library, nine wire and 22 server library tests,
+formatting and strict Clippy pass. World/client/normal manifest adoption is next;
+this direct-lease fixture does not exercise game command transport or UI.
+Continue headless only; desktop/mouse tests paused by user, local commits, no push.
+
+Fixed quest item reward storage qualified locally, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit reward-bound Store/worker turn-in now
+commits delivery consumption, the whole fixed bundle, final-holdings quest state,
+XP and the original receipt together. Full bags refuse without partial effects;
+old successful retries retain later item moves without granting again. 73 actual
+PostgreSQL contracts and process/database restart pass, plus eight persistence
+and 22 server library tests. [Scope and next retained-owner slice](QUEST_ITEM_REWARDS.md#implemented-atomic-storeworker-turn-in).
+World/client/server-owner admission remains closed. Continue headless work;
+no desktop/mouse tests while the user works, and no push. Earlier entries retain
+their checkpoint scope.
+
+Readable quest documents qualified locally, 6 November 2026:
+P3-05 / P3-11 / P3-15: opt-in manifest 20 now has a standard Bevy note reader
+with exact server approval, local page navigation and contextual Escape. Native
+1280×720, 1920×1200 and 3440×1440 pass pickup, pre-accept read exclusion,
+read/possession readiness, destruction reversal, replacement pickup, consumed
+turn-in and actual PostgreSQL restart/rejoin. RX 7900 XTX / RADV Vulkan reports
+zero GPU diagnostics. [Scope and evidence](QUEST_DOCUMENTS.md#reader-native-qualification-complete--6-november-2026).
+The fixture guarantees loot and reduces wolf danger; normal note loot remains
+35%. Campaign loading, save migration and broader document interactions remain
+separate. Work resumed by the user; commit locally only, no push. Earlier pause
+and prerequisite entries below describe historical checkpoints.
+
+Retained document owner and World admission qualified locally, 5 November 2026:
+P3-05 / P3-11 / P3-15: explicit exact document context now connects the retained
+item owner to durable opening. Real login, encrypted ticket and PostgreSQL prove
+original-stage credit, queued retirement/deletion, rejoin and one-time turn-in XP.
+375 network and sixteen server tests, formatting and strict Clippy pass.
+[Scope/evidence](QUEST_DOCUMENTS.md#implemented-retained-document-owner-and-explicit-world-admission).
+The owner fixture drives leases directly; document-wire/native combined proof
+and normal manifest/Bevy reader remain next. No push; playable remains `65977bd`.
+Earlier entries describe prior checkpoints.
+
+Durable document opening qualified locally, 5 November 2026:
+P3-05 / P3-11 / P3-15: bound Store/worker opens authorize the saved item and
+record original-stage read credit before success. Exact retries, item loss,
+concurrent mutation, rollback, lost replies and shutdown drain pass. 66 actual
+PostgreSQL contracts/restart, seven library and fifteen server tests, formatting
+and strict Clippy pass. [Scope/evidence](QUEST_DOCUMENTS.md#implemented-durable-authorized-document-opening).
+Retained owner, encrypted commands, normal manifest and Bevy reader remain pending;
+continue those locally. No push. Qualified playable remains `65977bd`.
+Earlier entries describe prior checkpoints.
+
+Document content binding prerequisite qualified, 5 November 2026:
+P3-05 / P3-11 / P3-15: explicit wire/storage profiles now bind exact document,
+inventory, journal, XP and optional area bytes; read-only quests still bind items.
+Legacy Store/Publisher/owner/World/client execution stays closed for documents.
+Fifteen server, seven persistence-library and 60 actual PostgreSQL regression
+contracts/restart, formatting and strict Clippy pass. [Scope/evidence](QUEST_DOCUMENTS.md#implemented-prerequisite-exact-documentitemjournal-binding).
+Continue durable authorized opening locally; no push. No document UI/runtime yet.
+Qualified normal quest-loot playable remains `65977bd`.
+
+Read-objective core prerequisite qualified, 5 November 2026:
+P3-05 / P3-11 / P3-15: schema-4 `read_document` objectives and opaque original-
+stage observations now preserve historical read credit separately from possession.
+Registry compilation/version review support the selector; legacy runtime, World
+and normal manifest paths refuse it. 357 core, 368 network, twelve server and
+79 authoring/validation tests, formatting and strict Clippy pass.
+[Scope and next slices](QUEST_DOCUMENTS.md#implemented-prerequisite-schema-4-logical-read-objectives).
+Continue exact document/item/journal binding and durable opening locally; no push.
+No document UI/runtime adoption yet. Qualified playable remains `65977bd`.
+
+Readable-document catalogue prerequisite qualified, 5 November 2026:
+P3-05 / P3-11 / P3-15: bounded plain-text document definitions now map to known
+items. Pure bag-slot/revision checks reject missing, moved, deleted or wrong
+items; they grant no authorization or read credit. All 351 core tests, formatting
+and strict workspace/all-target Clippy pass. [Scope and next slices](QUEST_DOCUMENTS.md).
+Read objective, exact runtime binding, durable open receipts and UI remain pending.
+Continue those locally; no push. Qualified quest-loot playable: `65977bd`.
+
+Normal quest-only loot qualified locally, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in manifest schema 19 binds the exact item
+journal before conditional loot on client/server and selects the retained owner.
+Linux native pickup, split/delete reversal, replacement pickup, consumption and
+PostgreSQL restart/rejoin pass at 1280x720, 1920x1200 and 3440x1440. First three
+unaccepted lives stay denied; four later lives retain their original rights.
+57 validator, 41 bundle, 147 client and eleven server tests, formatting, strict
+Clippy and optimized builds pass. [Evidence and limits](LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
+The native fixture guarantees loot and uses low damage; ordinary random gameplay
+content remains 60% pelt / 25% token. Continue readable quest documents next;
+commit locally only, no push. Earlier gate/stop entries describe prior checkpoints.
+
+Quest-only client/transport prerequisite qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit client loot profiles retain item/vendor
+identity and require the exact configured item journal before connection.
+Conditional encrypted two-peer tag/life/private pickup passes at 20/30/60 Hz with
+UDP impairment; its owner publications are synthetic. 368 network tests,
+formatting and strict Clippy pass. [Scope/evidence](LOOT_TABLES.md#quest-only-client-binding-and-encrypted-bridge--5-november-2026).
+Normal CLI/manifest/native conditional adoption remains pending. Continue that
+locally; no push. Qualified ordinary item-quest playable: `85fd967`.
+
+Quest-only World prerequisite qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit simulation admission now requires the
+exact installed item journal and inactive matching combat/creature. Real fatal
+casts at 20/30/60 Hz preserve original loot facts; durable need stays in the owner.
+365 network-library tests, formatting and strict Clippy pass.
+[Scope/evidence](LOOT_TABLES.md#quest-only-world-admission--5-november-2026).
+Normal client/manifest adoption remains pending. Continue client binding and
+conditional encrypted runtime checks locally; no push. Playable: `85fd967`.
+
+Quest-only retained owner qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit exact-journal owner admission now uses
+conditional generation/view/pickup; stationary bag/journal changes refresh loot.
+Actual OIDC/encrypted-ticket/PostgreSQL checks cover denial replay, deletion,
+retained pickup/queued fatal facts, rejoin and atomic turn-in. Ordinary loot and
+item-journal regressions, eleven server tests, formatting and strict Clippy pass.
+[Scope/evidence](LOOT_TABLES.md#quest-only-retained-owner--5-november-2026).
+World and normal manifest/client adoption remain pending. Continue locally with
+World validation and encrypted runtime coverage; no push. Playable: `85fd967`.
+
+Quest-only worker prerequisite qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit conditional generation/list/pickup now
+use the existing bounded critical FIFO. Accepted writes survive queued reply loss
+and drain on shutdown; async producers wait for capacity and stale need rejects
+without stopping the worker. 60 actual PostgreSQL contracts plus restart, eleven
+server-library tests, formatting and strict Clippy pass. [Scope/evidence](LOOT_TABLES.md#quest-only-worker-prerequisite--5-november-2026).
+Retained owner, World and normal manifest/client adoption remain closed. Continue
+owner refresh and authorization locally; no push. Playable remains `85fd967`.
+
+Quest-only paging/pickup storage prerequisite qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit Store views filter current item need
+before the nearest-16 page; pickup validates original generation and fresh locked
+need. Ready replay, deletion/reacquisition, completion, ordinary rewards and full-
+bag rollback pass 59 actual PostgreSQL contracts plus restart. [Evidence/limits](LOOT_TABLES.md#quest-only-paging-and-pickup-storage-prerequisite--5-november-2026).
+Formatting and strict all-target Clippy pass. Generic APIs, worker/owner/World
+and normal manifests remain closed for quest-only content. Continue worker and
+retained-owner adoption locally; no push. Normal playable remains `85fd967`.
+
+Quest-only generation storage prerequisite qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit trusted Store generation now persists
+first-transaction eligibility, the single ticket and observed bag/journal revisions.
+Later acceptance/removal cannot create old rights; a failed winning claim rolls
+back the whole generation. 57 actual PostgreSQL contracts plus process restart,
+version-13 ordinary-roll upgrade, formatting and strict all-target Clippy pass.
+[Ordering policy, evidence and limits](LOOT_TABLES.md#quest-only-generation-storage-prerequisite--5-november-2026). Owner/World/manifest admission and
+conditional paging/pickup remain closed. Continue those locally; no push.
+Normal item-quest playable remains the separately qualified `85fd967`.
+
+Quest-only profile binding prerequisite, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit headless constructors now bind quest-only
+loot to the exact inventory-bound journal, including its XP/area/source identity.
+Legacy constructors, owner/World admission, ordinary Store paths and normal
+manifests stay closed for this content. Eleven server, five non-SQL persistence,
+ten reward-wire, 56 validator and 13 focused core tests, formatting and strict
+all-target Clippy pass. [Scope and remaining work](LOOT_TABLES.md#quest-only-profile-binding-prerequisite--5-november-2026).
+No new SQL/native/runtime-adoption claim. Normal item quests remain qualified at
+`85fd967`. Continue durable generation rights and filtered paging/pickup locally;
+no push. Earlier metadata-only gate statements describe their checkpoints.
+
+Quest-only loot metadata prerequisite, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: reward schema 4 now describes quest-required
+independent single-item per-life entries. Ordinary chances stay separate from
+eligibility. Wire profiles, storage profiles and normal manifests refuse these
+entries until generation rights, exact journal binding and pickup checks exist.
+345 core, ten reward-wire, four persistence-library and 56 validator tests,
+formatting and strict all-target Clippy pass. [Scope and remaining work](LOOT_TABLES.md#quest-required-metadata-prerequisite--5-november-2026).
+No new SQL/native/runtime claim; normal item quests remain qualified at `85fd967`.
+Continue implementation locally; no push.
+
+Normal item quests qualified locally, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in schema-18 inventory-bound quests now pass
+native Linux pickup, split/delete reversal, replacement pickup, atomic turn-in
+consumption and actual PostgreSQL restart/fresh login. 1280x720, 1920x1200 and
+3440x1440 pass on RX 7900 XTX / RADV Vulkan with zero GPU diagnostics. Guaranteed
+loot and low-damage combat are explicit native fixtures; the ordinary random-loot
+profile is separate. 147 client, 55 validator and 40 bundle tests, formatting,
+strict all-target Clippy and optimized builds pass. [Evidence and limits](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-qualification-complete--5-november-2026).
+Continue with quest-only generation rights and current-need checks before paging
+and pickup. Commit locally only; no push. Earlier stop/gate entries are historical.
+
+Explicit headless item-journal admission prerequisite, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in World installation/preparation now requires
+the exact bound inventory profile; legacy/raw paths remain closed. 363 network
+library tests, nine wire checks, formatting and strict all-target Clippy pass.
+[Exact scope and remaining normal adoption](QUEST_ITEM_OBJECTIVES.md#explicit-headless-item-journal-admission--5-november-2026).
+No new saved-player/native claim. Normal CLI/manifest item-quest admission and
+quest-only loot filtering remain pending. Continue implementation with local
+commits only; no push. Ordinary loot checkpoint remains `4dbeefd`.
+
+Quest-only loot eligibility core prerequisite, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: current checked backpack holdings now derive the
+items needed by accepted unfinished quests, independently of cached Ready counts.
+343 core tests, formatting and strict all-target Clippy pass. [Exact scope and
+remaining adoption](LOOT_TABLES.md#quest-only-eligibility-core-prerequisite--5-november-2026).
+No new runtime/SQL/native claim; quest-only and live possession gates remain closed.
+Ordinary corpse pickup/random loot remain qualified at `4dbeefd`. Continue with
+joint profile binding, bounded eligible pages and pickup checks; local commits only.
+
+Corpse pickup and authored loot rolls qualified locally, 5 November 2026:
+P3-02 / P3-05 / P3-09 / P3-11 / P3-15: opt-in schema-17 corpse UI passes three
+native Linux sizes and database restart/rejoin. Reward schema 3 adds authored
+independent chances and exclusive groups with durable winning/missing rolls.
+1,295 workspace/all-target tests pass (65 service skips); 55 actual PostgreSQL
+contracts/restart, actual OIDC/SQL retained-owner rolls, formatting and strict
+all-target Clippy pass. [Pickup evidence](QUEST_ITEM_OBJECTIVES.md#explicit-corpse-pickup-ui--5-november-2026)
+and [drop-table semantics, profiles and limits](LOOT_TABLES.md).
+Guaranteed content remains the native UI fixture; random ordinary loot has a
+separate development manifest. Quest-only eligibility and live possession quests
+remain gated; continue those next. Local commits only, no push. Earlier pending/
+stop entries below are historical.
+
+Explicit corpse pickup UI qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: normal opt-in corpse selection, read-only opening,
+individual pickup, serial Loot all and partial-loot recovery pass native Linux
+at 1280x720, 1920x1200 and 3440x1440 plus actual database restart/rejoin.
+[Exact evidence and limits](QUEST_ITEM_OBJECTIVES.md#explicit-corpse-pickup-ui--5-november-2026).
+Guaranteed drops remain the repeatable UI fixture; [authored random rolls](LOOT_TABLES.md)
+have separate storage evidence and combined checks in progress. Live item quests
+remain gated. Continue implementation, commit locally, do not push.
+
+Nearby durable loot interest qualified, 5 November 2026:
+P3-02 / P3-05 / P3-09 / P3-11 / P3-15: per-life owner pages follow the retained
+server pose instead of distant oldest drops. 54 actual PostgreSQL contracts and
+restart, new per-life and legacy OIDC/SQL owner qualifications, 394 selected
+library tests, formatting and strict all-target Clippy pass.
+[Bounds, evidence and remaining client work](QUEST_ITEM_OBJECTIVES.md#nearby-durable-loot-interest--5-november-2026).
+Continue implementation with local commits only. Corpse UI/normal manifest and
+live item-quest native adoption remain pending. No new rendering/capacity claim.
+
+Implementation resumed, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit headless per-life pickup now shares the
+backpack acknowledgement stream and passes impaired encrypted two-peer tests
+at 20/30/60 Hz. 381 selected tests, formatting and strict all-target Clippy pass.
+[Scope and next slice](QUEST_ITEM_OBJECTIVES.md#explicit-headless-pickup-integration--5-november-2026).
+Default/normal manifest adoption stays gated; corpse UI and native item-quest
+flow remain pending. Continue until user stops, commit locally, do not push.
+Earlier stop entries below are historical.
+
+Stopped safely at user request, 4 November 2026:
+Explicit corpse-life pickup validation prerequisite passes 367 selected tests,
+formatting and strict workspace/all-target Clippy. [Exact scope and resume work](QUEST_ITEM_OBJECTIVES.md#safe-stop-explicit-pickup-authority-prerequisite--4-november-2026).
+Per-life content and live item-quest admission remain closed: corpse UI, client
+pickup and encrypted/native integration are unfinished. Source/proof preserved at
+`build/quest-loot-pickup-stopped-v1-20261104`; last qualified runnable UI remains
+`build/quest-item-ui-qualified-v1-20261104`. No active owned services or desktop
+input. Changes committed locally only; no push. Resume only when requested.
+
+Loot availability codec prerequisite checked locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in RW02 carries bounded victim/corpse metadata;
+legacy RW01/RC01 remain byte-compatible. 366 selected checks, formatting and
+strict workspace/all-target Clippy pass. [Exact bounds and remaining work](QUEST_ITEM_OBJECTIVES.md#bounded-loot-availability-codec-prerequisite--4-november-2026).
+Default profile and World admission still refuse per-life loot. Continue with
+corpse interaction/explicit pickup; no new encrypted/native/SQL claim or push.
+
+Per-life loot storage prerequisite qualified locally, 4 November 2026:
+P3-02 / P3-05 / P3-09 / P3-11 / P3-15: migration 12 preserves old once-character
+claims and binds repeatable loot to victim life and corpse position. Death/offer
+alone changes no bag or possession credit; explicit pickup commits both together.
+53 actual PostgreSQL contracts and restart hashes pass; 377 selected regular
+tests, formatting and strict workspace/all-target Clippy pass. No full-workspace
+execution claim. [Exact scope and pending corpse interaction](QUEST_ITEM_OBJECTIVES.md#per-life-loot-storage-prerequisite-qualified--4-november-2026).
+Preserve `build/quest-loot-storage-qualified-v1-20261104`. Runtime per-life content
+and live item quests stay gated. Continue explicit corpse pickup/UI with local
+commits only; no new native/Windows/capacity claim for this storage slice.
+
+Per-life loot core prerequisite checked locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: schema 2 and trusted victim-life selector added;
+339 core tests, three reward-wire checks and one non-SQL storage gate pass.
+Formatting and strict workspace/all-target Clippy pass. Runtime/storage still
+refuse per-life content; no live repeatable-loot or new SQL/native claim.
+[Current boundary and next work](QUEST_ITEM_OBJECTIVES.md#per-life-loot-core-prerequisite--4-november-2026).
+User-authorized work continues with local commits only. Durable per-life claims
+and bounded pending availability are next; item-quest admission stays closed.
+
+Confirmed destruction UI qualified locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: normal split/confirm/cancel/close/reopen/destroy
+and database restart/rejoin pass at 1920x1200, 3440x1440 and 1280x720.
+All four native starts have zero GPU diagnostics on Linux RX 7900 XTX / RADV.
+144 client tests, 11 inventory bridge tests, formatting and strict workspace/
+all-target Clippy pass; optimized current-checkout client/server/validator built.
+[Exact scope and evidence](QUEST_ITEM_OBJECTIVES.md#confirmed-destruction-ui-qualified--4-november-2026).
+Preserve `build/quest-item-ui-qualified-v1-20261104`. User resumed implementation
+and authorized local commits only. Continue with actual per-creature-life loot;
+item-quest live admission and document-reading objectives remain pending.
+Earlier stop/local-only records below are historical. No new native Windows claim.
+
+Repository alignment, 4 November 2026: approved story authoring and CI repairs
+are merged into `main` through PRs #52/#53. Unfinished MMO development is preserved
+on `dev/quest-inventory-integration`, synchronized with main, in draft PR #54.
+Implementation remains paused; item-quest/native acceptance work is still pending.
+See [current status and validation](STATUS.md) before the historical checkpoints below.
+
+Stopped safely at user request, 4 November 2026:
+Qualified retained inventory/quest owner work is preserved at
+`build/quest-item-owner-qualified-v1-20261104`: 1,271 workspace/all-target tests,
+59 service skips and two actual OIDC/encrypted-ticket/PostgreSQL owner scenarios.
+Subsequent work adds a confirmed destruction UI, exact confirmed-revision command,
+and support for matching inventory acknowledgements carrying newer committed bags.
+Eleven inventory bridge tests, seven encrypted account tests, 144 client tests,
+formatting, strict all-target Clippy and optimized builds pass for those changes.
+The first 1920x1200 native run stopped at an inventory Escape-close check before
+testing destruction. It has zero GPU diagnostics on RX 7900 XTX / RADV Vulkan /
+Mesa 26.2.6. Additional close-pending diagnostics and a settled-close wait are
+built but not rerun. The destruction UI is work in progress, not native-qualified.
+Preserve current source/build at `build/quest-item-ui-wip-stopped-v1-20261104`.
+[Exact scope and resume work](QUEST_ITEM_OBJECTIVES.md).
+Reading/viewing notes is planned separately from possession. Live item-quest
+admission stays closed; repeatable loot and full native item flow remain pending.
+All owned services and desktop input stopped. Nothing committed or pushed.
+
+Item-quest retained owner prerequisite qualified locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: inventory initializes before item-bound journal
+admission; all supported owner bag mutations select compound transactions.
+Generation-bound publication preserves newer committed bag/journal/XP projections
+and command replies when responses arrive late. Actual owned OIDC/encrypted-ticket/
+PostgreSQL lease checks cover split/destroy/reacquire, refused missing-item turn-in,
+retained turn-in after logout, rejoin and replay without duplicate consumption/XP.
+The earlier historical journal owner also passes its actual service regression.
+All 1,271 workspace/all-target tests (59 service skips), formatting and strict
+workspace/all-target Clippy pass. Preserve
+`build/quest-item-owner-qualified-v1-20261104`.
+[Exact evidence and remaining native work](QUEST_ITEM_OBJECTIVES.md).
+NPC/event entitlement in owner checks is synthetic; separate channels may render
+on separate frames. Live World/manifest item admission stays closed. Confirmed
+UI, repeatable loot and normal encrypted/native item flow remain pending. Reading
+notes is recorded as a distinct planned objective. Changes stay local.
+
+Stopped safely at user request, 3 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: item-quest storage checkpoint is preserved, plus
+checked quantity destruction in core, canonical IR02-only destruction requests
+and compound SQL destruction/readiness reconciliation. A real split-one then
+destroy-one SQL command changes Ready 3/3 to Active 2/3; retries never remove twice.
+All 347 selected core/persistence/server tests, 14 inventory/journal codec checks,
+19 actual owned PostgreSQL journal contracts, formatting and strict workspace/
+all-target Clippy pass. Preserve
+`build/quest-item-destruction-storage-qualified-v1-20261103`.
+[Behavior, limits and resume work](QUEST_ITEM_OBJECTIVES.md).
+Unfinished destruction UI is set aside as an ignored patch; the client UI is
+restored to the prior qualified source. Item-quest live admission remains closed.
+Resume with retained owner initialization/coherent publication, confirmed UI,
+per-victim-life repeatable loot and normal encrypted/native item flow. Latest
+native playable remains the area checkpoint. All local; nothing committed/pushed.
+
+Item-quest durable storage prerequisite qualified locally, 3 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: exact item-profile binding, locked current-bag
+reconciliation and atomic item consumption/completion/XP/action receipts. Optional
+compound move/split/equipment, vendor and reward-claim APIs reconcile all active
+item quests before the same COMMIT. Accepted compound jobs drain after response
+loss. Existing unbound historical quest profiles retain their hashes and paths.
+All 345 selected core/persistence/server tests (48 service skips), 18 actual owned
+PostgreSQL journal contracts, formatting and strict workspace/all-target Clippy
+pass; durable bag/journal/XP/receipt hashes match after database restart.
+Preserve `build/quest-item-storage-qualified-v1-20261103`.
+[Exact evidence and pending live work](QUEST_ITEM_OBJECTIVES.md).
+SQL authorization/removal fixtures are synthetic. Live World/manifest item
+admission remains closed; owner publication, destruction, repeatable loot and
+normal encrypted/native item flows are pending. Latest playable remains the area
+client. No save migration or new full-workspace/GPU/Windows claim. Local only.
+
+Reversible item-quest core/codec prerequisite qualified locally, 3 November 2026:
+P3-05 / P3-11 / P3-15: quest schema 3 adds explicit possession requirements and
+consume-on-turn-in flags in an all-required final stage. Current holdings can
+change Ready back to Active while permanent facts remain. Pure turn-in rechecks
+current bags, prepares consumption/completion and recalculates other quests
+sharing the materials. Completed quests stay completed.
+All 335 core tests, nine codec checks, 72 authoring-tool checks, formatting and
+strict workspace/all-target Clippy pass. Preserve
+`build/quest-item-journal-qualified-v1-20261103`.
+[Behavior, evidence and pending live work](QUEST_ITEM_OBJECTIVES.md).
+Normal World/manifest admission still refuses unbound item quests. No new item
+SQL transaction, deletion UI, repeatable loot, encrypted/native item quest,
+save migration or full-workspace claim. Area client remains the latest playable.
+Changes stay local; storage/ownership integration is next.
+
+Quest-item possession/consumption prerequisite qualified locally, 3 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: checked backpack requirements count all stacks,
+preserve totals across split/merge, distinguish kept from consumed requirements
+and prepare all-or-nothing consumption against the supplied current bag.
+All 327 core tests, seven new requirement cases, formatting and denied-warning
+workspace/all-target Clippy pass. Preserve
+`build/quest-item-possession-qualified-v1-20261103`.
+[User semantics, pinned Classic-emulator evidence and remaining work](QUEST_ITEM_OBJECTIVES.md).
+This pure helper is not live quest progress, item deletion, repeatable loot or
+a SQL reward transaction. The area client remains the latest native playable.
+Reversible item objectives, synchronized storage/owner publication and real
+wolf-pelt loot/split/delete/reloot/turn-in are pending. Changes stay local.
+
+Reach-area quest normal client qualified locally, 3 November 2026:
+P3-02 / P3-11 / P3-12 / P3-15 / initial P3-16: opt-in manifest 16 binds static
+metric volumes to exact quest/XP content. Current alive authoritative feet
+produce bounded stage-scoped batches; the retained owner commits all changed
+quests and replay receipts before private publication. Overlapping multi-goal
+batches now preserve monotonic journal heads above every contained revision.
+All 1,169 workspace tests / 54 service skips, 51 manifest / 36 launcher checks,
+14 actual PostgreSQL journal contracts, formatting and strict all-target Clippy
+pass. Normal unmodified data/native OS controls complete the original two quests
+plus the overlook (about 134 m west), return and turn in: head 16 / 150 XP.
+Database restart/rejoin preserves all three completions, six actions and ten
+event receipts. Two native starts have zero GPU diagnostics on Linux RX 7900 XTX
+/ RADV Vulkan / Mesa 26.2.6. Preserve
+`build/quest-reach-client-qualified-v1-20261103`.
+[Exact semantics, proof and limits](QUEST_REACH_AREAS.md).
+Earlier schema-15 content/playables remain; no save migration, runtime packs,
+native Windows, FPS benchmark or MMO-capacity claim. All changes local.
+Next: user-requested possession-based item quests; splitting remains allowed.
+
+Reach-area queue/encrypted prerequisite qualified locally, 3 November 2026:
+P3-11 / P3-15 / initial P3-16: fixed-step authority reserves one bounded owner
+slot before sampling a typed stage-bound area batch. Full queues preserve retry;
+unchanged batches do not repeat while commit is pending. The retained server
+owner uses the qualified storage helper and publishes only committed views.
+All 354 network-library tests, formatting and strict workspace/all-target Clippy
+pass. New encrypted two-client delay/loss/duplicate cases at 20/30/60 Hz advance
+one batch per stage, keep the other journal private and award XP only at turn-in.
+Those encrypted cases use an explicit in-memory commit fixture; PostgreSQL was
+qualified separately. The combined native/SQL path is still pending.
+Preserve `build/quest-reach-owner-qualified-v1-20261103`.
+[Evidence and remaining normal-launch/native work](QUEST_REACH_AREAS.md).
+No normal manifest area role, native area quest, save migration or new full
+workspace/GPU/Windows/capacity claim. Changes remain local.
+
+Reach-area storage/worker prerequisite qualified locally, 3 November 2026:
+P3-02 / P3-11 / P3-15 / initial P3-16: area-aware persistence binds exact profile
+bytes, stage-scoped observations and domain-separated replay receipts. All
+affected quests and their receipt commit atomically; accepted jobs survive a
+dropped response and worker shutdown. Area evidence grants no XP; normal turn-in
+remains the reward transaction. Thirteen actual owned PostgreSQL journal
+contracts pass, including three new area cases, plus four non-SQL checks,
+formatting and strict workspace/all-target Clippy. Durable table hashes match
+across an actual database restart with fsync/synchronous_commit/full_page_writes.
+Preserve `build/quest-reach-store-qualified-v1-20261103`.
+[Exact proof and pending owner/native integration](QUEST_REACH_AREAS.md).
+Trusted SQL observations are synthetic; no encrypted/native area credit,
+manifest installation, save migration or new full-workspace/GPU claim. Local only.
+
+Reach-area World adapter qualified locally, 3 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: opt-in exact-area-byte quest profiles
+validate selectors, installed namespaces and continental bounds. Samples use
+current alive authoritative capsule feet, current World/actor binding and ready
+collision coverage, with no client position argument or simulation I/O.
+All 319 core / 352 network-library tests, 67 authoring-tool checks, formatting and
+strict workspace/all-target Clippy pass; five new authority cases include
+20/30/60-Hz predicate fixtures and dead-life exclusion. Preserve
+`build/quest-reach-world-qualified-v1-20261103`.
+[Evidence and remaining durable/live work](QUEST_REACH_AREAS.md).
+The immediately preceding full workspace passed 1,160 tests / 50 service skips;
+this checkpoint does not claim a new full-workspace or GPU/native run.
+Normal manifests still refuse area content; no durable area credit, save
+migration or new Windows/capacity claim. Changes remain local.
+
+Reach-area pure proposal prerequisite qualified locally, 3 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: schema 2 adds count-one area selectors;
+stage-scoped batches cannot credit later stages or later acceptances. Overlap,
+quorums, delayed same-stage credit, 128-goal bounds and saved-count round trips
+pass. Compiler selects the minimum schema; review detects selector changes.
+All 1,160 workspace tests / 50 skips, 319 core tests, 66 authoring-tool checks,
+formatting and strict workspace/all-target Clippy pass. Preserve
+`build/quest-reach-stage-qualified-v1-20261103`.
+[Semantics and pending live integration](QUEST_REACH_AREAS.md).
+Normal World/manifest admission explicitly refuses unsupported area objectives.
+No live area credit, runtime pack loading, migration, new GPU or Windows claim.
+Normal playable remains directional v1; all changes remain local.
+
+Reach-area geometry prerequisite qualified locally, 3 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: strict finite XYZ volumes use checked
+global metres, inclusive faces and bounded inputs; no renderer/physics/streaming
+is created. All 310 core tests, six actual CLI cases, formatting and strict
+workspace/all-target Clippy pass. Preserve
+`build/quest-reach-area-geometry-qualified-v1-20261103`.
+[Exact semantics, evidence and pending stage-bound/live work](QUEST_REACH_AREAS.md).
+This is geometry only: quest schema 1 and its budgets remain, with no World area
+credit, runtime packs, save migration or new GPU/Windows/capacity claim.
+The qualified directional playable remains available; story IDs are untouched.
+
+Classic directional locomotion runtime qualified locally, 3 November 2026:
+P2-09 / P3-08 / P2-05: optional eight-way walking/running uses displayed manual
+heading and checked global motion; backward run selects RunBack. Phase continuity,
+standard Bevy finger/strike masks and death/jump priorities pass local/remote
+native source-pose checks. All 1,145 workspace tests / 50 skips, 144 client tests,
+formatting and strict all-target Clippy pass. Seven final native client starts
+pass: two-account animation/life fixture, new-art ultrawide controls, and normal
+unmodified quests/database restart/rejoin with both new art (1920) and old-art
+fallback (720p). Normal new-art W traversal covers 207.9 m, streamed retirement
+and an origin change. Zero GPU diagnostics on Linux RX 7900 XTX / RADV.
+Preserve `build/classic-directional-client-qualified-v1-20261103`.
+[Exact art/mapping/fixture scope, proof and remaining work](CLASSIC_DIRECTIONAL_LOCOMOTION.md).
+Crossfades/stride tuning and the existing skin-preview limitation remain.
+Earlier checkpoints unchanged; local only, no native Windows/MMO-capacity claim.
+
+Directional locomotion asset prerequisite qualified, 3 November 2026:
+P2-09 / P3-08 / P2-05: separate 22-clip POLYGON asset retains all eight original
+clips, skin, weights, binds, palette and sword sockets. Independent 702-frame
+source comparison and 640 retained pose samples per artifact pass, with zero
+retained matrix difference. Thirteen Python checks and standard glTF validation
+pass. Fourteen native clip inspections have active Khronos validation and zero
+GPU diagnostics on Linux RX 7900 XTX / RADV. The existing 8.8 mm four-weight
+preview limitation remains; no production-fidelity claim.
+Preserve `build/classic-directional-art-qualified-v1-20261103`.
+[Asset proof and pending runtime adoption](CLASSIC_DIRECTIONAL_LOCOMOTION.md).
+Rust is unchanged from ground-v3; live directional selection is next. Local only.
+
+Classic ground movement v3 qualified locally, 3 November 2026:
+P2-04 / P2-05 / P2-07 / P2-09 / P2-11: shared authority/prediction uses
+data-bound 7 m/s run, 4.5 m/s backward run and 2.5 m/s walk; schema-2 controls
+default to run with NumpadDivide walk/run toggle, removing Classic Shift boost.
+All 1,139 workspace tests / 50 skips, 138 client tests, 35 launcher/bundle checks,
+formatting and strict all-target Clippy pass. Three native resolutions pass all
+27 measured speed checks; a separate normal unmodified wolf/quest run and
+database-restart rejoin preserve head 13 / 125 XP, followed by 207.7 m of normal
+W traversal through streamed chunks and an origin change. Five final native
+starts have zero GPU diagnostics on Linux RX 7900 XTX / RADV. Preserve
+`build/classic-ground-client-qualified-v1-20261103`.
+[Exact mapping, source uncertainty, compatibility and evidence](CLASSIC_GROUND_MOVEMENT.md).
+Earlier checkpoints unchanged; local only, no native Windows/MMO-capacity claim.
+
+Local minimap traversal follow-up qualified, 3 November 2026:
+P2-14 / P3-13: retained no-facing arrow now reads displayed character rotation;
+Classic controls and gameplay remain unchanged. Actual normal W movement walks
+208.3 m through three chunk owners and a render-origin change after OIDC/
+PostgreSQL restart/rejoin, preserving head 13 / 125 XP. A separate explicit 32x
+development-ticket run crosses the 16-km extent: 125 total origin changes,
+62 independently sampled origins, bounded terrain retirement and correct dark
+world edge. All 1,134 workspace tests (50 skips), 136 client / two checker tests,
+formatting and strict all-target Clippy pass. Five final native starts have zero
+GPU diagnostics on Linux RX 7900 XTX / RADV; normal UI checks retain all three
+supported resolutions. Preserve
+`build/minimap-traversal-client-qualified-v1-20261103`.
+[Exact normal/accelerated scopes and measurement corrections](MINIMAP.md).
+Earlier checkpoints remain unchanged; local only, no native Windows/MMO-capacity claim.
+
+Initial local minimap qualified, 3 November 2026:
+P2-14 / P3-13: standard Bevy north-up local map, resident-mesh height sampling,
+checked global projection, manual player heading and committed guide/quest icons.
+Two fixed images use 17 KiB; no new camera, terrain read or residency request.
+Health/mana and backpack layout remain usable at all three supported sizes.
+All 1,133 workspace tests (50 skips), 135 client tests, fmt and all-target
+denied-warning Clippy pass. Normal OIDC/PostgreSQL/native two-quest completion
+and database-restart rejoin pass at 1280x720, 1920x1200 and 3440x1440 fullscreen:
+four starts, zero GPU diagnostics. Visible map refresh leaves terrain reads and
+residency unchanged; maximum raster 0.329 ms, active presentation mean
+25.64–26.74 us on Linux RX 7900 XTX / RADV Vulkan. Preserve
+`build/minimap-client-qualified-v1-20261103`.
+[Exact Classic scope, measurements and remaining work](MINIMAP.md). Local only;
+no new native Windows/continent-crossing/population-capacity claim.
+
+Renet lost-initial-acknowledgement fix qualified, 3 November 2026:
+P1-06 / P1-08 / P3-04 / P3-16: bounded encrypted NC01 confirmation precedes
+World/account admission; Renet transport revision 1 leaves movement wire/Quinn
+12 and library pins unchanged. Full workspace: 1,128 passes / 50 explicit skips;
+two focused loss-policy checks, formatting and all-target denied-warning Clippy
+pass. Final baseline/seeded-loss comparison passes 48 cases at 20/30/60 Hz,
+including 24 reused endpoints, 60 dropped initial KeepAlives and 3,607 old-packet
+replays. Retain the separate periodic-loss result: 46/48, with snapshot erasure
+after successful Welcome. Normal OIDC/PostgreSQL/native quests and database
+restart/rejoin pass (head 13 / 125 XP); two 1920x1200 starts have zero GPU
+diagnostics on Linux RX 7900 XTX / RADV Vulkan. Preserve
+`build/connection-confirmation-client-qualified-v1-20261103`.
+[Implementation, exact evidence and loss limitations](RENET_CONNECTION_CONFIRMATION.md).
+No native Windows/population/universal-loss-recovery claim. Local only.
+
+Read-only quest update review qualified, 3 November 2026:
+P3-11 / P3-15: compare two validated closed executable catalogues by stable IDs,
+versions, exact hashes and review-only gameplay fingerprints. Distinguish rule,
+presentation/layout and version changes; report missing bumps/regressions without
+copying narrative text. Inputs are never rewritten; no save compatibility,
+World-reference admission or automatic migration claim. Seven review checks and
+all 65 authoring-example checks pass, along with formatting/all-target Clippy.
+Actual built CLI proves deterministic hashes/output, input preservation and
+unsupported/oversized refusal. Preserve
+`build/quest-update-review-qualified-v1-20261103`. Normal schema-15 playable is
+unchanged; its earlier 1,123-test/native qualification remains the runtime
+baseline. [Workflow and limits](QUEST_PACK_AUTHORING.md). Local only.
+
+Normal public player death/fresh-life presentation qualified, 3 November 2026:
+P3-04 / P3-14 / P3-16: schema-15 matched normal CLI/bundle, public visual life
+roster and standard Bevy remote Death/fresh-life reset, with life-aware pose
+reset and owner-private controls/vitals retained. Actual two-account native
+observer sees a finished corpse in view (52 changing Death bones), then fresh
+generation/pose; it stays at 100 HP with no private incoming windup/target. Owner
+live casting is verified, then dead movement/new casts are blocked. Unmodified
+quest completion and PostgreSQL restart/rejoin pass: two quests, three kills,
+head 13 / 125 XP, no duplicate rewards. All 1,123 workspace tests (50 skips),
+131 client / 47 validator / 35 Python checks, formatting and all-target Clippy
+pass. Three final native runs at 1920x1200 have zero GPU diagnostics on Linux
+RX 7900 XTX / RADV Vulkan. Preserve `build/avatar-life-client-qualified-v1-20261103`.
+Older bundles remain unchanged. [Exact scope and endpoint limitation](PUBLIC_AVATAR_LIFE.md).
+Synthetic PID-bound X11 input; no native Windows/population/Classic corpse-run
+claim. All changes remain local.
+
+Public avatar lifecycle transport qualified, 3 November 2026:
+P3-04 / P3-14 / P3-16: shared bounded priority reliable channel, readiness gate,
+full roster/changed-lifecycle publication, private-vitals separation and explicit
+queue/upload/profile refusal. Actual encrypted observer sees death/respawn,
+leave and fresh-endpoint rejoin under impairment at 20/30/60 Hz; old encrypted
+traffic cannot restore the former life. Separate two-peer NPC/AV coexistence
+passes at all three rates. All 670 network tests (ten skips), formatting and
+workspace/all-target denied-warning Clippy pass. Preserve
+`build/avatar-life-runtime-qualified-v1-20261103`. Normal CLI/bundle/remote Bevy
+adoption remains next; normal schema-14 public-NPC playable is unchanged.
+[Scope, replay proof and same-endpoint limitation](PUBLIC_AVATAR_LIFE.md).
+Trusted development profiles/synthetic ports; no new native/SQL/OIDC/Windows or
+population-capacity claim. All changes remain local.
+
+Public avatar life observation/codec prerequisite qualified, 3 November 2026:
+P3-04 / P3-14 / P3-16: explicit pre-admission World/profile and bounded AV01
+actor/life/alive-dead roster; no health, damage or respawn-control fields. Nine
+focused wire/World checks cover actual death/respawn at 20/30/60 Hz, the bounded
+connected set, stale/invalid data and unavailable authority. All 664 network
+tests (ten skips), formatting and workspace/all-target denied-warning Clippy
+pass. Preserve `build/avatar-life-codec-qualified-v1-20261103`. Public transport,
+normal version and remote Bevy adoption remain next. Latest normal playable is
+public-NPC schema 14, unchanged. [Scope](PUBLIC_AVATAR_LIFE.md). Local only; no
+new native/SQL/OIDC/Windows/population claim.
+
+Normal public NPC attack presentation qualified, 3 November 2026:
+P3-07 / P3-14 / P4-08: schema-14 exact-byte bundle and matching normal CLI identities
+adopt the priority public timing stream with standard Bevy wolf clips and actual
+victim facing. Native two-account observer stays at 100 HP, receives no private
+incoming windup, keeps no target selected and renders remote-victim attacks.
+Unmodified-wolf normal quest completion and database-restart rejoin also pass:
+two quests, three kills, head 13 and 125 XP, no duplicate rewards. All 1,106
+workspace tests (50 skips), 129 client / 46 validator / 34 Python checks,
+formatting and all-target denied-warning Clippy pass. Three successful native
+runs at 1920x1200 have zero GPU diagnostics on Linux RX 7900 XTX / RADV Vulkan.
+Preserve `build/creature-attack-client-qualified-v1-20261103`; older bundles remain
+unchanged. [Exact scope and evidence](PUBLIC_CREATURE_ATTACKS.md). Synthetic
+PID-bound X11 input; no native Windows or population-capacity claim. Local only.
+
+Public NPC attack transport qualified, 3 November 2026:
+P3-07 / P3-14 / P4-08: optional 8-KiB reliable priority channel, accepted-readiness
+publication gate, exact profile/rate checks and bounded 16-event presentation
+handoff. Actual encrypted victim/observer peers agree on windup/cancel/transfer
+at 20/30/60 Hz under loss, jitter, duplication and reordering; incoming strikes
+and vitals remain private. Four additional boundary checks cover full queues,
+readiness and forged uploads on both channels. All 655 network tests (ten skips),
+formatting and workspace/all-target denied-warning Clippy pass. Preserve
+`build/creature-attack-runtime-qualified-v1-20261103`. Normal CLI/bundle/Bevy
+adoption remains next; threat v2 playable is unchanged. [Scope](PUBLIC_CREATURE_ATTACKS.md).
+Synthetic admission/inventory ports; no native/SQL/OIDC/Windows/capacity claim.
+All changes remain local.
+
+Public NPC timing observation/codec prerequisite qualified, 3 November 2026:
+P3-07 / P3-14 / P4-08: explicit pre-admission World profile/hash, read-only NPC
+windup observation and strict 62/86-byte NA01 contract. No health/damage/outcome
+or private player-life generation fields. Ten focused cases cover owner/observer,
+transfer/cancel/death/respawn, malformed/stale/expired frames and 20/30/60 Hz.
+All 650 network tests (ten skips), formatting and all-target Clippy pass. Preserve
+`build/creature-attack-codec-qualified-v1-20261103`. Actual reliable public
+replication, optional normal adoption and Bevy bystander animation remain next;
+normal threat v2 playable is unchanged. [Scope](PUBLIC_CREATURE_ATTACKS.md).
+Local only; no new native/Windows/population claim.
+
+Closed quest-subset authoring handoff qualified, 3 November 2026:
+P3-11 / P3-15: deterministic compiler includes every transitive prerequisite,
+preserves definition IDs/versions/behavior and revalidates the closed runtime
+catalogue. Refuses 32-quest/512-objective/64-KiB overflow rather than truncating.
+Explicit `--compile-selection` emits catalogue bytes plus source/selection/output
+hashes; inputs stay unchanged. Actual compiled output passes normal schema-13
+manifest validation, while an uninstalled guide correctly refuses admission.
+All 1,089 workspace tests (50 skips), 304 core, 45 gameplay-validator and 11
+authoring-tool checks, formatting and all-target Clippy pass. Preserve
+`build/quest-compile-qualified-v1-20261103`. [Workflow](QUEST_PACK_AUTHORING.md).
+No runtime pack loader, history expansion, automatic migration or normal content
+replacement. Latest normal playable remains threat v2; changes stay local.
+
+Offline quest pack/index workflow qualified, 3 November 2026:
+P3-11 / P3-15: strict contained JSON index, bounded regular-file reads, global
+IDs/prerequisites and exact hash report. Typed diagnostics identify files/IDs;
+no narrative dump or source mutation. Seven core registry / seven file checks,
+all 297 core and 44 existing gameplay-validator checks, formatting and Clippy
+pass. Actual compiled CLI success/refusal and read-only hashes pass. Both example
+validators are configured in Linux/Windows CI; only local Linux execution is
+claimed. [Authoring workflow](QUEST_PACK_AUTHORING.md). Preserve
+`build/quest-registry-cli-qualified-v1-20261103`. Runtime pack loading, history/
+migration and world-reference admission are separate; normal playable unchanged.
+Local only; next is a bounded reviewed subset handoff to the closed catalogue.
+
+Offline quest pack-registry prerequisite qualified, 3 November 2026:
+P3-11 / P3-15: bounded pure Registry validates global definition IDs, cross-pack
+prerequisites/cycles and target aliases across up to 32 executable packs (2 MiB,
+1,024 quests under current development bounds). Six new checks include a full
+padded chain; all 296 core tests, formatting and all-target denied-warning Clippy
+pass. Live `Catalog::from_json` stays closed/local; Registry exposes no Catalog
+for journal loading. No runtime, save-history or migration change. Preserve
+`build/quest-registry-core-qualified-v1-20261103`; normal playable remains the
+schema-13 threat v2 checkpoint. Offline file/index validation is next. Local only.
+
+Unmodified wolf/threat regression qualified, 3 November 2026:
+P3-07 / P4-08: actual normal schema-13 OIDC/PostgreSQL/native flow also passes
+with unchanged wolf perception, speed and retaliation profiles. Two quests,
+three kills, head 13 and 125 XP survive a database process restart/rejoin; no
+player death, zero GPU diagnostics. Fresh threat counters show 22 resolved facts,
+300 actual HP lost and three clears; rejoin records none. A new actual World
+passive body-pull case passes at 20/30/60 Hz: zero damage threat, no tag claim and
+real retaliation. All 66 affected authority tests, formatting and all-target
+Clippy pass; the 1,074-test workspace baseline is inherited with only test-helper
+changes plus this case. Preserve `build/creature-threat-client-qualified-v2-20261103`.
+Linux RX 7900 XTX / RADV Vulkan; native 1920x1200, synthetic OS input. Services
+stopped; no Windows or population-capacity claim. All changes remain local.
+
+Normal damage-threat playable qualified, 3 November 2026:
+P3-07 / P4-08: schema-13 canonical journal/threat bundle, exact-byte launcher
+snapshot and explicit server/client identity wiring pass normal OIDC/PostgreSQL
+native completion and database-restart rejoin at 1920x1200. Fresh state has two
+completed quests, head 13 and 125 XP; three kills commit 300 actual HP lost and
+clear threat three times. Rejoin adds no progress/reward/damage. Both runs have
+zero GPU diagnostics on Linux RX 7900 XTX / RADV Vulkan / Mesa 26.2.6 (fresh-run
+adapter capture). The private combat fixture remains explicit; two-peer victim
+transfer has separate impaired 20/30/60 Hz proof. Final workspace 1,074 tests pass
+(50 ignored), plus 44 validator / 127 client / 33 Python checks, formatting and
+all-target denied-warning Clippy. Preserve
+`build/creature-threat-client-qualified-v1-20261103` and prior playables. Older
+bundles/bare launcher stay unchanged. General/group/healing threat, streamed NPC
+navigation, production capacity and Windows remain open. All changes stay local.
+
+Normal creature threat adoption in progress, 3 November 2026:
+P3-07 / P4-08: schema-13 canonical journal/threat bundle, exact-byte launcher
+snapshot and explicit server/client `--creature-threat` identity wiring are
+implemented. 44 validator, 127 client and 33 Python handoff checks pass, plus
+formatting and workspace/all-target denied-warning Clippy. Optimized build and
+normal OIDC/PostgreSQL native regression are pending. Preserve both qualified
+threat World/runtime checkpoints and the schema-12 repeat-choice playable.
+No new normal playable/native adoption claim yet. Changes stay local.
+
+Encrypted creature threat competition qualified, 3 November 2026:
+P3-07 / P4-08: two actual encrypted peers at 20/30/60 Hz under packet loss,
+duplication and reordering observe victim transfer, old-windup cancellation and
+new retaliation. Public outgoing results agree; incoming strikes remain private.
+Damage threat matches actual NPC health lost; relay overflow is zero. Formatting,
+all-target denied-warning Clippy and the three-rate test pass. Preserve
+`build/creature-threat-runtime-qualified-v1-20261103`; ordinary schema-12 quest
+playable is unchanged. Next is explicit versioned CLI/bundle/native adoption.
+Synthetic admission/inventory ports; no new SQL/OIDC/native/capacity claim. Local.
+
+Creature threat World adapter qualified, 3 November 2026:
+P3-07 / P4-08: opt-in committed-health-loss threat, current metric reach,
+prepared victim transfer, old-windup/path invalidation, retained membership and
+independent tag ownership. Ten World and two transfer/path checks pass; full
+workspace 1,071 tests pass (50 ignored), followed by two additional focused cases.
+Formatting/all-target denied-warning Clippy pass. Fixed same-frame Return/death
+cleanup. Preserve `build/creature-threat-world-qualified-v1-20261103`; latest normal
+playable stays `build/quest-journal-repeat-qualified-v1-20261103`. Actual encrypted
+competition and normal CLI/manifest/native adoption remain next. Local only.
+[Scope and evidence](CREATURE_THREAT.md).
+
+Repeated NPC interaction qualified, 3 November 2026:
+P2-14 / P3-11 / P3-12: standard Bevy click-on-release now also handles shared
+NPC dialogue choices. Actual 1920x1200 normal OIDC/SQL native input repeats the
+same choice twice before acceptance, then completes both quests normally and
+rejoins after a database restart. The two earlier conversations grant no quest
+credit or XP; final state has head 13, nine events, four actions and 125 XP.
+127 client tests, formatting, all-target denied-warning Clippy and two native
+runs pass; GPU diagnostics are zero. Prior wide/small layout proof is inherited
+unchanged. The private combat fixture remains explicit. Preserve
+`build/quest-journal-repeat-qualified-v1-20261103`; all work stays local.
+
+Expanded journal playable qualified, 3 November 2026:
+P2-14 / P3-02 / P3-11 / P3-12 / P3-15: schema-12 canonical bundle,
+authenticated World/owner wiring, standard Bevy journal/actions and aggregated
+markers pass 127 client / 41 validator / 31 Python checks, formatting and
+workspace/all-target denied-warning Clippy. Five normal OIDC/PostgreSQL native
+runs cover fresh completion at 1920x1200, 3440x1440 fullscreen and 1280x720, plus
+two post-database-restart rejoins. Each fresh character completes both quests:
+three kills, four semantic choices, four durable actions, seven events, head 11
+and 125 XP. No extra offers/rewards on rejoin; GPU diagnostics are zero on Linux
+RX 7900 XTX / RADV Vulkan / Mesa 26.2.6, connected display. The private combat
+fixture reduces perception/speed/retaliation policy damage; quest/reward data are
+unchanged. The 1,057-test runtime and 40-contract SQL baselines are inherited.
+Preserve `build/quest-journal-client-qualified-v1-20261103` and the schema-11
+playable. Bare launcher stays a walking sandbox; the new bundle is explicit.
+No production campaign-scale, physical-input hardware or Windows claim. Local.
+
+Normal expanded-journal adoption in progress, 3 November 2026:
+P2-14 / P3-02 / P3-11 / P3-12 / P3-15: schema-12 canonical content bundle,
+authenticated CLI/owner wiring, standard Bevy journal/NPC actions and committed
+marker aggregation are implemented as an explicit mode. All 127 client, 41
+validator and 31 Python handoff tests pass; formatting and all-target denied-
+warning Clippy pass. Optimized build and owned native acceptance are pending.
+No new playable/default adoption claim yet. Preserve the schema-11 playable and
+`build/quest-journal-runtime-qualified-v1-20261103`. Changes stay local.
+
+Expanded journal transport qualified, 3 November 2026:
+P1-06 / P1-08 / P3-11 / P3-12: installed World/owner identity, bounded
+semantic/atomic-kill routing and private reliable state/action dispatch pass
+1,057 workspace tests (50 ignored), formatting and workspace/all-target
+denied-warning Clippy. Fifteen focused checks include two encrypted peers with
+measured loss/duplication/reordering at 20/30/60 Hz and a no-kill-XP 30-Hz case.
+Transport uses a synthetic commit adapter; actual OIDC/SQL retirement also passes
+separately. The 40 SQL contracts/restart proof are inherited unchanged from the
+kill checkpoint. Preserve `build/quest-journal-runtime-qualified-v1-20261103`.
+Normal manifest/CLI/UI and combined native/durable acceptance remain open.
+Services are stopped; all changes remain local.
+
+Original kill routing qualified, 3 November 2026:
+P3-02 / P3-10 / P3-11 / P3-12: original victim-life facts now use the bounded
+journal router, retained owner and shared critical worker's atomic optional-XP
+transaction. All 1,050 workspace tests pass (50 ignored; 40 SQL contracts
+executed explicitly), formatting and workspace/all-target denied-warning Clippy.
+Actual OIDC/SQL logout/reconnect preserves command replies and grants kill XP
+once; new atomic journal/receipt fixtures survive database process restart.
+Preserve `build/quest-journal-kill-qualified-v1-20261103`. Normal World profile,
+UDP journal/client and native adoption remain open. Changes remain local.
+
+Stopped safely at the user's request, 2 November 2026:
+The [expanded quest action/router and optional-XP kill Store](QUEST_ENGINE.md)
+prerequisites are qualified locally. All 290 core, eight codec, eight focused
+World/router and one competing-player credit/routing check pass, plus all 39
+owned PostgreSQL contracts, formatting and workspace/all-target denied-warning
+Clippy. Test services are shut down. Commit `4ceff46` is pushed; the later action
+and atomic-kill slice remains local. Preserve
+`build/quest-journal-atomic-qualified-v1-20261102`. Normal runtime/client adoption
+remains open; legacy playable is unchanged. Resume with original victim-life
+facts through the bounded worker/router, then encrypted/client/native acceptance.
+No further implementation is authorized until the user resumes.
+
+Quest action codec/router prerequisite qualified, 2 November 2026:
+P1-06 / P1-08 / P3-11 / P3-12: [QK01/QP01 action boundaries](QUEST_ENGINE.md)
+use 110-byte requests and 94-byte replies, carrying explicit actor/NPC/profile,
+original intent and painted quest revision. Eight codec and eight focused World/
+router checks pass, formatting and workspace/all-target denied-warning Clippy.
+One pending command shares the event producer sequence; success waits for a
+matching committed owner result. Channel tests use synthetic owner views; normal
+UDP/client adoption remains open. Before replacement, preserve configured kill XP
+and journal-event atomicity while retaining quest-only events without XP recipes.
+
 Compact quest observation prerequisite qualified, 2 November 2026:
 P1-08 / P3-11 / P3-15: [QJ01 journal snapshots](QUEST_ENGINE.md) encode the
 current full development maximum in 925 bytes, retaining the existing 8-KiB

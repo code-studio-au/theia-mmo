@@ -8,6 +8,14 @@ use theia_core::{coordinates::GlobalPosition, identity::EntityKey};
 pub trait AdmissionLease: Send + Sync {
     fn live(&self) -> Result<bool>;
     fn record(&self, actor: EntityKey, position: GlobalPosition, tick: u64) -> Result<()>;
+    /// Server-selected public character label, captured outside simulation.
+    /// Anonymous/direct development admissions retain the generic UI label.
+    fn display_name(&self) -> Result<Option<theia_core::character_name::CharacterName>> {
+        Ok(None)
+    }
+    fn appearance(&self) -> Result<theia_core::appearance::Appearance> {
+        Ok(Default::default())
+    }
     fn progression(&self) -> Result<Option<super::progression::Port>> {
         Ok(None)
     }

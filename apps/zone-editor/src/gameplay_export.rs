@@ -1,0 +1,159 @@
+//! Publish authored areas/contact/patrol binding with a validated template snapshot.
+use std::{fs, path::Path};
+use theia_network::gameplay_bundle::{self, Snapshot};
+use theia_zone::Zone;
+
+pub(super) struct Draft {
+    template: Snapshot,
+    manifest: Vec<u8>,
+    areas: Vec<u8>,
+    creature: Option<Vec<u8>>,
+    pub(super) contact: Option<theia_network::authored_world::Contact>,
+    pub(super) contacts: Vec<theia_network::authored_world::Contact>,
+}
+
+impl Draft {
+    pub(super) fn prepare(
+        zone: &Zone,
+        template: &Path,
+        id: &str,
+        revision: u32,
+    ) -> Result<Self, String> {
+        let template = gameplay_bundle::snapshot(template).map_err(|e| e.to_string())?;
+        crate::quest_travel_export::validate_bindings(
+            zone,
+            template
+                .profile("quest")
+                .ok_or("Gameplay template needs quests")?,
+        )?;
+        if template.report().manifest_schema < 16 {
+            return Err("Gameplay template must support quest areas (schema 16 or newer)".into());
+        }
+        if template
+            .report()
+            .profiles
+            .iter()
+            .any(|r| r.path == "gameplay.manifest.json")
+        {
+            return Err("Gameplay profile conflicts with the exported manifest filename".into());
+        }
+        let areas = crate::quest_area_export::prepare(
+            zone,
+            template
+                .profile("quest")
+                .ok_or("Gameplay template needs quests")?,
+            id,
+            revision,
+        )?;
+        let contacts: Vec<_> = zone
+            .markers
+            .iter()
+            .filter(|marker| {
+                marker.kind == theia_zone::markers::MarkerKind::Npc && marker.definition.is_some()
+            })
+            .collect();
+        let profile = theia_network::dialogue::Profile::from_content(
+            template
+                .profile("dialogue")
+                .ok_or("Gameplay template needs dialogue")?,
+        )
+        .map_err(|e| e.to_string())?;
+        let collection = profile.catalog().is_some();
+        if collection && contacts.len() != profile.contacts().count() {
+            return Err("Place exactly one NPC marker for every dialogue catalogue contact".into());
+        }
+        if !collection && contacts.len() > 1 {
+            return Err("Single-guide templates require at most one bound contact".into());
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        let mut placements = Vec::new();
+        for marker in contacts {
+            let npc = marker.definition.as_ref().unwrap();
+            let id = theia_core::content::ContentId::new(npc).ok_or("Invalid NPC catalog ID")?;
+            if profile.contact(&id).is_none() || !seen.insert(id) {
+                return Err(format!("Unknown or duplicate NPC contact: {npc}"));
+            }
+            placements.push(theia_network::authored_world::Contact {
+                npc: npc.clone(),
+                feet: marker.position,
+            });
+        }
+        placements.sort_by(|a, b| a.npc.cmp(&b.npc));
+        let (contact, contacts) = if collection {
+            (None, placements)
+        } else {
+            (placements.pop(), vec![])
+        };
+        let routes: Vec<_> = zone
+            .paths
+            .iter()
+            .filter_map(|path| path.patrol_route_id())
+            .collect();
+        if routes.len() > 1 {
+            return Err("Current gameplay runtime supports one authored creature patrol; keep one patrol guide for gameplay export".into());
+        }
+        let creature = routes
+            .first()
+            .map(|route| -> Result<Vec<u8>, String> {
+                let mut profile: serde_json::Value = serde_json::from_slice(
+                    template
+                        .profile("creature")
+                        .ok_or("Patrol binding requires a creature profile")?,
+                )
+                .map_err(|e| e.to_string())?;
+                profile["route"] = serde_json::json!(route);
+                let bytes = serde_json::to_vec_pretty(&profile).map_err(|e| e.to_string())?;
+                theia_network::simulation::creatures::Profile::from_json(&bytes)
+                    .map_err(|e| e.to_string())?;
+                Ok(bytes)
+            })
+            .transpose()?;
+        let mut manifest: serde_json::Value =
+            serde_json::from_slice(template.manifest()).map_err(|e| e.to_string())?;
+        manifest["id"] = serde_json::json!(id);
+        manifest["revision"] = serde_json::json!(revision);
+        let manifest = serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?;
+        Ok(Self {
+            template,
+            manifest,
+            areas,
+            creature,
+            contact,
+            contacts,
+        })
+    }
+
+    /// The caller owns this new staging directory and cleans it on error.
+    pub(super) fn write(&self, root: &Path) -> Result<gameplay_bundle::Report, String> {
+        fs::create_dir(root).map_err(|e| e.to_string())?;
+        for record in &self.template.report().profiles {
+            let path = root.join(&record.path);
+            fs::create_dir_all(path.parent().ok_or("Missing profile parent")?)
+                .map_err(|e| e.to_string())?;
+            let bytes = if record.kind == "quest_areas" {
+                &self.areas
+            } else if record.kind == "creature" && self.creature.is_some() {
+                self.creature.as_ref().unwrap()
+            } else {
+                self.template
+                    .profile(&record.kind)
+                    .ok_or("Missing validated profile")?
+            };
+            write_new(&path, bytes)?;
+        }
+        let manifest = root.join("gameplay.manifest.json");
+        write_new(&manifest, &self.manifest)?;
+        // Recheck all cross-profile rules after replacing authored area and optional patrol roles.
+        gameplay_bundle::validate(&manifest).map_err(|e| e.to_string())
+    }
+}
+
+fn write_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    use std::io::Write;
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(|e| e.to_string())?;
+    file.write_all(bytes).map_err(|e| e.to_string())
+}

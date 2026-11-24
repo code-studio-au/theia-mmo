@@ -9,6 +9,7 @@ pub struct Profile {
     stats_hash: [u8; 32],
     creature_hash: [u8; 32],
     creature: ContentId,
+    creature_definition: [u8; 32],
     life: Arc<player_life::Profile>,
     retaliation: Arc<retaliation::Profile>,
 }
@@ -20,7 +21,7 @@ impl Profile {
         respawn: &[u8],
     ) -> Result<Self> {
         let stats_profile = resources::Profile::from_json(stats)?;
-        let creature_profile = creatures::Profile::from_json(creature)?;
+        let creature_profile = creatures::Definition::from_json(creature)?;
         let policy = retaliation::Profile::from_json(retaliation)?;
         let life = player_life::Profile::from_json(respawn, &stats_profile)?;
         if policy.creature() != creature_profile.id() {
@@ -36,6 +37,7 @@ impl Profile {
             stats_hash: crate::terrain::sha256(stats),
             creature_hash: crate::terrain::sha256(creature),
             creature: creature_profile.id().clone(),
+            creature_definition: creature_profile.identity(),
             life: Arc::new(life),
             retaliation: Arc::new(policy),
         })
@@ -52,12 +54,21 @@ impl Profile {
     pub fn creature(&self) -> &ContentId {
         &self.creature
     }
+    pub fn creature_definition_identity(&self) -> [u8; 32] {
+        self.creature_definition
+    }
     pub fn life(&self) -> &player_life::Profile {
         &self.life
     }
     pub fn retaliation(&self) -> &retaliation::Profile {
         &self.retaliation
     }
+}
+/// Bind independent population retaliation separately from the retained passive-life fixture.
+pub fn population_retaliation_identity(base: [u8; 32]) -> [u8; 32] {
+    let mut bytes = b"theia-population-retaliation-world-v1\0".to_vec();
+    bytes.extend(base);
+    crate::terrain::sha256(&bytes)
 }
 pub fn profile_identity(base: [u8; 32], profile: &Profile) -> [u8; 32] {
     let mut bytes = b"theia-player-life-and-retaliation-world-v1\0".to_vec();

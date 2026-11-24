@@ -3,7 +3,7 @@
 Derivation reference (Unity engineer's explanation, not a stable Unity API):
 https://discussions.unity.com/t/fbx-submesh-fileids/803882
 No geometry decompression or source execution. Generated candidates must match
-actual serialized references before use. Older metadata schemes are rejected.
+actual serialized references before use. The explicit version-21 recycle-name table is also admitted; unknown older schemes reject.
 """
 import argparse
 from collections import Counter
@@ -156,8 +156,17 @@ def identity(path):
 
 def bound_candidates(model, importer):
     table=importer.get('internalIDToNameTable')
+    legacy = importer.get('serializedVersion') == 21 and bool(importer.get('fileIDToRecycleName'))
+    if legacy:
+        if table or len(importer['fileIDToRecycleName'])>65536:
+            raise ValueError('Ambiguous or oversized legacy model ID table')
+        table=[]
+        for identifier,name in importer['fileIDToRecycleName'].items():
+            if type(identifier) is not int or identifier<=0:
+                raise ValueError('Invalid legacy model ID')
+            table.append({'first':{identifier//100000:identifier},'second':name})
     if not table:
-        if importer['meshes']['fileIdsGeneration']!=2:
+        if importer['meshes'].get('fileIdsGeneration')!=2:
             raise ValueError('Model metadata requires a separate ID mapping contract')
         return model['candidates'], 'modern-source-derived-candidates'
     if len(table)>65536:raise ValueError('Explicit model ID table exceeds budget')
@@ -177,7 +186,7 @@ def bound_candidates(model, importer):
             binding={'model':roots[0]}
         else:raise ValueError('Explicit model hierarchy path needs separate mapping')
         result[identifier]={'kind':kind,'name':name,**binding}
-    return result,'explicit-metadata-name-table'
+    return result,('explicit-v21-recycle-name-table' if legacy else 'explicit-metadata-name-table')
 
 
 def audit(source, dependency_report):

@@ -31,7 +31,9 @@ def members(archive, include_meta=False):
     # reader mishandles for some Unity packages. Never call tar.extractall.
     with gzip.open(archive, 'rb') as source, tarfile.open(fileobj=source, mode='r|') as stream:
         for member in stream:
-            parts = member.name.split('/')
+            # Unity exporters also emit ./GUID/asset; strip only that single
+            # archive-root marker, retaining the strict two-component contract.
+            parts = member.name.removeprefix('./').split('/')
             if len(parts) != 2 or not re.fullmatch('[0-9a-f]{32}', parts[0]):
                 continue
             if member.issym() or member.islnk():

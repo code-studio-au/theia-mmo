@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "{}",
         serde_json::to_string_pretty(
-            &serde_json::json!({"validated":true,"scope":"offline structure only; no world target or persistence admission","schema":1,"id":catalog.id().as_str(),"revision":catalog.revision(),"quests":quests})
+            &serde_json::json!({"validated":true,"scope":"offline structure only; no world target or persistence admission","schema":catalog.schema(),"id":catalog.id().as_str(),"revision":catalog.revision(),"quests":quests})
         )?
     );
     Ok(())

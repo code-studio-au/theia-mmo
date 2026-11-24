@@ -36,9 +36,18 @@ struct Ledger {
     records: Vec<(EntityKey, GlobalPosition, u64)>,
     dropped: usize,
     inventory: Option<net::inventory::Port>,
+    name: Option<theia_core::character_name::CharacterName>,
+    appearance: theia_core::appearance::Appearance,
 }
 struct Lease(Arc<Policy>);
 impl AdmissionLease for Lease {
+    fn appearance(&self) -> Result<theia_core::appearance::Appearance> {
+        Ok(self.0.state.lock().unwrap().appearance)
+    }
+    fn display_name(&self) -> Result<Option<theia_core::character_name::CharacterName>> {
+        Ok(self.0.state.lock().unwrap().name.clone())
+    }
+
     fn inventory(&self) -> Result<Option<net::inventory::Port>> {
         Ok(self.0.state.lock().unwrap().inventory.clone())
     }
@@ -142,6 +151,11 @@ impl Client {
                     shutdown,
                     world,
                     net::GameplayClient {
+                        party: None,
+                        chat: None,
+                        avatar_life: None,
+                        public_attacks: None,
+                        journal: None,
                         classic_source: None,
                         dodge: None,
                         player_life: None,
@@ -179,6 +193,7 @@ impl Client {
                             )
                         }),
                         inventory: Some(net::inventory::Client {
+                            pickups: None,
                             profile,
                             commands: item_requests,
                         }),
@@ -319,9 +334,22 @@ fn synthetic_items(
 }
 fn synthetic_items_with_profile(
     count: u32,
+    released: watch::Receiver<bool>,
+    stop: watch::Receiver<bool>,
+    equipment: bool,
+) -> (
+    net::inventory::Port,
+    tokio::task::JoinHandle<()>,
+    Arc<std::sync::atomic::AtomicU64>,
+) {
+    synthetic_items_with_options(count, released, stop, equipment, false)
+}
+fn synthetic_items_with_options(
+    count: u32,
     mut released: watch::Receiver<bool>,
     mut stop: watch::Receiver<bool>,
     equipment: bool,
+    coalesced: bool,
 ) -> (
     net::inventory::Port,
     tokio::task::JoinHandle<()>,
@@ -360,6 +388,7 @@ fn synthetic_items_with_profile(
         ..Default::default()
     });
     let port = net::inventory::Port {
+        documents: None,
         vendor: None,
         rewards: None,
         opportunities: None,
@@ -380,6 +409,21 @@ fn synthetic_items_with_profile(
             let outcome = match command.command.propose(&bag, &catalog) {
                 Ok(next) => {
                     bag = next;
+                    if coalesced {
+                        let from = bag.slots().iter().position(Option::is_some).unwrap() as u8;
+                        bag = bag
+                            .propose(
+                                &catalog,
+                                theia_core::inventory::Command {
+                                    expected_revision: bag.revision(),
+                                    operation: theia_core::inventory::Operation::Destroy {
+                                        from,
+                                        amount: 1,
+                                    },
+                                },
+                            )
+                            .unwrap();
+                    }
                     theia_network::inventory_wire::Outcome::Applied
                 }
                 Err(theia_core::inventory::Error::StaleRevision) => {
@@ -408,16 +452,25 @@ fn synthetic_items_with_profile(
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement_while_pending() {
+    encrypted_item_ports(false).await;
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_coalesced_item_reply_preserves_later_removal_privacy_and_movement() {
+    encrypted_item_ports(true).await;
+}
+async fn encrypted_item_ports(coalesced: bool) {
     use theia_core::inventory::{Command, Operation};
     let mut world = World::with_procedural([8000., 8000.], 1.).unwrap();
     world.enable_prediction().unwrap();
     let identity = world.identity();
     let patch = Patch::build(ChunkId { x: 120, z: 100 });
     let (stop, shutdown) = watch::channel(false);
+    let (owner_stop, owner_shutdown) = watch::channel(false);
     let (release_a, waiting) = watch::channel(false);
     let (_release_b, ready) = watch::channel(true);
-    let (items_a, task_a, received_a) = synthetic_items(13, waiting, shutdown.clone());
-    let (items_b, task_b, _) = synthetic_items(7, ready, shutdown.clone());
+    let (items_a, task_a, received_a) =
+        synthetic_items_with_options(13, waiting, owner_shutdown.clone(), false, coalesced);
+    let (items_b, task_b, _) = synthetic_items(7, ready, owner_shutdown);
     let policies: [Arc<Policy>; 2] = std::array::from_fn(|i| {
         let policy = Arc::new(Policy::default());
         policy.live.store(true, Ordering::SeqCst);
@@ -429,6 +482,7 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
         {
             let mut state = policy.state.lock().unwrap();
             state.code = i as u8 + 1;
+
             state.position = GlobalPosition::new(body);
             state.inventory = Some(if i == 0 {
                 items_a.clone()
@@ -535,7 +589,10 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
     release_a.send_replace(true);
     let done = a
         .until(|s| {
-            s.inventory.as_ref().is_some_and(|i| i.bag.revision() == 1) && !s.inventory_pending
+            s.inventory
+                .as_ref()
+                .is_some_and(|i| i.bag.revision() == if coalesced { 2 } else { 1 })
+                && !s.inventory_pending
         })
         .await;
     assert_eq!(
@@ -543,7 +600,7 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
             .as_ref()
             .unwrap()
             .count(),
-        13
+        if coalesced { 12 } else { 13 }
     );
     assert!(done.inventory.as_ref().unwrap().bag.slots()[0].is_none());
     a.items
@@ -588,6 +645,8 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
     assert!(stats.inventory_states_sent >= 5);
     assert!(stats.queued_commands > 0);
     assert!(stats.max_control_batch <= 8 && stats.max_event_queue_bytes <= 8192);
+    // Inventory owners must outlive the server consuming their streams.
+    owner_stop.send_replace(true);
     task_a.await.unwrap();
     task_b.await.unwrap();
 }
@@ -606,6 +665,7 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     {
         let mut state = policy.state.lock().unwrap();
         state.code = 1;
+        state.name = Some(theia_core::character_name::CharacterName::parse("Arden").unwrap());
         state.position = Some(position);
     }
     let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
@@ -629,6 +689,18 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     let mut client = Client::start(address, first.clone(), identity);
     let initial = client.admitted().await;
     assert_eq!(initial.id, Some(1));
+    let named = client
+        .until(|s| s.snapshot.is_some() && s.player_identity.is_some())
+        .await;
+    assert_eq!(
+        named.player_identity.as_ref().unwrap().actors[0]
+            .name
+            .as_ref()
+            .unwrap()
+            .as_str(),
+        "Arden"
+    );
+    let identity_tick = named.player_identity.as_ref().unwrap().tick;
     {
         let state = policy.state.lock().unwrap();
         assert!(state.spent);
@@ -643,6 +715,11 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     let sent_commands = client
         .move_until_recorded(&policy, position.metres()[0])
         .await;
+    assert_eq!(
+        client.state.borrow().player_identity.as_ref().unwrap().tick,
+        identity_tick,
+        "Movement must not resend unchanged display metadata"
+    );
     let old_packets: Vec<_> = relay_control
         .lock()
         .unwrap()
@@ -665,6 +742,8 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     {
         let mut state = policy.state.lock().unwrap();
         state.code = 2;
+        state.name =
+            Some(theia_core::character_name::CharacterName::parse("Abcdefghijklmnopqrst").unwrap());
         state.spent = false;
         state.records.clear();
     }
@@ -682,6 +761,14 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     let mut replacement = Client::start(address, second, identity);
     let fresh = replacement.admitted().await;
     assert_eq!(fresh.id, Some(2));
+    let named = replacement.until(|s| s.player_identity.is_some()).await;
+    let roster = named.player_identity.as_ref().unwrap();
+    assert_eq!(roster.actors.len(), 1);
+    assert_eq!(roster.actors[0].key.entity.value(), 2);
+    assert_eq!(
+        roster.actors[0].name.as_ref().unwrap().as_str(),
+        "Abcdefghijklmnopqrst"
+    );
     tokio::time::sleep(Duration::from_millis(150)).await;
     let before = replacement.state.borrow().correction.unwrap().state.input;
     assert_eq!(before.applied_sequence, 0);
@@ -712,6 +799,7 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     stop.send_replace(true);
     let stats = server.await.unwrap().unwrap();
     assert_eq!(stats.persistent_spawn_admissions, 2);
+    assert_eq!(stats.player_identity_states_sent, 2);
     assert_eq!(
         policy.state.lock().unwrap().dropped,
         2,
@@ -739,11 +827,12 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
     }
     let patch = Patch::build(ChunkId { x: 120, z: 100 });
     let (stop, shutdown) = watch::channel(false);
+    let (owner_stop, owner_shutdown) = watch::channel(false);
     let (release_a, waiting) = watch::channel(false);
     let (_release_b, ready) = watch::channel(true);
     let (items_a, task_a, received_a) =
-        synthetic_items_with_profile(13, waiting, shutdown.clone(), true);
-    let (items_b, task_b, _) = synthetic_items_with_profile(7, ready, shutdown.clone(), true);
+        synthetic_items_with_profile(13, waiting, owner_shutdown.clone(), true);
+    let (items_b, task_b, _) = synthetic_items_with_profile(7, ready, owner_shutdown, true);
     let policies: [Arc<Policy>; 2] = std::array::from_fn(|i| {
         let policy = Arc::new(Policy::default());
         policy.live.store(true, Ordering::SeqCst);
@@ -755,6 +844,17 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
         {
             let mut state = policy.state.lock().unwrap();
             state.code = i as u8 + 1;
+            state.appearance =
+                theia_core::appearance::Appearance::new([i as u8, 2, 4, 0, i as u8 + 1, 3, 1])
+                    .unwrap();
+            state.name = Some(
+                theia_core::character_name::CharacterName::parse(if i == 0 {
+                    "Arden"
+                } else {
+                    "Briar"
+                })
+                .unwrap(),
+            );
             state.position = GlobalPosition::new(body);
             state.inventory = Some(if i == 0 {
                 items_a.clone()
@@ -817,6 +917,32 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
         .await;
     b.until(|s| s.inventory.is_some() && s.chunk_ack.is_some())
         .await;
+    for client in [&mut a, &mut b] {
+        let state = client
+            .until(|s| {
+                s.player_identity
+                    .as_ref()
+                    .is_some_and(|v| v.actors.len() == 2)
+            })
+            .await;
+        let roster = state.player_identity.unwrap();
+        let names: Vec<_> = roster
+            .actors
+            .iter()
+            .map(|a| a.name.as_ref().unwrap().as_str())
+            .collect();
+        assert!(names.contains(&"Arden") && names.contains(&"Briar"));
+        for actor in &roster.actors {
+            let i = u8::from(actor.name.as_ref().unwrap().as_str() == "Briar");
+            assert_eq!(actor.appearance.values(), [i, 2, 4, 0, i + 1, 3, 1]);
+        }
+        assert!(
+            roster
+                .actors
+                .iter()
+                .all(|a| a.key.epoch.value() == state.welcome.as_ref().unwrap().epoch)
+        );
+    }
     a.items
         .as_ref()
         .unwrap()
@@ -1011,6 +1137,8 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
     assert!(stats.appearance_states_sent >= 4);
     assert_eq!(stats.max_players, 2);
     assert!(stats.max_event_queue_bytes <= 8192);
+    // Keep synthetic owners alive until the server has released their streams.
+    owner_stop.send_replace(true);
     task_a.await.unwrap();
     task_b.await.unwrap();
     relay_stop.send_replace(true);
@@ -1084,6 +1212,7 @@ async fn encrypted_vendor_rejects_closed_session_then_commits_accepted_trade_aft
         ledger.code = 1;
         ledger.position = world.development_player_spawn(1);
         ledger.inventory = Some(net::inventory::Port {
+            documents: None,
             vendor: Some(vendor.clone()),
             rewards: None,
             opportunities: None,
@@ -1295,11 +1424,12 @@ async fn melee_delivery(miss: bool, projectile: bool) {
     let identity = world.identity();
     let patch = Patch::build(ChunkId { x: 120, z: 100 });
     let (stop, shutdown) = watch::channel(false);
+    let (owner_stop, owner_shutdown) = watch::channel(false);
     let (release_a, waiting) = watch::channel(false);
     let (_release_b, ready) = watch::channel(true);
     let (items_a, task_a, received_a) =
-        synthetic_items_with_profile(13, waiting, shutdown.clone(), true);
-    let (items_b, task_b, _) = synthetic_items_with_profile(7, ready, shutdown.clone(), true);
+        synthetic_items_with_profile(13, waiting, owner_shutdown.clone(), true);
+    let (items_b, task_b, _) = synthetic_items_with_profile(7, ready, owner_shutdown, true);
     let policies: [Arc<Policy>; 2] = std::array::from_fn(|i| {
         let policy = Arc::new(Policy::default());
         policy.live.store(true, Ordering::SeqCst);
@@ -1575,6 +1705,7 @@ async fn melee_delivery(miss: bool, projectile: bool) {
         assert_eq!(travel.impacts, 1);
         assert_eq!(travel.peak_active, 1);
     }
+    owner_stop.send_replace(true);
     task_a.await.unwrap();
     task_b.await.unwrap();
 }

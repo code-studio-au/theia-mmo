@@ -14,7 +14,7 @@ pub struct Observation {
     pub closed: bool,
     pub failed: bool,
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct OwnedRewards {
     pub generation: u64,
     pub available: Vec<crate::reward_wire::Available>,
@@ -26,10 +26,11 @@ pub struct Request {
 }
 #[derive(Clone)]
 pub struct Port {
+    pub documents: Option<Arc<crate::documents::Profile>>,
     pub vendor: Option<Arc<crate::vendor_wire::Profile>>,
     pub rewards: Option<Arc<crate::reward_wire::Profile>>,
     /// Trusted authority facts only. Never populated from a client request.
-    pub opportunities: Option<mpsc::Sender<theia_core::content::ContentId>>,
+    pub opportunities: Option<mpsc::Sender<crate::simulation::rewards::Opportunity>>,
     pub catalog: Arc<Catalog>,
     pub hash: [u8; 32],
     /// Bound to a server-owned character, never a client-supplied UUID.
@@ -42,6 +43,7 @@ pub struct Profile {
     hash: [u8; 32],
     rewards: Option<Arc<crate::reward_wire::Profile>>,
     vendor: Option<Arc<crate::vendor_wire::Profile>>,
+    documents: Option<Arc<crate::documents::Profile>>,
 }
 impl Profile {
     pub fn from_json(bytes: &[u8]) -> crate::Result<Self> {
@@ -51,6 +53,7 @@ impl Profile {
             hash: crate::terrain::sha256(bytes),
             rewards: None,
             vendor: None,
+            documents: None,
         })
     }
     pub fn catalog(&self) -> &Catalog {
@@ -59,11 +62,66 @@ impl Profile {
     pub fn hash(&self) -> [u8; 32] {
         self.hash
     }
+    pub fn with_documents(mut self, bytes: &[u8]) -> crate::Result<Self> {
+        if self.documents.is_some() {
+            return Err("Document profile already installed".into());
+        }
+        self.documents = Some(Arc::new(crate::documents::Profile::from_json(
+            bytes, &self,
+        )?));
+        Ok(self)
+    }
+    pub fn documents(&self) -> Option<&crate::documents::Profile> {
+        self.documents.as_deref()
+    }
     pub fn with_rewards(mut self, bytes: &[u8]) -> crate::Result<Self> {
         self.rewards = Some(Arc::new(crate::reward_wire::Profile::from_json(
             bytes, &self,
         )?));
         Ok(self)
+    }
+    /// Explicit headless per-life mode; does not change default manifest admission.
+    pub fn with_creature_loot(mut self, bytes: &[u8]) -> crate::Result<Self> {
+        self.rewards = Some(Arc::new(
+            crate::reward_wire::Profile::from_json_with_creature_loot(bytes, &self)?,
+        ));
+        Ok(self)
+    }
+    /// Explicit headless conditional mode, retaining the raw inventory identity.
+    pub fn with_quest_loot(
+        mut self,
+        bytes: &[u8],
+        journal: &crate::quest_journal::Profile,
+    ) -> crate::Result<Self> {
+        if self.rewards.is_some() {
+            return Err("Quest loot cannot replace installed rewards".into());
+        }
+        self.rewards = Some(Arc::new(
+            crate::reward_wire::Profile::from_json_with_quest_journal(bytes, &self, journal)?,
+        ));
+        Ok(self)
+    }
+    pub(super) fn check_quest_journal(
+        &self,
+        journal: Option<&crate::quest_journal::Profile>,
+    ) -> crate::Result<()> {
+        match (self.documents(), journal.and_then(|j| j.documents())) {
+            (None, None) => {}
+            (Some(a), Some(b)) if a.hash() == b.hash() && a.inventory_hash() == self.hash() => {}
+            _ => return Err("Document intents require the exact client document journal".into()),
+        }
+        if journal
+            .and_then(|j| j.inventory_hash())
+            .is_some_and(|hash| hash != self.hash())
+        {
+            return Err("Journal/inventory client profile mismatch".into());
+        }
+        if let Some(bound) = self.rewards().and_then(|r| r.quest_journal_hash())
+            && journal.is_none_or(|j| j.hash() != bound || j.inventory_hash() != Some(self.hash()))
+        {
+            return Err("Quest loot requires the exact client item journal".into());
+        }
+        Ok(())
     }
     pub fn with_vendor(mut self, bytes: &[u8]) -> crate::Result<Self> {
         self.vendor = Some(Arc::new(crate::vendor_wire::Profile::from_json(
@@ -78,7 +136,14 @@ impl Profile {
         self.rewards.as_deref()
     }
 }
+#[derive(Clone, Copy, Debug)]
+pub struct Pickup {
+    pub command: theia_core::rewards::ClaimCommand,
+    pub life: theia_core::progression::KillId,
+}
 pub struct Client {
+    /// A second bounded intent inlet shares the same pending/sequence gate.
+    pub pickups: Option<mpsc::Receiver<Pickup>>,
     pub profile: Profile,
     pub commands: mpsc::Receiver<ItemCommand>,
 }
@@ -88,11 +153,18 @@ pub(super) struct ClientState {
     pub(super) appearance: Option<crate::appearance_wire::State>,
     pub(super) rewards: Option<crate::reward_wire::State>,
     sequence: u64,
+    pub(super) approved_document: Option<crate::document_wire::Approved>,
+    pub(super) document_reply: Option<crate::document_wire::Completion>,
     pending: Option<(u64, ItemCommand, tokio::time::Instant)>,
 }
 impl ClientState {
     pub(super) fn new(config: Client) -> crate::Result<Self> {
-        if config.commands.max_capacity() != 1 {
+        if config.commands.max_capacity() != 1
+            || config
+                .pickups
+                .as_ref()
+                .is_some_and(|q| q.max_capacity() != 1)
+        {
             return Err("Inventory intent queue must have capacity one".into());
         }
         Ok(Self {
@@ -101,6 +173,8 @@ impl ClientState {
             appearance: None,
             rewards: None,
             sequence: 0,
+            approved_document: None,
+            document_reply: None,
             pending: None,
         })
     }
@@ -177,11 +251,16 @@ impl ClientState {
         actor: theia_core::identity::EntityKey,
     ) -> crate::Result<()> {
         use crate::inventory_wire::Outcome;
-        let state = crate::inventory_wire::State::decode(
-            bytes,
-            &self.config.profile.catalog,
-            self.config.profile.hash,
-        )?;
+        let state = match self.config.profile.documents() {
+            Some(documents) => {
+                crate::inventory_wire::State::decode_with_documents(bytes, documents)?
+            }
+            None => crate::inventory_wire::State::decode(
+                bytes,
+                &self.config.profile.catalog,
+                self.config.profile.hash,
+            )?,
+        };
         if state.actor != actor || state.reply.is_some_and(|r| r.sequence > self.sequence) {
             return Err("Foreign or unsent inventory acknowledgement".into());
         }
@@ -191,11 +270,10 @@ impl ClientState {
             .and_then(|s| s.reply)
             .map_or(0, |r| r.sequence);
         let sequence = state.reply.map_or(0, |r| r.sequence);
-        if self
-            .view
-            .as_ref()
-            .is_some_and(|old| state.bag.revision() < old.bag.revision())
-            || sequence < prior_sequence
+        if self.view.as_ref().is_some_and(|old| {
+            state.bag.revision() < old.bag.revision()
+                || (state.bag.revision() == old.bag.revision() && state.bag != old.bag)
+        }) || sequence < prior_sequence
         {
             return Err("Authoritative inventory state regressed".into());
         }
@@ -209,9 +287,37 @@ impl ClientState {
             if matches!(
                 state.reply.unwrap().outcome,
                 Outcome::Applied | Outcome::Replayed
-            ) && command.expected_revision().checked_add(1) != Some(state.bag.revision())
-            {
-                return Err("Inventory success revision did not match intent".into());
+            ) {
+                let minimum = command
+                    .expected_revision()
+                    .checked_add(u64::from(!matches!(command, ItemCommand::OpenDocument(_))));
+                if minimum.is_none_or(|minimum| state.bag.revision() < minimum) {
+                    return Err("Inventory success precedes its required committed revision".into());
+                }
+                if let ItemCommand::OpenDocument(command) = command {
+                    let profile = self
+                        .config
+                        .profile
+                        .documents()
+                        .ok_or("Unbound document success")?;
+                    profile.resolve(command)?;
+                    self.approved_document = Some(crate::document_wire::Approved {
+                        command,
+                        profile_hash: profile.hash(),
+                    });
+                }
+            }
+            if let ItemCommand::OpenDocument(command) = command {
+                self.document_reply = Some(crate::document_wire::Completion {
+                    command,
+                    profile_hash: self
+                        .config
+                        .profile
+                        .documents()
+                        .ok_or("Unbound document reply")?
+                        .hash(),
+                    outcome: state.reply.unwrap().outcome,
+                });
             }
             self.pending = None;
         }
@@ -226,6 +332,34 @@ impl ClientState {
         if self.pending.is_some() || self.view.is_none() {
             return Ok(None);
         }
+        if let Some(pickup) = self.config.pickups.as_mut().and_then(|q| q.try_recv().ok()) {
+            let profile = self
+                .config
+                .profile
+                .rewards()
+                .ok_or("Pickup requires reward profile")?;
+            if !profile.catalog().definitions().any(|d| {
+                d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+            }) {
+                return Err("Pickup requires a per-life profile".into());
+            }
+            let sequence = self
+                .sequence
+                .checked_add(1)
+                .ok_or("Inventory sequence exhausted")?;
+            let bytes = crate::reward_wire::PickupRequest {
+                request: crate::reward_wire::Request {
+                    actor,
+                    sequence,
+                    command: pickup.command,
+                },
+                life: pickup.life,
+            }
+            .encode()?;
+            self.sequence = sequence;
+            self.pending = Some((sequence, pickup.command.into(), now));
+            return Ok(Some(bytes));
+        }
         let Ok(command) = self.config.commands.try_recv() else {
             return Ok(None);
         };
@@ -233,7 +367,22 @@ impl ClientState {
             .sequence
             .checked_add(1)
             .ok_or("Inventory sequence exhausted")?;
-        let bytes = if let ItemCommand::Vendor(command) = command {
+        let bytes = if let ItemCommand::OpenDocument(command) = command {
+            let profile = self
+                .config
+                .profile
+                .documents()
+                .ok_or("Document intent requires enabled profile")?;
+            let bytes = crate::document_wire::Request {
+                actor,
+                sequence,
+                command,
+            }
+            .encode(profile)?;
+            self.approved_document = None;
+            self.document_reply = None;
+            bytes
+        } else if let ItemCommand::Vendor(command) = command {
             self.config
                 .profile
                 .vendor()
@@ -315,6 +464,11 @@ impl Peer {
             })
     }
     pub(super) fn new(port: Port) -> crate::Result<Self> {
+        if port.documents.as_ref().is_some_and(|d| {
+            d.inventory_hash() != port.hash || d.catalog().inventory() != port.catalog.as_ref()
+        }) {
+            return Err("Document/item owner profile mismatch".into());
+        }
         if port.hash == [0; 32] || port.requests.max_capacity() != 1 {
             return Err("Invalid inventory owner port capacity/profile".into());
         }
@@ -375,7 +529,38 @@ impl Peer {
         bytes: &[u8],
         world: Option<(&crate::simulation::World, u64)>,
     ) -> crate::Result<bool> {
-        let message = if bytes.starts_with(crate::vendor_wire::REQUEST_TAG) {
+        let mut pickup_life = None;
+        let message = if bytes.starts_with(crate::document_wire::REQUEST_TAG) {
+            let profile = self
+                .port
+                .documents
+                .as_ref()
+                .ok_or("Document request requires enabled profile")?;
+            let request = crate::document_wire::Request::decode(bytes, profile)?;
+            crate::inventory_wire::ItemRequest {
+                actor: request.actor,
+                sequence: request.sequence,
+                command: request.command.into(),
+            }
+        } else if bytes.starts_with(crate::reward_wire::PICKUP_TAG) {
+            let profile = self
+                .port
+                .rewards
+                .as_ref()
+                .ok_or("Pickup requires reward profile")?;
+            if !profile.catalog().definitions().any(|d| {
+                d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+            }) {
+                return Err("Pickup requires a per-life profile".into());
+            }
+            let pickup = crate::reward_wire::PickupRequest::decode(bytes)?;
+            pickup_life = Some(pickup.life);
+            crate::inventory_wire::ItemRequest {
+                actor: pickup.request.actor,
+                sequence: pickup.request.sequence,
+                command: pickup.request.command.into(),
+            }
+        } else if bytes.starts_with(crate::vendor_wire::REQUEST_TAG) {
             self.port
                 .vendor
                 .as_ref()
@@ -416,8 +601,85 @@ impl Peer {
         if self.pending.is_some() || self.port.state.borrow().bag.is_none() {
             return Err("Inventory intent before load or while another is pending".into());
         }
-        if let ItemCommand::Vendor(command) = message.command
-            && world.is_none_or(|(world, id)| !world.vendor_eligible(id, command))
+        let reward_refused = if let ItemCommand::RewardClaim(command) = message.command {
+            let profile = self.port.rewards.as_ref().ok_or("Reward profile missing")?;
+            let observation = self.port.state.borrow();
+            if pickup_life.is_some()
+                || profile.catalog().definitions().any(|d| {
+                    d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+                })
+            {
+                observation.failed
+                    || observation.closed
+                    || observation.rewards.as_ref().is_none_or(|owned| {
+                        !owned.available.iter().any(|row| {
+                            row.claim == command.claim
+                                && match (pickup_life, row.corpse) {
+                                    (Some(life), Some(source)) => {
+                                        source.life == life
+                                            && profile
+                                                .catalog()
+                                                .definition(&row.reward)
+                                                .is_some_and(|d| {
+                                                    d.scope()
+                                                    == theia_core::rewards::Scope::PerCreatureLife
+                                                })
+                                            && world.is_some_and(|(world, id)| {
+                                                world.corpse_pickup_eligible(
+                                                    id,
+                                                    profile.hash(),
+                                                    source,
+                                                )
+                                            })
+                                    }
+                                    (None, None) => {
+                                        profile.catalog().definition(&row.reward).is_some_and(|d| {
+                                            d.scope()
+                                                == theia_core::rewards::Scope::OncePerCharacter
+                                                && d.ground().is_none_or(|g| {
+                                                    world.is_some_and(|(w, id)| {
+                                                        w.ground_pickup_eligible(id, g.position)
+                                                    })
+                                                })
+                                        })
+                                    }
+                                    _ => false,
+                                }
+                        })
+                    })
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+        // A once-only ground quest item must remain deliverable. Revision checks
+        // bind this source slot to the same committed bag used by the worker.
+        let protected_pickup = if let ItemCommand::Backpack(theia_core::inventory::Command {
+            operation: theia_core::inventory::Operation::Destroy { from, .. },
+            ..
+        }) = message.command
+        {
+            self.port
+                .state
+                .borrow()
+                .bag
+                .as_ref()
+                .and_then(|b| b.slots().get(usize::from(from)))
+                .and_then(|s| s.as_ref())
+                .is_some_and(|s| {
+                    self.port.rewards.as_ref().is_some_and(|p| {
+                        p.catalog().definitions().any(|d| {
+                            d.ground().is_some() && d.grants().iter().any(|g| g.item() == s.item())
+                        })
+                    })
+                })
+        } else {
+            false
+        };
+        if reward_refused
+            || protected_pickup
+            || matches!(message.command, ItemCommand::Vendor(command) if world.is_none_or(|(world, id)| !world.vendor_eligible(id, command)))
         {
             self.sequence = message.sequence;
             self.pending = Some(message.sequence);
@@ -555,6 +817,7 @@ mod tests {
             ..Default::default()
         });
         let mut peer = Peer::new(Port {
+            documents: None,
             vendor: None,
             rewards: None,
             opportunities: None,
@@ -662,6 +925,7 @@ mod tests {
             ..Default::default()
         });
         let mut peer = Peer::new(Port {
+            documents: None,
             vendor: Some(vendor.clone()),
             rewards: None,
             opportunities: None,
@@ -672,7 +936,12 @@ mod tests {
         })
         .unwrap();
         let (sender, commands) = mpsc::channel(1);
-        let mut client = ClientState::new(Client { profile, commands }).unwrap();
+        let mut client = ClientState::new(Client {
+            profile,
+            commands,
+            pickups: None,
+        })
+        .unwrap();
         let View::State(initial) = peer.view(actor).unwrap() else {
             panic!()
         };
@@ -812,10 +1081,16 @@ mod tests {
             available: vec![crate::reward_wire::Available {
                 reward: reward.catalog().definitions().next().unwrap().id().clone(),
                 claim: ClaimId::new([17; 16]).unwrap(),
+                corpse: None,
             }],
         };
         let encoded_offer = offered.encode(reward.catalog(), reward.hash()).unwrap();
-        let mut client = ClientState::new(Client { profile, commands }).unwrap();
+        let mut client = ClientState::new(Client {
+            profile,
+            commands,
+            pickups: None,
+        })
+        .unwrap();
         client.receive(&encode(&client, &initial), actor()).unwrap();
         client.receive_rewards(&encoded_offer, actor()).unwrap();
         let claim = ClaimCommand {
@@ -924,7 +1199,12 @@ mod tests {
             reply: None,
         };
         (
-            ClientState::new(Client { profile, commands }).unwrap(),
+            ClientState::new(Client {
+                profile,
+                commands,
+                pickups: None,
+            })
+            .unwrap(),
             sender,
             view,
         )
@@ -960,7 +1240,12 @@ mod tests {
             bag: Bag::from_slots(profile.catalog(), 0, slots).unwrap(),
             reply: None,
         };
-        let mut client = ClientState::new(Client { profile, commands }).unwrap();
+        let mut client = ClientState::new(Client {
+            profile,
+            commands,
+            pickups: None,
+        })
+        .unwrap();
         client.receive(&encode(&client, &state), actor()).unwrap();
         let first: ItemCommand = EquipmentCommand {
             expected_revision: 0,
@@ -1080,6 +1365,7 @@ mod tests {
             ..Default::default()
         });
         let mut peer = Peer::new(Port {
+            documents: None,
             vendor: None,
             rewards: None,
             opportunities: None,
@@ -1184,18 +1470,9 @@ mod tests {
         client.receive(&encode(&client, &initial), actor()).unwrap();
         sender.try_send(intent().into()).unwrap();
         client.next(actor(), tokio::time::Instant::now()).unwrap();
-        let mut false_success = success.clone();
-        false_success.bag = Bag::from_slots(
-            client.config.profile.catalog(),
-            5,
-            success.bag.slots().clone(),
-        )
-        .unwrap();
-        assert!(
-            client
-                .receive(&encode(&client, &false_success), actor())
-                .is_err()
-        );
+        let mut false_success = encode(&client, &success);
+        false_success[52..60].fill(0);
+        assert!(client.receive(&false_success, actor()).is_err());
         assert!(
             client.pending(),
             "Invalid acknowledgement cannot clear pending work"
@@ -1220,6 +1497,140 @@ mod tests {
         assert!(client.receive(&wrong_catalog, actor()).is_err());
     }
     #[tokio::test]
+    async fn coalesced_current_bag_acknowledges_original_intent_without_restoring_consumed_items() {
+        for background_first in [false, true] {
+            let (mut client, sender, initial) = fixture();
+            client.receive(&encode(&client, &initial), actor()).unwrap();
+            sender.try_send(intent().into()).unwrap();
+            client
+                .next(actor(), tokio::time::Instant::now())
+                .unwrap()
+                .unwrap();
+            let committed = applied(&client, &initial);
+            let after = committed
+                .bag
+                .propose(
+                    client.config.profile.catalog(),
+                    Command {
+                        expected_revision: 1,
+                        operation: Operation::Destroy { from: 1, amount: 3 },
+                    },
+                )
+                .unwrap();
+            let mut coalesced = State {
+                bag: after.clone(),
+                reply: None,
+                ..initial.clone()
+            };
+            if background_first {
+                client
+                    .receive(&encode(&client, &coalesced), actor())
+                    .unwrap();
+                assert!(
+                    client.pending(),
+                    "Unsolicited newer bag is not a command acknowledgement"
+                );
+            }
+            coalesced.reply = committed.reply;
+            client
+                .receive(&encode(&client, &coalesced), actor())
+                .unwrap();
+            assert!(!client.pending());
+            assert_eq!(client.view.as_ref().unwrap().bag, after);
+            assert_eq!(
+                client.view.as_ref().unwrap().bag.slots()[1]
+                    .as_ref()
+                    .unwrap()
+                    .count(),
+                10
+            );
+            assert!(
+                client
+                    .receive(&encode(&client, &committed), actor())
+                    .is_err(),
+                "Delayed older bag cannot restore removed items"
+            );
+        }
+    }
+    #[tokio::test]
+    async fn queued_destruction_keeps_explicit_confirmed_revision_when_a_newer_view_arrives() {
+        let profile = Profile::from_json(include_bytes!(
+            "../../../../content/gameplay/development-equipment-items.json"
+        ))
+        .unwrap();
+        let (sender, commands) = mpsc::channel(1);
+        let mut client = ClientState::new(Client {
+            profile,
+            commands,
+            pickups: None,
+        })
+        .unwrap();
+        let mut slots = std::array::from_fn(|_| None);
+        slots[0] = Stack::new(
+            client.config.profile.catalog(),
+            ContentId::new("theia.dev.training-stone").unwrap(),
+            3,
+        );
+        let initial = State {
+            actor: actor(),
+            catalog_hash: client.config.profile.hash(),
+            bag: Bag::from_slots(client.config.profile.catalog(), 0, slots.clone()).unwrap(),
+            reply: None,
+        };
+        client.receive(&encode(&client, &initial), actor()).unwrap();
+        let command = Command {
+            expected_revision: 0,
+            operation: Operation::Destroy { from: 0, amount: 3 },
+        };
+        sender.try_send(command.into()).unwrap();
+        let newer = State {
+            bag: Bag::from_slots(client.config.profile.catalog(), 1, slots).unwrap(),
+            ..initial
+        };
+        client.receive(&encode(&client, &newer), actor()).unwrap();
+        let frame = client
+            .next(actor(), tokio::time::Instant::now())
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            crate::inventory_wire::ItemRequest::decode(&frame)
+                .unwrap()
+                .command,
+            command.into(),
+            "A stale confirmed command must reach authority as stale, never silently retarget a newer stack"
+        );
+    }
+    #[tokio::test]
+    async fn matching_success_without_the_required_next_commit_cannot_clear_pending_work() {
+        let (mut client, sender, mut initial) = fixture();
+        initial.bag = Bag::from_slots(
+            client.config.profile.catalog(),
+            5,
+            initial.bag.slots().clone(),
+        )
+        .unwrap();
+        client.receive(&encode(&client, &initial), actor()).unwrap();
+        sender
+            .try_send(
+                Command {
+                    expected_revision: 5,
+                    operation: Operation::Move { from: 0, to: 1 },
+                }
+                .into(),
+            )
+            .unwrap();
+        client
+            .next(actor(), tokio::time::Instant::now())
+            .unwrap()
+            .unwrap();
+        initial.reply = Some(Reply {
+            sequence: 1,
+            outcome: Outcome::Applied,
+        });
+        assert!(client.receive(&encode(&client, &initial), actor()).is_err());
+        assert!(client.pending());
+    }
+    #[tokio::test]
     async fn peer_port_only_routes_its_actor_once_and_waits_until_an_observation_is_queued() {
         let (client, _, initial) = fixture();
         let (sender, mut requests) = mpsc::channel(1);
@@ -1228,6 +1639,7 @@ mod tests {
             ..Observation::default()
         });
         let mut peer = Peer::new(Port {
+            documents: None,
             vendor: None,
             rewards: None,
             opportunities: None,
@@ -1289,7 +1701,14 @@ mod tests {
         let (mut client, sender, initial) = fixture();
         let profile = client.config.profile.clone();
         let (_, commands) = mpsc::channel(2);
-        assert!(ClientState::new(Client { profile, commands }).is_err());
+        assert!(
+            ClientState::new(Client {
+                profile,
+                commands,
+                pickups: None
+            })
+            .is_err()
+        );
         let now = tokio::time::Instant::now();
         let later = now + std::time::Duration::from_secs(9);
         assert!(client.check_deadline(later, now).is_err());
@@ -1302,6 +1721,7 @@ mod tests {
         let (_, state) = watch::channel(Observation::default());
         assert!(
             Peer::new(Port {
+                documents: None,
                 vendor: None,
                 rewards: None,
                 opportunities: None,
@@ -1314,3 +1734,19 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "inventory/pickup_tests.rs"]
+mod pickup_tests;
+
+#[cfg(test)]
+#[path = "inventory/quest_profile_tests.rs"]
+mod quest_profile_tests;
+
+#[cfg(test)]
+#[path = "inventory/document_tests.rs"]
+mod document_tests;
+
+#[cfg(test)]
+#[path = "inventory/document_renet_tests.rs"]
+mod document_renet_tests;

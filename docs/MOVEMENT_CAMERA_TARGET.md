@@ -1,3 +1,24 @@
+15 November 2026 — moving contact presentation:
+Contact meshes and their overhead names now reuse the remote actor interpolation
+between received authoritative positions. Missing contacts and new identities
+clear the old pose; large discontinuities snap using the existing remote policy.
+Stationary contacts settle without extrapolation. Range checks, dialogue and
+quest progress continue to use server positions. Contact positions remain global
+f64 until the ordinary bounded render-frame conversion. Tests cover 20/30/60/120/
+144 FPS, uneven frames, waiting/restart and rebasing; native evidence is in STATUS.
+
+14 November 2026 — local prediction presentation correction:
+The compass AI test exposed whole-character speed variation when render frames
+spanned zero or multiple simulation ticks. Local rendering now interpolates the
+last two reconciled, collision-checked predicted positions using the continuous
+prediction clock fraction (one simulation tick of presentation delay), instead
+of restarting a one-tick tween each frame. Prediction and diagnostics sample the
+Bevy frame timestamp, avoiding variable CPU scheduling time within Update. It never extrapolates past checked
+positions or changes movement authority/commands. Stream resets discard the old
+endpoints. Regression covers 20/30/60 Hz simulation with 20/30/60/144 FPS and
+uneven frame times; motion diagnostics now use the actual Classic walk/run speed.
+Native evidence and frame-rate limits are recorded in STATUS.
+
 # Current target — strict WoW Classic controls, 1 November 2026
 
 The governing design is [THEIA-COMBAT-001 v1.0](COMBAT_TARGETING_MOVEMENT_SPEC.md).
@@ -15,7 +36,7 @@ The table below describes the remaining normal-player experience.
 
 | Area | Existing implementation / evidence | Required migration |
 | --- | --- | --- |
-| Movement | Qualified character-relative W/S, A/D turn and Q/E strafe in `--classic`; configurable A/D strafe | Directional locomotion animation and movement-speed/feel calibration |
+| Movement | Qualified character-relative W/S, A/D turn and Q/E strafe in `--classic`; configurable A/D strafe | [Ground movement v3 qualified](CLASSIC_GROUND_MOVEMENT.md): 7/4.5/2.5 m/s run/backward/walk and toggle; [optional eight-way locomotion qualified](CLASSIC_DIRECTIONAL_LOCOMOTION.md); crossfades/stride tuning and subjective feel remain |
 | Camera | Qualified independent LMB orbit, stationary RMB steering, both-button forward, static collision/zoom and UI ownership in `--classic` | Broader feel tuning; action camera remains disabled in classic |
 | Facing | Independent authoritative heading, correction replay, render-rate local input and interpolated remote yaw | Native independent remote-turn evidence and ability/autoattack-facing validation |
 | Selection | Qualified persistent hostile/friendly selection, character-front-biased Tab and Shift+Tab; explicit clear/removal | Immediate local pending-selection feedback and general dynamic friendly-removal observations |

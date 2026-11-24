@@ -21,16 +21,22 @@ impl World {
         {
             return Err("Progression requires inactive combat world".into());
         }
-        let patrol = self
+        let definition = self
             .patrol
             .as_ref()
+            .map(|patrol| patrol.definition())
+            .or_else(|| {
+                self.population_binding
+                    .as_ref()
+                    .map(|binding| binding.definition().id())
+            })
             .ok_or("Progression requires authoritative creature")?;
         if profile
             .profile()
             .kill_rewards()
-            .any(|(id, _)| id != patrol.definition())
+            .any(|(id, _)| id != definition)
         {
-            return Err("Progression creature differs from installed patrol".into());
+            return Err("Progression creature differs from installed creature definition".into());
         }
         self.progression = Some(profile);
         Ok(())
@@ -42,18 +48,16 @@ impl World {
         let Some(profile) = &self.progression else {
             return Ok(Vec::new());
         };
-        let patrol = self.patrol.as_ref().ok_or("Progression creature missing")?;
         let mut facts = Vec::new();
         for event in events {
             let Some((actor, target)) = self.kill_recipient(event)? else {
                 continue;
             };
-            if target != patrol.key
-                || self.entity_key(actor.entity.value()) != Some(actor)
-                || profile
-                    .profile()
-                    .kill_experience(patrol.definition())
-                    .is_none()
+            let Some(definition) = self.combat_creature_definition(target) else {
+                continue;
+            };
+            if self.entity_key(actor.entity.value()) != Some(actor)
+                || profile.profile().kill_experience(definition.id()).is_none()
             {
                 continue;
             }
@@ -61,7 +65,7 @@ impl World {
                 actor,
                 event: KillEvent {
                     id: KillId::from_victim(target),
-                    creature: patrol.definition().clone(),
+                    creature: definition.id().clone(),
                 },
             };
             if facts.contains(&fact) {

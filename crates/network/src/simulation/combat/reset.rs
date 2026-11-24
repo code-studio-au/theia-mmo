@@ -1,4 +1,4 @@
-//! Explicit one-creature return reset. No respawn, grants, paths or I/O.
+//! Explicit per-creature return reset. No respawn, grants, paths or I/O.
 use super::{Authority, World};
 use crate::Result;
 use serde::Deserialize;
@@ -54,10 +54,13 @@ pub struct Metrics {
     pub health_restored: u64,
     pub statuses_removed: u64,
 }
-pub(super) struct Runtime {
-    profile: Profile,
+struct Encounter {
     npc: EntityKey,
     in_reset: bool,
+}
+pub(super) struct Runtime {
+    profile: Profile,
+    encounters: Vec<Encounter>,
     error: Option<String>,
     metrics: Metrics,
 }
@@ -79,25 +82,27 @@ impl World {
             .combat
             .as_ref()
             .ok_or("Creature reset requires combat")?;
-        let patrol = self
-            .patrol
-            .as_ref()
-            .ok_or("Creature reset requires patrol")?;
-        let (npc, _, _) = combat
-            .membership_encounter()
-            .ok_or("Creature reset requires pursuit")?;
+        let encounters = combat.checked_reset_encounters()?;
         if combat.reset.is_some()
             || combat.credit.is_none()
             || combat.membership.is_none()
-            || !combat.ordinary_target_ready()
-            || profile.creature() != patrol.definition()
+            || (!combat.ordinary_target_ready() && !combat.population_physical_ready(self))
+            || encounters.iter().any(|(npc, _, _)| {
+                self.creature_definition(*npc)
+                    .is_none_or(|d| profile.creature() != d.id())
+            })
         {
-            return Err("Creature reset requires matching explicit typed credit encounter".into());
+            return Err("Creature reset requires matching explicit typed credit encounters".into());
         }
         self.combat.as_mut().unwrap().reset = Some(Runtime {
             profile,
-            npc,
-            in_reset: false,
+            encounters: encounters
+                .into_iter()
+                .map(|(npc, _, _)| Encounter {
+                    npc,
+                    in_reset: false,
+                })
+                .collect(),
             error: None,
             metrics: Metrics::default(),
         });
@@ -132,27 +137,45 @@ impl Authority {
             if runtime.error.is_some() {
                 return Ok(());
             }
-            let (npc, mode, _) = self.checked_reset_encounter()?;
-            if runtime.npc != npc {
-                runtime.npc = npc;
-                runtime.in_reset = false;
+            let encounters = self.checked_reset_encounters()?;
+            let mut next = Vec::with_capacity(encounters.len());
+            let mut resets = Vec::with_capacity(encounters.len());
+            // Validate every transition before changing health, effects or
+            // lifecycle state. A new entity starts a fresh reset latch.
+            for (npc, mode, _) in encounters {
+                let returning = matches!(mode, Mode::Return | Mode::Blocked);
+                let previous = runtime
+                    .encounters
+                    .iter()
+                    .find(|e| e.npc == npc)
+                    .is_some_and(|e| e.in_reset);
+                if returning && !previous {
+                    let creature = self
+                        .creatures
+                        .iter()
+                        .find(|c| c.key == npc)
+                        .ok_or("Reset creature lifetime unavailable")?;
+                    if creature.current == 0 || creature.respawn_at.is_some() {
+                        return Err("Dead creature cannot enter return reset".into());
+                    }
+                    let restored = creature
+                        .maximum
+                        .checked_sub(creature.current)
+                        .ok_or("Invalid reset creature health")?;
+                    resets.push((npc, restored));
+                }
+                next.push(Encounter {
+                    npc,
+                    in_reset: returning,
+                });
             }
-            let returning = matches!(mode, Mode::Return | Mode::Blocked);
-            if returning && !runtime.in_reset {
+            for (npc, restored) in resets {
                 let creature = self
                     .creatures
                     .iter_mut()
-                    .find(|creature| creature.key == npc)
-                    .ok_or("Reset creature lifetime unavailable")?;
-                // A reset never resurrects or changes NPC identity/death deadlines.
-                if creature.current == 0 || creature.respawn_at.is_some() {
-                    return Err("Dead creature cannot enter return reset".into());
-                }
-                let restored = creature
-                    .maximum
-                    .checked_sub(creature.current)
-                    .ok_or("Invalid reset creature health")?;
-                creature.current = creature.maximum;
+                    .find(|c| c.key == npc)
+                    .expect("Validated reset creature");
+                creature.restore();
                 let removed = self
                     .statuses
                     .as_mut()
@@ -167,7 +190,7 @@ impl Authority {
                     .statuses_removed
                     .saturating_add(removed as u64);
             }
-            runtime.in_reset = returning;
+            runtime.encounters = next;
             Ok(())
         })();
         if let Err(error) = result {

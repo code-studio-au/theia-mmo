@@ -70,6 +70,56 @@ class Accounts(unittest.TestCase):
             self.assertIsNone(client._session)
         self.assertEqual(calls[-1],('/auth/cancel',{'challenge':flow['challenge'],'proof':flow['proof']}))
 
+    def test_owner_cancellation_revokes_login_challenge_and_allows_logout(self):
+        calls = []
+        stopped = threading.Event()
+        flow = {'challenge':'a'*32, 'proof':'b'*64, 'authorization_url':'http://127.0.0.1:5051/authorize'}
+        def reply(path, body):
+            calls.append(path)
+            return (200, {}, json.dumps(flow).encode()) if path == '/auth/start' else (204, {}, b'')
+        with service(reply) as base:
+            client = AccountClient(base, cancelled=stopped.is_set)
+            def browser(_):
+                stopped.set()
+                return True
+            with self.assertRaises(KeyboardInterrupt):
+                client.login(open_browser=browser)
+            self.assertEqual(calls, ['/auth/start', '/auth/cancel'])
+            client._session = 'f'*64
+            client.close()
+            self.assertEqual(calls[-1], '/auth/logout')
+            self.assertIsNone(client._session)
+
+    def test_live_logout_requires_confirmation_and_preserves_retry_credential(self):
+        for refusal in (200, 503):
+            calls = []
+            def reply(path, body):
+                calls.append((path, body))
+                return (refusal, {}, b'{}') if len(calls) == 1 else (204, {}, b'')
+            with self.subTest(refusal=refusal), service(reply) as base:
+                client = AccountClient(base)
+                client._session = 'f'*64
+                with self.assertRaises(AccountError): client.logout()
+                self.assertEqual(client._session, 'f'*64)
+                client.logout()
+                self.assertIsNone(client._session)
+                client.close()
+                self.assertEqual(calls, [('/auth/logout', {}), ('/auth/logout', {})])
+
+    def test_owner_cancellation_during_admission_never_writes_a_ticket(self):
+        stopped = threading.Event()
+        character = '74686569-6100-0000-0000-000000000123'
+        def reply(path, body):
+            stopped.set()
+            return 200, {}, json.dumps({'id':character, 'address':'127.0.0.1:7000',
+                                        'ticket':[1], 'expires_in_seconds':20}).encode()
+        with service(reply) as base, tempfile.TemporaryDirectory() as folder:
+            client = AccountClient(base, cancelled=stopped.is_set)
+            ticket = Path(folder)/'private.token'
+            with self.assertRaises(KeyboardInterrupt):
+                client.enter(character, ticket)
+            self.assertFalse(ticket.exists())
+
     def test_invalid_tickets_never_create_a_bearer_file(self):
         character='74686569-6100-0000-0000-000000000123'
         for address,data in [('203.0.113.1:7000',[1]),('127.0.0.1:7000',[True]),('127.0.0.1:7000',[-1]),('127.0.0.1:7000',[256]),('127.0.0.1:7000',[1]*2049)]:
@@ -116,6 +166,21 @@ class CharacterMenu(unittest.TestCase):
         self.assertIn('N. Create a character',shown)
         self.assertEqual(len(prompts),1)
 
+    def test_character_list_rejects_bad_or_duplicate_ids_and_omits_extra_fields(self):
+        for rows in [[{'id':'bad','name':'Legacy'}], [{'id':'0'*32,'name':'Legacy'}],
+                     [{'id':self.old,'name':'Legacy'}]*2]:
+            with self.subTest(rows=rows), service(lambda *_:(200,{},json.dumps({'characters':rows}).encode())) as base:
+                with self.assertRaises(AccountError):
+                    AccountClient(base).characters()
+        with service(lambda *_:(200,{},json.dumps({'characters':[{'id':self.old,'name':'Legacy','unused':'hidden'}]}).encode())) as base:
+            self.assertEqual(AccountClient(base).characters(), [{'id':self.old,'name':'Legacy'}])
+
+    def test_invalid_creation_names_are_refused_before_http(self):
+        with service(lambda *_: self.fail('Invalid names must not reach HTTP')) as base:
+            for name in [None, '', 'Ab', 'Ar--den', 'Arden2', 'Arden\n', 'x'*21]:
+                with self.subTest(name=name), self.assertRaises(AccountError):
+                    AccountClient(base).create_character(name)
+
     def test_create_another_character_on_existing_account(self):
         calls=[];answers=iter(['n','Newhero'])
         def respond(path, body):
@@ -131,7 +196,7 @@ class CharacterMenu(unittest.TestCase):
         calls=[];shown=[]
         def respond(path, body):
             calls.append((path,body))
-            return 200, {}, json.dumps({'characters':[{'id':self.old,'name':'Legacy'}]*8}).encode()
+            return 200, {}, json.dumps({'characters':[{'id':f'74686569-6100-0000-0000-{i:012d}','name':'Legacy'} for i in range(1,9)]}).encode()
         with service(respond) as base:
             with self.assertRaisesRegex(AccountError,'limit reached'):
                 AccountClient(base).choose_character(read=lambda _:'N',write=shown.append)

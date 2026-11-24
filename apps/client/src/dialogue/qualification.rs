@@ -293,7 +293,7 @@ fn observe(world: &mut World) {
         let expected_text = view
             .open
             .as_ref()
-            .and_then(|open| world.resource::<Config>().0.profile().node(&open.node))
+            .and_then(|open| world.resource::<Config>().0.node(&open.node))
             .map(|node| node.text().to_owned());
         let actual_text = world
             .query_filtered::<&Text, With<DialogueText>>()

@@ -266,3 +266,132 @@ fn general_collision_schema_and_explicit_spawns_are_package_bound_without_visual
     fixture.write();
     assert!(fixture.load().is_err());
 }
+
+#[test]
+fn particle_manifest_binds_catalog_and_fails_closed_for_visual_loading() {
+    // Independently calculated with Python's hashlib and little-endian struct packing.
+    let mut golden: Value = serde_json::from_slice(GOLDEN).unwrap();
+    golden["schema"] = json!(4);
+    golden["particle_bytes"] = json!(10);
+    golden["particle_sha256"] = json!(vec![3; 32]);
+    assert_eq!(
+        hex(Manifest::decode(&serde_json::to_vec(&golden).unwrap())
+            .unwrap()
+            .identity()),
+        "cb8c7e56a45c5c6375881cdc906f8000d6cef2ccedec9fed31ca6b061cd00dea"
+    );
+    let mut fixture = Fixture::new();
+    let catalog = serde_json::to_vec(&json!({
+        "schema":1,"effects":[{"id":"vfx.fire","bytes":4,"sha256":sha256(b"fire")}],
+        "placements":[{"id":1,"effect":"vfx.fire","position":[0.,0.,0.],"yaw_degrees":0.,"scale":1.}]
+    })).unwrap();
+    fixture.manifest["schema"] = json!(4);
+    fixture.manifest["particle_bytes"] = json!(catalog.len());
+    fixture.manifest["particle_sha256"] = json!(sha256(&catalog));
+    fixture.write();
+    let terrain = fixture.load().unwrap();
+    let package = terrain.package.as_ref().unwrap();
+    assert_eq!(
+        package
+            .verify_particle_catalog(&catalog)
+            .unwrap()
+            .placements()
+            .len(),
+        1
+    );
+    assert!(package.verify_particle_catalog(b"wrong").is_err());
+    assert!(
+        terrain
+            .verify_visual(&fixture.root.join("terrain.glb"))
+            .is_err()
+    );
+    assert!(
+        terrain
+            .verify_visual_in(&fixture.root.join("terrain.glb"), &fixture.root)
+            .is_err()
+    );
+    let identity = package.identity();
+    let mut changed = fixture.manifest.clone();
+    changed["particle_sha256"] = json!(sha256(b"other"));
+    assert_ne!(
+        Manifest::decode(&serde_json::to_vec(&changed).unwrap())
+            .unwrap()
+            .identity(),
+        identity
+    );
+    changed = fixture.manifest.clone();
+    changed["particle_bytes"] = json!(catalog.len() + 1);
+    assert_ne!(
+        Manifest::decode(&serde_json::to_vec(&changed).unwrap())
+            .unwrap()
+            .identity(),
+        identity
+    );
+    for field in ["particle_bytes", "particle_sha256"] {
+        let mut missing = fixture.manifest.clone();
+        missing.as_object_mut().unwrap().remove(field);
+        assert!(Manifest::decode(&serde_json::to_vec(&missing).unwrap()).is_err());
+        missing[field] = Value::Null;
+        assert!(Manifest::decode(&serde_json::to_vec(&missing).unwrap()).is_err());
+    }
+    for schema in 1..=3 {
+        let mut legacy = fixture.manifest.clone();
+        legacy["schema"] = json!(schema);
+        assert!(Manifest::decode(&serde_json::to_vec(&legacy).unwrap()).is_err());
+    }
+    let invalid = b"invalid catalog";
+    let mut malformed = fixture.manifest.clone();
+    malformed["particle_bytes"] = json!(invalid.len());
+    malformed["particle_sha256"] = json!(sha256(invalid));
+    let manifest = Manifest::decode(&serde_json::to_vec(&malformed).unwrap()).unwrap();
+    assert!(manifest.verify_particle_catalog(invalid).is_err());
+}
+
+#[test]
+fn material_and_particle_manifest_binds_both_requirements() {
+    let mut document: Value = serde_json::from_slice(GOLDEN).unwrap();
+    document["schema"] = json!(5);
+    document["particle_bytes"] = json!(10);
+    document["particle_sha256"] = json!(vec![3; 32]);
+    document["shared_images"] = json!([
+        {"sha256":vec![1; 32],"bytes":12,"color_space":"srgb","sampler":[10497,10497,9729,9729]},
+        {"sha256":vec![2; 32],"bytes":13,"color_space":"linear","sampler":[10497,10497,9729,9729]}
+    ]);
+    let manifest = Manifest::decode(&serde_json::to_vec(&document).unwrap()).unwrap();
+    assert!(manifest.requires_material_profiles());
+    assert!(manifest.has_particle_catalog());
+    assert_eq!(
+        hex(manifest.identity()),
+        "adfe3c80633b3b9b760e1c269c469cef21c8ca8b7045733fa75baa721e313828"
+    );
+    assert!(manifest.verify_particle_catalog(b"wrong").is_err());
+    assert!(
+        manifest
+            .verify_visual(std::path::Path::new("missing"))
+            .is_err()
+    );
+    for field in ["particle_bytes", "particle_sha256"] {
+        let mut missing = document.clone();
+        missing.as_object_mut().unwrap().remove(field);
+        assert!(Manifest::decode(&serde_json::to_vec(&missing).unwrap()).is_err());
+    }
+    let mut missing_images = document.clone();
+    missing_images["shared_images"] = json!([]);
+    assert!(Manifest::decode(&serde_json::to_vec(&missing_images).unwrap()).is_err());
+    let mut changed = document.clone();
+    changed["shared_images"][0]["sha256"] = json!(vec![4; 32]);
+    assert_ne!(
+        Manifest::decode(&serde_json::to_vec(&changed).unwrap())
+            .unwrap()
+            .identity(),
+        manifest.identity()
+    );
+    changed = document;
+    changed["particle_sha256"] = json!(vec![4; 32]);
+    assert_ne!(
+        Manifest::decode(&serde_json::to_vec(&changed).unwrap())
+            .unwrap()
+            .identity(),
+        manifest.identity()
+    );
+}

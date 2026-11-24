@@ -158,6 +158,19 @@ def run(output, binaries, players, creature_asset, terrain, navigation,
             wait(lambda: ready_peer(first), 25, 'First native melee peer did not load')
             second = native('B', b, cb)
             wait(lambda: ready_peer(second), 25, 'Second native melee peer did not load')
+            # The second native window takes focus. Real input is accepted only by
+            # the focused client, so explicitly activate the casting client's
+            # owned window before sending the qualification's input events.
+            def caster_window():
+                listing = subprocess.check_output(['wmctrl', '-lp'], text=True, env=dict(os.environ, DISPLAY=':0'))
+                for line in listing.splitlines():
+                    fields = line.split(None, 4)
+                    if len(fields) >= 3 and fields[2] == str(first[0].pid):
+                        return fields[0]
+                return None
+            window = wait(caster_window, 5, 'Casting client window not found')
+            subprocess.run(['wmctrl', '-ia', window], check=True, env=dict(os.environ, DISPLAY=':0'))
+            time.sleep(.25)  # Allow the window manager focus event to reach Bevy.
             (output/'go').write_text('both native peers ready\n')
             evidence['native'] = {}
             width, height = map(int, window_size.split('x'))
@@ -187,8 +200,8 @@ def run(output, binaries, players, creature_asset, terrain, navigation,
                 for report in evidence['native'].values():
                     assert report['shot_health'] == 100 and report['shot_resolved'] == 0 and report['pre_damage_frames'] > 0
                     visual = report['visuals']
-                    assert visual['launches'] == visual['spawns'] == visual['terminals'] == 3
-                    assert visual['visible_frames'] > 0 and visual['travel_frames'] > 0 and visual['dropped'] == 0
+                    assert visual['launches'] == visual['spawns'] == visual['particle_spawns'] == visual['terminals'] == 3
+                    assert visual['visible_frames'] > 0 and visual['travel_frames'] > 0 and visual['particle_emitter_visible_frames'] > 0 and visual['dropped'] == 0
             else:
                 assert evidence['native']['A']['wand_refused']
                 assert evidence['native']['B']['attacks']['remote_starts'] >= 3

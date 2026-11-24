@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Inject X11 input only into owned Theia windows; synthetic OS, not hardware."""
+"""Guard X11 pointer/keys and Linux wheel input to owned windows; synthetic OS."""
 import argparse
 import ctypes as c
 import ctypes.util
 import json
+import fcntl
+import struct
 import math
 import os
 from pathlib import Path
@@ -42,14 +44,15 @@ def capture_ready(path):
 
 
 class Desktop:
-    def __init__(self):
+    def __init__(self, display=':0'):
         self.held_keys=set()
         self.held_buttons=set()
         self.window=None
+        self.wheel_fd=None
         self.x=c.CDLL(ctypes.util.find_library('X11'))
         self.t=c.CDLL(ctypes.util.find_library('Xtst'))
         self.x.XOpenDisplay.argtypes=[c.c_char_p];self.x.XOpenDisplay.restype=c.c_void_p
-        self.display=self.x.XOpenDisplay(b':0')
+        self.display=self.x.XOpenDisplay(display.encode('ascii'))
         assert self.display,'No owned desktop display'
         for name,args in [('XRaiseWindow',[c.c_void_p,c.c_ulong]),('XSetInputFocus',[c.c_void_p,c.c_ulong,c.c_int,c.c_ulong]),('XFlush',[c.c_void_p]),('XCloseDisplay',[c.c_void_p])]:
             getattr(self.x,name).argtypes=args
@@ -66,9 +69,16 @@ class Desktop:
         self.t.XTestFakeButtonEvent.argtypes=[c.c_void_p,c.c_uint,c.c_int,c.c_ulong]
         self.t.XTestFakeKeyEvent.argtypes=[c.c_void_p,c.c_uint,c.c_int,c.c_ulong]
     def focus(self,window):
-        self.x.XRaiseWindow(self.display,window);self.x.XSetInputFocus(self.display,window,2,0);self.x.XFlush(self.display)
         self.window=window
         self.refresh_ancestry()
+        # Reparenting window managers stack the decorated root child. Raising
+        # only its client child does not bring the owned frame above a peer.
+        self.x.XRaiseWindow(self.display,self.frame)
+        # Ask the window manager to activate this exact owned client as well;
+        # direct X focus does not update its stacking/active-window policy.
+        subprocess.run(['wmctrl','-i','-a',hex(window)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=3)
+        self.x.XSetInputFocus(self.display,window,2,0)
+        self.x.XFlush(self.display)
     def refresh_ancestry(self):
         current=self.window
         for _ in range(8):
@@ -110,6 +120,39 @@ class Desktop:
         self.t.XTestFakeButtonEvent(self.display,button,int(pressed),0);self.x.XFlush(self.display);time.sleep(.08)
     def click(self,window,point,scale,button):
         self.move(window,point,scale);self.button(button,True);self.button(button,False)
+    def scroll(self,lines):
+        """Guarded Linux wheel-axis input; XTEST wheel buttons may be ignored."""
+        self.owned_focus(pointer=True)
+        assert isinstance(lines,int) and 0<abs(lines)<=8
+        self.prepare_wheel()
+        self.owned_focus(pointer=True)
+        # Native input_event: timeval, type, code, value; REL_WHEEL + SYN_REPORT.
+        payload=struct.pack('llHHi',0,0,2,8,lines)+struct.pack('llHHi',0,0,0,0,0)
+        assert os.write(self.wheel_fd,payload)==len(payload)
+        time.sleep(.12)
+    def prepare_wheel(self):
+        """Create the input device before launching an event loop that uses it.
+
+        Enumeration by XInput does not prove a running Winit client has processed
+        its hierarchy change. Pre-launch creation avoids dropping its first wheel.
+        This method creates a device; it sends no mouse or keyboard events.
+        """
+        if self.wheel_fd is None:
+            descriptor=os.open('/dev/uinput',os.O_WRONLY|os.O_NONBLOCK|os.O_CLOEXEC)
+            try:
+                # linux/uinput.h: _IOW('U', nr, int), input-event-codes.h.
+                for event_type in [1,2]:fcntl.ioctl(descriptor,0x40045564,event_type)
+                for button in [0x110,0x111,0x112]:fcntl.ioctl(descriptor,0x40045565,button)
+                for axis in [0,1,8]:fcntl.ioctl(descriptor,0x40045566,axis)
+                name=f'Theia owned qualification wheel {os.getpid()}'
+                setup=struct.pack('HHHH80sI',3,0x1209,1,1,name.encode(),0)
+                fcntl.ioctl(descriptor,(1<<30)|(len(setup)<<16)|(0x55<<8)|3,setup)
+                fcntl.ioctl(descriptor,0x5501)
+                wait(lambda:name in subprocess.check_output(['xinput','list','--name-only'],text=True).splitlines(),5)
+            except BaseException:
+                os.close(descriptor)
+                raise
+            self.wheel_fd=descriptor
     def key_state(self,name,pressed):
         if pressed:self.owned_focus();self.held_keys.add(name)
         else:self.held_keys.discard(name)
@@ -121,6 +164,26 @@ class Desktop:
         self.t.XTestFakeRelativeMotionEvent(self.display,int(x),int(y),0);self.x.XFlush(self.display);time.sleep(.2)
     def key(self,name):
         self.key_state(name,True);self.key_state(name,False)
+    def hold_key(self,name,seconds,observe=None):
+        """Bounded gameplay hold without the UI key helper's 100 ms minimum."""
+        assert math.isfinite(seconds) and 0 < seconds <= 1
+        self.owned_focus()
+        if observe: observe()
+        code=self.x.XKeysymToKeycode(self.display,self.x.XStringToKeysym(name.encode()))
+        assert code
+        self.held_keys.add(name)
+        self.t.XTestFakeKeyEvent(self.display,code,1,0);self.x.XFlush(self.display)
+        try:
+            if observe:
+                deadline=time.monotonic()+seconds
+                while time.monotonic()<deadline:
+                    time.sleep(min(.05,max(0.,deadline-time.monotonic())))
+                    observe()
+            else:
+                time.sleep(seconds)
+        finally:
+            self.t.XTestFakeKeyEvent(self.display,code,0,0);self.x.XFlush(self.display)
+            self.held_keys.discard(name)
     def drag(self,window,point,scale):
         self.move(window,point,scale);self.button(3,True)
         for _ in range(8):
@@ -130,6 +193,11 @@ class Desktop:
     def close(self):
         for key in list(self.held_keys):self.key_state(key,False)
         for button in list(self.held_buttons):self.button(button,False)
+        if self.wheel_fd is not None:
+            try:fcntl.ioctl(self.wheel_fd,0x5502)
+            finally:
+                os.close(self.wheel_fd)
+                self.wheel_fd=None
         self.x.XCloseDisplay(self.display)
 
 

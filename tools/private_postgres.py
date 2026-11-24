@@ -9,10 +9,11 @@ import time
 
 
 class Cluster:
-    def __init__(self, output, sdk):
+    def __init__(self, output, sdk, *, isolate_process=False):
         self.output = Path(output).resolve()
         self.sdk = Path(sdk).resolve()
         self.bin = self.sdk/'usr/lib/postgresql/16/bin'
+        self.isolate_process = isolate_process
         self.server = None
         self.log = None
         self.env = dict(os.environ)
@@ -56,7 +57,7 @@ class Cluster:
                                         '-c', 'shared_buffers=16MB', '-c', 'max_connections=16',
                                         '-c', 'fsync=on', '-c', 'synchronous_commit=on',
                                         '-c', 'full_page_writes=on'], env=self.env,
-                                       stdout=self.log, stderr=subprocess.STDOUT)
+                                       stdout=self.log, stderr=subprocess.STDOUT, start_new_session=self.isolate_process)
         deadline = time.monotonic()+20
         while time.monotonic() < deadline:
             assert self.server.poll() is None, 'Owned PostgreSQL exited; inspect server.log'

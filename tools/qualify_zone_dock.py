@@ -1,0 +1,389 @@
+#!/usr/bin/env python3
+"""Guarded native Linux checks for the stacked left dock and compact status bar."""
+import argparse, sys, os, json, hashlib, shutil, subprocess
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from qualify_world_input_os import Desktop, wait, owned_window, capture_ready
+from launch_environment import client_environment
+from gpu_validation import check_gpu_diagnostics
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--output', required=True, type=Path)
+parser.add_argument('--case', choices=['local', 'far'], default='local')
+parser.add_argument('--inline', action='store_true')
+parser.add_argument('--categories', action='store_true')
+parser.add_argument('--toolbar', action='store_true')
+parser.add_argument('--names', action='store_true')
+parser.add_argument('--spawn', action='store_true')
+parser.add_argument('--property-actions', action='store_true')
+args = parser.parse_args()
+out = args.output.resolve()
+out.mkdir(parents=True, exist_ok=False)
+origin = [0.125, 0.25, -0.5] if args.case == 'local' else [128000000000.125, 20.25, -128000000000.5]
+document = dict(schema=1, name='Dock and status bar acceptance', origin=origin, spawn=[origin[0], origin[1] + 0.0625, origin[2] + 6], objects=[dict(id=i, name=f'Authored box {i}', primitive='box', pose=dict(position=[origin[0] + 8.125 if i == 1 else origin[0] - 64 + i % 7 * 5, origin[1] + 1.25, origin[2] - 8.5 if i == 1 else origin[2] - 64 + i // 7 * 5], yaw_degrees=17.25, size=[2, 2.5, 3])) for i in range(1, 44)])
+source = out / 'source.json'
+source.write_text(json.dumps(document))
+original = source.read_bytes()
+report = out / 'state.json'
+binary = Path('target/debug/theia-zone-editor').resolve()
+data = out / 'particle-data'
+data.mkdir()
+env = client_environment(dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', THEIA_PARTICLE_EDITOR_DATA_DIR=str(data)))
+desktop = Desktop()
+process = None
+try:
+    with (out / 'editor.log').open('w') as log:
+        process = subprocess.Popen([str(binary), '--zone', str(source), '--report', str(report)], env=env, stdout=log, stderr=log)
+        window = wait(lambda: owned_window(process.pid), 45)
+        desktop.focus(window)
+
+        def state():
+            assert process.poll() is None
+            return json.loads(report.read_text())
+        wait(lambda: report.exists() and state()['viewport'] == [3440, 1440], 45)
+
+        def fresh():
+            elapsed = state()['input_elapsed']
+            wait(lambda: state()['input_elapsed'] > elapsed)
+            return state()
+
+        def click(point):
+            desktop.click(window, point, 1, 1)
+            fresh()
+
+        def capture(name):
+            image = report.with_suffix('.png')
+            image.unlink(missing_ok=True)
+            desktop.key('F12')
+            wait(lambda: capture_ready(image))
+            shutil.copyfile(image, out / name)
+
+        def chord(key):
+            desktop.key_state('Control_L', True)
+            desktop.key(key)
+            desktop.key_state('Control_L', False)
+            fresh()
+        initial = state()['document']
+        history = state()['history']
+        revision = state()['revision']
+        assert state()['ui_layout']['status_bar'] == [0, 1412, 3440, 28]
+        assert state()['ui_layout']['inspector'][0] == state()['ui_layout']['browser'][0]
+        layout = state()['ui_layout']
+        edge = [layout['canvas'][0], 300]
+        desktop.move(window, edge, 1)
+        desktop.button(1, True)
+        desktop.move(window, [edge[0] + 60, edge[1]], 1)
+        desktop.button(1, False)
+        wait(lambda: state()['ui_layout']['browser'][2] == 420)
+        assert state()['ui_layout']['status_bar'] == [0, 1412, 3440, 28]
+        row = next((c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)'))
+        click(row['centre'])
+        wait(lambda: state()['selected'] is not None)
+        started = state()['input_elapsed']
+        wait(lambda: state()['input_elapsed'] > started + 3)
+        capture('status-bar-selected.png')
+        if args.toolbar:
+            toolbar_document = state()['document']
+            toolbar_history = state()['history']
+            toolbar_revision = state()['revision']
+            bounds = state()['viewport_toolbar']['bounds']
+            assert bounds and bounds[0] > state()['ui_layout']['canvas'][0]
+            def toolbar_control(target):
+                return next(c for c in state()['workspace_controls'] if c['target'] == target and min(c['size']) > 0 and bounds[0] <= c['centre'][0] <= bounds[0] + bounds[2])
+            for tool in ['Rotate', 'Scale', 'Move']:
+                click(toolbar_control('GizmoTool(' + tool + ')')['centre'])
+                wait(lambda: state()['viewport_toolbar']['tool'] == tool)
+                wait(lambda: any(c['tool'] == tool and c['visible'] for c in state()['move_handles']))
+                assert state()['document'] == toolbar_document
+                assert state()['history'] == toolbar_history
+            capture('viewport-toolbar.png')
+            for button in [1, 2, 3]:
+                camera = state()['camera_position']
+                desktop.move(window, toolbar_control('GizmoTool(Move)')['centre'], 1)
+                desktop.button(button, True)
+                wait(lambda: state()['viewport_toolbar']['owns_pointer'])
+                point = next(c['screen'] for c in state()['objects'] if c['id'] == 1)
+                desktop.move(window, point, 1)
+                fresh()
+                assert state()['viewport_toolbar']['owns_pointer']
+                assert not state()['dragging']
+                assert state()['camera_position'] == camera
+                desktop.button(button, False)
+                wait(lambda: not state()['viewport_toolbar']['owns_pointer'])
+                assert state()['selected'] == 1
+                assert state()['document'] == toolbar_document
+                assert state()['revision'] == toolbar_revision
+                assert state()['history'] == toolbar_history
+            click(toolbar_control('Frame')['centre'])
+            assert state()['document'] == toolbar_document and source.read_bytes() == original
+        if args.categories:
+            category_document = state()['document']
+            category_revision = state()['revision']
+            category_history = state()['history']
+            assert state()['property_tabs']['active'] == 'Attributes'
+            for tab in ['View', 'Tools', 'Attributes']:
+                control = next(c for c in state()['property_tabs']['controls'] if c['tab'] == tab)
+                assert min(control['size']) > 0
+                click(control['centre'])
+                wait(lambda: state()['property_tabs']['active'] == tab)
+                capture('category-' + tab.lower() + '.png')
+                assert state()['document'] == category_document
+                assert state()['revision'] == category_revision
+                assert state()['history'] == category_history
+                assert source.read_bytes() == original
+            control = next(c for c in state()['property_tabs']['controls'] if c['tab'] == 'View')
+            click(control['centre'])
+            wait(lambda: state()['property_tabs']['active'] == 'View')
+            desktop.key('F9')
+            wait(lambda: state()['property_tabs']['active'] == 'Attributes')
+            wait(lambda: any(c['focused'] for c in state()['inline_attributes']))
+            desktop.key('Escape')
+            fresh()
+
+        click([1200, 1426])
+        assert state()['revision'] == revision
+        layout = state()['ui_layout']
+        click([layout['browser'][0] + 80, layout['browser'][1] + 16])
+        wait(lambda: state()['ui_layout']['panel_collapsed']['explorer'])
+        assert state()['ui_layout']['browser'][3] == 32
+        click([layout['browser'][0] + 80, layout['browser'][1] + 16])
+        wait(lambda: not state()['ui_layout']['panel_collapsed']['explorer'])
+        layout = state()['ui_layout']
+        split = [layout['browser'][0] + 100, layout['inspector'][1]]
+        desktop.move(window, split, 1)
+        desktop.button(1, True)
+        desktop.move(window, [split[0], split[1] + 80], 1)
+        desktop.button(1, False)
+        wait(lambda: state()['ui_layout']['inspector'][1] > layout['inspector'][1] + 60)
+        layout = state()['ui_layout']
+        click([layout['inspector'][0] + 80, layout['inspector'][1] + 16])
+        wait(lambda: state()['ui_layout']['panel_collapsed']['properties'])
+        assert state()['ui_layout']['inspector'][3] == 32
+        click([layout['inspector'][0] + 80, 1380 + 16])
+        wait(lambda: not state()['ui_layout']['panel_collapsed']['properties'])
+        trigger = next((c for c in state()['menus'] if c['name'] == 'Content filter' and c['role'] == 'button'))
+        click(trigger['centre'])
+        wait(lambda: any((c['name'] == 'Content filter' and c['role'] == 'popup' and (min(c['size']) > 0) for c in state()['menus'])))
+        capture('filter-dropdown.png')
+        item = next((c for c in state()['content_list']['controls'] if c['target'] == 'Filter(Objects)' and min(c['size']) > 0))
+        click(item['centre'])
+        wait(lambda: state()['content_list']['filter'] == 'Objects')
+        click(trigger['centre'])
+        wait(lambda: any((c['target'] == 'Filter(All)' and min(c['size']) > 0 for c in state()['content_list']['controls'])))
+        item = next((c for c in state()['content_list']['controls'] if c['target'] == 'Filter(All)'))
+        click(item['centre'])
+        wait(lambda: state()['content_list']['filter'] == 'All')
+        assert state()['document'] == initial and state()['history'] == history and (source.read_bytes() == original)
+        if args.names:
+            assert len(state()['inline_names']) == 1
+            assert min(state()['inline_names'][0]['size']) > 0
+            desktop.key('F8')
+            wait(lambda: state()['inline_names'][0]['focused'])
+            assert state()['name_edit'] is None
+            def type_name(text):
+                chord('a')
+                desktop.key('BackSpace')
+                for char in text:
+                    desktop.key('space' if char == ' ' else char)
+                wait(lambda: state()['inline_names'][0]['value'] == text)
+            type_name('renamed inline')
+            desktop.key('Tab')
+            wait(lambda: any(c['field'] == 0 and c['focused'] for c in state()['inline_attributes']))
+            desktop.key('Escape')
+            wait(lambda: not state()['inline_names'][0]['focused'])
+            assert state()['document']['objects'][0]['name'] == 'renamed inline'
+            assert source.read_bytes() == original
+            capture('inline-name.png')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('y')
+            wait(lambda: state()['document']['objects'][0]['name'] == 'renamed inline')
+            click(state()['inline_names'][0]['centre'])
+            type_name('')
+            invalid_revision = state()['revision']
+            desktop.key('Return')
+            fresh()
+            assert state()['inline_names'][0]['focused']
+            assert state()['revision'] == invalid_revision and source.read_bytes() == original
+            desktop.key('Escape')
+            wait(lambda: not state()['inline_names'][0]['focused'])
+            click(state()['inline_names'][0]['centre'])
+            type_name('saved inline')
+            chord('s')
+            wait(lambda: not state()['inline_names'][0]['focused'] and not state()['unsaved_changes'])
+            assert json.loads(source.read_text())['objects'][0]['name'] == 'saved inline'
+            chord('z')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('s')
+            wait(lambda: not state()['unsaved_changes'])
+            original = source.read_bytes()
+            revision = state()['revision']
+            history = state()['history']
+        if args.spawn:
+            click(next(c for c in state()['content_list']['controls'] if c['target'] == 'Spawn')['centre'])
+            wait(lambda: state()['selected'] is None and len(state()['inline_attributes']) == 3 and not state()['inline_names'])
+            assert state()['transform_edit'] is None
+            assert state()['document'] == initial and source.read_bytes() == original
+            capture('inline-spawn.png')
+            def edit_spawn(index, value):
+                field = next(c for c in state()['attribute_summary'] if c['field'] == index)
+                click(field['centre'])
+                wait(lambda: any(c['field'] == index and c['focused'] for c in state()['inline_attributes']))
+                chord('a')
+                for char in value:
+                    desktop.key({'.': 'period', '-': 'minus'}.get(char, char))
+                wait(lambda: any(c['value'] == value for c in state()['inline_attributes']))
+            first = initial['spawn'][0] + 0.125
+            edit_spawn(0, str(first))
+            desktop.key('Return')
+            wait(lambda: state()['document']['spawn'][0] == first)
+            assert source.read_bytes() == original
+            second = initial['spawn'][2] + 0.25
+            edit_spawn(2, str(second))
+            chord('s')
+            wait(lambda: not state()['unsaved_changes'] and not any(c['focused'] for c in state()['inline_attributes']))
+            assert json.loads(source.read_text())['spawn'] == [first, initial['spawn'][1], second]
+            chord('z')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('s')
+            wait(lambda: not state()['unsaved_changes'])
+            original = source.read_bytes()
+            revision = state()['revision']
+            history = state()['history']
+            click(next(c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)')['centre'])
+            wait(lambda: state()['selected'] == 1)
+            trigger = next(c for c in state()['menus'] if c['name'] == 'Zone' and c['role'] == 'button')
+            click(trigger['centre'])
+            wait(lambda: any(c['target'] == 'SpawnTransform' and c['menu_item'] and min(c['size']) > 0 for c in state()['workspace_controls']))
+            item = next(c for c in state()['workspace_controls'] if c['target'] == 'SpawnTransform' and c['menu_item'] and min(c['size']) > 0)
+            click(item['centre'])
+            wait(lambda: len(state()['inline_attributes']) == 3 and any(c['field'] == 0 and c['focused'] for c in state()['inline_attributes']))
+            assert state()['transform_edit'] is None and not state()['inline_names']
+            desktop.key('Escape')
+            fresh()
+            click(next(c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)')['centre'])
+            wait(lambda: state()['selected'] == 1 and len(state()['inline_attributes']) == 7)
+        if args.property_actions:
+            assert state()['selected'] == 1
+            name_field = state()['inline_names'][0]
+            click(name_field['centre'])
+            chord('a')
+            desktop.key('BackSpace')
+            for char in 'menu text':
+                desktop.key('space' if char == ' ' else char)
+            wait(lambda: state()['inline_names'][0]['value'] == 'menu text')
+            def open_property_actions():
+                trigger = next(c for c in state()['menus'] if c['name'] == 'Property actions' and c['role'] == 'button' and min(c['size']) > 0)
+                click(trigger['centre'])
+                wait(lambda: any(c['name'] == 'Property actions' and c['role'] == 'popup' and min(c['size']) > 0 for c in state()['menus']))
+                return next(c for c in state()['menus'] if c['name'] == 'Property actions' and c['role'] == 'popup')
+            def property_item(popup, target):
+                x, y = popup['centre']
+                w, h = popup['size']
+                return next(c for c in state()['workspace_controls'] if c['target'] == target and c['menu_item']
+                            and min(c['size']) > 0 and abs(c['centre'][0] - x) < w / 2 and abs(c['centre'][1] - y) < h / 2)
+            popup = open_property_actions()
+            wait(lambda: state()['document']['objects'][0]['name'] == 'menu text')
+            assert source.read_bytes() == original and state()['transform_edit'] is None
+            capture('property-actions.png')
+            click(property_item(popup, 'Command(Duplicate)')['centre'])
+            wait(lambda: len(state()['document']['objects']) == len(initial['objects']) + 1)
+            chord('z')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            assert source.read_bytes() == original
+            click(next(c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)')['centre'])
+            wait(lambda: state()['selected'] == 1)
+            popup = open_property_actions()
+            click(property_item(popup, 'Rename')['centre'])
+            wait(lambda: state()['inline_names'] and state()['inline_names'][0]['focused'])
+            assert state()['name_edit'] is None and state()['document'] == initial
+            desktop.key('Escape')
+            fresh()
+            revision = state()['revision']
+            history = state()['history']
+        if args.inline:
+
+            def edit_field(index, value):
+                field = next((c for c in state()['attribute_summary'] if c['field'] == index))
+                click(field['centre'])
+                wait(lambda: any((c['field'] == index and c['focused'] for c in state()['inline_attributes'])))
+                assert state()['transform_edit'] is None
+                chord('a')
+                for char in value:
+                    desktop.key({'.': 'period', '-': 'minus'}.get(char, char))
+                wait(lambda: any((c['value'] == value for c in state()['inline_attributes'])))
+            first = initial['objects'][0]['pose']['position'][0] + 0.125
+            edit_field(0, str(first))
+            capture('inline-editing.png')
+            if args.categories:
+                click(next(c for c in state()['property_tabs']['controls'] if c['tab'] == 'View')['centre'])
+                wait(lambda: state()['property_tabs']['active'] == 'View')
+                wait(lambda: state()['document']['objects'][0]['pose']['position'][0] == first)
+                assert not state()['inline_attributes']
+                click(next(c for c in state()['property_tabs']['controls'] if c['tab'] == 'Attributes')['centre'])
+                wait(lambda: state()['property_tabs']['active'] == 'Attributes' and state()['inline_attributes'])
+            else:
+                desktop.key('Return')
+            wait(lambda: not any(c['focused'] for c in state()['inline_attributes']))
+            assert state()['document']['objects'][0]['pose']['position'][0] == first
+            assert state()['unsaved_changes'] and source.read_bytes() == original
+            field = next(c for c in state()['attribute_summary'] if c['field'] == 0)
+            click(field['centre'])
+            desktop.key('Tab')
+            wait(lambda: any(c['field'] == 1 and c['focused'] for c in state()['inline_attributes']))
+            desktop.key('Escape')
+            wait(lambda: not any(c['focused'] for c in state()['inline_attributes']))
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('y')
+            wait(lambda: state()['document']['objects'][0]['pose']['position'][0] == first)
+            second = first + 0.25
+            edit_field(0, str(second))
+            chord('s')
+            wait(lambda: not any(c['focused'] for c in state()['inline_attributes']) and (not state()['unsaved_changes']))
+            assert json.loads(source.read_text())['objects'][0]['pose']['position'][0] == second
+            saved = source.read_bytes()
+            saved_revision = state()['revision']
+            edit_field(4, '-1')
+            desktop.key('Return')
+            fresh()
+            assert any(c['focused'] for c in state()['inline_attributes']) and state()['revision'] == saved_revision
+            assert source.read_bytes() == saved
+            capture('inline-invalid.png')
+            desktop.key('Escape')
+            wait(lambda: not any(c['focused'] for c in state()['inline_attributes']))
+            assert source.read_bytes() == saved
+            chord('z')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('s')
+            wait(lambda: not state()['unsaved_changes'])
+            original = source.read_bytes()
+            revision = state()['revision']
+            history = state()['history']
+        chord('d')
+        wait(lambda: state()['revision'] > revision)
+        assert state()['unsaved_changes']
+        capture('status-bar-unsaved.png')
+        chord('z')
+        wait(lambda: state()['document'] == initial)
+        chord('s')
+        wait(lambda: not state()['unsaved_changes'])
+        while state()['content_list']['page'] > 0:
+            click(next((c for c in state()['content_list']['controls'] if c['target'] == 'Previous'))['centre'])
+        click(next((c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)'))['centre'])
+        wait(lambda: state()['selected'] == 1)
+        capture('status-bar-final.png')
+        result = dict(property_actions_verified=args.property_actions, spawn_verified=args.spawn, names_verified=args.names, toolbar_verified=args.toolbar, categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
+finally:
+    desktop.close()
+    if process is not None and process.poll() is None:
+        process.terminate()
+        process.wait(timeout=15)
+if process.returncode not in [0, -15]:
+    raise AssertionError(process.returncode)
+result['gpu_diagnostics'] = check_gpu_diagnostics((out / 'editor.log').read_text())
+(out / 'qualification.json').write_text(json.dumps(result, indent=2))
+print(json.dumps(result))

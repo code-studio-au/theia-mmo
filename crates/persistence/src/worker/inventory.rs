@@ -6,6 +6,7 @@ use theia_core::inventory::{
 };
 use tokio::sync::oneshot;
 pub(super) enum Request {
+    QuestItems(super::quest_items::Request),
     QuestLifecycle(super::quest_lifecycle::Request),
     QuestJournal(super::quest_journal::Request),
     Vendor(super::vendors::Request),
@@ -153,6 +154,7 @@ impl Request {
     pub(super) async fn run(self, store: &mut Store, status: &mut WorkerStatus) -> Result<()> {
         match self {
             Self::QuestLifecycle(request) => request.run(store, status).await,
+            Self::QuestItems(request) => request.run(store, status).await,
             Self::QuestJournal(request) => request.run(store, status).await,
             Self::Vendor(request) => request.run(store, status).await,
             Self::Progression(request) => request.run(store, status).await,
@@ -225,6 +227,7 @@ pub(super) fn respond<T>(
         Ok(_) => false,
         Err(Error::VendorCommand(
             theia_core::vendors::Error::InsufficientCost
+            | theia_core::vendors::Error::CurrencyOverflow
             | theia_core::vendors::Error::NoCapacity
             | theia_core::vendors::Error::UnknownOffer
             | theia_core::vendors::Error::StaleRevision
@@ -236,6 +239,7 @@ pub(super) fn respond<T>(
         Err(
             Error::RewardMissing
             | Error::RewardConsumed
+            | Error::RewardNotNeeded
             | Error::RewardCommand(
                 theia_core::rewards::Error::NoCapacity
                 | theia_core::rewards::Error::StaleRevision
@@ -247,7 +251,9 @@ pub(super) fn respond<T>(
             false
         }
         Err(
-            Error::QuestJournalMissing
+            Error::DocumentProfileMismatch
+            | Error::DocumentCommand(_)
+            | Error::QuestJournalMissing
             | Error::QuestJournalConflict
             | Error::QuestJournalCommand(_)
             | Error::ProgressionMissing

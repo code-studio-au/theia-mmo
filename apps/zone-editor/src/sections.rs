@@ -1,0 +1,236 @@
+//! Collapsible inspector sections adapted from Sprinkles' panel_section.rs.
+//! Upstream 0e978f5, MIT; see third_party/sprinkles/PROVENANCE.md.
+use super::*;
+
+#[derive(Component)]
+pub(super) struct Section {
+    pub title: &'static str,
+    pub body: Entity,
+    pub expanded: bool,
+}
+#[derive(Component)]
+pub(super) struct Root;
+#[derive(Component)]
+struct Chevron;
+#[derive(Component)]
+pub(super) struct Title;
+
+pub(super) fn spawn(
+    parent: &mut ChildSpawnerCommands,
+    title: &'static str,
+    body: impl FnOnce(&mut ChildSpawnerCommands),
+) {
+    parent
+        .spawn((
+            Root,
+            Node {
+                width: percent(100),
+                flex_direction: FlexDirection::Column,
+                border: UiRect::bottom(px(1)),
+                padding: UiRect::vertical(px(12)),
+                row_gap: px(12),
+                flex_shrink: 0.,
+                ..default()
+            },
+            BorderColor::all(theme::BORDER),
+        ))
+        .with_children(|section| {
+            let header = section
+                .spawn((
+                    Button,
+                    theme::Variant::Ghost,
+                    ActivateOnPress,
+                    Hovered::default(),
+                    Node {
+                        width: percent(100),
+                        min_height: px(20),
+                        justify_content: JustifyContent::SpaceBetween,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    BackgroundColor(theme::Variant::Ghost.background(false)),
+                    children![
+                        (
+                            Title,
+                            Text::new(title),
+                            TextFont {
+                                weight: FontWeight::SEMIBOLD,
+                                ..theme::font(12.)
+                            },
+                            TextColor(theme::DISPLAY),
+                        ),
+                        (
+                            Chevron,
+                            Pickable::IGNORE,
+                            Node {
+                                width: px(6),
+                                height: px(6),
+                                border: UiRect {
+                                    right: px(1),
+                                    bottom: px(1),
+                                    ..default()
+                                },
+                                margin: UiRect::right(px(4)),
+                                ..default()
+                            },
+                            BorderColor::all(theme::BODY),
+                            UiTransform::from_rotation(Rot2::degrees(45.))
+                        ),
+                    ],
+                ))
+                .observe(toggle)
+                .id();
+            let body = section
+                .spawn(Node {
+                    width: percent(100),
+                    flex_direction: FlexDirection::Column,
+                    row_gap: px(12),
+                    ..default()
+                })
+                .with_children(body)
+                .id();
+            section.commands().entity(header).insert(Section {
+                title,
+                body,
+                expanded: true,
+            });
+        });
+}
+
+#[allow(clippy::too_many_arguments)]
+fn toggle(
+    event: On<Activate>,
+    session: Res<Session>,
+    windows: Query<&Window>,
+    mut sections: Query<(&mut Section, &Children)>,
+    mut nodes: Query<&mut Node>,
+    mut commands: Commands,
+    mut chevrons: Query<&mut UiTransform, With<Chevron>>,
+    mut focus: Option<ResMut<bevy::input_focus::InputFocus>>,
+) {
+    if workspace::busy(&session) || !windows.single().is_ok_and(|window| window.focused) {
+        return;
+    }
+    let Ok((mut section, children)) = sections.get_mut(event.entity) else {
+        return;
+    };
+    let Ok(mut node) = nodes.get_mut(section.body) else {
+        return;
+    };
+    section.expanded = !section.expanded;
+    node.display = if section.expanded {
+        Display::Flex
+    } else {
+        Display::None
+    };
+    commands.entity(section.body).insert(if section.expanded {
+        Visibility::Inherited
+    } else {
+        Visibility::Hidden
+    });
+    // A hidden field must never retain keyboard ownership. Section activation
+    // itself is read-only and cannot create history or change tool preferences.
+    if let Some(focus) = focus.as_mut() {
+        focus.set(event.entity, bevy::input_focus::FocusCause::Navigated);
+    }
+    for child in children.iter() {
+        if let Ok(mut transform) = chevrons.get_mut(child) {
+            transform.rotation = Rot2::degrees(if section.expanded { 45. } else { -45. });
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy::input_focus::InputFocus;
+
+    #[test]
+    fn section_activation_retains_exact_source_redo_preferences_and_keyboard_access() {
+        for origin in [
+            [0.125, 0.25, -0.5],
+            [128_000_000_000.125, 20.25, -128_000_000_000.5],
+        ] {
+            let zone = Zone {
+                origin,
+                spawn: [origin[0], origin[1] + 0.1, origin[2]],
+                ..default()
+            };
+            let mut editor = Editor::new(zone.clone()).unwrap();
+            editor
+                .execute(Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![Edit::SetSpawn {
+                        position: [origin[0] + 4., origin[1] + 0.1, origin[2]],
+                    }],
+                })
+                .unwrap();
+            editor
+                .execute(Command::Undo {
+                    expected_revision: 1,
+                })
+                .unwrap();
+            let mut app = App::new();
+            app.insert_resource(Session::new(
+                editor,
+                "unused.json".into(),
+                Some(zone.clone()),
+            ));
+            app.world_mut().resource_mut::<Session>().placement_size = [8.25, 3.5, 2.25];
+            let window = app
+                .world_mut()
+                .spawn(Window {
+                    focused: true,
+                    ..default()
+                })
+                .id();
+            let body = app.world_mut().spawn(Node::default()).id();
+            let hidden_field = app.world_mut().spawn_empty().id();
+            let chevron = app
+                .world_mut()
+                .spawn((Chevron, UiTransform::from_rotation(Rot2::degrees(45.))))
+                .id();
+            let header = app
+                .world_mut()
+                .spawn(Section {
+                    title: "Tool settings",
+                    body,
+                    expanded: true,
+                })
+                .add_child(chevron)
+                .observe(toggle)
+                .id();
+            app.insert_resource(InputFocus::from_entity(hidden_field));
+            for expected in [false, true, false, true] {
+                app.world_mut().trigger(Activate { entity: header });
+                assert_eq!(
+                    app.world().get::<Section>(header).unwrap().expanded,
+                    expected
+                );
+                assert_eq!(
+                    app.world().get::<Node>(body).unwrap().display,
+                    if expected {
+                        Display::Flex
+                    } else {
+                        Display::None
+                    }
+                );
+                assert_eq!(app.world().resource::<InputFocus>().get(), Some(header));
+                let session = app.world().resource::<Session>();
+                assert_eq!(session.editor.zone(), &zone);
+                assert_eq!(session.editor.revision(), 2);
+                assert_eq!(session.editor.history(), (0, 1));
+                assert_eq!(session.placement_size, [8.25, 3.5, 2.25]);
+                assert!(!session.is_dirty());
+            }
+            app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+            app.world_mut().trigger(Activate { entity: header });
+            assert!(app.world().get::<Section>(header).unwrap().expanded);
+            app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+            app.world_mut().resource_mut::<Session>().play =
+                Some(playtest::Playtest::new(&zone).unwrap());
+            app.world_mut().trigger(Activate { entity: header });
+            assert!(app.world().get::<Section>(header).unwrap().expanded);
+        }
+    }
+}

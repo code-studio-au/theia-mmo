@@ -13,6 +13,7 @@ pub(crate) struct Metrics {
     pub catch_up_speed_mps: f32,
     pub samples: u64,
     pub moving_frames: u64,
+    pub blended_frames: u64,
     pub authority_updates: u64,
     pub max_authority_lag_m: f64,
     pub max_frame_displacement_m: f64,
@@ -71,6 +72,7 @@ impl TargetMotion {
         metrics.samples += 1;
         if displacement > 0.00001 {
             metrics.moving_frames += 1;
+            metrics.blended_frames += u64::from((a[0] - b[0]).hypot(a[2] - b[2]) > 0.00001);
         }
         metrics.max_authority_lag_m = metrics
             .max_authority_lag_m
@@ -105,6 +107,45 @@ mod tests {
     }
     fn position(x: f64) -> GlobalPosition {
         GlobalPosition::new([15000. + x, 1., 15000.]).unwrap()
+    }
+    #[test]
+    fn walking_snapshots_blend_without_run_speed_spikes_and_settle_at_all_rates() {
+        for hz in [20, 30, 60] {
+            for fps in [20, 30, 60, 120, 144] {
+                let mut motion = TargetMotion::new(key(1), position(0.), 0);
+                let mut metrics = Metrics {
+                    enabled: true,
+                    catch_up_speed_mps: 10.,
+                    ..default()
+                };
+                let mut previous = position(0.);
+                for frame in 1..=fps * 4 {
+                    let tick = u64::from(frame * hz / fps);
+                    let authority = position(tick as f64 / f64::from(hz) * 1.5);
+                    let presented =
+                        motion.observe(authority, tick, hz, 1. / fps as f32, &mut metrics);
+                    assert!(presented.metres()[0] >= previous.metres()[0]);
+                    assert!(presented.metres()[0] <= authority.metres()[0]);
+                    assert!(authority.metres()[0] - presented.metres()[0] < 0.2);
+                    let speed = (presented.metres()[0] - previous.metres()[0]) * f64::from(fps);
+                    assert!(speed <= 3., "hz={hz} fps={fps} frame={frame} speed={speed}");
+                    previous = presented;
+                }
+                if fps > hz {
+                    assert!(metrics.blended_frames > 0, "hz={hz} fps={fps}");
+                }
+                for frame in 1..=fps {
+                    motion.observe(
+                        position(6.),
+                        u64::from(4 * hz + frame * hz / fps),
+                        hz,
+                        1. / fps as f32,
+                        &mut metrics,
+                    );
+                }
+                assert!((motion.global().metres()[0] - position(6.).metres()[0]).abs() < 1e-7);
+            }
+        }
     }
     #[test]
     fn delayed_burst_catch_up_does_not_lurch_during_the_measured_sub_metre_window() {

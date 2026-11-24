@@ -100,6 +100,7 @@ impl Player {
 struct RawCreature {
     creature: String,
     physical: Physical,
+    maximum_mana: Option<u32>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -116,6 +117,7 @@ pub struct Profile {
     ruleset: Ruleset,
     player: Player,
     creatures: BTreeMap<ContentId, Physical>,
+    creature_mana: BTreeMap<ContentId, u32>,
 }
 impl Profile {
     pub fn from_json(bytes: &[u8]) -> Result<Self, &'static str> {
@@ -128,8 +130,15 @@ impl Profile {
         }
         let id = ContentId::new(&raw.id).ok_or("Invalid damage stats ID")?;
         let mut creatures = BTreeMap::new();
+        let mut creature_mana = BTreeMap::new();
         for raw in raw.creatures {
             let id = ContentId::new(&raw.creature).ok_or("Invalid damage stats creature ID")?;
+            if let Some(maximum) = raw.maximum_mana {
+                if !(1..=crate::resources::MAX_VALUE).contains(&maximum) {
+                    return Err("Creature mana exceeds resource bounds");
+                }
+                creature_mana.insert(id.clone(), maximum);
+            }
             if creatures.insert(id, raw.physical).is_some() {
                 return Err("Duplicate damage stats creature");
             }
@@ -139,6 +148,7 @@ impl Profile {
             ruleset: raw.ruleset,
             player: raw.player,
             creatures,
+            creature_mana,
         })
     }
     pub fn id(&self) -> &ContentId {
@@ -152,6 +162,9 @@ impl Profile {
     }
     pub fn creature(&self, id: &ContentId) -> Option<Physical> {
         self.creatures.get(id).copied()
+    }
+    pub fn creature_maximum_mana(&self, id: &ContentId) -> Option<u32> {
+        self.creature_mana.get(id).copied()
     }
     pub fn creatures(&self) -> impl ExactSizeIterator<Item = (&ContentId, &Physical)> {
         self.creatures.iter()

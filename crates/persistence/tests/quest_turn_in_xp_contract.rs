@@ -540,7 +540,26 @@ async fn worker_retains_executing_lost_answers_orders_later_kills_and_bounds_bac
 #[tokio::test]
 #[ignore = "requires owned PostgreSQL; run tools/qualify_persistence.py"]
 async fn migration_nine_journal_rows_and_receipts_upgrade_without_completion_rewards() {
-    let (url, admin, driver) = support::owned().await;
+    // Downgrade only this disposable database: later migrations may preserve
+    // data (such as repeatable loot) that cannot be folded into schema nine.
+    let (base_url, base_admin, base_driver) = support::owned().await;
+    let database = format!("theia_upgrade_{}", uuid::Uuid::new_v4().simple());
+    base_admin
+        .batch_execute(&format!("CREATE DATABASE {database}"))
+        .await
+        .unwrap();
+    let (prefix, original) = base_url.rsplit_once('/').unwrap();
+    assert_eq!(
+        original, "postgres",
+        "Expected the owned runner's database URL"
+    );
+    let url = format!("{prefix}/{database}");
+    drop(base_admin);
+    base_driver.await.unwrap().unwrap();
+    let (admin, connection) = tokio_postgres::connect(&url, tokio_postgres::NoTls)
+        .await
+        .unwrap();
+    let driver = tokio::spawn(connection);
     let realm = RealmId::random();
     let mut store = Store::connect_loopback(&url, realm).await.unwrap();
     let (xp, rewarded) = profiles(None);
@@ -569,15 +588,54 @@ async fn migration_nine_journal_rows_and_receipts_upgrade_without_completion_rew
         store.load_progression(a, WORLD, &xp).await.unwrap().total(),
         75
     );
+    let legacy_items = theia_persistence::InventoryCatalog::from_json(include_bytes!(
+        "../../../content/gameplay/development-equipment-items.json"
+    ))
+    .unwrap();
+    let legacy_rewards = theia_persistence::RewardCatalog::from_json(
+        include_bytes!("../../../content/gameplay/development-rewards.json"),
+        &legacy_items,
+    )
+    .unwrap();
+    store
+        .ensure_inventory(
+            a,
+            WORLD,
+            &legacy_items,
+            &theia_core::inventory::Bag::empty(legacy_items.catalog()),
+        )
+        .await
+        .unwrap();
+    let legacy_reward_id = ContentId::new("theia.dev.first-training-kill").unwrap();
+    let legacy_claim = store
+        .offer_reward(a, WORLD, &legacy_rewards, &legacy_reward_id)
+        .await
+        .unwrap();
+    let legacy_bag = store
+        .claim_reward(a, WORLD, &legacy_rewards, legacy_claim.id, 0)
+        .await
+        .unwrap()
+        .bag;
     store.close().await.unwrap();
-    admin.batch_execute("DROP TABLE theia.quest_journal_actions; DROP TABLE theia.quest_journal_events; DROP TABLE theia.quest_journal_entries; DROP TABLE theia.quest_journal_heads; ALTER TABLE theia.quest_action_receipts DROP CONSTRAINT quest_action_xp_metadata, DROP COLUMN xp_profile_hash, DROP COLUMN xp_granted, DROP COLUMN xp_revision, DROP COLUMN xp_total; DELETE FROM theia.schema_migrations WHERE version>=10;").await.unwrap();
+    admin.batch_execute("ALTER TABLE theia.characters DROP COLUMN appearance; DROP INDEX theia.reward_once_character; DROP INDEX theia.reward_per_victim_life; DROP INDEX theia.reward_pending_life_page; ALTER TABLE theia.reward_claims DROP CONSTRAINT reward_claim_source, DROP COLUMN claim_scope, DROP COLUMN victim_life, DROP COLUMN corpse_x, DROP COLUMN corpse_y, DROP COLUMN corpse_z, ADD CONSTRAINT reward_claims_realm_id_character_id_reward_id_key UNIQUE(realm_id,character_id,reward_id); DROP TABLE theia.quest_journal_actions; DROP TABLE theia.quest_journal_events; DROP TABLE theia.quest_journal_entries; DROP TABLE theia.quest_journal_heads; ALTER TABLE theia.quest_action_receipts DROP CONSTRAINT quest_action_xp_metadata, DROP COLUMN xp_profile_hash, DROP COLUMN xp_granted, DROP COLUMN xp_revision, DROP COLUMN xp_total; DROP TABLE theia.loot_rolls; DELETE FROM theia.schema_migrations WHERE version>=10;").await.unwrap();
     let mut store = Store::connect_loopback(&url, realm).await.unwrap();
     let count: i64 = admin
         .query_one("SELECT count(*) FROM theia.schema_migrations", &[])
         .await
         .unwrap()
         .get(0);
-    assert_eq!(count, 11);
+    assert_eq!(count, 15);
+    assert_eq!(
+        store.load_inventory(a, WORLD, &legacy_items).await.unwrap(),
+        legacy_bag
+    );
+    let legacy_after = store
+        .offer_reward(a, WORLD, &legacy_rewards, &legacy_reward_id)
+        .await
+        .unwrap();
+    assert_eq!(legacy_after.id, legacy_claim.id);
+    assert_eq!(legacy_after.consumed_revision, Some(1));
+    assert!(legacy_after.corpse.is_none());
     assert_eq!(
         store
             .load_quest_lifecycle(a, WORLD, &journal)

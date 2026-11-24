@@ -1,33 +1,91 @@
 //! Explicit reward messages. Structural validity never authorizes a recipient
 //! or acknowledges durable items. Runtime admission binds the actor and profile.
 use crate::Result;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 use theia_core::{
     content::ContentId,
+    coordinates::GlobalPosition,
     identity::{EntityId, EntityKey, WorldEpoch},
     inventory::MAX_REVISION,
-    rewards::{Catalog, ClaimCommand, ClaimId, MAX_DEFINITIONS},
+    progression::KillId,
+    rewards::{
+        Catalog, ClaimCommand, ClaimId, CorpseSource, MAX_DEFINITIONS, MAX_VISIBLE_LIFE_CLAIMS,
+        Scope,
+    },
 };
 pub const REQUEST_TAG: &[u8; 4] = b"RC01";
 pub const REQUEST_BYTES: usize = 52;
+pub const PICKUP_TAG: &[u8; 4] = b"RC02";
+pub const PICKUP_BYTES: usize = REQUEST_BYTES + 16;
 pub const STATE_TAG: &[u8; 4] = b"RW01";
+pub const LOOT_STATE_TAG: &[u8; 4] = b"RW02";
 pub const HEADER_BYTES: usize = 61;
 pub const ROW_BYTES: usize = 17;
 pub const MAX_BYTES: usize = HEADER_BYTES + MAX_DEFINITIONS * ROW_BYTES;
+pub const MAX_AVAILABLE_CLAIMS: usize = MAX_DEFINITIONS + MAX_VISIBLE_LIFE_CLAIMS;
+pub const LOOT_ROW_BYTES: usize = ROW_BYTES + 1 + 16 + 24;
+pub const MAX_LOOT_BYTES: usize =
+    HEADER_BYTES + MAX_DEFINITIONS * (ROW_BYTES + 1) + MAX_VISIBLE_LIFE_CLAIMS * LOOT_ROW_BYTES;
+fn has_life_rewards(catalog: &Catalog) -> bool {
+    catalog
+        .definitions()
+        .any(|d| d.scope() == Scope::PerCreatureLife)
+}
 /// The same byte-bound reward/item identity used by the durable store.
 #[derive(Clone, Debug)]
 pub struct Profile {
     catalog: Arc<Catalog>,
     hash: [u8; 32],
     item_hash: [u8; 32],
+    quest_journal: Option<[u8; 32]>,
 }
 impl Profile {
     pub fn from_json(
         bytes: &[u8],
         items: &crate::renet_runtime::inventory::Profile,
     ) -> Result<Self> {
+        Self::parse(bytes, items, false, false)
+    }
+    /// Explicit opt-in for headless per-life pickup. Default content admission
+    /// remains unchanged until normal client interaction is qualified.
+    pub fn from_json_with_creature_loot(
+        bytes: &[u8],
+        items: &crate::renet_runtime::inventory::Profile,
+    ) -> Result<Self> {
+        Self::parse(bytes, items, true, false)
+    }
+    /// Exact immutable binding only; not simulation/client/owner admission.
+    pub fn from_json_with_quest_journal(
+        bytes: &[u8],
+        items: &crate::renet_runtime::inventory::Profile,
+        journal: &crate::quest_journal::Profile,
+    ) -> Result<Self> {
+        let mut profile = Self::parse(bytes, items, true, true)?;
+        if !profile.catalog.has_quest_required() || journal.inventory_hash() != Some(items.hash()) {
+            return Err("Quest-only loot requires the exact inventory-bound journal".into());
+        }
+        profile.catalog.validate_quest_items(journal.catalog())?;
+        let mut bound = theia_core::rewards::QUEST_PROFILE_DOMAIN.to_vec();
+        bound.extend(profile.hash);
+        bound.extend(journal.hash());
+        profile.hash = crate::terrain::sha256(&bound);
+        profile.quest_journal = Some(journal.hash());
+        Ok(profile)
+    }
+    fn parse(
+        bytes: &[u8],
+        items: &crate::renet_runtime::inventory::Profile,
+        allow_life: bool,
+        allow_quest: bool,
+    ) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes, items.catalog())?);
+        if catalog.has_quest_required() && !allow_quest {
+            return Err("Quest-only loot runtime is not installed".into());
+        }
+        if has_life_rewards(&catalog) && !allow_life {
+            return Err("Per-creature-life reward runtime is not installed".into());
+        }
         let mut bound = theia_core::rewards::PROFILE_DOMAIN.to_vec();
         bound.extend(items.hash());
         bound.extend(bytes);
@@ -35,6 +93,7 @@ impl Profile {
             catalog,
             hash: crate::terrain::sha256(&bound),
             item_hash: items.hash(),
+            quest_journal: None,
         })
     }
     pub fn catalog(&self) -> &Catalog {
@@ -45,6 +104,9 @@ impl Profile {
     }
     pub fn item_hash(&self) -> [u8; 32] {
         self.item_hash
+    }
+    pub fn quest_journal_hash(&self) -> Option<[u8; 32]> {
+        self.quest_journal
     }
 }
 fn word(bytes: &[u8], at: usize) -> u64 {
@@ -97,13 +159,41 @@ impl Request {
         Ok(request)
     }
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// Explicit pickup of one private claim from an exact original creature life.
+/// No client-supplied position or recipient. Structural validity grants nothing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PickupRequest {
+    pub request: Request,
+    pub life: KillId,
+}
+impl PickupRequest {
+    pub fn encode(self) -> Result<Vec<u8>> {
+        let mut bytes = self.request.encode()?;
+        bytes[..4].copy_from_slice(PICKUP_TAG);
+        bytes.extend(self.life.bytes());
+        Ok(bytes)
+    }
+    pub fn decode(bytes: &[u8]) -> Result<Self> {
+        if bytes.len() != PICKUP_BYTES || !bytes.starts_with(PICKUP_TAG) {
+            return Err("Invalid corpse pickup frame".into());
+        }
+        let mut request = bytes[..REQUEST_BYTES].to_vec();
+        request[..4].copy_from_slice(REQUEST_TAG);
+        Ok(Self {
+            request: Request::decode(&request)?,
+            life: KillId::from_bytes(bytes[REQUEST_BYTES..].try_into().unwrap())
+                .ok_or("Invalid corpse pickup life")?,
+        })
+    }
+}
+#[derive(Clone, Debug, PartialEq)]
 pub struct Available {
     pub reward: ContentId,
     pub claim: ClaimId,
+    pub corpse: Option<CorpseSource>,
 }
 /// Private owned availability, independent of the backpack revision and reply.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct State {
     pub actor: EntityKey,
     pub generation: u64,
@@ -112,39 +202,92 @@ pub struct State {
 }
 impl State {
     pub fn encode(&self, catalog: &Catalog, expected: [u8; 32]) -> Result<Vec<u8>> {
+        let life = has_life_rewards(catalog);
+        let limit = if life {
+            MAX_AVAILABLE_CLAIMS
+        } else {
+            MAX_DEFINITIONS
+        };
         if self.generation == 0
             || expected == [0; 32]
             || self.profile_hash != expected
-            || self.available.len() > MAX_DEFINITIONS
+            || self.available.len() > limit
         {
             return Err("Invalid reward observation header".into());
         }
-        let definitions: Vec<_> = catalog.definitions().map(|d| d.id()).collect();
-        let mut bytes = STATE_TAG.to_vec();
+        let definitions: Vec<_> = catalog.definitions().collect();
+        let mut bytes = if life {
+            LOOT_STATE_TAG.to_vec()
+        } else {
+            STATE_TAG.to_vec()
+        };
         write_key(&mut bytes, self.actor);
         bytes.extend(self.generation.to_le_bytes());
         bytes.extend(self.profile_hash);
         bytes.push(self.available.len() as u8);
-        let mut previous = None;
+        let mut previous: Option<(usize, [u8; 16])> = None;
         let mut claims = BTreeSet::new();
+        let mut once = BTreeSet::new();
+        let mut occurrences = BTreeSet::new();
+        let mut positions = BTreeMap::new();
+        let mut life_count = 0;
         for row in &self.available {
             let ordinal = definitions
                 .iter()
-                .position(|id| **id == row.reward)
+                .position(|d| d.id() == &row.reward)
                 .ok_or("Unknown reward definition")?;
-            if previous.is_some_and(|p| ordinal <= p) || !claims.insert(row.claim) {
+            let order = (ordinal, row.claim.bytes());
+            if previous.is_some_and(|p| if life { order <= p } else { ordinal <= p.0 })
+                || !claims.insert(row.claim)
+            {
                 return Err("Duplicate/unordered reward availability".into());
             }
-            previous = Some(ordinal);
+            previous = Some(order);
             bytes.push(ordinal as u8);
             bytes.extend(row.claim.bytes());
+            match (definitions[ordinal].scope(), row.corpse) {
+                (Scope::OncePerCharacter, None) => {
+                    if !once.insert(ordinal) {
+                        return Err("Duplicate once-character availability".into());
+                    }
+                    if life {
+                        bytes.push(0);
+                    }
+                }
+                (Scope::PerCreatureLife, Some(source)) => {
+                    life_count += 1;
+                    if life_count > MAX_VISIBLE_LIFE_CLAIMS
+                        || !occurrences.insert((ordinal, source.life.bytes()))
+                    {
+                        return Err("Duplicate or over-budget life availability".into());
+                    }
+                    if positions
+                        .insert(source.life.bytes(), source.position)
+                        .is_some_and(|old| old != source.position)
+                    {
+                        return Err("Conflicting corpse source positions".into());
+                    }
+                    bytes.push(1);
+                    bytes.extend(source.life.bytes());
+                    for value in source.position.metres() {
+                        bytes.extend(value.to_le_bytes());
+                    }
+                }
+                _ => return Err("Reward scope/source mismatch".into()),
+            }
         }
         Ok(bytes)
     }
     pub fn decode(bytes: &[u8], catalog: &Catalog, expected: [u8; 32]) -> Result<Self> {
+        let life = has_life_rewards(catalog);
+        let (tag, maximum, limit) = if life {
+            (LOOT_STATE_TAG, MAX_LOOT_BYTES, MAX_AVAILABLE_CLAIMS)
+        } else {
+            (STATE_TAG, MAX_BYTES, MAX_DEFINITIONS)
+        };
         if bytes.len() < HEADER_BYTES
-            || bytes.len() > MAX_BYTES
-            || !bytes.starts_with(STATE_TAG)
+            || bytes.len() > maximum
+            || !bytes.starts_with(tag)
             || expected == [0; 32]
         {
             return Err("Invalid reward observation frame/profile".into());
@@ -153,33 +296,67 @@ impl State {
         let generation = word(bytes, 20);
         let profile_hash = bytes[28..60].try_into().unwrap();
         let count = usize::from(bytes[60]);
-        if count > MAX_DEFINITIONS
-            || bytes.len() != HEADER_BYTES + count * ROW_BYTES
-            || generation == 0
-            || profile_hash != expected
-        {
+        if count > limit || generation == 0 || profile_hash != expected {
             return Err("Invalid reward observation identity/count/generation".into());
         }
-        let definitions: Vec<_> = catalog.definitions().map(|d| d.id()).collect();
+        let definitions: Vec<_> = catalog.definitions().collect();
         let mut available = Vec::with_capacity(count);
-        let mut previous = None;
-        let mut claims = BTreeSet::new();
-        for row in bytes[HEADER_BYTES..].as_chunks::<ROW_BYTES>().0 {
-            let ordinal = usize::from(row[0]);
-            let reward = (*definitions.get(ordinal).ok_or("Unknown reward ordinal")?).clone();
+        let mut at = HEADER_BYTES;
+        for _ in 0..count {
+            let row = take::<ROW_BYTES>(bytes, &mut at)?;
+            let reward = definitions
+                .get(usize::from(row[0]))
+                .ok_or("Unknown reward ordinal")?
+                .id()
+                .clone();
             let claim =
                 ClaimId::new(row[1..].try_into().unwrap()).ok_or("Invalid reward claim ID")?;
-            if previous.is_some_and(|p| ordinal <= p) || !claims.insert(claim) {
-                return Err("Duplicate/unordered reward availability".into());
-            }
-            previous = Some(ordinal);
-            available.push(Available { reward, claim });
+            let corpse = if life {
+                match take::<1>(bytes, &mut at)?[0] {
+                    0 => None,
+                    1 => {
+                        let life = KillId::from_bytes(take::<16>(bytes, &mut at)?)
+                            .ok_or("Invalid corpse victim life")?;
+                        let mut xyz = [0.; 3];
+                        for value in &mut xyz {
+                            *value = f64::from_le_bytes(take::<8>(bytes, &mut at)?);
+                        }
+                        Some(CorpseSource {
+                            life,
+                            position: GlobalPosition::new(xyz)
+                                .ok_or("Invalid corpse global position")?,
+                        })
+                    }
+                    _ => return Err("Unknown reward source kind".into()),
+                }
+            } else {
+                None
+            };
+            available.push(Available {
+                reward,
+                claim,
+                corpse,
+            });
         }
-        Ok(Self {
+        if at != bytes.len() {
+            return Err("Trailing reward observation bytes".into());
+        }
+        let state = Self {
             actor,
             generation,
             profile_hash,
             available,
-        })
+        };
+        // Share scope, ordering, unique receipt/life and location validation.
+        if state.encode(catalog, expected)?.as_slice() != bytes {
+            return Err("Noncanonical reward observation".into());
+        }
+        Ok(state)
     }
+}
+fn take<const N: usize>(bytes: &[u8], at: &mut usize) -> Result<[u8; N]> {
+    let end = at.checked_add(N).ok_or("Reward cursor overflow")?;
+    let value = bytes.get(*at..end).ok_or("Truncated reward observation")?;
+    *at = end;
+    Ok(value.try_into().unwrap())
 }

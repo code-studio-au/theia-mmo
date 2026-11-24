@@ -4,7 +4,9 @@ use theia_network::{Result, server, tls};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut args = std::env::args().skip(1);
+    let arguments: Vec<_> = std::env::args().skip(1).collect();
+    theia_network::simulation::population::configuration::validate_launch(&arguments)?;
+    let mut args = arguments.into_iter();
     let bind: SocketAddr = args
         .next()
         .unwrap_or_else(|| "127.0.0.1:5000".into())
@@ -14,6 +16,7 @@ async fn main() -> Result<()> {
             .unwrap_or_else(|| "build/server-cert.der".into()),
     );
     let mut tickets = None;
+    let mut test_players = None;
     let mut dev_relays: Option<Vec<SocketAddr>> = None;
     let mut chunk_stream = false;
     let mut world_selected = false;
@@ -21,6 +24,8 @@ async fn main() -> Result<()> {
     let mut terrain_source = theia_network::procedural::Source::Procedural;
     let mut predicted = false;
     let mut classic = false;
+    let mut parties = false;
+    let mut chat_area = None;
     let mut dodge_profile = None;
     let mut melee_weapons = None;
     let mut physical_definitions = None;
@@ -31,6 +36,9 @@ async fn main() -> Result<()> {
     let mut combat_membership = None;
     let mut creature_credit = None;
     let mut creature_reset = None;
+    let mut creature_threat = None;
+    let mut public_creature_attacks = false;
+    let mut public_avatar_life = false;
     let mut combat_bytes = None;
     let mut targeted = false;
     let mut combat_catalog = None;
@@ -39,34 +47,69 @@ async fn main() -> Result<()> {
     let mut player_respawn = None;
     let mut player_stats_bytes = None;
     let mut patrol_bytes = None;
+    let mut population_bytes = None;
     let mut status_catalog = None;
     let mut patrol_profile = None;
+    let mut population_config = None;
+    let mut respawn_ms = theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS;
     let mut navigation = None;
+    let mut follow_navigation = None;
+    let mut follow_destinations = Vec::new();
     let mut item_catalog = None;
     let mut reward_catalog = None;
+    let mut creature_loot = false;
+    let mut quest_items = false;
+    let mut quest_loot = false;
     let mut progression_catalog = None;
     let mut quest_catalog = None;
+    let mut quest_areas = None;
+    let mut document_catalog = None;
+    let mut quest_item_rewards = None;
     let mut explicit_quest = false;
+    let mut journal_mode = false;
     let mut quest_turn_in_xp = None;
     let mut dialogue_catalog = None;
     let mut vendor_catalog = None;
-    let mut guide_position: Option<[f64; 2]> = None;
+    let mut guide_position: Option<String> = None;
     let mut dev_persistence = false;
     let mut account_login = false;
     let mut dev_tour = false;
     let mut dev_speed = 1.;
     let mut dev_spawn = [8000., 8000.];
+    let mut explicit_dev_spawn = false;
     let mut origin = None;
     let mut replication_span = None;
     let mut world = theia_network::simulation::World::default();
     while let Some(option) = args.next() {
         match option.as_str() {
+            "--test-players" => {
+                if test_players.is_some() { return Err("Choose one test player profile".into()); }
+                test_players=Some(PathBuf::from(args.next().ok_or("Missing test player profile")?));
+            }
             "--dev-relays" => dev_relays=Some(args.next().ok_or("Missing relay endpoints")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?),
             "--prediction" => predicted=true,
             "--classic" => classic=true,
+            "--chat-area" => {
+                if chat_area.is_some() { return Err("Choose chat area once".into()); }
+                let id = args.next().ok_or("Missing chat area")?.parse()?;
+                chat_area = Some(theia_core::chat::Area::new(id).ok_or("Chat area must be nonzero")?);
+            }
+            "--parties" => {
+                if std::mem::replace(&mut parties, true) { return Err("Choose party mode once".into()); }
+            }
             "--ability-starting" => {
                 if ability_starting.is_some(){return Err("Choose one ability starting profile".into());}
                 ability_starting=Some(PathBuf::from(args.next().ok_or("Missing ability starting profile")?));
+            }
+            "--public-avatar-life" => {
+                if std::mem::replace(&mut public_avatar_life,true){return Err("Choose public avatar life once".into());}
+            }
+            "--public-creature-attacks" => {
+                if std::mem::replace(&mut public_creature_attacks, true) {return Err("Choose public creature attacks once".into());}
+            }
+            "--creature-threat" => {
+                if creature_threat.is_some(){return Err("Choose one creature threat policy".into());}
+                creature_threat=Some(PathBuf::from(args.next().ok_or("Missing creature threat policy")?));
             }
             "--creature-reset" => {
                 if creature_reset.is_some(){return Err("Choose one creature reset policy".into());}
@@ -127,13 +170,29 @@ async fn main() -> Result<()> {
             }
             "--guide-position" => {
                 if guide_position.is_some() {return Err("Choose one guide position".into());}
-                let values:Vec<f64>=args.next().ok_or("Missing guide position")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;
-                guide_position=Some(values.try_into().map_err(|_|"Expected guide x,z")?);
+                let value = args.next().ok_or("Missing guide position")?;
+                if value != "authored" { theia_network::dialogue::Placement::parse(&value)?; }
+                guide_position=Some(value);
             }
             "--quest-lifecycle" => explicit_quest=true,
+            "--quest-journal" => journal_mode=true,
+            "--quest-items" => quest_items=true,
+            "--quest-loot" => quest_loot=true,
+            "--quest-item-rewards" => {
+                if quest_item_rewards.is_some() {return Err("Choose one fixed quest reward catalogue".into());}
+                quest_item_rewards=Some(PathBuf::from(args.next().ok_or("Missing fixed quest reward catalogue")?));
+            }
+            "--document-catalog" => {
+                if document_catalog.is_some() {return Err("Choose one document catalogue".into());}
+                document_catalog=Some(PathBuf::from(args.next().ok_or("Missing document catalogue")?));
+            }
             "--quest-turn-in-xp" => {
                 if quest_turn_in_xp.is_some() {return Err("Choose one completion XP recipe".into());}
                 quest_turn_in_xp=Some(PathBuf::from(args.next().ok_or("Missing completion XP recipe")?));
+            }
+            "--quest-areas" => {
+                if quest_areas.is_some() {return Err("Choose one quest area catalogue".into());}
+                quest_areas=Some(PathBuf::from(args.next().ok_or("Missing quest areas")?));
             }
             "--quest-catalog" => {
                 if quest_catalog.is_some() {return Err("Choose one quest catalog".into());}
@@ -143,6 +202,7 @@ async fn main() -> Result<()> {
                 if progression_catalog.is_some() {return Err("Choose one progression catalog".into());}
                 progression_catalog=Some(PathBuf::from(args.next().ok_or("Missing progression catalog")?));
             }
+            "--creature-loot" => {creature_loot=true;}
             "--reward-catalog" => {
                 if reward_catalog.is_some() {return Err("Choose one reward catalog".into());}
                 reward_catalog=Some(PathBuf::from(args.next().ok_or("Missing reward catalog")?));
@@ -150,6 +210,9 @@ async fn main() -> Result<()> {
             "--item-catalog" => {
                 if item_catalog.is_some() {return Err("Choose one item catalog".into());}
                 item_catalog=Some(PathBuf::from(args.next().ok_or("Missing item catalog")?));
+            }
+            "--population-config" => {
+                population_config=Some(PathBuf::from(args.next().ok_or("Missing population configuration")?));targeted=true;
             }
             "--creature-profile" => {
                 if patrol_profile.is_some() {return Err("Choose one creature profile".into());}
@@ -174,11 +237,13 @@ async fn main() -> Result<()> {
                 targeted=true;
             }
             "--dev-tour" => {dev_tour=true;}
+            "--authored-world" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true;
+                terrain_source=theia_network::procedural::Source::Authored(std::sync::Arc::new(theia_network::authored_world::Store::open(&PathBuf::from(args.next().ok_or("Missing authored world directory")?))?)); }
             "--saved-terrain" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true;
                 terrain_source=theia_network::procedural::Source::Saved(std::sync::Arc::new(theia_network::saved_terrain::Store::open(&PathBuf::from(args.next().ok_or("Missing saved terrain directory")?))?)); }
             "--graybox-world" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true; }
             "--dev-speed" => {dev_speed=args.next().ok_or("Missing developer speed")?.parse()?;}
-            "--dev-spawn" => {let values:Vec<f64>=args.next().ok_or("Missing developer spawn")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;dev_spawn=values.try_into().map_err(|_|"Expected x,z")?;}
+            "--dev-spawn" => {explicit_dev_spawn=true;let values:Vec<f64>=args.next().ok_or("Missing developer spawn")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;dev_spawn=values.try_into().map_err(|_|"Expected x,z")?;}
             "--chunk-stream"=>chunk_stream=true,
             "--world-origin" => {
                 let xyz: Vec<f64> = args.next().ok_or("Missing world origin")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;
@@ -224,6 +289,25 @@ async fn main() -> Result<()> {
             _ => return Err("Expected --terrain-world or --chunk-world <directory>, --tick-hz <20|30|60> or --renet-tickets <fresh-directory>".into()),
         }
     }
+    if test_players.is_some()
+        && (tickets.is_none()
+            || account_login
+            || dev_persistence
+            || chunk_stream
+            || !bind.ip().is_loopback()
+            || !graybox
+            || !predicted
+            || !classic
+            || dev_tour
+            || dev_speed != 1.)
+    {
+        return Err("Test players require local-ticket Classic prediction at normal speed, without accounts, persistence or streaming overrides".into());
+    }
+    if quest_item_rewards.is_some()
+        && (!journal_mode || quest_catalog.is_none() || item_catalog.is_none())
+    {
+        return Err("Fixed quest rewards require journal, quest and item catalogues".into());
+    }
     if status_catalog.is_some() && (character_stats.is_none() || combat_catalog.is_none()) {
         return Err("Statuses require combat and character stats".into());
     }
@@ -232,7 +316,7 @@ async fn main() -> Result<()> {
     }
     if creature_retaliation.is_some()
         && (!predicted
-            || patrol_profile.is_none()
+            || (patrol_profile.is_none() && population_config.is_none())
             || character_stats.is_none()
             || combat_catalog.is_none())
     {
@@ -246,6 +330,19 @@ async fn main() -> Result<()> {
     }
     if character_stats.is_some() && combat_catalog.is_none() {
         return Err("Character stats require combat".into());
+    }
+    if let theia_network::procedural::Source::Authored(store) = &terrain_source {
+        if explicit_dev_spawn {
+            return Err(
+                "Authored worlds use the saved player spawn; edit the zone instead of --dev-spawn"
+                    .into(),
+            );
+        }
+        let [x, _, z] = store
+            .spawn(0)
+            .ok_or("Authored world has no player spawn")?
+            .metres();
+        dev_spawn = [x, z];
     }
     if graybox {
         if (tickets.is_none() && !account_login) || origin.is_some() || replication_span.is_some() {
@@ -274,48 +371,97 @@ async fn main() -> Result<()> {
         }
         world.enable_classic()?;
     }
+    if let Some(area) = chat_area {
+        if !account_login || !classic {
+            return Err("Chat requires Classic account admission".into());
+        }
+        world.enable_local_chat(area)?;
+    }
+    if parties {
+        if !account_login || !classic {
+            return Err("Parties require Classic account admission".into());
+        }
+        world.enable_parties()?;
+    }
     if targeted {
         if !graybox || (tickets.is_none() && !account_login) {
             return Err("Targeting requires a graybox world and secure Renet".into());
         }
-        let target = if let Some(path) = patrol_profile {
-            use std::io::Read;
-            use theia_network::simulation::creatures;
-            let mut bytes = Vec::new();
-            std::fs::File::open(path)?
-                .take(creatures::MAX_PROFILE_BYTES as u64 + 1)
-                .read_to_end(&mut bytes)?;
-            let profile = creatures::Profile::from_json(&bytes)?;
-            if profile.aggro().is_some() && creature_retaliation.is_none() {
+        if let Some(path) = population_config {
+            let source = &world
+                .procedural()
+                .ok_or("Population requires authored terrain")?
+                .source;
+            let loaded =
+                theia_network::simulation::population::configuration::Loaded::open(&path, source)?;
+            if loaded.definition().aggro().is_some()
+                && (creature_retaliation.is_none() || player_respawn.is_none())
+            {
                 return Err(
-                    "Creature pursuit requires player life and retaliation profiles".into(),
+                    "Aggressive population requires player-life and retaliation profiles".into(),
                 );
             }
-            let source = world
-                .procedural()
-                .ok_or("Creature patrol requires terrain")?
-                .source
-                .clone();
-            let navigation =
-                theia_network::navigation::Store::open(&navigation.unwrap(), source.identity())?;
-            println!("development_creature profile={}", profile.id().as_str());
-            let target =
-                world.enable_patrol(creatures::Prepared::load(profile, &navigation, &source)?)?;
-            patrol_bytes = Some(bytes);
-            target
-        } else {
-            let x = if dev_spawn[0] + 8. <= 15999. {
-                dev_spawn[0] + 8.
+            follow_destinations = loaded.destinations().to_vec();
+            follow_navigation = Some(loaded.navigation().clone());
+            let pursuit_worker = loaded.pursuit_worker()?;
+            respawn_ms = loaded.respawn_ms();
+            population_bytes = Some(loaded.creature_bytes().to_vec());
+            let (prepared, binding) = loaded.into_parts();
+            let targets = if let Some(worker) = pursuit_worker {
+                world.enable_navigating_population(prepared, binding, worker)?
             } else {
-                dev_spawn[0] - 8.
+                world.enable_defined_population(prepared, binding)?
             };
-            world.spawn_development_target([x, dev_spawn[1]])?
-        };
-        println!("development_target id={}", target.entity.value());
+            println!(
+                "development_population count={} respawn_ms={respawn_ms}",
+                targets.len()
+            );
+        } else {
+            let target = if let Some(path) = patrol_profile {
+                use std::io::Read;
+                use theia_network::simulation::creatures;
+                let mut bytes = Vec::new();
+                std::fs::File::open(path)?
+                    .take(creatures::MAX_PROFILE_BYTES as u64 + 1)
+                    .read_to_end(&mut bytes)?;
+                let profile = creatures::Profile::from_json(&bytes)?;
+                if profile.aggro().is_some() && creature_retaliation.is_none() {
+                    return Err(
+                        "Creature pursuit requires player life and retaliation profiles".into(),
+                    );
+                }
+                let source = world
+                    .procedural()
+                    .ok_or("Creature patrol requires terrain")?
+                    .source
+                    .clone();
+                let navigation = theia_network::navigation::Store::open(
+                    &navigation.unwrap(),
+                    source.identity(),
+                )?;
+                follow_navigation = Some(navigation.clone());
+                println!("development_creature profile={}", profile.id().as_str());
+                let target = world.enable_patrol(creatures::Prepared::load(
+                    profile,
+                    &navigation,
+                    &source,
+                )?)?;
+                patrol_bytes = Some(bytes);
+                target
+            } else {
+                let x = if dev_spawn[0] + 8. <= 15999. {
+                    dev_spawn[0] + 8.
+                } else {
+                    dev_spawn[0] - 8.
+                };
+                world.spawn_development_target([x, dev_spawn[1]])?
+            };
+            println!("development_target id={}", target.entity.value());
+        }
     }
     if let Some(path) = combat_catalog {
         use std::io::Read;
-        use theia_network::simulation::combat::{DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS};
+        use theia_network::simulation::combat::DEVELOPMENT_HEALTH;
         let mut bytes = Vec::new();
         std::fs::File::open(path)?
             .take(theia_core::abilities::MAX_CATALOG_BYTES as u64 + 1)
@@ -334,21 +480,16 @@ async fn main() -> Result<()> {
                 world.enable_status_combat(
                     &bytes,
                     DEVELOPMENT_HEALTH,
-                    DEVELOPMENT_RESPAWN_MS,
+                    respawn_ms,
                     &stats,
                     &statuses,
                 )?;
             } else {
-                world.enable_resource_combat(
-                    &bytes,
-                    DEVELOPMENT_HEALTH,
-                    DEVELOPMENT_RESPAWN_MS,
-                    &stats,
-                )?;
+                world.enable_resource_combat(&bytes, DEVELOPMENT_HEALTH, respawn_ms, &stats)?;
             }
             player_stats_bytes = Some(stats);
         } else {
-            world.enable_combat(&bytes, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS)?;
+            world.enable_combat(&bytes, DEVELOPMENT_HEALTH, respawn_ms)?;
         }
         println!(
             "development_combat abilities={}",
@@ -371,11 +512,16 @@ async fn main() -> Result<()> {
                 .ok_or("Missing player life stats")?,
             patrol_bytes
                 .as_deref()
+                .or(population_bytes.as_deref())
                 .ok_or("Missing player life creature")?,
             &policy,
             &respawn,
         )?);
-        world.enable_player_life(profile)?;
+        if population_bytes.is_some() {
+            world.enable_population_player_life(profile)?;
+        } else {
+            world.enable_player_life(profile)?;
+        }
         println!("development_player_life enabled=true transient=true");
     }
     if let Some(path) = melee_weapons {
@@ -485,6 +631,30 @@ async fn main() -> Result<()> {
         world.enable_creature_reset(&bytes)?;
         println!("development_creature_reset enabled=true policy=creature_return_reset_fixture_v1");
     }
+    if let Some(path) = creature_threat {
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        std::fs::File::open(path)?
+            .take(theia_core::threat::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        world.enable_creature_threat(&bytes)?;
+        println!(
+            "development_creature_threat enabled=true policy=classic_damage_threat_empirical_v1"
+        );
+    }
+    if public_creature_attacks {
+        if population_bytes.is_some() {
+            world.enable_public_population_attacks()?;
+            println!("development_public_creature_attacks enabled=true contract=NP01");
+        } else {
+            world.enable_public_creature_attacks()?;
+            println!("development_public_creature_attacks enabled=true contract=NA01");
+        }
+    }
+    if public_avatar_life {
+        world.enable_public_avatar_life()?;
+        println!("development_public_avatar_life enabled=true contract=AV01");
+    }
     if let Some(origin) = origin
         && !world.set_origin(origin)
     {
@@ -505,9 +675,35 @@ async fn main() -> Result<()> {
         return Err("Loopback relay qualification requires Renet tickets".into());
     }
     if progression_catalog.is_some()
-        && (!account_login || world.patrol_snapshot().is_none() || !world.combat_enabled())
+        && (!account_login
+            || (world.patrol_snapshot().is_none() && population_bytes.is_none())
+            || !world.combat_enabled())
     {
         return Err("Progression requires account login and authoritative creature combat".into());
+    }
+    if quest_loot && (!quest_items || !creature_loot || reward_catalog.is_none()) {
+        return Err("Quest loot requires item journal, creature loot and rewards".into());
+    }
+    if quest_items && (!journal_mode || quest_catalog.is_none() || item_catalog.is_none()) {
+        return Err("Quest items require journal mode, quest and item catalogues".into());
+    }
+    if document_catalog.is_some()
+        && (!journal_mode || quest_catalog.is_none() || item_catalog.is_none())
+    {
+        return Err("Documents require journal, quest and item catalogues".into());
+    }
+    if quest_areas.is_some() && (!journal_mode || quest_catalog.is_none()) {
+        return Err("Quest areas require expanded journal mode and a catalogue".into());
+    }
+    if journal_mode && (explicit_quest || quest_turn_in_xp.is_some()) {
+        return Err(
+            "Journal mode excludes legacy quest modes and external completion recipes".into(),
+        );
+    }
+    if journal_mode
+        && (quest_catalog.is_none() || dialogue_catalog.is_none() || !account_login || !predicted)
+    {
+        return Err("Journal requires catalog, dialogue and predicted account login".into());
     }
     if quest_catalog.is_some() && progression_catalog.is_none() {
         return Err("Quest objectives require progression".into());
@@ -525,20 +721,33 @@ async fn main() -> Result<()> {
     }
     // Validate world options before opening an endpoint.
     match (dialogue_catalog, guide_position) {
-        (Some(path), Some(xz)) if graybox && (account_login || tickets.is_some()) => {
+        (Some(path), Some(placement)) if graybox && (account_login || tickets.is_some()) => {
             use std::io::Read;
             let mut bytes = Vec::new();
             std::fs::File::open(path)?
-                .take(theia_core::dialogue::MAX_PROFILE_BYTES as u64 + 1)
+                .take(theia_core::dialogue::catalog::MAX_CATALOG_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
-            let profile = std::sync::Arc::new(theia_network::dialogue::Profile::from_json(&bytes)?);
-            let guide = theia_server::development::prepare_guide(&mut world, profile, xz).await?;
-            println!(
-                "guide_ready epoch={} entity={} position={:?}",
-                guide.key.epoch.value(),
-                guide.key.entity.value(),
-                guide.position.metres()
-            );
+            let profile =
+                std::sync::Arc::new(theia_network::dialogue::Profile::from_content(&bytes)?);
+            let placements = profile.placements(
+                &placement,
+                &world
+                    .procedural()
+                    .ok_or("Guide requires prepared world")?
+                    .source,
+            )?;
+            let contacts =
+                theia_server::development::prepare_contacts(&mut world, profile, placements)
+                    .await?;
+            for contact in contacts {
+                let guide = contact.guide;
+                println!(
+                    "guide_ready epoch={} entity={} position={:?}",
+                    guide.key.epoch.value(),
+                    guide.key.entity.value(),
+                    guide.position.metres()
+                );
+            }
         }
         (None, None) => {}
         _ => {
@@ -550,10 +759,13 @@ async fn main() -> Result<()> {
     if !bind.ip().is_loopback() {
         return Err("Local prototype only: bind must be loopback".into());
     }
+    if creature_loot && reward_catalog.is_none() {
+        return Err("Creature loot requires a reward catalog".into());
+    }
     if reward_catalog.is_some()
         && (!account_login
             || item_catalog.is_none()
-            || world.patrol_snapshot().is_none()
+            || (world.patrol_snapshot().is_none() && population_bytes.is_none())
             || !world.combat_enabled())
     {
         return Err(
@@ -581,6 +793,25 @@ async fn main() -> Result<()> {
         } else {
             None
         };
+        let documents = if let Some(path) = document_catalog {
+            use std::io::Read;
+            let mut bytes = Vec::new();
+            std::fs::File::open(path)?
+                .take(theia_core::documents::MAX_CATALOG_BYTES as u64 + 1)
+                .read_to_end(&mut bytes)?;
+            wire_items = Some(
+                wire_items
+                    .take()
+                    .ok_or("Documents require wire inventory")?
+                    .with_documents(&bytes)?,
+            );
+            Some(theia_persistence::DocumentCatalog::from_json(
+                &bytes,
+                inventory.as_ref().ok_or("Documents require inventory")?,
+            )?)
+        } else {
+            None
+        };
         if let Some(catalog) = world.combat_catalog() {
             catalog.validate_equipment(wire_items.as_ref().map(|p| p.catalog()))?;
         }
@@ -604,22 +835,37 @@ async fn main() -> Result<()> {
         } else {
             None
         };
-        let rewards = if let Some(path) = reward_catalog {
+        let mut quest_loot_bytes = None;
+        let mut rewards = if let Some(path) = reward_catalog {
             use std::io::Read;
             let mut bytes = Vec::new();
             std::fs::File::open(path)?
                 .take(theia_core::rewards::MAX_CATALOG_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
             let inventory = inventory.as_ref().ok_or("Rewards require items")?;
-            let profile = theia_persistence::RewardCatalog::from_json(&bytes, inventory)?;
-            let wire = wire_items.as_ref().ok_or("Reward wire items missing")?;
-            world.enable_rewards(std::sync::Arc::new(
-                theia_network::reward_wire::Profile::from_json(&bytes, wire)?,
-            ))?;
-            Some(profile)
+            if quest_loot {
+                quest_loot_bytes = Some(bytes);
+                None
+            } else {
+                let profile = theia_persistence::RewardCatalog::from_json(&bytes, inventory)?;
+                let wire = wire_items.as_ref().ok_or("Reward wire items missing")?;
+                if creature_loot {
+                    world.enable_creature_loot(std::sync::Arc::new(
+                        theia_network::reward_wire::Profile::from_json_with_creature_loot(
+                            &bytes, wire,
+                        )?,
+                    ))?;
+                } else {
+                    world.enable_rewards(std::sync::Arc::new(
+                        theia_network::reward_wire::Profile::from_json(&bytes, wire)?,
+                    ))?;
+                }
+                Some(profile)
+            }
         } else {
             None
         };
+        let mut journal_progression = None;
         let progression = if let Some(path) = progression_catalog {
             use std::io::Read;
             let mut bytes = Vec::new();
@@ -627,20 +873,150 @@ async fn main() -> Result<()> {
                 .take(theia_core::progression::MAX_PROFILE_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
             let profile = theia_persistence::ProgressionCatalog::from_json(&bytes)?;
-            world.enable_progression(std::sync::Arc::new(
-                theia_network::progression_wire::Profile::from_json(&bytes)?,
-            ))?;
+            let wire =
+                std::sync::Arc::new(theia_network::progression_wire::Profile::from_json(&bytes)?);
+            if journal_mode {
+                journal_progression = Some(wire);
+            } else {
+                world.enable_progression(wire)?;
+            }
             Some(profile)
         } else {
             None
         };
-        let (quest, quest_lifecycle) = if let Some(path) = quest_catalog {
+        let (quest, quest_lifecycle, quest_journal) = if let Some(path) = quest_catalog {
             use std::io::Read;
             let mut bytes = Vec::new();
             std::fs::File::open(path)?
-                .take(theia_core::quests::MAX_PROFILE_BYTES as u64 + 1)
+                .take(
+                    if journal_mode {
+                        theia_core::quests::catalog::MAX_CATALOG_BYTES
+                    } else {
+                        theia_core::quests::MAX_PROFILE_BYTES
+                    } as u64
+                        + 1,
+                )
                 .read_to_end(&mut bytes)?;
-            if explicit_quest {
+            if journal_mode {
+                let xp = progression.as_ref().ok_or("Journal requires progression")?;
+                let wire_xp = journal_progression
+                    .take()
+                    .ok_or("Journal requires world XP policy")?;
+                let areas = if let Some(path) = &quest_areas {
+                    let mut bytes = Vec::new();
+                    std::fs::File::open(path)?
+                        .take(theia_core::quests::areas::MAX_CATALOG_BYTES as u64 + 1)
+                        .read_to_end(&mut bytes)?;
+                    Some(bytes)
+                } else {
+                    None
+                };
+                let (mut profile, mut wire) = if let Some(documents) = &documents {
+                    (
+                        theia_persistence::QuestJournalCatalog::from_json_with_documents(
+                            &bytes,
+                            areas.as_deref(),
+                            xp,
+                            documents,
+                        )?,
+                        theia_network::quest_journal::Profile::from_json_with_documents(
+                            &bytes,
+                            areas.as_deref(),
+                            &wire_xp,
+                            wire_items
+                                .as_ref()
+                                .and_then(|i| i.documents())
+                                .ok_or("Document wire profile missing")?,
+                        )?,
+                    )
+                } else if let Some(areas) = &areas {
+                    (
+                        theia_persistence::QuestJournalCatalog::from_json_with_areas(
+                            &bytes, areas, xp,
+                        )?,
+                        theia_network::quest_journal::Profile::from_json_with_areas(
+                            &bytes, areas, &wire_xp,
+                        )?,
+                    )
+                } else {
+                    (
+                        theia_persistence::QuestJournalCatalog::from_json(&bytes, xp)?,
+                        theia_network::quest_journal::Profile::from_json(&bytes, &wire_xp)?,
+                    )
+                };
+                if quest_items && documents.is_none() {
+                    profile = profile.with_inventory(
+                        inventory.as_ref().ok_or("Quest items require inventory")?,
+                    )?;
+                    wire = wire.with_inventory(
+                        wire_items
+                            .as_ref()
+                            .ok_or("Quest items require wire inventory")?,
+                    )?;
+                }
+                if let Some(path) = &quest_item_rewards {
+                    let mut raw = Vec::new();
+                    std::fs::File::open(path)?
+                        .take(theia_core::quests::item_rewards::MAX_CATALOG_BYTES as u64 + 1)
+                        .read_to_end(&mut raw)?;
+                    profile = profile.with_item_rewards(
+                        &raw,
+                        inventory
+                            .as_ref()
+                            .ok_or("Fixed rewards require inventory")?,
+                    )?;
+                    wire = wire.with_item_rewards(
+                        &raw,
+                        wire_items
+                            .as_ref()
+                            .ok_or("Fixed rewards require wire inventory")?,
+                    )?;
+                }
+                if wire.catalog().quests().any(|q| {
+                    q.stages()
+                        .any(|s| s.objectives().iter().any(|o| o.follow().is_some()))
+                }) {
+                    world.prepare_follow_quests(
+                        wire.catalog(),
+                        follow_navigation
+                            .as_ref()
+                            .ok_or("Follow quests require installed navigation")?,
+                        &follow_destinations,
+                    )?;
+                }
+                let wire = std::sync::Arc::new(wire);
+                if profile.hash() != wire.hash() {
+                    return Err("Journal authority/persistence identity mismatch".into());
+                }
+                if quest_item_rewards.is_some() {
+                    world.enable_item_reward_quest_journal(
+                        wire,
+                        wire_xp,
+                        wire_items
+                            .as_ref()
+                            .ok_or("Fixed rewards require wire inventory")?,
+                    )?;
+                } else if documents.is_some() {
+                    world.enable_document_quest_journal(
+                        wire,
+                        wire_xp,
+                        wire_items
+                            .as_ref()
+                            .ok_or("Documents require wire inventory")?,
+                    )?;
+                } else if quest_items {
+                    world.enable_item_quest_journal(
+                        wire,
+                        wire_xp,
+                        wire_items
+                            .as_ref()
+                            .ok_or("Quest items require wire inventory")?,
+                    )?;
+                } else {
+                    world.enable_quest_journal(wire, wire_xp)?;
+                }
+                (None, None, Some(profile))
+            } else if explicit_quest {
                 let recipe = if let Some(path) = &quest_turn_in_xp {
                     let mut recipe = Vec::new();
                     std::fs::File::open(path)?
@@ -674,19 +1050,42 @@ async fn main() -> Result<()> {
                     )
                 };
                 world.enable_quest_lifecycle(std::sync::Arc::new(wire))?;
-                (None, Some(profile))
+                (None, Some(profile), None)
             } else {
                 let profile = theia_persistence::QuestCatalog::from_json(&bytes)?;
                 world.enable_quest(std::sync::Arc::new(
                     theia_network::quest_wire::Profile::from_json(&bytes)?,
                 ))?;
-                (Some(profile), None)
+                (Some(profile), None, None)
             }
         } else {
-            (None, None)
+            (None, None, None)
         };
+        if let Some(bytes) = quest_loot_bytes {
+            let items = inventory.as_ref().ok_or("Quest loot requires items")?;
+            let journal = quest_journal
+                .as_ref()
+                .ok_or("Quest loot requires bound journal")?;
+            let profile = theia_persistence::RewardCatalog::from_json_with_quest_journal(
+                &bytes, items, journal,
+            )?;
+            let wire = theia_network::reward_wire::Profile::from_json_with_quest_journal(
+                &bytes,
+                wire_items
+                    .as_ref()
+                    .ok_or("Quest loot requires wire items")?,
+                world
+                    .quest_journal_profile()
+                    .ok_or("Quest loot requires installed journal")?,
+            )?;
+            if profile.hash() != wire.hash() {
+                return Err("Quest loot authority/persistence mismatch".into());
+            }
+            world.enable_quest_loot(std::sync::Arc::new(wire))?;
+            rewards = Some(profile);
+        }
         if tickets.is_some() || dev_persistence || chunk_stream || !graybox || !predicted {
-            return Err("Account login requires saved predicted terrain and excludes development ticket/persistence overrides".into());
+            return Err("Account login requires bound predicted terrain and excludes development ticket/persistence overrides".into());
         }
         let realm = theia_persistence::RealmId::parse(
             &std::env::var("THEIA_DEV_REALM_ID")
@@ -697,6 +1096,12 @@ async fn main() -> Result<()> {
             .map_err(|_| "Account login requires THEIA_DATABASE_URL")?;
         let store = theia_persistence::Store::connect_loopback(&url, realm).await?;
         let config = theia_server::accounts::Config {
+            session_seconds: std::env::var("THEIA_ACCOUNT_SESSION_SECONDS")
+                .ok()
+                .map(|value| value.parse::<u64>())
+                .transpose()
+                .map_err(|_| "Invalid THEIA_ACCOUNT_SESSION_SECONDS")?
+                .unwrap_or_else(theia_server::accounts::default_session_seconds),
             listen: std::env::var("THEIA_ACCOUNT_BIND")
                 .unwrap_or_else(|_| "127.0.0.1:5050".into())
                 .parse()?,
@@ -720,6 +1125,7 @@ async fn main() -> Result<()> {
             config,
             shutdown,
             theia_server::authenticated::GameplayProfiles {
+                quest_journal,
                 quest_lifecycle,
                 inventory,
                 rewards,
@@ -738,6 +1144,31 @@ async fn main() -> Result<()> {
             return Err("Development persistence requires saved terrain, predicted Renet and no chunk-stream override".into());
         }
         Some(persistence::prepare(&mut world).await?)
+    } else {
+        None
+    };
+    let test_players = if let Some(path) = test_players {
+        use std::io::Read;
+        use theia_network::renet_runtime::test_players::{MAX_BYTES, Plan};
+        let mut bytes = Vec::new();
+        std::fs::File::open(path)?
+            .take(MAX_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        let plan = Plan::from_json(&bytes, &world)?;
+        let positions = plan.positions();
+        tokio::time::timeout(std::time::Duration::from_secs(15), async {
+            loop {
+                world.poll_terrain_keeping(&positions)?;
+                if positions.iter().all(|p| world.terrain_prepared_for(*p)) {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(2)).await;
+            }
+            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
+        })
+        .await
+        .map_err(|_| "Test player collision preparation timed out")??;
+        Some(plan.prepare(&world)?)
     } else {
         None
     };
@@ -767,6 +1198,33 @@ async fn main() -> Result<()> {
             game?;
             saved?;
             return Ok(());
+        }
+        if let Some(players) = test_players {
+            return theia_network::renet_runtime::run_server_with_test_players(
+                transport, stop, world, players,
+            )
+            .await
+            .map(|_| ());
+        }
+        if let Some(path) = std::env::var_os(theia_network::development::ENV) {
+            let path = PathBuf::from(path);
+            if !address.ip().is_loopback() || !path.is_absolute() || chunk_stream {
+                return Err("Developer speed control requires a local terrain server and absolute control path".into());
+            }
+            world.enable_development_speed()?;
+            let (control, requests) = theia_network::renet_runtime::world_control();
+            let watcher = tokio::spawn(theia_network::development::watch(
+                path,
+                control,
+                stop.clone(),
+            ));
+            let result = theia_network::renet_runtime::run_server_with_world_control(
+                transport, stop, world, requests,
+            )
+            .await;
+            watcher.abort();
+            let _ = watcher.await;
+            return result.map(|_| ());
         }
         return if chunk_stream {
             theia_network::renet_runtime::run_server_streaming(transport, stop, world)

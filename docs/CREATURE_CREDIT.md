@@ -1,3 +1,91 @@
+P3-09 / P3-11 population kill and possession journal integration,
+14 November 2026: the frozen account/native qualifier now optionally combines
+one accepted kill objective with the one-pelt possession objective. A bounded
+opt-in driver marker pauses ordinary pickup after death; it never writes gameplay
+state. The pre-acceptance kill leaves no journal entry. After acceptance all
+counts start at zero. The next population death produces kill 1/1 and pelt 0/1,
+Active, 50 XP and unchanged backpack revision 3. Only explicit pickup advances
+possession to 1/1/Ready. Visible turn-in consumes the pelt, awards XP and completes
+the quest. PostgreSQL restart/same-character rejoin retains both counts at 1,
+Completed revision 4, 75 XP and backpack revision 6 with 102 tokens/no pelts.
+Original conditional generation rights and four consumed claims remain unchanged.
+
+Evidence: build/population-kill-journal-native-v1/qualification.json,
+accepted/kill-before-pickup.json, phase journal-sql.txt and screenshots. Normal
+five-NPC pursuit, equipment/mana/facing/range/casts and private pickups apply;
+quest acceptance/turn-in use PID-bound OS buttons. Explicit one-kill/one-pelt,
+guaranteed-loot fixture, native Linux 1280x720 RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, zero GPU diagnostics. This proves ordinary population journal credit
+separately from item possession, not party credit, authored quest publishing,
+Windows or capacity. All 265 client tests (four ignored), fmt, strict workspace/
+all-target Clippy, Python compile and diff checks pass; logs:
+build/population-kill-journal-{client-tests,clippy}.log. Gameplay server and existing
+network contracts are unchanged. Next: publish a checked authored guide and quest
+snapshot beside a population, retaining exact world/contact identity. Local only.
+
+P3-06 / P3-09 / P3-10 / P5-17 authenticated native population competition,
+14 November 2026: two distinct OIDC accounts now qualify the ordinary pursuing
+editor population together through one normal authoritative server. The owner
+lands one Arcane cast, stops attacking, then the other player lands four casts
+and finishes the NPC. Shared damage threat transfers once; both clients observe
+the public windup toward the finisher, its private incoming windup and remote-victim
+wolf animation. Actual health lost totals 100; four neighbouring NPCs remain
+undamaged. Normal equipment, mana, facing/range checks and cast timing apply.
+
+Only the original tagger receives 25 XP, the training reward and both corpse
+pickups: inventory revision 4, one pelt and 101 tokens. The finisher retains zero
+XP/rewards and equipment revision 1. Actual SQL has one XP receipt, three consumed
+owner claims and two corpse claims for one victim life. PostgreSQL process restart,
+fresh server, separate account login and both character rejoins preserve exact
+inventories/XP without additional grants. Fresh health is 62/85; health is transient.
+
+Evidence: build/population-competing-accounts-native-v3/qualification.json, matching
+binary hashes, fresh/transfer-sample.json, both native screenshots and fresh/resumed
+SQL records. Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6, zero GPU
+diagnostics. The test-only client driver can request an exact currently live target
+and wait for another player's kill before collecting; it still sends ordinary
+selection, equipment, cast and pickup requests. No OS input or prepared damage.
+The initial harness cutoff was too strict at the 2.9 m NPC stopping boundary;
+match existing 2.95 m selection and await committed diagnostic publication after
+pickup. All 265 client tests pass (four fixture-dependent ignored), strict workspace/
+all-target Clippy, fmt, Python compile and diff checks pass. Evidence:
+build/population-competing-driver-tests.log and population-competing-driver-checks.log.
+This is native Linux/30 Hz normal grants and loot, not a new gameplay policy,
+Windows or MMO capacity claim. Multi-rate impaired transport and SQL contracts
+remain separate. Next: close the remaining normal population quest-only loot
+integration gate, preserving exact journal/owner eligibility. Local only.
+
+P3-06 / P3-09 / P3-10 / P3-11 pursuing population durable competition,
+14 November 2026: extend the retained owned World/PostgreSQL qualifier with an
+explicit --threat population mode and 20/30/60 Hz selection. It uses the normal
+configured navigation, retaliation, reset, shared damage threat and public NP01
+observation. Accepted Arcane casts move the victim from the first tagger to the
+finisher; exact public/private windups agree and an incoming ordinary strike reaches
+the finisher. Every live sample checks damage-threat totals against actual health
+lost and unchanged tag ownership. Death clears the table; neighbouring NPC health
+is unchanged. The existing no-cost/unequipped Arcane and synthetic account/accepted
+legacy quest fixtures remain explicit, without production gameplay changes.
+
+At all three rates the first tagger alone receives 25 XP, one accepted quest count
+and one unconsumed training claim. SQL lock withholding, continued fixed steps,
+replay idempotency, wrong-recipient refusal, fresh Store connection and PostgreSQL
+process restart all pass. Passive-population and singleton receipt regressions
+also pass. Evidence: build/population-threat-receipts-{20,30,60,passive,singleton}-v1/
+verification.json. Strict workspace/all-target Clippy, fmt, 25 server tests, Python
+compile and diff checks pass; see population-threat-receipt-final-checks.log and
+population-threat-receipt-server-tests.log. Socket-dependent tests were rerun outside
+the restricted sandbox. This adds no OIDC, encrypted-client, corpse-consumption,
+native Windows or MMO capacity claim. Next: competing authenticated native clients
+with normal durable grants/loot, retaining these separate receipt contracts. Local only.
+
+Population durability follow-up, 13 November 2026: the owned qualifier accepts
+`--population PACKAGE` and checks one contested NPC among five checked passive actors.
+First tag owns the durable XP, legacy quest count and training claim; the finisher's
+replay is refused. Both old singleton and population modes survive PostgreSQL process
+restart. This uses explicit unequipped/no-cost Arcane and synthetic account/quest
+fixtures, not normal population quest interaction or SQL-backed encrypted clients.
+Evidence: `build/population-credit-durable-v1/verification.json`.
+
 # Ordinary creature ownership and credit — 2 November 2026
 
 P3-09 / P3-10 / P3-11 / P4-08. Prerequisites: typed authoritative outgoing
@@ -233,3 +321,22 @@ separately above; the native cases use one player. No native Windows, tag-color
 UI, party/shared eligibility, loot consumption, general per-corpse loot or
 MMO-capacity claim. Combat permission consumers remain ungated. Follow with
 bounded encounter threat/reset before expanding NPC population.
+
+## Passive population receipt prerequisite — 13 November 2026
+
+`population_durable_qualification` and `tools/qualify_population_durability.py`
+exercise a real exported five-actor World with one synthetic player and owned
+PostgreSQL. Ten distinct creature lives across fresh-ID respawns yield matching
+World XP/quest facts and ten receipts on each durable path. A ten-kill quest
+variant without introduction/turn-in is explicitly fixture content. Total XP is
+250 and count is ten; reverse/forward replay grants nothing. A held SQL row lock
+blocks acknowledgement while fixed simulation continues. Fresh Store connections
+and a PostgreSQL process restart retain the result. Evidence is
+`build/population-durable-v2/verification.json`.
+
+The recipient remains the development last-hit fixture; one player cannot
+qualify contested ownership. Population CLI reward flags remain refused. Do not
+replace the adopted first-tag policy with this receipt evidence. Per-creature
+encounters, eligibility, departure/reset and delayed old-life damage still need
+to be connected before normal population rewards are enabled. No OIDC, native
+client, quest acceptance interaction, turn-in or loot claim is established here.

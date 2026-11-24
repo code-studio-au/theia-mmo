@@ -1,3 +1,9 @@
+Current update, 3 November 2026: the initial [local Classic minimap](MINIMAP.md)
+is qualified with resident terrain, manual heading, committed guide/quest icons
+and normal native input/layout/rejoin checks. Normal keyboard chunk/origin traversal and a separate accelerated retained-mode
+continent diagnostic now also pass. Broader HUD/map layers remain follow-ups. Earlier dates below retain
+their historical checkpoint scope.
+
 Broader follow-up register: [Classic world systems](CLASSIC_WORLD_SYSTEMS_REFERENCE.md)
 adds combat membership, attack resolution, separate tagging/credit, spawns,
 linked encounters, resource/control rules and corpse recovery. It includes the
@@ -43,7 +49,7 @@ and HUD presentation remain scheduled with their actual data prerequisites.
 | Magic and bows have projectiles | An opt-in server-owned homing Arcane Bolt and visible standard Bevy travel now pass real two-client native checks | Bow equipment/arrow visuals and shared travel, ranged NPC casting, general volumes and AoE; P3-06 / P4-08 / P5-15 |
 | Chance to hit, miss or deflect | Opt-in player direct damage now has checked server-owned hit/miss/deflect resolution and encrypted outcomes; actual two-client native feedback now passes | NPC outcome expansion, defence/class rules and final balance; P3-06 / P4-08 |
 | Floating quest markers above NPCs | One bounded available/active/ready Bevy guide marker is [qualified](QUEST_MARKERS.md) | Generalized quest/NPC associations, icon art and broader presentation; P3-11 / P3-12 / P3-14 |
-| Minimap | Large streamed greybox world and global/chunk coordinates exist | Map presentation, player heading, known NPC/quest icons and bounded update/load costs; P2-14 / P3-13 / P4-02 |
+| Minimap | [Qualified Classic local map](MINIMAP.md): north-up resident-mesh terrain, manual player arrow, committed nearby guide/quest icons, fixed 17-KiB images, no terrain loads, three native UI sizes and normal quest/restart rejoin | World atlas/zoom/fog, other NPC/party/waypoint icons and art/decluttering remain; P2-14 / P3-13. No P4-02 predictive-streaming completion claim. |
 
 Existing ranges above describe current development profiles, not finalized game
 balance. Existing experiments and checkpoints stay available until replacements

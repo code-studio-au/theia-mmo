@@ -1,3 +1,32 @@
+P5-17 same-window Sprinkles authoring accepted on Linux, 10 November 2026:
+File → Particles workspace opens the actual upstream UI inside Theia; Zone in
+its top bar returns. Original editing/playback/save, project/pause retention and
+exclusive input/camera/render-layer ownership pass native local/far checks with
+exact zone/source/revision/history preservation and zero Vulkan diagnostics on
+RX 7900 XTX / RADV NAVI31. All 177 focused tests, three doctests, fmt and strict
+workspace/all-target Clippy pass. The original standalone host remains qualified.
+The direct editor-integration slice is complete at this scope. Asset placement/
+world export/client VFX, full P2-13, Windows and MMO budgets remain separate.
+See [SPRINKLES_INTEGRATION](../SPRINKLES_INTEGRATION.md) for use and exact evidence.
+
+P5-17 original Sprinkles widget commits, 10 November 2026: curve range, gradient
+stop and colour edits pass real native input and exact asset/source comparisons
+with zero Vulkan diagnostics. Correct the curve range root/child lookup and
+reject invalid ranges without commits or panics. All 16 runtime/editor tests,
+three doctests, fmt and strict workspace Clippy pass. Same-window hosting is
+next. See [SPRINKLES_INTEGRATION](../SPRINKLES_INTEGRATION.md) for evidence.
+
+P5-17 direct Sprinkles source integration, 10 November 2026: the original
+runtime and editor are imported at the reviewed pin and ported to exact Bevy
+0.20.0. File → Particle editor opens the retained UI/preview/RON authoring tool
+in one companion window. Native editing/save and host launch/return checks pass
+on RX 7900 XTX / RADV NAVI31 / Vulkan with zero diagnostics and exact zone/source/
+history preservation. All 172 focused tests plus three runtime doctests, fmt and
+denied-warning workspace/all-target Clippy pass. Source and asset licenses/hashes
+are retained. This completes the first direct-reuse slice; same-window hosting,
+asset placement/client integration, Windows and full P2-13 remain pending.
+See [SPRINKLES_INTEGRATION.md](../SPRINKLES_INTEGRATION.md) for exact evidence.
+
 # Theia MMO — Approved Architecture
 
 **Initial controls/combat amendment, 1 November 2026:**

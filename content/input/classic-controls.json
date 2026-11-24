@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "turn_degrees_per_second": 180.0,
   "targeting": {"prefer_front": true, "maximum_distance_metres": null},
   "bindings": {
@@ -10,6 +10,6 @@
     "strafe_left": "KeyQ",
     "strafe_right": "KeyE",
     "jump": "Space",
-    "run_modifier": "ShiftLeft"
+    "walk_run_toggle": "NumpadDivide"
   }
 }

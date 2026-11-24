@@ -1,0 +1,103 @@
+{
+  "tool": "built-in image_gen",
+  "style_reference": "content/ui/sprites-v3/sprites/icon/character.png",
+  "records": [
+    {
+      "name": "lock",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a closed padlock with a rounded arch shackle and a small keyhole. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-895dc4cc-c8af-4524-95fa-e4838d688576.png",
+      "source_sha256": "a35d790d6441389e5d19ba8f715d35949e86f154931767aae531046d1ecda7e5",
+      "file": "lock.png",
+      "sha256": "2c1d2d64def51ba6f3716be8e1052abfc1bef5e46022e35d322070332b76a3df"
+    },
+    {
+      "name": "settings",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a settings cogwheel with eight broad teeth and a round hole. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-22d5cf4e-c6b7-4bd9-b000-e8b682c641bf.png",
+      "source_sha256": "9fdbfaad49f03b3aacbf2a78467a39365b5309d19c826160dcba10c38d48dec0",
+      "file": "settings.png",
+      "sha256": "6963650db0b2430e1bd9b814093de2d790aecdf8d769fc8d44ebe85f904df98e"
+    },
+    {
+      "name": "support",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a bold question mark, including its separate dot. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-8d1849b4-cb1d-49eb-b0c6-01009cec48af.png",
+      "source_sha256": "5542010727fc23ba3a98b990fcc2b437b6d020a8899e3d9c3b3140cbf81a813a",
+      "file": "support.png",
+      "sha256": "b3d7a7ab62f40100bc0705eae59e865923ce658215ea005d2fb854e0b8a2533a"
+    },
+    {
+      "name": "exit",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a power symbol: open circular ring with a short vertical stroke entering from above. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-0ce02cdf-3abe-41a8-b06c-1f03aa46ac81.png",
+      "source_sha256": "dfbc99a98e54aac22f1ada75251ff16f538beb1770150d36cddd507938721c9b",
+      "file": "exit.png",
+      "sha256": "8cdf05f9c7276972f9367877d4330e405016650fb143e2e9d0727b03c8ebabf2"
+    },
+    {
+      "name": "eye",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a simple open eye outline with a round pupil, transparent space between pupil and outline. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-5078426d-e175-455b-9425-32afaac2115c.png",
+      "source_sha256": "36be752bf5f7a15d9aafe5e37dc857d0fedf390d46d500d5bb02b50575f306b4",
+      "file": "eye.png",
+      "sha256": "8dba7f968eab137417c35a1847c6b81fd3b6b344e9204f7a370ea4a38f312e19"
+    },
+    {
+      "name": "graphics",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a computer display monitor with a simple foot, transparent screen interior. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-0b96e32e-2858-4ca3-a2e8-fa51b5795bad.png",
+      "source_sha256": "83188170728abf5f1d05887dc0885a3fc291532e760a36b752bd91bcc6041296",
+      "file": "graphics.png",
+      "sha256": "c587d539fbd844eee797882f540a1efe91b348773efcb7ad6e43dea67b465fb8"
+    },
+    {
+      "name": "controls",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a symmetrical game controller with simple directional cross and two buttons. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-e667a9f2-a891-460d-888c-a88db887e76a.png",
+      "source_sha256": "10f866da1a643bdaf85e8fefa30c3a707579f31d469b5e5f35bc67280f298b51",
+      "file": "controls.png",
+      "sha256": "ffc0560c68b53df2c7f3c54f25b5199542c07851a5fd5fcdad339e78dbbb35ea"
+    },
+    {
+      "name": "keyboard",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a compact computer keyboard with clearly spaced rows of keys. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-879883c0-eea8-4bf1-9f5d-36069819c15b.png",
+      "source_sha256": "c05b721eefcd55983c385d5414f59b0fd5ee1843f71d0ed90ca3917c91a3fa7f",
+      "file": "keyboard.png",
+      "sha256": "c9960646b49109d80d11ae22f33ccc5e34c8eddc8398aa7271a58330267882a5"
+    },
+    {
+      "name": "interface",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a simple application window symbol, outer window outline with a top header and one left sidebar division, transparent empty interior. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-d33b00bb-ee34-42da-ab50-1f5205d2959b.png",
+      "source_sha256": "65cdc2baa5dec3bc68da564a877b8a856ac6e6fe2850ceec268205f41a8cf60c",
+      "file": "interface.png",
+      "sha256": "9006b6091acd7900f671da8cdfc3faba8c284f47b11081e31fd263227e90d804"
+    },
+    {
+      "name": "accessibility",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a universal accessibility human figure with round head, outstretched arms and separated legs, no enclosing circle. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-3d67b894-2aa9-4ce8-a301-1003bdb9471f.png",
+      "source_sha256": "c0637ee4ac8144e071a531a6ff984a77570bdc340c43d33c045f115b1dd72b29",
+      "file": "accessibility.png",
+      "sha256": "6c58e1548aae8ea7c1624fc99c100489e973d0f41ab4269eb8a509ac7b0b2d76"
+    },
+    {
+      "name": "language",
+      "prompt": "Use case: stylized-concept. Create one production game UI icon on genuinely transparent background. Subject: a globe symbol with circular outer contour and clear longitude and latitude lines, transparent spaces. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, simple chunky silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single standalone symbol only, centered, front-facing, generous transparent margin. Readable at 24\u201332px. No enclosing button, square, tile, frame, badge, backing plate, text, ground shadow or decorative surround. Preserve transparent holes in the symbol.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-cf58f997-7ab3-4ec2-806f-27853f6511ff.png",
+      "source_sha256": "0785fa7808a43ffe7e3c3c41aceac2c22e067349c6fbd39d0a1de6f4c319902c",
+      "file": "language.png",
+      "sha256": "9ee225bddf38d18c2a960f34089f8d0d92217e2bf5976be80dec3eb4aa712d8f"
+    },
+    {
+      "name": "rotate",
+      "prompt": "Use case: stylized-concept. Production game UI icon on genuinely transparent background: two thick curved arrows forming an open circular rotation symbol. The reference image is STYLE REFERENCE ONLY: match its warm polished golden metal, chunky readable silhouette, restrained bevel, amber edge shading and pale upper-left highlight. Single centered front-facing standalone symbol. No enclosing circle other than the arrows themselves, no button, tile, frame, backing, text, blur or cast shadow. Transparent inner hole and transparent exterior. Clear at 28px.",
+      "source": "/home/steven/.codex/generated_images/01a1e677-d31d-7df3-b44d-204392584ce4/exec-960e1163-d125-4991-adb5-14660568abda.png",
+      "source_sha256": "491c8aab71f5845d65c9012dbea314d4738d5739cca91afedaf4f70e17070269",
+      "file": "rotate.png",
+      "sha256": "32bc5baf1d3d91f9f7175721c450bf30709ea1e928467756d9840440cd327269"
+    }
+  ],
+  "finishing": "Gold-only alpha cleanup of detached dark shadow remnants; tight alpha bounds; fit 112px into centered transparent 128px canvas; Lanczos reduction."
+}

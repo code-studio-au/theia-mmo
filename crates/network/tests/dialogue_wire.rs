@@ -220,6 +220,7 @@ fn guide_presence_is_private_bounded_and_uses_checked_global_coordinates() {
     let presence = Presence {
         actor,
         profile_hash: profile.hash(),
+        contacts: vec![],
         guide: Some(Guide {
             key: key(7, 1),
             position: GlobalPosition::new([15000.25, 24.5, -12000.75]).unwrap(),
@@ -267,6 +268,7 @@ fn guide_presence_is_private_bounded_and_uses_checked_global_coordinates() {
     for invalid in [
         Presence {
             profile_hash: [0; 32],
+            contacts: vec![],
             ..presence.clone()
         },
         Presence {
@@ -376,4 +378,72 @@ fn independent_replies_bound_request_acknowledgement_without_predicting_node_cha
         )
         .is_err()
     );
+}
+
+#[test]
+fn collection_presence_is_bounded_exact_ordered_and_separate_from_legacy_frames() {
+    let profile = Profile::from_catalog_json(include_bytes!(
+        "../../../content/quests/development-valley-contacts.json"
+    ))
+    .unwrap();
+    let contacts = profile
+        .contacts()
+        .enumerate()
+        .map(|(i, p)| theia_network::dialogue::ContactPresence {
+            npc: p.npc().clone(),
+            guide: Guide {
+                key: key(7, i as u64 + 10),
+                position: GlobalPosition::new([8192. + i as f64, 1., 8192.]).unwrap(),
+            },
+        })
+        .collect();
+    let presence = Presence {
+        actor: key(7, 2),
+        profile_hash: profile.hash(),
+        guide: None,
+        contacts,
+    };
+    let bytes = wire::encode_presence(&presence, &profile).unwrap();
+    assert!(bytes.starts_with(wire::CONTACTS_TAG));
+    assert_eq!(bytes.len(), 53 + 41 * 2);
+    assert_eq!(
+        wire::decode_presence(&bytes, &profile, presence.actor).unwrap(),
+        presence
+    );
+    for length in 0..bytes.len() {
+        assert!(wire::decode_presence(&bytes[..length], &profile, presence.actor).is_err());
+    }
+    let mut invalid = presence.clone();
+    invalid.contacts.reverse();
+    assert!(wire::encode_presence(&invalid, &profile).is_err());
+    invalid = presence.clone();
+    invalid.contacts[1].guide.key = invalid.contacts[0].guide.key;
+    assert!(wire::encode_presence(&invalid, &profile).is_err());
+    invalid = presence.clone();
+    invalid.guide = Some(invalid.contacts[0].guide);
+    assert!(wire::encode_presence(&invalid, &profile).is_err());
+    invalid = presence.clone();
+    invalid.profile_hash = [0; 32];
+    assert!(wire::encode_presence(&invalid, &profile).is_err());
+    let mut malformed = bytes.clone();
+    malformed[53] = 16;
+    assert!(wire::decode_presence(&malformed, &profile, presence.actor).is_err());
+    let legacy = super_profile();
+    assert!(wire::decode_presence(&bytes, &legacy, presence.actor).is_err());
+    let empty = Presence {
+        contacts: vec![],
+        ..presence
+    };
+    assert_eq!(
+        wire::decode_presence(
+            &wire::encode_presence(&empty, &profile).unwrap(),
+            &profile,
+            empty.actor
+        )
+        .unwrap(),
+        empty
+    );
+}
+fn super_profile() -> Profile {
+    profile()
 }

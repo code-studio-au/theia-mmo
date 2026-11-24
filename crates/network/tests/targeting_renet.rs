@@ -357,6 +357,7 @@ struct RawPeer {
     welcome: Option<theia_network::wire::Welcome>,
     targeting: Option<theia_network::targeting_wire::State>,
     disconnected: bool,
+    connection_confirmed: bool,
 }
 impl RawPeer {
     fn start(address: SocketAddr, ticket: &[u8], identity: [u8; 32]) -> Self {
@@ -375,6 +376,7 @@ impl RawPeer {
             welcome: None,
             targeting: None,
             disconnected: false,
+            connection_confirmed: false,
         }
     }
     async fn until(&mut self, predicate: impl Fn(&Self) -> bool) {
@@ -390,11 +392,20 @@ impl RawPeer {
                     assert!(predicate(self), "Unexpected raw test-peer disconnect");
                     break;
                 }
+                theia_network::renet_transport::confirm_connection(
+                    &mut self.client,
+                    &mut self.connection_confirmed,
+                )
+                .unwrap();
                 while let Some(bytes) = self.client.receive_message(EVENT_CHANNEL) {
                     if self.welcome.is_none() {
                         self.welcome = Some(
                             theia_network::wire::Welcome::decode(&bytes, self.identity).unwrap(),
                         );
+                    } else if bytes.starts_with(theia_network::player_identity_wire::STATE_TAG) {
+                        let view =
+                            theia_network::player_identity_wire::State::decode(&bytes).unwrap();
+                        assert_eq!(view.world, self.identity);
                     } else {
                         self.targeting =
                             Some(theia_network::targeting_wire::State::decode(&bytes).unwrap());

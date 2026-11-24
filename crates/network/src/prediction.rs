@@ -32,10 +32,31 @@ pub fn terrain_step(
     rate: TickRate,
     speed: f32,
 ) -> Result<Option<Pose>, &'static str> {
+    terrain_step_kind(patch, ready, pose, intent, rate, Some(speed), 1.)
+}
+pub(crate) fn terrain_step_classic(
+    patch: &crate::procedural::Patch,
+    ready: &std::collections::BTreeSet<theia_core::coordinates::ChunkId>,
+    pose: Pose,
+    intent: Intent,
+    rate: TickRate,
+    multiplier: f32,
+) -> Result<Option<Pose>, &'static str> {
+    terrain_step_kind(patch, ready, pose, intent, rate, None, multiplier)
+}
+fn terrain_step_kind(
+    patch: &crate::procedural::Patch,
+    ready: &std::collections::BTreeSet<theia_core::coordinates::ChunkId>,
+    pose: Pose,
+    intent: Intent,
+    rate: TickRate,
+    development_speed: Option<f32>,
+    classic_multiplier: f32,
+) -> Result<Option<Pose>, &'static str> {
     if pose.dodge.is_some()
         || intent.dodge.is_some()
         || pose.facing.is_some()
-        || intent.facing.is_some()
+        || intent.facing.is_some() != development_speed.is_none()
     {
         return Err("Dodge requires its bound movement profile");
     }
@@ -51,15 +72,27 @@ pub fn terrain_step(
     )
     .map_err(|_| "Invalid prepared terrain coverage")?;
     let mut motion = crate::kinematic::Motion::restore(pose.motion)?;
-    let feet = crate::kinematic::advance_development(
-        &patch.scene,
-        &mut motion,
-        start,
-        intent,
-        rate,
-        Some(&coverage),
-        speed,
-    )?;
+    let feet = if let Some(speed) = development_speed {
+        crate::kinematic::advance_development(
+            &patch.scene,
+            &mut motion,
+            start,
+            intent,
+            rate,
+            Some(&coverage),
+            speed,
+        )?
+    } else {
+        crate::kinematic::advance_classic_development(
+            &patch.scene,
+            &mut motion,
+            start,
+            intent,
+            rate,
+            Some(&coverage),
+            classic_multiplier,
+        )?
+    };
     let feet = patch
         .frame
         .to_global(feet)
@@ -203,6 +236,16 @@ impl History {
     }
     pub fn pose(&self) -> Pose {
         self.pose
+    }
+    /// Last two completed, reconciled positions for rendering one tick behind
+    /// the prediction clock. Never extrapolate beyond checked collision.
+    pub fn presentation_endpoints(&self) -> [GlobalPosition; 2] {
+        let previous = if self.steps.len() >= 2 {
+            self.steps[self.steps.len() - 2].pose.feet
+        } else {
+            self.anchor.pose.feet
+        };
+        [previous, self.pose.feet]
     }
     pub fn input(&self) -> State {
         self.input.state()

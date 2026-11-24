@@ -35,6 +35,8 @@ def run(output, sdk):
                                      '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('equipment-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'equipment_contract',
                                      '-j', '2', '--', '--ignored', '--test-threads=1'])
+        cargo('quest-loot-migration-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quest_loot_migration_contract',
+                                               '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('rewards-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'rewards_contract',
                                    '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('quests-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quests_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
@@ -44,21 +46,56 @@ def run(output, sdk):
         cargo('vendors-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'vendors_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('progression-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'progression_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('quest-journal-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quest_journal_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
-        journal_query = """
+        cargo('quest-item-reward-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quest_item_reward_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
+        cargo('quest-document-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quest_document_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
+        cargo('document-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_document_qualification', '--', 'write'])
+        cargo('fixed-reward-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_item_reward_qualification', '--', 'write'])
+        fixed_reward_query = """
+            SELECT n.display_name,h.revision,p.experience,b.revision,
+              (SELECT count(*) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
+              md5(to_jsonb(h)::text),md5(to_jsonb(b)::text),md5(to_jsonb(p)::text),
+              (SELECT md5(string_agg(to_jsonb(a)::text,'|' ORDER BY request_id)) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
+              (SELECT md5(string_agg(to_jsonb(e)::text,'|' ORDER BY quest_id)) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id)
+            FROM theia.character_names n JOIN theia.quest_journal_heads h USING(realm_id,character_id)
+            JOIN theia.backpacks b USING(realm_id,character_id) JOIN theia.progression p USING(realm_id,character_id)
+            WHERE n.display_name='Itemrewardprobe';
+        """
+        fixed_before=cluster.query(fixed_reward_query)
+        assert fixed_before.returncode==0 and len(fixed_before.stdout.splitlines())==1 and fixed_before.stdout.startswith('Itemrewardprobe|3|25|2|2|'),fixed_before.stdout
+        (output/'fixed-rewards-before-restart.txt').write_text(fixed_before.stdout)
+        document_query = """
             SELECT n.display_name,h.revision,p.experience,
+              (SELECT count(*) FROM theia.quest_journal_events e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
+              (SELECT count(*) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
+              md5(to_jsonb(h)::text),
+              (SELECT md5(string_agg(to_jsonb(e)::text,'|' ORDER BY event_id)) FROM theia.quest_journal_events e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
+              (SELECT md5(string_agg(to_jsonb(e)::text,'|' ORDER BY quest_id)) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
+              (SELECT md5(to_jsonb(b)::text) FROM theia.backpacks b WHERE b.realm_id=n.realm_id AND b.character_id=n.character_id),md5(to_jsonb(p)::text)
+            FROM theia.character_names n JOIN theia.quest_journal_heads h USING(realm_id,character_id)
+            JOIN theia.progression p USING(realm_id,character_id) WHERE n.display_name LIKE 'Document%' ORDER BY n.display_name;
+        """
+        document_before=cluster.query(document_query)
+        assert document_before.returncode==0 and len(document_before.stdout.splitlines())==7,document_before.stdout
+        (output/'documents-before-restart.txt').write_text(document_before.stdout)
+        journal_query = """
+            SELECT n.display_name,h.revision,coalesce(p.experience,-1),
               (SELECT count(*) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
               (SELECT count(*) FROM theia.quest_journal_events e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
               (SELECT count(*) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
               (SELECT coalesce(sum(xp_granted),0) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
-              (SELECT md5(string_agg(encode(state,'hex'),'|' ORDER BY quest_id)) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id)
+              (SELECT md5(string_agg(to_jsonb(e)::text,'|' ORDER BY quest_id)) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
+              md5(to_jsonb(h)::text), md5(coalesce(to_jsonb(p)::text,'')),
+              (SELECT md5(string_agg(to_jsonb(e)::text,'|' ORDER BY event_id)) FROM theia.quest_journal_events e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
+              (SELECT md5(string_agg(to_jsonb(a)::text,'|' ORDER BY request_id)) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
+              (SELECT md5(string_agg(to_jsonb(x)::text,'|' ORDER BY event_id)) FROM theia.experience_receipts x WHERE x.realm_id=n.realm_id AND x.character_id=n.character_id)
             FROM theia.character_names n JOIN theia.quest_journal_heads h USING(realm_id,character_id)
-            JOIN theia.progression p USING(realm_id,character_id)
-            WHERE n.display_name LIKE 'Journal%' ORDER BY n.display_name;
+            LEFT JOIN theia.progression p USING(realm_id,character_id)
+            WHERE n.display_name LIKE 'Journal%' OR n.display_name LIKE 'Atomic%' ORDER BY n.display_name;
         """
         journal_before = cluster.query(journal_query)
         assert journal_before.returncode == 0
         journal_rows = [row.split('|') for row in journal_before.stdout.splitlines()]
-        assert {row[0]: int(row[2]) for row in journal_rows} == {'Journalone':75,'Journaltwo':25,'Journalatomic':25,'Journalguard':0,'Journalzero':0,'Journalcap':25}
+        assert {row[0]: int(row[2]) for row in journal_rows} == {'Journalone':75,'Journaltwo':25,'Journalatomic':25,'Journalguard':0,'Journalzero':0,'Journalcap':25,'Atomicnormal':125,'Atomiccap':25,'Atomiconlyone':-1,'Atomiconlytwo':-1,'Atomicindependent':-1,'Atomicrollback':50}
         (output/'quest-journal-before-restart.txt').write_text(journal_before.stdout)
         cargo('write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'store_qualification', '--', 'write'])
         cargo('character-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'character_qualification', '--', 'write'])
@@ -70,7 +107,47 @@ def run(output, sdk):
         cargo('vendors-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'vendors_qualification', '--', 'write'])
         cargo('quest-lifecycle-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_lifecycle_qualification', '--', 'write'])
         cargo('quest-turn-in-xp-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_turn_in_xp_qualification', '--', 'write'])
+        loot_query = """
+            SELECT n.display_name,
+              (SELECT count(*) FROM theia.reward_claims r WHERE r.realm_id=n.realm_id AND r.character_id=n.character_id),
+              (SELECT count(*) FROM theia.reward_claims r WHERE r.realm_id=n.realm_id AND r.character_id=n.character_id AND r.consumed_revision IS NULL),
+              (SELECT md5(string_agg(to_jsonb(r)::text,'|' ORDER BY claim_id)) FROM theia.reward_claims r WHERE r.realm_id=n.realm_id AND r.character_id=n.character_id),
+              (SELECT md5(to_jsonb(b)::text) FROM theia.backpacks b WHERE b.realm_id=n.realm_id AND b.character_id=n.character_id),
+              (SELECT md5(to_jsonb(h)::text) FROM theia.quest_journal_heads h WHERE h.realm_id=n.realm_id AND h.character_id=n.character_id),
+              (SELECT md5(string_agg(to_jsonb(q)::text,'|' ORDER BY quest_id)) FROM theia.quest_journal_entries q WHERE q.realm_id=n.realm_id AND q.character_id=n.character_id),
+              (SELECT md5(to_jsonb(p)::text) FROM theia.progression p WHERE p.realm_id=n.realm_id AND p.character_id=n.character_id)
+            FROM theia.character_names n WHERE n.display_name LIKE 'Loot%' ORDER BY n.display_name;
+        """
+        loot_before = cluster.query(loot_query)
+        assert loot_before.returncode == 0
+        loot_counts = {r[0]: (int(r[1]), int(r[2])) for r in (line.split('|') for line in loot_before.stdout.splitlines())}
+        assert loot_counts == {'Lootlife': (2, 0), 'Lootnear': (39, 38), 'Lootother': (1, 1), 'Lootpages': (19, 0), 'Lootquest': (4, 0), 'Lootretained': (2, 1)}, loot_counts
+        (output/'creature-loot-before-restart.txt').write_text(loot_before.stdout)
+        roll_query = "SELECT count(*),md5(string_agg(to_jsonb(r)::text,'|' ORDER BY realm_id,character_id,roll_key,victim_life)) FROM theia.loot_rolls r;"
+        rolls_before = cluster.query(roll_query)
+        assert rolls_before.returncode == 0 and int(rolls_before.stdout.split('|')[0]) == 65, rolls_before.stdout
+        (output/'loot-rolls-before-restart.txt').write_text(rolls_before.stdout)
         cluster.restart()
+        fixed_after=cluster.query(fixed_reward_query)
+        assert fixed_after.returncode==0 and fixed_after.stdout==fixed_before.stdout
+        (output/'fixed-rewards-after-restart.txt').write_text(fixed_after.stdout)
+        cargo('fixed-reward-read', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_item_reward_qualification', '--', 'read'])
+        fixed_retry=cluster.query(fixed_reward_query)
+        assert fixed_retry.returncode==0 and fixed_retry.stdout==fixed_before.stdout
+        (output/'fixed-rewards-after-replayed-turn-in.txt').write_text(fixed_retry.stdout)
+        document_after=cluster.query(document_query)
+        assert document_after.returncode==0 and document_after.stdout==document_before.stdout,'Document state/receipts changed across database restart'
+        (output/'documents-after-restart.txt').write_text(document_after.stdout)
+        cargo('document-reload', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_document_qualification', '--', 'read'])
+        def document_probe(name):
+            return next(json.loads(line.removeprefix('document_probe ')) for line in (output/(name+'.log')).read_text().splitlines() if line.startswith('document_probe '))
+        assert document_probe('document-write')==document_probe('document-reload'),'Document replay changed after restart'
+        rolls_after = cluster.query(roll_query)
+        assert rolls_after.returncode == 0 and rolls_after.stdout == rolls_before.stdout
+        (output/'loot-rolls-after-restart.txt').write_text(rolls_after.stdout)
+        loot_after = cluster.query(loot_query)
+        assert loot_after.returncode == 0 and loot_after.stdout == loot_before.stdout, 'Per-life loot source/availability/receipts/items/journals changed across restart'
+        (output/'creature-loot-after-restart.txt').write_text(loot_after.stdout)
         journal_after = cluster.query(journal_query)
         assert journal_after.returncode == 0 and journal_after.stdout == journal_before.stdout, 'Multi-quest rows/receipts changed across database process restart'
         (output/'quest-journal-after-restart.txt').write_text(journal_after.stdout)
@@ -118,8 +195,15 @@ def run(output, sdk):
     result = dict(passed=True, scope='PostgreSQL store/account/character/item/reward/progression/objective/vendor/explicit-quest-journal-and-completion-XP boundaries; no live kill credit, NPC/range, networking or native purchase proof',
                   postgres=version, commands=commands, authenticated_loopback=True,
                   wrong_password_rejected=True, durability_flags=['fsync=on','synchronous_commit=on','full_page_writes=on'],
+                  document_open_authorization_original_stage_and_receipts=True,
+                  document_read_history_independent_of_possession=True,
+                  document_open_lost_reply_and_worker_shutdown_drain=True,
+                  document_open_waiting_bag_mutation_rechecks_and_full_bag_read=True,
+                  document_open_receipts_bag_and_journal_survive_restart=True,
+                  document_runtime_owner_world_client_enabled=False,
                   multi_quest_rows_event_receipts_and_exact_snapshots_survive_restart=True,
                   multi_quest_atomic_completion_rollback_and_lock_barrier=True,
+                  atomic_optional_xp_kill_snapshots_survive_process_restart=True,
                   quest_events_independent_of_kill_xp_recipe=True,
                   real_clean_restart_reload=True, named_character_identity_and_pose_survive_restart=True,
                   bounded_character_create_list_select=True, durable_backpack_restart_and_latest_receipt=True,
@@ -129,9 +213,23 @@ def run(output, sdk):
                   equipment_backpack_race_conserves_items=True, equipment_dropped_response_recovery=True,
                   equipment_backend_loss_never_acknowledged_as_commit=True,
                   nonrepeatable_reward_claims_and_latest_receipt=True,
+                  quest_loot_first_generation_need_and_audit_revisions=True,
+                  quest_loot_later_acceptance_or_removal_cannot_create_old_rights=True,
+                  ordinary_version_thirteen_roll_upgrade_preserves_result=True,
+                  quest_loot_generation_snapshot_survives_database_restart=True,
+                  quest_loot_runtime_admission=False,
+                  quest_loot_need_filters_before_nearest_page_limit=True,
+                  quest_loot_fresh_pickup_need_and_original_receipt_checked=True,
+                  quest_loot_ready_replay_and_full_bag_rollback=True,
+                  quest_loot_worker_bounded_queued_lost_replies_and_shutdown_drain=True,
+                  quest_loot_worker_not_needed_rejection_nonfatal=True,
                   reward_full_bag_retains_claim_and_transaction_rollback=True,
                   reward_availability_consumption_and_items_survive_restart=True,
                   reward_cancelled_response_and_backend_loss_fail_closed=True,
+                  per_life_offer_without_pickup_does_not_credit_possession=True,
+                  per_life_pending_consumed_corpse_bags_and_journals_survive_restart=True,
+                  per_life_accepted_offers_drain_after_lost_response=True,
+                  per_life_pending_page_size=16,
                   progression_old_event_deduplication_and_cap=True,
                   progression_atomic_receipt_rollback_and_backend_loss=True,
                   progression_process_database_restart_and_old_receipts=True,
@@ -153,6 +251,14 @@ def run(output, sdk):
                   vendor_full_bag_rollback_and_freed_slot=True,
                   vendor_dropped_answer_queue_and_backend_failure=True,
                   vendor_process_database_restart_receipt=True,
+                  fixed_quest_item_rewards_atomic_consumption_grants_xp_receipts=True,
+                  fixed_quest_item_reward_capacity_and_freed_slot=True,
+                  fixed_quest_item_reward_policy_and_current_holdings_checked=True,
+                  fixed_quest_item_reward_lost_replies_queued_retry_shutdown_drain=True,
+                  fixed_quest_item_reward_capacity_refusal_nonfatal=True,
+                  fixed_quest_item_reward_document_replay_and_capped_xp=True,
+                  fixed_quest_item_reward_database_restart_and_moved_item_replay=True,
+                  fixed_quest_item_reward_live_admission=False,
                   plaintext_password_files_removed=True)
     (output/'verification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result

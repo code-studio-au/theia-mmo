@@ -3,6 +3,10 @@
 //! internal. This qualifier drives leases directly; it is not native game proof.
 #[path = "../src/admissions.rs"]
 mod admissions;
+#[path = "admission_lease/documents.rs"]
+mod document_owner;
+#[path = "admission_lease/item_rewards.rs"]
+mod item_reward_owner;
 #[path = "../../../crates/persistence/tests/support/mod.rs"]
 mod support;
 use std::{
@@ -147,10 +151,23 @@ async fn main() -> theia_network::Result<()> {
     let socket = UdpSocket::bind("127.0.0.1:0")?;
     let address = socket.local_addr()?;
     let (mut transport, issuer) = net::secure_issuer(socket, vec![address])?;
+    let item_rewards = std::env::var("THEIA_TEST_QUEST_ITEM_REWARDS").is_ok_and(|v| v == "1");
+    let document_journal = std::env::var("THEIA_TEST_QUEST_DOCUMENTS").is_ok_and(|v| v == "1");
+    let quest_loot = std::env::var("THEIA_TEST_QUEST_LOOT").is_ok_and(|v| v == "1");
+    let item_journal = std::env::var("THEIA_TEST_QUEST_ITEMS").is_ok_and(|v| v == "1");
     let vendors = std::env::var("THEIA_TEST_VENDORS").is_ok_and(|v| v == "1");
-    let inventory = vendors || std::env::var("THEIA_TEST_INVENTORY").is_ok_and(|v| v == "1");
-    let rewards_enabled = std::env::var("THEIA_TEST_REWARDS").is_ok_and(|v| v == "1");
-    let item_bytes: &[u8] = if rewards_enabled || vendors {
+    let inventory = item_rewards
+        || document_journal
+        || quest_loot
+        || item_journal
+        || vendors
+        || std::env::var("THEIA_TEST_INVENTORY").is_ok_and(|v| v == "1");
+    let creature_loot = std::env::var("THEIA_TEST_CREATURE_LOOT").is_ok_and(|v| v == "1");
+    let rewards_enabled =
+        creature_loot || std::env::var("THEIA_TEST_REWARDS").is_ok_and(|v| v == "1");
+    let item_bytes: &[u8] = if quest_loot {
+        include_bytes!("../../../content/gameplay/development-loot-items.json")
+    } else if item_rewards || document_journal || item_journal || rewards_enabled || vendors {
         include_bytes!("../../../content/gameplay/development-equipment-items.json")
     } else {
         include_bytes!("../../../content/gameplay/development-items.json")
@@ -162,6 +179,16 @@ async fn main() -> theia_network::Result<()> {
     let mut second = recipe["rewards"][0].clone();
     second["id"] = "theia.dev.second-training-kill".into();
     recipe["rewards"].as_array_mut().unwrap().push(second);
+    if creature_loot {
+        recipe["schema"] = 3.into();
+        recipe["rewards"].as_array_mut().unwrap().truncate(1);
+        recipe["rewards"][0]["scope"] = "per_creature_life".into();
+        recipe["rewards"][0]["chance_basis_points"] = 10_000.into();
+        let mut miss = recipe["rewards"][0].clone();
+        miss["id"] = "theia.dev.zero-drop".into();
+        miss["chance_basis_points"] = 0.into();
+        recipe["rewards"].as_array_mut().unwrap().push(miss);
+    }
     let reward_bytes = serde_json::to_vec(&recipe)?;
     let rewards = if rewards_enabled {
         Some(theia_persistence::RewardCatalog::from_json(
@@ -174,10 +201,14 @@ async fn main() -> theia_network::Result<()> {
     let (publisher, worker) = Worker::start(store);
     let mut gate = if let Some(rewards) = &rewards {
         let items = net::inventory::Profile::from_json(item_bytes)?;
-        let wire = Arc::new(theia_network::reward_wire::Profile::from_json(
-            &reward_bytes,
-            &items,
-        )?);
+        let wire = Arc::new(if creature_loot {
+            theia_network::reward_wire::Profile::from_json_with_creature_loot(
+                &reward_bytes,
+                &items,
+            )?
+        } else {
+            theia_network::reward_wire::Profile::from_json(&reward_bytes, &items)?
+        });
         admissions::GameAdmissions::new_rewards(
             sessions.clone(),
             issuer,
@@ -197,6 +228,768 @@ async fn main() -> theia_network::Result<()> {
     } else {
         admissions::GameAdmissions::new(sessions.clone(), issuer, world)
     };
+    if document_journal || item_rewards {
+        let fixture = document_owner::Fixture {
+            gate,
+            publisher,
+            worker,
+            transport,
+            context,
+            saved: character.saved,
+            profile,
+            admin,
+            driver,
+            url,
+            realm,
+            world,
+        };
+        return if item_rewards {
+            item_reward_owner::run(fixture).await
+        } else {
+            document_owner::run(fixture).await
+        };
+    }
+    if quest_loot {
+        use net::progression::{Input, JournalInput, JournalOperation};
+        use theia_core::{
+            content::ContentId,
+            progression::{KillEvent, KillId},
+            quests::journal::{Action, Command, Status},
+            rewards::ClaimCommand,
+        };
+        use theia_network::simulation::rewards::Opportunity;
+        let id = |s: &str| ContentId::new(s).unwrap();
+        let xp_bytes = include_bytes!("../../../content/gameplay/development-progression.json");
+        let xp = theia_persistence::ProgressionCatalog::from_json(xp_bytes)?;
+        let data = serde_json::to_vec(
+            &serde_json::json!({"schema":3,"id":"catalog","revision":1,"quests":[{
+            "id":"quest","version":1,"title":"Pelts","description":"Owned conditional loot fixture","prerequisites":[],
+            "giver":"theia.dev.guide","turn_in":"theia.dev.guide","repeat_policy":"once","credit_scope":"character","experience":25,
+            "start_stage":"stage","stages":[{"id":"stage","completion":{"kind":"all"},"next":null,"objectives":[{
+            "kind":"possess_item","id":"goal","label":"Bring","item":"theia.dev.wolf-pelt","required":3,"consume_on_turn_in":true}]}]}]}),
+        )?;
+        let q = theia_persistence::QuestJournalCatalog::from_json(&data, &xp)?
+            .with_inventory(&profile)?;
+        let wi = net::inventory::Profile::from_json(item_bytes)?;
+        let wj = theia_network::quest_journal::Profile::from_json(
+            &data,
+            &theia_network::progression_wire::Profile::from_json(xp_bytes)?,
+        )?
+        .with_inventory(&wi)?;
+        let mut source: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../content/gameplay/development-random-creature-loot-rewards.json"
+        ))?;
+        source["schema"] = 4.into();
+        source["rewards"].as_array_mut().unwrap().remove(0);
+        source["rewards"][0]["quest_required"] = true.into();
+        for entry in source["rewards"].as_array_mut().unwrap() {
+            entry["chance_basis_points"] = 10_000.into();
+        }
+        let source = serde_json::to_vec(&source)?;
+        let rewards =
+            theia_persistence::RewardCatalog::from_json_with_quest_journal(&source, &profile, &q)?;
+        let wire = Arc::new(
+            theia_network::reward_wire::Profile::from_json_with_quest_journal(&source, &wi, &wj)?,
+        );
+        admissions::GameAdmissions::with_progression(
+            &mut gate,
+            xp,
+            Arc::new(theia_network::progression_wire::Profile::from_json(
+                xp_bytes,
+            )?),
+            publisher.clone(),
+        )?;
+        // Refuse before installing the bound journal, without partially adopting rewards.
+        assert!(
+            admissions::GameAdmissions::with_quest_loot(&mut gate, rewards.clone(), wire.clone())
+                .is_err()
+        );
+        admissions::GameAdmissions::with_quest_journal(&mut gate, q.clone())?;
+        let mut changed_source = source.clone();
+        changed_source.push(b' ');
+        let foreign_wire = Arc::new(
+            theia_network::reward_wire::Profile::from_json_with_quest_journal(
+                &changed_source,
+                &wi,
+                &wj,
+            )?,
+        );
+        assert!(
+            admissions::GameAdmissions::with_quest_loot(&mut gate, rewards.clone(), foreign_wire,)
+                .is_err()
+        );
+        admissions::GameAdmissions::with_quest_loot(&mut gate, rewards.clone(), wire.clone())?;
+        assert!(
+            admissions::GameAdmissions::with_quest_loot(&mut gate, rewards.clone(), wire,).is_err()
+        );
+        let actor = EntityKey {
+            epoch: WorldEpoch::new(195).unwrap(),
+            entity: EntityId::new(1).unwrap(),
+        };
+        let command = |request, action, revision| Command {
+            request_id: std::num::NonZeroU128::new(request).unwrap(),
+            quest: id("quest"),
+            npc: id("theia.dev.guide"),
+            action,
+            expected_revision: revision,
+        };
+        let input = |sequence, command| {
+            Input::Journal(JournalInput {
+                actor,
+                catalog: q.hash(),
+                sequence,
+                operation: JournalOperation::Command(command),
+            })
+        };
+        let ticket = gate
+            .reserve(context.clone(), binding)?
+            .issue(character.saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        lease.record(actor, position, 1)?;
+        let mut items = lease.inventory()?.unwrap();
+        let mut progress = lease.progression()?.unwrap();
+        inventory_until(&mut items, |s| s.bag.is_some() && s.rewards.is_some()).await;
+        progression_until(&mut progress, |s| {
+            s.journal.is_some() && s.progress.is_some()
+        })
+        .await;
+        let fact = |n, reward: &str| Opportunity {
+            actor,
+            reward: id(reward),
+            position,
+            event: KillEvent {
+                id: KillId::from_victim(EntityKey {
+                    entity: EntityId::new(n).unwrap(),
+                    ..actor
+                }),
+                creature: id("theia.dev.training-creature"),
+            },
+        };
+        let pelt = "theia.dev.wolf-pelt-loot";
+        let token = "theia.dev.wolf-token-loot";
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(100, pelt))
+            .await?;
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(100, token))
+            .await?;
+        let ordinary = inventory_until(&mut items, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 1)
+        })
+        .await;
+        assert_eq!(ordinary.rewards.unwrap().available[0].reward, id(token));
+        progress
+            .input
+            .send(input(1, command(1, Action::Accept, 0)))
+            .await?;
+        progression_until(&mut progress, |s| {
+            s.journal
+                .as_ref()
+                .is_some_and(|j| j.reply.as_ref().is_some_and(|r| r.sequence == 1))
+        })
+        .await;
+        // Replay after acceptance cannot create rights on the old denied corpse.
+        let before = worker.status().reward_offers;
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(100, pelt))
+            .await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while worker.status().reward_offers == before {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        assert!(
+            publisher
+                .list_quest_reward_claims_nearby(binding, world, &rewards, position)
+                .await?
+                .iter()
+                .all(|c| c.reward == id(token))
+        );
+        for n in 101..106 {
+            items
+                .opportunities
+                .as_ref()
+                .unwrap()
+                .send(fact(n, pelt))
+                .await?;
+        }
+        let offered = inventory_until(&mut items, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 6)
+        })
+        .await;
+        let pelts: Vec<_> = offered
+            .rewards
+            .unwrap()
+            .available
+            .into_iter()
+            .filter(|r| r.reward == id(pelt))
+            .collect();
+        assert_eq!(pelts.len(), 5);
+        for (index, claim) in pelts.iter().take(3).enumerate() {
+            let revision = items.state.borrow().bag.as_ref().unwrap().revision();
+            items
+                .requests
+                .send(net::inventory::Request {
+                    sequence: index as u64 + 1,
+                    command: ClaimCommand {
+                        claim: claim.claim,
+                        expected_revision: revision,
+                    }
+                    .into(),
+                })
+                .await?;
+            inventory_until(&mut items, |s| {
+                s.reply.is_some_and(|r| r.sequence == index as u64 + 1)
+            })
+            .await;
+        }
+        progression_until(&mut progress, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Ready)
+            })
+        })
+        .await;
+        inventory_until(&mut items, |s| {
+            s.rewards
+                .as_ref()
+                .is_some_and(|r| r.available.len() == 1 && r.available[0].reward == id(token))
+        })
+        .await;
+        let ready_bag = items.state.borrow().bag.as_ref().unwrap().clone();
+        // Fresh stale-pane pickup is a normal rejection, not owner failure.
+        items
+            .requests
+            .send(net::inventory::Request {
+                sequence: 4,
+                command: ClaimCommand {
+                    claim: pelts[3].claim,
+                    expected_revision: ready_bag.revision(),
+                }
+                .into(),
+            })
+            .await?;
+        let rejected =
+            inventory_until(&mut items, |s| s.reply.is_some_and(|r| r.sequence == 4)).await;
+        assert_eq!(
+            rejected.reply.unwrap().outcome,
+            theia_network::inventory_wire::Outcome::Rejected(
+                theia_network::inventory_wire::Reason::Conflict
+            )
+        );
+        let slot = ready_bag
+            .slots()
+            .iter()
+            .position(|s| {
+                s.as_ref()
+                    .is_some_and(|s| s.item() == &id("theia.dev.wolf-pelt"))
+            })
+            .unwrap() as u8;
+        items
+            .requests
+            .send(net::inventory::Request {
+                sequence: 5,
+                command: ItemCommand {
+                    expected_revision: ready_bag.revision(),
+                    operation: ItemOperation::Destroy {
+                        from: slot,
+                        amount: 1,
+                    },
+                }
+                .into(),
+            })
+            .await?;
+        inventory_until(&mut items, |s| s.reply.is_some_and(|r| r.sequence == 5)).await;
+        progression_until(&mut progress, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Active)
+            })
+        })
+        .await;
+        // No lease.record after the first pose: this must refresh while stationary.
+        inventory_until(&mut items, |s| {
+            s.rewards
+                .as_ref()
+                .is_some_and(|r| r.available.iter().any(|r| r.claim == pelts[3].claim))
+        })
+        .await;
+        let revision = items.state.borrow().bag.as_ref().unwrap().revision();
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
+        items
+            .requests
+            .send(net::inventory::Request {
+                sequence: 6,
+                command: ClaimCommand {
+                    claim: pelts[3].claim,
+                    expected_revision: revision,
+                }
+                .into(),
+            })
+            .await?;
+        wait_inventory_lock(&guard).await;
+        drop(lease);
+        assert!(gate.reserve(context.clone(), binding).is_err());
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let saved = publisher.select_character(binding, world).await?.saved;
+        let reservation = gate.reserve(context.clone(), binding)?;
+        assert_eq!(
+            reservation.check_gameplay_profiles(&publisher).await?,
+            theia_persistence::ProfileCompatibility::Compatible
+        );
+        let ticket = reservation.issue(saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let actor2 = EntityKey {
+            entity: EntityId::new(2).unwrap(),
+            ..actor
+        };
+        lease.record(actor2, position, 2)?;
+        let mut items = lease.inventory()?.unwrap();
+        let mut progress = lease.progression()?.unwrap();
+        let loaded = inventory_until(&mut items, |s| s.bag.is_some() && s.rewards.is_some()).await;
+        assert_eq!(loaded.bag.as_ref().unwrap().revision(), revision + 1);
+        assert_eq!(loaded.rewards.unwrap().available.len(), 1);
+        let restored = progression_until(&mut progress, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Ready)
+            })
+        })
+        .await;
+        // Latest committed retry succeeds despite reaching the required quantity.
+        items
+            .requests
+            .send(net::inventory::Request {
+                sequence: 1,
+                command: ClaimCommand {
+                    claim: pelts[3].claim,
+                    expected_revision: revision,
+                }
+                .into(),
+            })
+            .await?;
+        let replay =
+            inventory_until(&mut items, |s| s.reply.is_some_and(|r| r.sequence == 1)).await;
+        assert_eq!(
+            replay.reply.unwrap().outcome,
+            theia_network::inventory_wire::Outcome::Replayed
+        );
+        let turn = command(
+            2,
+            Action::TurnIn,
+            restored
+                .journal
+                .as_ref()
+                .unwrap()
+                .journal
+                .progress(&id("quest"))
+                .unwrap()
+                .revision(),
+        );
+        progress
+            .input
+            .send(Input::Journal(JournalInput {
+                actor: actor2,
+                catalog: q.hash(),
+                sequence: 1,
+                operation: JournalOperation::Command(turn),
+            }))
+            .await?;
+        let completed = progression_until(&mut progress, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Completed)
+            })
+        })
+        .await;
+        assert_eq!(completed.progress.unwrap().total(), 25);
+        let bag = inventory_until(&mut items, |s| {
+            s.bag.as_ref().is_some_and(|b| b.revision() == revision + 2)
+        })
+        .await
+        .bag
+        .unwrap();
+        assert!(
+            bag.slots()
+                .iter()
+                .flatten()
+                .all(|s| s.item() != &id("theia.dev.wolf-pelt"))
+        );
+        inventory_until(&mut items, |s| {
+            s.rewards
+                .as_ref()
+                .is_some_and(|r| r.available.len() == 1 && r.available[0].reward == id(token))
+        })
+        .await;
+        // Leave one entitled pelt uncollected: completion must keep it hidden.
+        assert_eq!(
+            publisher
+                .list_quest_reward_claims_nearby(binding, world, &rewards, position)
+                .await?
+                .len(),
+            1
+        );
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(200, pelt))
+            .await?;
+        wait_inventory_lock(&guard).await;
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(201, pelt))
+            .await?;
+        drop(lease);
+        assert!(gate.reserve(context.clone(), binding).is_err());
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let row=admin.query_one("SELECT count(*),count(*) FILTER (WHERE NOT generation_eligible) FROM theia.loot_rolls WHERE realm_id=$1 AND character_id=$2",&[&realm.value(),&binding.character.value()]).await?;
+        assert_eq!(row.get::<_, i64>(0), 9);
+        assert_eq!(row.get::<_, i64>(1), 3);
+        assert_eq!(
+            publisher
+                .list_quest_reward_claims_nearby(binding, world, &rewards, position)
+                .await?
+                .len(),
+            1
+        );
+        let status = worker.shutdown().await?;
+        assert!(!status.failed);
+        drop(admin);
+        driver.await??;
+        emit(
+            serde_json::json!({"passed":true,"quest_loot_enabled":true,"actual_oidc_and_postgres":true,"encrypted_ticket_binding":true,"denied_generation_stays_denied":true,"stationary_need_refresh":true,"stale_need_nonfatal":true,"pickup_survives_retirement":true,"latest_pickup_replay":true,"atomic_turn_in":true,"completed_leftovers_hidden":true,"queued_generation_survives_retirement":true,"direct_lease_contract_not_native_game":true}),
+        );
+        return Ok(());
+    }
+    if item_journal {
+        use net::progression::{Input, JournalInput, JournalOperation};
+        use theia_core::{
+            content::ContentId,
+            quests::journal::{Action, Command, Status},
+        };
+        let id = |s: &str| ContentId::new(s).unwrap();
+        let xp_bytes = include_bytes!("../../../content/gameplay/development-progression.json");
+        let xp = theia_persistence::ProgressionCatalog::from_json(xp_bytes)?;
+        let data = serde_json::to_vec(
+            &serde_json::json!({"schema":3,"id":"catalog","revision":1,"quests":[{
+            "id":"quest","version":1,"title":"Bring","description":"Owned owner fixture","prerequisites":[],
+            "giver":"theia.dev.guide","turn_in":"theia.dev.guide","repeat_policy":"once","credit_scope":"character","experience":25,
+            "start_stage":"stage","stages":[{"id":"stage","completion":{"kind":"all"},"next":null,"objectives":[{
+                "kind":"possess_item","id":"goal","label":"Bring","item":"theia.dev.training-stone","required":28,"consume_on_turn_in":true}]}]}]}),
+        )?;
+        let q = theia_persistence::QuestJournalCatalog::from_json(&data, &xp)?
+            .with_inventory(&profile)?;
+        admissions::GameAdmissions::with_progression(
+            &mut gate,
+            xp,
+            Arc::new(theia_network::progression_wire::Profile::from_json(
+                xp_bytes,
+            )?),
+            publisher.clone(),
+        )?;
+        admissions::GameAdmissions::with_quest_journal(&mut gate, q.clone())?;
+        let vendor_bytes = include_bytes!("../../../content/gameplay/development-vendor.json");
+        admissions::GameAdmissions::with_vendor(
+            &mut gate,
+            theia_persistence::VendorCatalog::from_json(vendor_bytes, &profile)?,
+            Arc::new(theia_network::vendor_wire::Profile::from_json(
+                vendor_bytes,
+                &net::inventory::Profile::from_json(item_bytes)?,
+            )?),
+        )?;
+        let actor = EntityKey {
+            epoch: WorldEpoch::new(174).unwrap(),
+            entity: EntityId::new(1).unwrap(),
+        };
+        let command = |request_id, action, expected_revision| Command {
+            request_id: std::num::NonZeroU128::new(request_id).unwrap(),
+            quest: id("quest"),
+            npc: id("theia.dev.guide"),
+            action,
+            expected_revision,
+        };
+        let input = |sequence, cmd| {
+            Input::Journal(JournalInput {
+                actor,
+                catalog: q.hash(),
+                sequence,
+                operation: JournalOperation::Command(cmd),
+            })
+        };
+        let reservation = gate.reserve(context.clone(), binding)?;
+        let ticket = reservation.issue(character.saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        lease.record(actor, position, 1)?;
+        let mut inventory = lease.inventory()?.unwrap();
+        let mut progression = lease.progression()?.unwrap();
+        inventory_until(&mut inventory, |s| s.bag.is_some()).await;
+        progression_until(&mut progression, |s| {
+            s.journal.is_some() && s.progress.is_some()
+        })
+        .await;
+        progression
+            .input
+            .try_send(input(1, command(1, Action::Accept, 0)))?;
+        let ready = progression_until(&mut progression, |s| {
+            s.journal
+                .as_ref()
+                .is_some_and(|j| j.reply.as_ref().is_some_and(|r| r.sequence == 1))
+        })
+        .await;
+        assert_eq!(
+            ready
+                .journal
+                .as_ref()
+                .unwrap()
+                .journal
+                .progress(&id("quest"))
+                .unwrap()
+                .status(),
+            Status::Ready
+        );
+        inventory.requests.try_send(net::inventory::Request {
+            sequence: 1,
+            command: ItemCommand {
+                expected_revision: 0,
+                operation: ItemOperation::Split {
+                    from: 0,
+                    to: 15,
+                    amount: 1,
+                },
+            }
+            .into(),
+        })?;
+        inventory_until(&mut inventory, |s| s.reply.is_some_and(|r| r.sequence == 1)).await;
+        assert_eq!(
+            progression.state.borrow().journal.as_ref().unwrap().journal,
+            ready.journal.as_ref().unwrap().journal
+        );
+        inventory.requests.try_send(net::inventory::Request {
+            sequence: 2,
+            command: ItemCommand {
+                expected_revision: 1,
+                operation: ItemOperation::Destroy {
+                    from: 15,
+                    amount: 1,
+                },
+            }
+            .into(),
+        })?;
+        inventory_until(&mut inventory, |s| s.reply.is_some_and(|r| r.sequence == 2)).await;
+        let active = progression_until(&mut progression, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Active)
+            })
+        })
+        .await;
+        assert_eq!(
+            active
+                .journal
+                .as_ref()
+                .unwrap()
+                .journal
+                .progress(&id("quest"))
+                .unwrap()
+                .count(&id("goal")),
+            Some(27)
+        );
+        progression.input.try_send(input(
+            2,
+            command(
+                2,
+                Action::TurnIn,
+                ready
+                    .journal
+                    .as_ref()
+                    .unwrap()
+                    .journal
+                    .progress(&id("quest"))
+                    .unwrap()
+                    .revision(),
+            ),
+        ))?;
+        let rejected = progression_until(&mut progression, |s| {
+            s.journal
+                .as_ref()
+                .is_some_and(|j| j.reply.as_ref().is_some_and(|r| r.sequence == 2))
+        })
+        .await;
+        assert!(
+            rejected
+                .journal
+                .as_ref()
+                .unwrap()
+                .reply
+                .as_ref()
+                .unwrap()
+                .rejection
+                .is_some()
+        );
+        assert_eq!(rejected.progress.as_ref().unwrap().total(), 0);
+        let guide = EntityKey {
+            epoch: actor.epoch,
+            entity: EntityId::new(90).unwrap(),
+        };
+        inventory.requests.try_send(net::inventory::Request {
+            sequence: 3,
+            command: theia_core::inventory::ItemCommand::Vendor(theia_core::vendors::Command {
+                expected_revision: 2,
+                dialogue_revision: 1,
+                npc: guide,
+                offer: 0,
+            }),
+        })?;
+        inventory_until(&mut inventory, |s| s.reply.is_some_and(|r| r.sequence == 3)).await;
+        let restored = progression_until(&mut progression, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Ready)
+            })
+        })
+        .await;
+        let turn = command(
+            3,
+            Action::TurnIn,
+            restored
+                .journal
+                .as_ref()
+                .unwrap()
+                .journal
+                .progress(&id("quest"))
+                .unwrap()
+                .revision(),
+        );
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.quest_journal_heads WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
+        progression.input.try_send(input(3, turn.clone()))?;
+        tokio::time::timeout(Duration::from_millis(300),async {
+            loop {
+                guard.query_one("SELECT pg_stat_clear_snapshot()",&[]).await.unwrap();
+                let waiting:bool=guard.query_one("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE '%quest_journal_heads%' AND pid<>pg_backend_pid())",&[]).await.unwrap().get(0);
+                if waiting {break;}
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        }).await?;
+        drop(lease);
+        assert_eq!(gate.flush(&publisher, &worker.status())?, 1);
+        assert!(gate.reserve(context.clone(), binding).is_err());
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let done = progression.state.borrow().clone();
+        assert!(!done.failed && done.closed);
+        assert_eq!(
+            done.journal
+                .as_ref()
+                .unwrap()
+                .journal
+                .progress(&id("quest"))
+                .unwrap()
+                .status(),
+            Status::Completed
+        );
+        assert_eq!(done.progress.as_ref().unwrap().total(), 25);
+        assert_eq!(inventory.state.borrow().bag.as_ref().unwrap().revision(), 4);
+        let selected = publisher.select_character(binding, world).await?.saved;
+        let reservation = gate.reserve(context.clone(), binding)?;
+        assert_eq!(
+            reservation.check_gameplay_profiles(&publisher).await?,
+            theia_persistence::ProfileCompatibility::Compatible
+        );
+        let ticket = reservation.issue(selected)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let actor2 = EntityKey {
+            epoch: actor.epoch,
+            entity: EntityId::new(2).unwrap(),
+        };
+        lease.record(actor2, position, 2)?;
+        let mut reopened = lease.progression()?.unwrap();
+        let mut reopened_items = lease.inventory()?.unwrap();
+        let loaded = progression_until(&mut reopened, |s| {
+            s.journal.is_some() && s.progress.is_some()
+        })
+        .await;
+        assert_eq!(
+            loaded.journal.as_ref().unwrap().journal,
+            done.journal.as_ref().unwrap().journal
+        );
+        reopened.input.try_send(Input::Journal(JournalInput {
+            actor: actor2,
+            catalog: q.hash(),
+            sequence: 1,
+            operation: JournalOperation::Command(turn),
+        }))?;
+        let replay = progression_until(&mut reopened, |s| {
+            s.journal
+                .as_ref()
+                .is_some_and(|j| j.reply.as_ref().is_some_and(|r| r.sequence == 1))
+        })
+        .await;
+        assert_eq!(replay.progress.as_ref().unwrap().total(), 25);
+        let bag = inventory_until(&mut reopened_items, |s| {
+            s.bag.as_ref().is_some_and(|b| b.revision() == 4)
+        })
+        .await;
+        assert_eq!(bag.bag.as_ref(), inventory.state.borrow().bag.as_ref());
+        drop(lease);
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let status = worker.shutdown().await?;
+        assert!(!status.failed);
+        drop(admin);
+        driver.await??;
+        emit(
+            serde_json::json!({"passed":true,"item_journal_enabled":true,"current_possession_reversal":true,"atomic_turn_in_after_retirement":true,"rejoin_replay_does_not_consume_again":true,"xp":25,"npc_entitlement":"trusted owner fixture; not World or native range proof"}),
+        );
+        return Ok(());
+    }
     if std::env::var("THEIA_TEST_QUEST_JOURNAL").is_ok_and(|v| v == "1") {
         use net::progression::{Input, JournalInput, JournalOperation};
         use std::num::NonZeroU128;
@@ -300,6 +1093,22 @@ async fn main() -> theia_network::Result<()> {
         ))?;
         // A later event must not overwrite the pending command's acknowledgement.
         port.input.try_send(input(8, event(4, "training")))?;
+        let kill = |n, creature: &str| {
+            JournalOperation::Kill(theia_core::progression::KillEvent {
+                id: theia_core::progression::KillId::from_victim(EntityKey {
+                    epoch: actor.epoch,
+                    entity: EntityId::new(n).unwrap(),
+                }),
+                creature: id(creature),
+            })
+        };
+        for (sequence, victim) in [(9, 100), (10, 101), (11, 102), (12, 100)] {
+            port.input
+                .try_send(input(sequence, kill(victim, "theia.dev.training-creature")))?;
+        }
+        // Quest-only facts must also survive retirement without an XP recipe.
+        port.input
+            .try_send(input(13, kill(103, "theia.dev.no-xp-creature")))?;
         sessions.lock().unwrap().revoke(secret.expose_secret());
         drop(lease);
         assert_eq!(gate.flush(&publisher, &worker.status())?, 1);
@@ -327,16 +1136,16 @@ async fn main() -> theia_network::Result<()> {
         let saved = port.state.borrow().clone();
         assert!(saved.closed && !saved.failed);
         let journal = saved.journal.as_ref().unwrap();
-        assert_eq!(journal.revision, 7);
+        assert_eq!(journal.revision, 11);
         assert_eq!(
             journal.journal.progress(&first).unwrap().status(),
             Status::Completed
         );
         assert_eq!(
             journal.journal.progress(&second).unwrap().status(),
-            Status::Active
+            Status::Ready
         );
-        assert_eq!(saved.progress.as_ref().unwrap().total(), 25);
+        assert_eq!(saved.progress.as_ref().unwrap().total(), 100);
         assert_eq!(journal.reply.as_ref().unwrap().sequence, 7);
         assert!(journal.reply.as_ref().unwrap().rejection.is_none());
         assert!(port.input.try_send(input(9, event(5, "road"))).is_err());
@@ -357,7 +1166,7 @@ async fn main() -> theia_network::Result<()> {
         let mut reloaded = lease.progression()?.unwrap();
         let loaded = progression_until(&mut reloaded, |s| s.journal.is_some()).await;
         assert_eq!(loaded.journal.as_ref().unwrap().journal, journal.journal);
-        assert_eq!(loaded.progress.as_ref().unwrap().total(), 25);
+        assert_eq!(loaded.progress.as_ref().unwrap().total(), 100);
         reloaded.input.try_send(Input::Journal(JournalInput {
             actor: actor2,
             catalog: q.hash(),
@@ -372,8 +1181,14 @@ async fn main() -> theia_network::Result<()> {
         .await;
         assert_eq!(
             reloaded.state.borrow().progress.as_ref().unwrap().total(),
-            25
+            100
         );
+        reloaded.input.try_send(Input::Journal(JournalInput {
+            actor: actor2,
+            catalog: q.hash(),
+            sequence: 2,
+            operation: kill(100, "theia.dev.training-creature"),
+        }))?;
         sessions.lock().unwrap().revoke(secret2.expose_secret());
         drop(lease);
         tokio::time::timeout(Duration::from_secs(5), async {
@@ -386,13 +1201,21 @@ async fn main() -> theia_network::Result<()> {
         })
         .await?;
         let status = worker.shutdown().await?;
-        assert_eq!(status.journal_experience_units, 25);
-        assert_eq!(status.journal_replayed, 2);
+        assert_eq!(
+            reloaded.state.borrow().progress.as_ref().unwrap().total(),
+            100
+        );
+        assert_eq!(
+            reloaded.state.borrow().journal.as_ref().unwrap().journal,
+            journal.journal
+        );
+        assert_eq!(status.journal_experience_units, 100);
+        assert_eq!(status.journal_replayed, 4);
         assert!(!status.failed);
         emit(
             serde_json::json!({"passed":true, "expanded_journal_enabled":true,
             "accepted_executing_and_queued_journal_work_survives_logout":true,
-            "reconnect_blocked_until_retirement":true, "completion_xp_awarded":25,
+            "reconnect_blocked_until_retirement":true, "completion_xp_awarded":25, "kill_xp_awarded":75, "optional_xp_kills_retained":true,
             "replayed_event_and_completion_award_no_extra":true,
             "scope":"Actual OIDC/encrypted ticket/SQL retained owner; NPC and semantic events are trusted synthetic inputs, no live World or new client UI"}),
         );
@@ -871,6 +1694,209 @@ async fn main() -> theia_network::Result<()> {
         );
         return Ok(());
     }
+    if creature_loot {
+        use theia_core::{
+            progression::{KillEvent, KillId},
+            rewards::ClaimCommand,
+        };
+        use theia_network::simulation::rewards::Opportunity;
+        let rewards = rewards.as_ref().unwrap();
+        let recipe = rewards.catalog().definitions().next().unwrap();
+        let ticket = gate
+            .reserve(context.clone(), binding)?
+            .issue(character.saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let actor = EntityKey {
+            epoch: WorldEpoch::new(123).unwrap(),
+            entity: EntityId::new(1).unwrap(),
+        };
+        lease.record(actor, position, 1)?;
+        let mut port = lease.inventory()?.unwrap();
+        let initial = inventory_until(&mut port, |s| s.bag.is_some() && s.rewards.is_some()).await;
+        let baseline = initial.bag.unwrap();
+        assert!(initial.rewards.unwrap().available.is_empty());
+        let mut xyz = position.metres();
+        xyz[0] += 1000.;
+        let distant = GlobalPosition::new(xyz).unwrap();
+        let fact = |n, position| Opportunity {
+            actor,
+            reward: recipe.id().clone(),
+            position,
+            event: KillEvent {
+                id: KillId::from_victim(EntityKey {
+                    entity: EntityId::new(n).unwrap(),
+                    ..actor
+                }),
+                creature: recipe.creature().clone(),
+            },
+        };
+        let mut miss = fact(99, position);
+        miss.reward = theia_core::content::ContentId::new("theia.dev.zero-drop").unwrap();
+        for _ in 0..2 {
+            port.opportunities
+                .as_ref()
+                .unwrap()
+                .send(miss.clone())
+                .await?;
+        }
+        for n in 100..117 {
+            port.opportunities
+                .as_ref()
+                .unwrap()
+                .send(fact(n, distant))
+                .await?;
+        }
+        port.opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(117, position))
+            .await?;
+        let offered = inventory_until(&mut port, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 1)
+        })
+        .await;
+        assert_eq!(offered.bag.as_ref().unwrap(), &baseline);
+        let claim = offered.rewards.unwrap().available[0].clone();
+        assert_eq!(claim.corpse.unwrap().position, position);
+        lease.record(actor, distant, 2)?;
+        let far = inventory_until(&mut port, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 16)
+        })
+        .await;
+        assert!(
+            far.rewards
+                .unwrap()
+                .available
+                .iter()
+                .all(|c| c.corpse.unwrap().position == distant)
+        );
+        assert_eq!(far.bag.as_ref().unwrap(), &baseline);
+        lease.record(actor, position, 3)?;
+        let back = inventory_until(&mut port, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 1)
+        })
+        .await;
+        assert_eq!(back.rewards.unwrap().available[0].claim, claim.claim);
+        // Direct accepted owner command: World range/life checks are separately
+        // exercised by encrypted runtime tests, not bypassed in the product.
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
+        port.requests
+            .send(net::inventory::Request {
+                sequence: 1,
+                command: ClaimCommand {
+                    claim: claim.claim,
+                    expected_revision: baseline.revision(),
+                }
+                .into(),
+            })
+            .await?;
+        wait_inventory_lock(&guard).await;
+        assert_eq!(port.state.borrow().bag.as_ref().unwrap(), &baseline);
+        drop(lease);
+        assert!(matches!(
+            gate.reserve(context.clone(), binding),
+            Err(admissions::Error::Conflict)
+        ));
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let saved = publisher.select_character(binding, world).await?.saved;
+        assert_eq!(saved.position, position);
+        let ticket = gate.reserve(context.clone(), binding)?.issue(saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let mut fresh = lease.inventory()?.unwrap();
+        let loaded = inventory_until(&mut fresh, |s| s.bag.is_some() && s.rewards.is_some()).await;
+        assert_eq!(loaded.bag.unwrap().revision(), baseline.revision() + 1);
+        assert!(loaded.rewards.unwrap().available.is_empty());
+        let next_actor = EntityKey {
+            entity: EntityId::new(2).unwrap(),
+            ..actor
+        };
+        lease.record(next_actor, distant, 1)?;
+        let recovered = inventory_until(&mut fresh, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 16)
+        })
+        .await;
+        assert!(
+            recovered
+                .rewards
+                .unwrap()
+                .available
+                .iter()
+                .all(|c| c.corpse.unwrap().position == distant)
+        );
+        let all_far = publisher
+            .list_reward_claims_nearby(binding, world, rewards, distant)
+            .await?;
+        assert_eq!(all_far.len(), 16);
+        // Replaying an already collected fatal life does not restore loot.
+        lease.record(next_actor, position, 2)?;
+        inventory_until(&mut fresh, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.is_empty())
+        })
+        .await;
+        let offered_before = worker.status().reward_offers;
+        fresh
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(117, position))
+            .await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while worker.status().reward_offers == offered_before {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        drop(lease);
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        assert!(
+            publisher
+                .list_reward_claims_nearby(binding, world, rewards, position)
+                .await?
+                .is_empty()
+        );
+        assert_eq!(
+            publisher
+                .load_inventory(binding, world, &profile)
+                .await?
+                .revision(),
+            baseline.revision() + 1
+        );
+        let row=admin.query_one("SELECT count(*),count(*) FILTER(WHERE consumed_revision IS NULL) FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2",&[&realm.value(),&binding.character.value()]).await?;
+        assert_eq!(row.get::<_, i64>(0), 18);
+        assert_eq!(row.get::<_, i64>(1), 17);
+        let rolls = admin
+            .query_one(
+                "SELECT count(*) FROM theia.loot_rolls WHERE realm_id=$1 AND character_id=$2",
+                &[&realm.value(), &binding.character.value()],
+            )
+            .await?;
+        assert_eq!(
+            rolls.get::<_, i64>(0),
+            19,
+            "Repeated miss must retain one roll without advertising loot"
+        );
+        worker.shutdown().await?;
+        drop(admin);
+        driver.await??;
+        emit(
+            serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"encrypted_ticket_binding":true,"creature_loot_enabled":true,"persisted_rolls_including_miss":true,"nearby_interest_follows_retained_pose":true,"pickup_survives_retirement":true,"distant_uncollected_loot_restores":true,"death_offer_does_not_grant_items":true,"consumed_life_replay_does_not_restore_loot":true,"direct_lease_contract_not_native_game":true}),
+        );
+        return Ok(());
+    }
     if let Some(rewards) = &rewards {
         use theia_core::rewards::ClaimCommand;
         let reward = rewards.catalog().definitions().next().unwrap().id().clone();
@@ -897,13 +1923,32 @@ async fn main() -> theia_network::Result<()> {
         let guard = admin.transaction().await?;
         guard.query_one("SELECT revision FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
         let earned = port.opportunities.as_ref().unwrap().clone();
-        earned.try_send(reward.clone())?;
+        let fact = |reward: theia_core::content::ContentId| {
+            theia_network::simulation::rewards::Opportunity {
+                actor,
+                event: theia_core::progression::KillEvent {
+                    id: theia_core::progression::KillId::from_victim(EntityKey {
+                        entity: EntityId::new(99).unwrap(),
+                        ..actor
+                    }),
+                    creature: rewards
+                        .catalog()
+                        .definition(&reward)
+                        .unwrap()
+                        .creature()
+                        .clone(),
+                },
+                reward,
+                position,
+            }
+        };
+        earned.try_send(fact(reward.clone()))?;
         wait_inventory_lock(&guard).await;
         // A distinct queued recipe must commit too; a duplicate alone could
         // conceal a broken drain behind the first executing transaction.
         let second = theia_core::content::ContentId::new("theia.dev.second-training-kill").unwrap();
-        earned.try_send(second.clone())?;
-        earned.try_send(reward.clone())?;
+        earned.try_send(fact(second.clone()))?;
+        earned.try_send(fact(reward.clone()))?;
         sessions.lock().unwrap().revoke(secret.expose_secret());
         drop(lease);
         assert_eq!(gate.flush(&publisher, &before)?, 1);
@@ -926,7 +1971,7 @@ async fn main() -> theia_network::Result<()> {
         })
         .await?;
         assert!(
-            earned.try_send(reward.clone()).is_err(),
+            earned.try_send(fact(reward.clone())).is_err(),
             "Retired generation cannot accept new facts"
         );
         assert_eq!(
@@ -1320,7 +2365,7 @@ async fn main() -> theia_network::Result<()> {
     assert!(reservation.issue(invalid).is_err());
     let ticket = gate
         .reserve(context.clone(), binding)?
-        .issue(character.saved)?;
+        .issue_character(character.clone())?;
     let data = connected_data(&mut transport, ticket.bytes()).await;
     let mut tampered = data;
     tampered[16] ^= 1;
@@ -1332,6 +2377,7 @@ async fn main() -> theia_network::Result<()> {
         "A valid, unexpired nonce must be one-use"
     );
     assert!(lease.live()?);
+    assert_eq!(lease.display_name()?.as_ref(), Some(&character.name));
     let actor = EntityKey {
         epoch: WorldEpoch::new(123).unwrap(),
         entity: EntityId::new(1).unwrap(),
@@ -1370,7 +2416,7 @@ async fn main() -> theia_network::Result<()> {
     assert_eq!(restored.saved.position, final_pose);
     let fresh = gate
         .reserve(context.clone(), binding)?
-        .issue(restored.saved)?;
+        .issue_character(restored.clone())?;
     assert!(
         gate.clone().consume(1, &data)?.is_none(),
         "Old generation cannot consume replacement reservation"
@@ -1378,8 +2424,10 @@ async fn main() -> theia_network::Result<()> {
     let fresh_data = connected_data(&mut transport, fresh.bytes()).await;
     let second = gate.clone().consume(1, &fresh_data)?.unwrap();
     assert_eq!(second.position, final_pose);
+    assert_eq!(second.lease.display_name()?.as_ref(), Some(&restored.name));
     sessions.lock().unwrap().revoke(secret.expose_secret());
     assert!(!second.lease.live()?);
+    assert!(second.lease.display_name().is_err());
     drop(second);
     assert!(matches!(
         gate.reserve(context, binding),
@@ -1403,7 +2451,7 @@ async fn main() -> theia_network::Result<()> {
     drop(admin);
     driver.await??;
     emit(
-        serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"valid_unexpired_nonce_one_use":true,"tampered_nonce_and_wrong_slot_denied":true,"cancelled_selection_released":true,"queued_final_pose_not_saved":true,"old_commit_cannot_release_new_pose":true,"actual_final_commit_before_reuse":true,"stale_generation_denied":true,"revoked_lease_denied":true,"expired_reservation_reclaimed":true,"direct_lease_contract_not_native_game":true}),
+        serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"valid_unexpired_nonce_one_use":true,"tampered_nonce_and_wrong_slot_denied":true,"cancelled_selection_released":true,"queued_final_pose_not_saved":true,"old_commit_cannot_release_new_pose":true,"actual_final_commit_before_reuse":true,"stale_generation_denied":true,"revoked_lease_denied":true,"expired_reservation_reclaimed":true,"selected_display_name_survives_rejoin_and_revocation":true,"direct_lease_contract_not_native_game":true}),
     );
     Ok(())
 }

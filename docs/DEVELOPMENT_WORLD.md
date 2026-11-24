@@ -1,3 +1,130 @@
+# Current optimized UI playtest pack — 7 November 2026
+
+Use `build/local-play-release-20261107-v5` for the current preserved checkpoint.
+It contains saved UI-size/error retry, focus guards, ability tooltips, readable
+combat history, XP feedback, corrected connection hints and a visible Interface
+Exit game control. Release binaries and copied player/wolf art are frozen with
+SHA-256 metadata; client runtime source is `b412e74`, including the owner-level header. Optimized saved-size,
+journal/XP/minimap, database rejoin, actual timeout and Interface Exit pass at
+1280×720. Full panel checks retain their separately recorded exact sources.
+Optimized ultrawide owner-level/rejoin/timeout checks pass too.
+See [UI evidence](UI_FANTASY_WARRIOR.md#optimized-ultrawide-level-and-frozen-v5-checkpoint).
+The launcher reads selected repository content at launch. Existing packs remain
+intact. Local commits only; no push. Desktop input/display use is authorized.
+
+
+# Qualified optimized UI checkpoint — 7 November 2026
+
+`build/local-play-release-20261107-v2` preserves source `c05ac56`, with release
+client/server/validator, copied qualified model art and SHA-256 metadata. It
+includes panel focus guards and the brighter-terrain combat-log contrast fix.
+Connected controlled Linux UI evidence is linked in `build.json`; Windows, monitor
+DPI and FPS benchmarks remain separate. The newer failed-save retry is qualified
+with a debug client and is not included in this frozen pack. Earlier packs remain
+unchanged. Local commits only; no push.
+
+Current permission, updated 7 November 2026: the user restored desktop input
+and display access. Connected native UI qualification is in progress. Continue
+with local commits only; no push. Restrictions in older records below are historical.
+
+# Prepared optimized UI candidate — 7 November 2026
+
+An ignored frozen Linux pack is ready at `build/local-play-release-20261107-v1`,
+from source `d9df562`. It contains release-profile client/server/validator
+executables, binary SHA-256 metadata and copied existing qualified player/wolf
+art. It includes optional saved UI size, committed XP feedback, configured
+ability tooltips, bounded combat history and ability/world-click focus guards.
+The older `build/local-play-release-20261106-v1` remains byte-for-byte unchanged.
+
+All nine actual optimized-client preference/configuration checks pass with
+unchanged gameplay identity. Evidence:
+`build/ui-release-20261107/preferences-cli-v1/verification.json` and the pack's
+`build.json`. Optimized client/server compilation took 1m56s and validator build
+28.39s; these are build times, not gameplay performance measurements. Source
+checks include 211 client cases, 53 launcher checks, ten core ability cases,
+formatting and strict all-target workspace Clippy. No native window, renderer,
+services or game were launched. Current permission forbids mouse/keyboard/display.
+Native new-UI layout/input/focus, GPU performance and Windows remain pending.
+The skin remains opt-in and this pack is a candidate, not fully native-qualified.
+
+For a later user-authorized play session (not run while display is forbidden):
+
+```bash
+python3 tools/play_local.py \
+  --binaries build/local-play-release-20261107-v1 \
+  --output build/local-play-fresh-20261107 \
+  --fantasy-ui "/path/to/FantasyWarriorHUD" \
+  --ui-preferences build/local-interface.json
+```
+
+This still creates a fresh disposable account/database. The launcher freezes
+current repository JSON at launch; the binary pack does not pin future content
+changes. A missing preference file uses the client's 100% size, then an actual
+preset change saves it; omit the preference option for the launcher's old 125%
+default. An explicit `--ui-scale` overrides saved size for that launch.
+
+# Isolated local playtest launcher — 6 November 2026
+
+P2-02 / P2-14. `tools/play_local.py` prepares a **fresh disposable Linux playtest**
+with the ordinary authenticated Classic launcher, a local synthetic Keycloak
+identity and owned PostgreSQL. It defaults to a one-hour bounded session,
+1920×1200 and 125% UI scale. It does not log in to a real account or resume an
+older disposable identity/database. Existing saved test directories are retained.
+Optional current-client `--ui-preferences build/local-interface.json` shares a
+local UI size across runs; omit `--ui-scale` to use it. Without either argument
+the existing 125% default remains. An explicit scale overrides the saved value.
+
+After preparing binaries/art and the baked terrain/navigation described below:
+
+```bash
+python3 tools/play_local.py \
+  --binaries build/playable \
+  --client target/debug/theia-client \
+  --server target/debug/theia-server \
+  --output build/local-play-fresh \
+  --fantasy-ui "/path/to/FantasyWarriorHUD"
+```
+
+`build/playable` stands for an existing prepared directory containing
+`theia-client`, `theia-server`, `validate_gameplay`, `art/player/character.glb` and
+`art/wolf/wolf.glb`. Client/server overrides are optional; use them to play the
+current build with an existing prepared validator/art pack. The current local
+qualified pack is `build/quest-offer-list-candidate-v1-20261106`. This wrapper does
+not bake missing assets or certify arbitrary mixed binary versions.
+
+The chosen output must be new and under ignored `build/`. Binaries, JSON content
+and model art are copied before services start. The ordinary launcher runs from
+that private directory, so its temporary validated bundle, tickets, certificates
+and logs cannot overwrite another run's `build/development-session`. Baked
+terrain/navigation remain shared immutable sources; the licensed HUD directory
+remains external. Keep those sources unchanged during a playtest. Subsequent
+Rust builds and source JSON edits do not replace the frozen copies.
+
+Closing the game or interrupting the wrapper stops its game/server first, then
+PostgreSQL and Keycloak. PostgreSQL uses a separate process group so a terminal
+interrupt cannot stop it ahead of the game. Private credential files are removed
+by the existing owned fixtures; retained database/log files remain under the
+private output directory. Status and SHA-256 build metadata contain no credentials.
+Startup failures are reported in the private `game.log`. The wrapper does not
+send mouse/keyboard input, read arbitrary windows or claim native game readiness
+from the mere existence of its launcher process.
+
+`--session-seconds` accepts 60–43,200 and explicitly sets both issuer token and
+server limits; it is an absolute duration, not renewal. `--character` chooses a
+fresh ASCII test name; window size and scale have the same bounded options as the
+ordinary launcher. Linux fixture SDKs remain prerequisites; no Windows execution
+is claimed by this helper. [Lifetime policy](AUTHENTICATED_ADMISSION.md).
+
+Validation: 20 selected Python cases pass, including frozen build/content
+isolation, invalid-input refusal and child-before-service cleanup. A real
+PostgreSQL check confirms the separate process group, SELECT access and cleanup
+(`build/ui-reference-20261106/play-local-db-v1/verification.json`). A complete
+owned OIDC/SQL/game-server launch/close smoke passes from the private working
+directory (`play-local-headless-v1/verification.json` in the same evidence root).
+That smoke uses an explicit no-window client stub: it proves the launcher/content/
+account/cleanup path, not native rendering, transport join or playable input.
+No desktop input was sent; native use of this wrapper remains separate.
+
 # Current development bundle — 2026-10-31: player melee and terrain-specific readiness
 
 The [qualified sword bundle](PLAYER_MELEE.md) combines the existing world/pursuit

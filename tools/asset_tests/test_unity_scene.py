@@ -7,10 +7,25 @@ import tempfile
 import unittest
 import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from unity_scene import records, load_yaml, audit, Sources
+from unity_scene import records, load_yaml, audit, Sources, without_legacy_prefab_header
 
 
 class UnitySceneTests(unittest.TestCase):
+    def test_legacy_standalone_header_is_not_a_nested_prefab_instance(self):
+        import copy
+        rows={1:{'kind':1,'name':'GameObject','fields':{'m_PrefabInternal':{'fileID':100},'m_PrefabParentObject':{'fileID':0}}},
+              100:{'kind':1001,'name':'Prefab','stripped':False,'fields':{'m_IsPrefabParent':1,'m_ParentPrefab':{'fileID':0},
+                   'm_RootGameObject':{'fileID':1},'m_Modification':{'m_TransformParent':{'fileID':0},'m_Modifications':[], 'm_RemovedComponents':[]}}}}
+        before=copy.deepcopy(rows)
+        self.assertEqual(without_legacy_prefab_header(rows),{1:rows[1]})
+        self.assertEqual(rows,before)
+        for field,value in [('m_IsPrefabParent',0),('m_ParentPrefab',{'fileID':12}),('m_RootGameObject',{'fileID':9}),
+                            ('m_Modification',{'m_TransformParent':{'fileID':0},'m_Modifications':[1]})]:
+            bad=copy.deepcopy(rows);bad[100]['fields'][field]=value
+            with self.assertRaises(ValueError):without_legacy_prefab_header(bad)
+        instance=copy.deepcopy(rows);instance[100]['name']='PrefabInstance'
+        self.assertEqual(without_legacy_prefab_header(instance),instance)
+
     def test_lfs_pointer_reports_missing_payload_and_rejects_malformed_record(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);path=root/'Assets/mesh.fbx';path.parent.mkdir()

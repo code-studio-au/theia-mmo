@@ -84,10 +84,24 @@ fn private_availability_has_checked_identity_bounds_and_known_unique_recipes() {
         available: vec![Available {
             reward,
             claim: request().command.claim,
+            corpse: None,
         }],
     };
     let bytes = state.encode(&c, [19; 32]).unwrap();
     assert_eq!(bytes.len(), 78);
+    let golden = concat!(
+        "52573031",
+        "0700000000000000",
+        "0900000000000000",
+        "0100000000000000",
+        "1313131313131313131313131313131313131313131313131313131313131313",
+        "0100",
+        "11111111111111111111111111111111"
+    );
+    assert_eq!(
+        bytes.iter().map(|b| format!("{b:02x}")).collect::<String>(),
+        golden
+    );
     assert_eq!(State::decode(&bytes, &c, [19; 32]).unwrap(), state);
     for len in 0..bytes.len() {
         assert!(State::decode(&bytes[..len], &c, [19; 32]).is_err());
@@ -119,4 +133,48 @@ fn private_availability_has_checked_identity_bounds_and_known_unique_recipes() {
     empty.generation = 0;
     assert!(empty.encode(&c, [19; 32]).is_err());
     assert!(State::decode(&vec![0; wire::MAX_BYTES + 1], &c, [19; 32]).is_err());
+}
+
+#[test]
+fn uninstalled_per_life_runtime_refuses_the_new_core_policy() {
+    let data = include_bytes!("../../../content/gameplay/development-equipment-items.json");
+    let items = theia_network::renet_runtime::inventory::Profile::from_json(data).unwrap();
+    let mut value: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../content/gameplay/development-rewards.json"
+    ))
+    .unwrap();
+    value["schema"] = serde_json::json!(2);
+    assert!(wire::Profile::from_json(&serde_json::to_vec(&value).unwrap(), &items).is_ok());
+    value["rewards"][0]["scope"] = serde_json::json!("per_creature_life");
+    let bytes = serde_json::to_vec(&value).unwrap();
+    assert!(Catalog::from_json(&bytes, items.catalog()).is_ok());
+    assert!(wire::Profile::from_json(&bytes, &items).is_err());
+}
+
+#[path = "reward_wire/per_life.rs"]
+mod per_life;
+
+#[test]
+fn quest_only_metadata_cannot_enter_unbound_reward_or_inventory_runtime_profiles() {
+    let mut value: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../content/gameplay/development-rewards.json"
+    ))
+    .unwrap();
+    value["schema"] = serde_json::json!(4);
+    value["rewards"][0]["scope"] = serde_json::json!("per_creature_life");
+    value["rewards"][0]["quest_required"] = serde_json::json!(true);
+    let bytes = serde_json::to_vec(&value).unwrap();
+    let items = theia_network::renet_runtime::inventory::Profile::from_json(include_bytes!(
+        "../../../content/gameplay/development-equipment-items.json"
+    ))
+    .unwrap();
+    assert!(
+        Catalog::from_json(&bytes, items.catalog())
+            .unwrap()
+            .has_quest_required()
+    );
+    assert!(wire::Profile::from_json(&bytes, &items).is_err());
+    assert!(wire::Profile::from_json_with_creature_loot(&bytes, &items).is_err());
+    assert!(items.clone().with_rewards(&bytes).is_err());
+    assert!(items.with_creature_loot(&bytes).is_err());
 }

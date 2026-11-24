@@ -15,9 +15,13 @@ bevy = { workspace = true, features = [
     "mesh_picking", "pbr_light_textures",
     "bevy_audio", "wav", "bevy_ui_widgets", "ui_picking",
 ] }
+bevy_sprinkles = { path = "../../third_party/sprinkles/crates/bevy_sprinkles" }
 avian3d.workspace = true
 serde_json.workspace = true
 serde.workspace = true
+raw-window-handle = "0.6"
 theia-network.workspace = true
 theia-core.workspace = true
+theia-vfx = { path = "../../crates/vfx" }
 tokio.workspace = true
+uuid = "1"

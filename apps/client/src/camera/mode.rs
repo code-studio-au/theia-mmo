@@ -55,7 +55,8 @@ impl Mode {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn input_policy(
+pub(crate) fn input_policy(
+    loading: Option<Res<crate::loading::State>>,
     mut mode: ResMut<Mode>,
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -71,7 +72,8 @@ fn input_policy(
         .as_ref()
         .is_some_and(|ui| ui.open || ui.pending || ui.close_when_open)
         || inventory.as_ref().is_some_and(|ui| ui.open)
-        || keys.just_pressed(KeyCode::KeyI);
+        || keys.just_pressed(KeyCode::KeyI)
+        || loading.is_some_and(|s| s.blocks_input());
     if classic.is_some() {
         mode.requested = false;
         mode.active = false;

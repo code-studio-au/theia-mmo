@@ -40,7 +40,13 @@ pub struct Config {
     pub listen: SocketAddr,
     pub issuer: String,
     pub client_id: String,
+    #[serde(default = "default_session_seconds")]
+    pub session_seconds: u64,
 }
+pub const fn default_session_seconds() -> u64 {
+    300
+}
+
 /// Static/redacted errors only. Never format provider/SQL errors, bearer headers,
 /// raw callback queries or request bodies in responses/diagnostics.
 #[derive(Clone, Copy)]
@@ -266,6 +272,9 @@ fn random(bytes: usize) -> Result<String> {
 /// Store/wire pairs validated before the account service starts accepting entry.
 #[derive(Default)]
 pub struct GameProfiles {
+    /// Explicit wire agreement for reward-bearing journals only.
+    pub reward_journal: Option<Arc<theia_network::quest_journal::Profile>>,
+    pub documents: Option<Arc<theia_network::documents::Profile>>,
     pub quest_journal: Option<theia_persistence::QuestJournalCatalog>,
     pub inventory: Option<theia_persistence::InventoryCatalog>,
     pub rewards: Option<(
@@ -289,6 +298,25 @@ pub struct GameProfiles {
         Arc<theia_network::vendor_wire::Profile>,
     )>,
 }
+impl GameProfiles {
+    pub(crate) fn check_reward_context(&self) -> Result<()> {
+        let reward_journal = &self.reward_journal;
+        let quest_journal = &self.quest_journal;
+        if reward_journal.is_some()
+            != quest_journal
+                .as_ref()
+                .is_some_and(|j| j.item_rewards().is_some())
+            || reward_journal.as_ref().is_some_and(|w| {
+                w.item_rewards().is_none()
+                    || quest_journal.as_ref().is_none_or(|j| j.hash() != w.hash())
+            })
+        {
+            return Err(ApiError::internal());
+        }
+        Ok(())
+    }
+}
+
 pub struct AccountService {
     listener: TcpListener,
     router: Router,
@@ -307,6 +335,8 @@ impl AccountService {
         if !config.listen.ip().is_loopback() || world == [0; 32] {
             return Err(ApiError::bad());
         }
+        let sessions = Sessions::with_max_age(Duration::from_secs(config.session_seconds))
+            .map_err(|_| ApiError::bad())?;
         let listener = TcpListener::bind(config.listen)
             .await
             .map_err(|_| ApiError::internal())?;
@@ -324,7 +354,7 @@ impl AccountService {
         let state = Arc::new(Inner {
             provider,
             publisher,
-            sessions: Arc::new(Mutex::new(Sessions::default())),
+            sessions: Arc::new(Mutex::new(sessions)),
             game: Mutex::new(None),
             flows: Mutex::new(Flows::default()),
             request_slots: Arc::new(Semaphore::new(16)),
@@ -337,6 +367,7 @@ impl AccountService {
             fatal,
         });
         let router = Router::new()
+            .route("/ready", get(routes::ready))
             .route("/auth/start", post(routes::start))
             .route("/callback", get(routes::callback))
             .route("/auth/poll", post(routes::poll))
@@ -444,6 +475,8 @@ impl AccountService {
         self.enable_game_with_profiles(
             issuer,
             GameProfiles {
+                reward_journal: None,
+                documents: None,
                 quest_journal: None,
                 inventory,
                 rewards,
@@ -459,7 +492,10 @@ impl AccountService {
         issuer: theia_network::renet_runtime::TicketIssuer,
         profiles: GameProfiles,
     ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        profiles.check_reward_context()?;
         let GameProfiles {
+            reward_journal,
+            documents,
             quest_journal,
             inventory,
             rewards,
@@ -468,6 +504,14 @@ impl AccountService {
             vendor,
             quest_lifecycle,
         } = profiles;
+        if documents.as_ref().is_some_and(|d| {
+            quest_journal
+                .as_ref()
+                .and_then(|j| j.documents())
+                .is_none_or(|bound| bound.hash() != d.hash())
+        }) {
+            return Err(ApiError::internal());
+        }
         if usize::from(quest.is_some())
             + usize::from(quest_lifecycle.is_some())
             + usize::from(quest_journal.is_some())
@@ -479,6 +523,12 @@ impl AccountService {
         if slot.is_some() {
             return Err(ApiError::internal());
         }
+        let (rewards, quest_loot) = match rewards {
+            Some((profile, wire)) if profile.quest_journal().is_some() => {
+                (None, Some((profile, wire)))
+            }
+            other => (other, None),
+        };
         let mut gate = if let Some((rewards, wire)) = rewards {
             if inventory
                 .as_ref()
@@ -529,7 +579,25 @@ impl AccountService {
                 .map_err(|_| ApiError::internal())?;
         }
         if let Some(profile) = quest_journal {
-            crate::admissions::GameAdmissions::with_quest_journal(&mut gate, profile)
+            match (reward_journal, documents) {
+                (Some(wire), _) => {
+                    crate::admissions::GameAdmissions::with_item_reward_quest_journal(
+                        &mut gate, profile, wire,
+                    )
+                }
+                (None, Some(documents)) => {
+                    crate::admissions::GameAdmissions::with_document_quest_journal(
+                        &mut gate, profile, documents,
+                    )
+                }
+                (None, None) => {
+                    crate::admissions::GameAdmissions::with_quest_journal(&mut gate, profile)
+                }
+            }
+            .map_err(|_| ApiError::internal())?;
+        }
+        if let Some((profile, wire)) = quest_loot {
+            crate::admissions::GameAdmissions::with_quest_loot(&mut gate, profile, wire)
                 .map_err(|_| ApiError::internal())?;
         }
         if let Some((profile, wire)) = vendor {
@@ -548,5 +616,31 @@ impl AccountService {
         database: watch::Receiver<WorkerStatus>,
     ) -> Result<Stats> {
         transport::run(self, shutdown, database).await
+    }
+}
+
+#[cfg(test)]
+mod session_config_tests {
+    use super::*;
+    #[test]
+    fn old_account_configuration_retains_default_and_explicit_lifetimes_are_checked() {
+        let mut raw = serde_json::json!({"listen":"127.0.0.1:0","issuer":"http://127.0.0.1:123/realm","client_id":"native"});
+        let config: Config = serde_json::from_value(raw.clone()).unwrap();
+        assert_eq!(config.session_seconds, 300);
+        for seconds in [60, 3600, 43200] {
+            raw["session_seconds"] = serde_json::json!(seconds);
+            let config: Config = serde_json::from_value(raw.clone()).unwrap();
+            assert!(
+                Sessions::<u64>::with_max_age(Duration::from_secs(config.session_seconds)).is_ok()
+            );
+        }
+        for value in [
+            serde_json::json!(-1),
+            serde_json::json!(1.5),
+            serde_json::json!("3600"),
+        ] {
+            raw["session_seconds"] = value;
+            assert!(serde_json::from_value::<Config>(raw.clone()).is_err());
+        }
     }
 }

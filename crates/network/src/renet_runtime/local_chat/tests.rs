@@ -1,0 +1,645 @@
+use super::*;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use theia_core::{
+    character_name::CharacterName,
+    chat::{Area, Channel, Request as Intent, Text},
+    coordinates::GlobalPosition,
+};
+struct Lease {
+    live: Arc<AtomicBool>,
+    name: Option<CharacterName>,
+}
+impl AdmissionLease for Lease {
+    fn live(&self) -> Result<bool> {
+        Ok(self.live.load(Ordering::Acquire))
+    }
+    fn record(&self, _: EntityKey, _: GlobalPosition, _: u64) -> Result<()> {
+        Ok(())
+    }
+    fn display_name(&self) -> Result<Option<CharacterName>> {
+        Ok(self.name.clone())
+    }
+}
+fn world() -> World {
+    let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+    world.enable_prediction().unwrap();
+    world.enable_local_chat(Area::new(1).unwrap()).unwrap();
+    world
+}
+fn bytes(world: &World, sequence: u64) -> Vec<u8> {
+    crate::chat_wire::Request {
+        epoch: theia_core::identity::WorldEpoch::new(world.epoch()).unwrap(),
+        intent: Intent {
+            sequence,
+            channel: Channel::Say,
+            text: Text::parse("Hello nearby").unwrap(),
+        },
+    }
+    .encode()
+    .unwrap()
+}
+#[test]
+fn optional_profile_binds_compatibility_and_trusted_lease_revocation_purges_queued_chat() {
+    let mut baseline = World::with_procedural([8060., 8000.], 1.).unwrap();
+    baseline.enable_prediction().unwrap();
+    let original = baseline.identity();
+    assert!(Bridge::new(&baseline).unwrap().is_none());
+    baseline.enable_local_chat(Area::new(1).unwrap()).unwrap();
+    assert_eq!(
+        baseline.identity(),
+        crate::chat::profile_identity(original, Area::new(1).unwrap())
+    );
+    assert_ne!(baseline.identity(), original);
+    assert!(baseline.enable_local_chat(Area::new(2).unwrap()).is_err());
+    let mut world = world();
+    let mut server = RenetServer::new(connection_config());
+    let live = Arc::new(AtomicBool::new(true));
+    server.add_connection(1);
+    let peer = admit_peer(
+        &mut world,
+        &mut server,
+        1,
+        None,
+        Some(Box::new(Lease {
+            live: live.clone(),
+            name: Some(CharacterName::parse("Arden").unwrap()),
+        })),
+        Instant::now(),
+    )
+    .unwrap()
+    .unwrap();
+    let mut peers = BTreeMap::from([(1, peer)]);
+    let mut bridge = Bridge::new(&world).unwrap().unwrap();
+    world.step();
+    bridge.sync(&peers, &world).unwrap();
+    let mut stats = Stats::default();
+    bridge
+        .request(&peers[&1], &world, &bytes(&world, 1), &mut stats)
+        .unwrap();
+    assert_eq!(stats.accepted, 1);
+    assert_eq!(stats.queued, 1);
+    live.store(false, Ordering::Release);
+    bridge.sync(&peers, &world).unwrap();
+    bridge.flush(&mut server, &peers, &mut stats).unwrap();
+    assert_eq!(stats.sent, 0);
+    assert!(bridge.actors.is_empty());
+    assert!(world.enable_local_chat(Area::new(1).unwrap()).is_err());
+    peers.clear();
+}
+
+struct Policy {
+    used: std::sync::Mutex<[bool; 3]>,
+    positions: [GlobalPosition; 3],
+}
+impl AccountAdmissions for Policy {
+    fn consume(self: Arc<Self>, id: u64, data: &[u8; 256]) -> Result<Option<PlayerAdmission>> {
+        if !(1..=3).contains(&id) || data[0] != id as u8 {
+            return Ok(None);
+        }
+        let index = id as usize - 1;
+        let mut used = self.used.lock().unwrap();
+        if used[index] {
+            return Ok(None);
+        }
+        used[index] = true;
+        Ok(Some(PlayerAdmission {
+            position: self.positions[index],
+            lease: Box::new(Lease {
+                live: Arc::new(AtomicBool::new(true)),
+                name: Some(CharacterName::parse(["Arden", "Briar", "Cedar"][index]).unwrap()),
+            }),
+        }))
+    }
+    fn retained_positions(&self) -> Result<[Option<GlobalPosition>; MAX_PLAYERS]> {
+        let mut positions = [None; MAX_PLAYERS];
+        for (to, from) in positions.iter_mut().zip(self.positions) {
+            *to = Some(from);
+        }
+        Ok(positions)
+    }
+}
+struct Raw {
+    client: RenetClient,
+    transport: renet_netcode::NetcodeClientTransport,
+    last: Instant,
+    confirmed: bool,
+    welcome: Option<Welcome>,
+    messages: Vec<crate::chat_wire::Delivery>,
+    replies: Vec<crate::chat_wire::Reply>,
+    inbox: Option<crate::chat_client::Inbox>,
+    snapshots: usize,
+    world: [u8; 32],
+}
+impl Raw {
+    fn new(address: SocketAddr, ticket: &[u8], world: [u8; 32]) -> Self {
+        Self {
+            client: RenetClient::new(connection_config()),
+            transport: secure_client(
+                UdpSocket::bind("127.0.0.1:0").unwrap(),
+                now().unwrap(),
+                read_ticket(ticket, address).unwrap(),
+            )
+            .unwrap(),
+            last: Instant::now(),
+            confirmed: false,
+            welcome: None,
+            messages: Vec::new(),
+            replies: Vec::new(),
+            inbox: None,
+            snapshots: 0,
+            world,
+        }
+    }
+    fn poll(&mut self) {
+        let current = Instant::now();
+        let delta = current.saturating_duration_since(self.last);
+        self.last = current;
+        self.client.update(delta);
+        self.transport.update(delta, &mut self.client).unwrap();
+        confirm_connection(&mut self.client, &mut self.confirmed).unwrap();
+        while let Some(bytes) = self.client.receive_message(EVENT_CHANNEL) {
+            let Some(welcome) = self.welcome.as_ref() else {
+                let welcome = Welcome::decode(&bytes, self.world).unwrap();
+                let owner = EntityKey {
+                    epoch: theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),
+                    entity: theia_core::identity::EntityId::new(welcome.id).unwrap(),
+                };
+                self.inbox = Some(crate::chat_client::Inbox::new(owner, self.world).unwrap());
+                self.welcome = Some(welcome);
+                continue;
+            };
+            if bytes.starts_with(crate::chat_wire::DELIVERY_TAG) {
+                let message = crate::chat_wire::Delivery::decode(&bytes).unwrap();
+                message
+                    .validate_context(
+                        theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),
+                        self.world,
+                    )
+                    .unwrap();
+                assert!(
+                    self.inbox
+                        .as_mut()
+                        .unwrap()
+                        .receive(message.clone())
+                        .unwrap()
+                );
+                self.messages.push(message);
+            } else if bytes.starts_with(crate::chat_wire::REPLY_TAG) {
+                let reply = crate::chat_wire::Reply::decode(&bytes).unwrap();
+                let owner = EntityKey {
+                    epoch: theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),
+                    entity: theia_core::identity::EntityId::new(welcome.id).unwrap(),
+                };
+                reply.validate_context(owner, self.world).unwrap();
+                self.inbox
+                    .as_mut()
+                    .unwrap()
+                    .receive_reply(reply.clone())
+                    .unwrap();
+                self.replies.push(reply);
+            } else if bytes.starts_with(crate::player_identity_wire::STATE_TAG) {
+                crate::player_identity_wire::State::decode(&bytes).unwrap();
+            } else {
+                panic!("Unexpected headless chat fixture event tag");
+            }
+        }
+        while let Some(bytes) = self.client.receive_message(MOVEMENT_CHANNEL) {
+            if Snapshot::decode(&bytes).is_ok() {
+                self.snapshots += 1;
+            } else if bytes.starts_with(crate::classic_wire::CORRECTION_TAG) {
+                crate::classic_wire::decode_correction(&bytes).unwrap();
+            } else {
+                crate::prediction_wire::Corrected::decode(&bytes).unwrap();
+            }
+        }
+        self.transport.send_packets(&mut self.client).unwrap();
+    }
+    fn send(&mut self, sequence: u64, channel: Channel) {
+        let request = crate::chat_wire::Request {
+            epoch: theia_core::identity::WorldEpoch::new(self.welcome.as_ref().unwrap().epoch)
+                .unwrap(),
+            intent: Intent {
+                sequence,
+                channel,
+                text: Text::parse("Hello nearby").unwrap(),
+            },
+        };
+        self.client
+            .send_message(EVENT_CHANNEL, request.encode().unwrap());
+    }
+}
+async fn until(peers: &mut [Raw], condition: impl Fn(&[Raw]) -> bool) {
+    tokio::time::timeout(Duration::from_secs(8), async {
+        loop {
+            for peer in &mut *peers {
+                peer.poll();
+            }
+            if condition(peers) {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .expect("Encrypted chat fixture condition timed out");
+}
+struct Stop(watch::Sender<bool>);
+impl Drop for Stop {
+    fn drop(&mut self) {
+        self.0.send_replace(true);
+    }
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn encrypted_named_chat_routes_local_and_area_with_replay_and_flood_refusals() {
+    let world = world();
+    let mut positions = [GlobalPosition::new([8060., 0., 8000.]).unwrap(); 3];
+    for (index, x) in [8060., 8068., 8135.].into_iter().enumerate() {
+        let patch = world
+            .procedural()
+            .unwrap()
+            .patch(GlobalPosition::new([x, 0., 8000.]).unwrap())
+            .unwrap();
+        let mut position = patch.try_spawn(x, 8000.).unwrap().metres();
+        position[1] += f64::from(crate::world::PAWN_Y);
+        positions[index] = GlobalPosition::new(position).unwrap();
+    }
+    let policy = Arc::new(Policy {
+        used: std::sync::Mutex::new([false; 3]),
+        positions,
+    });
+    let identity = world.identity();
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let address = socket.local_addr().unwrap();
+    let (transport, issuer) = secure_issuer(socket, vec![address]).unwrap();
+    let mut peers: Vec<_> = (1..=3)
+        .map(|id| {
+            let mut data = [0; 256];
+            data[0] = id as u8;
+            let issued = issuer.issue(id, Some(&data), 30).unwrap();
+            Raw::new(address, issued.bytes(), identity)
+        })
+        .collect();
+    let (stop, shutdown) = watch::channel(false);
+    let stop = Stop(stop);
+    let server = tokio::spawn(run_server_with_admissions(
+        transport, shutdown, world, policy,
+    ));
+    until(&mut peers, |p| {
+        p.iter().all(|p| p.welcome.is_some() && p.snapshots > 1)
+    })
+    .await;
+    peers[0].send(1, Channel::Say);
+    peers[0].send(2, Channel::Area);
+    peers[0].send(3, Channel::Say);
+    peers[0].send(4, Channel::Say);
+    peers[0].send(1, Channel::Say);
+    until(&mut peers, |p| {
+        p[0].messages.len() == 3 && p[1].messages.len() == 3 && p[2].messages.len() == 1
+    })
+    .await;
+    let until_time = Instant::now() + Duration::from_millis(150);
+    while Instant::now() < until_time {
+        for peer in &mut peers {
+            peer.poll();
+        }
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+    assert_eq!(
+        peers.iter().map(|p| p.messages.len()).collect::<Vec<_>>(),
+        vec![3, 3, 1]
+    );
+    assert_eq!(peers[2].messages[0].channel, Channel::Area);
+    for peer in &peers {
+        for message in &peer.messages {
+            assert_eq!(message.name.as_str(), "Arden");
+            assert_eq!(
+                message.sender.entity.value(),
+                peers[0].welcome.as_ref().unwrap().id
+            );
+        }
+    }
+    stop.0.send_replace(true);
+    let stats = server.await.unwrap().unwrap();
+    for peer in &peers {
+        assert_eq!(
+            peer.inbox.as_ref().unwrap().history().len(),
+            peer.messages.len()
+        );
+    }
+    assert_eq!(
+        peers[0].inbox.as_ref().unwrap().reply().unwrap().outcome,
+        crate::chat_wire::Outcome::RateLimited
+    );
+    assert_eq!(peers[0].replies.len(), 4);
+    assert!(peers[1].replies.is_empty() && peers[2].replies.is_empty());
+    assert_eq!(
+        peers[0].replies[0].outcome,
+        crate::chat_wire::Outcome::Accepted
+    );
+    assert_eq!(
+        peers[0].replies[3].outcome,
+        crate::chat_wire::Outcome::RateLimited
+    );
+    assert_eq!(stats.local_chat.replies_sent, 4);
+    assert_eq!(stats.local_chat.replies_dropped, 1);
+    assert_eq!(stats.local_chat.accepted, 3);
+    assert_eq!(stats.local_chat.refused, 2);
+    assert_eq!(stats.local_chat.queued, 7);
+    assert_eq!(stats.local_chat.sent, 7);
+    assert_eq!(stats.local_chat.malformed_uploads, 0);
+    assert!(stats.simulation.samples > 1);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn encrypted_disabled_malformed_and_forged_chat_uploads_fail_closed() {
+    for case in 0..4 {
+        let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+        world.enable_prediction().unwrap();
+        if case != 0 {
+            world.enable_local_chat(Area::new(1).unwrap()).unwrap();
+        }
+        let position = world
+            .procedural()
+            .unwrap()
+            .patch(GlobalPosition::new([8060., 0., 8000.]).unwrap())
+            .unwrap()
+            .try_spawn(8060., 8000.)
+            .unwrap()
+            .metres();
+        let position = GlobalPosition::new([
+            position[0],
+            position[1] + f64::from(crate::world::PAWN_Y),
+            position[2],
+        ])
+        .unwrap();
+        let identity = world.identity();
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let address = socket.local_addr().unwrap();
+        let (transport, issuer) = secure_issuer(socket, vec![address]).unwrap();
+        let mut data = [0; 256];
+        data[0] = 1;
+        let ticket = issuer.issue(1, Some(&data), 30).unwrap();
+        let mut peers = [Raw::new(address, ticket.bytes(), identity)];
+        let (stop, shutdown) = watch::channel(false);
+        let stop = Stop(stop);
+        let policy = Arc::new(Policy {
+            used: std::sync::Mutex::new([false; 3]),
+            positions: [position; 3],
+        });
+        let server = tokio::spawn(run_server_with_admissions(
+            transport, shutdown, world, policy,
+        ));
+        until(&mut peers, |p| p[0].welcome.is_some() && p[0].snapshots > 1).await;
+        match case {
+            0 => peers[0].send(1, Channel::Say),
+            1 => peers[0]
+                .client
+                .send_message(EVENT_CHANNEL, crate::chat_wire::REQUEST_TAG.as_slice()),
+            2 => peers[0]
+                .client
+                .send_message(EVENT_CHANNEL, crate::chat_wire::DELIVERY_TAG.as_slice()),
+            _ => peers[0]
+                .client
+                .send_message(EVENT_CHANNEL, crate::chat_wire::REPLY_TAG.as_slice()),
+        }
+        peers[0]
+            .transport
+            .send_packets(&mut peers[0].client)
+            .unwrap();
+        tokio::time::timeout(Duration::from_secs(3), async {
+            loop {
+                let peer = &mut peers[0];
+                let delta = Duration::from_millis(5);
+                peer.client.update(delta);
+                if peer.transport.update(delta, &mut peer.client).is_err()
+                    || peer.client.is_disconnected()
+                {
+                    break;
+                }
+                if peer.transport.send_packets(&mut peer.client).is_err() {
+                    break;
+                }
+                tokio::time::sleep(delta).await;
+            }
+        })
+        .await
+        .expect("Invalid chat peer was not disconnected");
+        stop.0.send_replace(true);
+        let stats = server.await.unwrap().unwrap();
+        assert_eq!(stats.local_chat.accepted, 0);
+        assert_eq!(stats.local_chat.sent, 0);
+        match case {
+            0 => assert_eq!(stats.local_chat.disabled_uploads, 1),
+            1 => assert_eq!(stats.local_chat.malformed_uploads, 1),
+            _ => assert_eq!(stats.local_chat.forged_deliveries, 1),
+        }
+    }
+}
+
+#[test]
+fn chat_replies_and_deliveries_defer_while_gameplay_queue_reserve_remains_available() {
+    let mut world = world();
+    let mut server = RenetServer::new(connection_config());
+    server.add_connection(1);
+    let peer = admit_peer(
+        &mut world,
+        &mut server,
+        1,
+        None,
+        Some(Box::new(Lease {
+            live: Arc::new(AtomicBool::new(true)),
+            name: Some(CharacterName::parse("Arden").unwrap()),
+        })),
+        Instant::now(),
+    )
+    .unwrap()
+    .unwrap();
+    let peers = BTreeMap::from([(1, peer)]);
+    world.step();
+    let mut bridge = Bridge::new(&world).unwrap().unwrap();
+    bridge.sync(&peers, &world).unwrap();
+    let mut stats = Stats::default();
+    bridge
+        .request(&peers[&1], &world, &bytes(&world, 1), &mut stats)
+        .unwrap();
+    while server.can_send_message(1, EVENT_CHANNEL, GAMEPLAY_RESERVE_BYTES + 64) {
+        server.send_message(1, EVENT_CHANNEL, vec![0; 64]);
+    }
+    assert!(server.can_send_message(1, EVENT_CHANNEL, 64));
+    bridge.flush(&mut server, &peers, &mut stats).unwrap();
+    assert_eq!(stats.replies_deferred, 1);
+    assert_eq!(stats.deferred, 1);
+    assert_eq!(stats.replies_sent, 0);
+    assert_eq!(stats.sent, 0);
+    let mut drained = RenetServer::new(connection_config());
+    drained.add_connection(1);
+    bridge.flush(&mut drained, &peers, &mut stats).unwrap();
+    assert_eq!(stats.replies_sent, 1);
+    assert_eq!(stats.sent, 1);
+    assert_eq!(peers.len(), 1);
+}
+
+async fn worker_fixture(classic: bool) {
+    let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+    world.enable_prediction().unwrap();
+    let classic_source = world.identity();
+    if classic {
+        world.enable_classic().unwrap();
+    }
+    let source = world.identity();
+    let area = Area::new(1).unwrap();
+    world.enable_local_chat(area).unwrap();
+    let identity = world.identity();
+    let patch = world
+        .procedural()
+        .unwrap()
+        .patch(GlobalPosition::new([8060., 0., 8000.]).unwrap())
+        .unwrap();
+    let positions = std::array::from_fn(|index| {
+        let x = 8060. + index as f64 * 3.;
+        let p = patch.try_spawn(x, 8000.).unwrap().metres();
+        GlobalPosition::new([p[0], p[1] + f64::from(crate::world::PAWN_Y), p[2]]).unwrap()
+    });
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let address = socket.local_addr().unwrap();
+    let (transport, issuer) = secure_issuer(socket, vec![address]).unwrap();
+    let tickets: Vec<_> = (1..=2)
+        .map(|id| {
+            let mut data = [0; 256];
+            data[0] = id as u8;
+            issuer.issue(id, Some(&data), 30).unwrap()
+        })
+        .collect();
+    let mut peers = [Raw::new(address, tickets[1].bytes(), identity)];
+    let (server_stop, shutdown) = watch::channel(false);
+    let server_stop = Stop(server_stop);
+    let server = tokio::spawn(run_server_with_admissions(
+        transport,
+        shutdown,
+        world,
+        Arc::new(Policy {
+            used: std::sync::Mutex::new([false; 3]),
+            positions,
+        }),
+    ));
+    let (_input, inputs) = watch::channel(crate::wire::Intent::default());
+    let (_ready, ready) = watch::channel(Some(
+        crate::procedural::neighbours(theia_core::coordinates::ChunkId { x: 62, z: 62 }, 1)
+            .into_iter()
+            .collect(),
+    ));
+    let (_commands, commands) = mpsc::channel(8);
+    let (publish, state) = watch::channel(State::default());
+    let (submit, outgoing) = mpsc::channel(4);
+    let (stop, shutdown) = watch::channel(false);
+    let stop = Stop(stop);
+    let ticket = tickets[0].bytes().to_vec();
+    let task = tokio::spawn(async move {
+        run_client_gameplay(
+            address,
+            &ticket,
+            inputs,
+            publish,
+            shutdown,
+            identity,
+            GameplayClient {
+                party: None,
+                chat: Some(crate::chat_client::Client::new(source, area, outgoing).unwrap()),
+                avatar_life: None,
+                public_attacks: None,
+                classic_source: classic.then_some(classic_source),
+                dodge: None,
+                player_life: None,
+                journal: None,
+                lifecycle: None,
+                dialogue: None,
+                ready,
+                commands: Some(commands),
+                choices: None,
+                combat: None,
+                quest: None,
+                progression: None,
+                inventory: None,
+                statuses: None,
+            },
+        )
+        .await
+    });
+    until(&mut peers, |p| {
+        let s = state.borrow();
+        assert!(s.error.is_none());
+        p[0].welcome.is_some() && s.snapshot.is_some() && s.chunk_ack.is_some() && s.chat.is_some()
+    })
+    .await;
+    submit
+        .try_send(crate::chat_client::Compose {
+            channel: Channel::Say,
+            text: Text::parse("Hello nearby").unwrap(),
+        })
+        .unwrap();
+    until(&mut peers, |p| {
+        let s = state.borrow();
+        s.chat
+            .as_ref()
+            .is_some_and(|c| c.submitted == 1 && !c.pending && c.inbox.history().len() == 1)
+            && p[0].messages.len() == 1
+    })
+    .await;
+    peers[0].send(1, Channel::Say);
+    until(&mut peers, |p| {
+        state.borrow().chat.as_ref().unwrap().inbox.history().len() == 2 && p[0].messages.len() == 2
+    })
+    .await;
+    for channel in [Channel::Say, Channel::Area, Channel::Say] {
+        submit
+            .try_send(crate::chat_client::Compose {
+                channel,
+                text: Text::parse("Another nearby message").unwrap(),
+            })
+            .unwrap();
+    }
+    until(&mut peers, |p| {
+        let s = state.borrow();
+        s.chat.as_ref().is_some_and(|c| {
+            c.submitted == 4 && !c.pending && c.inbox.reply().is_some_and(|r| r.sequence == 4)
+        }) && p[0].messages.len() == 4
+    })
+    .await;
+    let before = state.borrow().snapshot.as_ref().unwrap().tick;
+    until(&mut peers, |_| {
+        state.borrow().snapshot.as_ref().unwrap().tick > before + 2
+    })
+    .await;
+    let s = state.borrow().clone();
+    let chat = s.chat.as_ref().unwrap();
+    assert_eq!(chat.inbox.history().len(), 4);
+    assert_eq!(
+        chat.inbox.reply().unwrap().outcome,
+        crate::chat_wire::Outcome::RateLimited
+    );
+    assert!(!chat.pending && !chat.timed_out);
+    assert!(s.error.is_none());
+    let stats = s.transport.as_ref().unwrap();
+    assert_eq!(stats.chat_requests_sent, 4);
+    assert_eq!(stats.chat_replies_received, 4);
+    assert_eq!(stats.chat_deliveries_received, 4);
+    stop.0.send_replace(true);
+    task.await.unwrap().unwrap();
+    server_stop.0.send_replace(true);
+    let stats = server.await.unwrap().unwrap();
+    assert_eq!(stats.local_chat.accepted, 4);
+    assert_eq!(stats.local_chat.refused, 1);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn actual_client_worker_preserves_chat_through_snapshots_and_paces_submissions_until_reply() {
+    worker_fixture(false).await;
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn actual_classic_client_worker_binds_chat_after_movement_and_preserves_chat_through_snapshots()
+ {
+    worker_fixture(true).await;
+}

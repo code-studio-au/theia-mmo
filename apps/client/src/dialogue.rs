@@ -1,5 +1,7 @@
 //! Standard Bevy informational guide/panel. Every displayed node is observed;
 //! widget choice and movement never advance dialogue optimistically.
+mod motion;
+pub(crate) mod names;
 mod qualification;
 use crate::{floating_origin::Frame, network::Network, scene::PawnAssets};
 use bevy::{
@@ -8,12 +10,12 @@ use bevy::{
     prelude::*,
     text::{FontSize, LineBreak},
     ui::Pressed,
-    ui_widgets::{Activate, ActivateOnPress, Button},
+    ui_widgets::{Activate, Button},
 };
 use std::sync::Arc;
 use theia_network::dialogue::{Action, Profile, Rejection};
 #[derive(Resource)]
-struct Config(Arc<Profile>);
+pub(crate) struct Config(pub(crate) Arc<Profile>);
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Ui {
     pub open: bool,
@@ -28,6 +30,9 @@ pub(crate) struct Ui {
     pub submitted: u64,
     pub visible_guide_frames: u64,
     pub open_frames: u64,
+    pub scroll_events: u64,
+    pub scroll_delta: f32,
+    pub scroll_maximum: f32,
 }
 #[derive(Resource, Default)]
 struct Pending {
@@ -36,6 +41,10 @@ struct Pending {
 }
 #[derive(Component)]
 pub(super) struct GuideVisual;
+#[derive(Component)]
+pub(super) struct ContactDefinition(theia_core::content::ContentId);
+#[derive(Component, Default)]
+pub(super) struct ContactKey(pub Option<theia_core::identity::EntityKey>);
 #[derive(Component)]
 struct Panel;
 #[derive(Component)]
@@ -76,6 +85,8 @@ fn activate(
         ui.pointer_actions += 1;
     }
 }
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct InputControls;
 pub(crate) fn install(app: &mut App, profile: Arc<Profile>) {
     app.insert_resource(Config(profile))
         .init_resource::<Ui>()
@@ -87,11 +98,12 @@ pub(crate) fn install(app: &mut App, profile: Arc<Profile>) {
         )
         .add_systems(
             Update,
-            (controls, present, scroll)
+            (controls.in_set(InputControls), present, scroll)
                 .chain()
                 .after(crate::network::present),
         );
     qualification::install(app);
+    names::install(app);
 }
 fn text(value: &str, size: f32) -> impl Bundle {
     (
@@ -113,7 +125,6 @@ fn button(widget: Widget) -> impl Bundle {
     (
         widget,
         Button,
-        ActivateOnPress,
         Hovered::default(),
         Node {
             width: percent(100),
@@ -130,39 +141,65 @@ fn setup(
     mut commands: Commands,
     pawns: Res<PawnAssets>,
     config: Res<Config>,
+    journal: Option<Res<crate::quest_journal::Definitions>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
-    commands.spawn((
-        GuideVisual,
-        Mesh3d(pawns.mesh.clone()),
-        MeshMaterial3d(materials.add(Color::srgb(0.1, 0.65, 0.72))),
-        Transform::default(),
-        Visibility::Hidden,
-    ));
-    commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                left: px(12),
-                top: px(268),
-                width: px(340),
-                padding: UiRect::all(px(10)),
-                ..default()
-            },
-            BackgroundColor(Color::srgba(0.02, 0.04, 0.07, 0.9)),
-            Pickable::IGNORE,
-        ))
-        .with_child((Prompt, text("Guide: waiting for server", 14.)));
+    for contact in config.0.contacts() {
+        commands.spawn((
+            GuideVisual,
+            ContactDefinition(contact.npc().clone()),
+            ContactKey::default(),
+            motion::Motion::default(),
+            Mesh3d(pawns.mesh.clone()),
+            MeshMaterial3d(materials.add(Color::srgb(0.1, 0.65, 0.72))),
+            Transform::default(),
+            Visibility::Hidden,
+        ));
+    }
+    // The expanded journal supplies this context beside its committed progress;
+    // retain the legacy fixed-position prompt only in the legacy presentation.
+    if journal.is_none() {
+        commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(12),
+                    top: px(268),
+                    width: px(340),
+                    padding: UiRect::all(px(10)),
+                    ..default()
+                },
+                BackgroundColor(Color::srgba(0.02, 0.04, 0.07, 0.9)),
+                Pickable::IGNORE,
+            ))
+            .with_child((Prompt, text("Guide: waiting for server", 14.)));
+    }
     commands
         .spawn((
             Panel,
             Node {
                 position_type: PositionType::Absolute,
-                left: px(0),
-                right: px(0),
-                top: percent(20),
-                height: percent(50),
-                justify_content: JustifyContent::Center,
+                left: px(if skin.is_some() { 12. } else { 0. }),
+                right: if skin.is_some() { Val::Auto } else { px(0) },
+                width: if skin.is_some() { px(420) } else { Val::Auto },
+                max_width: if skin.is_some() {
+                    percent(45)
+                } else {
+                    Val::Auto
+                },
+                top: if skin.is_some() { px(64) } else { percent(20) },
+                height: percent(if skin.is_some() { 70. } else { 50. }),
+                max_height: if skin.is_some() {
+                    px(crate::fantasy_ui::PAPER_MAX_HEIGHT)
+                } else {
+                    Val::Auto
+                },
+                justify_content: if skin.is_some() {
+                    JustifyContent::FlexStart
+                } else {
+                    JustifyContent::Center
+                },
                 ..default()
             },
             Visibility::Hidden,
@@ -171,9 +208,10 @@ fn setup(
         .with_children(|root| {
             root.spawn((
                 Pane,
+                crate::fantasy_ui::Panel::Paper,
                 Node {
-                    width: px(480),
-                    max_width: percent(90),
+                    width: px(if skin.is_some() { 420. } else { 480. }),
+                    max_width: percent(if skin.is_some() { 100. } else { 90. }),
                     height: percent(100),
                     padding: UiRect::all(px(14)),
                     flex_direction: FlexDirection::Column,
@@ -183,10 +221,20 @@ fn setup(
                 BackgroundColor(Color::srgba(0.02, 0.05, 0.08, 0.98)),
             ))
             .with_children(|panel| {
-                panel.spawn((Title, text(config.0.profile().name(), 20.)));
+                if skin.is_some() {
+                    crate::fantasy_ui::window_header(
+                        panel,
+                        (Title, text(config.0.profile().name(), 20.)),
+                        button(Widget::Close),
+                        "Close dialogue",
+                    );
+                } else {
+                    panel.spawn((Title, text(config.0.profile().name(), 20.)));
+                }
                 panel
                     .spawn((
                         Body,
+                        Hovered::default(),
                         ScrollPosition::default(),
                         Node {
                             width: percent(100),
@@ -212,12 +260,21 @@ fn setup(
             });
         });
 }
+#[allow(clippy::too_many_arguments)]
 fn controls(
     keys: Res<ButtonInput<KeyCode>>,
     network: Res<Network>,
     mut pending: ResMut<Pending>,
     mut ui: ResMut<Ui>,
     classic: Option<Res<crate::classic_controls::Controller>>,
+    selection: Option<Res<crate::world_input::Selection>>,
+    loot: Option<Res<crate::loot::Ui>>,
+    documents: Option<Res<crate::documents::Ui>>,
+    (interface, book): (
+        Option<Res<crate::fantasy_ui::settings::Ui>>,
+        Option<Res<crate::combat::book::Ui>>,
+    ),
+    party: Option<Res<crate::party::Ui>>,
 ) {
     let state = network.state();
     let pointer_choice = pending.choice.take();
@@ -229,7 +286,14 @@ fn controls(
     let Some(view) = &state.dialogue else {
         return;
     };
-    let escape = keys.just_pressed(KeyCode::Escape);
+    let loot_owns = crate::party::owns_escape(party.as_deref())
+        || crate::combat::book::owns_escape(book.as_deref())
+        || crate::fantasy_ui::settings::owns_escape(interface.as_deref())
+        || loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame)
+        || documents
+            .as_ref()
+            .is_some_and(|u| u.open || u.closed_this_frame);
+    let escape = keys.just_pressed(KeyCode::Escape) && !loot_owns;
     if escape && state.dialogue_pending {
         ui.close_when_open = true;
     }
@@ -238,11 +302,7 @@ fn controls(
     }
     let action = if view.open.is_some() {
         if pointer_close.is_some() || escape || ui.close_when_open {
-            let revision = if ui.close_when_open {
-                Some(view.revision)
-            } else {
-                pointer_close.or(ui.displayed_revision)
-            };
+            let revision = close_revision(view.revision, escape, ui.close_when_open, pointer_close);
             ui.close_when_open = false;
             if escape {
                 ui.keyboard_actions += 1;
@@ -261,14 +321,32 @@ fn controls(
         }
     } else {
         ui.close_when_open = false;
-        if keys.just_pressed(KeyCode::KeyF)
-            || (classic.is_none() && keys.just_pressed(KeyCode::KeyE))
+        if !loot_owns
+            && (keys.just_pressed(KeyCode::KeyF)
+                || (classic.is_none() && keys.just_pressed(KeyCode::KeyE)))
         {
             ui.keyboard_actions += 1;
             state
                 .guide
                 .as_ref()
-                .and_then(|p| p.guide)
+                .and_then(|p| {
+                    // Explicit friendly selection wins; never substitute another NPC.
+                    if let Some(key) = selection.as_ref().and_then(|s| s.friendly) {
+                        return p.find(key);
+                    }
+                    let focus = state.authority_focus()?.metres();
+                    p.guides().min_by(|a, b| {
+                        let d = |g: &theia_network::dialogue::Guide| {
+                            g.position
+                                .metres()
+                                .into_iter()
+                                .zip(focus)
+                                .map(|(a, b)| (a - b).powi(2))
+                                .sum::<f64>()
+                        };
+                        d(a).total_cmp(&d(b))
+                    })
+                })
                 .filter(|guide| {
                     state
                         .authority_focus()
@@ -286,6 +364,21 @@ fn controls(
     }
 }
 
+fn close_revision(
+    current: u64,
+    escape: bool,
+    deferred_escape: bool,
+    pointer: Option<u64>,
+) -> Option<u64> {
+    // Escape closes the current conversation, including a response that arrived
+    // before presentation refreshed. Pointer actions retain the painted identity.
+    if escape || deferred_escape {
+        Some(current)
+    } else {
+        pointer
+    }
+}
+
 type Label<'a> = (
     &'a mut Text,
     Option<&'a Title>,
@@ -299,6 +392,9 @@ type Visual<'a> = (
     Option<&'a GuideVisual>,
     Option<&'a Panel>,
     Option<&'a mut Transform>,
+    Option<&'a ContactDefinition>,
+    Option<&'a mut ContactKey>,
+    Option<&'a mut motion::Motion>,
 );
 type VisualFilter = Or<(With<GuideVisual>, With<Panel>)>;
 type ButtonView<'a> = (
@@ -310,6 +406,7 @@ type ButtonView<'a> = (
 );
 #[allow(clippy::too_many_arguments)]
 fn present(
+    time: Res<Time>,
     network: Res<Network>,
     config: Res<Config>,
     frame: Res<Frame>,
@@ -318,11 +415,12 @@ fn present(
     mut labels: Query<Label<'_>>,
     mut buttons: Query<ButtonView<'_>>,
     mut bodies: Query<&mut ScrollPosition, With<Body>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     let state = network.state();
     let view = state.dialogue.as_ref().filter(|_| state.error.is_none());
     let open = view.and_then(|view| view.open.as_ref());
-    let dialogue_node = open.and_then(|open| config.0.profile().node(&open.node));
+    let dialogue_node = open.and_then(|open| config.0.node(&open.node));
     let node_id = dialogue_node.map(|node| node.id().as_str().to_owned());
     ui.displayed_revision = view.map(|view| view.revision);
     ui.choices = dialogue_node.map_or_else(Vec::new, |node| {
@@ -355,7 +453,7 @@ fn present(
                 .is_some_and(|report| report.chunks.contains(&[id.x, id.z]))
         })
     });
-    for (mut visibility, is_guide, is_panel, transform) in &mut visuals {
+    for (mut visibility, is_guide, is_panel, transform, definition, key, motion) in &mut visuals {
         if is_panel.is_some() {
             *visibility = if ui.open {
                 Visibility::Inherited
@@ -364,7 +462,37 @@ fn present(
             };
         }
         if is_guide.is_some() {
-            if let Some(local) = guide.and_then(|guide| frame.render.to_local(guide.position)) {
+            let contact = state
+                .guide
+                .as_ref()
+                .and_then(|p| {
+                    if config.0.catalog().is_none() {
+                        return p.guide;
+                    }
+                    p.contacts
+                        .iter()
+                        .find(|c| definition.is_some_and(|d| d.0 == c.npc))
+                        .map(|c| c.guide)
+                })
+                .filter(|g| {
+                    state.error.is_none()
+                        && g.position.chunk(128).is_some_and(|id| {
+                            state
+                                .chunk_report
+                                .as_ref()
+                                .is_some_and(|r| r.chunks.contains(&[id.x, id.z]))
+                        })
+                });
+            if let Some(mut key) = key {
+                key.0 = contact.map(|c| c.key);
+            }
+            let tick_seconds = state
+                .snapshot
+                .as_ref()
+                .map_or(1. / 30., |s| 1. / s.tick_hz as f32);
+            let position = motion
+                .and_then(|mut motion| motion.sample(contact, time.delta_secs(), tick_seconds));
+            if let Some(local) = position.and_then(|position| frame.render.to_local(position)) {
                 transform.unwrap().translation = Vec3::from_array(local.metres());
                 *visibility = Visibility::Inherited;
                 ui.visible_guide_frames += 1;
@@ -384,7 +512,9 @@ fn present(
     };
     for (mut label, title, body, is_status, prompt, choice) in &mut labels {
         let value = if title.is_some() {
-            config.0.profile().name().to_owned()
+            open.and_then(|o| config.0.node_contact(&o.node))
+                .map_or("Conversation", |p| p.name())
+                .to_owned()
         } else if body.is_some() {
             dialogue_node.map_or("", |node| node.text()).to_owned()
         } else if is_status.is_some() {
@@ -426,7 +556,9 @@ fn present(
         } else {
             Display::Flex
         };
-        color.0 = if ui.pending {
+        color.0 = if skin.is_some() {
+            crate::fantasy_ui::button_color(ui.pending, hovered.is_some_and(|h| h.0), pressed)
+        } else if ui.pending {
             Color::srgb(0.07, 0.08, 0.1)
         } else if pressed || hovered.is_some_and(|h| h.0) {
             Color::srgb(0.12, 0.3, 0.38)
@@ -437,12 +569,13 @@ fn present(
 }
 fn scroll(
     mut events: MessageReader<MouseWheel>,
-    ui: Res<Ui>,
-    mut bodies: Query<(&mut ScrollPosition, &ComputedNode), With<Body>>,
+    mut ui: ResMut<Ui>,
+    mut bodies: Query<(&Hovered, &mut ScrollPosition, &ComputedNode), With<Body>>,
 ) {
     let delta: f32 = events
         .read()
         .map(|event| {
+            ui.scroll_events += 1;
             -event.y
                 * if event.unit == MouseScrollUnit::Line {
                     24.
@@ -452,16 +585,126 @@ fn scroll(
         })
         .sum();
     if ui.open && delta != 0. {
-        for (mut position, node) in &mut bodies {
+        ui.scroll_delta = delta;
+        for (hovered, mut position, node) in &mut bodies {
+            if !hovered.0 {
+                continue;
+            }
             let maximum =
                 ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
+            ui.scroll_maximum = maximum;
             position.y = (position.y + delta).clamp(0., maximum);
         }
     }
 }
 
+/// Read-only bounds and scroll state for diagnosing clipped dialogue choices.
+pub(crate) fn qualification_body(world: &mut World) -> Option<serde_json::Value> {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |scale| scale.0);
+    world.query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform, &ScrollPosition), With<Body>>()
+        .iter(world).next().map(|(node, transform, scroll)| serde_json::json!({
+            "point": (transform.affine().translation * crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+            "size": (node.size() * crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+            "content": (node.content_size() * crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+            "scroll": [scroll.x, scroll.y]
+        }))
+}
+
+/// Current painted choice locations for explicit read-only OS qualification.
+pub(crate) fn qualification_choices(world: &mut World) -> Vec<serde_json::Value> {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |scale| scale.0);
+    let Some(ui) = world.get_resource::<Ui>() else {
+        return Vec::new();
+    };
+    if !ui.open {
+        return Vec::new();
+    }
+    let choices = ui.choices.clone();
+    world.query::<(&Widget,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world)
+        .filter_map(|(widget,node,t)| {
+            let Widget::Choice(index)=widget else {return None};
+            if node.size().min_element()<=0. {return None;}
+            let (_,id)=choices.get(*index)?;
+            Some(serde_json::json!({"choice":id.as_str(),"point":(t.affine().translation*crate::fantasy_ui::window_factor(node, ui_scale)).to_array()}))
+        }).collect()
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn escape_closes_newly_received_view_but_pointer_keeps_painted_revision() {
+        assert_eq!(close_revision(10, true, false, Some(9)), Some(10));
+        assert_eq!(close_revision(10, true, false, None), Some(10));
+        assert_eq!(close_revision(10, false, true, None), Some(10));
+        assert_eq!(close_revision(10, false, false, Some(9)), Some(9));
+        assert_eq!(close_revision(10, false, false, None), None);
+    }
+
+    #[test]
+    fn exported_dialogue_bounds_use_window_pixels_without_rescaling_scroll_offsets() {
+        let mut app = App::new();
+        app.insert_resource(bevy::ui::UiScale(1.25));
+        app.world_mut().spawn((
+            Body,
+            ComputedNode {
+                size: Vec2::new(400., 200.),
+                content_size: Vec2::new(600., 1200.),
+                inverse_scale_factor: 0.4,
+                ..default()
+            },
+            bevy::ui::UiGlobalTransform::from_xy(1200., 900.),
+            ScrollPosition(Vec2::new(0., 17.)),
+        ));
+        let value = qualification_body(app.world_mut()).unwrap();
+        assert_eq!(value["point"], serde_json::json!([600., 450.]));
+        assert_eq!(value["size"], serde_json::json!([200., 100.]));
+        assert_eq!(value["content"], serde_json::json!([300., 600.]));
+        assert_eq!(value["scroll"], serde_json::json!([0., 17.]));
+        assert_eq!(app.world().resource::<bevy::ui::UiScale>().0, 1.25);
+    }
+
+    #[test]
+    fn header_close_retains_revision_and_pending_guards_of_the_existing_action() {
+        use bevy::ecs::system::RunSystemOnce;
+        let mut app = App::new();
+        app.insert_resource(Ui {
+            open: true,
+            displayed_revision: Some(7),
+            ..default()
+        })
+        .init_resource::<Pending>()
+        .add_observer(activate);
+        app.world_mut()
+            .run_system_once(|mut commands: Commands| {
+                commands.spawn(Node::default()).with_children(|panel| {
+                    crate::fantasy_ui::window_header(
+                        panel,
+                        (Title, text("Dialogue", 20.)),
+                        button(Widget::Close),
+                        "Close dialogue",
+                    );
+                });
+            })
+            .unwrap();
+        let world = app.world_mut();
+        let close = world
+            .query_filtered::<Entity, With<crate::fantasy_ui::HeaderClose>>()
+            .single(world)
+            .unwrap();
+        world.trigger(Activate { entity: close });
+        assert_eq!(world.resource::<Pending>().close, Some(7));
+        assert!(world.resource::<Pending>().choice.is_none());
+        world.resource_mut::<Pending>().close = None;
+        world.resource_mut::<Ui>().pending = true;
+        world.trigger(Activate { entity: close });
+        assert!(world.resource::<Pending>().close.is_none());
+        assert_eq!(world.resource::<Ui>().pointer_actions, 1);
+    }
+
     use super::*;
     #[test]
     fn widget_activation_keeps_the_displayed_branch_identity_and_revision() {

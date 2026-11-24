@@ -1,0 +1,44 @@
+{
+  "schema": 3,
+  "id": "theia.dev.equipment-items",
+  "items": [
+    {
+      "id": "theia.dev.training-stone",
+      "name": "Training Stone",
+      "maximum_stack": 20
+    },
+    {
+      "id": "theia.dev.training-token",
+      "name": "Training Token",
+      "maximum_stack": 99
+    },
+    {
+      "id": "theia.dev.training-sword",
+      "name": "Training Sword",
+      "maximum_stack": 1,
+      "main_hand_appearance": "theia.dev.simple-sword"
+    },
+    {
+      "id": "theia.dev.training-wand",
+      "name": "Training Wand",
+      "maximum_stack": 1,
+      "main_hand_appearance": "theia.dev.simple-wand"
+    },
+    {
+      "id": "theia.dev.wolf-pelt",
+      "name": "Wolf Pelt",
+      "maximum_stack": 20
+    },
+    {
+      "id": "theia.dev.roadside-orders",
+      "name": "Roadside Orders",
+      "maximum_stack": 20
+    },
+    {
+      "id": "theia.dev.lost-compass",
+      "name": "Lost Compass",
+      "maximum_stack": 1
+    }
+  ],
+  "starting_copper": 52550
+}

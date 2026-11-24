@@ -172,6 +172,7 @@ async fn scenario(rate: TickRate, blocked_presentation: bool, explicit_rules: bo
     let (requests, _requests) = mpsc::channel(1);
     let policy = Arc::new(Policy(
         net::inventory::Port {
+            documents: None,
             vendor: None,
             rewards: None,
             opportunities: None,
@@ -228,6 +229,11 @@ async fn scenario(rate: TickRate, blocked_presentation: bool, explicit_rules: bo
             shutdown,
             identity,
             net::GameplayClient {
+                party: None,
+                chat: None,
+                avatar_life: None,
+                public_attacks: None,
+                journal: None,
                 classic_source: Some(source),
                 dodge: None,
                 player_life: None,
@@ -253,6 +259,7 @@ async fn scenario(rate: TickRate, blocked_presentation: bool, explicit_rules: bo
                 quest: None,
                 progression: None,
                 inventory: Some(net::inventory::Client {
+                    pickups: None,
                     profile,
                     commands: item_rx,
                 }),

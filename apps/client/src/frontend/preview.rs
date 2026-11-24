@@ -1,0 +1,271 @@
+//! Native front-end model uses the same curated parts and animation as gameplay.
+use super::*;
+use bevy::{
+    asset::LoadState,
+    camera::{RenderTarget, visibility::RenderLayers},
+    world_serialization::WorldAssetRoot,
+};
+const LAYER: usize = 20;
+#[derive(Resource)]
+pub(super) struct Preview {
+    pub(super) camera: Entity,
+    model: Option<Handle<Gltf>>,
+    root: Option<Entity>,
+    graph: Option<(Handle<AnimationGraph>, AnimationNodeIndex)>,
+    pub(super) ready: bool,
+    pub(super) visible: bool,
+    settled: u32,
+    appearance: Option<Appearance>,
+    pub(super) error: Option<String>,
+}
+impl Preview {
+    fn request(&mut self, appearance: Appearance) {
+        if self.appearance != Some(appearance) {
+            self.appearance = Some(appearance);
+            self.settled = 0;
+            self.ready = false;
+            self.error = None;
+        }
+    }
+    fn hide(&mut self) {
+        self.ready = false;
+        self.visible = false;
+        self.settled = 0;
+    }
+    pub(super) fn model_visible(&self, world: &World) -> bool {
+        world
+            .get::<Camera>(self.camera)
+            .is_some_and(|camera| camera.is_active)
+            && self
+                .root
+                .and_then(|root| world.get::<Visibility>(root))
+                .is_some_and(|visibility| *visibility != Visibility::Hidden)
+    }
+    fn observe_ready(&mut self, model_ready: bool, pipelines_ready: bool) {
+        self.settled = if model_ready && pipelines_ready {
+            self.settled.saturating_add(1)
+        } else {
+            0
+        };
+        // Page/appearance transitions reset this latch. Global renderer work
+        // must never blank a character that has already finished loading.
+        self.ready |= self.settled >= 8;
+        // Keep the previous complete appearance visible during the next load.
+        // `ready` still gates Create/Enter for the newly requested appearance.
+        self.visible |= self.ready;
+    }
+}
+pub(super) fn setup(commands: &mut Commands, images: &mut Assets<Image>) -> Entity {
+    let image = images.add(Image::new_target_texture(
+        1,
+        1,
+        bevy::render::render_resource::TextureFormat::Bgra8UnormSrgb,
+        None,
+    ));
+    let camera = commands
+        .spawn((
+            PreviewCamera,
+            Camera3d::default(),
+            Camera {
+                order: -3,
+                is_active: false,
+                clear_color: ClearColorConfig::Custom(Color::NONE),
+                ..default()
+            },
+            RenderTarget::Image(image.into()),
+            RenderLayers::layer(LAYER),
+            AmbientLight {
+                brightness: 220.,
+                ..default()
+            },
+            bevy::core_pipeline::tonemapping::Tonemapping::ReinhardLuminance,
+            Transform::from_xyz(0., 1.2, 3.2).looking_at(Vec3::new(0., 0.95, 0.), Vec3::Y),
+        ))
+        .id();
+    commands.spawn((
+        RenderLayers::layer(LAYER),
+        DirectionalLight {
+            illuminance: 16000.,
+            shadow_maps_enabled: false,
+            ..default()
+        },
+        Transform::from_xyz(3., 4., 5.).looking_at(Vec3::Y, Vec3::Y),
+    ));
+    commands.insert_resource(Preview {
+        camera,
+        model: None,
+        root: None,
+        graph: None,
+        ready: false,
+        visible: false,
+        settled: 0,
+        appearance: None,
+        error: None,
+    });
+    camera
+}
+pub(super) fn tick(world: &mut World) {
+    let menu = world.resource::<Menu>();
+    let show = menu.preview_visible();
+    let (appearance, yaw) = (menu.appearance, menu.yaw);
+    world.resource_scope(|world, mut preview: Mut<Preview>| {
+        world.get_mut::<Camera>(preview.camera).unwrap().is_active = show;
+        if !show {
+            preview.hide();
+            if let Some(root) = preview.root {
+                world.entity_mut(root).insert(Visibility::Hidden);
+            }
+            return;
+        }
+        preview.request(appearance);
+        match prepare(world, &mut preview, appearance, yaw) {
+            Ok(ready) => {
+                let pipelines_ready = world
+                    .resource::<crate::capture_ready::CaptureReady>()
+                    .ready();
+                preview.observe_ready(ready, pipelines_ready);
+            }
+            Err(error) => {
+                world.resource_mut::<Menu>().message = error.clone();
+                preview.error = Some(error);
+            }
+        }
+    });
+}
+fn prepare(
+    world: &mut World,
+    preview: &mut Preview,
+    appearance: Appearance,
+    yaw: f32,
+) -> Result<bool, String> {
+    if preview.root.is_none() {
+        let server = world.resource::<AssetServer>();
+        let model = preview
+            .model
+            .get_or_insert_with(|| server.load("players://character-variants.glb"));
+        if matches!(server.load_state(model.id()), LoadState::Failed(_)) {
+            return Err("Character preview failed to load".into());
+        }
+        if !server.is_loaded_with_dependencies(model.id()) {
+            return Ok(false);
+        }
+        let gltf = world
+            .resource::<Assets<Gltf>>()
+            .get(model)
+            .ok_or("Missing hero model")?;
+        let scene = gltf
+            .default_scene
+            .clone()
+            .ok_or("Hero has no default scene")?;
+        let idle = gltf
+            .named_animations
+            .get("Idle")
+            .ok_or("Hero has no idle animation")?
+            .clone();
+        let (graph, node) = AnimationGraph::from_clip(idle);
+        preview.graph = Some((
+            world.resource_mut::<Assets<AnimationGraph>>().add(graph),
+            node,
+        ));
+        preview.root = Some(
+            world
+                .spawn((
+                    WorldAssetRoot(scene),
+                    Transform::default(),
+                    Visibility::Hidden,
+                    RenderLayers::layer(LAYER),
+                ))
+                .id(),
+        );
+    }
+    let root = preview.root.unwrap();
+    let mut entities = vec![root];
+    let mut index = 0;
+    while index < entities.len() {
+        if let Some(children) = world.get::<Children>(entities[index]) {
+            entities.extend(children.iter());
+        }
+        index += 1;
+    }
+    let (graph, node) = preview.graph.as_ref().unwrap();
+    for entity in entities {
+        world
+            .entity_mut(entity)
+            .insert((RenderLayers::layer(LAYER), Pickable::IGNORE));
+        if world.get::<AnimationPlayer>(entity).is_some()
+            && world.get::<AnimationGraphHandle>(entity).is_none()
+        {
+            world
+                .get_mut::<AnimationPlayer>(entity)
+                .unwrap()
+                .start(*node)
+                .repeat();
+            world
+                .entity_mut(entity)
+                .insert(AnimationGraphHandle(graph.clone()));
+        }
+    }
+    let ready = crate::modular_hero::apply(world, root, appearance, "players")?;
+    world.entity_mut(root).insert((
+        Transform::from_rotation(Quat::from_rotation_y(yaw)),
+        if ready || preview.visible {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        },
+    ));
+    Ok(ready)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn ready_model_stays_visible_during_shader_work_and_cosmetic_loading() {
+        let mut preview = Preview {
+            camera: Entity::PLACEHOLDER,
+            model: None,
+            root: None,
+            graph: None,
+            ready: false,
+            visible: false,
+            settled: 0,
+            appearance: None,
+            error: None,
+        };
+        for _ in 0..7 {
+            preview.observe_ready(true, true);
+            assert!(!preview.ready);
+        }
+        preview.observe_ready(true, true);
+        assert!(preview.ready);
+        for _ in 0..20 {
+            preview.observe_ready(true, false);
+            assert!(preview.ready);
+        }
+        let next = Appearance::default().cycle(4, true);
+        preview.request(next);
+        assert!(!preview.ready);
+        assert!(preview.visible);
+        for _ in 0..20 {
+            preview.observe_ready(false, true);
+            assert!(!preview.ready);
+            assert!(preview.visible);
+        }
+        for _ in 0..7 {
+            preview.observe_ready(true, true);
+            assert!(!preview.ready);
+            assert!(preview.visible);
+        }
+        preview.observe_ready(true, true);
+        assert!(preview.ready);
+        preview.request(next); // Repeated selection must not restart the wait.
+        assert!(preview.ready);
+        preview.hide();
+        assert!(!preview.ready);
+        assert!(!preview.visible);
+        preview.observe_ready(false, true);
+        assert!(!preview.ready);
+        assert!(!preview.visible);
+    }
+}

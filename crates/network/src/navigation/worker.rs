@@ -25,7 +25,7 @@ pub struct Request {
     pub expires: u64,
 }
 impl Request {
-    fn valid(self) -> bool {
+    pub(super) fn valid(self) -> bool {
         self.tag.revision != 0
             && self
                 .tag

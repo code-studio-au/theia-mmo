@@ -1,14 +1,15 @@
 //! Versioned multi-quest definitions. Pure/offline only; not live journal state.
 use crate::content::ContentId;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 pub const MAX_CATALOG_BYTES: usize = 65536;
 pub const MAX_QUESTS: usize = 32;
 pub const MAX_STAGES: usize = 8;
 pub const MAX_OBJECTIVES: usize = 8;
 pub const MAX_TOTAL_OBJECTIVES: usize = 512;
+pub mod registry;
 type Result<T> = std::result::Result<T, &'static str>;
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct RawCatalog {
     schema: u32,
@@ -16,13 +17,15 @@ struct RawCatalog {
     revision: u32,
     quests: Vec<RawQuest>,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct RawQuest {
     id: String,
     version: u32,
     title: String,
     description: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    ready_label: Option<String>,
     prerequisites: Vec<String>,
     giver: String,
     turn_in: String,
@@ -32,7 +35,7 @@ struct RawQuest {
     start_stage: String,
     stages: Vec<RawStage>,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct RawStage {
     id: String,
@@ -40,11 +43,15 @@ struct RawStage {
     next: Option<String>,
     objectives: Vec<RawObjective>,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct RawCompletion {
     kind: String,
-    #[serde(default, deserialize_with = "present_count")]
+    #[serde(
+        default,
+        deserialize_with = "present_count",
+        skip_serializing_if = "Option::is_none"
+    )]
     count: Option<u32>,
 }
 fn present_count<'de, D: serde::Deserializer<'de>>(
@@ -77,9 +84,15 @@ impl Completion {
         }
     }
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum RawObjective {
+    FollowNpc {
+        id: String,
+        label: String,
+        npc: String,
+        travel: Follow,
+    },
     Kill {
         id: String,
         label: String,
@@ -92,14 +105,55 @@ enum RawObjective {
         npc: String,
         interaction: String,
     },
+    ReachArea {
+        id: String,
+        label: String,
+        area: String,
+    },
+    ReadDocument {
+        id: String,
+        label: String,
+        document: String,
+    },
+    PossessItem {
+        id: String,
+        label: String,
+        item: String,
+        required: u32,
+        consume_on_turn_in: bool,
+    },
 }
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum EventKey {
+    FollowNpc(ContentId),
     Kill(ContentId),
     NpcInteraction {
         npc: ContentId,
         interaction: ContentId,
     },
+    ReachArea(ContentId),
+    PossessItem(ContentId),
+    ReadDocument(ContentId),
+}
+/// Saved editor destination marker identity and metric travel policy. Route geometry is bound
+/// to the exported world and checked against navigation before player admission.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Follow {
+    pub destination: u64,
+    pub max_distance_metres: u32,
+    pub speed_millimetres_per_second: u32,
+}
+impl Follow {
+    fn validate(&self) -> Result<()> {
+        if self.destination == 0
+            || !(3..=20).contains(&self.max_distance_metres)
+            || !(500..=8000).contains(&self.speed_millimetres_per_second)
+        {
+            return Err("Invalid follow destination, speed or distance bounds");
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Objective {
@@ -107,8 +161,13 @@ pub struct Objective {
     label: String,
     event: EventKey,
     required: u32,
+    consume_on_turn_in: bool,
+    follow: Option<Follow>,
 }
 impl Objective {
+    pub fn follow(&self) -> Option<&Follow> {
+        self.follow.as_ref()
+    }
     pub fn id(&self) -> &ContentId {
         &self.id
     }
@@ -117,6 +176,9 @@ impl Objective {
     }
     pub fn event(&self) -> &EventKey {
         &self.event
+    }
+    pub fn consume_on_turn_in(&self) -> bool {
+        self.consume_on_turn_in
     }
     pub fn required(&self) -> u32 {
         self.required
@@ -149,6 +211,7 @@ pub struct Definition {
     version: u32,
     title: String,
     description: String,
+    ready_label: Option<String>,
     prerequisites: Vec<ContentId>,
     giver: ContentId,
     turn_in: ContentId,
@@ -165,6 +228,9 @@ impl Definition {
     }
     pub fn title(&self) -> &str {
         &self.title
+    }
+    pub fn ready_label(&self) -> Option<&str> {
+        self.ready_label.as_deref()
     }
     pub fn description(&self) -> &str {
         &self.description
@@ -187,6 +253,45 @@ impl Definition {
     pub fn stage(&self, id: &ContentId) -> Option<&Stage> {
         self.stages.get(id)
     }
+    pub fn has_document_objectives(&self) -> bool {
+        self.stages().any(|s| {
+            s.objectives()
+                .iter()
+                .any(|o| matches!(o.event(), EventKey::ReadDocument(_)))
+        })
+    }
+    pub fn has_possession_objectives(&self) -> bool {
+        self.stages().any(|s| {
+            s.objectives()
+                .iter()
+                .any(|o| matches!(o.event(), EventKey::PossessItem(_)))
+        })
+    }
+    pub fn possession_requirements(
+        &self,
+        items: &crate::inventory::Catalog,
+    ) -> Result<Option<crate::inventory::requirements::Requirements>> {
+        use crate::inventory::requirements::{Requirement, Requirements};
+        let mut requirements = Vec::new();
+        for objective in self.stages().flat_map(|s| s.objectives()) {
+            if let EventKey::PossessItem(item) = objective.event() {
+                requirements.push(
+                    Requirement::new(
+                        item.clone(),
+                        objective.required(),
+                        objective.consume_on_turn_in(),
+                    )
+                    .ok_or("Invalid possession quantity")?,
+                );
+            }
+        }
+        if requirements.is_empty() {
+            return Ok(None);
+        }
+        Requirements::new(items, requirements)
+            .map(Some)
+            .map_err(|_| "Invalid possession item requirements")
+    }
     pub fn stages(&self) -> impl Iterator<Item = &Stage> {
         self.stages.values()
     }
@@ -199,6 +304,7 @@ pub struct ObjectiveRef {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Catalog {
+    schema: u32,
     id: ContentId,
     revision: u32,
     quests: BTreeMap<ContentId, Definition>,
@@ -219,12 +325,17 @@ fn unique(raw: &str, seen: &mut BTreeSet<ContentId>) -> Result<ContentId> {
 }
 impl Catalog {
     pub fn from_json(bytes: &[u8]) -> Result<Self> {
+        Self::parse(bytes, true)
+    }
+    // Only the child registry can defer prerequisite linking. It never exposes
+    // its internal Catalog values to a runtime journal or World.
+    fn parse(bytes: &[u8], local_dependencies: bool) -> Result<Self> {
         if bytes.len() > MAX_CATALOG_BYTES {
             return Err("Quest catalogue exceeds byte budget");
         }
         let raw: RawCatalog =
             serde_json::from_slice(bytes).map_err(|_| "Invalid quest catalogue")?;
-        if raw.schema != 1
+        if !matches!(raw.schema, 1..=5)
             || raw.revision == 0
             || raw.quests.is_empty()
             || raw.quests.len() > MAX_QUESTS
@@ -236,10 +347,15 @@ impl Catalog {
         let mut quests = BTreeMap::new();
         let mut index: BTreeMap<EventKey, Vec<ObjectiveRef>> = BTreeMap::new();
         let mut total = 0;
+        let mut followers = BTreeSet::new();
         for quest in raw.quests {
             if quest.version == 0
                 || !text(&quest.title, 128)
                 || !text(&quest.description, 2048)
+                || quest
+                    .ready_label
+                    .as_ref()
+                    .is_some_and(|label| raw.schema < 5 || !text(label, 256))
                 || quest.repeat_policy != "once"
                 || quest.credit_scope != "character"
                 || quest.experience > crate::progression::MAX_GRANT_EXPERIENCE
@@ -270,14 +386,45 @@ impl Catalog {
                 let stage_id = unique(&stage.id, &mut ids)?;
                 let mut objectives = Vec::new();
                 let mut events = BTreeSet::new();
+                let objective_count = stage.objectives.len();
                 for objective in stage.objectives {
-                    let (raw_id, label, event, required) = match objective {
+                    let mut follow = None;
+                    let (raw_id, label, event, required, consume_on_turn_in) = match objective {
+                        RawObjective::FollowNpc {
+                            id: raw_id,
+                            label,
+                            npc,
+                            travel,
+                        } => {
+                            if raw.schema < 5
+                                || stage.next.is_some()
+                                || objective_count != 1
+                                || completion != Completion::All
+                                || !stages.is_empty()
+                                || quest.giver != npc
+                                || quest.turn_in != npc
+                                || !followers.insert(npc.clone())
+                            {
+                                return Err(
+                                    "Follow quests require schema 5, one unique NPC and one final objective",
+                                );
+                            }
+                            travel.validate()?;
+                            follow = Some(travel);
+                            (raw_id, label, EventKey::FollowNpc(id(&npc)?), 1, false)
+                        }
                         RawObjective::Kill {
                             id: raw_id,
                             label,
                             creature,
                             required,
-                        } => (raw_id, label, EventKey::Kill(id(&creature)?), required),
+                        } => (
+                            raw_id,
+                            label,
+                            EventKey::Kill(id(&creature)?),
+                            required,
+                            false,
+                        ),
                         RawObjective::NpcInteraction {
                             id: raw_id,
                             label,
@@ -291,7 +438,61 @@ impl Catalog {
                                 interaction: id(&interaction)?,
                             },
                             1,
+                            false,
                         ),
+                        RawObjective::ReachArea {
+                            id: raw_id,
+                            label,
+                            area,
+                        } => {
+                            if raw.schema < 2 {
+                                return Err(
+                                    "Reach-area objectives require quest catalogue schema 2",
+                                );
+                            }
+                            (raw_id, label, EventKey::ReachArea(id(&area)?), 1, false)
+                        }
+                        RawObjective::ReadDocument {
+                            id: raw_id,
+                            label,
+                            document,
+                        } => {
+                            if raw.schema < 4 {
+                                return Err(
+                                    "Document-read objectives require quest catalogue schema 4",
+                                );
+                            }
+                            (
+                                raw_id,
+                                label,
+                                EventKey::ReadDocument(id(&document)?),
+                                1,
+                                false,
+                            )
+                        }
+                        RawObjective::PossessItem {
+                            id: raw_id,
+                            label,
+                            item,
+                            required,
+                            consume_on_turn_in,
+                        } => {
+                            if raw.schema < 3
+                                || stage.next.is_some()
+                                || completion != Completion::All
+                            {
+                                return Err(
+                                    "Possession objectives require schema 3 and an all-required final stage",
+                                );
+                            }
+                            (
+                                raw_id,
+                                label,
+                                EventKey::PossessItem(id(&item)?),
+                                required,
+                                consume_on_turn_in,
+                            )
+                        }
                     };
                     if !text(&label, 128)
                         || !(1..=100).contains(&required)
@@ -314,6 +515,8 @@ impl Catalog {
                         label,
                         event,
                         required,
+                        consume_on_turn_in,
+                        follow,
                     });
                 }
                 stages.insert(
@@ -325,6 +528,13 @@ impl Catalog {
                         objectives,
                     },
                 );
+            }
+            if stages.len() != 1
+                && stages
+                    .values()
+                    .any(|s| s.objectives.iter().any(|o| o.follow.is_some()))
+            {
+                return Err("Follow quests require exactly one stage");
             }
             let start_stage = id(&quest.start_stage)?;
             let mut visited = BTreeSet::new();
@@ -347,6 +557,7 @@ impl Catalog {
                 version: quest.version,
                 title: quest.title,
                 description: quest.description,
+                ready_label: quest.ready_label,
                 prerequisites,
                 giver: id(&quest.giver)?,
                 turn_in: id(&quest.turn_in)?,
@@ -356,10 +567,12 @@ impl Catalog {
             };
             quests.insert(quest_id, definition);
         }
-        for quest in quests.values() {
-            let mut visiting = BTreeSet::new();
-            let mut done = BTreeSet::new();
-            dependencies(&quest.id, &quests, &mut visiting, &mut done)?;
+        if local_dependencies {
+            for quest in quests.values() {
+                let mut visiting = BTreeSet::new();
+                let mut done = BTreeSet::new();
+                dependencies(&quest.id, &quests, &mut visiting, &mut done)?;
+            }
         }
         // External gameplay targets cannot masquerade as quest definition IDs.
         for quest in quests.values() {
@@ -369,7 +582,10 @@ impl Catalog {
         }
         for event in index.keys() {
             let alias = match event {
-                EventKey::Kill(creature) => ids.contains(creature),
+                EventKey::Kill(creature) | EventKey::FollowNpc(creature) => ids.contains(creature),
+                EventKey::ReachArea(area)
+                | EventKey::PossessItem(area)
+                | EventKey::ReadDocument(area) => ids.contains(area),
                 EventKey::NpcInteraction { npc, interaction } => {
                     ids.contains(npc) || ids.contains(interaction)
                 }
@@ -382,6 +598,7 @@ impl Catalog {
             objectives.sort();
         }
         Ok(Self {
+            schema: raw.schema,
             id: catalog_id,
             revision: raw.revision,
             quests,
@@ -390,6 +607,45 @@ impl Catalog {
     }
     pub fn id(&self) -> &ContentId {
         &self.id
+    }
+    pub fn validate_possession_items(&self, items: &crate::inventory::Catalog) -> Result<()> {
+        let mut reserved = BTreeSet::from([self.id().clone()]);
+        let mut references = BTreeSet::new();
+        for quest in self.quests() {
+            reserved.extend([
+                quest.id().clone(),
+                quest.giver().clone(),
+                quest.turn_in().clone(),
+            ]);
+            for stage in quest.stages() {
+                reserved.insert(stage.id().clone());
+                for objective in stage.objectives() {
+                    reserved.insert(objective.id().clone());
+                    match objective.event() {
+                        EventKey::PossessItem(item) => {
+                            references.insert(item.clone());
+                        }
+                        EventKey::FollowNpc(id)
+                        | EventKey::Kill(id)
+                        | EventKey::ReachArea(id)
+                        | EventKey::ReadDocument(id) => {
+                            reserved.insert(id.clone());
+                        }
+                        EventKey::NpcInteraction { npc, interaction } => {
+                            reserved.extend([npc.clone(), interaction.clone()]);
+                        }
+                    }
+                }
+            }
+            quest.possession_requirements(items)?;
+        }
+        if references.iter().any(|id| reserved.contains(id)) {
+            return Err("Possession item aliases another quest target or definition");
+        }
+        Ok(())
+    }
+    pub fn schema(&self) -> u32 {
+        self.schema
     }
     pub fn revision(&self) -> u32 {
         self.revision

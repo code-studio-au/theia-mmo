@@ -213,21 +213,17 @@ fn events_validate_weapon_damage_and_incarnation() {
 #[test]
 fn positional_reasons_require_explicit_ability_rules_on_state_and_events() {
     use crate::simulation::combat::{self, Reason};
-    let mut raw: serde_json::Value = serde_json::from_slice(include_bytes!(
+    // Keep the legacy catalogue independent of schema-7-only additions to current content.
+    let legacy = abilities::Catalog::from_json(include_bytes!(
+        "../../../../../content/gameplay/development-projectile-abilities.json"
+    ))
+    .unwrap();
+    assert_eq!(legacy.schema(), 6);
+    let explicit = abilities::Catalog::from_json(include_bytes!(
         "../../../../../content/gameplay/development-classic-abilities.json"
     ))
     .unwrap();
-    let mut legacy_raw = raw.clone();
-    legacy_raw["schema"] = serde_json::json!(6);
-    for ability in legacy_raw["abilities"].as_array_mut().unwrap() {
-        ability.as_object_mut().unwrap().remove("combat");
-    }
-    let legacy = abilities::Catalog::from_json(&serde_json::to_vec(&legacy_raw).unwrap()).unwrap();
-    raw["schema"] = serde_json::json!(7);
-    for ability in raw["abilities"].as_array_mut().unwrap() {
-        ability["combat"] = serde_json::json!({"minimum_range_metres":0.0,"facing":{"kind":"frontal","arc_degrees":180.0},"autoattack":{"kind":"continue"}});
-    }
-    let explicit = abilities::Catalog::from_json(&serde_json::to_vec(&raw).unwrap()).unwrap();
+    assert_eq!(explicit.schema(), 7);
     for reason in [Reason::NotFacing, Reason::TooClose] {
         let view = super::super::State {
             vitals: None,

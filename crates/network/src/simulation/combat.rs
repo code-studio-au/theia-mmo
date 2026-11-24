@@ -9,6 +9,7 @@ pub mod player_life;
 mod projectiles;
 pub mod reset;
 mod statuses;
+pub mod threat;
 pub mod white_melee;
 use super::World;
 pub use outcomes::Metrics as OutcomeMetrics;
@@ -27,6 +28,8 @@ pub const MAX_STEP_EVENTS: usize = 64;
 pub const MAX_PROJECTILE_STEP_EVENTS: usize = 128;
 pub const DEVELOPMENT_HEALTH: u32 = 100;
 pub const DEVELOPMENT_RESPAWN_MS: u32 = 5000;
+/// Theia authored spawn-group cap (24 hours), not a Classic formula.
+pub const MAX_RESPAWN_MS: u32 = 86_400_000;
 struct Configuration {
     resources_hash: Option<[u8; 32]>,
     catalog: Catalog,
@@ -41,7 +44,7 @@ fn configuration(
     resources: Option<&[u8]>,
     statuses: Option<&[u8]>,
 ) -> crate::Result<Configuration> {
-    if health == 0 || health > 1_000_000 || !(100..=60_000).contains(&respawn_ms) {
+    if health == 0 || health > 1_000_000 || !(100..=MAX_RESPAWN_MS).contains(&respawn_ms) {
         return Err("Combat health/respawn configuration exceeds bounded prototype".into());
     }
     let catalog = Catalog::from_json(bytes)?;
@@ -58,13 +61,16 @@ fn configuration(
         return Err("Status abilities require explicit status and resource profiles".into());
     }
     for ability in catalog.abilities() {
-        if let Effect::ApplyStatus { status } = ability.effect()
-            && status_catalog
+        if let Effect::ApplyStatus { status } = ability.effect() {
+            let definition = status_catalog
                 .as_ref()
                 .and_then(|c| c.definition(&status))
-                .is_none()
-        {
-            return Err("Ability references an unknown status definition".into());
+                .ok_or("Ability references an unknown status definition")?;
+            if definition.effect().periodic()
+                != (ability.target() == theia_core::abilities::Target::HostileAlive)
+            {
+                return Err("Status effect and ability target are incompatible".into());
+            }
         }
     }
     if let Some(profile) = &profile
@@ -334,7 +340,16 @@ pub struct Health {
     pub position: GlobalPosition,
     pub current: u32,
     pub maximum: u32,
+    pub mana: Option<Pool>,
     pub respawn_at: Option<u64>,
+}
+impl Health {
+    fn restore(&mut self) {
+        self.current = self.maximum;
+        self.mana = self
+            .mana
+            .and_then(|pool| Pool::new(pool.maximum(), pool.maximum()));
+    }
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct Snapshot {
@@ -414,12 +429,21 @@ pub(super) struct Authority {
     membership: Option<membership::Runtime>,
     credit: Option<credit::Runtime>,
     reset: Option<reset::Runtime>,
+    threat: Option<threat::Runtime>,
+    population_threat: Vec<threat::Runtime>,
+    public_attack: Option<std::sync::Arc<crate::creature_attack_wire::Profile>>,
+    public_population_attack:
+        Option<std::sync::Arc<crate::creature_attack_wire::population::PopulationProfile>>,
+    public_life: Option<std::sync::Arc<crate::avatar_life_wire::Profile>>,
     catalog_digest: [u8; 32],
     projectiles: Vec<projectiles::Active>,
     projectile_metrics: ProjectileMetrics,
     random: Option<outcomes::Random>,
     outcome_metrics: OutcomeMetrics,
     pve: Option<player_life::Authority>,
+    retaliators: Vec<player_life::Authority>,
+    pursuit_navigation: Option<crate::navigation::scheduler::Scheduler>,
+    lives: Option<player_life::Lives>,
     resources_hash: Option<[u8; 32]>,
     statuses: Option<statuses::Registry>,
     resources: Option<Profile>,
@@ -486,7 +510,9 @@ impl Authority {
         }
     }
     fn damage(&mut self, world: &mut World, hit: Hit) {
-        if self.reset.is_some() && !self.ordinary_target_ready() {
+        if !self.population_target_ready(hit.target)
+            || (self.reset.is_some() && self.pve.is_some() && !self.ordinary_target_ready())
+        {
             return;
         }
         self.apply_damage(
@@ -574,12 +600,20 @@ impl Authority {
             membership: None,
             credit: None,
             reset: None,
+            threat: None,
+            population_threat: Vec::new(),
+            public_attack: None,
+            public_population_attack: None,
+            public_life: None,
             catalog_digest: crate::terrain::sha256(bytes),
             projectiles: Vec::with_capacity(projectiles::MAX_ACTIVE),
             projectile_metrics: ProjectileMetrics::default(),
             random,
             outcome_metrics: OutcomeMetrics::default(),
             pve: None,
+            retaliators: Vec::new(),
+            pursuit_navigation: None,
+            lives: None,
             resources_hash,
             statuses: statuses.map(statuses::Registry::new),
             resources,
@@ -597,6 +631,7 @@ impl Authority {
                     position: t.position,
                     current: health,
                     maximum: health,
+                    mana: None,
                     respawn_at: None,
                 })
                 .collect(),
@@ -616,9 +651,14 @@ impl Authority {
     }
     pub(super) fn identity(&self, base: [u8; 32]) -> [u8; 32] {
         let base = world_digest(base, self.digest);
-        let base = self.pve.as_ref().map_or(base, |p| {
+        let base = self.lives.as_ref().map_or(base, |p| {
             crate::player_life_wire::profile_identity(base, &p.profile)
         });
+        let base = if self.retaliators.is_empty() {
+            base
+        } else {
+            crate::player_life_wire::population_retaliation_identity(base)
+        };
         let base = self.autoattack.as_ref().map_or(base, |p| p.identity(base));
         let base = self
             .physical
@@ -634,7 +674,21 @@ impl Authority {
             .map_or(base, |p| p.profile.identity(base));
         let base = self.membership.as_ref().map_or(base, |p| p.identity(base));
         let base = self.credit.as_ref().map_or(base, |p| p.identity(base));
-        self.reset.as_ref().map_or(base, |p| p.identity(base))
+        let base = self.reset.as_ref().map_or(base, |p| p.identity(base));
+        let base = self
+            .threat
+            .as_ref()
+            .or_else(|| self.population_threat.first())
+            .map_or(base, |p| p.identity(base));
+        let base = self
+            .public_attack
+            .as_ref()
+            .map_or(base, |p| p.identity(base));
+        let base = self
+            .public_population_attack
+            .as_ref()
+            .map_or(base, |p| p.identity(base));
+        self.public_life.as_ref().map_or(base, |p| p.identity(base))
     }
     pub(super) fn leave(&mut self, id: u64, rate: theia_core::time::TickRate) {
         if let Some(credit) = &mut self.credit {
@@ -643,8 +697,15 @@ impl Authority {
         if let Some(membership) = &mut self.membership {
             membership.leave(id);
         }
-        if let Some(pve) = &mut self.pve {
+        if self.threat.is_none()
+            && let Some(pve) = &mut self.pve
+        {
             pve.retired_player(id, rate);
+        }
+        for pve in &mut self.retaliators {
+            if !self.population_threat.iter().any(|t| t.npc == pve.npc) {
+                pve.retired_player(id, rate);
+            }
         }
         self.actors.remove(&id);
         if let Some(statuses) = &mut self.statuses {
@@ -695,6 +756,10 @@ impl Authority {
         moved: bool,
     ) -> std::result::Result<(), Reason> {
         let actor = world.players.get(&id).ok_or(Reason::Interrupted)?;
+        let self_cast = ability.target() == theia_core::abilities::Target::SelfAlive;
+        if !self_cast && !self.population_target_ready(target) {
+            return Err(Reason::NotReady);
+        }
         if !self.player_alive(id) {
             return Err(Reason::Interrupted);
         }
@@ -706,14 +771,22 @@ impl Authority {
         {
             return Err(Reason::EquipmentRequired);
         }
-        let health = self
-            .creatures
-            .iter()
-            .find(|c| c.key == target)
-            .ok_or(Reason::UnknownTarget)?;
-        if health.current == 0 {
-            return Err(Reason::Dead);
-        }
+        let health = if self_cast {
+            if world.entity_key(id) != Some(target) {
+                return Err(Reason::UnknownTarget);
+            }
+            None
+        } else {
+            let health = self
+                .creatures
+                .iter()
+                .find(|c| c.key == target)
+                .ok_or(Reason::UnknownTarget)?;
+            if health.current == 0 {
+                return Err(Reason::Dead);
+            }
+            Some(health)
+        };
         if !Self::ready(world, id) {
             return Err(Reason::NotReady);
         }
@@ -727,6 +800,9 @@ impl Authority {
         {
             return Err(Reason::Moving);
         }
+        let Some(health) = health else {
+            return Ok(());
+        };
         let a = actor.position.metres();
         let b = health.position.metres();
         let distance2: f64 = a.into_iter().zip(b).map(|(a, b)| (a - b) * (a - b)).sum();
@@ -779,6 +855,17 @@ impl Authority {
                 })
                 .max(actor.cooldowns.get(ability.id()).copied().unwrap_or(now))
         })
+    }
+    fn living_cast_target(&self, actor: EntityKey, target: EntityKey, ability: &Ability) -> bool {
+        match ability.target() {
+            theia_core::abilities::Target::SelfAlive => {
+                target == actor && self.player_alive(actor.entity.value())
+            }
+            theia_core::abilities::Target::HostileAlive => self
+                .creatures
+                .iter()
+                .any(|c| c.key == target && c.current > 0),
+        }
     }
     fn start(
         &mut self,
@@ -854,7 +941,7 @@ impl Authority {
             return Err(Reason::InsufficientMana);
         }
         self.commit_ability_swing(id, swing_plan);
-        let credit_encounter = self.capture_credit();
+        let credit_encounter = self.capture_credit(cast.target);
         let actor = self.actor(id);
         actor.cast = Some(cast.clone());
         actor.cast_credit_encounter = credit_encounter;
@@ -966,14 +1053,26 @@ impl Authority {
                     continue;
                 };
                 let previous = creature.key;
+                if let Some(navigation) = &mut self.pursuit_navigation {
+                    navigation.retire(previous);
+                }
                 creature.key.entity = theia_core::identity::EntityId::new(next).unwrap();
-                if let Some(home) = world.patrol_respawn(previous, creature.key) {
+                if let Some(home) = world
+                    .patrol_respawn(previous, creature.key)
+                    .or_else(|| world.population_respawn(previous, creature.key))
+                {
                     creature.position = home;
                 }
                 if let Some(pve) = &mut self.pve {
                     pve.respawned_creature(previous, creature.key, world.rate);
                 }
-                creature.current = creature.maximum;
+                for pve in &mut self.retaliators {
+                    pve.respawned_creature(previous, creature.key, world.rate);
+                }
+                for threat in self.threat.iter_mut().chain(&mut self.population_threat) {
+                    threat.respawned(previous, creature.key);
+                }
+                creature.restore();
                 creature.respawn_at = None;
                 world.next_id = next;
                 world.targets.insert(
@@ -997,6 +1096,13 @@ impl Authority {
                 self.actors.remove(&id);
                 continue;
             };
+            // Dead and interrupted actors still publish combat views. Expire
+            // deadlines before either path can skip ordinary cast processing.
+            self.actors
+                .get_mut(&id)
+                .unwrap()
+                .cooldowns
+                .retain(|_, at| *at > world.tick);
             if !self.player_alive(id) {
                 continue;
             }
@@ -1028,11 +1134,7 @@ impl Authority {
                     Some(Reason::NotReady)
                 } else if !self.actors[&id].equipment.permits(ability) {
                     Some(Reason::EquipmentRequired)
-                } else if !self
-                    .creatures
-                    .iter()
-                    .any(|c| c.key == cast.target && c.current > 0)
-                {
+                } else if !self.living_cast_target(key, cast.target, ability) {
                     Some(Reason::Dead)
                 } else if !ability.cast_while_moving()
                     && (moved
@@ -1089,10 +1191,7 @@ impl Authority {
                     .catalog
                     .ability(queued.request.ability.as_str())
                     .unwrap();
-                let dead = !self
-                    .creatures
-                    .iter()
-                    .any(|c| c.key == queued.request.target && c.current > 0);
+                let dead = !self.living_cast_target(key, queued.request.target, ability);
                 if dead || !Self::ready(world, id) {
                     self.actors.get_mut(&id).unwrap().queued = None;
                     self.cancel(
@@ -1117,11 +1216,6 @@ impl Authority {
                     self.cancel(key, queued.request.sequence, Reason::Unavailable);
                 }
             }
-            self.actors
-                .get_mut(&id)
-                .unwrap()
-                .cooldowns
-                .retain(|_, at| *at > world.tick);
         }
         self.advance_statuses(world);
         self.advance_autoattack(world);
@@ -1162,6 +1256,19 @@ impl Authority {
     }
 }
 impl World {
+    /// Includes defeated actors until their fresh-ID respawn replaces this life.
+    pub(super) fn has_combat_incarnation(&self, key: EntityKey) -> bool {
+        self.combat_creature_position(key).is_some()
+    }
+    /// Retain the authoritative corpse position until this exact life retires.
+    pub(super) fn combat_creature_position(&self, key: EntityKey) -> Option<GlobalPosition> {
+        self.combat
+            .as_ref()?
+            .creatures
+            .iter()
+            .find(|creature| creature.key == key)
+            .map(|creature| creature.position)
+    }
     pub fn enable_combat(
         &mut self,
         catalog: &[u8],
@@ -1195,7 +1302,15 @@ impl World {
     pub fn combat_status_snapshot(&self, actor: u64) -> Option<Vec<Status>> {
         let authority = self.combat.as_ref()?;
         let statuses = authority.statuses.as_ref()?;
-        Some(statuses.views(self.players.get(&actor)?.position, &authority.creatures))
+        let owner = authority
+            .player_alive(actor)
+            .then(|| self.entity_key(actor))
+            .flatten();
+        Some(statuses.views(
+            owner,
+            self.players.get(&actor)?.position,
+            &authority.creatures,
+        ))
     }
     fn enable_combat_config(
         &mut self,
@@ -1213,6 +1328,15 @@ impl World {
         {
             return Err(
                 "Combat requires inactive graybox world with prepared development targets".into(),
+            );
+        }
+        if self
+            .population_binding
+            .as_ref()
+            .is_some_and(|binding| binding.respawn_ms() != respawn_ms)
+        {
+            return Err(
+                "Combat respawn delay does not match the authored population binding".into(),
             );
         }
         let authority = Authority::create(self, catalog, health, respawn_ms, stats, statuses)?;
@@ -1267,6 +1391,28 @@ impl World {
     pub fn combat_events(&self) -> &[Event] {
         self.combat.as_ref().map_or(&[], |c| &c.events)
     }
+    /// Read only the admitted actor's authoritative resources, without cloning
+    /// creature targets, casts or cooldowns for party presentation.
+    pub fn combat_vitals(&self, actor: u64) -> Option<Vitals> {
+        self.players.get(&actor)?;
+        let authority = self.combat.as_ref()?;
+        let profile = authority.resources.as_ref()?;
+        let state = authority.actors.get(&actor);
+        Vitals::new(
+            if authority.lives.is_some() {
+                state
+                    .and_then(|a| a.life.as_ref())
+                    .map_or(0, |p| p.state.health())
+            } else {
+                profile.maximum_health()
+            },
+            profile.maximum_health(),
+            state
+                .and_then(|a| a.mana)
+                .map_or(profile.maximum_mana(), |m| m.current()),
+            profile.maximum_mana(),
+        )
+    }
     pub fn combat_snapshot(&self, actor: u64) -> Option<Snapshot> {
         let focus = self.players.get(&actor)?.position;
         let authority = self.combat.as_ref()?;
@@ -1279,23 +1425,7 @@ impl World {
             .collect();
         targets.sort_by_key(|c| c.key.entity);
         Some(Snapshot {
-            vitals: authority.resources.as_ref().map(|p| {
-                Vitals::new(
-                    if authority.pve.is_some() {
-                        state
-                            .and_then(|a| a.life.as_ref())
-                            .map_or(0, |p| p.state.health())
-                    } else {
-                        p.maximum_health()
-                    },
-                    p.maximum_health(),
-                    state
-                        .and_then(|a| a.mana)
-                        .map_or(p.maximum_mana(), |m| m.current()),
-                    p.maximum_mana(),
-                )
-                .unwrap()
-            }),
+            vitals: self.combat_vitals(actor),
             tick: self.tick,
             reply: state.and_then(|a| a.reply),
             cast: state.and_then(|a| a.cast.clone()),

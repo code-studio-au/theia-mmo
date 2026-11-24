@@ -2,8 +2,11 @@
 //! belongs to this asynchronous owner;
 //! producers copy at most eight records and never await a database operation.
 mod accounts;
+#[cfg(test)]
+mod document_tests;
 mod inventory;
 mod progression;
+mod quest_items;
 mod quest_journal;
 mod quest_lifecycle;
 mod quests;

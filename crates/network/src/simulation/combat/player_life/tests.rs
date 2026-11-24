@@ -67,6 +67,249 @@ fn fixture(rate: TickRate, enable: bool) -> (World, EntityKey) {
     }
     (world, npc)
 }
+
+#[test]
+fn dead_escort_member_observes_but_cannot_drive_or_receive_arrival() {
+    use theia_core::quests::{catalog::EventKey, journal::Journal};
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (world, _) = fixture(rate, true);
+        let (mut world, profile, quest, npc) = crate::simulation::follow::tests::setup_in(world);
+        world.enable_parties().unwrap();
+        let a = join(&mut world, [8062., 8000.]);
+        let b = join(&mut world, [8062., 7950.]);
+        crate::simulation::follow::tests::invite(&mut world, a, b);
+        let active = Journal::default()
+            .propose_accept(profile.catalog(), &quest, &npc)
+            .unwrap()
+            .journal;
+        world.sync_follow_journal(a, &active).unwrap();
+        world.sync_follow_journal(b, &active).unwrap();
+        let fallback = world.global_position(a).unwrap();
+        let home = world.follow.position(a, &npc, fallback);
+        let life = world.player_life_snapshot(a).unwrap().key;
+        let mut combat = world.combat.take().unwrap();
+        assert!(
+            combat
+                .damage_player(&mut world, life, 100)
+                .unwrap()
+                .unwrap()
+                .died
+        );
+        world.combat = Some(combat);
+        assert!(!world.player_alive(a));
+        // No World clock advancement here: retain the real dead life instead
+        // of allowing this fixture's deliberately short respawn timer to fire.
+        for _ in 0..rate.hz() {
+            world.advance_follow();
+        }
+        assert_eq!(world.follow.position(a, &npc, fallback), home);
+        for _ in 0..rate.hz() * 4 {
+            world.players.get_mut(&b).unwrap().position = world.follow.position(b, &npc, fallback);
+            world.advance_follow();
+        }
+        let arrived = world.follow.position(b, &npc, fallback);
+        assert_eq!(world.follow.position(a, &npc, fallback), arrived);
+        world.players.get_mut(&a).unwrap().position = arrived;
+        assert!(world.finished_follow_events(a).is_empty());
+        assert_eq!(
+            world.finished_follow_events(b),
+            vec![EventKey::FollowNpc(npc)]
+        );
+    }
+}
+
+#[test]
+fn party_membership_survives_authoritative_death_and_fresh_life() {
+    use theia_core::party::{Action, Request as PartyRequest};
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, _) = fixture(rate, true);
+        world.enable_parties().unwrap();
+        let leader = join(&mut world, [8006., 8000.]);
+        let member = join(&mut world, [8008., 8000.]);
+        let target = world.entity_key(member).unwrap();
+        let revision = world.party_view(leader).unwrap().revision;
+        world
+            .party_request(
+                leader,
+                PartyRequest {
+                    sequence: 1,
+                    revision,
+                    action: Action::Invite(target),
+                },
+            )
+            .unwrap();
+        let invited = world.party_view(member).unwrap();
+        world
+            .party_request(
+                member,
+                PartyRequest {
+                    sequence: 1,
+                    revision: invited.revision,
+                    action: Action::Accept(invited.membership.incoming.unwrap().id),
+                },
+            )
+            .unwrap();
+        let membership = world.party_view(leader).unwrap();
+        let life = world.player_life_snapshot(leader).unwrap().key;
+        let mut combat = world.combat.take().unwrap();
+        assert!(
+            combat
+                .damage_player(&mut world, life, 100)
+                .unwrap()
+                .unwrap()
+                .died
+        );
+        world.combat = Some(combat);
+        assert!(!world.player_alive(leader));
+        assert_eq!(world.party_view(leader).unwrap(), membership);
+        for _ in 0..rate.hz() {
+            world.step();
+        }
+        assert!(world.player_alive(leader));
+        assert_ne!(world.player_life_snapshot(leader).unwrap().key, life);
+        assert_eq!(world.party_view(leader).unwrap(), membership);
+        world.leave(leader);
+        assert!(world.party_view(member).unwrap().membership.party.is_none());
+    }
+}
+
+#[test]
+fn shared_player_lives_admit_die_and_respawn_without_an_npc_retaliation_controller() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, _) = fixture(rate, true);
+        let identity = world.identity();
+        // Internal separation fixture only: public installation still requires
+        // the paired patrol/retaliation configuration and exposes no bypass.
+        world.combat.as_mut().unwrap().pve = None;
+        assert_eq!(world.identity(), identity);
+        let actor = join(&mut world, [8006., 8000.]);
+        let before = world.player_life_snapshot(actor).unwrap();
+        assert!(before.windup.is_none());
+        let home = world.global_position(actor).unwrap();
+        let mut combat = world.combat.take().unwrap();
+        assert!(
+            combat
+                .damage_player(&mut world, before.key, 100)
+                .unwrap()
+                .unwrap()
+                .died
+        );
+        world.combat = Some(combat);
+        assert!(!world.player_alive(actor));
+        let dead = world.player_life_snapshot(actor).unwrap();
+        assert_eq!(dead.health, 0);
+        assert!(dead.windup.is_none());
+        for _ in 0..rate.hz() {
+            world.step();
+        }
+        let alive = world.player_life_snapshot(actor).unwrap();
+        assert!(world.player_alive(actor));
+        assert_eq!(alive.health, alive.maximum_health);
+        assert_eq!(alive.key.actor, before.key.actor);
+        assert_eq!(alive.key.generation.get(), before.key.generation.get() + 1);
+        assert_eq!(alive.movement_stream, before.movement_stream + 2);
+        // Local f32 capsule support and body/feet conversion retain sub-mm error.
+        for (actual, expected) in world
+            .global_position(actor)
+            .unwrap()
+            .metres()
+            .into_iter()
+            .zip(home.metres())
+        {
+            assert!((actual - expected).abs() < 0.0001);
+        }
+        assert_eq!(world.player_life_metrics().unwrap().respawns, 1);
+        assert!(world.player_life_error().is_none());
+    }
+}
+
+#[test]
+fn respawn_keeps_ground_or_roof_support_including_airborne_restored_players() {
+    use bevy::prelude::Vec3;
+    for (height, expected_height) in [(0., 0.), (1.5, 0.), (6.5, 6.5), (8., 6.5)] {
+        let (mut world, _) = fixture(TickRate::Hz30, true);
+        let focus = GlobalPosition::new([8006., 0., 8000.]).unwrap();
+        let original = world
+            .procedural
+            .as_ref()
+            .unwrap()
+            .patch(focus)
+            .unwrap()
+            .clone();
+        let floor = original.try_spawn(8006., 8000.).unwrap();
+        let local = Vec3::from_array(original.frame.to_local(floor).unwrap().metres());
+        let mut geometry = original.scene.colliders.clone();
+        geometry.push(crate::physics::PlacedCollider {
+            shape: avian3d::prelude::Collider::cuboid(20., 1., 20.),
+            center: local + Vec3::Y * 6.,
+            layer: crate::physics::SOLID | crate::physics::GROUND | crate::physics::CAMERA,
+        });
+        let patch = Arc::new(crate::procedural::Patch {
+            owner: original.owner,
+            frame: original.frame,
+            ids: original.ids.clone(),
+            scene: crate::physics::StaticScene::new(geometry),
+        });
+        let at_height = |height: f64| {
+            let mut position = floor.metres();
+            position[1] += height;
+            GlobalPosition::new(position).unwrap()
+        };
+        assert!(patch.try_landing_spawn(at_height(100.)).is_none());
+        assert!(patch.try_landing_spawn(at_height(5.8)).is_none());
+        assert!(patch.try_spawn(8006., 8000.).unwrap().metres()[1] > floor.metres()[1] + 6.);
+        world
+            .procedural
+            .as_mut()
+            .unwrap()
+            .patches
+            .insert(original.owner, patch);
+        let actor = world
+            .join_restored(at_height(height + f64::from(crate::world::PAWN_Y)))
+            .unwrap();
+        ready(&mut world, actor, 1);
+        let home = world.combat.as_ref().unwrap().actors[&actor]
+            .life
+            .as_ref()
+            .unwrap()
+            .home;
+        let expected = at_height(expected_height + f64::from(crate::world::PAWN_Y));
+        assert!(
+            (home.metres()[1] - expected.metres()[1]).abs() < 0.01,
+            "height={height} home={home:?} expected={expected:?}"
+        );
+        let key = world.player_life_snapshot(actor).unwrap().key;
+        let mut combat = world.combat.take().unwrap();
+        assert!(
+            combat
+                .damage_player(&mut world, key, 100)
+                .unwrap()
+                .unwrap()
+                .died
+        );
+        world.combat = Some(combat);
+        for _ in 0..20 {
+            world.step();
+            if world.player_alive(actor) {
+                break;
+            }
+        }
+        assert!(world.player_alive(actor));
+        assert_eq!(world.player_life_metrics().unwrap().respawns, 1);
+        assert!(world.player_life_error().is_none());
+        let restored = world.global_position(actor).unwrap().metres();
+        for (actual, expected) in restored.into_iter().zip(expected.metres()) {
+            assert!(
+                (actual - expected).abs() < 0.01,
+                "height={height} respawn={restored:?}"
+            );
+        }
+        assert_eq!(
+            world.player_life_snapshot(actor).unwrap().movement_stream,
+            3
+        );
+    }
+}
 pub(super) fn join(world: &mut World, xz: [f64; 2]) -> u64 {
     let position = GlobalPosition::new([xz[0], 0., xz[1]]).unwrap();
     let patch = world.procedural.as_ref().unwrap().patch(position).unwrap();
@@ -191,6 +434,70 @@ fn profile_is_exact_and_activation_checks_dependencies_without_mutating_identity
     assert!(world.enable_player_life(profile(true)).is_err());
     assert_eq!(world.identity(), selected);
 }
+#[test]
+fn fatal_competing_damage_never_publishes_an_earlier_attackers_pending_windup() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        for population in [false, true] {
+            let (mut world, npc) = fixture(rate, true);
+            if population {
+                let combat = world.combat.as_mut().unwrap();
+                let pve = combat.pve.take().unwrap();
+                combat.retaliators.push(pve);
+            }
+            let actor = join(&mut world, [8006., 8000.]);
+            hit(&mut world, actor, npc, 1);
+            for _ in 0..rate.hz() {
+                world.step();
+                if world.player_life_snapshot(actor).unwrap().windup.is_some() {
+                    break;
+                }
+            }
+            let alive = world.player_life_snapshot(actor).unwrap();
+            assert!(alive.health > 0);
+            assert_eq!(alive.windup.unwrap().creature, npc);
+            let profile = profile(true);
+            crate::player_life_wire::encode(&profile, rate, &alive).unwrap();
+
+            // Stage the exact ordering from a pack attack: this controller has
+            // already advanced, then another damage source kills its target.
+            let mut combat = world.combat.take().unwrap();
+            assert!(
+                combat
+                    .damage_player(&mut world, alive.key, alive.health)
+                    .unwrap()
+                    .unwrap()
+                    .died
+            );
+            assert!(
+                combat
+                    .pve
+                    .iter()
+                    .chain(&combat.retaliators)
+                    .any(|pve| pve.policy.windup_until().is_some())
+            );
+            world.combat = Some(combat);
+
+            let dead = world.player_life_snapshot(actor).unwrap();
+            assert_eq!(dead.health, 0);
+            assert!(dead.windup.is_none());
+            let bytes = crate::player_life_wire::encode(&profile, rate, &dead).unwrap();
+            let decoded =
+                crate::player_life_wire::decode(&profile, alive.key.actor, rate, &bytes).unwrap();
+            assert_eq!(decoded, dead);
+            world.step();
+            assert!(world.player_life_error().is_none());
+            let combat = world.combat.as_ref().unwrap();
+            assert!(
+                combat
+                    .pve
+                    .iter()
+                    .chain(&combat.retaliators)
+                    .all(|pve| pve.policy.windup_until().is_none())
+            );
+        }
+    }
+}
+
 #[test]
 fn actual_authority_retaliates_and_dead_input_casts_and_interactions_cannot_act() {
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
@@ -355,6 +662,74 @@ fn leaving_reach_cancels_the_real_swing_before_damage_and_legacy_patrol_never_re
             .health(),
         100
     );
+}
+
+#[test]
+fn expired_cooldowns_remain_wire_safe_while_dead_or_interrupted() {
+    for death in [true, false] {
+        let (mut world, npc) = fixture(TickRate::Hz30, false);
+        if death {
+            let mut respawn: Value = serde_json::from_slice(RESPAWN).unwrap();
+            respawn["delay_ms"] = json!(6000);
+            world
+                .enable_player_life(Arc::new(
+                    Profile::from_json(
+                        STATS,
+                        CREATURE,
+                        POLICY,
+                        &serde_json::to_vec(&respawn).unwrap(),
+                    )
+                    .unwrap(),
+                ))
+                .unwrap();
+        }
+        let actor = join(&mut world, [8006., 8000.]);
+        let long = ContentId::new("theia.dev.long-bolt").unwrap();
+        let result = world.cast(
+            actor,
+            Request {
+                epoch: world.epoch(),
+                sequence: 1,
+                ability: long.clone(),
+                target: npc,
+            },
+        );
+        assert!(matches!(result.reply.outcome, Outcome::Started { .. }));
+        let deadline = world.combat.as_ref().unwrap().actors[&actor].cooldowns[&long];
+        if death {
+            let key = world.player_life_snapshot(actor).unwrap().key;
+            let mut combat = world.combat.take().unwrap();
+            assert!(
+                combat
+                    .damage_player(&mut world, key, 100)
+                    .unwrap()
+                    .unwrap()
+                    .died
+            );
+            world.combat = Some(combat);
+        }
+        while world.tick <= deadline {
+            if !death && world.tick + 1 == deadline {
+                world.combat.as_mut().unwrap().interrupt(actor);
+            }
+            world.step();
+            let catalog = &world.combat.as_ref().unwrap().catalog;
+            let state = crate::combat_wire::State::new(
+                world.epoch(),
+                world.combat_snapshot(actor).unwrap(),
+                catalog,
+            )
+            .unwrap();
+            let bytes = state.encode(catalog).unwrap();
+            crate::combat_wire::State::decode(&bytes, catalog).unwrap();
+        }
+        assert_eq!(world.player_alive(actor), !death);
+        assert!(
+            !world.combat.as_ref().unwrap().actors[&actor]
+                .cooldowns
+                .contains_key(&long)
+        );
+    }
 }
 
 #[test]
@@ -1042,5 +1417,206 @@ fn basic_weapon_hit_arms_real_retaliation_and_owner_death_respawn_never_resume_e
                 .outcome,
             autoattack::Outcome::Engaged
         );
+    }
+}
+
+#[test]
+fn dead_player_cannot_supply_new_area_observations_but_original_live_batch_remains_logical() {
+    let (mut world, _) = fixture(TickRate::Hz30, true);
+    world
+        .spawn_development_guide(
+            Arc::new(
+                crate::dialogue::Profile::from_json(include_bytes!(
+                    "../../../../../../content/quests/development-journal-dialogue.json"
+                ))
+                .unwrap(),
+            ),
+            [8000., 8000.],
+        )
+        .unwrap();
+    let mut q: Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../content/quests/development-journal.json"
+    ))
+    .unwrap();
+    q["schema"] = json!(2);
+    q["quests"].as_array_mut().unwrap().truncate(1);
+    q["quests"][0]["stages"].as_array_mut().unwrap().truncate(1);
+    q["quests"][0]["stages"][0]["next"] = Value::Null;
+    q["quests"][0]["stages"][0]["objectives"] = json!([{
+        "kind":"reach_area","id":"theia.dev.area-goal","label":"Reach","area":"theia.dev.area-test"}]);
+    let a = json!({"schema":1,"id":"theia.dev.area-catalog","revision":1,"areas":[{
+        "id":"theia.dev.area-test","name":"Test","min":[7990.,-64.,7990.],"max":[8010.,64.,8010.]}]});
+    let xp = crate::progression_wire::Profile::from_json(include_bytes!(
+        "../../../../../../content/gameplay/development-progression.json"
+    ))
+    .unwrap();
+    let p = crate::quest_journal::Profile::from_json_with_areas(
+        &serde_json::to_vec(&q).unwrap(),
+        &serde_json::to_vec(&a).unwrap(),
+        &xp,
+    )
+    .unwrap();
+    let prepared = world.prepare_quest_journal_profile(&p).unwrap();
+    let journal = theia_core::quests::journal::Journal::default()
+        .propose_accept(
+            p.catalog(),
+            &ContentId::new("theia.dev.quest-introduction").unwrap(),
+            &ContentId::new("theia.dev.guide").unwrap(),
+        )
+        .unwrap()
+        .journal;
+    let actor = join(&mut world, [8000., 8000.]);
+    let key = world.entity_key(actor).unwrap();
+    let live = world.observe_quest_areas(&prepared, key, &journal).unwrap();
+    assert_eq!(live.len(), 1);
+    let life = world.player_life_snapshot(actor).unwrap().key;
+    let mut combat = world.combat.take().unwrap();
+    assert!(
+        combat
+            .damage_player(&mut world, life, 100)
+            .unwrap()
+            .unwrap()
+            .died
+    );
+    world.combat = Some(combat);
+    assert!(world.observe_quest_areas(&prepared, key, &journal).is_err());
+    // Death after a real sample does not erase a historical live occurrence.
+    assert_eq!(
+        journal
+            .propose_reached_areas(p.catalog(), &live)
+            .unwrap()
+            .changed
+            .len(),
+        1
+    );
+}
+
+#[test]
+fn private_party_vitals_follow_damage_mana_death_respawn_and_departure() {
+    use theia_core::party::{Action, Request};
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, _) = fixture(rate, true);
+        world.enable_parties().unwrap();
+        let a = join(&mut world, [8006., 8000.]);
+        let b = join(&mut world, [8062., 7950.]);
+        let outsider = join(&mut world, [8009., 8000.]);
+        crate::simulation::follow::tests::invite(&mut world, a, b);
+        let membership = world.party_view(a).unwrap();
+        assert!(world.party_member_vitals(outsider).unwrap().is_empty());
+        world
+            .combat
+            .as_mut()
+            .unwrap()
+            .actors
+            .get_mut(&b)
+            .unwrap()
+            .mana = Pool::new(24, 100);
+        let life = world.player_life_snapshot(b).unwrap().key;
+        for damage in [28, 72] {
+            let mut combat = world.combat.take().unwrap();
+            combat
+                .damage_player(&mut world, life, damage)
+                .unwrap()
+                .unwrap();
+            world.combat = Some(combat);
+            let values = world.party_member_vitals(a).unwrap();
+            assert_eq!(values, world.party_member_vitals(b).unwrap());
+            let value = values[1].vitals.unwrap();
+            assert_eq!(value, world.combat_snapshot(b).unwrap().vitals.unwrap());
+            assert_eq!(value.health(), if damage == 28 { 72 } else { 0 });
+            assert_eq!(value.mana(), 24);
+            assert_eq!(world.party_view(a).unwrap(), membership);
+            assert!(world.party_member_vitals(outsider).unwrap().is_empty());
+        }
+        for _ in 0..rate.hz() {
+            world.step();
+        }
+        let restored = world.party_member_vitals(a).unwrap()[1].vitals.unwrap();
+        assert_eq!(restored.health(), restored.maximum_health());
+        assert_eq!(restored, world.combat_vitals(b).unwrap());
+        let view = world.party_view(b).unwrap();
+        world
+            .party_request(
+                b,
+                Request {
+                    sequence: view.sequence + 1,
+                    revision: view.revision,
+                    action: Action::Leave,
+                },
+            )
+            .unwrap();
+        assert!(world.party_member_vitals(a).unwrap().is_empty());
+        assert!(world.party_member_vitals(b).unwrap().is_empty());
+        world.leave(b);
+        assert!(world.party_member_vitals(b).is_none());
+        assert!(world.combat_vitals(b).is_none());
+        let replacement = join(&mut world, [8062., 7950.]);
+        assert_ne!(replacement, b);
+        assert!(world.party_member_vitals(replacement).unwrap().is_empty());
+    }
+}
+
+#[test]
+fn selected_party_member_survives_actual_death_and_respawn_without_becoming_hostile() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, npc) = fixture(rate, true);
+        world.enable_parties().unwrap();
+        let owner = join(&mut world, [8000., 8000.]);
+        let member = join(&mut world, [8006., 8000.]);
+        let key = world.entity_key(member).unwrap();
+        crate::simulation::parties::targeting_tests::group(&mut world, owner, key);
+        assert!(world.select_target(owner, Some(key)));
+        let view = world.party_view(owner).unwrap();
+        let mark = theia_core::party::marks::Mark {
+            target: key,
+            symbol: theia_core::party::marks::Symbol::Star,
+        };
+        world
+            .party_request(
+                owner,
+                theia_core::party::Request {
+                    sequence: view.sequence + 1,
+                    revision: view.revision,
+                    action: theia_core::party::Action::Mark {
+                        target: key,
+                        symbol: Some(mark.symbol),
+                    },
+                },
+            )
+            .unwrap();
+        hit(&mut world, member, npc, 1);
+        dead(&mut world, member);
+        assert_eq!(world.player_life_snapshot(member).unwrap().health, 0);
+        assert_eq!(
+            world
+                .party_view(owner)
+                .unwrap()
+                .membership
+                .party
+                .unwrap()
+                .marks,
+            vec![mark]
+        );
+        assert_eq!(
+            world.targeting_snapshot(owner).unwrap().selected_member,
+            Some(key)
+        );
+        for _ in 0..rate.hz() * 2 {
+            world.step();
+        }
+        assert!(world.player_alive(member));
+        assert_eq!(
+            world
+                .party_view(owner)
+                .unwrap()
+                .membership
+                .party
+                .unwrap()
+                .marks,
+            vec![mark]
+        );
+        let view = world.targeting_snapshot(owner).unwrap();
+        assert_eq!(view.selected_member, Some(key));
+        assert!(view.selected.is_none() && view.targets.iter().all(|t| t.key != key));
     }
 }

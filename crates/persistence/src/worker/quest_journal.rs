@@ -9,12 +9,21 @@ use crate::{
     QuestJournalCommand, Result, Store,
 };
 use std::num::NonZeroU128;
-use theia_core::quests::catalog::EventKey;
+use theia_core::{progression::KillEvent, quests::catalog::EventKey};
 use tokio::sync::oneshot;
 
 enum Operation {
+    Kill {
+        xp: ProgressionCatalog,
+        event: KillEvent,
+    },
     Ensure,
+    OpenDocument(crate::DocumentOpenCommand),
     Load,
+    Areas {
+        id: NonZeroU128,
+        observation: theia_core::quests::journal::ReachedAreas,
+    },
     Event {
         id: NonZeroU128,
         event: EventKey,
@@ -32,6 +41,29 @@ pub(super) struct Request {
     reply: oneshot::Sender<Result<QuestJournalApplied>>,
 }
 impl Publisher {
+    /// Critical original open intent; the Store commits ownership/read credit
+    /// before answering. Existing FIFO retention applies after reply loss.
+    pub fn enqueue_document_open(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        catalog: &QuestJournalCatalog,
+        command: crate::DocumentOpenCommand,
+    ) -> Result<oneshot::Receiver<Result<QuestJournalApplied>>> {
+        catalog.check_document_binding()?.validate_open(&command)?;
+        self.queue_journal(binding, world, catalog, Operation::OpenDocument(command))
+    }
+    pub async fn open_quest_document(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        catalog: &QuestJournalCatalog,
+        command: crate::DocumentOpenCommand,
+    ) -> Result<QuestJournalApplied> {
+        catalog.check_document_binding()?.validate_open(&command)?;
+        self.wait_journal(binding, world, catalog, Operation::OpenDocument(command))
+            .await
+    }
     /// Trusted admission initialization, outside the simulation step.
     pub async fn ensure_quest_journal(
         &self,
@@ -130,6 +162,83 @@ impl Publisher {
         self.wait_journal(binding, world, catalog, Operation::Event { id, event })
             .await
     }
+    /// Trusted World observation; queue acceptance is not a success ack.
+    pub fn enqueue_reached_areas(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        catalog: &QuestJournalCatalog,
+        id: NonZeroU128,
+        observation: theia_core::quests::journal::ReachedAreas,
+    ) -> Result<oneshot::Receiver<Result<QuestJournalApplied>>> {
+        catalog.check_reached_areas(&observation)?;
+        self.queue_journal(
+            binding,
+            world,
+            catalog,
+            Operation::Areas { id, observation },
+        )
+    }
+    /// Retained async owner path; never await this in fixed simulation.
+    pub async fn record_reached_areas(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        catalog: &QuestJournalCatalog,
+        id: NonZeroU128,
+        observation: theia_core::quests::journal::ReachedAreas,
+    ) -> Result<QuestJournalApplied> {
+        catalog.check_reached_areas(&observation)?;
+        self.wait_journal(
+            binding,
+            world,
+            catalog,
+            Operation::Areas { id, observation },
+        )
+        .await
+    }
+    /// Original trusted victim life; journal credit and optional kill XP commit
+    /// together. No XP recipe is required. Accepted work survives response loss.
+    pub fn enqueue_progression_and_quest_journal(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        xp: &ProgressionCatalog,
+        catalog: &QuestJournalCatalog,
+        event: KillEvent,
+    ) -> Result<oneshot::Receiver<Result<QuestJournalApplied>>> {
+        catalog.check_progression(xp)?;
+        self.queue_journal(
+            binding,
+            world,
+            catalog,
+            Operation::Kill {
+                xp: xp.clone(),
+                event,
+            },
+        )
+    }
+    /// Retained owner path; waits for bounded FIFO space outside simulation.
+    pub async fn award_progression_and_quest_journal(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        xp: &ProgressionCatalog,
+        catalog: &QuestJournalCatalog,
+        event: &KillEvent,
+    ) -> Result<QuestJournalApplied> {
+        catalog.check_progression(xp)?;
+        self.wait_journal(
+            binding,
+            world,
+            catalog,
+            Operation::Kill {
+                xp: xp.clone(),
+                event: event.clone(),
+            },
+        )
+        .await
+    }
     async fn wait_journal(
         &self,
         binding: Binding,
@@ -138,6 +247,7 @@ impl Publisher {
         operation: Operation,
     ) -> Result<QuestJournalApplied> {
         valid_world(world)?;
+        catalog.check_runtime_admission()?;
         let (reply, answer) = oneshot::channel();
         self.inventory
             .send(inventory::Request::QuestJournal(Request {
@@ -161,6 +271,7 @@ impl Publisher {
         operation: Operation,
     ) -> Result<oneshot::Receiver<Result<QuestJournalApplied>>> {
         valid_world(world)?;
+        catalog.check_runtime_admission()?;
         let (reply, answer) = oneshot::channel();
         self.inventory
             .try_send(inventory::Request::QuestJournal(Request {
@@ -184,6 +295,30 @@ impl Request {
         // Intentionally no reply.is_closed check: accepted occurrences/actions
         // remain work even if a session disconnects before this job begins.
         let (kind, result) = match self.operation {
+            Operation::OpenDocument(command) => (
+                3,
+                store
+                    .open_quest_document(self.binding, self.world, &self.catalog, &command)
+                    .await,
+            ),
+            Operation::Kill { xp, event } => (
+                3,
+                store
+                    .award_progression_and_quest_journal(
+                        self.binding,
+                        self.world,
+                        &xp,
+                        &self.catalog,
+                        &event,
+                    )
+                    .await,
+            ),
+            Operation::Areas { id, observation } => (
+                3,
+                store
+                    .record_reached_areas(self.binding, self.world, &self.catalog, id, &observation)
+                    .await,
+            ),
             Operation::Ensure => (
                 0,
                 store

@@ -39,6 +39,17 @@ def fbx(path, wide=False, cycle=False, duplicate=False, collection=False, single
 
 
 class UnityModelIdTests(unittest.TestCase):
+    def test_explicit_legacy_recycle_names_bind_only_known_source_meshes_and_classes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'model.fbx';fbx(path,single=True);model=identity(path)
+            importer={'serializedVersion':21,'meshes':{},'fileIDToRecycleName':{100000:'//RootNode',400000:'//RootNode',4300000:'Cube'}}
+            ids,method=bound_candidates(model,importer)
+            self.assertEqual(method,'explicit-v21-recycle-name-table')
+            self.assertEqual(ids[4300000]['name'],'Cube');self.assertEqual(ids[4300000]['geometry'],2)
+            for table in [{4300000:'Missing'}, {9900000:'Cube'}, {-1:'Cube'}]:
+                with self.assertRaises(ValueError):bound_candidates(model,dict(importer,fileIDToRecycleName=table))
+            with self.assertRaises(ValueError):bound_candidates(model,dict(importer,serializedVersion=20))
+
     def test_published_root_ids_match_signed_64_bit_values(self):
         self.assertEqual(signed_hash('Type:Transform->//RootNode/root/Transform0'),-8679921383154817045)
         self.assertEqual(signed_hash('Type:GameObject->//RootNode/root0'),919132149155446097)

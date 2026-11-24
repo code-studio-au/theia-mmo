@@ -21,6 +21,7 @@ pub struct Config {
     pub directory: PathBuf,
     pub data: theia_network::chunk_world::Config,
     pub active: Residency,
+    pub particles: Option<theia_vfx::PreparedResidency>,
     recovery_spawns: Vec<theia_core::coordinates::GlobalPosition>,
 }
 impl Config {
@@ -33,12 +34,17 @@ impl Config {
         let data =
             theia_network::chunk_world::Config::load(&directory).map_err(|e| e.to_string())?;
         let (active, recovery_spawns) = data.prepare_startup().map_err(|e| e.to_string())?;
-        active.verify_visuals().map_err(|e| e.to_string())?;
+        let particles = theia_vfx::prepare_resident_particles(
+            &active,
+            crate::particle_world::LIMITS,
+            crate::particle_world::MAX_IMAGE_BYTES,
+        )?;
         args.drain(..2);
         Ok(Some(Self {
             directory,
             data,
             active,
+            particles: Some(particles),
             recovery_spawns,
         }))
     }
@@ -62,12 +68,16 @@ pub struct Loading {
 }
 struct Candidate {
     data: Residency,
+    particles: theia_vfx::PreparedResidency,
     handles: BTreeMap<ChunkId, Handle<Gltf>>,
     roots: BTreeMap<ChunkId, Entity>,
     withdrawal: Option<Vec<ChunkId>>,
 }
 enum Pending {
-    Worker(u64, Task<Result<Residency, String>>),
+    Worker(
+        u64,
+        Task<Result<(Residency, theia_vfx::PreparedResidency), String>>,
+    ),
     Assets(u64, Box<Candidate>),
 }
 #[derive(Resource)]
@@ -149,7 +159,8 @@ pub fn load(mut commands: Commands, config: Res<Config>, assets: Res<AssetServer
 }
 #[derive(bevy::ecs::system::SystemParam)]
 pub struct ReadyView<'w, 's> {
-    camera: Query<'w, 's, (&'static Camera, &'static GlobalTransform), With<Camera3d>>,
+    camera:
+        Query<'w, 's, (&'static Camera, &'static GlobalTransform), crate::frontend::WorldCamera>,
     frame: Res<'w, crate::floating_origin::Frame>,
 }
 pub fn report_ready(
@@ -332,6 +343,9 @@ fn validate_roots(
     Ok(())
 }
 pub fn validate_initial(world: &mut World) {
+    if crate::loading::failed(world) {
+        return;
+    }
     if world.contains_resource::<BoundsChecked>() {
         return;
     }
@@ -345,7 +359,7 @@ pub fn validate_initial(world: &mut World) {
             Ok(false) => return,
             Err(error) => {
                 error!("Chunk startup material validation failed: {error}");
-                world.write_message(AppExit::error());
+                crate::loading::fail_or_exit(world, "World assets could not be prepared.");
                 return;
             }
         }
@@ -374,7 +388,7 @@ pub fn validate_initial(world: &mut World) {
         }
         Err(error) => {
             error!("Chunk startup contributor validation failed: {error}");
-            world.write_message(AppExit::error());
+            crate::loading::fail_or_exit(world, "World assets could not be prepared.");
         }
     }
 }
@@ -416,7 +430,9 @@ pub fn drive(world: &mut World) {
                         None=>{stream.pending=Some(Pending::Worker(generation,task));}
                         Some(_) if generation!=offer.generation=>{},
                         Some(Err(error))=>discard(world,&mut stream,generation,None,&error),
-                        Some(Ok(data))=>{
+                        Some(Ok((data, particles)))=>{
+                            let active=world.resource::<crate::particle_world::ChunkParticles>();
+                            if let Err(error)=theia_vfx::check_residency_staging_budget(active.counts, active.image_bytes, &particles, &active.retained_chunks(), crate::particle_world::LIMITS, crate::particle_world::MAX_IMAGE_BYTES) {discard(world,&mut stream,generation,None,&error);return;}
                             observe(world,&mut stream,generation,"prepared");
                             let loading=world.resource::<Loading>();
                             let directory=&world.resource::<Config>().directory;
@@ -424,7 +440,7 @@ pub fn drive(world: &mut World) {
                                 let path=r.asset.strip_prefix(directory).unwrap().to_str().unwrap().replace('\\',"/");
                                 (r.chunk,world.resource::<AssetServer>().load(path))
                             }).collect();
-                            stream.pending=Some(Pending::Assets(generation,Box::new(Candidate {data,handles,roots:BTreeMap::new(),withdrawal:None})));
+                            stream.pending=Some(Pending::Assets(generation,Box::new(Candidate {data,particles,handles,roots:BTreeMap::new(),withdrawal:None})));
                         }
                     }
                     return;
@@ -474,6 +490,8 @@ pub fn drive(world: &mut World) {
                         stream.pending=Some(Pending::Assets(generation,candidate));return;
                     }
                     stream.waiting_reason=None;
+                    let particles=std::mem::replace(&mut candidate.particles, theia_vfx::PreparedResidency { chunks:Vec::new(), counts:Default::default(), decoded_image_bytes:0 });
+                    if let Err(error)=crate::particle_world::publish_chunks(world,particles) {discard(world,&mut stream,generation,Some(&candidate),&error);return;}
                     let next=candidate.data.loaded();
                     let retained=world.resource::<Loading>().roots.iter().filter(|(id,_)|next.contains(id)).map(|(id,entity)|(*id,*entity)).collect::<Vec<_>>();
                     let mut removed=Vec::new();
@@ -505,6 +523,7 @@ pub fn drive(world: &mut World) {
         let ids=offer.chunks.iter().map(|&[x,z]|ChunkId{x,z}).collect::<Vec<_>>();
         if ids==config.active.loaded() {stream.seen=offer.generation;return;}
         let active=config.active.clone();let delay=stream.delay;
+        let active_particle_image_bytes=world.resource::<crate::particle_world::ChunkParticles>().image_bytes;
         stream.started=Instant::now();
         stream.settle_since=None;
         stream.waiting_reason=None;
@@ -512,8 +531,9 @@ pub fn drive(world: &mut World) {
         stream.pending=Some(Pending::Worker(offer.generation,IoTaskPool::get().spawn(async move {
             if !delay.is_zero() {std::thread::sleep(delay);}
             let data=active.staged(&ids,&[]).map_err(|e|e.to_string())?;
-            data.verify_visuals().map_err(|e|e.to_string())?;
-            Ok(data)
+            let image_allowance=crate::particle_world::MAX_IMAGE_BYTES.checked_sub(active_particle_image_bytes).ok_or("Active particle images exceed client budget")?;
+            let particles=theia_vfx::prepare_resident_particles(&data,crate::particle_world::LIMITS,image_allowance)?;
+            Ok((data,particles))
         })));
     });
 }
@@ -548,9 +568,17 @@ pub fn tick(
     (server, assets): (Res<AssetServer>, Res<Assets<Gltf>>),
     hierarchy: (Query<&Children>, Query<&Mesh3d>),
     mut pipelines: ResMut<crate::capture_ready::CaptureReady>,
-    mut exit: MessageWriter<AppExit>,
+    mut exit: (
+        MessageWriter<AppExit>,
+        Option<ResMut<crate::loading::State>>,
+    ),
 ) {
-    if ready.is_some() {
+    if ready.is_some()
+        || exit
+            .1
+            .as_ref()
+            .is_some_and(|s| s.phase == crate::loading::Phase::Failed)
+    {
         return;
     }
     let failed = loading.handles.values().any(|h| {
@@ -562,7 +590,11 @@ pub fn tick(
     });
     if failed || loading.started.elapsed().as_secs() > 120 {
         error!("Chunk startup asset/dependency loading failed or timed out");
-        exit.write(AppExit::error());
+        crate::loading::exit_unless_presented(
+            &mut exit.0,
+            exit.1.as_deref_mut(),
+            "World assets could not be prepared.",
+        );
         return;
     }
     if !loading
@@ -582,7 +614,11 @@ pub fn tick(
                 .or_else(|| gltf.scenes.first().cloned())
             else {
                 error!("Chunk GLB has no scene");
-                exit.write(AppExit::error());
+                crate::loading::exit_unless_presented(
+                    &mut exit.0,
+                    exit.1.as_deref_mut(),
+                    "World assets could not be prepared.",
+                );
                 return;
             };
             let local = config

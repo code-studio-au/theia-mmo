@@ -32,6 +32,7 @@ impl Drop for Authority {
     }
 }
 struct Peer {
+    connection_confirmed: bool,
     client: RenetClient,
     transport: NetcodeClientTransport,
     welcome: Option<Welcome>,
@@ -152,6 +153,11 @@ impl Load {
                         peer.sent += 1;
                     }
                 }
+                theia_network::renet_transport::confirm_connection(
+                    &mut peer.client,
+                    &mut peer.connection_confirmed,
+                )
+                .unwrap();
                 if let Err(error) = peer.transport.send_packets(&mut peer.client) {
                     assert!(
                         flood && index == 0 && peer.client.is_disconnected(),
@@ -225,6 +231,7 @@ async fn eight_authenticated_clients_rates_expiry_stall_recovery_and_input_budge
                 std::fs::read(authority.directory.join(format!("client-{id}.token"))).unwrap();
             let token = runtime::read_ticket(&bytes, address).unwrap();
             load.peers.push(Peer {
+                connection_confirmed: false,
                 client: RenetClient::new(connection_config()),
                 transport: secure_client(
                     UdpSocket::bind("127.0.0.1:0").unwrap(),

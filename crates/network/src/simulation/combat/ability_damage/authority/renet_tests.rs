@@ -64,6 +64,11 @@ impl Drop for Stop {
 }
 #[derive(Clone)]
 struct Session {
+    journal: Option<Arc<crate::quest_journal::Profile>>,
+    dialogue: Option<Arc<crate::dialogue::Profile>>,
+    public_avatar: Option<Arc<crate::avatar_life_wire::Profile>>,
+    public_attacks: Option<Arc<crate::creature_attack_wire::Profile>>,
+    public_population: Option<Arc<crate::creature_attack_wire::population::PopulationProfile>>,
     source: [u8; 32],
     identity: [u8; 32],
     physical: Arc<crate::simulation::combat::physical::Profile>,
@@ -88,18 +93,56 @@ fn fixture(rate: TickRate) -> Fixture {
     fixture_mode(rate, false)
 }
 fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
+    fixture_population_mode(rate, membership, false)
+}
+fn fixture_population_mode(rate: TickRate, membership: bool, population: bool) -> Fixture {
+    fixture_population_behavior(rate, membership, population, false)
+}
+fn fixture_population_behavior(
+    rate: TickRate,
+    membership: bool,
+    population: bool,
+    pursuing: bool,
+) -> Fixture {
     let mut creature: serde_json::Value = serde_json::from_slice(include_bytes!(
         "../../../../../../../content/gameplay/development-creature-patrol.json"
     ))
     .unwrap();
     creature["speed_metres_per_second"] = serde_json::json!(0.1);
     creature["aggro"] = serde_json::json!({"perception_metres":1.0,"leash_metres":35.0,"chase_speed":5.0,"return_speed":5.0,"los_grace_ms":2000,"engagement_ms":30000,"reacquire_ms":2000});
-    let creature = serde_json::to_vec(&creature).unwrap();
-    let (mut world, npc) = creatures::tests::fixture_profile_at(rate, [8008., 8002.], &creature);
+    let creature = if population {
+        if pursuing {
+            let mut value: serde_json::Value = serde_json::from_slice(include_bytes!(
+                "../../../../../../../content/gameplay/development-creature-passive.json"
+            ))
+            .unwrap();
+            value["aggro"] = creature["aggro"].clone();
+            serde_json::to_vec(&value).unwrap()
+        } else {
+            include_bytes!(
+                "../../../../../../../content/gameplay/development-creature-passive.json"
+            )
+            .to_vec()
+        }
+    } else {
+        serde_json::to_vec(&creature).unwrap()
+    };
+    let (mut world, npc, placement) = if population {
+        population::prepare(rate, &creature)
+    } else {
+        let (world, npc) = creatures::tests::fixture_profile_at(rate, [8008., 8002.], &creature);
+        (world, npc, [8008., 8002.])
+    };
     world.enable_prediction().unwrap();
     world.enable_classic().unwrap();
     world
-        .enable_status_combat(ABILITIES, 1000, 5000, VITALS, STATUSES)
+        .enable_status_combat(
+            ABILITIES,
+            1000,
+            if population { 30_000 } else { 5000 },
+            VITALS,
+            STATUSES,
+        )
         .unwrap();
     let life = Arc::new(
         crate::player_life_wire::Profile::from_json(
@@ -112,7 +155,15 @@ fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
         )
         .unwrap(),
     );
-    world.enable_player_life(life.clone()).unwrap();
+    if pursuing {
+        world.enable_population_player_life(life.clone()).unwrap();
+    } else if population {
+        world
+            .enable_passive_population_player_life(life.clone())
+            .unwrap();
+    } else {
+        world.enable_player_life(life.clone()).unwrap();
+    }
     world
         .enable_autoattack(
             include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json"),
@@ -171,21 +222,20 @@ fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
         .as_mut()
         .unwrap()
         .random = outcomes::Random::seed_for_test([7; 32]);
-    let source = world
-        .combat
-        .as_ref()
-        .unwrap()
-        .identity(world.patrol_identity.unwrap());
+    let source = population::combat_source(&world);
     let identity = world.identity();
     assert_eq!(identity, crate::classic::profile_identity(source));
     let patch = world
         .procedural
         .as_ref()
         .unwrap()
-        .patch(GlobalPosition::new([8008., 0., 8002.]).unwrap())
+        .patch(GlobalPosition::new([placement[0], 0., placement[1]]).unwrap())
         .unwrap()
         .clone();
-    let mut position = patch.try_spawn(8008., 8002.).unwrap().metres();
+    let mut position = patch
+        .try_spawn(placement[0], placement[1])
+        .unwrap()
+        .metres();
     position[1] += f64::from(crate::world::PAWN_Y);
     let position = GlobalPosition::new(position).unwrap();
     let items = net::inventory::Profile::from_json(ITEMS).unwrap();
@@ -218,6 +268,7 @@ fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
     let (requests, receiver) = mpsc::channel(1);
     let policy = Arc::new(Policy(
         net::inventory::Port {
+            documents: None,
             vendor: None,
             rewards: None,
             opportunities: None,
@@ -229,6 +280,11 @@ fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
         position,
     ));
     let session = Session {
+        journal: None,
+        dialogue: None,
+        public_avatar: None,
+        public_attacks: None,
+        public_population: None,
         source,
         identity,
         physical: world.physical_damage_profile().unwrap().clone(),
@@ -252,6 +308,9 @@ fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
 }
 #[derive(Clone, Default)]
 struct Seen {
+    avatars: Vec<crate::avatar_life_wire::Observation>,
+    public_attacks: Vec<crate::creature_attack_wire::Observation>,
+    public_population: Vec<crate::creature_attack_wire::population::Frame>,
     batches: u64,
     deaths: usize,
     respawns: usize,
@@ -262,6 +321,11 @@ struct Seen {
     life: Vec<crate::simulation::combat::player_life::Observation>,
 }
 struct Peer {
+    _journal: mpsc::Sender<net::quest_journal::Intent>,
+    _talk: mpsc::Sender<net::dialogue::Intent>,
+    avatars: JoinHandle<Vec<crate::avatar_life_wire::Observation>>,
+    public_attacks: JoinHandle<Vec<crate::creature_attack_wire::Observation>>,
+    public_population: JoinHandle<Vec<crate::creature_attack_wire::population::Frame>>,
     state: watch::Receiver<State>,
     seen: watch::Receiver<Seen>,
     melee: watch::Sender<Option<net::MeleeChoice>>,
@@ -275,6 +339,7 @@ struct Peer {
     _choices: watch::Sender<Option<crate::targeting::Choice>>,
     _casts: mpsc::Sender<net::CastChoice>,
     _items: mpsc::Sender<theia_core::inventory::ItemCommand>,
+    _pickups: mpsc::Sender<net::inventory::Pickup>,
     _seen: watch::Sender<Seen>,
 }
 impl Peer {
@@ -285,6 +350,22 @@ impl Peer {
         shutdown: watch::Receiver<bool>,
         blocked: bool,
     ) -> Self {
+        let (avatar_events, mut avatar_rx) = mpsc::channel(net::avatar_life::PRESENTATION_CAPACITY);
+        let avatar_mode = session
+            .public_avatar
+            .clone()
+            .map(|profile| net::avatar_life::Client {
+                profile,
+                events: avatar_events,
+            });
+        let avatars = tokio::spawn(async move {
+            let mut seen = Vec::new();
+            while let Some(view) = avatar_rx.recv().await {
+                assert!(seen.len() < 128);
+                seen.push(view);
+            }
+            seen
+        });
         let (input, inputs) = watch::channel(Intent::default());
         let (ready, readiness) = watch::channel(Some(session.patch.ids.iter().copied().collect()));
         let (commands, command_rx) = mpsc::channel(8);
@@ -292,8 +373,62 @@ impl Peer {
         let (melee, melee_rx) = watch::channel(None);
         let (casts, cast_rx) = mpsc::channel(8);
         let (events, event_rx) = mpsc::channel::<Batch>(if blocked { 1 } else { 16 });
+        let (journal_actions, journal_rx) = mpsc::channel(4);
+        let journal_mode = session
+            .journal
+            .clone()
+            .map(|profile| net::quest_journal::Client {
+                profile,
+                actions: journal_rx,
+            });
+        let (talk_actions, talk_rx) = mpsc::channel(4);
+        let dialogue_mode = session
+            .dialogue
+            .clone()
+            .map(|profile| net::dialogue::Client {
+                profile,
+                actions: talk_rx,
+            });
         let (item_commands, item_rx) = mpsc::channel(1);
+        let (pickups, pickup_rx) = mpsc::channel(1);
         let (life_events, mut life_rx) = mpsc::channel(16);
+        let (public_events, mut public_rx) =
+            mpsc::channel(net::creature_attacks::PRESENTATION_CAPACITY);
+        let public_mode = session.public_attacks.clone().map(|profile| {
+            net::creature_attacks::Mode::Singleton(net::creature_attacks::Client {
+                profile,
+                events: public_events,
+            })
+        });
+        let (population_events, mut population_rx) =
+            mpsc::channel(net::creature_attacks::population::PRESENTATION_CAPACITY);
+        let public_mode = if let Some(profile) = &session.public_population {
+            assert!(public_mode.is_none());
+            Some(net::creature_attacks::Mode::Population(
+                net::creature_attacks::population::Client {
+                    profile: profile.clone(),
+                    events: population_events,
+                },
+            ))
+        } else {
+            public_mode
+        };
+        let public_population = tokio::spawn(async move {
+            let mut observed = Vec::new();
+            while let Some(value) = population_rx.recv().await {
+                assert!(observed.len() < 128);
+                observed.push(value);
+            }
+            observed
+        });
+        let public_attacks = tokio::spawn(async move {
+            let mut observed = Vec::new();
+            while let Some(value) = public_rx.recv().await {
+                assert!(observed.len() < 128);
+                observed.push(value);
+            }
+            observed
+        });
         let (publish, state) = watch::channel(State::default());
         let (seen_tx, seen) = watch::channel(Seen::default());
         let life = tokio::spawn(async move {
@@ -360,8 +495,13 @@ impl Peer {
         });
         let client = tokio::spawn(async move {
             let result=net::run_client_gameplay(address,&token,inputs,publish.clone(),shutdown,session.identity,net::GameplayClient {
-    classic_source:Some(session.source),dodge:None,player_life:Some(net::player_life::Client{profile:session.life,membership:session.membership,events:life_events}),lifecycle:None,dialogue:None,ready:readiness,commands:Some(command_rx),choices:Some(choice_rx),
-    combat:Some(net::CombatActions{melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(session.physical),white:Some(session.white),ability:Some(session.ability),choices:melee_rx}),catalog:session.abilities,casts:cast_rx,events}),quest:None,progression:session.progression,inventory:Some(net::inventory::Client{profile:session.items,commands:item_rx}),statuses:Some(Arc::new(theia_core::statuses::Catalog::from_json(STATUSES).unwrap())),
+                party: None,
+                chat: None,
+                avatar_life: avatar_mode,
+                public_attacks: public_mode,
+    journal: journal_mode,
+    classic_source:Some(session.source),dodge:None,player_life:Some(net::player_life::Client{profile:session.life,membership:session.membership,events:life_events}),lifecycle:None,dialogue:dialogue_mode,ready:readiness,commands:Some(command_rx),choices:Some(choice_rx),
+    combat:Some(net::CombatActions{melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(session.physical),white:Some(session.white),ability:Some(session.ability),choices:melee_rx}),catalog:session.abilities,casts:cast_rx,events}),quest:None,progression:session.progression,inventory:Some(net::inventory::Client{pickups:Some(pickup_rx),profile:session.items,commands:item_rx}),statuses:Some(Arc::new(theia_core::statuses::Catalog::from_json(STATUSES).unwrap())),
    }).await;
             if let Err(error) = &result {
                 publish.send_modify(|s| s.error = Some(error.to_string()));
@@ -369,6 +509,11 @@ impl Peer {
             result
         });
         Self {
+            _journal: journal_actions,
+            _talk: talk_actions,
+            avatars,
+            public_attacks,
+            public_population,
             state,
             seen,
             melee,
@@ -382,11 +527,12 @@ impl Peer {
             _choices: choices,
             _casts: casts,
             _items: item_commands,
+            _pickups: pickups,
             _seen: seen_tx,
         }
     }
     async fn until(&mut self, predicate: impl Fn(&State, &Seen) -> bool) -> State {
-        tokio::time::timeout(Duration::from_secs(12),async {loop {let raw=self.state.borrow().clone();let seen=self.seen.borrow().clone();if predicate(&raw,&seen){return raw;}assert!(raw.error.is_none(),"Ability UDP client failed: {:?}",raw.error);tokio::select!{value=self.state.changed()=>value.expect("Ability client closed"),value=self.seen.changed()=>value.expect("Ability capture closed")}}}).await.expect("Ability UDP acceptance timed out")
+        tokio::time::timeout(Duration::from_secs(12),async {loop {let raw=self.state.borrow().clone();let seen=self.seen.borrow().clone();if predicate(&raw,&seen){return raw;}assert!(raw.error.is_none(),"Ability UDP client failed: {:?}",raw.error);tokio::select!{value=self.state.changed()=>value.expect("Ability client closed"),value=self.seen.changed()=>value.expect("Ability capture closed")}}}).await.unwrap_or_else(|_| panic!("Ability UDP acceptance timed out: private={:?} facts={} ordinary={}", self.state.borrow().player_life.as_ref().and_then(|p|p.current()), self.seen.borrow().facts.len(), self.seen.borrow().ordinary.len()))
     }
     fn attack(&self, target: Option<EntityKey>) {
         self.melee.send_replace(Some(net::MeleeChoice {
@@ -416,6 +562,9 @@ impl Peer {
             assert_eq!(self.blocked.unwrap().len(), 1);
             Seen::default()
         };
+        seen.avatars = self.avatars.await.unwrap();
+        seen.public_attacks = self.public_attacks.await.unwrap();
+        seen.public_population = self.public_population.await.unwrap();
         seen.life = life;
         seen
     }
@@ -739,7 +888,7 @@ async fn unbound_ability_ordinary_or_changed_catalogue_is_refused_before_network
         } else {
             f.session.abilities.clone()
         };
-        let error=net::run_client_gameplay("127.0.0.1:1".parse().unwrap(),&[],input,state,shutdown,f.session.identity,net::GameplayClient{classic_source:Some(f.session.source),dodge:None,player_life:None,lifecycle:None,dialogue:None,ready,commands:Some(commands),choices:None,combat:Some(net::CombatActions{catalog:catalogue,casts,events,melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(f.session.physical.clone()),white,ability:Some(f.session.ability.clone()),choices})}),quest:None,progression:None,inventory:None,statuses:None}).await.unwrap_err();
+        let error=net::run_client_gameplay("127.0.0.1:1".parse().unwrap(),&[],input,state,shutdown,f.session.identity,net::GameplayClient{party:None,chat:None,avatar_life:None,public_attacks:None,journal:None,classic_source:Some(f.session.source),dodge:None,player_life:None,lifecycle:None,dialogue:None,ready,commands:Some(commands),choices:None,combat:Some(net::CombatActions{catalog:catalogue,casts,events,melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(f.session.physical.clone()),white,ability:Some(f.session.ability.clone()),choices})}),quest:None,progression:None,inventory:None,statuses:None}).await.unwrap_err();
         assert!(
             error.to_string().contains("Unbound ability-damage"),
             "{error}"
@@ -752,3 +901,7 @@ mod membership;
 mod credit;
 
 mod reset;
+
+mod threat;
+
+mod population;

@@ -10,11 +10,23 @@ use theia_core::{
 };
 pub const REQUEST_TAG: &[u8; 4] = b"IR01";
 pub const STATE_TAG: &[u8; 4] = b"IS01";
+pub const DOCUMENT_STATE_TAG: &[u8; 4] = b"DS01";
 pub const REQUEST_BYTES: usize = 43;
 pub const STATE_BYTES: usize = 117;
 pub const ITEM_REQUEST_TAG: &[u8; 4] = b"IR02";
 pub const ITEM_STATE_TAG: &[u8; 4] = b"IS02";
 pub const ITEM_STATE_BYTES: usize = STATE_BYTES + 3;
+pub const COIN_STATE_TAG: &[u8; 4] = b"IS03";
+pub const COIN_STATE_BYTES: usize = ITEM_STATE_BYTES + 8;
+fn state_format(catalog: &Catalog) -> (&'static [u8; 4], usize) {
+    if catalog.currency_enabled() {
+        (COIN_STATE_TAG, COIN_STATE_BYTES)
+    } else if catalog.equipment_enabled() {
+        (ITEM_STATE_TAG, ITEM_STATE_BYTES)
+    } else {
+        (STATE_TAG, STATE_BYTES)
+    }
+}
 fn word(bytes: &[u8], at: usize) -> u64 {
     u64::from_le_bytes(bytes[at..at + 8].try_into().unwrap())
 }
@@ -33,6 +45,7 @@ pub struct Request {
 impl Request {
     fn valid(self) -> bool {
         let (from, to, amount) = match self.command.operation {
+            Operation::Destroy { .. } => return false,
             Operation::Move { from, to } => (from, to, 0),
             Operation::Split { from, to, amount } => (from, to, amount),
         };
@@ -52,6 +65,7 @@ impl Request {
         bytes.extend(self.sequence.to_le_bytes());
         bytes.extend(self.command.expected_revision.to_le_bytes());
         match self.command.operation {
+            Operation::Destroy { .. } => return Err("Destruction requires item profile 2".into()),
             Operation::Move { from, to } => {
                 bytes.extend([0, from, to]);
                 bytes.extend(0_u32.to_le_bytes());
@@ -99,6 +113,28 @@ pub struct ItemRequest {
 }
 impl ItemRequest {
     pub fn encode(self) -> Result<Vec<u8>> {
+        if let ItemCommand::Backpack(Command {
+            expected_revision,
+            operation: Operation::Destroy { from, amount },
+        }) = self.command
+        {
+            if self.sequence == 0
+                || expected_revision > MAX_REVISION
+                || usize::from(from) >= SLOT_COUNT
+                || amount == 0
+                || amount > MAX_STACK
+            {
+                return Err("Invalid item destruction request".into());
+            }
+            let mut bytes = ITEM_REQUEST_TAG.to_vec();
+            bytes.extend(self.actor.epoch.value().to_le_bytes());
+            bytes.extend(self.actor.entity.value().to_le_bytes());
+            bytes.extend(self.sequence.to_le_bytes());
+            bytes.extend(expected_revision.to_le_bytes());
+            bytes.extend([4, from, 0]);
+            bytes.extend(amount.to_le_bytes());
+            return Ok(bytes);
+        }
         if let ItemCommand::Backpack(command) = self.command {
             let mut bytes = Request {
                 actor: self.actor,
@@ -135,6 +171,25 @@ impl ItemRequest {
     pub fn decode(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != REQUEST_BYTES || !bytes.starts_with(ITEM_REQUEST_TAG) {
             return Err("Invalid equipment-capable request frame".into());
+        }
+        if bytes[36] == 4 {
+            if bytes[38] != 0 {
+                return Err("Noncanonical destruction destination".into());
+            }
+            let value = Self {
+                actor: key(bytes)?,
+                sequence: word(bytes, 20),
+                command: Command {
+                    expected_revision: word(bytes, 28),
+                    operation: Operation::Destroy {
+                        from: bytes[37],
+                        amount: u32::from_le_bytes(bytes[39..43].try_into().unwrap()),
+                    },
+                }
+                .into(),
+            };
+            value.encode()?;
+            return Ok(value);
         }
         if bytes[36] <= 1 {
             let mut legacy = bytes.to_vec();
@@ -224,12 +279,38 @@ pub struct State {
 }
 impl State {
     pub fn encode(&self, catalog: &Catalog, expected_hash: [u8; 32]) -> Result<Vec<u8>> {
+        self.encode_inner(catalog, expected_hash, false)
+    }
+    /// Explicit document mode permits a read receipt without a bag mutation.
+    /// Legacy encoders/decoders retain their positive-success revision rule.
+    pub fn encode_with_documents(&self, documents: &crate::documents::Profile) -> Result<Vec<u8>> {
+        let mut bytes = self.encode_inner(
+            documents.catalog().inventory(),
+            documents.inventory_hash(),
+            true,
+        )?;
+        bytes[..4].copy_from_slice(DOCUMENT_STATE_TAG);
+        bytes.extend(documents.hash());
+        Ok(bytes)
+    }
+    fn encode_inner(
+        &self,
+        catalog: &Catalog,
+        expected_hash: [u8; 32],
+        documents: bool,
+    ) -> Result<Vec<u8>> {
         if catalog.equipment_enabled() != self.bag.equipment_enabled()
+            || catalog.currency_enabled() != self.bag.copper().is_some()
+            || self
+                .bag
+                .copper()
+                .is_some_and(|c| c > theia_core::inventory::MAX_COPPER)
             || expected_hash == [0; 32]
             || self.catalog_hash != expected_hash
             || self.bag.catalog() != catalog.id()
             || self.bag.revision() > MAX_REVISION
-            || (self.bag.revision() == 0
+            || (!documents
+                && self.bag.revision() == 0
                 && self
                     .reply
                     .is_some_and(|r| matches!(r.outcome, Outcome::Applied | Outcome::Replayed)))
@@ -244,12 +325,7 @@ impl State {
         {
             return Err("Invalid equipped item".into());
         }
-        let mut bytes = if catalog.equipment_enabled() {
-            ITEM_STATE_TAG
-        } else {
-            STATE_TAG
-        }
-        .to_vec();
+        let mut bytes = state_format(catalog).0.to_vec();
         bytes.extend(self.actor.epoch.value().to_le_bytes());
         bytes.extend(self.actor.entity.value().to_le_bytes());
         bytes.extend(self.catalog_hash);
@@ -299,14 +375,37 @@ impl State {
                 bytes.extend(0_u16.to_le_bytes());
             }
         }
+        if let Some(copper) = self.bag.copper() {
+            bytes.extend(copper.to_le_bytes());
+        }
         Ok(bytes)
     }
     pub fn decode(bytes: &[u8], catalog: &Catalog, expected_hash: [u8; 32]) -> Result<Self> {
-        let (tag, size) = if catalog.equipment_enabled() {
-            (ITEM_STATE_TAG, ITEM_STATE_BYTES)
-        } else {
-            (STATE_TAG, STATE_BYTES)
-        };
+        Self::decode_inner(bytes, catalog, expected_hash, false)
+    }
+    pub fn decode_with_documents(
+        bytes: &[u8],
+        documents: &crate::documents::Profile,
+    ) -> Result<Self> {
+        let catalog = documents.catalog().inventory();
+        let size = state_format(catalog).1;
+        if bytes.len() != size + 32
+            || !bytes.starts_with(DOCUMENT_STATE_TAG)
+            || bytes[size..] != documents.hash()
+        {
+            return Err("Invalid document-bound inventory state".into());
+        }
+        let mut ordinary = bytes[..size].to_vec();
+        ordinary[..4].copy_from_slice(state_format(catalog).0);
+        Self::decode_inner(&ordinary, catalog, documents.inventory_hash(), true)
+    }
+    fn decode_inner(
+        bytes: &[u8],
+        catalog: &Catalog,
+        expected_hash: [u8; 32],
+        documents: bool,
+    ) -> Result<Self> {
+        let (tag, size) = state_format(catalog);
         if bytes.len() != size || !bytes.starts_with(tag) {
             return Err("Invalid inventory state frame".into());
         }
@@ -327,7 +426,12 @@ impl State {
         let definitions: Vec<_> = catalog.definitions().collect();
         let mut slots = std::array::from_fn(|_| None);
         let mut main_hand = None;
-        for (i, data) in bytes[69..].as_chunks::<3>().0.iter().enumerate() {
+        let slots_end = if catalog.equipment_enabled() {
+            ITEM_STATE_BYTES
+        } else {
+            STATE_BYTES
+        };
+        for (i, data) in bytes[69..slots_end].as_chunks::<3>().0.iter().enumerate() {
             let ordinal = data[0];
             let count = u32::from(u16::from_le_bytes([data[1], data[2]]));
             if ordinal == 255 && count == 0 {
@@ -346,9 +450,13 @@ impl State {
                 main_hand = stack;
             }
         }
-        let bag = Bag::from_parts(catalog, word(bytes, 52), slots, main_hand)
+        let copper = catalog
+            .currency_enabled()
+            .then(|| word(bytes, ITEM_STATE_BYTES));
+        let bag = Bag::from_parts_with_copper(catalog, word(bytes, 52), slots, main_hand, copper)
             .map_err(|_| "Invalid inventory state revision/contents")?;
-        if bag.revision() == 0
+        if !documents
+            && bag.revision() == 0
             && reply.is_some_and(|r| matches!(r.outcome, Outcome::Applied | Outcome::Replayed))
         {
             return Err("Inventory success requires a committed revision".into());

@@ -1,4 +1,5 @@
 //! Versioned bounded world packages. No renderer or asset-server dependency.
+use crate::particle_content::{Catalog, MAX_CATALOG_BYTES};
 use crate::shared_images::{self, SharedImage};
 use crate::{Result, terrain::sha256};
 use ring::digest::{Context, SHA256};
@@ -25,6 +26,20 @@ struct Document {
     visual_sha256: [u8; 32],
     #[serde(default)]
     shared_images: Vec<SharedImage>,
+    #[serde(default, deserialize_with = "present_u64")]
+    particle_bytes: Option<u64>,
+    #[serde(default, deserialize_with = "present_sha256")]
+    particle_sha256: Option<[u8; 32]>,
+}
+fn present_u64<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<u64>, D::Error> {
+    Ok(Some(u64::deserialize(deserializer)?))
+}
+fn present_sha256<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<[u8; 32]>, D::Error> {
+    Ok(Some(<[u8; 32]>::deserialize(deserializer)?))
 }
 /// Constructed only after schema, logical identity and resource budgets validate.
 pub struct Manifest {
@@ -38,9 +53,16 @@ impl Manifest {
         }
         let mut document: Document = serde_json::from_slice(bytes)?;
         let id = ContentId::new(&document.content_id).ok_or("Invalid stable content ID")?;
-        if !matches!(document.schema, 1..=3)
+        if !matches!(document.schema, 1..=5)
             || (document.schema == 1 && (bytes.len() > 8192 || !document.shared_images.is_empty()))
-            || (document.schema == 3 && document.shared_images.len() < 2)
+            || (matches!(document.schema, 3 | 5) && document.shared_images.len() < 2)
+            || (!matches!(document.schema, 4 | 5)
+                && (document.particle_bytes.is_some() || document.particle_sha256.is_some()))
+            || (matches!(document.schema, 4 | 5)
+                && (!document
+                    .particle_bytes
+                    .is_some_and(|n| (1..=MAX_CATALOG_BYTES).contains(&n))
+                    || document.particle_sha256.is_none()))
             || document.revision == 0
             || !matches!(document.collision_schema, 1..=4)
             || !(1..=MAX_COLLISION_BYTES).contains(&document.collision_bytes)
@@ -68,7 +90,11 @@ impl Manifest {
         &self.id
     }
     pub fn requires_material_profiles(&self) -> bool {
-        self.document.schema == 3
+        matches!(self.document.schema, 3 | 5)
+    }
+    /// Whether this manifest binds a particle catalog.
+    pub fn has_particle_catalog(&self) -> bool {
+        matches!(self.document.schema, 4 | 5)
     }
     pub fn revision(&self) -> u32 {
         self.document.revision
@@ -84,8 +110,12 @@ impl Manifest {
                 DOMAIN
             } else if d.schema == 2 {
                 b"theia-world-package-v2\0"
-            } else {
+            } else if d.schema == 3 {
                 b"theia-world-package-v3\0"
+            } else if d.schema == 4 {
+                b"theia-world-package-v4\0"
+            } else {
+                b"theia-world-package-v5\0"
             },
             &(id.len() as u16).to_le_bytes(),
             id,
@@ -109,7 +139,25 @@ impl Manifest {
                 }
             }
         }
+        if matches!(d.schema, 4 | 5) {
+            context.update(
+                &d.particle_bytes
+                    .expect("validated particle bytes")
+                    .to_le_bytes(),
+            );
+            context.update(&d.particle_sha256.expect("validated particle hash"));
+        }
         context.finish().as_ref().try_into().unwrap()
+    }
+    /// Checks the manifest binding and decodes the bounded particle catalog.
+    pub fn verify_particle_catalog(&self, bytes: &[u8]) -> Result<Catalog> {
+        if !self.has_particle_catalog()
+            || self.document.particle_bytes != Some(bytes.len() as u64)
+            || self.document.particle_sha256 != Some(sha256(bytes))
+        {
+            return Err("Particle catalog does not match world manifest".into());
+        }
+        Catalog::decode(bytes)
     }
     pub fn verify_collision(&self, bytes: &[u8]) -> Result<()> {
         if bytes.len() as u64 != self.document.collision_bytes
@@ -129,6 +177,43 @@ impl Manifest {
     pub fn verify_visual(&self, path: &Path) -> Result<()> {
         self.verify_visual_with_root(path, None)
     }
+    /// Verify a particle-bearing visual only for a caller that is preparing its exact
+    /// manifest-bound particle catalog. The caller still must admit and render
+    /// those particles; legacy `verify_visual` continues to reject particle-bearing packages.
+    pub fn verify_visual_for_particle_catalog(&self, path: &Path, catalog: &[u8]) -> Result<()> {
+        self.verify_particle_catalog(catalog)?;
+        verify_visual(
+            path,
+            self.document.visual_sha256,
+            Some(self.document.visual_bytes),
+        )?;
+        shared_images::verify(
+            path,
+            None,
+            &self.document.shared_images,
+            self.document.schema,
+        )
+    }
+    /// As above, with an explicit shared-image asset root for a chunk package.
+    pub fn verify_visual_in_for_particle_catalog(
+        &self,
+        path: &Path,
+        asset_root: &Path,
+        catalog: &[u8],
+    ) -> Result<()> {
+        self.verify_particle_catalog(catalog)?;
+        verify_visual(
+            path,
+            self.document.visual_sha256,
+            Some(self.document.visual_bytes),
+        )?;
+        shared_images::verify(
+            path,
+            Some(asset_root),
+            &self.document.shared_images,
+            self.document.schema,
+        )
+    }
     pub fn verify_visual_in(&self, path: &Path, asset_root: &Path) -> Result<()> {
         self.verify_visual_with_root(path, Some(asset_root))
     }
@@ -136,6 +221,11 @@ impl Manifest {
         &self.document.shared_images
     }
     fn verify_visual_with_root(&self, path: &Path, root: Option<&Path>) -> Result<()> {
+        if self.has_particle_catalog() {
+            return Err(
+                "Particle-bearing world packages are not yet supported by the client".into(),
+            );
+        }
         verify_visual(
             path,
             self.document.visual_sha256,

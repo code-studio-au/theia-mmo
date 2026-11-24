@@ -2,6 +2,7 @@
 //! gentle-terrain triangulation fixture; not native or authenticated peers.
 use super::*;
 use crate::{
+    navigation::worker::Worker,
     simulation::{World, creatures},
     wire::Intent,
 };
@@ -188,17 +189,9 @@ fn unavailable_navigation_cancels_chase_without_a_direct_line_fallback() {
     let (mut world, _) = fixture(TickRate::Hz30);
     let patch = world.patrol.as_ref().unwrap().patch.clone();
     let query = creatures::tests::query_fixture(&world, &patch, 80.);
-    let runtime = world
-        .combat
-        .as_mut()
-        .unwrap()
-        .pve
-        .as_mut()
-        .unwrap()
-        .pursuit
-        .as_mut()
-        .unwrap();
-    runtime.worker = Worker::spawn(query, runtime.worker.navigation()).unwrap();
+    let combat = world.combat.as_mut().unwrap();
+    let identity = combat.pursuit_navigation.as_ref().unwrap().navigation();
+    combat.pursuit_navigation = Some(Scheduler::new(Worker::spawn(query, identity).unwrap()));
     let actor = join(&mut world, 8018.);
     let anchor = world.patrol_snapshot().unwrap().position;
     for _ in 0..60 {
@@ -247,17 +240,15 @@ fn creature_death_respawn_and_explicit_despawn_retire_old_path_identity() {
     let fresh = world.patrol.as_ref().unwrap().key;
     assert_ne!(fresh, npc);
     assert_eq!(world.creature_pursuit_metrics().unwrap().acquisitions, 2);
-    let runtime = world
+    let navigation = world
         .combat
         .as_ref()
         .unwrap()
-        .pve
-        .as_ref()
-        .unwrap()
-        .pursuit
+        .pursuit_navigation
         .as_ref()
         .unwrap();
-    if let Some(request) = runtime.worker.pending() {
+    assert!(navigation.pending(npc).is_none());
+    if let Some(request) = navigation.pending(fresh) {
         assert_eq!(request.tag.creature, fresh);
     }
     assert!(world.remove_development_target(fresh));
@@ -379,5 +370,326 @@ fn ongoing_melee_does_not_reset_at_the_original_thirty_second_deadline() {
         }
         assert_eq!(world.creature_pursuit_metrics().unwrap().acquisitions, 1);
         assert!(world.player_life_metrics().unwrap().strikes > 0);
+    }
+}
+
+// Authority-only transfer helpers on real World/worker state. These fixtures
+// exercise preparation independently of threat scoring and network admission.
+fn transfer_fixture(rate: TickRate) -> (World, EntityKey, u64, u64) {
+    let (mut world, npc) = fixture(rate);
+    let a = join(&mut world, 8006.);
+    let b = join(&mut world, 8018.);
+    for _ in 0..rate.hz() * 3 {
+        step(&mut world, Some((a, [0, 0])));
+        if world
+            .combat
+            .as_ref()
+            .unwrap()
+            .pve
+            .as_ref()
+            .unwrap()
+            .policy
+            .windup_until()
+            .is_some()
+        {
+            assert_eq!(
+                world
+                    .creature_pursuit_directive()
+                    .unwrap()
+                    .target
+                    .unwrap()
+                    .actor,
+                world.entity_key(a).unwrap()
+            );
+            return (world, npc, a, b);
+        }
+    }
+    panic!("Transfer fixture did not reach a live windup")
+}
+#[test]
+fn prepared_transfer_cancels_old_windup_and_invalidates_every_old_route_handle_all_rates() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, npc, a, b) = transfer_fixture(rate);
+        // Advance only the real movement clock: the transfer must precede this
+        // frame's pursuit/retaliation evaluation, as the World adapter does.
+        world.step_movement();
+        let mut combat = world.combat.take().unwrap();
+        let old_life = combat.actors[&a].life.as_ref().unwrap().state.key();
+        let new_life = combat.actors[&b].life.as_ref().unwrap().state.key();
+        let target = combat.threat_candidate(&world, new_life).unwrap();
+        let old = combat
+            .pve
+            .as_ref()
+            .unwrap()
+            .pursuit
+            .as_ref()
+            .unwrap()
+            .directive();
+        let position = combat
+            .creatures
+            .iter()
+            .find(|c| c.key == npc)
+            .unwrap()
+            .position;
+        let runtime = combat.pve.as_mut().unwrap().pursuit.as_mut().unwrap();
+        let revision = runtime.revision;
+        let old_tag = Tag {
+            creature: npc,
+            target: Some(old_life),
+            revision,
+        };
+        let old_request = Request {
+            tag: old_tag,
+            start: position,
+            end: target.position,
+            submitted: world.tick,
+            expires: world.tick + 10,
+        };
+        runtime.tag = Some(old_tag);
+        runtime.requested_goal = Some(target.position);
+        runtime.path = Some(Path {
+            points: vec![position, target.position],
+            index: 1,
+            expires: world.tick + 10,
+            mode: old.mode,
+            target: old.target,
+        });
+        runtime.reply = Some(Reply {
+            navigation: runtime.navigation,
+            request: old_request,
+            route: Ok(vec![position, target.position]),
+        });
+        let plan = combat.prepare_threat_transfer(&world, target).unwrap();
+        assert_eq!(
+            combat
+                .pve
+                .as_ref()
+                .unwrap()
+                .pursuit
+                .as_ref()
+                .unwrap()
+                .revision,
+            revision,
+            "Preparation changed live route state"
+        );
+        assert!(combat.pve.as_ref().unwrap().policy.windup_until().is_some());
+        combat.commit_threat_transfer(plan);
+        let pve = combat.pve.as_mut().unwrap();
+        assert_eq!(pve.policy.target(), Some(new_life));
+        assert!(pve.policy.windup_until().is_none());
+        assert_eq!(pve.metrics.cancelled, 1);
+        let runtime = pve.pursuit.as_mut().unwrap();
+        assert_eq!(runtime.directive().anchor, old.anchor);
+        assert_eq!(runtime.directive().target, Some(new_life));
+        assert_eq!(runtime.revision, revision + 1);
+        assert!(
+            runtime.path.is_none()
+                && runtime.reply.is_none()
+                && runtime.tag.is_none()
+                && runtime.requested_goal.is_none()
+        );
+        // Model a late old reply after commit, using an otherwise valid live
+        // navigation incarnation/window. It must never become the new path.
+        runtime.reply = Some(Reply {
+            navigation: runtime.navigation,
+            request: old_request,
+            route: Ok(vec![position, target.position]),
+        });
+        let rejected = runtime.metrics.rejected;
+        let motion = runtime
+            .advance(
+                world.tick,
+                npc,
+                combat.pursuit_navigation.as_mut().unwrap(),
+                policy::Observation {
+                    position,
+                    alive: true,
+                    candidates: &[],
+                    target: Some(target),
+                    provoked: Some(target),
+                    blocked: false,
+                },
+            )
+            .unwrap();
+        assert_eq!(motion.mode, policy::Mode::Chase);
+        assert_eq!(runtime.metrics.rejected, rejected + 1);
+        assert!(runtime.path.is_none());
+        world.combat = Some(combat);
+    }
+}
+#[test]
+fn failed_transfer_keeps_old_pursuit_windup_and_route_revision_unchanged() {
+    let (mut world, _, _, b) = transfer_fixture(TickRate::Hz30);
+    world.step_movement();
+    let mut combat = world.combat.take().unwrap();
+    let life = combat.actors[&b].life.as_ref().unwrap().state.key();
+    let mut target = combat.threat_candidate(&world, life).unwrap();
+    let before = combat
+        .pve
+        .as_ref()
+        .unwrap()
+        .pursuit
+        .as_ref()
+        .unwrap()
+        .directive();
+    let windup = combat.pve.as_ref().unwrap().policy.windup_until();
+    let victim = combat.pve.as_ref().unwrap().policy.target();
+    target.visible = false;
+    assert!(combat.prepare_threat_transfer(&world, target).is_err());
+    target.visible = true;
+    combat
+        .pve
+        .as_mut()
+        .unwrap()
+        .pursuit
+        .as_mut()
+        .unwrap()
+        .revision = u64::MAX;
+    assert!(combat.prepare_threat_transfer(&world, target).is_err());
+    assert_eq!(
+        combat
+            .pve
+            .as_ref()
+            .unwrap()
+            .pursuit
+            .as_ref()
+            .unwrap()
+            .directive(),
+        before
+    );
+    assert_eq!(
+        combat
+            .pve
+            .as_ref()
+            .unwrap()
+            .pursuit
+            .as_ref()
+            .unwrap()
+            .revision,
+        u64::MAX
+    );
+    assert_eq!(combat.pve.as_ref().unwrap().policy.windup_until(), windup);
+    assert_eq!(combat.pve.as_ref().unwrap().policy.target(), victim);
+    world.combat = Some(combat);
+}
+
+#[test]
+fn independent_pursuit_controllers_share_one_worker_without_crossing_targets() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, npc) = fixture(rate);
+        let a = join(&mut world, 8018.);
+        let b = join(&mut world, 8020.);
+        let mut combat = world.combat.take().unwrap();
+        let mut first = combat.pve.as_mut().unwrap().pursuit.take().unwrap();
+        let second_key = EntityKey {
+            entity: theia_core::identity::EntityId::new(100).unwrap(),
+            ..npc
+        };
+        let mut second = Runtime::new(first.settings, second_key, rate, first.navigation).unwrap();
+        let mut scheduler = combat.pursuit_navigation.take().unwrap();
+        let position = GlobalPosition::new(world.patrol_snapshot().unwrap().position).unwrap();
+        let targets = [a, b].map(|actor| policy::Target {
+            key: combat.actors[&actor].life.as_ref().unwrap().state.key(),
+            position: world.global_position(actor).unwrap(),
+            alive: true,
+            visible: true,
+            in_melee: false,
+        });
+        // Controller/transport contract only. These observations do not install
+        // a second world creature or qualify collision movement for populations.
+        for now in 1..=u64::from(rate.hz()) {
+            scheduler.pump(now).unwrap();
+            for (runtime, key, target) in [
+                (&mut first, npc, targets[0]),
+                (&mut second, second_key, targets[1]),
+            ] {
+                if let Some(reply) = scheduler.take_reply(key, now) {
+                    assert_eq!(reply.request.tag.target, Some(target.key));
+                    runtime.reply = Some(reply);
+                }
+                runtime
+                    .advance(
+                        now,
+                        key,
+                        &mut scheduler,
+                        policy::Observation {
+                            position,
+                            alive: true,
+                            candidates: &[],
+                            target: Some(target),
+                            provoked: Some(target),
+                            blocked: false,
+                        },
+                    )
+                    .unwrap();
+                assert_eq!(runtime.directive().target, Some(target.key));
+                if let Some(path) = &runtime.path {
+                    assert_eq!(path.target, Some(target.key));
+                    assert!(distance(*path.points.last().unwrap(), target.position) < 0.1);
+                }
+            }
+            if first.metrics.published > 0 && second.metrics.published > 0 {
+                break;
+            }
+            thread::sleep(Duration::from_millis(2));
+        }
+        assert!(first.metrics.published > 0 && second.metrics.published > 0);
+        assert_eq!(scheduler.registered(), 2);
+    }
+}
+
+#[test]
+fn threat_transfer_follows_exact_creature_authority_when_it_moves_into_pool() {
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut world, npc, a, b) = transfer_fixture(rate);
+        world.step_movement();
+        let mut combat = world.combat.take().unwrap();
+        let original = combat.pve.take().unwrap();
+        let runtime = original.pursuit.as_ref().unwrap();
+        let other_key = EntityKey {
+            entity: theia_core::identity::EntityId::new(100).unwrap(),
+            ..npc
+        };
+        // Authority routing fixture only: this extra idle state is not a
+        // second admitted world creature or multiplayer/capacity evidence.
+        let idle = super::super::Authority {
+            npc: other_key,
+            profile: original.profile.clone(),
+            policy: theia_core::retaliation::State::new(
+                original.profile.retaliation().clone(),
+                rate,
+            ),
+            error: None,
+            metrics: super::super::Metrics::default(),
+            pursuit: Some(
+                Runtime::new(runtime.settings, other_key, rate, runtime.navigation).unwrap(),
+            ),
+        };
+        combat.retaliators = vec![idle, original];
+        let old = combat.actors[&a].life.as_ref().unwrap().state.key();
+        let next = combat.actors[&b].life.as_ref().unwrap().state.key();
+        assert_eq!(combat.threat_policy_target_for(npc), Some(old));
+        let candidate = combat.threat_candidate_for(&world, npc, next).unwrap();
+        let plan = combat
+            .prepare_threat_transfer_for(&world, npc, candidate)
+            .unwrap();
+        assert_eq!(combat.threat_current_victim_for(npc), Some(old));
+        combat.commit_threat_transfer(plan);
+        assert_eq!(combat.threat_policy_target_for(npc), Some(next));
+        assert_eq!(combat.threat_current_victim_for(npc), Some(next));
+        assert!(combat.retaliators[1].policy.windup_until().is_none());
+        assert_eq!(combat.threat_current_victim_for(other_key), None);
+        assert_eq!(combat.retaliators[0].pursuit.as_ref().unwrap().revision, 1);
+        assert!(
+            combat
+                .prepare_threat_transfer_for(&world, other_key, candidate)
+                .is_err()
+        );
+        assert!(
+            combat
+                .threat_candidate_for(&world, other_key, next)
+                .is_none()
+        );
+        assert!(combat.pve.is_none());
     }
 }

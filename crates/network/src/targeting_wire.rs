@@ -1,4 +1,4 @@
-//! Opt-in targeting profile 1. Bounded reliable messages; no client coordinates.
+//! Opt-in targeting profile 2. Bounded reliable messages; no client coordinates.
 use crate::{
     Result,
     targeting::{MAX_TARGETS, Snapshot, Target},
@@ -8,9 +8,9 @@ use theia_core::{
     identity::{EntityId, EntityKey, WorldEpoch},
 };
 pub const SELECTION_TAG: &[u8; 4] = b"TS01";
-pub const STATE_TAG: &[u8; 4] = b"TG01";
+pub const STATE_TAG: &[u8; 4] = b"TG02";
 pub const SELECTION_BYTES: usize = 28;
-const HEADER_BYTES: usize = 38;
+const HEADER_BYTES: usize = 46;
 const TARGET_BYTES: usize = 32;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Selection {
@@ -54,7 +54,10 @@ pub struct State {
     /// Processed request, including a rejected request. Not a successful cast ack.
     pub request_sequence: u64,
     pub accepted: bool,
+    /// Hostile selection, always a member of `targets`.
     pub selected: Option<EntityId>,
+    /// Friendly party selection; never carries position or enters `targets`.
+    pub selected_member: Option<EntityId>,
     pub targets: Vec<Target>,
 }
 impl State {
@@ -71,6 +74,7 @@ impl State {
             request_sequence,
             accepted,
             selected: snapshot.selected.map(|k| k.entity),
+            selected_member: snapshot.selected_member.map(|k| k.entity),
             targets: snapshot.targets,
         }
     }
@@ -80,11 +84,16 @@ impl State {
             && self.request_sequence == other.request_sequence
             && self.accepted == other.accepted
             && self.selected == other.selected
+            && self.selected_member == other.selected_member
             && self.targets == other.targets
     }
     fn valid(&self) -> bool {
         WorldEpoch::new(self.epoch).is_some()
             && !(self.request_sequence == 0 && self.accepted)
+            && !(self.selected.is_some() && self.selected_member.is_some())
+            && self
+                .selected_member
+                .is_none_or(|id| self.targets.iter().all(|t| t.key.entity != id))
             && self.targets.len() <= MAX_TARGETS
             && self
                 .targets
@@ -109,6 +118,11 @@ impl State {
         bytes.extend(self.request_sequence.to_le_bytes());
         bytes.push(u8::from(self.accepted));
         bytes.extend(self.selected.map_or(0, EntityId::value).to_le_bytes());
+        bytes.extend(
+            self.selected_member
+                .map_or(0, EntityId::value)
+                .to_le_bytes(),
+        );
         bytes.push(self.targets.len() as u8);
         for target in &self.targets {
             bytes.extend(target.key.entity.value().to_le_bytes());
@@ -122,7 +136,7 @@ impl State {
         if bytes.len() < HEADER_BYTES || !bytes.starts_with(STATE_TAG) || bytes[28] > 1 {
             return Err("Invalid targeting state frame".into());
         }
-        let count = usize::from(bytes[37]);
+        let count = usize::from(bytes[45]);
         if count > MAX_TARGETS || bytes.len() != HEADER_BYTES + count * TARGET_BYTES {
             return Err("Targeting state exceeds count/byte budget".into());
         }
@@ -151,6 +165,7 @@ impl State {
             request_sequence: word(bytes, 20),
             accepted: bytes[28] != 0,
             selected: EntityId::new(word(bytes, 29)),
+            selected_member: EntityId::new(word(bytes, 37)),
             targets,
         };
         if !value.valid() {

@@ -13,7 +13,15 @@ pub(super) fn credit_world_profile(
     capacity: usize,
     bytes: &[u8],
 ) -> (World, EntityKey) {
-    let (mut w, npc) = inactive(rate, Some(DATA));
+    credit_authority(inactive(rate, Some(DATA)), miss, capacity, bytes)
+}
+pub(super) fn credit_authority(
+    fixture: (World, EntityKey),
+    miss: bool,
+    capacity: usize,
+    bytes: &[u8],
+) -> (World, EntityKey) {
+    let (mut w, npc) = fixture;
     let mut policy: Value = serde_json::from_slice(POLICY).unwrap();
     for ability in policy["abilities"].as_array_mut().unwrap() {
         if ability.get("miss_bp").is_some() {
@@ -81,10 +89,17 @@ fn first_special_tags_before_competitors_fatal_hit_at_each_rate() {
         let first = join(&mut w);
         let second = join(&mut w);
         let owner = w.entity_key(first).unwrap();
+        assert_eq!(
+            w.creature_credit_encounter_for(npc),
+            w.creature_credit_encounter()
+        );
+        assert!(w.creature_credit_encounter_for(owner).is_none());
         cast(&mut w, first, npc, 1, "theia.dev.sword-slash");
         assert_eq!(w.creature_tag_owner(), None);
         w.step();
         assert_eq!(w.creature_tag_owner(), Some(owner));
+        assert_eq!(w.creature_tag_owner_for(npc), Some(owner));
+        assert!(w.creature_tag_owner_for(owner).is_none());
         assert!(w.creature_kill_credit().is_none());
         w.combat.as_mut().unwrap().creatures[0].current = 1;
         cast(&mut w, second, npc, 1, "theia.dev.sword-slash");
@@ -196,6 +211,9 @@ fn resolved_death_credit_is_stable_until_fresh_npc_respawn() {
     }
     w.step();
     assert_ne!(w.combat.as_ref().unwrap().creatures[0].key, npc);
+    assert!(w.creature_kill_credit_for(npc).is_none());
+    assert!(w.creature_tag_owner_for(npc).is_none());
+    assert!(w.creature_credit_encounter_for(npc).is_none());
     assert!(w.creature_kill_credit().is_none());
     assert_eq!(w.creature_tag_owner(), None);
     assert!(w.creature_credit_error().is_none());
@@ -350,7 +368,7 @@ fn player_death_alone_keeps_session_claim_and_stale_life_cannot_contribute() {
 
 #[test]
 fn expanded_quest_kill_credit_is_independent_of_xp_and_retains_solo_tag_owner_at_all_rates() {
-    use theia_core::quests::catalog::{Catalog, EventKey};
+    use theia_core::quests::catalog::Catalog;
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let (mut w, npc) = credit_world_profile(
             rate,
@@ -377,6 +395,16 @@ fn expanded_quest_kill_credit_is_independent_of_xp_and_retains_solo_tag_owner_at
                     "../../../../../../../../content/quests/development-journal.json"
                 ))
                 .unwrap(),
+            ))
+            .unwrap();
+        let mut conversation: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../../../../../content/quests/development-journal.json"
+        ))
+        .unwrap();
+        conversation["quests"].as_array_mut().unwrap().truncate(1);
+        let conversation = w
+            .prepare_quest_journal(Arc::new(
+                Catalog::from_json(&serde_json::to_vec(&conversation).unwrap()).unwrap(),
             ))
             .unwrap();
         let xp = Arc::new(
@@ -409,16 +437,20 @@ fn expanded_quest_kill_credit_is_independent_of_xp_and_retains_solo_tag_owner_at
         let facts = w
             .quest_kill_occurrences(&prepared, w.combat_events())
             .unwrap();
+        assert_eq!(
+            w.quest_kill_occurrences(&conversation, w.combat_events())
+                .unwrap(),
+            facts,
+            "Kills without matching objectives must still retain optional XP and original disposition"
+        );
         assert_eq!(facts.len(), 1);
         assert_eq!(
             facts[0].actor, owner,
             "Final hitter must not steal quest credit"
         );
         assert_eq!(
-            facts[0].event,
-            EventKey::Kill(
-                theia_core::content::ContentId::new("theia.dev.training-creature").unwrap()
-            )
+            facts[0].event.creature,
+            theia_core::content::ContentId::new("theia.dev.training-creature").unwrap()
         );
         let mut duplicate = w.combat_events().to_vec();
         duplicate.extend_from_slice(w.combat_events());
@@ -438,20 +470,13 @@ fn expanded_quest_kill_credit_is_independent_of_xp_and_retains_solo_tag_owner_at
         );
         // Bounded synthetic owner receiver: actual World recipient routing,
         // no SQL/transport or durable acknowledgement claimed by this fixture.
-        use crate::renet_runtime::progression::{
-            self, Input, JournalObservation, JournalOperation, Observation, Port,
-        };
+        use crate::renet_runtime::progression::{self, Input, JournalOperation, Observation, Port};
         let (input, mut receiver) = tokio::sync::mpsc::channel(progression::CAPACITY);
-        let (_publish, state) = tokio::sync::watch::channel(Observation {
-            journal: Some(JournalObservation {
-                catalog: profile.hash(),
-                revision: 0,
-                journal: theia_core::quests::journal::Journal::default(),
-                reply: None,
-            }),
-            ..Observation::default()
-        });
+        // An immutable admission-bound owner can retain earned kills before its
+        // first SQL observation exists. This is not an early success response.
+        let (_publish, state) = tokio::sync::watch::channel(Observation::default());
         let port = Port {
+            journal: Some(profile.hash()),
             profile: xp,
             input,
             state,
@@ -483,10 +508,10 @@ fn expanded_quest_kill_credit_is_independent_of_xp_and_retains_solo_tag_owner_at
             "Refused reservation cannot consume owner sequence"
         );
         assert_eq!(queued.actor, owner);
-        let JournalOperation::Event { id, event } = queued.operation else {
+        let JournalOperation::Kill(event) = queued.operation else {
             panic!("Wrong routed operation")
         };
-        assert_eq!(id, facts[0].id);
+        assert_eq!(event.id.victim(), npc);
         assert_eq!(event, facts[0].event);
         w.leave(first);
         assert!(

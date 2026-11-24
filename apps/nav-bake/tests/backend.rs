@@ -126,6 +126,31 @@ fn actual_128m_seam_is_connected_at_15km_and_a_missing_tile_has_no_fallback() {
     assert!(Query::new(&[left, foreign]).is_err());
 }
 #[test]
+fn neighbouring_tile_height_quantization_connects_but_separate_floors_do_not() {
+    let a = ChunkId { x: 10, z: 28 };
+    let b = ChunkId { x: 11, z: 28 };
+    let left = bake(a, [7; 32], Agent::development(), floor(256.)).unwrap();
+    let mut geometry = floor(256.);
+    for p in &mut geometry.positions {
+        p[0] -= 128.;
+    }
+    let right = bake(b, [7; 32], Agent::development(), geometry).unwrap();
+    for difference in [0.06, 0.5] {
+        let mut shifted = right.clone();
+        for p in shifted
+            .vertices
+            .iter_mut()
+            .chain(&mut shifted.detail.vertices)
+        {
+            p[1] += difference;
+        }
+        let query = Query::new(&[left.clone(), shifted]).unwrap();
+        let result = query.route(point(a, 120., 0., 64.), point(b, 8., difference, 64.));
+        assert_eq!(result.is_ok(), difference < 0.1, "{result:?}");
+    }
+}
+
+#[test]
 fn forbidden_slope_is_disconnected_and_low_headroom_cannot_snap_onto_roof() {
     let id = ChunkId { x: 0, z: 0 };
     let agent = Agent::development();
@@ -161,4 +186,34 @@ fn forbidden_slope_is_disconnected_and_low_headroom_cannot_snap_onto_roof() {
     let low = Query::new(&[low]).unwrap();
     assert!(low.sample(point(id, 10., 0., 10.)).is_err());
     assert!(low.sample(point(id, 10., 1.4, 10.)).is_ok());
+}
+
+#[test]
+fn empty_walkable_result_is_explicit_and_invalid_geometry_still_refuses() {
+    let id = ChunkId { x: 64, z: 64 };
+    let agent = Agent::development();
+    // Vertical-only surfaces cannot support an agent.
+    let wall = || {
+        let mut g = empty();
+        quad(
+            &mut g,
+            [
+                [16., 0., 16.],
+                [16., 4., 16.],
+                [16., 4., 32.],
+                [16., 0., 32.],
+            ],
+        );
+        g
+    };
+    assert!(
+        theia_nav_bake::bake_if_walkable(id, [7; 32], agent, wall())
+            .unwrap()
+            .is_none()
+    );
+    assert!(bake(id, [7; 32], agent, wall()).is_err());
+    assert!(theia_nav_bake::bake_if_walkable(id, [7; 32], agent, empty()).is_err());
+    let mut invalid = floor(128.);
+    invalid.positions[0][0] = f32::NAN;
+    assert!(theia_nav_bake::bake_if_walkable(id, [7; 32], agent, invalid).is_err());
 }

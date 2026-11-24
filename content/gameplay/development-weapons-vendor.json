@@ -1,0 +1,96 @@
+{
+  "schema": 2,
+  "id": "theia.dev.weapons-vendor",
+  "npc": "theia.dev.weapon-merchant",
+  "item_catalog": "theia.dev.equipment-items",
+  "offers": [
+    {
+      "id": "theia.dev.weapons.buy-sword",
+      "name": "Training Sword",
+      "cost": {
+        "copper": 1250
+      },
+      "grant": {
+        "item": "theia.dev.training-sword",
+        "count": 1
+      }
+    },
+    {
+      "id": "theia.dev.weapons.buy-wand",
+      "name": "Training Wand",
+      "cost": {
+        "copper": 1500
+      },
+      "grant": {
+        "item": "theia.dev.training-wand",
+        "count": 1
+      }
+    },
+    {
+      "id": "theia.dev.weapons.sell-training-sword",
+      "name": "Training Sword",
+      "cost": {
+        "item": "theia.dev.training-sword",
+        "count": 1
+      },
+      "grant": {
+        "copper": 250
+      }
+    },
+    {
+      "id": "theia.dev.weapons.sell-training-wand",
+      "name": "Training Wand",
+      "cost": {
+        "item": "theia.dev.training-wand",
+        "count": 1
+      },
+      "grant": {
+        "copper": 300
+      }
+    },
+    {
+      "id": "theia.dev.weapons.sell-training-stone",
+      "name": "Training Stone",
+      "cost": {
+        "item": "theia.dev.training-stone",
+        "count": 1
+      },
+      "grant": {
+        "copper": 5
+      }
+    },
+    {
+      "id": "theia.dev.weapons.sell-training-token",
+      "name": "Training Token",
+      "cost": {
+        "item": "theia.dev.training-token",
+        "count": 1
+      },
+      "grant": {
+        "copper": 10
+      }
+    },
+    {
+      "id": "theia.dev.weapons.sell-wolf-pelt",
+      "name": "Wolf Pelt",
+      "cost": {
+        "item": "theia.dev.wolf-pelt",
+        "count": 1
+      },
+      "grant": {
+        "copper": 25
+      }
+    },
+    {
+      "id": "theia.dev.weapons.sell-roadside-orders",
+      "name": "Roadside Orders",
+      "cost": {
+        "item": "theia.dev.roadside-orders",
+        "count": 1
+      },
+      "grant": {
+        "copper": 1
+      }
+    }
+  ]
+}

@@ -32,7 +32,7 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 class Identity:
-    def __init__(self, output, sdk, *, users=1, token_seconds=60):
+    def __init__(self, output, sdk, *, users=1, token_seconds=60, interactive=False, registration=False):
         self.output = Path(output).resolve()
         self.sdk = Path(sdk).resolve()
         self.server = None
@@ -40,8 +40,10 @@ class Identity:
         self.password = secrets.token_urlsafe(32)
         if not 1 <= users <= 4:
             raise ValueError('Owned identity fixture supports 1..4 synthetic users')
-        if type(token_seconds) is not int or not 60 <= token_seconds <= 300:
-            raise ValueError('Owned identity token lifetime must be 60..300 seconds')
+        maximum = 43200 if interactive else 300
+        if type(interactive) is not bool or type(token_seconds) is not int or not 60 <= token_seconds <= maximum:
+            raise ValueError('Owned identity token lifetime outside its explicit test/play policy')
+        self.registration = registration
         self.token_seconds = token_seconds
         self.username = 'theia-synthetic-user'
         self.users = [(self.username, self.password)]+[(f'theia-synthetic-user-{i+1}', secrets.token_urlsafe(32)) for i in range(1, users)]
@@ -67,7 +69,7 @@ class Identity:
             imports.mkdir(parents=True)
             self.realm_file = imports/'theia-test-realm.json'
             realm = dict(realm='theia-test', enabled=True, sslRequired='none',
-                         registrationAllowed=False, resetPasswordAllowed=False,
+                         registrationAllowed=self.registration, resetPasswordAllowed=False,
                          accessTokenLifespan=self.token_seconds,
                          clients=[dict(clientId=self.client_id, publicClient=True,
                                        standardFlowEnabled=True, directAccessGrantsEnabled=False,
@@ -79,6 +81,15 @@ class Identity:
                                      email=f'synthetic-{i}@example.invalid', emailVerified=True,
                                      credentials=[dict(type='password', value=password, temporary=False)])
                                 for i, (username, password) in enumerate(self.users)])
+            if self.registration:
+                realm['passwordPolicy'] = r'length(8) and maxLength(128) and digits(1) and regexPattern(^(?=.*[a-zA-Z])(?=.*[0-9])[^\s\p{Z}\p{Cc}]+$)'
+                permissions = dict(view=['admin', 'user'], edit=['admin', 'user'])
+                attributes = [dict(name='username', required=dict(roles=['user']), permissions=permissions,
+                                   validations={'length': {'min': 3, 'max': 32}, 'pattern': {'pattern': '[A-Za-z0-9_.-]+'}}),
+                              dict(name='email', required=dict(roles=['user']), permissions=permissions,
+                                   validations={'email': {}, 'length': {'max': 254}})]
+                realm['components'] = {'org.keycloak.userprofile.UserProfileProvider': [dict(
+                    providerId='declarative-user-profile', config={'kc.user.profile.config': [json.dumps(dict(attributes=attributes))]})]}
             self.realm_file.write_text(json.dumps(realm))
             self.realm_file.chmod(0o600)
             env = dict(os.environ)

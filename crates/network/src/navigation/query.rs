@@ -27,7 +27,13 @@ impl Query {
             z: tiles[0].id[1],
         };
         let frame = LocalFrame::new(first.origin(128).ok_or("Invalid query frame")?);
-        let mut nav = Archipelago::<XYZ>::new(ArchipelagoOptions::from_agent_radius(agent.radius));
+        let mut options = ArchipelagoOptions::from_agent_radius(agent.radius);
+        // Independent tile rasterization/simplification can differ by a height
+        // cell at a shared edge. Landmass's default 1cm tolerance disconnects
+        // these continuous floors. Bound joins below the admitted step and 10cm;
+        // strict layer sampling and route/capsule clearance still apply.
+        options.edge_link_distance = (2. * agent.cell_height).min(0.1).min(agent.step).max(0.01);
+        let mut nav = Archipelago::<XYZ>::new(options);
         for tile in tiles {
             tile.validate()?;
             if tile.agent != agent || tile.source != source || !ids.insert(tile.id) {

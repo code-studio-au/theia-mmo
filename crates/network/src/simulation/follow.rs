@@ -1,0 +1,665 @@
+//! Committed character escorts, shared by active participants in the same party.
+//! Plans and collision patches are prepared at startup; fixed ticks use only
+//! bounded memory and the ordinary world controller.
+use super::World;
+use crate::{Result, chunks::Coverage, dialogue::Guide, kinematic, navigation, procedural};
+use std::{collections::BTreeMap, sync::Arc};
+use theia_core::{
+    content::ContentId,
+    coordinates::{ChunkId, GlobalPosition},
+    quests::{
+        catalog::{Catalog, EventKey, Follow},
+        journal::{Journal, Status},
+    },
+};
+
+pub(super) struct Plan {
+    quest: ContentId,
+    guide: Guide,
+    policy: Follow,
+    route: Vec<GlobalPosition>,
+    patches: BTreeMap<ChunkId, (Arc<procedural::Patch>, Coverage)>,
+}
+#[derive(Clone, Copy)]
+pub(super) struct Journey {
+    position: GlobalPosition,
+    waypoint: usize,
+    body: kinematic::Motion,
+    status: Status,
+}
+#[derive(Default)]
+pub(super) struct Authority {
+    plans: BTreeMap<ContentId, Plan>,
+    actors: BTreeMap<u64, BTreeMap<ContentId, Journey>>,
+}
+impl Authority {
+    pub(super) fn leave(&mut self, actor: u64) {
+        self.actors.remove(&actor);
+    }
+    pub(super) fn position(
+        &self,
+        actor: u64,
+        npc: &ContentId,
+        fallback: GlobalPosition,
+    ) -> GlobalPosition {
+        self.actors
+            .get(&actor)
+            .and_then(|a| a.get(npc))
+            .map_or(fallback, |j| j.position)
+    }
+    pub(super) fn prepared(&self, quest: &ContentId, npc: &ContentId, policy: &Follow) -> bool {
+        self.plans
+            .get(npc)
+            .is_some_and(|p| &p.quest == quest && &p.policy == policy)
+    }
+}
+fn distance(a: GlobalPosition, b: GlobalPosition) -> f64 {
+    a.metres()
+        .into_iter()
+        .zip(b.metres())
+        .map(|(a, b)| (a - b).powi(2))
+        .sum::<f64>()
+        .sqrt()
+}
+impl World {
+    /// Startup only, after contact placement and before journal/player admission.
+    /// All authored navigation and capsule clearance checks complete before commit.
+    pub fn prepare_follow_quests(
+        &mut self,
+        catalog: &Catalog,
+        nav: &navigation::Store,
+        markers: &[theia_zone::markers::Marker],
+    ) -> Result<()> {
+        if self.tick != 0 || !self.players.is_empty() || self.quest_journal.is_some() {
+            return Err("Follow plans require inactive World".into());
+        }
+        if self
+            .dialogue
+            .as_ref()
+            .is_none_or(|d| d.profile.catalog().is_none())
+        {
+            return Err("Follow requires a contact catalogue".into());
+        }
+        let runtime = self.procedural.as_ref().ok_or("Follow requires terrain")?;
+        let procedural::Source::Authored(store) = &runtime.source else {
+            return Err("Follow requires authored navigation and collision".into());
+        };
+        let mut plans = BTreeMap::new();
+        for quest in catalog.quests() {
+            for objective in quest.stages().flat_map(|s| s.objectives()) {
+                let (EventKey::FollowNpc(npc), Some(policy)) =
+                    (objective.event(), objective.follow())
+                else {
+                    continue;
+                };
+                let guide = self
+                    .dialogue
+                    .as_ref()
+                    .and_then(|d| d.home(npc))
+                    .ok_or("Follow contact is not installed")?;
+                let mut home = guide.position.metres();
+                home[1] -= f64::from(crate::world::PAWN_Y);
+                // Two endpoints only: navmesh chooses all intervening corners.
+                let route = navigation::escort::prepare(
+                    store,
+                    nav,
+                    GlobalPosition::new(home).ok_or("Invalid follow home")?,
+                    policy,
+                    markers,
+                )?;
+                let mut patches = BTreeMap::new();
+                // Include all sampled cells, including long simplified segments.
+                for pair in route.windows(2) {
+                    let steps = (distance(pair[0], pair[1]) / 0.2).ceil().max(1.) as usize;
+                    for step in 0..=steps {
+                        let point = GlobalPosition::new(std::array::from_fn(|i| {
+                            pair[0].metres()[i]
+                                + (pair[1].metres()[i] - pair[0].metres()[i]) * step as f64
+                                    / steps as f64
+                        }))
+                        .ok_or("Invalid follow sample")?;
+                        let id = procedural::owner(point).ok_or("Follow outside terrain")?;
+                        if let std::collections::btree_map::Entry::Vacant(entry) = patches.entry(id)
+                        {
+                            let patch = Arc::new(store.patch(id)?);
+                            let coverage =
+                                Coverage::procedural_cells(patch.frame, patch.ids.iter().copied())?;
+                            entry.insert((patch, coverage));
+                        }
+                    }
+                }
+                let route = route
+                    .into_iter()
+                    .map(|p| {
+                        let mut p = p.metres();
+                        p[1] += f64::from(crate::world::PAWN_Y);
+                        GlobalPosition::new(p).ok_or("Invalid follow centre".into())
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                plans.insert(
+                    npc.clone(),
+                    Plan {
+                        quest: quest.id().clone(),
+                        guide,
+                        policy: policy.clone(),
+                        route,
+                        patches,
+                    },
+                );
+            }
+        }
+        self.follow = Authority {
+            plans,
+            actors: BTreeMap::new(),
+        };
+        Ok(())
+    }
+    /// Import only the async owner's committed journal. Pending acceptance never
+    /// starts travel. Restored Ready/Completed quests place this private NPC at
+    /// the destination; an interrupted Active journey restarts at its home.
+    pub(crate) fn sync_follow_journal(&mut self, actor: u64, journal: &Journal) -> Result<()> {
+        let profile = self
+            .quest_journal
+            .as_ref()
+            .ok_or("Follow journal missing")?;
+        journal
+            .validate(profile.catalog())
+            .map_err(|_| "Invalid follow journal")?;
+        if !self.players.contains_key(&actor) {
+            return Err("Follow actor absent".into());
+        }
+        let journeys = self.follow.actors.entry(actor).or_default();
+        for (npc, plan) in &self.follow.plans {
+            let Some(progress) = journal.progress(&plan.quest) else {
+                journeys.remove(npc);
+                continue;
+            };
+            let status = progress.status();
+            let journey = journeys.entry(npc.clone()).or_insert_with(|| Journey {
+                position: if status == Status::Active {
+                    plan.guide.position
+                } else {
+                    *plan.route.last().unwrap()
+                },
+                waypoint: if status == Status::Active {
+                    1
+                } else {
+                    plan.route.len()
+                },
+                body: kinematic::Motion::default(),
+                status,
+            });
+            journey.status = status;
+        }
+        Ok(())
+    }
+    pub(crate) fn finished_follow_events(&self, actor: u64) -> Vec<EventKey> {
+        self.follow
+            .actors
+            .get(&actor)
+            .into_iter()
+            .flat_map(|a| a.iter())
+            .filter_map(|(npc, j)| {
+                let plan = &self.follow.plans[npc];
+                (j.status == Status::Active
+                    && j.waypoint == plan.route.len()
+                    && self.player_alive(actor)
+                    && self.global_position(actor).is_some_and(|p| {
+                        distance(p, j.position) <= f64::from(plan.policy.max_distance_metres)
+                    }))
+                .then(|| EventKey::FollowNpc(npc.clone()))
+            })
+            .collect()
+    }
+    pub(super) fn advance_follow(&mut self) {
+        let mut authority = std::mem::take(&mut self.follow);
+        // At most MAX_PLAYERS admitted actors. A solo actor and a party never
+        // share a key, even when their numeric IDs coincide.
+        let groups: BTreeMap<_, _> = authority
+            .actors
+            .keys()
+            .map(|&actor| {
+                let group = self
+                    .party_view(actor)
+                    .and_then(|v| v.membership.party)
+                    .map_or((false, actor), |p| (true, p.id));
+                (actor, group)
+            })
+            .collect();
+        for (npc, plan) in &authority.plans {
+            if self.contact_definition(plan.guide.key).is_none() {
+                continue;
+            }
+            let mut participants: BTreeMap<_, Vec<u64>> = BTreeMap::new();
+            for (&actor, journeys) in &authority.actors {
+                if journeys
+                    .get(npc)
+                    .is_some_and(|j| j.status == Status::Active)
+                {
+                    participants.entry(groups[&actor]).or_default().push(actor);
+                }
+            }
+            for actors in participants.values() {
+                // Joining an ongoing escort adopts its furthest progress. Every
+                // participant retains a copy, so departure forks in place.
+                let mut journey = *actors
+                    .iter()
+                    .map(|a| &authority.actors[a][npc])
+                    .max_by(|a, b| {
+                        a.waypoint.cmp(&b.waypoint).then_with(|| {
+                            let target = plan.route[a.waypoint.min(plan.route.len() - 1)];
+                            distance(b.position, target).total_cmp(&distance(a.position, target))
+                        })
+                    })
+                    .unwrap();
+                let players: Vec<_> = actors
+                    .iter()
+                    .filter(|&&a| self.player_alive(a))
+                    .filter_map(|&a| self.global_position(a))
+                    .collect();
+                advance(plan, &mut journey, &players, self.rate);
+                for actor in actors {
+                    *authority
+                        .actors
+                        .get_mut(actor)
+                        .unwrap()
+                        .get_mut(npc)
+                        .unwrap() = journey;
+                }
+            }
+        }
+        self.follow = authority;
+    }
+}
+
+fn advance(
+    plan: &Plan,
+    journey: &mut Journey,
+    players: &[GlobalPosition],
+    rate: theia_core::time::TickRate,
+) {
+    let within_range = |position| {
+        players
+            .iter()
+            .any(|&p| distance(p, position) <= f64::from(plan.policy.max_distance_metres))
+    };
+    if journey.waypoint == plan.route.len() || !within_range(journey.position) {
+        return;
+    }
+    while journey.waypoint < plan.route.len()
+        && distance(journey.position, plan.route[journey.waypoint]) < 0.15
+    {
+        journey.waypoint += 1;
+    }
+    if journey.waypoint == plan.route.len() {
+        return;
+    }
+    let target = plan.route[journey.waypoint];
+    let a = journey.position.metres();
+    let b = target.metres();
+    let dx = b[0] - a[0];
+    let dz = b[2] - a[2];
+    let length = dx.hypot(dz);
+    if length < 0.000001 {
+        return;
+    }
+    let speed = (f64::from(plan.policy.speed_millimetres_per_second) / 1000.)
+        .min(length / f64::from(rate.seconds()));
+    let intent = crate::wire::Intent {
+        axes: [
+            (dx / length * speed * 125.).round() as i16,
+            (dz / length * speed * 125.).round() as i16,
+        ],
+        sprint: true,
+        ..Default::default()
+    };
+    let Some((patch, coverage)) =
+        procedural::owner(journey.position).and_then(|id| plan.patches.get(&id))
+    else {
+        return;
+    };
+    let mut body = journey.body;
+    if let Ok(position) =
+        super::creatures::motion::step(patch, coverage, &mut body, journey.position, intent, rate)
+        && within_range(position)
+    {
+        journey.position = position;
+        journey.body = body;
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::*;
+    use theia_core::time::TickRate;
+    fn id(s: &str) -> ContentId {
+        ContentId::new(s).unwrap()
+    }
+    fn setup(
+        rate: TickRate,
+    ) -> (
+        World,
+        Arc<crate::quest_journal::Profile>,
+        ContentId,
+        ContentId,
+    ) {
+        let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+        world.set_tick_rate(rate);
+        setup_in(world)
+    }
+    pub(in crate::simulation) fn setup_in(
+        mut world: World,
+    ) -> (
+        World,
+        Arc<crate::quest_journal::Profile>,
+        ContentId,
+        ContentId,
+    ) {
+        let npc = id("theia.dev.guide");
+        let quest = id("follow");
+        let value = serde_json::json!({"schema":5,"id":"quests","revision":1,"quests":[{"id":"follow","version":1,"title":"Follow","description":"Follow","prerequisites":[],"giver":npc.as_str(),"turn_in":npc.as_str(),"repeat_policy":"once","credit_scope":"character","experience":25,"start_stage":"travel","stages":[{"id":"travel","completion":{"kind":"all"},"next":null,"objectives":[{"kind":"follow_npc","id":"arrive","label":"Follow","npc":npc.as_str(),"travel":{"destination":1202,"max_distance_metres":10,"speed_millimetres_per_second":7000}}]}]}]});
+        let xp = Arc::new(
+            crate::progression_wire::Profile::from_json(include_bytes!(
+                "../../../../content/gameplay/development-progression.json"
+            ))
+            .unwrap(),
+        );
+        let profile = Arc::new(
+            crate::quest_journal::Profile::from_json(&serde_json::to_vec(&value).unwrap(), &xp)
+                .unwrap(),
+        );
+        let contacts = world
+            .spawn_placed_contacts(
+                Arc::new(
+                    crate::dialogue::Profile::from_catalog_json(include_bytes!(
+                        "../../../../content/quests/development-valley-contacts.json"
+                    ))
+                    .unwrap(),
+                ),
+                vec![
+                    (
+                        npc.clone(),
+                        crate::dialogue::Placement::Horizontal([8062., 8000.]),
+                    ),
+                    (
+                        id("theia.dev.steward"),
+                        crate::dialogue::Placement::Horizontal([8064., 8000.]),
+                    ),
+                ],
+            )
+            .unwrap();
+        let guide = contacts.iter().find(|c| c.npc == npc).unwrap().guide;
+        let patch = world
+            .procedural
+            .as_ref()
+            .unwrap()
+            .patch(guide.position)
+            .unwrap()
+            .clone();
+        let end = patch.try_spawn(8062., 8016.).unwrap();
+        let mut p = end.metres();
+        p[1] += f64::from(crate::world::PAWN_Y);
+        let coverage = Coverage::procedural_cells(patch.frame, patch.ids.iter().copied()).unwrap();
+        world.follow.plans.insert(
+            npc.clone(),
+            Plan {
+                quest: quest.clone(),
+                guide,
+                policy: Follow {
+                    destination: 1202,
+                    max_distance_metres: 10,
+                    speed_millimetres_per_second: 7000,
+                },
+                route: vec![guide.position, GlobalPosition::new(p).unwrap()],
+                patches: BTreeMap::from([(
+                    procedural::owner(guide.position).unwrap(),
+                    (patch, coverage),
+                )]),
+            },
+        );
+        world.enable_quest_journal(profile.clone(), xp).unwrap();
+        (world, profile, quest, npc)
+    }
+    #[test]
+    fn committed_acceptance_wait_resume_private_positions_arrival_and_restore_all_rates() {
+        for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+            let (mut world, profile, quest, npc) = setup(rate);
+            let home = world.follow.plans[&npc].guide.position;
+            let a = world.join().unwrap();
+            let b = world.join().unwrap();
+            world.players.get_mut(&a).unwrap().position = home;
+            world.players.get_mut(&b).unwrap().position = home;
+            world.sync_follow_journal(a, &Journal::default()).unwrap();
+            assert!(world.follow.actors[&a].is_empty());
+            let active = Journal::default()
+                .propose_accept(profile.catalog(), &quest, &npc)
+                .unwrap()
+                .journal;
+            world.sync_follow_journal(a, &active).unwrap();
+            world.sync_follow_journal(b, &active).unwrap();
+            let identity = world.identity();
+            for _ in 0..rate.hz() {
+                world.advance_follow();
+            }
+            let running = world.follow.actors[&a][&npc].position.metres();
+            let start = home.metres();
+            assert!(((running[0] - start[0]).hypot(running[2] - start[2]) - 7.).abs() < 0.02);
+            for _ in 0..rate.hz() * 10 {
+                world.advance_follow();
+            }
+            let paused = world.follow.actors[&a][&npc].position;
+            assert!(
+                distance(home, paused) > 9. && distance(home, paused) <= 10.,
+                "paused {:?}, home {:?}",
+                paused,
+                home
+            );
+            assert!(world.finished_follow_events(a).is_empty());
+            for _ in 0..rate.hz() * 2 {
+                world.advance_follow();
+            }
+            assert_eq!(world.follow.actors[&a][&npc].position, paused);
+            for _ in 0..rate.hz() * 10 {
+                world.players.get_mut(&a).unwrap().position =
+                    world.follow.actors[&a][&npc].position;
+                world.advance_follow();
+            }
+            assert_eq!(
+                world.finished_follow_events(a),
+                vec![EventKey::FollowNpc(npc.clone())]
+            );
+            assert!(world.finished_follow_events(b).is_empty());
+            assert_eq!(world.follow.actors[&b][&npc].position, paused);
+            assert_eq!(identity, world.identity());
+            let ready = active
+                .propose_trusted_event(profile.catalog(), &EventKey::FollowNpc(npc.clone()))
+                .unwrap()
+                .journal;
+            world.sync_follow_journal(a, &ready).unwrap();
+            assert!(world.finished_follow_events(a).is_empty());
+            let key = world.follow.plans[&npc].guide.key;
+            let request = crate::dialogue::Request {
+                sequence: 1,
+                expected_revision: 0,
+                action: crate::dialogue::Action::Open(key),
+            };
+            world.interact(a, &request).unwrap();
+            assert!(world.guide_interaction_eligible(a, 1, key));
+            world.players.get_mut(&a).unwrap().position = home;
+            assert!(!world.guide_interaction_eligible(a, 1, key));
+            world.leave(a);
+            assert!(!world.follow.actors.contains_key(&a));
+            let restored = world.join().unwrap();
+            world.sync_follow_journal(restored, &ready).unwrap();
+            assert_eq!(
+                world.follow.actors[&restored][&npc].position,
+                *world.follow.plans[&npc].route.last().unwrap()
+            );
+        }
+    }
+
+    fn party_action(world: &mut World, actor: u64, action: theia_core::party::Action) {
+        let view = world.party_view(actor).unwrap();
+        world
+            .party_request(
+                actor,
+                theia_core::party::Request {
+                    sequence: view.sequence + 1,
+                    revision: view.revision,
+                    action,
+                },
+            )
+            .unwrap();
+    }
+    pub(in crate::simulation) fn invite(world: &mut World, leader: u64, member: u64) {
+        let key = world.entity_key(member).unwrap();
+        party_action(world, leader, theia_core::party::Action::Invite(key));
+        let invitation = world
+            .party_view(member)
+            .unwrap()
+            .membership
+            .incoming
+            .unwrap()
+            .id;
+        party_action(world, member, theia_core::party::Action::Accept(invitation));
+    }
+    #[test]
+    fn party_range_handoff_wait_nonparticipants_and_individual_arrival_all_rates() {
+        for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+            let (mut world, profile, quest, npc) = setup(rate);
+            world.enable_parties().unwrap();
+            let home = world.follow.plans[&npc].guide.position;
+            let far = GlobalPosition::new([8062., home.metres()[1], 7950.]).unwrap();
+            let a = world.join().unwrap();
+            let b = world.join().unwrap();
+            let unaccepted = world.join().unwrap();
+            let solo = world.join().unwrap();
+            invite(&mut world, a, b);
+            invite(&mut world, a, unaccepted);
+            let active = Journal::default()
+                .propose_accept(profile.catalog(), &quest, &npc)
+                .unwrap()
+                .journal;
+            for actor in [a, b, solo] {
+                world.sync_follow_journal(actor, &active).unwrap();
+                world.players.get_mut(&actor).unwrap().position = far;
+            }
+            world
+                .sync_follow_journal(unaccepted, &Journal::default())
+                .unwrap();
+            world.players.get_mut(&a).unwrap().position = home;
+            for _ in 0..rate.hz() {
+                world.advance_follow();
+            }
+            let first = world.follow.actors[&a][&npc].position;
+            assert!((distance(home, first) - 7.).abs() < 0.02);
+            assert_eq!(world.follow.actors[&b][&npc].position, first);
+            assert_eq!(world.follow.position(unaccepted, &npc, home), home);
+            assert_eq!(world.follow.actors[&solo][&npc].position, home);
+            // A leaves the range; B alone now drives the same journey.
+            world.players.get_mut(&a).unwrap().position = far;
+            world.players.get_mut(&b).unwrap().position = first;
+            for _ in 0..rate.hz() {
+                world.advance_follow();
+            }
+            let second = world.follow.actors[&b][&npc].position;
+            assert!((distance(first, second) - 7.).abs() < 0.02);
+            assert_eq!(world.follow.actors[&a][&npc].position, second);
+            // A nearby party member without the quest cannot keep it moving.
+            world.players.get_mut(&b).unwrap().position = far;
+            world.players.get_mut(&unaccepted).unwrap().position = second;
+            for _ in 0..rate.hz() {
+                world.advance_follow();
+            }
+            assert_eq!(world.follow.actors[&a][&npc].position, second);
+            world.players.get_mut(&b).unwrap().position = second;
+            for _ in 0..rate.hz() {
+                world.advance_follow();
+            }
+            assert_eq!(
+                world.follow.actors[&a][&npc].position,
+                world.follow.actors[&b][&npc].position
+            );
+            assert!(world.finished_follow_events(a).is_empty());
+            assert_eq!(
+                world.finished_follow_events(b),
+                vec![EventKey::FollowNpc(npc.clone())]
+            );
+            let ready = active
+                .propose_trusted_event(profile.catalog(), &EventKey::FollowNpc(npc.clone()))
+                .unwrap()
+                .journal;
+            world.sync_follow_journal(b, &ready).unwrap();
+            assert_eq!(world.follow.actors[&a][&npc].status, Status::Active);
+            assert_eq!(world.follow.actors[&b][&npc].status, Status::Ready);
+            assert!(world.finished_follow_events(b).is_empty());
+            world.players.get_mut(&a).unwrap().position = world.follow.actors[&a][&npc].position;
+            assert_eq!(
+                world.finished_follow_events(a),
+                vec![EventKey::FollowNpc(npc.clone())]
+            );
+            assert_eq!(world.follow.actors[&solo][&npc].position, home);
+        }
+    }
+
+    #[test]
+    fn late_accept_leave_merge_and_disconnect_keep_checked_progress_all_rates() {
+        for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+            let (mut world, profile, quest, npc) = setup(rate);
+            world.enable_parties().unwrap();
+            let home = world.follow.plans[&npc].guide.position;
+            let far = GlobalPosition::new([8062., home.metres()[1], 7950.]).unwrap();
+            let a = world.join().unwrap();
+            let b = world.join().unwrap();
+            invite(&mut world, a, b);
+            let active = Journal::default()
+                .propose_accept(profile.catalog(), &quest, &npc)
+                .unwrap()
+                .journal;
+            world.sync_follow_journal(a, &active).unwrap();
+            world.players.get_mut(&a).unwrap().position = home;
+            world.players.get_mut(&b).unwrap().position = far;
+            for _ in 0..rate.hz() {
+                world.advance_follow();
+            }
+            let first = world.follow.actors[&a][&npc].position;
+            world.sync_follow_journal(b, &active).unwrap();
+            world.advance_follow();
+            assert_eq!(
+                world.follow.actors[&a][&npc].position,
+                world.follow.actors[&b][&npc].position
+            );
+            assert!(
+                distance(home, world.follow.actors[&b][&npc].position) >= distance(home, first)
+            );
+            let split = world.follow.actors[&b][&npc].position;
+            party_action(&mut world, b, theia_core::party::Action::Leave);
+            world.players.get_mut(&a).unwrap().position = split;
+            for _ in 0..rate.hz() / 2 {
+                world.advance_follow();
+            }
+            assert_eq!(world.follow.actors[&b][&npc].position, split);
+            let advanced = world.follow.actors[&a][&npc].position;
+            assert!(distance(split, advanced) > 3.);
+            invite(&mut world, a, b);
+            world.advance_follow();
+            let merged = world.follow.actors[&b][&npc].position;
+            assert_eq!(world.follow.actors[&a][&npc].position, merged);
+            assert!(distance(home, merged) >= distance(home, advanced));
+            world.leave(a);
+            for _ in 0..rate.hz() {
+                world.advance_follow();
+            }
+            assert_eq!(world.follow.actors[&b][&npc].position, merged);
+            assert!(world.party_view(b).unwrap().membership.party.is_none());
+            world.players.get_mut(&b).unwrap().position = merged;
+            for _ in 0..rate.hz() {
+                world.advance_follow();
+            }
+            assert_eq!(
+                world.finished_follow_events(b),
+                vec![EventKey::FollowNpc(npc.clone())]
+            );
+        }
+    }
+}

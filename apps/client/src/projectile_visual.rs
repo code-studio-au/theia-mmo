@@ -1,5 +1,6 @@
 //! Cosmetic travel from server launches. Never reports impacts or changes HP.
 use bevy::prelude::*;
+use bevy_sprinkles::{SprinklesPlugin, asset::ParticlesAsset, runtime::Particles3d};
 use std::{collections::VecDeque, time::Instant};
 use theia_core::{
     abilities::Catalog,
@@ -41,6 +42,8 @@ pub(crate) struct Metrics {
     pub dropped: u64,
     pub late: u64,
     pub spawns: u64,
+    pub particle_spawns: u64,
+    pub particle_emitter_visible_frames: u64,
     pub removed: u64,
     pub max_active: usize,
     pub visible_frames: u64,
@@ -163,10 +166,14 @@ impl Cues {
 struct Assets {
     mesh: Handle<Mesh>,
     material: Handle<StandardMaterial>,
+    particle: Option<Handle<ParticlesAsset>>,
 }
 #[derive(Component)]
 struct Visual(Key);
 pub(crate) fn install(app: &mut App) {
+    if !app.is_plugin_added::<SprinklesPlugin>() {
+        app.add_plugins(SprinklesPlugin);
+    }
     app.init_resource::<Cues>()
         .add_systems(Startup, setup)
         .add_systems(Update, render.after(crate::combat::Presentation));
@@ -175,8 +182,19 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<bevy::asset::Assets<Mesh>>,
     mut materials: ResMut<bevy::asset::Assets<StandardMaterial>>,
+    mut particles: ResMut<bevy::asset::Assets<ParticlesAsset>>,
 ) {
+    let particle = match bevy_sprinkles::asset::versions::migrate(include_bytes!(
+        "../assets/vfx/projectile-glimmer.ron"
+    )) {
+        Ok(result) => Some(particles.add(result.asset)),
+        Err(error) => {
+            warn!("Projectile cosmetic unavailable: {error}");
+            None
+        }
+    };
     commands.insert_resource(Assets {
+        particle,
         mesh: meshes.add(Sphere::new(0.12).mesh().uv(12, 8)),
         material: materials.add(StandardMaterial {
             base_color: Color::srgb(0.1, 0.65, 1.),
@@ -185,18 +203,39 @@ fn setup(
         }),
     });
 }
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Bevy supplies distinct resources and queries"
+)]
 fn render(
     mut commands: Commands,
     mut cues: ResMut<Cues>,
     assets: Res<Assets>,
     frame: Res<crate::floating_origin::Frame>,
     visuals: Query<(Entity, &Visual, &ViewVisibility)>,
+    particle_parents: Query<&ChildOf, With<Particles3d>>,
+    emitters: Query<(
+        &bevy_sprinkles::runtime::EmitterEntity,
+        &bevy_sprinkles::runtime::EmitterRuntime,
+        &ViewVisibility,
+    )>,
     targets: Query<(
         &crate::targeting::TargetVisual,
         &crate::targeting::motion::TargetMotion,
     )>,
 ) {
     let now = Instant::now();
+    for (emitter, runtime, visible) in &emitters {
+        if runtime.system_time > 0.
+            && visible.get()
+            && particle_parents
+                .get(emitter.parent_system)
+                .ok()
+                .is_some_and(|parent| visuals.get(parent.parent()).is_ok())
+        {
+            cues.metrics.particle_emitter_visible_frames += 1;
+        }
+    }
     cues.metrics.visible_now = 0;
     cues.tracks.retain(|t| {
         t.flight.state() != State::Expired
@@ -289,18 +328,26 @@ fn render(
                 .entity(entity)
                 .insert((transform, Visibility::Inherited));
         } else {
-            track.entity = Some(
-                commands
-                    .spawn((
-                        Visual(track.key),
-                        Mesh3d(assets.mesh.clone()),
-                        MeshMaterial3d(assets.material.clone()),
-                        transform,
-                        bevy::light::NotShadowCaster,
-                        bevy::light::NotShadowReceiver,
-                    ))
-                    .id(),
-            );
+            let mut entity = commands.spawn((
+                Visual(track.key),
+                Mesh3d(assets.mesh.clone()),
+                MeshMaterial3d(assets.material.clone()),
+                transform,
+                Visibility::Inherited,
+                bevy::light::NotShadowCaster,
+                bevy::light::NotShadowReceiver,
+            ));
+            if let Some(particle) = &assets.particle {
+                entity.with_children(|parent| {
+                    parent.spawn((
+                        Particles3d(particle.clone()),
+                        Transform::default(),
+                        Visibility::Inherited,
+                    ));
+                });
+                metrics.particle_spawns += 1;
+            }
+            track.entity = Some(entity.id());
             metrics.spawns += 1;
         }
     }
@@ -309,6 +356,51 @@ fn render(
 mod tests {
     use super::*;
     use theia_core::identity::{EntityId, WorldEpoch};
+    #[test]
+    fn bundled_cosmetic_is_local_and_bounded() {
+        let asset = bevy_sprinkles::asset::versions::migrate(include_bytes!(
+            "../assets/vfx/projectile-glimmer.ron"
+        ))
+        .unwrap()
+        .asset;
+        assert_eq!(asset.emitters.len(), 1);
+        let emitter = &asset.emitters[0];
+        assert!(emitter.enabled && emitter.draw_pass.use_local_coords);
+        let counts = bevy_sprinkles::budget::emitter_counts(emitter).unwrap();
+        assert_eq!(counts.particle_slots, 12);
+        assert_eq!(counts.trail_history_entries, 0);
+        assert_eq!(MAX_ACTIVE * counts.particle_slots as usize, 384);
+    }
+    #[test]
+    fn projectile_cosmetic_follows_parent_and_is_removed_with_it() {
+        let catalog = catalog();
+        let mut cues = Cues::default();
+        cues.offer(&launch(&catalog, 1), &catalog, 10, 10, 30);
+        let key = cues.tracks[0].key;
+        let mut frame = crate::floating_origin::Frame::default();
+        frame.focus_large(GlobalPosition::new([15040., 25., 15040.]).unwrap());
+        let mut app = App::new();
+        app.insert_resource(cues)
+            .insert_resource(frame)
+            .insert_resource(Assets {
+                mesh: Handle::default(),
+                material: Handle::default(),
+                particle: Some(Handle::default()),
+            })
+            .add_systems(Update, render);
+        app.update();
+        let parent = app.world().resource::<Cues>().tracks[0].entity.unwrap();
+        let child = app.world().get::<Children>(parent).unwrap()[0];
+        assert!(app.world().get::<Particles3d>(child).is_some());
+        assert_eq!(
+            *app.world().get::<Visibility>(child).unwrap(),
+            Visibility::Inherited
+        );
+        app.world_mut().resource_mut::<Cues>().terminal(key);
+        app.update();
+        assert!(app.world().get_entity(parent).is_err());
+        assert!(app.world().get_entity(child).is_err());
+    }
     fn catalog() -> Catalog {
         let mut raw: serde_json::Value = serde_json::from_slice(include_bytes!(
             "../../../content/gameplay/development-resource-abilities.json"

@@ -207,7 +207,7 @@ async fn either_effect_failure_rolls_back_both_receipts_and_both_progression_sta
     let q = quest();
     store.ensure_progression(a, WORLD, &p).await.unwrap();
     store.ensure_quest(a, WORLD, &q).await.unwrap();
-    admin.batch_execute("ALTER TABLE theia.quest_objectives ADD CONSTRAINT theia_test_no_quest CHECK(kill_count=0)").await.unwrap();
+    admin.batch_execute(&format!("ALTER TABLE theia.quest_objectives ADD CONSTRAINT theia_test_no_quest CHECK(realm_id <> '{}'::uuid OR kill_count=0)", realm.value())).await.unwrap();
     assert!(
         store
             .award_progression_and_quest(a, WORLD, &p, &q, &event(1))
@@ -231,7 +231,7 @@ async fn either_effect_failure_rolls_back_both_receipts_and_both_progression_sta
     assert!(!first.experience.replayed && !first.quest.replayed);
     admin
         .batch_execute(
-            "ALTER TABLE theia.progression ADD CONSTRAINT theia_test_no_xp CHECK(experience=25)",
+            &format!("ALTER TABLE theia.progression ADD CONSTRAINT theia_test_no_xp CHECK(realm_id <> '{}'::uuid OR experience=25)", realm.value()),
         )
         .await
         .unwrap();

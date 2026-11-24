@@ -484,3 +484,88 @@ async fn shared_worker_serializes_purchase_races_recovers_lost_answers_and_bound
     drop(admin);
     driver.await.unwrap().unwrap();
 }
+
+#[tokio::test]
+#[ignore = "requires owned PostgreSQL"]
+async fn coin_buy_and_sale_commit_together_replay_once_and_never_reseed_balance() {
+    let (url, admin, driver) = support::owned().await;
+    let mut store = Store::connect_loopback(&url, RealmId::random())
+        .await
+        .unwrap();
+    let items = InventoryCatalog::from_json(include_bytes!(
+        "../../../content/gameplay/development-coin-items.json"
+    ))
+    .unwrap();
+    let vendor = VendorCatalog::from_json(
+        include_bytes!("../../../content/gameplay/development-weapons-vendor.json"),
+        &items,
+    )
+    .unwrap();
+    let who = character(&mut store, "Cointrader").await;
+    let initial = Bag::from_parts_with_copper(
+        items.catalog(),
+        0,
+        std::array::from_fn(|_| None),
+        None,
+        Some(52550),
+    )
+    .unwrap();
+    store
+        .ensure_inventory(who, WORLD, &items, &initial)
+        .await
+        .unwrap();
+    let buy = Purchase {
+        expected_revision: 0,
+        offer: ContentId::new("theia.dev.weapons.buy-sword").unwrap(),
+    };
+    let bought = store
+        .purchase_vendor(who, WORLD, &vendor, &buy)
+        .await
+        .unwrap();
+    assert!(!bought.replayed);
+    assert_eq!(bought.bag.copper(), Some(51300));
+    assert_eq!(total(&bought.bag, "sword"), 1);
+    let retry = store
+        .purchase_vendor(who, WORLD, &vendor, &buy)
+        .await
+        .unwrap();
+    assert!(retry.replayed);
+    assert_eq!(retry.bag, bought.bag);
+    let sale = Purchase {
+        expected_revision: 1,
+        offer: ContentId::new("theia.dev.weapons.sell-training-sword").unwrap(),
+    };
+    let sold = store
+        .purchase_vendor(who, WORLD, &vendor, &sale)
+        .await
+        .unwrap();
+    assert_eq!(sold.bag.copper(), Some(51550));
+    assert_eq!(total(&sold.bag, "sword"), 0);
+    assert_eq!(sold.bag.revision(), 2);
+    let retry = store
+        .purchase_vendor(who, WORLD, &vendor, &sale)
+        .await
+        .unwrap();
+    assert!(retry.replayed);
+    assert_eq!(retry.bag, sold.bag);
+    assert!(matches!(
+        store.purchase_vendor(who, WORLD, &vendor, &buy).await,
+        Err(Error::InventoryStale)
+    ));
+    let missing = Purchase {
+        expected_revision: 2,
+        ..sale
+    };
+    assert!(matches!(
+        store.purchase_vendor(who, WORLD, &vendor, &missing).await,
+        Err(Error::VendorCommand(CommandError::InsufficientCost))
+    ));
+    let restored = store
+        .ensure_inventory(who, WORLD, &items, &initial)
+        .await
+        .unwrap();
+    assert_eq!(restored, sold.bag);
+    store.close().await.unwrap();
+    drop(admin);
+    driver.await.unwrap().unwrap();
+}

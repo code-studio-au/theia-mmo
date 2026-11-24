@@ -173,8 +173,13 @@ impl World {
             .combat
             .as_ref()
             .ok_or("Ordinary outcomes require combat")?;
-        if combat.white_melee.is_some() || !combat.supports_white_melee() {
-            return Err("Ordinary outcomes require one pursuit configuration".into());
+        if combat.white_melee.is_some()
+            || (!combat.supports_white_melee() && !combat.population_physical_ready(self))
+        {
+            return Err(
+                "Ordinary outcomes require a checked pursuit or passive population configuration"
+                    .into(),
+            );
         }
         let physical = combat
             .physical
@@ -229,7 +234,7 @@ impl Authority {
             .global_position(attacker.entity.value())
             .ok_or("Missing ordinary attacker position")?;
         let facing = world
-            .patrol_facing(npc)
+            .creature_facing(npc)
             .ok_or("Missing authoritative creature facing")?;
         Ok(DefenderState {
             standing: true,
@@ -279,10 +284,10 @@ impl Authority {
         weapon: &melee::Weapon,
         sequence: u64,
     ) -> Result<()> {
-        if !self.ordinary_target_ready()
+        if (!self.ordinary_target_ready() && !self.population_physical_ready(world))
             || self.events.len() + self.physical_melee_event_slots(target)
                 > self.step_event_budget()
-            || world.patrol.as_ref().is_none_or(|p| p.key != target)
+            || !self.physical_target_matches(world, target)
         {
             return Err("Ordinary event/creature context unavailable".into());
         }
@@ -325,7 +330,7 @@ impl Authority {
                 source: life,
                 target,
                 category: theia_core::creature_credit::Category::WhiteMelee,
-                encounter: self.capture_credit(),
+                encounter: self.capture_credit(target),
                 health_lost: plan.result.health_lost,
                 fatal: plan.result.health_lost == health,
             },
@@ -381,6 +386,9 @@ impl Authority {
         npc: EntityKey,
         target: LifeKey,
     ) -> Result<Option<theia_core::player_life::Damage>> {
+        if self.threat.as_ref().is_some_and(|runtime| !runtime.ready()) {
+            return Err("Creature threat authority unavailable".into());
+        }
         if self.reset.as_ref().is_some_and(|runtime| !runtime.ready()) {
             return Err("Creature reset authority unavailable".into());
         }
@@ -397,7 +405,7 @@ impl Authority {
         if player.state.key() != target
             || !player.state.alive()
             || world.entity_key(target.actor.entity.value()) != Some(target.actor)
-            || world.patrol.as_ref().is_none_or(|p| p.key != npc)
+            || world.creature_definition(npc).is_none()
             || !self.creatures.iter().any(|c| c.key == npc && c.current > 0)
         {
             return Ok(None);

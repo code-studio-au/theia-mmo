@@ -37,7 +37,7 @@ impl Known {
             weapons: &self.weapons,
             items: &self.items,
             abilities: &self.abilities,
-            creature: &self.creature,
+            creature: self.creature.definition(),
             player_maximum_health: player,
             creature_maximum_health: creature,
         }
@@ -51,6 +51,33 @@ fn id(s: &str) -> ContentId {
 }
 fn raw() -> Value {
     serde_json::from_slice(DEFINITIONS).unwrap()
+}
+#[test]
+fn damage_binding_uses_a_detached_creature_type_and_rejects_foreign_ids() {
+    let known = Known::new();
+    let definition = known.creature.definition().clone();
+    let mut bindings = known.bind(100, 1000);
+    bindings.creature = &definition;
+    let detached = Profile::new(DEFINITIONS, STATS, bindings).unwrap();
+    assert_eq!(detached.context_hash(), known.profile().context_hash());
+    assert_eq!(
+        detached
+            .weapon_result(&id("theia.dev.training-sword"), 11, 10)
+            .unwrap(),
+        known
+            .profile()
+            .weapon_result(&id("theia.dev.training-sword"), 11, 10)
+            .unwrap()
+    );
+    let mut foreign: Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../content/gameplay/development-creature-deflect-pursuit.json"
+    ))
+    .unwrap();
+    foreign["id"] = json!("theia.dev.foreign-creature");
+    let foreign = creatures::Profile::from_json(&bytes(&foreign)).unwrap();
+    let mut bindings = known.bind(100, 1000);
+    bindings.creature = foreign.definition();
+    assert!(Profile::new(DEFINITIONS, STATS, bindings).is_err());
 }
 fn bytes(v: &Value) -> Vec<u8> {
     serde_json::to_vec(v).unwrap()
@@ -141,7 +168,9 @@ fn positional_ability_rules_and_valid_health_bounds_are_required_before_binding(
     ))
     .unwrap();
     legacy["schema"] = json!(6);
-    for ability in legacy["abilities"].as_array_mut().unwrap() {
+    let abilities = legacy["abilities"].as_array_mut().unwrap();
+    abilities.retain(|a| a["target"] == "hostile_alive");
+    for ability in abilities {
         ability.as_object_mut().unwrap().remove("combat");
     }
     known.abilities = abilities::Catalog::from_json(&bytes(&legacy)).unwrap();

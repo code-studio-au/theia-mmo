@@ -1,0 +1,752 @@
+//! Visual road/stream guides and editor-only patrol requests. Every committed edit uses the shared zone commands.
+use super::*;
+use bevy::{
+    asset::RenderAssetUsages,
+    mesh::{Indices, PrimitiveTopology},
+    picking::mesh_picking::ray_cast::{MeshRayCast, MeshRayCastSettings},
+};
+use std::collections::{BTreeMap, BTreeSet};
+use theia_zone::paths::{GuidePath, PathKind};
+#[derive(Component)]
+pub(super) struct GuideVisual(u64);
+#[derive(Component)]
+pub(super) struct PointHandle(usize);
+pub(super) struct Draft {
+    pub path: GuidePath,
+    revision: u64,
+}
+#[derive(Resource)]
+pub(super) struct Scene {
+    road: Handle<StandardMaterial>,
+    stream: Handle<StandardMaterial>,
+    patrol: Handle<StandardMaterial>,
+    selected: Handle<StandardMaterial>,
+    cache: BTreeMap<u64, (Entity, Handle<Mesh>)>,
+    revision: Option<u64>,
+    selection: Option<u64>,
+    playing: bool,
+    draft_entity: Entity,
+    draft_mesh: Handle<Mesh>,
+    draft: Option<GuidePath>,
+    handles: [Entity; theia_zone::paths::MAX_POINTS],
+    handle_normal: Handle<StandardMaterial>,
+    handle_selected: Handle<StandardMaterial>,
+    handle_state: (Vec<[f64; 3]>, [f64; 3], Option<usize>),
+}
+pub(super) fn actions() -> [(Action, &'static str); 12] {
+    [
+        (Action::NewPath(PathKind::Road), "New road guide"),
+        (Action::NewPath(PathKind::Stream), "New stream guide"),
+        (Action::NewPath(PathKind::Patrol), "New patrol route"),
+        (Action::FinishPath, "Finish guide [Enter]"),
+        (Action::GradePath, "Grade terrain to guide"),
+        (Action::NextPath, "Select next guide"),
+        (Action::DeletePath, "Delete guide [Del]"),
+        (Action::PathWidth(1), "Wider guide (+0.5 m)"),
+        (Action::PathWidth(-1), "Narrower guide (-0.5 m)"),
+        (Action::Undo, "Undo [Ctrl Z]"),
+        (Action::Redo, "Redo [Ctrl Y]"),
+        (Action::Save, "Save zone [Ctrl S]"),
+    ]
+}
+/// Straight, explicit-height guide ribbon. It is render-only, never world collision.
+pub(super) fn ribbon(zone: &Zone, path: &GuidePath) -> Mesh {
+    let mut vertices = vec![];
+    let mut indices = vec![];
+    let points: Vec<Vec3> = path
+        .points
+        .iter()
+        .map(|p| Vec3::from_array(zone.local(*p).expect("Validated guide point")))
+        .collect();
+    let sides: Vec<Vec3> = points
+        .windows(2)
+        .map(|p| {
+            let delta = p[1] - p[0];
+            Vec3::new(delta.z, 0., -delta.x).normalize()
+        })
+        .collect();
+    // A live editor draft can have only its first point and no segment yet.
+    for (index, point) in points
+        .iter()
+        .take(if sides.is_empty() { 0 } else { points.len() })
+        .enumerate()
+    {
+        let before = sides[index.saturating_sub(1)];
+        let after = sides[index.min(sides.len() - 1)];
+        let miter = (before + after).try_normalize().unwrap_or(after);
+        let side = miter * (path.width_metres as f32 * 0.5 / miter.dot(after).abs().max(0.5));
+        // Render-only clearance: authored/navigation coordinates and collision
+        // stay exact. Shared cross-sections avoid coplanar overlap at bends.
+        let point = *point + Vec3::Y * 0.03;
+        vertices.extend([point - side, point + side].map(|v| v.to_array()));
+        if index > 0 {
+            let start = (index as u32 - 1) * 2;
+            indices.extend([start, start + 2, start + 1, start + 1, start + 2, start + 3]);
+        }
+    }
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+    mesh.insert_indices(Indices::U32(indices));
+    mesh.compute_normals();
+    mesh
+}
+pub(super) fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let road = materials.add(Color::srgb(0.48, 0.31, 0.15));
+    let stream = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.04, 0.36, 0.75, 0.8),
+        unlit: true,
+        alpha_mode: AlphaMode::Blend,
+        ..default()
+    });
+    let patrol = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.55, 0.28, 0.95, 0.8),
+        unlit: true,
+        alpha_mode: AlphaMode::Blend,
+        ..default()
+    });
+    let selected = materials.add(StandardMaterial {
+        base_color: Color::srgba(1., 0.68, 0.16, 0.8),
+        unlit: true,
+        alpha_mode: AlphaMode::Blend,
+        ..default()
+    });
+    let draft_mesh = meshes.add(Cuboid::new(1., 0.01, 1.));
+    let draft_entity = commands
+        .spawn((
+            Mesh3d(draft_mesh.clone()),
+            MeshMaterial3d(selected.clone()),
+            Transform::default(),
+            Visibility::Hidden,
+            bevy::light::NotShadowCaster,
+        ))
+        .id();
+    let point_mesh = meshes.add(Sphere::new(0.25));
+    let handle_normal = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.8, 0.9, 0.95),
+        unlit: true,
+        ..default()
+    });
+    let handle_selected = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.08, 0.85, 1.),
+        unlit: true,
+        ..default()
+    });
+    let handles = std::array::from_fn(|index| {
+        commands
+            .spawn((
+                PointHandle(index),
+                Mesh3d(point_mesh.clone()),
+                MeshMaterial3d(handle_normal.clone()),
+                Transform::default(),
+                Visibility::Hidden,
+                bevy::light::NotShadowCaster,
+            ))
+            .id()
+    });
+    commands.insert_resource(Scene {
+        road,
+        stream,
+        patrol,
+        selected,
+        cache: BTreeMap::new(),
+        revision: None,
+        selection: None,
+        playing: false,
+        draft_entity,
+        draft_mesh,
+        draft: None,
+        handles,
+        handle_normal,
+        handle_selected,
+        handle_state: (vec![], [0.; 3], None),
+    });
+}
+pub(super) fn sync(
+    mut commands: Commands,
+    session: Res<Session>,
+    mut scene: ResMut<Scene>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    if scene.revision != Some(session.editor.revision()) {
+        let keep: BTreeSet<_> = session.editor.zone().paths.iter().map(|p| p.id).collect();
+        let removed: Vec<_> = scene
+            .cache
+            .keys()
+            .filter(|id| !keep.contains(id))
+            .copied()
+            .collect();
+        for id in removed {
+            if let Some((entity, handle)) = scene.cache.remove(&id) {
+                commands.entity(entity).despawn();
+                meshes.remove(handle.id());
+            }
+        }
+        for path in &session.editor.zone().paths {
+            let mesh = ribbon(session.editor.zone(), path);
+            if let Some((_, handle)) = scene.cache.get(&path.id) {
+                *meshes.get_mut(handle).expect("Resident guide mesh") = mesh;
+            } else {
+                let handle = meshes.add(mesh);
+                let material = match path.kind {
+                    PathKind::Road => scene.road.clone(),
+                    PathKind::Stream => scene.stream.clone(),
+                    PathKind::Patrol => scene.patrol.clone(),
+                };
+                let entity = commands
+                    .spawn((
+                        GuideVisual(path.id),
+                        Mesh3d(handle.clone()),
+                        MeshMaterial3d(material),
+                        Transform::default(),
+                        bevy::light::NotShadowCaster,
+                    ))
+                    .id();
+                scene.cache.insert(path.id, (entity, handle));
+            }
+        }
+    }
+    let selected = session.path_selected.filter(|_| session.path_mode);
+    if scene.revision != Some(session.editor.revision())
+        || scene.selection != selected
+        || scene.playing != session.play.is_some()
+    {
+        for path in &session.editor.zone().paths {
+            let material = if session.path_selected == Some(path.id) && session.path_mode {
+                scene.selected.clone()
+            } else {
+                match path.kind {
+                    PathKind::Road => scene.road.clone(),
+                    PathKind::Stream => scene.stream.clone(),
+                    PathKind::Patrol => scene.patrol.clone(),
+                }
+            };
+            let entity = scene.cache[&path.id].0;
+            commands.entity(entity).insert((
+                MeshMaterial3d(material),
+                if path.kind == PathKind::Patrol && session.play.is_some() {
+                    Visibility::Hidden
+                } else {
+                    Visibility::Visible
+                },
+            ));
+        }
+        scene.revision = Some(session.editor.revision());
+        scene.selection = selected;
+        scene.playing = session.play.is_some();
+    }
+    let draft = session.path_draft.as_ref().map(|d| d.path.clone());
+    if scene.draft != draft {
+        if let Some(path) = &draft {
+            if path.points.len() >= 2 {
+                *meshes.get_mut(&scene.draft_mesh).expect("Draft guide mesh") =
+                    ribbon(session.editor.zone(), path);
+                commands
+                    .entity(scene.draft_entity)
+                    .insert(Visibility::Visible);
+            } else {
+                commands
+                    .entity(scene.draft_entity)
+                    .insert(Visibility::Hidden);
+            }
+        } else {
+            commands
+                .entity(scene.draft_entity)
+                .insert(Visibility::Hidden);
+        }
+        scene.draft = draft;
+    }
+    let points = if session.path_mode && session.play.is_none() {
+        if let Some(draft) = &session.path_draft {
+            draft.path.points.clone()
+        } else {
+            session
+                .editor
+                .zone()
+                .paths
+                .iter()
+                .find(|p| Some(p.id) == session.path_selected)
+                .map_or(vec![], |p| p.points.clone())
+        }
+    } else {
+        vec![]
+    };
+    let point = if session.path_draft.is_some() {
+        points.len().checked_sub(1)
+    } else {
+        session.path_point
+    };
+    let state = (points, session.editor.zone().origin, point);
+    if scene.handle_state != state {
+        for (index, &entity) in scene.handles.iter().enumerate() {
+            if let Some(&position) = state.0.get(index) {
+                let selected = point == Some(index);
+                commands.entity(entity).insert((
+                    Visibility::Visible,
+                    Transform::from_translation(Vec3::from_array(
+                        session.editor.zone().local(position).unwrap(),
+                    ))
+                    .with_scale(Vec3::splat(if selected { 1.5 } else { 1. })),
+                    MeshMaterial3d(if selected {
+                        scene.handle_selected.clone()
+                    } else {
+                        scene.handle_normal.clone()
+                    }),
+                ));
+            } else {
+                commands.entity(entity).insert(Visibility::Hidden);
+            }
+        }
+        scene.handle_state = state;
+    }
+}
+pub(super) fn perform(action: Action, session: &mut Session) {
+    match action {
+        Action::NewPath(kind) => {
+            let id = session.next_id;
+            let Some(next) = id.checked_add(1) else {
+                session.status = "Authoring IDs exhausted".into();
+                return;
+            };
+            session.next_id = next;
+            session.path_selected = None;
+            session.path_point = None;
+            session.path_draft = Some(Draft {
+                path: GuidePath {
+                    id,
+                    name: format!("{kind:?} {id}"),
+                    kind,
+                    width_metres: match kind {
+                        PathKind::Road => 4.,
+                        PathKind::Stream => 2.,
+                        PathKind::Patrol => 0.7,
+                    },
+                    points: vec![],
+                },
+                revision: session.editor.revision(),
+            });
+            session.status = "Click ground points, Enter to finish, Esc to cancel".into();
+        }
+        Action::FinishPath => {
+            if let Some(draft) = session.path_draft.take() {
+                if draft.path.points.len() < 2 {
+                    session.status = "Add at least two guide points".into();
+                    session.path_draft = Some(draft);
+                    return;
+                }
+                let id = draft.path.id;
+                session.execute(Command::Apply {
+                    expected_revision: draft.revision,
+                    edits: vec![Edit::PutPath { path: draft.path }],
+                });
+                if session.editor.zone().paths.iter().any(|p| p.id == id) {
+                    session.path_selected = Some(id);
+                }
+            }
+        }
+        Action::GradePath => {
+            if session.path_draft.is_some() {
+                session.status = "Finish or cancel guide draft before grading".into();
+                return;
+            }
+            if let Some(path_id) = session.path_selected {
+                session.edit(vec![Edit::GradePath {
+                    grade: theia_zone::grading::Grade {
+                        path_id,
+                        surface_offset_metres: -0.03,
+                        falloff_metres: 4.,
+                        blend: 1.,
+                    },
+                }]);
+            } else {
+                session.status = "Select a committed guide to grade terrain".into();
+            }
+        }
+        Action::InsertPoint | Action::RemovePoint => {
+            if session.path_draft.is_some() {
+                session.status = "Finish or cancel the guide draft before editing points".into();
+                return;
+            }
+            let Some(path) = session
+                .editor
+                .zone()
+                .paths
+                .iter()
+                .find(|p| Some(p.id) == session.path_selected)
+            else {
+                session.status = "Select a guide before editing points".into();
+                return;
+            };
+            let id = path.id;
+            let (edit, selected) = if matches!(action, Action::InsertPoint) {
+                let segment = session.path_point.unwrap_or(0).min(path.points.len() - 2);
+                let index = segment + 1;
+                let a = path.points[segment];
+                let b = path.points[segment + 1];
+                let position = std::array::from_fn(|i| a[i] + (b[i] - a[i]) / 2.);
+                (
+                    Edit::InsertPathPoint {
+                        id,
+                        index,
+                        position,
+                    },
+                    index,
+                )
+            } else {
+                let Some(index) = session.path_point else {
+                    session.status = "Select a control point before removing it".into();
+                    return;
+                };
+                (
+                    Edit::RemovePathPoint { id, index },
+                    index.min(path.points.len().saturating_sub(2)),
+                )
+            };
+            let revision = session.editor.revision();
+            session.edit(vec![edit]);
+            if session.editor.revision() != revision {
+                session.path_point = Some(selected);
+            }
+        }
+        Action::PopPath => {
+            if let Some(draft) = &mut session.path_draft {
+                draft.path.points.pop();
+            }
+        }
+        Action::NextPath => {
+            session.path_draft = None;
+            session.path_point = None;
+            let paths = &session.editor.zone().paths;
+            session.path_selected = if paths.is_empty() {
+                None
+            } else {
+                let index = paths
+                    .iter()
+                    .position(|p| Some(p.id) == session.path_selected)
+                    .map_or(0, |i| (i + 1) % paths.len());
+                Some(paths[index].id)
+            };
+        }
+        Action::DeletePath => {
+            session.path_draft = None;
+            if let Some(id) = session.path_selected {
+                session.edit(vec![Edit::DeletePath { id }]);
+            }
+        }
+        Action::PathWidth(direction) => {
+            if let Some(draft) = &mut session.path_draft {
+                let mut candidate = draft.path.clone();
+                candidate.width_metres =
+                    (candidate.width_metres + f64::from(direction) * 0.5).clamp(0.25, 32.);
+                let result = if candidate.points.len() >= 2 {
+                    Editor::new(session.editor.zone().clone()).and_then(|mut e| {
+                        e.execute(Command::Apply {
+                            expected_revision: 0,
+                            edits: vec![Edit::PutPath {
+                                path: candidate.clone(),
+                            }],
+                        })
+                    })
+                } else {
+                    Ok(())
+                };
+                match result {
+                    Ok(()) => draft.path = candidate,
+                    Err(error) => session.status = error,
+                }
+            } else if let Some(path) = session
+                .editor
+                .zone()
+                .paths
+                .iter()
+                .find(|p| Some(p.id) == session.path_selected)
+            {
+                let mut path = path.clone();
+                path.width_metres =
+                    (path.width_metres + f64::from(direction) * 0.5).clamp(0.25, 32.);
+                session.edit(vec![Edit::PutPath { path }]);
+            }
+        }
+        _ => unreachable!("Guide action dispatch"),
+    }
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn pointer(
+    mouse: Res<ButtonInput<MouseButton>>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
+    ground: Query<(), imported_terrain::GroundFilter>,
+    mut raycast: MeshRayCast,
+    visuals: Query<&GuideVisual>,
+    handles: Query<&PointHandle>,
+    objects: Query<(), With<viewport::Authored>>,
+    mut session: ResMut<Session>,
+) {
+    if session.has_modal() {
+        return;
+    }
+    if !session.path_mode || session.play.is_some() {
+        return;
+    }
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    if !window.focused {
+        session.path_draft = None;
+        return;
+    }
+    if !mouse.just_pressed(MouseButton::Left) {
+        return;
+    }
+    let Some(cursor) = canvas_cursor(window, &session) else {
+        return;
+    };
+    let Ok((camera, transform)) = camera.single() else {
+        return;
+    };
+    let Ok(ray) = camera.viewport_to_world(transform, cursor) else {
+        return;
+    };
+    if session.path_draft.is_none() {
+        let filter = |e| {
+            handles.contains(e) || visuals.contains(e) || ground.contains(e) || objects.contains(e)
+        };
+        let settings = MeshRayCastSettings::default().with_filter(&filter);
+        let hit = raycast.cast_ray(ray, &settings).first().map(|(e, _)| *e);
+        if let Some(handle) = hit.and_then(|e| handles.get(e).ok()) {
+            session.path_point = Some(handle.0);
+        } else {
+            session.path_selected = hit.and_then(|e| visuals.get(e).ok()).map(|p| p.0);
+            session.path_point = None;
+        }
+        return;
+    }
+    let filter = |entity| ground.contains(entity);
+    let settings = MeshRayCastSettings::default().with_filter(&filter);
+    let point = raycast
+        .cast_ray(ray, &settings)
+        .first()
+        .map(|(_, hit)| ray.get_point(hit.distance));
+    let Some(point) = point else {
+        return;
+    };
+    let mut position = session.snapped(
+        session
+            .editor
+            .zone()
+            .global(point.to_array())
+            .expect("Bounded guide ray"),
+    );
+    let height = session
+        .editor
+        .zone()
+        .terrain
+        .as_ref()
+        .and_then(|p| p.height(position[0], position[2]).ok().flatten())
+        .unwrap_or(0.);
+    position[1] = session.editor.zone().origin[1] + f64::from(height) + 0.03;
+    let mut draft = session.path_draft.take().unwrap();
+    let mut candidate = draft.path.clone();
+    candidate.points.push(position);
+    let result = if candidate.points.len() >= 2 {
+        Editor::new(session.editor.zone().clone()).and_then(|mut editor| {
+            editor.execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![Edit::PutPath {
+                    path: candidate.clone(),
+                }],
+            })
+        })
+    } else {
+        Ok(())
+    };
+    match result {
+        Ok(()) => {
+            draft.path = candidate;
+            session.status = format!("{} guide points - Enter finishes", draft.path.points.len());
+        }
+        Err(error) => session.status = error,
+    }
+    session.path_draft = Some(draft);
+}
+
+pub(super) fn summary(session: &Session) -> String {
+    let guide = session.path_draft.as_ref().map(|d| &d.path).or_else(|| {
+        session
+            .editor
+            .zone()
+            .paths
+            .iter()
+            .find(|p| Some(p.id) == session.path_selected)
+    });
+    format!(
+        "{} guides\n{}",
+        session.editor.zone().paths.len(),
+        guide.map_or("No guide selected".into(), |p| format!(
+            "#{} {:?} | {} points\nwidth {} m{}\n{}",
+            p.id,
+            p.kind,
+            p.points.len(),
+            p.width_metres,
+            if session.path_draft.is_some() {
+                " | draft"
+            } else {
+                ""
+            },
+            session
+                .path_point
+                .map_or("Whole guide selected".into(), |i| format!(
+                    "Point {} selected",
+                    i + 1
+                ))
+        ))
+    )
+}
+pub(super) fn translate(keys: &ButtonInput<KeyCode>, session: &mut Session, view: &mut View) {
+    if session.play.is_some()
+        || session.path_draft.is_some()
+        || keys.pressed(KeyCode::ControlLeft)
+        || keys.pressed(KeyCode::ControlRight)
+    {
+        return;
+    }
+    let Some(path) = session
+        .editor
+        .zone()
+        .paths
+        .iter()
+        .find(|p| Some(p.id) == session.path_selected)
+    else {
+        return;
+    };
+    if keys.just_pressed(KeyCode::KeyF) {
+        focus(session, view);
+        return;
+    }
+    if keys.just_pressed(KeyCode::Tab) {
+        let count = path.points.len();
+        let slot = session.path_point.map_or(0, |i| i + 1);
+        let backwards = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
+        let next = if backwards {
+            (slot + count) % (count + 1)
+        } else {
+            (slot + 1) % (count + 1)
+        };
+        session.path_point = next.checked_sub(1);
+        return;
+    }
+    let mut delta = [0.; 3];
+    let step = if session.snap { session.move_step } else { 0.1 };
+    for (key, axis, sign) in [
+        (KeyCode::ArrowLeft, 0, -1.),
+        (KeyCode::ArrowRight, 0, 1.),
+        (KeyCode::ArrowUp, 2, -1.),
+        (KeyCode::ArrowDown, 2, 1.),
+        (KeyCode::PageUp, 1, 1.),
+        (KeyCode::PageDown, 1, -1.),
+    ] {
+        if keys.just_pressed(key) {
+            delta[axis] += step * sign;
+        }
+    }
+    if delta != [0.; 3] {
+        if let Some(index) = session.path_point {
+            let position = std::array::from_fn(|i| path.points[index][i] + delta[i]);
+            let id = path.id;
+            session.edit(vec![Edit::MovePathPoint {
+                id,
+                index,
+                position,
+            }]);
+            return;
+        }
+        let mut path = path.clone();
+        for point in &mut path.points {
+            for i in 0..3 {
+                point[i] += delta[i];
+            }
+        }
+        session.edit(vec![Edit::PutPath { path }]);
+    }
+}
+
+pub(super) fn focus(session: &Session, view: &mut View) {
+    let Some(path) = session
+        .editor
+        .zone()
+        .paths
+        .iter()
+        .find(|p| Some(p.id) == session.path_selected)
+    else {
+        return;
+    };
+    if let Some(index) = session.path_point {
+        view.target = Vec3::from_array(session.editor.zone().local(path.points[index]).unwrap());
+        view.distance = 12.;
+    } else {
+        let mut minimum = Vec3::splat(f32::INFINITY);
+        let mut maximum = Vec3::splat(f32::NEG_INFINITY);
+        for &p in &path.points {
+            let p = Vec3::from_array(session.editor.zone().local(p).unwrap());
+            minimum = minimum.min(p);
+            maximum = maximum.max(p);
+        }
+        view.target = (minimum + maximum) / 2.;
+        view.distance = ((maximum - minimum).length() * 1.5 + path.width_metres as f32 * 2. + 8.)
+            .clamp(8., selection::MAX_VIEW_DISTANCE);
+    }
+}
+
+#[cfg(test)]
+mod ribbon_tests {
+    use super::*;
+    #[test]
+    fn unfinished_road_draft_has_no_triangles() {
+        let mut path = GuidePath {
+            id: 1,
+            name: "Draft".into(),
+            kind: PathKind::Road,
+            width_metres: 2.,
+            points: Vec::new(),
+        };
+        for points in [vec![], vec![[0.; 3]]] {
+            path.points = points;
+            assert_eq!(ribbon(&Zone::default(), &path).indices().unwrap().len(), 0);
+        }
+    }
+    #[test]
+    fn road_has_shared_bend_vertices_and_clearance_without_changing_authoring() {
+        for origin in [[0.; 3], [1e9, 0., -1e9]] {
+            let zone = Zone {
+                origin,
+                ..Default::default()
+            };
+            let path = GuidePath {
+                id: 1,
+                name: "Road".into(),
+                kind: theia_zone::paths::PathKind::Road,
+                width_metres: 2.,
+                points: [[0., 0., 0.], [4., 0., 0.], [4., 0., 4.]]
+                    .map(|p| std::array::from_fn(|i| p[i] + origin[i]))
+                    .to_vec(),
+            };
+            let before = path.clone();
+            let mesh = ribbon(&zone, &path);
+            let Some(bevy::mesh::VertexAttributeValues::Float32x3(vertices)) =
+                mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+            else {
+                panic!("positions");
+            };
+            assert_eq!(vertices.len(), 6);
+            assert!(vertices.iter().all(|v| (v[1] - 0.03).abs() < 1e-6));
+            assert_eq!(mesh.indices().unwrap().len(), 12);
+            assert_eq!(path, before);
+        }
+    }
+}

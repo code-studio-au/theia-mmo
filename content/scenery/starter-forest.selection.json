@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "id": "theia.scenery.starter-forest",
+  "assets": [
+    {
+      "id": "synty.forest.archway",
+      "name": "Forest archway",
+      "category": "Structures",
+      "prefab": "SM_Prop_Archway_01",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.ruins",
+      "name": "Forest ruins",
+      "category": "Structures",
+      "prefab": "SM_Prop_Ruins_03",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.table",
+      "name": "Woodland table",
+      "category": "Props",
+      "prefab": "SM_Prop_Table_01",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.chair",
+      "name": "Woodland chair",
+      "category": "Props",
+      "prefab": "SM_Prop_Chair_01",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.lantern",
+      "name": "Forest lantern",
+      "category": "Props",
+      "prefab": "SM_Prop_Lantern_01",
+      "collision": "decorative"
+    },
+    {
+      "id": "synty.forest.log",
+      "name": "Fallen log",
+      "category": "Nature",
+      "prefab": "SM_Env_Log_01",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.pebbles",
+      "name": "Rock cluster",
+      "category": "Nature",
+      "prefab": "SM_Env_Rock_Pebbles_05",
+      "collision": "decorative"
+    }
+  ]
+}

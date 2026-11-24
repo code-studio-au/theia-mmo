@@ -13,7 +13,7 @@ use std::{
 use theia_core::{content::ContentId, coordinates::ChunkId};
 use theia_network::{
     client::State,
-    dialogue::{Action, Profile, Rejection},
+    dialogue::{Action, Guide, Profile, Rejection},
     renet_runtime::{
         self as net,
         dialogue::{Client, Intent as DialogueIntent},
@@ -69,6 +69,11 @@ impl Peer {
                 shutdown,
                 identity,
                 net::GameplayClient {
+                    party: None,
+                    chat: None,
+                    avatar_life: None,
+                    public_attacks: None,
+                    journal: None,
                     classic_source: None,
                     dodge: None,
                     player_life: None,
@@ -147,6 +152,17 @@ impl Peer {
 fn id(s: &str) -> ContentId {
     ContentId::new(s).unwrap()
 }
+fn in_contact_range(state: &State, guide: Guide) -> bool {
+    let Some((snapshot, actor)) = state.snapshot.as_ref().zip(state.id) else {
+        return false;
+    };
+    snapshot
+        .players
+        .iter()
+        .find(|player| player.id == actor)
+        .and_then(|player| snapshot.global_position(player))
+        .is_some_and(|position| theia_network::dialogue::in_range(position, guide.position))
+}
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_clients_keep_independent_dialogue_and_acknowledge_refusals_and_walkaway() {
     let profile = Arc::new(Profile::from_json(DATA).unwrap());
@@ -177,6 +193,7 @@ async fn encrypted_clients_keep_independent_dialogue_and_acknowledge_refusals_an
             && s.guide.as_ref().is_some_and(|p| p.guide == Some(guide))
             && s.chunk_ack.is_some()
             && s.snapshot.as_ref().is_some_and(|v| v.players.len() == 2)
+            && in_contact_range(s, guide)
     };
     let initial_a = a.until(ready).await;
     let initial_b = b.until(ready).await;
@@ -317,6 +334,7 @@ async fn malformed_and_oversized_interaction_frames_disconnect_actual_encrypted_
         )
         .unwrap();
         let mut client = renet::RenetClient::new(renet_transport::connection_config());
+        let mut connection_confirmed = false;
         let mut last = std::time::Instant::now();
         let mut admitted = false;
         let mut sent = false;
@@ -351,6 +369,11 @@ async fn malformed_and_oversized_interaction_frames_disconnect_actual_encrypted_
                     client.send_message(renet_transport::EVENT_CHANNEL, payload.clone());
                     sent = true;
                 }
+                theia_network::renet_transport::confirm_connection(
+                    &mut client,
+                    &mut connection_confirmed,
+                )
+                .unwrap();
                 if transport.send_packets(&mut client).is_err() {
                     assert!(
                         admitted && sent,
@@ -373,4 +396,96 @@ async fn malformed_and_oversized_interaction_frames_disconnect_actual_encrypted_
     assert_eq!(stats.dialogue_requests_accepted, 0);
     assert_eq!(stats.dialogue_requests_rejected, 2);
     assert_eq!(stats.dialogue_replies_sent, 0);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_collection_keeps_exact_contacts_and_independent_sessions() {
+    use theia_network::dialogue::Placement;
+    let profile = Arc::new(
+        Profile::from_catalog_json(include_bytes!(
+            "../../../content/quests/development-valley-contacts.json"
+        ))
+        .unwrap(),
+    );
+    let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+    // Keep both contacts inside both spawn slots' range, independent of admission order.
+    let contacts = world
+        .spawn_placed_contacts(
+            profile.clone(),
+            vec![
+                (id("theia.dev.guide"), Placement::Horizontal([8064., 8000.])),
+                (
+                    id("theia.dev.steward"),
+                    Placement::Horizontal([8065., 8000.]),
+                ),
+            ],
+        )
+        .unwrap();
+    let identity = world.identity();
+    let chunks: Vec<_> = theia_network::procedural::neighbours(ChunkId { x: 62, z: 62 }, 1)
+        .into_iter()
+        .collect();
+    let directory = Tickets(std::env::temp_dir().join(format!(
+        "theia-contacts-{}-{}",
+        std::process::id(),
+        NEXT.fetch_add(1, Ordering::Relaxed)
+    )));
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let address = socket.local_addr().unwrap();
+    let transport = net::issue_local(socket, &directory.0).unwrap();
+    let token = |id| fs::read(directory.0.join(format!("client-{id}.token"))).unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let guard = Stop(stop);
+    let server = tokio::spawn(net::run_server_measured(transport, shutdown, world));
+    let mut a = Peer::start(address, token(1), identity, profile.clone(), chunks.clone());
+    let mut b = Peer::start(address, token(2), identity, profile, chunks);
+    let ready = |s: &State| {
+        s.dialogue.is_some()
+            && s.guide
+                .as_ref()
+                .is_some_and(|p| p.contacts == contacts && p.guide.is_none())
+            && s.chunk_ack.is_some()
+            // Chunk readiness can precede falling into the actual 3D interaction range.
+            && contacts.iter().all(|contact| in_contact_range(s, contact.guide))
+    };
+    a.until(ready).await;
+    b.until(ready).await;
+    a.action(0, Action::Open(contacts[0].guide.key)).await;
+    assert_eq!(
+        a.reply(1, 1).await.dialogue.unwrap().open.unwrap().node,
+        id("theia.dev.quest-guide.welcome")
+    );
+    b.action(0, Action::Open(contacts[1].guide.key)).await;
+    assert_eq!(
+        b.reply(1, 1).await.dialogue.unwrap().open.unwrap().node,
+        id("theia.dev.steward.welcome")
+    );
+    a.action(1, Action::Choose(id("theia.dev.steward.report")))
+        .await;
+    assert_eq!(
+        a.reply(2, 1).await.dialogue_reply.unwrap().rejection,
+        Some(Rejection::InvalidAction)
+    );
+    b.action(1, Action::Choose(id("theia.dev.steward.report")))
+        .await;
+    assert_eq!(
+        b.reply(2, 2).await.dialogue.unwrap().open.unwrap().guide,
+        contacts[1].guide.key
+    );
+    a.action(1, Action::Close).await;
+    a.reply(3, 2).await;
+    a.action(2, Action::Open(contacts[1].guide.key)).await;
+    assert_eq!(
+        a.reply(4, 3).await.dialogue.unwrap().open.unwrap().node,
+        id("theia.dev.steward.welcome")
+    );
+    assert_eq!(b.state.borrow().dialogue.as_ref().unwrap().revision, 2);
+    a.finish().await;
+    b.finish().await;
+    drop(guard);
+    tokio::time::timeout(Duration::from_secs(4), server)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
 }

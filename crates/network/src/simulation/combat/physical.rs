@@ -18,7 +18,7 @@ pub struct Bindings<'a> {
     pub weapons: &'a melee::Catalog,
     pub items: &'a inventory::Catalog,
     pub abilities: &'a abilities::Catalog,
-    pub creature: &'a creatures::Profile,
+    pub creature: &'a creatures::Definition,
     pub player_maximum_health: u32,
     pub creature_maximum_health: u32,
 }
@@ -305,20 +305,41 @@ impl World {
             .as_ref()
             .ok_or("Physical damage requires basic melee")?;
         if combat.physical.is_some()
-            || combat.pve.is_none()
+            || combat.lives.is_none()
             || crate::terrain::sha256(items) != melee.items_digest()
         {
             return Err(
                 "Physical damage requires matching life/equipment and one configuration".into(),
             );
         }
-        let patrol = self
-            .patrol
-            .as_ref()
-            .ok_or("Physical damage requires a known patrol")?;
-        if combat.creatures.len() != 1 || combat.creatures[0].key != patrol.key {
-            return Err("Initial physical damage requires one identified creature".into());
-        }
+        let definition = if let Some(patrol) = &self.patrol {
+            if combat.pve.is_none()
+                || combat.creatures.len() != 1
+                || combat.creatures[0].key != patrol.key
+            {
+                return Err("Physical damage requires the identified patrol life".into());
+            }
+            patrol.profile().definition()
+        } else {
+            let binding = self
+                .population_binding
+                .as_ref()
+                .ok_or("Physical damage requires a bound creature type")?;
+            if self.population.is_none()
+                || combat.pve.is_some()
+                || combat.creatures.is_empty()
+                || combat.creatures.len() > crate::targeting::MAX_TARGETS
+                || combat.creatures.iter().any(|creature| {
+                    creature.maximum != combat.creatures[0].maximum
+                        || self.creature_definition(creature.key) != Some(binding.definition())
+                })
+            {
+                return Err(
+                    "Physical damage requires a checked homogeneous passive population".into(),
+                );
+            }
+            binding.definition()
+        };
         let items = inventory::Catalog::from_json(items)?;
         let profile = Profile::new(
             definitions,
@@ -327,7 +348,7 @@ impl World {
                 weapons: melee.catalog(),
                 items: &items,
                 abilities: &combat.catalog,
-                creature: patrol.profile(),
+                creature: definition,
                 player_maximum_health: combat
                     .resources
                     .as_ref()
@@ -336,8 +357,16 @@ impl World {
                 creature_maximum_health: combat.creatures[0].maximum,
             },
         )?;
+        let mana = profile
+            .stats()
+            .creature_maximum_mana(profile.creature_definition())
+            .and_then(|maximum| theia_core::resources::Pool::new(maximum, maximum));
         let runtime = Runtime::new(profile)?;
-        self.combat.as_mut().unwrap().physical = Some(runtime);
+        let combat = self.combat.as_mut().unwrap();
+        for creature in &mut combat.creatures {
+            creature.mana = mana;
+        }
+        combat.physical = Some(runtime);
         Ok(())
     }
     pub fn physical_damage_profile(&self) -> Option<&Arc<Profile>> {
@@ -351,6 +380,27 @@ impl World {
     }
 }
 impl Authority {
+    pub(super) fn population_physical_ready(&self, world: &World) -> bool {
+        world.population.is_some()
+            && world.population_binding.is_some()
+            && world.patrol.is_none()
+            && self.pve.is_none()
+            && self.lives.as_ref().is_some_and(|lives| lives.ready())
+            && self.reset.as_ref().is_none_or(|reset| reset.ready())
+            && self.population_threat.iter().all(|threat| threat.ready())
+            && self
+                .physical
+                .as_ref()
+                .is_some_and(|physical| physical.error.is_none())
+    }
+    pub(super) fn physical_target_matches(&self, world: &World, target: EntityKey) -> bool {
+        self.population_target_ready(target)
+            && self.physical.as_ref().is_some_and(|physical| {
+                world.creature_definition(target).is_some_and(|definition| {
+                    definition.id() == physical.profile.creature_definition()
+                })
+            })
+    }
     pub(super) fn physical_melee_event_slots(&self, target: EntityKey) -> usize {
         if self.physical.is_none() {
             return 2;
@@ -378,7 +428,7 @@ impl Authority {
         sequence: u64,
     ) -> Result<()> {
         if self.events.len() + self.physical_melee_event_slots(target) > self.step_event_budget()
-            || world.patrol.as_ref().is_none_or(|p| p.key != target)
+            || !self.physical_target_matches(world, target)
         {
             return Err("Physical melee event/creature context unavailable".into());
         }
@@ -466,7 +516,7 @@ impl Authority {
         if player.state.key() != target
             || !player.state.alive()
             || world.entity_key(target.actor.entity.value()) != Some(target.actor)
-            || world.patrol.as_ref().is_none_or(|p| p.key != npc)
+            || world.creature_definition(npc).is_none()
             || !self.creatures.iter().any(|c| c.key == npc && c.current > 0)
         {
             return Ok(None);
@@ -506,3 +556,6 @@ mod world_tests;
 
 #[cfg(test)]
 mod renet_tests;
+
+#[cfg(test)]
+mod population_tests;

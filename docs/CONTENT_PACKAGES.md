@@ -122,3 +122,35 @@ The normal chunk client validates exact GLB URI/settings agreement, in-root path
 PNG byte/header budgets and hashes before standard Bevy loading. Server collision
 loading still needs no image I/O. The offline extraction tool publishes a new
 representation without changing source geometry or the active map.
+
+## Particle catalog identity foundation (schema 4)
+
+Manifest schema 4 adds required `particle_bytes` and `particle_sha256` fields,
+bounded by the 256 KiB catalog limit. These fields are forbidden for schemas
+1–3. Its fingerprint uses the ASCII `theia-world-package-v4` domain followed by
+the schema-2 identity fields and canonical shared-image list, then the particle
+catalog byte count as u64 little-endian and its 32 SHA-256 bytes. The catalog's
+effect descriptors bind the RON bytes separately. See
+[Sprinkles integration](SPRINKLES_INTEGRATION.md) for the provisional catalog
+and its limits. Schema 4 does not support schema-3 material profiles; schema 5 combines both.
+
+Headless collision loading can recognize this identity without opening particle
+files. The client visual verification paths explicitly reject schema 4 until
+particle catalog admission, dependencies and rendering are implemented; no
+exporter publishes it yet. Existing schema-1 through schema-3 fingerprints are
+unchanged. Hashes establish consistency, not authenticity or protection from
+files changing after verification.
+
+## Combined projected materials and particles (schema 5)
+
+Schema 5 retains schema 3's required, verified projected material profiles and
+shared images, and schema 4's required, hash-bound particle catalog. Its identity
+uses the domain `theia-world-package-v5\0`, followed by the same little-endian
+fields and canonical shared-image list as schema 4, then the catalog byte length
+and SHA-256. Both visual dependencies and the catalog must be verified before
+rendering; visual-only verification rejects the package. Existing schema 1–4
+identities are unchanged. The reader and Python identity function support schema
+5. The overlay publisher retains schema-3 projected materials when it adds or
+replaces particles, and restores schema 3 when those particles are removed. Two
+connected Vulkan clients verified projected-material bindings and particle playback
+in a published far-origin chunk world (`build/projected-particle-native-20261111-v4/`).

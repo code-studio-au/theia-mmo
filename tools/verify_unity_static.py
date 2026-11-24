@@ -27,7 +27,7 @@ def signatures(triangles):
 
 
 
-def standard_source(fields):
+def standard_source(fields, normal_map=False):
     """Independent eligibility check; never trust a converter's profile label."""
     shader=fields['m_Shader'];saved=fields['m_SavedProperties']
     if shader.get('fileID')!=46 or shader.get('guid')!='0000000000000000f000000000000000':raise ValueError('Reference Standard shader differs')
@@ -41,7 +41,7 @@ def standard_source(fields):
         return result
     floats=entries(saved['m_Floats']);colors=entries(saved['m_Colors']);textures=entries(saved['m_TexEnvs'])
     keywords=(fields.get('m_ShaderKeywords') or '').split()
-    if set(keywords)-{'_EMISSION'} or fields.get('disabledShaderPasses') or fields.get('m_DoubleSidedGI',0) or fields.get('m_CustomRenderQueue',-1) not in (-1,2000):raise ValueError('Reference Standard variant/pass differs')
+    if set(keywords)-({'_EMISSION','_NORMALMAP'} if normal_map else {'_EMISSION'}) or fields.get('disabledShaderPasses') or fields.get('m_DoubleSidedGI',0) or fields.get('m_CustomRenderQueue',-1) not in (-1,2000):raise ValueError('Reference Standard variant/pass differs')
     for key,wanted in [('_Mode',0),('_SrcBlend',1),('_DstBlend',0),('_ZWrite',1),('_SpecularHighlights',1),('_GlossyReflections',1),('_SmoothnessTextureChannel',0)]:
         if floats.get(key,wanted)!=wanted:raise ValueError('Unsupported reference Standard state')
     if colors.get('_Color')!=dict(r=1,g=1,b=1,a=1):raise ValueError('Unsupported reference Standard tint')
@@ -52,7 +52,12 @@ def standard_source(fields):
     if not textures.get('_MainTex',{}).get('m_Texture',{}).get('fileID'):raise ValueError('Missing reference Standard base texture')
     for key,value in textures.items():
         if not value['m_Texture'].get('fileID'):continue
-        if key not in ('_MainTex','_EmissionMap') or value['m_Texture']['fileID']!=2800000 or value['m_Scale']!=dict(x=1,y=1) or value['m_Offset']!=dict(x=0,y=0):raise ValueError('Unsupported reference Standard texture')
+        if key not in (('_MainTex','_EmissionMap','_BumpMap') if normal_map else ('_MainTex','_EmissionMap')) or value['m_Texture']['fileID']!=2800000 or value['m_Scale']!=dict(x=1,y=1) or value['m_Offset']!=dict(x=0,y=0):raise ValueError('Unsupported reference Standard texture')
+    if normal_map:
+        amount = floats.get('_BumpScale')
+        if ('_NORMALMAP' not in keywords or not textures.get('_BumpMap', {}).get('m_Texture', {}).get('fileID')
+                or type(amount) not in (int, float) or not math.isfinite(amount) or not 0 <= amount <= 1):
+            raise ValueError('Invalid reference Standard normal map/strength')
     return True
 
 
@@ -134,8 +139,9 @@ def verify_material(sources, conversion, doc, binary):
     pbr = material['pbrMetallicRoughness']
     if conversion.get('material_plan',{}).get('profile')=='unity-standard-glass-blend-v1':
         return verify_glass(fields,doc,material)
-    standard = conversion.get('material_plan',{}).get('profile') == 'unity-standard-opaque-v1'
-    if standard:standard_source(fields)
+    normal_map = conversion.get('material_plan',{}).get('profile') == 'unity-standard-normal-v1'
+    standard = normal_map or conversion.get('material_plan',{}).get('profile') == 'unity-standard-opaque-v1'
+    if standard:standard_source(fields,normal_map=normal_map)
     if standard and (fields['m_Shader'].get('fileID') != 46 or fields['m_Shader'].get('guid') != '0000000000000000f000000000000000'):
         raise ValueError('Source shader does not match Standard adaptation')
     base_key = '_MainTex' if standard else '_BaseMap'
@@ -149,7 +155,7 @@ def verify_material(sources, conversion, doc, binary):
             raise ValueError('Exported surface scalars differ from source adaptation')
     if standard and (material.get('doubleSided',False) or material.get('alphaMode','OPAQUE') != 'OPAQUE'):
         raise ValueError('Exported culling/alpha differs from opaque source')
-    if any(k in material for k in ('normalTexture','occlusionTexture','extensions')) or 'metallicRoughnessTexture' in pbr:
+    if any(k in material for k in (('occlusionTexture','extensions') if normal_map else ('normalTexture','occlusionTexture','extensions'))) or 'metallicRoughnessTexture' in pbr:
         raise ValueError('Unexpected exported material feature')
     slots = [('base_color',base_key,pbr['baseColorTexture'])]
     expected_emission = [0,0,0]
@@ -162,6 +168,33 @@ def verify_material(sources, conversion, doc, binary):
     if 'emissiveTexture' in material and len(slots) == 1:
         raise ValueError('Unexpected exported emission texture')
     used = set(); result = {}
+    if normal_map:
+        from unity_standard_normal import sampler, verify_normal_pixels
+        from unity_texture_reference import inspect as inspect_textures
+        if '_NORMALMAP' not in (fields.get('m_ShaderKeywords') or '').split():
+            raise ValueError('Reference Standard normal keyword is absent')
+        reference = conversion.get('texture_reference')
+        if reference is not None:
+            actual_reference = inspect_textures(sources.root, Path(reference['project']))
+            if any(reference[k] != actual_reference[k] for k in ['request_sha256','report_sha256','collector_sha256']):
+                raise ValueError('Reference texture collector changed')
+            reference = actual_reference
+        expected_path = sources.by_guid[textures['_BumpMap']['m_Texture']['guid']]
+        if conversion.get('normal_texture') != expected_path:
+            raise ValueError('Reference normal texture binding differs')
+        meta = sampler(sources, expected_path, reference)
+        sampler(sources,sources.by_guid[textures['_MainTex']['m_Texture']['guid']],reference)
+        if meta['textureType'] != 1 or meta['mipmaps']['sRGBTexture'] != 0:
+            raise ValueError('Reference normal importer is not linear')
+        slot = material.get('normalTexture',{})
+        if slot.get('scale',1) != 1 or slot.get('texCoord',0) != 0 or slot.get('extensions'):
+            raise ValueError('Unexpected normal texture transform/strength')
+        texture = doc['textures'][slot['index']];image_id=texture['source'];used.add(image_id)
+        settings=doc['samplers'][texture['sampler']]
+        if [settings.get(k) for k in ['magFilter','minFilter','wrapS','wrapT']] != [9729,9985,10497,10497]:
+            raise ValueError('Reference normal sampler differs')
+        view=doc['bufferViews'][doc['images'][image_id]['bufferView']];offset=view.get('byteOffset',0)
+        result['normal']=verify_normal_pixels(sources.checked(expected_path),binary[offset:offset+view['byteLength']],floats['_BumpScale'])
     for name,key,slot in slots:
         expected_path = sources.by_guid[textures[key]['m_Texture']['guid']]
         original = sources.checked(expected_path)

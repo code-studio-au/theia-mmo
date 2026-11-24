@@ -1,3 +1,85 @@
+Authored full quest-loop qualification, 12 November 2026:
+The contact-v3 valley's introduction, three-kill follow-up and exported overlook
+area now pass native normal input, turn-in, 150 XP, database restart and rejoin.
+The copy at build/starter-valley-playable-gameplay-v1 retains the original combat
+profiles and uses the matching west-grove route. Scope is one contact and one
+respawning creature; one player death/respawn occurs. [Evidence and limitations](STATUS.md).
+
+Authored gameplay bundle launch, 12 November 2026:
+Normal account play now accepts an immutable authored world plus its gameplay
+manifest and explicit source-matched navigation. The guide comes from the exported
+contact; positional overrides are refused. Real client configuration preflight
+checks route identity and navigation tile hashes before launching a session. The
+existing sealed bundle validation and shared client/server identities remain intact.
+Native Linux qualification covers the introduction quest, 25 XP, durable restart and
+rejoin, with a moving west-grove patrol. It does not yet qualify the valley's kill
+or area quests. [Launch command and exact scope](ZONE_EDITOR.md).
+
+Headless normal client/server identity comparison, 6 November 2026:
+The client's explicit `--configuration-report` returns before networking or
+window/renderer startup. The existing configuration qualifier now compares its
+actual schema-21 identity with the real server, then checks OIDC/SQL HTTP ticket
+preflight. Both fixture and ordinary bundles pass. [Command scope and evidence](QUEST_ITEM_REWARDS.md#actual-clientserver-configuration-identities-agree-headlessly).
+Desktop testing remains paused; encrypted owned gameplay and native UI are separate.
+
+Positive schema-21 server configuration, 6 November 2026:
+The real normal server starts both fixed-reward bundles and passes real OIDC/SQL
+HTTP ticket preflight headlessly. No game client or desktop window is launched;
+no item/quest/XP state is created. [Evidence and limits](QUEST_ITEM_REWARDS.md#normal-server-startup-and-ticket-preflight-qualified-headlessly).
+Combined native gameplay and reward UI remain pending while desktop testing is paused.
+
+Schema-21 fixed quest reward configuration prerequisite, 6 November 2026:
+`development-gameplay-classic-item-rewards.json` and its guaranteed development
+fixture add exact `quest_item_rewards` to the schema-20 document bundle (25 roles).
+Rust validates the bounded recipe/context; the launcher seals it and passes
+`--quest-item-rewards` to both binaries. Older schema 1/12/19/20 reports exactly
+match the preserved reader validator. 62 validator / 45 bundle / three Linux CLI
+and 24 server / 150 client tests pass. [Current scope and pending reward UI/native work](QUEST_ITEM_REWARDS.md#implemented-normal-configuration-prerequisite).
+No desktop/mouse tests or combined native reward qualification; local only.
+
+Schema-15 public avatar-life bundle qualified, 3 November 2026:
+`content/development-gameplay-classic-public-life.json` retains all 22 exact
+schema-14 inputs, explicitly selecting both public NPC timing and avatar life
+contracts. Normal client/server identities agree after NPC timing; earlier
+schemas keep their meanings. 131 client / 47 validator / 35 Python checks,
+1,123 workspace tests (50 skips), formatting and Clippy pass. Actual native
+remote death/fresh life and normal quest completion/database restart pass.
+[Exact evidence, privacy and limits](PUBLIC_AVATAR_LIFE.md). Preserve
+`build/avatar-life-client-qualified-v1-20261103`. Local only.
+
+Schema-14 public NPC attack bundle native checks pass, 3 November 2026:
+`content/development-gameplay-classic-public-attacks.json` explicitly selects
+`--public-creature-attacks` on both normal binaries with the same 22 exact inputs
+as schema 13. World identity adds the derived public contract after threat;
+older manifests keep their behavior. Two owned OIDC accounts/native clients
+confirm victim-only incoming strikes and a healthy unselected observer rendering
+attacks aimed at the actual remote victim (positions 7.53 m apart). Normal
+unmodified-wolf quest completion and PostgreSQL restart/rejoin also pass: head
+13, two completed quests, 125 XP and no duplicate progress/rewards. Native
+1920x1200 on Linux RX 7900 XTX / RADV Vulkan; all three successful runs have zero
+GPU diagnostics. Final workspace regression passes 1,106 tests (50 skips); preserve
+`build/creature-attack-client-qualified-v1-20261103`. No Windows/capacity claim. [Contract and current proof](PUBLIC_CREATURE_ATTACKS.md).
+
+Schema-13 damage-threat bundle qualified, 3 November 2026:
+`content/development-gameplay-classic-threat.json` adds an exact bounded threat
+policy to the canonical schema-12 journal, for 22 roles. Complete context and
+exclusive versions/roles are checked by Rust and the copied snapshot is
+revalidated before children launch. Client/server identity includes the same
+policy bytes after reset. 44 validator / 33 Python checks, full 1,074-test
+workspace regression, formatting/Clippy and normal OIDC/SQL native completion/
+restart pass. Older bundles stay unchanged. [Exact proof and limits](CREATURE_THREAT.md).
+
+Schema-12 expanded journal qualified, 3 November 2026:
+`content/development-gameplay-classic-journal.json` selects 21 exact-byte roles.
+Its `quest` role is the bounded expanded catalogue (64 KiB development maximum)
+and includes completion XP; the external legacy completion recipe is excluded.
+Canonical `quests/` and `gameplay/` paths are staged together without importing
+story planning data. Offline checks resolve every local quest contact, semantic
+choice and creature; earlier schemas retain their interpretations. The launcher
+forwards `--quest-journal` to both children. 127 client / 41 validator / 31 Python
+checks and five actual normal OIDC/SQL native runs pass. [Quest behavior, proof
+scope, private combat fixture and launch command](QUEST_ENGINE.md).
+
 Schema-11 reset adoption qualified, 2 November 2026: the explicit
 `development-gameplay-classic-reset.json` bundle adds the bounded `creature_reset`
 role (twenty-two exact-byte profiles). It requires matching pursuit, solo credit,

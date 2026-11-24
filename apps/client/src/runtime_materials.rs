@@ -92,7 +92,7 @@ fn update(world: &mut World) {
     let diagnostic = world.resource::<Diagnostic>().0;
     if diagnostic != 0 {
         let cameras = world
-            .query_filtered::<Entity, (With<Camera3d>, Without<DiagnosticCamera>)>()
+            .query_filtered::<Entity, (crate::frontend::WorldCamera, Without<DiagnosticCamera>)>()
             .iter(world)
             .collect::<Vec<_>>();
         for entity in cameras {

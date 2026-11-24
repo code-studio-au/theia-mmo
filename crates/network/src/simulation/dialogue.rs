@@ -1,19 +1,25 @@
 //! Stationary, noncombat informational guide. Pure fixed-step state only;
 //! no database, file or transport I/O, and no physics body for the NPC.
 use super::World;
-use crate::dialogue::{Action, Guide, Open, Profile, Rejection, Request, View, in_range};
+use crate::dialogue::{
+    Action, Guide, Open, Placement, Profile, Rejection, Request, View, in_range,
+};
 use std::{collections::BTreeMap, sync::Arc};
 use theia_core::{
+    content::ContentId,
     coordinates::GlobalPosition,
     identity::{EntityId, EntityKey},
 };
 
 pub(super) struct Authority {
     pub(super) profile: Arc<Profile>,
-    pub(super) placement: [f64; 2],
+    contacts: BTreeMap<ContentId, Contact>,
+    actors: BTreeMap<u64, Session>,
+}
+struct Contact {
+    placement: Placement,
     guide: Guide,
     available: bool,
-    actors: BTreeMap<u64, Session>,
 }
 #[derive(Default)]
 struct Session {
@@ -43,28 +49,51 @@ impl Session {
     }
 }
 impl Authority {
+    pub(super) fn home(&self, npc: &ContentId) -> Option<Guide> {
+        self.contacts
+            .get(npc)
+            .filter(|c| c.available)
+            .map(|c| c.guide)
+    }
+    pub(super) fn identity(&self, mut base: [u8; 32]) -> [u8; 32] {
+        // Sorted content IDs make allocation and identity independent of input order.
+        for contact in self.contacts.values() {
+            base = contact.placement.identity(base, self.profile.hash());
+        }
+        base
+    }
     pub(super) fn available(&self) -> bool {
-        self.available
+        self.contacts.values().all(|c| c.available)
     }
     pub(super) fn leave(&mut self, actor: u64) {
         self.actors.remove(&actor);
     }
-    fn eligible(&self, world: &World, actor: u64) -> bool {
-        self.available
-            && world.player_alive(actor)
-            && world
-                .global_position(actor)
-                .is_some_and(|p| in_range(p, self.guide.position))
+    fn contact(&self, key: EntityKey) -> Option<(&ContentId, &Contact)> {
+        self.contacts.iter().find(|(_, c)| c.guide.key == key)
+    }
+    fn eligible(&self, world: &World, actor: u64, key: EntityKey) -> bool {
+        self.contact(key).is_some_and(|(npc, c)| {
+            c.available
+                && world.player_alive(actor)
+                && world.global_position(actor).is_some_and(|p| {
+                    in_range(p, world.follow.position(actor, npc, c.guide.position))
+                })
+        })
     }
     fn prune(&mut self, world: &World) {
-        // At most one session per admitted player; a departure also removes it.
-        let guide = self.guide;
-        let available = self.available;
+        let contacts = &self.contacts;
         self.actors.retain(|&id, state| {
             let Some(position) = world.global_position(id) else {
                 return false;
             };
-            if !available || !world.player_alive(id) || !in_range(position, guide.position) {
+            if state.open.as_ref().is_some_and(|open| {
+                !world.player_alive(id)
+                    || !contacts.iter().any(|(npc, c)| {
+                        c.available
+                            && c.guide.key == open.guide
+                            && in_range(position, world.follow.position(id, npc, c.guide.position))
+                    })
+            }) {
                 state.close();
             }
             true
@@ -74,7 +103,18 @@ impl Authority {
         if world.entity_key(actor).is_none() {
             return Err(Rejection::Unavailable);
         }
-        let eligible = self.eligible(world, actor);
+        let key = match request.action {
+            Action::Open(key) => Some(key),
+            _ => self
+                .actors
+                .get(&actor)
+                .and_then(|s| s.open.as_ref())
+                .map(|o| o.guide),
+        };
+        let eligible = key.is_some_and(|key| self.eligible(world, actor, key));
+        let contact = key
+            .and_then(|key| self.contact(key))
+            .map(|(id, _)| id.clone());
         let state = self.actors.entry(actor).or_default();
         let window = world.tick / u64::from(world.rate.hz());
         if window != state.window {
@@ -89,6 +129,9 @@ impl Authority {
             return Err(Rejection::StaleSequence);
         }
         state.sequence = request.sequence;
+        if contact.is_none() {
+            return Err(Rejection::InvalidAction);
+        }
         if !eligible {
             state.close();
             return Err(Rejection::OutOfRange);
@@ -97,15 +140,22 @@ impl Authority {
             return Err(Rejection::StaleRevision);
         }
         let open = match &request.action {
-            Action::Open(key) if *key == self.guide.key && state.open.is_none() => Some(Open {
+            Action::Open(key) if state.open.is_none() => Some(Open {
                 guide: *key,
-                node: self.profile.profile().start().id().clone(),
+                node: self
+                    .profile
+                    .contact(contact.as_ref().ok_or(Rejection::InvalidAction)?)
+                    .ok_or(Rejection::InvalidAction)?
+                    .start()
+                    .id()
+                    .clone(),
             }),
             Action::Choose(choice) => {
                 let open = state.open.as_ref().ok_or(Rejection::InvalidAction)?;
                 let node = self
                     .profile
-                    .profile()
+                    .contact(contact.as_ref().ok_or(Rejection::InvalidAction)?)
+                    .ok_or(Rejection::InvalidAction)?
                     .choose(&open.node, choice)
                     .map_err(|_| Rejection::InvalidAction)?;
                 Some(Open {
@@ -130,7 +180,7 @@ impl World {
             || self
                 .dialogue
                 .as_ref()
-                .is_none_or(|d| d.profile.profile().npc() != profile.catalog().npc())
+                .is_none_or(|d| d.profile.contact(profile.catalog().npc()).is_none())
         {
             return Err("Vendor requires inactive world and matching guide".into());
         }
@@ -146,6 +196,10 @@ impl World {
         self.vendor
             .as_ref()
             .is_some_and(|p| p.purchase(command).is_ok())
+            && self
+                .vendor
+                .as_ref()
+                .is_some_and(|p| self.contact_definition(command.npc) == Some(p.catalog().npc()))
             && self.guide_interaction_eligible(actor, command.dialogue_revision, command.npc)
     }
 
@@ -157,7 +211,9 @@ impl World {
         dialogue_revision: u64,
         npc: EntityKey,
     ) -> bool {
-        self.nearby_guide(actor).is_some_and(|g| g.key == npc)
+        self.dialogue
+            .as_ref()
+            .is_some_and(|d| d.eligible(self, actor, npc))
             && self.dialogue_view(actor).is_some_and(|v| {
                 v.revision == dialogue_revision && v.open.is_some_and(|o| o.guide == npc)
             })
@@ -170,59 +226,151 @@ impl World {
         profile: Arc<Profile>,
         xz: [f64; 2],
     ) -> crate::Result<Guide> {
+        self.spawn_placed_guide(profile, Placement::Horizontal(xz))
+    }
+    /// Install one trusted, supported contact before admitting players. This
+    /// retains the existing single-guide budget and creates no actor collision.
+    pub fn spawn_placed_guide(
+        &mut self,
+        profile: Arc<Profile>,
+        placement: Placement,
+    ) -> crate::Result<Guide> {
+        if profile.catalog().is_some() {
+            return Err("Contact catalogues require explicit collection placement".into());
+        }
+        let npc = profile.profile().npc().clone();
+        Ok(self.install_contacts(profile, vec![(npc, placement)])?[0].guide)
+    }
+    pub fn spawn_placed_contacts(
+        &mut self,
+        profile: Arc<Profile>,
+        placements: Vec<(ContentId, Placement)>,
+    ) -> crate::Result<Vec<crate::dialogue::ContactPresence>> {
+        if profile.catalog().is_none() {
+            return Err("Collection placement requires a contact catalogue".into());
+        }
+        self.install_contacts(profile, placements)
+    }
+    fn install_contacts(
+        &mut self,
+        profile: Arc<Profile>,
+        placements: Vec<(ContentId, Placement)>,
+    ) -> crate::Result<Vec<crate::dialogue::ContactPresence>> {
         if self.tick != 0 || !self.players.is_empty() || self.dialogue.is_some() {
-            return Err("Guide requires inactive world and unused guide budget".into());
+            return Err("Contacts require an inactive world and unused contact budget".into());
         }
-        let runtime = self.procedural.as_ref().ok_or("Guide requires graybox")?;
-        let focus = GlobalPosition::new([xz[0], 0., xz[1]]).ok_or("Invalid guide position")?;
-        if crate::procedural::owner(focus).is_none() {
-            return Err("Guide outside graybox".into());
+        if placements.len() != profile.contacts().count() {
+            return Err("Contact placements must match every catalogue entry".into());
         }
-        let patch = runtime.patch(focus).ok_or("Guide collision not prepared")?;
-        let mut position = patch
-            .try_spawn(xz[0], xz[1])
-            .ok_or("Guide unsupported")?
+        let mut sorted = BTreeMap::new();
+        for (npc, placement) in placements {
+            if profile.contact(&npc).is_none() || sorted.insert(npc, placement).is_some() {
+                return Err("Unknown or duplicate contact placement".into());
+            }
+        }
+        let runtime = self
+            .procedural
+            .as_ref()
+            .ok_or("Contacts require prepared world")?;
+        let mut next = self.next_id;
+        let mut contacts = BTreeMap::new();
+        for (npc, placement) in sorted {
+            let focus = placement.focus()?;
+            let patch = runtime
+                .patch(focus)
+                .ok_or("Contact collision not prepared")?;
+            let mut position = match placement {
+                Placement::Horizontal([x, z]) => patch.try_spawn(x, z),
+                Placement::Feet(feet) => patch.try_spawn_near(feet),
+            }
+            .ok_or("Contact unsupported at requested position")?
             .metres();
-        position[1] += f64::from(crate::world::PAWN_Y);
-        let position = GlobalPosition::new(position).ok_or("Invalid supported guide position")?;
-        let next = self
-            .next_id
-            .checked_add(1)
-            .ok_or("Entity identity exhausted")?;
-        let guide = Guide {
-            key: EntityKey {
-                epoch: self.epoch,
-                entity: EntityId::new(next).unwrap(),
-            },
-            position,
-        };
+            position[1] += f64::from(crate::world::PAWN_Y);
+            let position =
+                GlobalPosition::new(position).ok_or("Invalid supported contact position")?;
+            next = next.checked_add(1).ok_or("Entity identity exhausted")?;
+            contacts.insert(
+                npc,
+                Contact {
+                    placement,
+                    available: true,
+                    guide: Guide {
+                        key: EntityKey {
+                            epoch: self.epoch,
+                            entity: EntityId::new(next).unwrap(),
+                        },
+                        position,
+                    },
+                },
+            );
+        }
+        let presence = contacts
+            .iter()
+            .map(|(npc, c)| crate::dialogue::ContactPresence {
+                npc: npc.clone(),
+                guide: c.guide,
+            })
+            .collect();
+        // Commit only after every support/reference check succeeds.
         self.next_id = next;
         self.dialogue = Some(Authority {
             profile,
-            placement: xz,
-            guide,
-            available: true,
+            contacts,
             actors: BTreeMap::new(),
         });
-        Ok(guide)
+        Ok(presence)
     }
     pub fn dialogue_profile(&self) -> Option<&Arc<Profile>> {
         Some(&self.dialogue.as_ref()?.profile)
     }
-    pub fn nearby_guide(&self, actor: u64) -> Option<Guide> {
-        if !self.player_alive(actor) {
-            return None;
-        }
-        let authority = self.dialogue.as_ref()?;
-        authority.eligible(self, actor).then_some(authority.guide)
+    pub fn contact_definition(&self, key: EntityKey) -> Option<&ContentId> {
+        let (id, contact) = self.dialogue.as_ref()?.contact(key)?;
+        contact.available.then_some(id)
     }
-    /// Presentation interest is wider than interaction permission. The future
-    /// client can draw the NPC before an actor reaches the three-metre prompt.
+    pub fn nearby_guide(&self, actor: u64) -> Option<Guide> {
+        let authority = self.dialogue.as_ref()?;
+        // Legacy convenience only. Commands always validate their exact entity.
+        authority
+            .contacts
+            .iter()
+            .find(|(_, c)| authority.eligible(self, actor, c.guide.key))
+            .map(|(npc, c)| Guide {
+                position: self.follow.position(actor, npc, c.guide.position),
+                ..c.guide
+            })
+    }
+    pub fn visible_contacts(&self, actor: u64) -> Vec<crate::dialogue::ContactPresence> {
+        let Some(authority) = &self.dialogue else {
+            return vec![];
+        };
+        let Some(position) = self.global_position(actor) else {
+            return vec![];
+        };
+        authority
+            .contacts
+            .iter()
+            .filter(|(npc, c)| {
+                c.available
+                    && crate::targeting::relevant(
+                        position,
+                        self.follow.position(actor, npc, c.guide.position),
+                    )
+            })
+            .map(|(npc, c)| crate::dialogue::ContactPresence {
+                npc: npc.clone(),
+                guide: Guide {
+                    position: self.follow.position(actor, npc, c.guide.position),
+                    ..c.guide
+                },
+            })
+            .collect()
+    }
     pub fn visible_guide(&self, actor: u64) -> Option<Guide> {
         let authority = self.dialogue.as_ref()?;
-        (authority.available
-            && crate::targeting::relevant(self.global_position(actor)?, authority.guide.position))
-        .then_some(authority.guide)
+        if authority.profile.catalog().is_some() {
+            return None;
+        }
+        self.visible_contacts(actor).first().map(|c| c.guide)
     }
     /// Actor is supplied by the admitted owner, never decoded from a request.
     /// This library boundary is not yet an adopted network endpoint.
@@ -249,13 +397,20 @@ impl World {
         let Some(authority) = &mut self.dialogue else {
             return false;
         };
-        if authority.guide.key != key || !authority.available {
+        let Some(contact) = authority
+            .contacts
+            .values_mut()
+            .find(|c| c.guide.key == key && c.available)
+        else {
             return false;
-        }
-        authority.available = false;
+        };
+        contact.available = false;
         for state in authority.actors.values_mut() {
-            state.close();
+            if state.open.as_ref().is_some_and(|o| o.guide == key) {
+                state.close();
+            }
         }
+        self.retire_invalid_marks();
         true
     }
     pub(super) fn advance_dialogue(&mut self) {
@@ -730,3 +885,6 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod multi_contact_tests;

@@ -488,3 +488,30 @@ async fn shared_worker_serializes_claims_recovers_cancelled_answers_and_fails_cl
     drop(admin);
     driver.await.unwrap().unwrap();
 }
+
+#[test]
+fn versioned_per_life_storage_profile_accepts_the_explicit_core_policy() {
+    let items = InventoryCatalog::from_json(ITEMS).unwrap();
+    let mut value: serde_json::Value = serde_json::from_slice(DATA).unwrap();
+    value["schema"] = serde_json::json!(2);
+    assert!(RewardCatalog::from_json(&serde_json::to_vec(&value).unwrap(), &items).is_ok());
+    value["rewards"][0]["scope"] = serde_json::json!("per_creature_life");
+    let bytes = serde_json::to_vec(&value).unwrap();
+    assert!(rewards::Catalog::from_json(&bytes, items.catalog()).is_ok());
+    assert!(RewardCatalog::from_json(&bytes, &items).is_ok());
+}
+
+#[path = "rewards_contract/per_life.rs"]
+mod per_life;
+
+#[path = "rewards_contract/quest_generation.rs"]
+mod quest_generation;
+
+#[path = "rewards_contract/quest_pickup.rs"]
+mod quest_pickup;
+
+#[path = "rewards_contract/quest_worker.rs"]
+mod quest_worker;
+
+#[path = "rewards_contract/ground.rs"]
+mod ground;

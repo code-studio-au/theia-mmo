@@ -65,7 +65,7 @@ fn catalogs_reject_unbounded_unknown_duplicate_or_client_like_reward_definitions
     assert_eq!(reward.grants()[0].count(), 1);
     let original: Value = serde_json::from_slice(DATA).unwrap();
     for (key, value) in [
-        ("schema", json!(2)),
+        ("schema", json!(6)),
         ("id", json!("../rewards")),
         ("item_catalog", json!("theia.other.items")),
         ("rewards", json!([])),
@@ -306,4 +306,207 @@ fn repeated_trusted_proposals_mint_only_recipe_quantities_and_share_transfer_rev
     }
     assert_eq!(granted, 99 * SLOT_COUNT as u64);
     assert_eq!(totals(&bag).get(&id("sword")), Some(&1));
+}
+
+#[test]
+fn repeatable_scope_requires_schema_two_and_preserves_once_character_recipes() {
+    let items = Items::from_json(ITEMS).unwrap();
+    let mut value: Value = serde_json::from_slice(DATA).unwrap();
+    value["rewards"][0]["scope"] = json!("per_creature_life");
+    assert!(Catalog::from_json(&serde_json::to_vec(&value).unwrap(), &items).is_err());
+    value["schema"] = json!(2);
+    let mut once = value["rewards"][0].clone();
+    once["id"] = json!("theia.dev.first-kill-bonus");
+    once["scope"] = json!("once_per_character");
+    value["rewards"].as_array_mut().unwrap().push(once);
+    let catalog = Catalog::from_json(&serde_json::to_vec(&value).unwrap(), &items).unwrap();
+    assert_eq!(catalog.definitions().len(), 2);
+    assert_eq!(
+        catalog.definition(&reward_id()).unwrap().scope(),
+        Scope::PerCreatureLife
+    );
+    assert_eq!(
+        catalog
+            .definition(&ContentId::new("theia.dev.first-kill-bonus").unwrap())
+            .unwrap()
+            .scope(),
+        Scope::OncePerCharacter
+    );
+    assert_eq!(
+        Catalog::from_json(DATA, &items)
+            .unwrap()
+            .definition(&reward_id())
+            .unwrap()
+            .scope(),
+        Scope::OncePerCharacter
+    );
+}
+
+#[test]
+fn trusted_kill_selectors_bind_repeatable_occurrences_to_the_exact_victim_life() {
+    use theia_core::{
+        identity::{EntityId, EntityKey, WorldEpoch},
+        progression::{KillEvent, KillId},
+        rewards::Occurrence,
+    };
+    let items = Items::from_json(ITEMS).unwrap();
+    let old = Catalog::from_json(DATA, &items).unwrap();
+    let mut value: Value = serde_json::from_slice(DATA).unwrap();
+    value["schema"] = json!(2);
+    value["rewards"][0]["scope"] = json!("per_creature_life");
+    let repeatable = Catalog::from_json(&serde_json::to_vec(&value).unwrap(), &items).unwrap();
+    let reward = repeatable.definition(&reward_id()).unwrap();
+    let event = KillEvent {
+        id: KillId::from_victim(EntityKey {
+            epoch: WorldEpoch::new(7).unwrap(),
+            entity: EntityId::new(9).unwrap(),
+        }),
+        creature: reward.creature().clone(),
+    };
+    assert_eq!(
+        reward.occurrence(&event),
+        Ok(Occurrence::CreatureLife(event.id))
+    );
+    for key in [
+        EntityKey {
+            epoch: WorldEpoch::new(7).unwrap(),
+            entity: EntityId::new(10).unwrap(),
+        },
+        EntityKey {
+            epoch: WorldEpoch::new(8).unwrap(),
+            entity: EntityId::new(9).unwrap(),
+        },
+    ] {
+        let next = KillEvent {
+            id: KillId::from_victim(key),
+            creature: event.creature.clone(),
+        };
+        assert_ne!(reward.occurrence(&next), reward.occurrence(&event));
+        assert_eq!(
+            old.definition(&reward_id()).unwrap().occurrence(&next),
+            Ok(Occurrence::OncePerCharacter)
+        );
+    }
+    let wrong = KillEvent {
+        creature: ContentId::new("theia.dev.other-creature").unwrap(),
+        ..event
+    };
+    assert_eq!(reward.occurrence(&wrong), Err(Error::CreatureMismatch));
+    assert_eq!(
+        old.definition(&reward_id()).unwrap().occurrence(&wrong),
+        Err(Error::CreatureMismatch)
+    );
+}
+
+#[test]
+fn independent_and_exclusive_drop_chances_have_exact_integer_boundaries() {
+    let items = Items::from_json(ITEMS).unwrap();
+    let mut raw: Value = serde_json::from_slice(DATA).unwrap();
+    raw["schema"] = json!(3);
+    raw["rewards"][0]["scope"] = json!("per_creature_life");
+    raw["rewards"][0]["chance_basis_points"] = json!(3500);
+    let independent = Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).unwrap();
+    let d = independent.definition(&reward_id()).unwrap();
+    assert_eq!(
+        (0..10_000)
+            .filter(|t| d.wins_roll(&independent, *t))
+            .count(),
+        3500
+    );
+    assert!(!d.wins_roll(&independent, 10_000));
+    raw["rewards"][0]["drop_group"] = json!(1);
+    let mut second = raw["rewards"][0].clone();
+    second["id"] = json!("theia.dev.second-drop");
+    second["chance_basis_points"] = json!(2500);
+    raw["rewards"].as_array_mut().unwrap().push(second);
+    let grouped = Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).unwrap();
+    let mut wins = [0, 0, 0];
+    for ticket in 0..10_000 {
+        let n = grouped
+            .definitions()
+            .filter(|d| d.wins_roll(&grouped, ticket))
+            .count();
+        wins[n] += 1;
+    }
+    assert_eq!(wins, [4000, 6000, 0]);
+    raw["rewards"][1]["chance_basis_points"] = json!(6501);
+    assert!(Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).is_err());
+    raw["rewards"][1]["chance_basis_points"] = json!(6500);
+    assert!(Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).is_ok());
+    for schema in [1, 2] {
+        raw["schema"] = json!(schema);
+        assert!(Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).is_err());
+    }
+    raw["schema"] = json!(3);
+    raw["rewards"][0]["scope"] = json!("once_per_character");
+    assert!(Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).is_err());
+}
+
+#[test]
+fn quest_required_metadata_is_versioned_single_item_independent_and_per_life() {
+    let items = Items::from_json(ITEMS).unwrap();
+    let mut value: Value = serde_json::from_slice(DATA).unwrap();
+    value["schema"] = json!(4);
+    value["rewards"][0]["scope"] = json!("per_creature_life");
+    value["rewards"][0]["quest_required"] = json!(true);
+    let parse = |v: &Value| Catalog::from_json(&serde_json::to_vec(v).unwrap(), &items);
+    let catalog = parse(&value).unwrap();
+    assert!(catalog.has_quest_required());
+    let entry = catalog.definition(&reward_id()).unwrap();
+    assert_eq!(entry.quest_item(), Some(&id("token")));
+    assert!(entry.requires_roll());
+    for schema in 1..=3 {
+        for flag in [true, false] {
+            let mut bad = value.clone();
+            bad["schema"] = json!(schema);
+            bad["rewards"][0]["quest_required"] = json!(flag);
+            assert!(parse(&bad).is_err());
+        }
+    }
+    for (key, field) in [
+        ("scope", json!("once_per_character")),
+        ("drop_group", json!(1)),
+        ("quest_required", json!("true")),
+        ("grants", json!([])),
+        (
+            "grants",
+            json!([{"item":"theia.dev.training-token","count":1},{"item":"theia.dev.training-stone","count":1}]),
+        ),
+        ("grants", json!([{"item":"theia.dev.unknown","count":1}])),
+    ] {
+        let mut bad = value.clone();
+        bad["rewards"][0][key] = field;
+        assert!(parse(&bad).is_err(), "Accepted invalid {key}");
+    }
+    value["rewards"][0]["quest_required"] = json!(false);
+    let ordinary = parse(&value).unwrap();
+    assert!(!ordinary.has_quest_required());
+    assert_eq!(
+        ordinary.definition(&reward_id()).unwrap().quest_item(),
+        None
+    );
+}
+
+#[test]
+fn quest_requirement_metadata_does_not_change_ticket_chance_or_create_authority() {
+    let items = Items::from_json(ITEMS).unwrap();
+    let mut value: Value = serde_json::from_slice(DATA).unwrap();
+    value["schema"] = json!(4);
+    value["rewards"][0]["scope"] = json!("per_creature_life");
+    value["rewards"][0]["chance_basis_points"] = json!(6000);
+    let ordinary = Catalog::from_json(&serde_json::to_vec(&value).unwrap(), &items).unwrap();
+    value["rewards"][0]["quest_required"] = json!(true);
+    let conditional = Catalog::from_json(&serde_json::to_vec(&value).unwrap(), &items).unwrap();
+    let plain = ordinary.definition(&reward_id()).unwrap();
+    let quest = conditional.definition(&reward_id()).unwrap();
+    assert!(quest.wins_roll(&conditional, 5999));
+    assert!(!quest.wins_roll(&conditional, 6000));
+    for ticket in 0..=10_000 {
+        assert_eq!(
+            plain.wins_roll(&ordinary, ticket),
+            quest.wins_roll(&conditional, ticket)
+        );
+    }
+    // The exact definition binding still refuses a foreign entry/catalogue.
+    assert!(!quest.wins_roll(&ordinary, 0));
 }

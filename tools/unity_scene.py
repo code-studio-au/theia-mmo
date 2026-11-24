@@ -69,6 +69,34 @@ def records(path):
     return result
 
 
+def without_legacy_prefab_header(document):
+    """Remove only a standalone pre-2018 prefab's inert ownership record."""
+    headers = [(key, value) for key, value in document.items()
+               if value['kind'] == 1001 and value['name'] == 'Prefab']
+    if not headers:
+        return document
+    if len(headers) != 1:
+        raise ValueError('Ambiguous legacy prefab ownership')
+    identifier, record = headers[0]
+    fields = record['fields']; modification = fields.get('m_Modification', {})
+    root = fields.get('m_RootGameObject', {}).get('fileID')
+    if (record.get('stripped') or fields.get('m_IsPrefabParent') != 1
+            or fields.get('m_ParentPrefab', {}).get('fileID') != 0
+            or modification.get('m_TransformParent', {}).get('fileID') != 0
+            or modification.get('m_Modifications')
+            or any(value for key, value in modification.items() if key.startswith(('m_Removed', 'm_Added')))
+            or root not in document or document[root]['kind'] != 1):
+        raise ValueError('Legacy prefab inheritance or modifications require a separate adapter')
+    for key, value in document.items():
+        if key == identifier:
+            continue
+        if value['fields'].get('m_PrefabInternal', {}).get('fileID', 0) not in (0, identifier):
+            raise ValueError('Legacy prefab ownership differs')
+        if value['fields'].get('m_PrefabParentObject', {}).get('fileID', 0):
+            raise ValueError('Inherited legacy prefab object')
+    return {key: value for key, value in document.items() if key != identifier}
+
+
 class Sources:
     """Hash-bound, contained extracted sources; metadata GUIDs checked on access."""
     def __init__(self, root):

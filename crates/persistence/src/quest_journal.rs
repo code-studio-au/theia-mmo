@@ -15,10 +15,22 @@ pub struct QuestJournalCatalog {
     catalog: Arc<Catalog>,
     hash: [u8; 32],
     progression: [u8; 32],
+    areas: Option<Arc<theia_core::quests::areas::Catalog>>,
+    documents: Option<crate::DocumentCatalog>,
+    inventory: Option<crate::InventoryCatalog>,
+    item_rewards: Option<Arc<theia_core::quests::item_rewards::Catalog>>,
 }
 impl QuestJournalCatalog {
     pub fn from_json(bytes: &[u8], xp: &ProgressionCatalog) -> Result<Self> {
+        Self::parse(bytes, xp, false)
+    }
+    fn parse(bytes: &[u8], xp: &ProgressionCatalog, allow_documents: bool) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes).map_err(Error::Invalid)?);
+        if !allow_documents && catalog.quests().any(|q| q.has_document_objectives()) {
+            return Err(Error::Invalid(
+                "Document-read journal storage is not installed",
+            ));
+        }
         let mut bound = theia_core::quests::journal::PROFILE_DOMAIN.to_vec();
         bound.extend(bytes);
         bound.extend(xp.hash());
@@ -26,7 +38,231 @@ impl QuestJournalCatalog {
             catalog,
             hash: hash(&bound),
             progression: xp.hash(),
+            areas: None,
+            documents: None,
+            inventory: None,
+            item_rewards: None,
         })
+    }
+    pub fn from_json_with_areas(
+        bytes: &[u8],
+        area_bytes: &[u8],
+        xp: &ProgressionCatalog,
+    ) -> Result<Self> {
+        Self::from_json(bytes, xp)?.bind_areas(area_bytes)
+    }
+    fn bind_areas(mut self, area_bytes: &[u8]) -> Result<Self> {
+        let areas =
+            theia_core::quests::areas::Catalog::from_json(area_bytes).map_err(Error::Invalid)?;
+        areas
+            .validate_quests(&self.catalog)
+            .map_err(Error::Invalid)?;
+        let mut bound = theia_core::quests::areas::PROFILE_DOMAIN.to_vec();
+        bound.extend(self.hash);
+        bound.extend(area_bytes);
+        self.hash = hash(&bound);
+        self.areas = Some(Arc::new(areas));
+        Ok(self)
+    }
+    /// Exact metadata only; saved document opening is not yet installed.
+    pub fn from_json_with_documents(
+        bytes: &[u8],
+        area_bytes: Option<&[u8]>,
+        xp: &ProgressionCatalog,
+        documents: &crate::DocumentCatalog,
+    ) -> Result<Self> {
+        let mut catalog = Self::parse(bytes, xp, true)?;
+        if !catalog
+            .catalog
+            .quests()
+            .any(|q| q.has_document_objectives())
+        {
+            return Err(Error::Invalid("Document binding requires read objectives"));
+        }
+        let needs_areas = catalog
+            .catalog
+            .quests()
+            .flat_map(|q| q.stages())
+            .flat_map(|s| s.objectives())
+            .any(|o| {
+                matches!(
+                    o.event(),
+                    theia_core::quests::catalog::EventKey::ReachArea(_)
+                )
+            });
+        if needs_areas && area_bytes.is_none() {
+            return Err(Error::Invalid(
+                "Document journal requires its exact area context",
+            ));
+        }
+        if let Some(bytes) = area_bytes {
+            catalog = catalog.bind_areas(bytes)?;
+        }
+        documents
+            .catalog()
+            .validate_quests(&catalog.catalog)
+            .map_err(Error::Invalid)?;
+        if let Some(areas) = &catalog.areas {
+            documents
+                .catalog()
+                .validate_areas(areas)
+                .map_err(Error::Invalid)?;
+        }
+        let mut bound = theia_core::quests::journal::ITEM_PROFILE_DOMAIN.to_vec();
+        bound.extend(catalog.hash);
+        bound.extend(documents.inventory().hash());
+        catalog.hash = hash(&bound);
+        catalog.inventory = Some(documents.inventory().clone());
+        let mut bound = theia_core::documents::JOURNAL_PROFILE_DOMAIN.to_vec();
+        bound.extend(catalog.hash);
+        bound.extend(documents.hash());
+        catalog.hash = hash(&bound);
+        catalog.documents = Some(documents.clone());
+        Ok(catalog)
+    }
+    pub fn documents(&self) -> Option<&crate::DocumentCatalog> {
+        self.documents.as_ref()
+    }
+    pub fn with_inventory(mut self, inventory: &crate::InventoryCatalog) -> Result<Self> {
+        if self.inventory.is_some() || !self.catalog.quests().any(|q| q.has_possession_objectives())
+        {
+            return Err(Error::Invalid(
+                "Inventory binding requires unbound possession objectives",
+            ));
+        }
+        self.catalog
+            .validate_possession_items(inventory.catalog())
+            .map_err(Error::Invalid)?;
+        let mut bytes = theia_core::quests::journal::ITEM_PROFILE_DOMAIN.to_vec();
+        bytes.extend(self.hash);
+        bytes.extend(inventory.hash());
+        self.hash = hash(&bytes);
+        self.inventory = Some(inventory.clone());
+        Ok(self)
+    }
+    /// Explicit exact fixed reward policy; live owner/World adoption is separate.
+    pub fn with_item_rewards(
+        mut self,
+        bytes: &[u8],
+        inventory: &crate::InventoryCatalog,
+    ) -> Result<Self> {
+        if self.item_rewards.is_some() {
+            return Err(Error::Invalid("Quest item rewards are already bound"));
+        }
+        if self
+            .inventory
+            .as_ref()
+            .is_some_and(|old| old.hash() != inventory.hash())
+        {
+            return Err(Error::InventoryCatalogMismatch);
+        }
+        let rewards = theia_core::quests::item_rewards::Catalog::from_json(
+            bytes,
+            &self.catalog,
+            inventory.catalog(),
+        )
+        .map_err(Error::Invalid)?;
+        rewards
+            .validate_context(
+                self.areas.as_deref(),
+                self.documents.as_ref().map(|d| d.catalog()),
+            )
+            .map_err(Error::Invalid)?;
+        if self.inventory.is_none() {
+            let mut bound = theia_core::quests::journal::ITEM_PROFILE_DOMAIN.to_vec();
+            bound.extend(self.hash);
+            bound.extend(inventory.hash());
+            self.hash = hash(&bound);
+            self.inventory = Some(inventory.clone());
+        }
+        let mut bound = theia_core::quests::item_rewards::PROFILE_DOMAIN.to_vec();
+        bound.extend(self.hash);
+        bound.extend(bytes);
+        self.hash = hash(&bound);
+        self.item_rewards = Some(Arc::new(rewards));
+        Ok(self)
+    }
+    pub fn item_rewards(&self) -> Option<&theia_core::quests::item_rewards::Catalog> {
+        self.item_rewards.as_deref()
+    }
+    pub fn inventory(&self) -> Option<&crate::InventoryCatalog> {
+        self.inventory.as_ref()
+    }
+    pub(crate) fn check_runtime_admission(&self) -> Result<()> {
+        self.check_inventory_binding()?;
+        if self.documents.is_some() {
+            self.check_document_binding()?;
+        }
+        Ok(())
+    }
+    pub(crate) fn check_document_binding(&self) -> Result<&crate::DocumentCatalog> {
+        self.check_inventory_binding()?;
+        let documents = self
+            .documents
+            .as_ref()
+            .ok_or(Error::Invalid("Document journal binding required"))?;
+        if self
+            .inventory
+            .as_ref()
+            .is_none_or(|i| i.hash() != documents.inventory().hash())
+        {
+            return Err(Error::InventoryCatalogMismatch);
+        }
+        Ok(documents)
+    }
+    pub(crate) fn check_inventory_binding(&self) -> Result<()> {
+        if let Some(rewards) = &self.item_rewards {
+            let items = self
+                .inventory
+                .as_ref()
+                .ok_or(Error::InventoryCatalogMismatch)?;
+            if rewards.item_catalog() != items.catalog()
+                || rewards.quest_catalog() != self.catalog.as_ref()
+            {
+                return Err(Error::Invalid("Quest item reward context mismatch"));
+            }
+        }
+        if self.inventory.is_none()
+            && self
+                .catalog
+                .quests()
+                .any(|q| q.has_possession_objectives() || q.has_document_objectives())
+        {
+            return Err(Error::Invalid(
+                "Possession journal requires inventory binding",
+            ));
+        }
+        Ok(())
+    }
+    pub(crate) fn check_reached_areas(
+        &self,
+        observation: &theia_core::quests::journal::ReachedAreas,
+    ) -> Result<()> {
+        if self.areas.is_none()
+            || observation.is_empty()
+            || observation.catalog() != self.catalog.id()
+            || observation.catalog_revision() != self.catalog.revision()
+        {
+            return Err(Error::Invalid("Unbound or empty quest area observation"));
+        }
+        Ok(())
+    }
+    pub(crate) fn reached_areas_hash(
+        &self,
+        observation: &theia_core::quests::journal::ReachedAreas,
+    ) -> [u8; 32] {
+        let mut bytes = b"theia-quest-journal-area-observation-v1\0".to_vec();
+        bytes.extend(self.hash);
+        push(&mut bytes, observation.catalog());
+        bytes.extend(observation.catalog_revision().to_le_bytes());
+        bytes.extend((observation.len() as u16).to_le_bytes());
+        for goal in observation.goals() {
+            push(&mut bytes, goal.quest());
+            bytes.extend(goal.definition_version().to_le_bytes());
+            push(&mut bytes, goal.stage());
+            push(&mut bytes, goal.area());
+        }
+        hash(&bytes)
     }
     pub fn catalog(&self) -> &Catalog {
         &self.catalog
@@ -50,10 +286,40 @@ impl QuestJournalCatalog {
         );
         Ok(hash(&bytes))
     }
+    /// Original victim-life identity, matching the explicit World kill adapter.
+    pub fn kill_event_id(event: &theia_core::progression::KillEvent) -> std::num::NonZeroU128 {
+        let mut bytes = theia_core::quests::journal::KILL_OCCURRENCE_DOMAIN.to_vec();
+        bytes.extend(event.id.bytes());
+        let value = hash(&bytes);
+        std::num::NonZeroU128::new(u128::from_le_bytes(value[..16].try_into().unwrap()).max(1))
+            .unwrap()
+    }
+    pub(crate) fn kill_hash(&self, event: &theia_core::progression::KillEvent) -> [u8; 32] {
+        let mut bytes = b"theia-quest-journal-atomic-kill-v1\0".to_vec();
+        bytes.extend(self.event_hash(&EventKey::Kill(event.creature.clone())));
+        bytes.extend(event.id.bytes());
+        hash(&bytes)
+    }
     pub(crate) fn event_hash(&self, event: &EventKey) -> [u8; 32] {
         let mut bytes = b"theia-quest-journal-event-v1\0".to_vec();
         bytes.extend(self.hash);
         match event {
+            EventKey::FollowNpc(npc) => {
+                bytes.extend(b"follow-npc\0");
+                bytes.extend(npc.as_str().as_bytes());
+            }
+            EventKey::ReadDocument(document) => {
+                bytes.push(5);
+                push(&mut bytes, document);
+            }
+            EventKey::PossessItem(item) => {
+                bytes.push(4);
+                push(&mut bytes, item);
+            }
+            EventKey::ReachArea(id) => {
+                bytes.push(3);
+                push(&mut bytes, id);
+            }
             EventKey::Kill(id) => {
                 bytes.push(1);
                 push(&mut bytes, id);
@@ -88,10 +354,40 @@ pub use theia_core::quests::journal::{
 };
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QuestJournalApplied {
+    /// Current backpack from the same committed transaction, for item-bound profiles.
+    pub inventory: Option<theia_core::inventory::Bag>,
     pub journal: Journal,
     pub revision: u64,
     pub changed: Vec<ContentId>,
     pub replayed: bool,
     pub experience: Option<theia_core::progression::State>,
     pub experience_granted: u32,
+}
+
+#[cfg(test)]
+mod item_reward_binding_tests {
+    use super::*;
+    #[test]
+    fn bound_reward_policy_admits_store_context_and_retains_document_requirements() {
+        let xp = ProgressionCatalog::from_json(include_bytes!(
+            "../../../content/gameplay/development-progression.json"
+        ))
+        .unwrap();
+        let items = crate::InventoryCatalog::from_json(include_bytes!(
+            "../../../content/gameplay/development-document-items.json"
+        ))
+        .unwrap();
+        let base = QuestJournalCatalog::from_json(
+            include_bytes!("../../../content/quests/development-journal.json"),
+            &xp,
+        )
+        .unwrap();
+        let raw=serde_json::to_vec(&serde_json::json!({"schema":1,"id":"theia.test.fixed-rewards","revision":1,"quest_catalog":base.catalog().id().as_str(),"item_catalog":items.catalog().id().as_str(),"rewards":[{"quest":base.catalog().quests().next().unwrap().id().as_str(),"grants":[{"item":"theia.dev.training-token","count":1}]}]})).unwrap();
+        assert!(base.check_runtime_admission().is_ok());
+        let bound = base.with_item_rewards(&raw, &items).unwrap();
+        assert!(bound.check_runtime_admission().is_ok());
+        assert!(bound.check_inventory_binding().is_ok());
+        assert!(bound.check_progression(&xp).is_ok());
+        assert!(bound.check_document_binding().is_err());
+    }
 }

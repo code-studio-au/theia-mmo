@@ -544,6 +544,10 @@ impl Residency {
     pub fn colliders(&self, id: ChunkId) -> Option<&[PlacedCollider]> {
         self.active.get(&id).map(|t| t.physics.colliders.as_slice())
     }
+    /// The immutable, identity-checked manifest for an active chunk.
+    pub fn manifest(&self, id: ChunkId) -> Option<&Manifest> {
+        self.active.get(&id)?.package.as_ref()
+    }
     pub fn loaded(&self) -> Vec<ChunkId> {
         self.active.keys().copied().collect()
     }

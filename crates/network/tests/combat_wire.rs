@@ -60,6 +60,7 @@ fn largest(catalog: &Catalog) -> State {
                 entity: key(id).entity,
                 current: 100,
                 maximum: 100,
+                mana: None,
                 respawn_at: None,
             })
             .collect(),
@@ -380,6 +381,35 @@ fn resource_state_has_an_explicit_tag_and_checked_vitals_without_changing_legacy
 }
 
 #[test]
+fn target_mana_preserves_absence_and_empty_pools_within_the_datagram_budget() {
+    use theia_core::resources::{Pool, Vitals};
+
+    let catalog = catalog(64);
+    let mut state = largest(&catalog);
+    state.vitals = Some(Vitals::new(100, 100, 25, 100).unwrap());
+    for target in &mut state.targets {
+        target.mana = Pool::new(200_000, 1_000_000);
+    }
+    let bytes = state.encode(&catalog).unwrap();
+    assert_eq!(bytes.len(), 1194);
+    assert!(bytes.starts_with(wire::TARGET_MANA_STATE_TAG));
+    assert_eq!(State::decode(&bytes, &catalog).unwrap(), state);
+    let first_pool = 1066 - 15 * 24;
+    for (offset, value) in [(0, 2), (3, 0xff), (6, 0xff)] {
+        let mut invalid = bytes.clone();
+        invalid[first_pool + offset] = value;
+        assert!(State::decode(&invalid, &catalog).is_err());
+    }
+    let previous = state.clone();
+    state.targets[0].mana = None;
+    state.targets[1].mana = Pool::new(0, 100);
+    assert!(!previous.same_view(&state));
+    let bytes = state.encode(&catalog).unwrap();
+    assert_eq!(State::decode(&bytes, &catalog).unwrap(), state);
+    assert!(State::decode(&bytes[..bytes.len() - 1], &catalog).is_err());
+}
+
+#[test]
 fn equipment_refusal_round_trips_in_reply_and_reliable_cancellation() {
     let catalog = catalog(1);
     let mut state = largest(&catalog);
@@ -662,5 +692,54 @@ fn projectile_messages_reject_old_tags_catalogues_foreign_keys_extra_payloads_an
             }
         }
         assert!(bad.encode(&catalog).is_err());
+    }
+}
+
+#[test]
+fn day_long_respawns_are_bounded_separately_from_ability_deadlines() {
+    let catalog = catalog(1);
+    let mut state = largest(&catalog);
+    state.targets.truncate(1);
+    state.targets[0].current = 0;
+    let maximum = u64::from(combat::MAX_RESPAWN_MS) / 1000 * 60;
+    state.targets[0].respawn_at = Some(state.tick + maximum);
+    let bytes = state.encode(&catalog).unwrap();
+    assert_eq!(State::decode(&bytes, &catalog).unwrap(), state);
+    for at in [state.tick, state.tick + maximum + 1, u64::MAX] {
+        let mut invalid = bytes.clone();
+        let end = invalid.len();
+        invalid[end - 8..].copy_from_slice(&at.to_le_bytes());
+        assert!(State::decode(&invalid, &catalog).is_err());
+        let mut invalid = state.clone();
+        invalid.targets[0].respawn_at = Some(at);
+        assert!(invalid.encode(&catalog).is_err());
+    }
+    let mut cooldown = state.clone();
+    cooldown.cooldowns[0].1 = cooldown.tick + 3601;
+    assert!(cooldown.encode(&catalog).is_err());
+    let mut gcd = state.clone();
+    gcd.gcd_until = gcd.tick + 3601;
+    assert!(gcd.encode(&catalog).is_err());
+    let mut casting = state.clone();
+    casting.cast.as_mut().unwrap().completes = casting.tick + 3601;
+    assert!(casting.encode(&catalog).is_err());
+    let batch = Batch {
+        epoch: 7,
+        sequence: 1,
+        tick: state.tick,
+        events: vec![Event::Died {
+            target: key(1),
+            position: GlobalPosition::new([0.; 3]).unwrap(),
+            respawn_at: state.tick + maximum,
+        }],
+    };
+    let bytes = batch.encode(&catalog).unwrap();
+    assert_eq!(Batch::decode(&bytes, &catalog).unwrap(), batch);
+    for at in [state.tick, state.tick + maximum + 1, u64::MAX] {
+        let mut invalid = bytes.clone();
+        let end = invalid.len();
+        // The death deadline precedes the three f64 cue coordinates.
+        invalid[end - 32..end - 24].copy_from_slice(&at.to_le_bytes());
+        assert!(Batch::decode(&invalid, &catalog).is_err());
     }
 }

@@ -1,4 +1,7 @@
 //! Small standard Bevy presentation of server combat; never computes damage.
+pub(crate) mod action_bar;
+pub(crate) mod book;
+pub(crate) mod log;
 pub(crate) mod ui;
 use crate::network::Network;
 use bevy::{prelude::*, text::FontSize};
@@ -18,6 +21,10 @@ pub(crate) struct Config(
 );
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
+    pub public_life_rosters: u64,
+    pub public_attack_events: u64,
+    pub public_attack_windups: u64,
+    pub public_attack_idle: u64,
     pub life_events: u64,
     pub membership_events: u64,
     pub in_combat: Option<bool>,
@@ -97,6 +104,8 @@ struct Ui {
 }
 #[derive(Component)]
 struct Hud;
+#[derive(Component)]
+pub(crate) struct TargetVitals;
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct Presentation;
 pub fn load_catalog(path: &Path) -> Result<(Vec<u8>, Arc<Catalog>), Box<dyn std::error::Error>> {
@@ -124,6 +133,9 @@ pub fn install(
     player_life: bool,
 ) {
     ui::install(app);
+    book::install(app);
+    action_bar::install(app);
+    log::install(app);
     crate::combat_feedback::install(app);
     if catalog.abilities().iter().any(|a| a.projectile().is_some()) {
         crate::projectile_visual::install(app);
@@ -131,7 +143,8 @@ pub fn install(
     app.insert_resource(Config(catalog, profile, player_life))
         .init_resource::<crate::reference_scene::attack::Cues>()
         .insert_resource(crate::reference_scene::attack::Metrics {
-            capture: std::env::var_os("THEIA_PLAYER_MELEE_QUALIFY").is_some(),
+            capture: std::env::var_os("THEIA_PLAYER_MELEE_QUALIFY").is_some()
+                || std::env::var_os("THEIA_DIRECTIONAL_LOCOMOTION_QUALIFY").is_some(),
             ..default()
         })
         .init_resource::<Metrics>()
@@ -142,7 +155,38 @@ pub fn install(
             present.after(crate::network::present).in_set(Presentation),
         );
 }
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
+    if let Some(skin) = skin {
+        commands
+            .spawn((
+                crate::fantasy_ui::unit_frame(false),
+                crate::fantasy_ui::UnitFrame(false),
+                GlobalZIndex(crate::fantasy_ui::UNIT_LAYER),
+                bevy::picking::Pickable::IGNORE,
+            ))
+            .with_children(|panel| {
+                ui::unit_frame::portrait(panel, Some(skin.wolf.clone()), false);
+                ui::unit_frame::heading(panel, crate::targeting::TargetHud, "");
+                ui::unit_frame::bar(
+                    panel,
+                    ui::unit_frame::Pool::Hostile,
+                    TargetVitals,
+                    ui::HealthFill,
+                    ui::TargetHealthLabel,
+                );
+                ui::unit_frame::bar(
+                    panel,
+                    ui::unit_frame::Pool::TargetMana,
+                    TargetVitals,
+                    ui::TargetManaFill,
+                    ui::TargetManaLabel,
+                );
+                crate::party::selection::widgets(panel);
+                crate::party::marks::target_widget(panel);
+                crate::status_effects::widgets(panel, false, &skin);
+            });
+        return;
+    }
     commands
         .spawn((
             Node {
@@ -155,10 +199,12 @@ fn setup(mut commands: Commands) {
                 padding: UiRect::all(px(12)),
                 ..default()
             },
+            crate::fantasy_ui::UnitFrame(false),
             BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
         ))
         .with_child((
             Hud,
+            TargetVitals,
             Text::new("Preparing abilities..."),
             TextFont {
                 font_size: FontSize::Px(18.),
@@ -167,8 +213,11 @@ fn setup(mut commands: Commands) {
             TextColor(Color::WHITE),
         ))
         .with_children(|panel| {
+            crate::party::selection::widgets(panel);
+            crate::party::marks::target_widget(panel);
             panel
                 .spawn((
+                    TargetVitals,
                     Node {
                         width: percent(100),
                         height: px(10),
@@ -178,6 +227,7 @@ fn setup(mut commands: Commands) {
                 ))
                 .with_child((
                     ui::HealthFill,
+                    crate::ui_theme::Sprite("bar.fill-health"),
                     Node {
                         width: percent(0),
                         height: percent(100),
@@ -248,11 +298,18 @@ fn stale_own_life(event: &Event, owner: Option<u64>, generation: u64) -> bool {
     };
     life.is_some_and(|value| value.get() != generation)
 }
+type PresentationInput<'w> = (
+    Res<'w, ui::Input>,
+    Option<Res<'w, crate::world_input::Selection>>,
+    Option<Res<'w, crate::fantasy_ui::Skin>>,
+    Option<Res<'w, crate::progression::Profile>>,
+    Res<'w, action_bar::Layout>,
+);
 fn present(
     mut network: ResMut<Network>,
     config: Res<Config>,
-    (input, selection): (Res<ui::Input>, Option<Res<crate::world_input::Selection>>),
-    mut metrics: ResMut<Metrics>,
+    (input, selection, skin, progression, layout): PresentationInput<'_>,
+    (mut metrics, mut history): (ResMut<Metrics>, Option<ResMut<log::History>>),
     mut ui: ResMut<Ui>,
     (mut hud, mut panel): (Query<&mut Text, With<Hud>>, ResMut<ui::Model>),
     (
@@ -264,10 +321,44 @@ fn present(
         mut projectiles,
     ): PresentationFeedback<'_>,
 ) {
+    let action_limit = ui::action_limit(skin.is_some());
     let state = network.state();
     *panel = ui::Model::default();
     panel.connected = network.connected();
+    if panel.connected {
+        if let Some(owner) = ui::owner_identity(&state) {
+            panel.player_name = owner.name.as_ref().map(|name| name.as_str().to_owned());
+            panel.player_appearance = Some(owner.appearance);
+        }
+        panel.player_level = progression
+            .as_ref()
+            .and_then(|profile| ui::owner_level(&state, &profile.0));
+    }
     panel.status = "Waiting for server".into();
+    for _ in 0..theia_network::renet_runtime::avatar_life::PRESENTATION_CAPACITY {
+        if network.next_avatar_life_event().is_none() {
+            break;
+        }
+        metrics.public_life_rosters += 1;
+    }
+    for _ in 0..theia_network::renet_runtime::creature_attacks::PRESENTATION_CAPACITY {
+        let Some(event) = network.next_public_attack_event() else {
+            break;
+        };
+        metrics.public_attack_events += 1;
+        metrics.public_attack_windups += u64::from(event.windup.is_some());
+        metrics.public_attack_idle += u64::from(event.windup.is_none());
+    }
+    for _ in 0..theia_network::renet_runtime::creature_attacks::population::PRESENTATION_CAPACITY {
+        let Some(frame) = network.next_public_population_event() else {
+            break;
+        };
+        metrics.public_attack_events += frame.actors.len() as u64;
+        metrics.public_attack_windups +=
+            frame.actors.iter().filter(|v| v.windup.is_some()).count() as u64;
+        metrics.public_attack_idle +=
+            frame.actors.iter().filter(|v| v.windup.is_none()).count() as u64;
+    }
     for _ in 0..theia_network::renet_runtime::player_life::PRESENTATION_CAPACITY {
         let Some(event) = network.next_life_event() else {
             break;
@@ -296,12 +387,18 @@ fn present(
     if input.0.is_some() && !network.can_act() {
         metrics.blocked_life_casts += 1;
     }
+    if let Some(history) = &mut history {
+        history.begin(&state);
+    }
     for _ in 0..16 {
         let Some(batch) = network.next_combat_events() else {
             break;
         };
         if batch.sequence != metrics.last_batch + 1 {
             metrics.event_gaps += 1;
+        }
+        if let Some(history) = &mut history {
+            history.batch(batch.sequence);
         }
         metrics.last_batch = batch.sequence;
         metrics.event_batches += 1;
@@ -313,6 +410,9 @@ fn present(
                     metrics.stale_physical_cosmetics += 1;
                 }
                 continue;
+            }
+            if let Some(history) = &mut history {
+                history.offer(&event);
             }
             if let Some(attacks) = &mut attacks {
                 match &event {
@@ -503,23 +603,27 @@ fn present(
         let selected = if selection.as_ref().is_some_and(|s| s.friendly.is_some()) {
             None
         } else {
-            state.targeting.as_ref().and_then(|v| v.selected)
+            network.confirmed_hostile_target(&state)
         };
         if let Some((slot, source)) = input.0
             && network.connected()
             && network.can_act()
-            && let Some(ability) = config
-                .0
-                .abilities()
-                .get(slot)
-                .filter(|_| slot < ui::VISIBLE_ACTIONS)
+            && let Some(ability) = layout
+                .ability(&config.0, slot)
+                .filter(|_| slot < action_limit)
         {
             match source {
                 ui::Source::Keyboard => metrics.keyboard_requests += 1,
                 ui::Source::Widget => metrics.widget_requests += 1,
             }
 
-            if let Some(target) = selected {
+            let target = match ability.target() {
+                theia_core::abilities::Target::SelfAlive => {
+                    state.id.and_then(theia_core::identity::EntityId::new)
+                }
+                theia_core::abilities::Target::HostileAlive => selected,
+            };
+            if let Some(target) = target {
                 if !network.request_cast(ability.id().clone(), target) {
                     metrics.input_backpressure += 1;
                     note(&mut ui, "Ability input busy; try again");
@@ -550,12 +654,33 @@ fn present(
             .map_or(30., |s| f64::from(s.tick_hz));
         let health = combat.targets.iter().find(|h| Some(h.entity) == selected);
         panel.has_target = health.is_some_and(|h| h.current > 0);
+        panel.target_is_wolf = health.is_some() && creature_visuals.is_some();
+        if let Some(health) = health {
+            panel.target_level = network.physical_profile().and_then(|profile| {
+                profile
+                    .stats()
+                    .creature(profile.creature_definition())
+                    .map(|stats| stats.level())
+            });
+            panel.target_mana = health.mana.map(|pool| [pool.current(), pool.maximum()]);
+        }
         panel.health = health.map_or(0., |h| h.current as f32 / h.maximum as f32);
+        panel.target_health_text =
+            health.map_or_else(|| "—".into(), |h| format!("{} / {}", h.current, h.maximum));
         let health_line = if let Some(health) = health {
             metrics.selected_health_frames += 1;
             metrics.last_health = Some(health.current);
             metrics.max_health = metrics.max_health.max(health.maximum);
-            format!("Training target: {} / {}", health.current, health.maximum)
+            format!(
+                "{}: {} / {}",
+                if skin.is_some() {
+                    "Health"
+                } else {
+                    "Training target"
+                },
+                health.current,
+                health.maximum
+            )
         } else if let Some(dead) = combat.targets.iter().find(|h| h.current == 0) {
             metrics.defeated_frames += 1;
             metrics.last_health = Some(0);
@@ -568,7 +693,14 @@ fn present(
         };
         let rate =
             theia_core::time::TickRate::from_hz(hz as u32).expect("Validated server tick rate");
-        for ability in config.0.abilities().iter().take(ui::VISIBLE_ACTIONS) {
+        for slot in 0..action_limit {
+            let Some(ability) = layout.ability(&config.0, slot) else {
+                panel.actions.push(ui::Action {
+                    cooldown: 0.,
+                    status: "Empty slot".into(),
+                });
+                continue;
+            };
             let ready_at = combat
                 .cooldowns
                 .iter()
@@ -626,13 +758,15 @@ fn present(
             .as_ref()
             .and_then(|cast| config.0.ability(cast.ability.as_str()))
             .unwrap_or(ability);
-        let name = active_ability
-            .id()
-            .as_str()
-            .rsplit('.')
-            .next()
-            .unwrap()
-            .replace('-', " ");
+        let name = ui::ability_name(active_ability.id().as_str());
+        if let Some(cast) = combat.cast.as_ref().filter(|c| c.completes > now) {
+            panel.cast_info = Some(ui::Cast {
+                ability: cast.ability.as_str().to_owned(),
+                name: name.clone(),
+                elapsed: now.saturating_sub(cast.started) as f64 / hz,
+                total: cast.completes.saturating_sub(cast.started) as f64 / hz,
+            });
+        }
         panel.action = action.clone();
         panel.status = if combat.cast.as_ref().is_some_and(|c| c.completes > now) {
             format!("{name} | {action}")
@@ -716,7 +850,7 @@ fn present(
             } else if let Some(windup) = value.windup {
                 format!("Incoming attack {:.1}s", seconds(windup.completes))
             } else {
-                "Alive".into()
+                String::new()
             };
             if value.health > 0
                 && !panel.life_blocked
@@ -724,12 +858,13 @@ fn present(
             {
                 let active = summary.in_combat();
                 panel.membership = Some(active);
-                let status = if active { "In combat" } else { "Out of combat" };
-                panel.life_status = if let Some(windup) = value.windup {
-                    format!("{status} | attack {:.1}s", seconds(windup.completes))
-                } else {
-                    status.into()
-                };
+                if active {
+                    panel.life_status = if let Some(windup) = value.windup {
+                        format!("In combat | attack {:.1}s", seconds(windup.completes))
+                    } else {
+                        "In combat".into()
+                    };
+                }
             }
         } else {
             panel.vitals_ready = false;
@@ -737,6 +872,7 @@ fn present(
         if panel.life_blocked {
             panel.status = panel.life_status.clone();
             panel.cast = 0.;
+            panel.cast_info = None;
         }
     }
     if state.error.is_some() {

@@ -13,10 +13,13 @@ use theia_network::{
     Result,
     inventory_wire::{Outcome, Reason, Reply},
     renet_runtime::inventory::{Observation, Port, Request},
+    simulation::rewards::Opportunity,
 };
 use theia_persistence::{Binding, Error, InventoryCatalog, Publisher, RewardCatalog, RewardClaim};
 use tokio::sync::{mpsc, watch};
 pub(super) struct Config {
+    documents: Option<Arc<theia_network::documents::Profile>>,
+    journal: Option<theia_persistence::QuestJournalCatalog>,
     vendor: Option<(
         theia_persistence::VendorCatalog,
         Arc<theia_network::vendor_wire::Profile>,
@@ -29,6 +32,34 @@ pub(super) struct Config {
     publisher: Publisher,
 }
 impl Config {
+    pub(super) fn set_journal(
+        &mut self,
+        journal: theia_persistence::QuestJournalCatalog,
+        documents: Option<Arc<theia_network::documents::Profile>>,
+        item_reward_mode: bool,
+    ) -> Result<()> {
+        if self.journal.is_some()
+            || journal
+                .inventory()
+                .is_none_or(|i| i.hash() != self.profile.hash())
+        {
+            return Err("Invalid inventory journal binding".into());
+        }
+        if journal.item_rewards().is_some() != item_reward_mode {
+            return Err("Quest item reward owner is not installed".into());
+        }
+        match (journal.documents(), documents.as_deref()) {
+            (None, None) => {}
+            (Some(a), Some(b))
+                if a.hash() == b.hash()
+                    && b.inventory_hash() == self.profile.hash()
+                    && b.catalog().inventory() == self.profile.catalog() => {}
+            _ => return Err("Document owner requires exact stored/wire/item context".into()),
+        }
+        self.documents = documents;
+        self.journal = Some(journal);
+        Ok(())
+    }
     pub(super) fn profile_hash(&self) -> [u8; 32] {
         self.profile.hash()
     }
@@ -59,9 +90,17 @@ impl Config {
                 slots[slot] = Stack::new(profile.catalog(), id, 1);
             }
         }
-        let seed = Bag::from_slots(profile.catalog(), 0, slots)
-            .map_err(|_| "Invalid development inventory seed")?;
+        let seed = Bag::from_parts_with_copper(
+            profile.catalog(),
+            0,
+            slots,
+            None,
+            profile.catalog().starting_copper(),
+        )
+        .map_err(|_| "Invalid development inventory seed")?;
         Ok(Self {
+            documents: None,
+            journal: None,
             vendor: None,
             rewards: None,
             reward_wire: None,
@@ -87,11 +126,29 @@ impl Config {
         Ok(())
     }
     pub(super) fn with_rewards(mut self, rewards: RewardCatalog) -> Result<Self> {
+        if rewards.catalog().has_quest_required() {
+            return Err("Quest-only loot owner is not installed".into());
+        }
         if rewards.items().hash() != self.profile.hash() {
             return Err("Reward/item admission profile mismatch".into());
         }
         self.rewards = Some(rewards);
         Ok(self)
+    }
+    pub(super) fn set_quest_loot(&mut self, rewards: RewardCatalog) -> Result<()> {
+        if self.rewards.is_some()
+            || !rewards.catalog().has_quest_required()
+            || rewards.items().hash() != self.profile.hash()
+            || rewards.quest_journal().is_none_or(|bound| {
+                self.journal
+                    .as_ref()
+                    .is_none_or(|j| j.hash() != bound.hash())
+            })
+        {
+            return Err("Quest loot requires the installed exact item journal".into());
+        }
+        self.rewards = Some(rewards);
+        Ok(())
     }
     pub(super) fn set_reward_wire(
         &mut self,
@@ -133,11 +190,14 @@ impl Config {
             binding,
             world,
             profile: self.profile.clone(),
+            journal: self.journal.clone(),
+            documents: self.documents.clone(),
             publisher: self.publisher.clone(),
             seed: self.seed.clone(),
             rewards: self.rewards.clone(),
             vendor: self.vendor.clone(),
         };
+        let publication = state.clone();
         tokio::spawn(async move {
             let mut guard = guard;
             let result = owner.run(receiver, earned, stopping, &state).await;
@@ -153,7 +213,9 @@ impl Config {
             guard.handled = true;
         });
         Session {
+            publish: publication,
             port: Port {
+                documents: self.documents.clone(),
                 vendor: self.vendor.as_ref().map(|v| v.1.clone()),
                 rewards: self.reward_wire.clone(),
                 opportunities: self.rewards.as_ref().map(|_| opportunities),
@@ -168,6 +230,7 @@ impl Config {
     }
 }
 pub(super) struct Session {
+    pub(super) publish: watch::Sender<Observation>,
     pub(super) port: Port,
     stop: watch::Sender<bool>,
     done: Arc<AtomicBool>,
@@ -203,6 +266,7 @@ impl Drop for Finished {
     }
 }
 struct Owner {
+    documents: Option<Arc<theia_network::documents::Profile>>,
     vendor: Option<(
         theia_persistence::VendorCatalog,
         Arc<theia_network::vendor_wire::Profile>,
@@ -214,10 +278,44 @@ struct Owner {
     binding: Binding,
     world: [u8; 32],
     profile: InventoryCatalog,
+    journal: Option<theia_persistence::QuestJournalCatalog>,
     publisher: Publisher,
     seed: Bag,
 }
 impl Owner {
+    async fn open_document(
+        &self,
+        journal: &theia_persistence::QuestJournalCatalog,
+        command: theia_core::documents::OpenCommand,
+    ) -> theia_persistence::Result<theia_persistence::InventoryApplied> {
+        let wire = self
+            .documents
+            .as_ref()
+            .ok_or(Error::QuestJournalCatalogMismatch)?;
+        let document = wire.resolve(command).map_err(|_| {
+            Error::DocumentCommand(theia_core::documents::OpenError::UnknownDocument)
+        })?;
+        let applied = self
+            .publisher
+            .open_quest_document(
+                self.binding,
+                self.world,
+                journal,
+                theia_persistence::DocumentOpenCommand {
+                    request_id: command.request_id,
+                    profile_hash: wire.hash(),
+                    document: document.id().clone(),
+                    expected_revision: command.expected_revision,
+                    slot: command.slot,
+                },
+            )
+            .await?;
+        Ok(theia_persistence::InventoryApplied {
+            bag: applied.inventory.clone().ok_or(Error::QuestJournalData)?,
+            replayed: applied.replayed,
+            journal: Some(Box::new(applied)),
+        })
+    }
     fn retained_authorized(&self) -> Result<bool> {
         let Some(gate) = self.gate.upgrade() else {
             return Ok(false);
@@ -244,7 +342,7 @@ impl Owner {
     async fn run(
         self,
         mut requests: mpsc::Receiver<Request>,
-        mut earned: mpsc::Receiver<ContentId>,
+        mut earned: mpsc::Receiver<Opportunity>,
         mut stop: watch::Receiver<bool>,
         state: &watch::Sender<Observation>,
     ) -> Result<()> {
@@ -259,13 +357,26 @@ impl Owner {
             .publisher
             .ensure_inventory(self.binding, self.world, &self.profile, &self.seed)
             .await?;
-        let mut claims = if let Some(profile) = &self.rewards {
-            self.publisher
-                .list_reward_claims(self.binding, self.world, profile)
-                .await?
+        if let Some(catalog) = &self.journal {
+            let applied = self
+                .publisher
+                .ensure_quest_journal(self.binding, self.world, catalog)
+                .await?;
+            self.publish_journal(applied)?;
+        }
+        let mut interest_versions = self.loot_versions()?;
+        let (mut claims, mut interest_center) = if let Some(profile) = &self.rewards {
+            self.load_claims(profile).await?
         } else {
-            Vec::new()
+            (Vec::new(), None)
         };
+        let has_life = self.rewards.as_ref().is_some_and(|p| {
+            p.catalog().definitions().any(|d| {
+                d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+            })
+        });
+        let mut interest_timer = tokio::time::interval(std::time::Duration::from_millis(500));
+        interest_timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         let mut reward_generation = 1;
         if self.rewards.is_some() {
             state.send_modify(|s| s.rewards = Some(owned_rewards(reward_generation, &claims)));
@@ -273,7 +384,9 @@ impl Owner {
         if (*stop.borrow() || !self.authorized()?) && self.rewards.is_none() {
             return Ok(());
         }
-        state.send_modify(|s| s.bag = Some(bag.clone()));
+        let mut merged = Ok(());
+        state.send_modify(|s| merged = super::quest_items::merge_bag(&mut s.bag, bag.clone()));
+        merged?;
         let mut sequence = 0;
         let mut retiring = false;
         loop {
@@ -293,6 +406,24 @@ impl Owner {
             } else {
                 tokio::select! {biased;
                     _=stop.changed()=>{ retiring = true; continue; },
+                    _=interest_timer.tick(),if has_life=>{
+                        let position = self.loot_position()?;
+                        let versions = self.loot_versions()?;
+                        let changed = versions != interest_versions || interest_center.is_none_or(|old| old.metres().into_iter().zip(position.metres()).map(|(a,b)|(a-b)*(a-b)).sum::<f64>() >= 64.);
+                        if changed {
+                            let profile = self.rewards.as_ref().ok_or("Loot profile missing")?;
+                            let (next, center) = self.load_claims(profile).await?;
+                            interest_center = center;
+                            // Sample before the query: a concurrent commit must remain dirty.
+                            interest_versions = versions;
+                            if next != claims {
+                                claims = next;
+                                reward_generation = reward_generation.checked_add(1).ok_or("Reward generation exhausted")?;
+                                state.send_modify(|s| s.rewards=Some(owned_rewards(reward_generation,&claims)));
+                            }
+                        }
+                        continue;
+                    },
                     reward=earned.recv(),if self.rewards.is_some()=>{
                         if let Some(reward)=reward {
                             if self.offer(&reward, &mut claims).await? {
@@ -316,47 +447,104 @@ impl Owner {
             sequence = request.sequence;
             // Deliberately not selected against stop: accepted critical work
             // finishes before Finished permits character ownership release.
-            let applied = match request.command {
-                ItemCommand::Vendor(command) => {
-                    let (profile, wire) =
-                        self.vendor.as_ref().ok_or("Vendor owner profile missing")?;
-                    let purchase = wire.purchase(command)?;
-                    self.publisher
-                        .purchase_vendor(self.binding, self.world, profile, &purchase)
-                        .await
+            let applied = if let Some(journal) = &self.journal {
+                match request.command {
+                    ItemCommand::OpenDocument(command) => {
+                        self.open_document(journal, command).await
+                    }
+                    ItemCommand::Vendor(command) => {
+                        let (profile, wire) =
+                            self.vendor.as_ref().ok_or("Vendor owner profile missing")?;
+                        self.publisher
+                            .purchase_vendor_with_quest_journal(
+                                self.binding,
+                                self.world,
+                                profile,
+                                &wire.purchase(command)?,
+                                journal,
+                            )
+                            .await
+                    }
+                    ItemCommand::RewardClaim(command) => {
+                        let profile = self.rewards.as_ref().ok_or("Reward profile missing")?;
+                        if profile.quest_journal().is_some() {
+                            self.publisher
+                                .pickup_quest_reward(
+                                    self.binding,
+                                    self.world,
+                                    profile,
+                                    command.claim,
+                                    command.expected_revision,
+                                )
+                                .await
+                        } else {
+                            self.publisher
+                                .claim_reward_with_quest_journal(
+                                    self.binding,
+                                    self.world,
+                                    profile,
+                                    command.claim,
+                                    command.expected_revision,
+                                    journal,
+                                )
+                                .await
+                        }
+                    }
+                    command => {
+                        self.publisher
+                            .mutate_items_with_quest_journal(
+                                self.binding,
+                                self.world,
+                                &self.profile,
+                                command,
+                                journal,
+                            )
+                            .await
+                    }
                 }
-                ItemCommand::RewardClaim(command) => {
-                    let profile = self
-                        .rewards
-                        .as_ref()
-                        .ok_or("Reward claim profile is not installed")?;
-                    self.publisher
-                        .claim_reward(
-                            self.binding,
-                            self.world,
-                            profile,
-                            command.claim,
-                            command.expected_revision,
-                        )
-                        .await
-                }
-                ItemCommand::Backpack(command) => {
-                    self.publisher
-                        .mutate_inventory(self.binding, self.world, &self.profile, command)
-                        .await
-                }
-                ItemCommand::Equipment(command) => {
-                    self.publisher
-                        .mutate_equipment(self.binding, self.world, &self.profile, command)
-                        .await
+            } else {
+                match request.command {
+                    ItemCommand::Vendor(command) => {
+                        let (profile, wire) =
+                            self.vendor.as_ref().ok_or("Vendor owner profile missing")?;
+                        let purchase = wire.purchase(command)?;
+                        self.publisher
+                            .purchase_vendor(self.binding, self.world, profile, &purchase)
+                            .await
+                    }
+                    ItemCommand::RewardClaim(command) => {
+                        let profile = self
+                            .rewards
+                            .as_ref()
+                            .ok_or("Reward claim profile is not installed")?;
+                        self.publisher
+                            .claim_reward(
+                                self.binding,
+                                self.world,
+                                profile,
+                                command.claim,
+                                command.expected_revision,
+                            )
+                            .await
+                    }
+                    ItemCommand::Backpack(command) => {
+                        self.publisher
+                            .mutate_inventory(self.binding, self.world, &self.profile, command)
+                            .await
+                    }
+                    ItemCommand::OpenDocument(_) => {
+                        return Err("Document owner is not installed".into());
+                    }
+                    ItemCommand::Equipment(command) => {
+                        self.publisher
+                            .mutate_equipment(self.binding, self.world, &self.profile, command)
+                            .await
+                    }
                 }
             };
             if matches!(request.command, ItemCommand::RewardClaim(_)) {
                 let profile = self.rewards.as_ref().ok_or("Reward profile missing")?;
-                let next = self
-                    .publisher
-                    .list_reward_claims(self.binding, self.world, profile)
-                    .await?;
+                let (next, _) = self.load_claims(profile).await?;
                 if next != claims {
                     reward_generation = reward_generation
                         .checked_add(1)
@@ -365,7 +553,10 @@ impl Owner {
                 }
             }
             let outcome = match applied {
-                Ok(applied) => {
+                Ok(mut applied) => {
+                    if let Some(journal) = applied.journal.take() {
+                        self.publish_journal(*journal)?;
+                    }
                     bag = applied.bag;
                     if applied.replayed {
                         Outcome::Replayed
@@ -377,7 +568,19 @@ impl Owner {
                     let reason = reason(&error).ok_or(error)?;
                     // A full queue means this intent was never submitted. All
                     // ambiguous deadlines/closed-worker errors are fatal above.
-                    if reason != Reason::Busy {
+                    if reason != Reason::Busy
+                        && let Some(journal) = &self.journal
+                    {
+                        let saved = self
+                            .publisher
+                            .load_quest_journal(self.binding, self.world, journal)
+                            .await?;
+                        bag = saved
+                            .inventory
+                            .clone()
+                            .ok_or("Item journal returned no bag")?;
+                        self.publish_journal(saved)?;
+                    } else if reason != Reason::Busy {
                         bag = self
                             .publisher
                             .load_inventory(self.binding, self.world, &self.profile)
@@ -390,16 +593,16 @@ impl Owner {
                 retiring = true;
                 continue;
             }
-            state.send_replace(Observation {
-                bag: Some(bag.clone()),
-                reply: Some(Reply { sequence, outcome }),
-                rewards: self
+            let mut merged = Ok(());
+            state.send_modify(|s| {
+                merged = super::quest_items::merge_bag(&mut s.bag, bag.clone());
+                s.reply = Some(Reply { sequence, outcome });
+                s.rewards = self
                     .rewards
                     .as_ref()
-                    .map(|_| owned_rewards(reward_generation, &claims)),
-                closed: false,
-                failed: false,
+                    .map(|_| owned_rewards(reward_generation, &claims));
             });
+            merged?;
         }
         // Every ordinary exit closes acceptance before draining the finite set
         // of trusted facts, including logout and a closed client request port.
@@ -409,7 +612,119 @@ impl Owner {
         }
         Ok(())
     }
-    async fn offer(&self, reward: &ContentId, claims: &mut Vec<RewardClaim>) -> Result<bool> {
+    fn publish_journal(&self, applied: theia_persistence::QuestJournalApplied) -> Result<()> {
+        let catalog = self.journal.as_ref().ok_or("Item journal not configured")?;
+        self.gate
+            .upgrade()
+            .ok_or("Item journal admission gate closed")?
+            .publish_quest_items(
+                self.slot,
+                self.generation,
+                self.binding,
+                catalog.hash(),
+                applied,
+                None,
+            )
+    }
+    fn loot_position(&self) -> Result<theia_core::coordinates::GlobalPosition> {
+        let gate = self.gate.upgrade().ok_or("Loot owner gate closed")?;
+        let state = gate.lock()?;
+        state.slots[self.slot]
+            .as_ref()
+            .filter(|e| e.generation == self.generation && e.binding == self.binding)
+            .and_then(|e| e.saved.as_ref().map(|s| s.position))
+            .ok_or_else(|| "Loot owner lost its retained pose".into())
+    }
+    // Dirty hints only; Store queries still lock and derive authoritative need.
+    // Release the gate before borrowing either watch to avoid lock inversion.
+    fn loot_versions(&self) -> Result<(Option<u64>, Option<u64>)> {
+        if self
+            .rewards
+            .as_ref()
+            .is_none_or(|r| r.quest_journal().is_none())
+        {
+            return Ok((None, None));
+        }
+        let gate = self.gate.upgrade().ok_or("Loot owner gate closed")?;
+        let (items, journal) = {
+            let state = gate.lock()?;
+            let entry = state.slots[self.slot]
+                .as_ref()
+                .filter(|e| e.generation == self.generation && e.binding == self.binding)
+                .ok_or("Loot owner lost character generation")?;
+            (
+                entry
+                    .inventory
+                    .as_ref()
+                    .ok_or("Loot inventory missing")?
+                    .publish
+                    .clone(),
+                entry
+                    .progression
+                    .as_ref()
+                    .ok_or("Loot journal missing")?
+                    .publish
+                    .clone(),
+            )
+        };
+        let bag = items.borrow().bag.as_ref().map(|b| b.revision());
+        let head = journal.borrow().journal.as_ref().map(|j| j.revision);
+        Ok((bag, head))
+    }
+    async fn load_claims(
+        &self,
+        profile: &RewardCatalog,
+    ) -> Result<(
+        Vec<RewardClaim>,
+        Option<theia_core::coordinates::GlobalPosition>,
+    )> {
+        // Refresh bounded static ground offers when the committed bag/journal
+        // changes. SQL enforces acceptance/need and durable nonrepeatability.
+        for definition in profile
+            .catalog()
+            .definitions()
+            .filter(|d| d.ground().is_some())
+        {
+            match self
+                .publisher
+                .offer_reward(self.binding, self.world, profile, definition.id())
+                .await
+            {
+                Ok(_) | Err(Error::RewardNotNeeded) => {}
+                Err(error) => return Err(error.into()),
+            }
+        }
+        if profile.catalog().definitions().any(|d| {
+            d.scope() == theia_core::rewards::Scope::PerCreatureLife || d.ground().is_some()
+        }) {
+            let position = self.loot_position()?;
+            Ok((
+                if profile.quest_journal().is_some() {
+                    self.publisher
+                        .list_quest_reward_claims_nearby(
+                            self.binding,
+                            self.world,
+                            profile,
+                            position,
+                        )
+                        .await?
+                } else {
+                    self.publisher
+                        .list_reward_claims_nearby(self.binding, self.world, profile, position)
+                        .await?
+                },
+                Some(position),
+            ))
+        } else {
+            Ok((
+                self.publisher
+                    .list_reward_claims(self.binding, self.world, profile)
+                    .await?,
+                None,
+            ))
+        }
+    }
+    async fn offer(&self, fact: &Opportunity, claims: &mut Vec<RewardClaim>) -> Result<bool> {
         if !self.retained_authorized()? {
             return Err("Earned reward lost its character generation".into());
         }
@@ -417,19 +732,55 @@ impl Owner {
             .rewards
             .as_ref()
             .ok_or("Reward opportunity without profile")?;
-        if profile.catalog().definition(reward).is_none() {
-            return Err("Unknown earned reward definition".into());
-        }
-        if claims.iter().any(|c| &c.reward == reward) {
+        let definition = profile
+            .catalog()
+            .definition(&fact.reward)
+            .ok_or("Unknown earned reward definition")?;
+        let occurrence = definition
+            .occurrence(&fact.event)
+            .map_err(|_| "Earned reward creature mismatch")?;
+        if claims.iter().any(|c| {
+            c.reward == fact.reward
+                && match occurrence {
+                    theia_core::rewards::Occurrence::OncePerCharacter => c.corpse.is_none(),
+                    theia_core::rewards::Occurrence::CreatureLife(life) => {
+                        c.corpse.is_some_and(|s| s.life == life)
+                    }
+                }
+        }) {
             return Ok(false);
         }
-        let claim = self
-            .publisher
-            .offer_reward(self.binding, self.world, profile, reward)
-            .await?;
-        claims.push(claim);
-        claims.sort_by(|a, b| a.reward.cmp(&b.reward));
-        Ok(true)
+        // Persist the original fatal fact. Offering never mutates the backpack
+        // or possession journal. SQL uniqueness retains consumed life receipts.
+        if profile.quest_journal().is_some() {
+            self.publisher
+                .generate_quest_loot_for_kill(
+                    self.binding,
+                    self.world,
+                    profile,
+                    &fact.reward,
+                    &fact.event,
+                    fact.position,
+                )
+                .await?;
+        } else {
+            self.publisher
+                .roll_reward_for_kill(
+                    self.binding,
+                    self.world,
+                    profile,
+                    &fact.reward,
+                    &fact.event,
+                    fact.position,
+                )
+                .await?;
+        }
+        // The store owns the bounded pending page; never accumulate unbounded
+        // life history in a resident owner or suppress a later life by recipe.
+        let (next, _) = self.load_claims(profile).await?;
+        let changed = next != *claims;
+        *claims = next;
+        Ok(changed)
     }
 }
 fn owned_rewards(
@@ -444,6 +795,7 @@ fn owned_rewards(
             .map(|c| theia_network::reward_wire::Available {
                 reward: c.reward.clone(),
                 claim: c.id,
+                corpse: c.corpse,
             })
             .collect(),
     }
@@ -451,15 +803,28 @@ fn owned_rewards(
 fn reason(error: &Error) -> Option<Reason> {
     use theia_core::inventory::Error as Core;
     Some(match error {
+        Error::DocumentCommand(theia_core::documents::OpenError::StaleRevision) => Reason::Stale,
+        Error::DocumentCommand(theia_core::documents::OpenError::InvalidSlot) => Reason::Slot,
+        Error::DocumentCommand(theia_core::documents::OpenError::MissingItem) => {
+            Reason::EmptySource
+        }
+        Error::DocumentCommand(
+            theia_core::documents::OpenError::WrongItem
+            | theia_core::documents::OpenError::UnknownDocument,
+        ) => Reason::Conflict,
+        Error::QuestJournalConflict => Reason::Conflict,
         Error::VendorCommand(theia_core::vendors::Error::InsufficientCost) => Reason::EmptySource,
         Error::VendorCommand(theia_core::vendors::Error::NoCapacity) => Reason::Full,
         Error::VendorCommand(theia_core::vendors::Error::StaleRevision) => Reason::Stale,
-        Error::VendorCommand(theia_core::vendors::Error::RevisionExhausted) => Reason::Exhausted,
+        Error::VendorCommand(
+            theia_core::vendors::Error::RevisionExhausted
+            | theia_core::vendors::Error::CurrencyOverflow,
+        ) => Reason::Exhausted,
         Error::VendorCommand(theia_core::vendors::Error::UnknownOffer) => Reason::Conflict,
         Error::InventoryBusy => Reason::Busy,
         Error::InventoryStale | Error::InventoryCommand(Core::StaleRevision) => Reason::Stale,
         Error::InventoryConflict => Reason::Conflict,
-        Error::RewardMissing | Error::RewardConsumed => Reason::Conflict,
+        Error::RewardMissing | Error::RewardConsumed | Error::RewardNotNeeded => Reason::Conflict,
         Error::RewardCommand(theia_core::rewards::Error::NoCapacity) => Reason::Full,
         Error::RewardCommand(theia_core::rewards::Error::StaleRevision) => Reason::Stale,
         Error::RewardCommand(theia_core::rewards::Error::RevisionExhausted) => Reason::Exhausted,

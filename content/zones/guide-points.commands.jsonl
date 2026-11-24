@@ -1,0 +1,1 @@
+{"command":"apply","expected_revision":0,"edits":[{"op":"move_path_point","id":100,"index":1,"position":[64,5.03,96]},{"op":"grade_path","grade":{"path_id":100,"surface_offset_metres":-0.03,"falloff_metres":8,"blend":1}},{"op":"set_spawn","position":[64,4.35,84]}]}

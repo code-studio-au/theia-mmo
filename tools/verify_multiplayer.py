@@ -29,7 +29,7 @@ def verify_shared_bindings(bindings, directory, loaded):
     for x,z in loaded:
         package = directory/f'chunk_{x}_{z}'
         manifest = json.loads((package/'world.manifest.json').read_text())
-        assert manifest['schema'] in (2,3)
+        assert manifest['schema'] in (2,3,4,5)
         descriptors={'shared/'+filename(image):image for image in manifest['shared_images']}
         document,_=read(package/'terrain.glb',allow_external_images=True)
         used={primitive['material'] for mesh in document['meshes'] for primitive in mesh['primitives'] if 'material' in primitive}
@@ -221,12 +221,21 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor"):
+def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False, require_particle_rebase=False, hide_world_particles=False, exercise_particle_control=False, require_finished_particles=False, capture_particle_burst=False, require_particle_retirement=False, chunk_particle_failure=False, chunk_particle_texture_failure=False, chunk_particle_budget_failure=False, require_no_world_particles=False, require_particle_control_arrival=False, require_particle_control_departure=False):
+    assert not require_particle_control_departure or (chunk_stream and require_no_world_particles)
+    assert not require_particle_control_arrival or (chunk_stream and require_world_particles)
+    assert not require_no_world_particles or (chunk_world and not require_world_particles)
+    assert not require_particle_retirement or (chunk_stream and require_world_particles)
+    assert not require_finished_particles or require_world_particles
+    assert not capture_particle_burst or require_world_particles
+    assert not exercise_particle_control or (require_world_particles and not hide_world_particles)
+    assert not hide_world_particles or require_world_particles
+    assert not require_particle_rebase or (require_world_particles and render_span is not None)
     assert stream_probe in ('green_floor', 'bound_geometry')
-    assert stream_probe == 'green_floor' or (chunk_stream and chunk_shared_images and not any((chunk_asset_failure, chunk_bounds_failure, chunk_image_failure)))
+    assert stream_probe == 'green_floor' or (chunk_stream and chunk_shared_images and not any((chunk_asset_failure, chunk_bounds_failure, chunk_image_failure, chunk_particle_failure, chunk_particle_texture_failure, chunk_particle_budget_failure)))
     assert type(staging_root_limit) is int and 1 <= staging_root_limit <= 32
-    assert sum(map(bool,[chunk_asset_failure,chunk_bounds_failure,chunk_image_failure])) <= 1
-    candidate_failure = chunk_asset_failure or chunk_bounds_failure or chunk_image_failure
+    assert sum(map(bool,[chunk_asset_failure,chunk_bounds_failure,chunk_image_failure,chunk_particle_failure,chunk_particle_texture_failure,chunk_particle_budget_failure])) <= 1
+    candidate_failure = chunk_asset_failure or chunk_bounds_failure or chunk_image_failure or chunk_particle_failure or chunk_particle_texture_failure or chunk_particle_budget_failure
     assert not candidate_failure or chunk_stream
     assert not chunk_shared_images or chunk_world
     assert not chunk_world or not any((terrain, references, collision, interior, full_map, map_access, jump, world_origin)), "Initial chunk qualifier uses its own world/poses"
@@ -260,6 +269,8 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
     capture_gate.unlink(missing_ok=True);finish_gate.unlink(missing_ok=True)
     client_scene = (["--reference-scene", str(references)] if references else
                     ["--terrain-world", str(terrain)] if terrain else ["--chunk-world", str(client_chunk_world)] if chunk_world else [])
+    if hide_world_particles:
+        client_scene.append("--hide-world-particles")
     if player_assets:
         client_scene.extend(["--player-assets", str(player_assets)])
     server_scene = ["--terrain-world", str(terrain)] if terrain else ["--chunk-world", str(chunk_world)] if chunk_world else []
@@ -302,12 +313,14 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
             log = (directory / "run.log").open("w")
             logs.append(log)
             process = subprocess.Popen(
-                [str(client_binary), *client_scene, "--renet-smoke" if tickets else "--network-smoke", address,
+                [str(client_binary), *(["--fullscreen"] if window_size == "3440x1440" else []), *client_scene, "--renet-smoke" if tickets else "--network-smoke", address,
                  str(Path(tickets.name) / ("client-1.token" if name == "a" else "client-2.token")) if tickets else str(certificate), str(directory), direction],
                 # Gait acceptance below requires application info logs regardless
                 # of the caller's ambient logging filter.
                 env=dict(os.environ,
-                         THEIA_WINDOW_SIZE='1280x720',
+                         **({'THEIA_WORLD_PARTICLE_FIRST_CAPTURE': str(directory/'particle-first.png')} if require_finished_particles or capture_particle_burst else {}),
+                         **({'THEIA_WORLD_PARTICLE_FINISHED_MARKER': str(directory/'particle-finished')} if require_finished_particles else {}),
+                         THEIA_WINDOW_SIZE=window_size,
                          RUST_LOG=os.environ.get('RUST_LOG', 'info') + ',theia_client=info',
                          THEIA_RENDER_SPAN=str(render_span if render_span is not None else 128),
                          THEIA_SMOKE_START_GATE=str(gate),
@@ -325,12 +338,34 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
             assert all(p.poll() is None for p in clients), 'Client failed before scene readiness'
             assert time.monotonic() < deadline, 'Two-client scene readiness timed out'
             time.sleep(.05)
+        if exercise_particle_control:
+            from qualify_world_input_os import Desktop, owned_window
+            desktop = Desktop()
+            try:
+                window = None
+                deadline = time.monotonic() + 10
+                while window is None and time.monotonic() < deadline:
+                    window = owned_window(clients[0].pid)
+                    if window is None: time.sleep(.05)
+                assert window is not None, 'Casting client window not found'
+                desktop.focus(window)
+                width, height = map(int, window_size.split('x'))
+                desktop.click(window, (80, height-27), 1., 1)
+                desktop.key('F9')
+                desktop.key('F9')
+            finally:
+                desktop.close()
         gate.write_text('start\n')
         deadline = time.monotonic()+180
         while not all((output/name/'capture-ready').is_file() for name in ['a','b']):
             assert all(p.poll() is None for p in clients), 'Client failed before capture readiness'
             assert time.monotonic()<deadline, 'Two-client capture readiness timed out'
             time.sleep(.05)
+        if require_finished_particles:
+            while not all((output/name/'particle-finished').is_file() for name in ['a','b']):
+                assert all(p.poll() is None for p in clients), 'Client failed before particle completion'
+                assert time.monotonic()<deadline, 'Particle completion timed out'
+                time.sleep(.05)
         capture_gate.write_text('capture\n')
         while not all((output/name/'network.json').is_file() for name in ['a','b']):
             assert all(p.poll() is None for p in clients), 'Client failed before capture completion'
@@ -347,7 +382,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
         ground_checks = []
         for name, report in zip(("a", "b"), reports):
             assert report["completed"] and not report["offline"]
-            assert report['final']['version'] == 12
+            assert report['final']['version'] == 13
             coordinates = report['coordinates']
             expected_origin = world_origin if world_origin is not None else chunk_index["query_origin"] if chunk_world else [0., 0., 0.]
             assert coordinates['content_origin'] == expected_origin
@@ -421,7 +456,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 assert report['chunk_world']['authority_confirmed']
                 sent = report['chunk_world']['report']
                 ack = report['chunk_world']['ack']
-                assert ack['version'] == 12 and ack['epoch'] == coordinates['epoch']
+                assert ack['version'] == 13 and ack['epoch'] == coordinates['epoch']
                 assert ack['sequence'] == sent['sequence'] > 0
                 expected_ids = report['chunk_world']['offer']['chunks'] if chunk_stream and not candidate_failure else initial_ids
                 assert ack['chunks'] == sent['chunks'] == expected_ids
@@ -482,10 +517,48 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                         gap = min(gap, profile_capsule_clearance(profile, local_player))
                     assert -.001 <= gap <= .02, f'Chunk capsule mesh clearance: {gap}; {player}'
                     ground_checks.append({'client':name,'actor':player['id'],'clearance':gap})
+            if require_no_world_particles:
+                particles = report['world_particles']
+                assert particles['placements'] == 0 and particles['live_roots'] == 0
+                if not require_particle_control_departure:
+                    assert particles['running_emitter_frames'] == 0
+                assert not particles['control_visible']
+                if require_particle_control_departure:
+                    assert particles['control_hidden_after_ready'] > 0 and particles['control_visible_ready_frames'] > 0
+            if require_world_particles:
+                particles = report['world_particles']
+                assert particles['placements'] > 0
+                assert particles['control_visible']
+                if require_particle_control_arrival:
+                    assert particles['control_shown_after_ready'] > 0 and particles['control_hidden_ready_frames'] > 0
+                if require_particle_retirement:
+                    assert particles['chunk_publications'] >= 2
+                    assert particles['chunk_retained_roots'] > 0 and particles['chunk_retired_roots'] > 0
+                if require_finished_particles or capture_particle_burst:
+                    assert particles['released_systems'] == particles['placements']
+                    assert particles['unready_emitter_frames'] == 0
+                    assert (output/name/'particle-first.png').is_file()
+                if require_finished_particles:
+                    assert particles['live_roots'] == 0
+                else:
+                    assert particles['live_roots'] > 0
+                assert particles['running_emitter_frames'] > 0
+                if hide_world_particles:
+                    assert not particles['effects_enabled'] and particles['visible_emitter_frames'] == 0
+                elif exercise_particle_control and name == 'a':
+                    assert not particles['effects_enabled']
+                    assert particles['visibility_button_toggles'] == 1 and particles['visibility_key_toggles'] == 2
+                else:
+                    assert particles['effects_enabled'] and particles['visible_emitter_frames'] > 0
+                if require_particle_rebase:
+                    assert particles['world_space_rebase_translations'] > 0
+                    assert particles['world_space_rebase_resets'] == 0
             if terrain:
                 profile_bytes=(terrain/'terrain.json').read_bytes()
                 manifest_path = terrain / 'world.manifest.json'
                 manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
+                if require_world_particles:
+                    assert manifest and manifest['schema'] in (4, 5)
                 expected_identity = package_identity(manifest) if manifest else hashlib.sha256(profile_bytes).hexdigest()
                 assert bytes(report['terrain_world']).hex() == expected_identity
                 assert report['content_package'] == ({'content_id': manifest['content_id'], 'revision': manifest['revision']} if manifest else None)
@@ -517,7 +590,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                     assert abs(own['y']-initial['y']) > .02, 'Server height must change on this terrain walk'
             png = output / name / "scene.png"
             image = Image.open(png).convert("RGB")
-            assert image.size == (1280, 720)
+            assert image.size == tuple(map(int, window_size.split('x')))
             if chunk_stream:
                 surface = report['chunk_world']['stream']['surface_probe']
                 assert surface['present'] == (not candidate_failure)
@@ -561,6 +634,16 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 assert 'Chunk candidate rejected: Visual exceeds indexed contributor bounds; active scene retained' in log
             if chunk_image_failure:
                 assert 'Chunk candidate rejected: Shared image ' in log and 'failed verification:' in log
+            if chunk_particle_failure or chunk_particle_texture_failure or chunk_particle_budget_failure:
+                expected = ('Particle texture RGBA budget exceeded' if chunk_particle_budget_failure else
+                            'Particle texture does not match its descriptor' if chunk_particle_texture_failure else 'Particle effect ')
+                assert 'Chunk candidate rejected: ' + expected in log
+                assert 'active scene retained' in log
+                if not chunk_particle_budget_failure:
+                    assert 'does not match its descriptor; active scene retained' in log
+                assert report['world_particles']['chunk_publications'] == 1
+                assert report['world_particles']['chunk_retired_roots'] == 0
+                assert report['world_particles']['live_roots'] == report['world_particles']['placements']
             if player_assets:
                 evidence = report['human_animation']
                 assert len(evidence) == 2 and len({e['owner'] for e in evidence}) == 2
@@ -622,6 +705,9 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
             validation_active = 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in log
             if "VK_LAYER_KHRONOS_validation" in os.environ.get("VK_INSTANCE_LAYERS", ""):
                 assert validation_active, "Enable VK_LOADER_DEBUG=layer to prove layer activation"
+                if require_world_particles:
+                    from gpu_validation import check_gpu_diagnostics
+                    assert check_gpu_diagnostics(log) == 0, "Particle world produced GPU validation diagnostics"
             images.append({"client": name, "blue_pixels": blue, "red_pixels": red,
                            "image_sha256": sha256(png), "gpu": report["gpu"],
                            "validation_active": validation_active})
@@ -654,6 +740,9 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                   "chunk_stream": chunk_stream, "chunk_asset_failure":chunk_asset_failure,
                   "staging_root_limit": staging_root_limit,"stream_probe":stream_probe,
                   "chunk_bounds_failure":chunk_bounds_failure,
+                  "chunk_particle_failure":chunk_particle_failure,
+                  "chunk_particle_texture_failure":chunk_particle_texture_failure,
+                  "chunk_particle_budget_failure":chunk_particle_budget_failure,
                   "chunk_image_failure":chunk_image_failure,"chunk_shared_images":chunk_shared_images,
                   "client_chunk_world": str(client_chunk_world) if client_chunk_world else None,
                   "player_assets": str(player_assets) if player_assets else None,
@@ -689,6 +778,13 @@ if __name__ == "__main__":
     parser.add_argument("--binaries", type=Path, default=Path("target/debug"))
     parser.add_argument("--reference-assets", type=Path)
     parser.add_argument("--terrain-world", type=Path)
+    parser.add_argument("--require-world-particles", action="store_true", help="Require visible running particle emitters in both clients")
+    parser.add_argument("--require-no-world-particles", action="store_true", help="Require no world particle roots or playback in a chunk world")
+    parser.add_argument("--require-particle-rebase", action="store_true", help="Require world-space particle translations on both clients during rebases")
+    parser.add_argument("--hide-world-particles", action="store_true", help="Start with world effects hidden and verify they stay hidden")
+    parser.add_argument("--exercise-particle-control", action="store_true", help="Use actual X11 pointer and keyboard to toggle client A's world effects")
+    parser.add_argument("--require-finished-particles", action="store_true", help="Require a one-shot effect to start after readiness and finish")
+    parser.add_argument("--capture-particle-burst", action="store_true", help="Capture early playback and verify the scene readiness gate")
     parser.add_argument("--chunk-world", type=Path)
     parser.add_argument("--client-chunk-world", type=Path)
     parser.add_argument("--chunk-direction", choices=["x", "z"], default="z")
@@ -703,5 +799,6 @@ if __name__ == "__main__":
     parser.add_argument('--replication-span', type=float)
     parser.add_argument("--render-span", type=float)
     parser.add_argument("--jump", action="store_true")
+    parser.add_argument("--window-size", choices=["1280x720", "3440x1440"], default="1280x720")
     args = parser.parse_args()
-    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision, args.interior, args.full_map, args.map_access, args.transport, args.world_origin, args.replication_span, args.render_span, args.jump, args.chunk_world.resolve() if args.chunk_world else None, args.client_chunk_world.resolve() if args.client_chunk_world else None, not args.offscreen_remote, args.chunk_direction)
+    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision, args.interior, args.full_map, args.map_access, args.transport, args.world_origin, args.replication_span, args.render_span, args.jump, args.chunk_world.resolve() if args.chunk_world else None, args.client_chunk_world.resolve() if args.client_chunk_world else None, not args.offscreen_remote, args.chunk_direction, window_size=args.window_size, require_world_particles=args.require_world_particles, require_particle_rebase=args.require_particle_rebase, hide_world_particles=args.hide_world_particles, exercise_particle_control=args.exercise_particle_control, require_finished_particles=args.require_finished_particles, capture_particle_burst=args.capture_particle_burst, require_no_world_particles=args.require_no_world_particles)

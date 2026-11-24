@@ -678,3 +678,421 @@ async fn journal_admission_profile_preflight_is_read_only_and_checks_exact_bindi
     drop(admin);
     driver.await.unwrap().unwrap();
 }
+
+fn kill_source(n: u64, creature: &str) -> theia_core::progression::KillEvent {
+    use theia_core::{
+        identity::{EntityId, EntityKey, WorldEpoch},
+        progression::{KillEvent, KillId},
+    };
+    KillEvent {
+        id: KillId::from_victim(EntityKey {
+            epoch: WorldEpoch::new(197).unwrap(),
+            entity: EntityId::new(n).unwrap(),
+        }),
+        creature: id(creature),
+    }
+}
+fn kill_catalog(xp: &ProgressionCatalog, creature: &str) -> QuestJournalCatalog {
+    let mut raw: Value = serde_json::from_slice(DATA).unwrap();
+    let mut quest = raw["quests"][1].clone();
+    quest["prerequisites"] = json!([]);
+    quest["stages"][0]["objectives"][0]["creature"] = json!(creature);
+    raw["quests"] = json!([quest]);
+    QuestJournalCatalog::from_json(&serde_json::to_vec(&raw).unwrap(), xp).unwrap()
+}
+#[tokio::test]
+#[ignore = "requires owned PostgreSQL; run tools/qualify_persistence.py"]
+async fn atomic_kills_preserve_preaccept_disposition_replay_and_quest_progress_at_xp_cap() {
+    let (url, admin, driver) = support::owned().await;
+    let realm = RealmId::random();
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    for (name, cap, offset) in [("Atomicnormal", false, 0), ("Atomiccap", true, 10)] {
+        let mut raw: Value = serde_json::from_slice(XP).unwrap();
+        if cap {
+            raw["level_thresholds"] = json!([0, 25]);
+        }
+        let xp = ProgressionCatalog::from_json(&serde_json::to_vec(&raw).unwrap()).unwrap();
+        let q = kill_catalog(&xp, "theia.dev.training-creature");
+        let b = character(&mut store, name).await;
+        initialize(&mut store, b, &xp, &q).await;
+        let early = kill_source(offset + 1, "theia.dev.training-creature");
+        let result = store
+            .award_progression_and_quest_journal(b, WORLD, &xp, &q, &early)
+            .await
+            .unwrap();
+        assert_eq!(result.experience_granted, 25);
+        assert!(result.journal.quests().next().is_none());
+        store
+            .command_quest_journal(b, WORLD, &q, &xp, &command(1, second(), Action::Accept, 0))
+            .await
+            .unwrap();
+        let replay = store
+            .award_progression_and_quest_journal(b, WORLD, &xp, &q, &early)
+            .await
+            .unwrap();
+        assert!(replay.replayed);
+        assert_eq!(replay.experience_granted, 0);
+        let objective = id("theia.dev.quest-follow-up.objective.wolves");
+        assert_eq!(
+            replay
+                .journal
+                .progress(&second())
+                .unwrap()
+                .count(&objective),
+            Some(0)
+        );
+        for n in 2..=4 {
+            let source = kill_source(offset + n, "theia.dev.training-creature");
+            let result = store
+                .award_progression_and_quest_journal(b, WORLD, &xp, &q, &source)
+                .await
+                .unwrap();
+            assert_eq!(result.experience_granted, if cap { 0 } else { 25 });
+            assert_eq!(
+                result
+                    .journal
+                    .progress(&second())
+                    .unwrap()
+                    .count(&objective),
+                Some((n - 1) as u32)
+            );
+            let replay = store
+                .award_progression_and_quest_journal(b, WORLD, &xp, &q, &source)
+                .await
+                .unwrap();
+            assert!(replay.replayed);
+            assert_eq!(replay.experience_granted, 0);
+            assert_eq!(replay.journal, result.journal);
+        }
+        store
+            .record_quest_event(b, WORLD, &q, nz(100), &event("training"))
+            .await
+            .unwrap();
+        let done = store
+            .command_quest_journal(b, WORLD, &q, &xp, &command(2, second(), Action::TurnIn, 5))
+            .await
+            .unwrap();
+        assert_eq!(done.experience.unwrap().total(), if cap { 25 } else { 125 });
+        let result = store
+            .award_progression_and_quest_journal(b, WORLD, &xp, &q, &early)
+            .await
+            .unwrap();
+        assert_eq!(result.experience_granted, 0);
+        assert_eq!(
+            result.journal.progress(&second()).unwrap().status(),
+            Status::Completed
+        );
+        let records:i64=admin.query_one("SELECT count(*) FROM theia.quest_journal_events WHERE realm_id=$1 AND character_id=$2",&[&realm.value(),&b.character.value()]).await.unwrap().get(0);
+        assert_eq!(records, 5);
+    }
+    store.close().await.unwrap();
+    drop(admin);
+    driver.await.unwrap().unwrap();
+}
+#[tokio::test]
+#[ignore = "requires owned PostgreSQL; run tools/qualify_persistence.py"]
+async fn quest_only_kills_need_no_xp_row_and_bind_each_recipient_and_original_operation() {
+    let (url, admin, driver) = support::owned().await;
+    let realm = RealmId::random();
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    let xp = ProgressionCatalog::from_json(XP).unwrap();
+    let q = kill_catalog(&xp, "theia.dev.no-xp-creature");
+    let source = kill_source(21, "theia.dev.no-xp-creature");
+    for name in ["Atomiconlyone", "Atomiconlytwo"] {
+        let b = character(&mut store, name).await;
+        store.ensure_quest_journal(b, WORLD, &q).await.unwrap();
+        store
+            .command_quest_journal(b, WORLD, &q, &xp, &command(1, second(), Action::Accept, 0))
+            .await
+            .unwrap();
+        let result = store
+            .award_progression_and_quest_journal(b, WORLD, &xp, &q, &source)
+            .await
+            .unwrap();
+        assert!(result.experience.is_none());
+        assert_eq!(result.experience_granted, 0);
+        assert_eq!(
+            result
+                .journal
+                .progress(&second())
+                .unwrap()
+                .count(&id("theia.dev.quest-follow-up.objective.wolves")),
+            Some(1)
+        );
+        assert!(
+            store
+                .award_progression_and_quest_journal(b, WORLD, &xp, &q, &source)
+                .await
+                .unwrap()
+                .replayed
+        );
+        assert!(matches!(
+            store.load_progression(b, WORLD, &xp).await,
+            Err(Error::ProgressionMissing)
+        ));
+        assert!(matches!(
+            store
+                .record_quest_event(
+                    b,
+                    WORLD,
+                    &q,
+                    QuestJournalCatalog::kill_event_id(&source),
+                    &EventKey::Kill(source.creature.clone())
+                )
+                .await,
+            Err(Error::QuestJournalConflict)
+        ));
+    }
+    let b = character(&mut store, "Atomicindependent").await;
+    store.ensure_quest_journal(b, WORLD, &q).await.unwrap();
+    store
+        .record_quest_event(
+            b,
+            WORLD,
+            &q,
+            QuestJournalCatalog::kill_event_id(&source),
+            &EventKey::Kill(source.creature.clone()),
+        )
+        .await
+        .unwrap();
+    store
+        .command_quest_journal(b, WORLD, &q, &xp, &command(1, second(), Action::Accept, 0))
+        .await
+        .unwrap();
+    assert!(matches!(
+        store
+            .award_progression_and_quest_journal(b, WORLD, &xp, &q, &source)
+            .await,
+        Err(Error::QuestJournalConflict)
+    ));
+    assert_eq!(
+        store
+            .load_quest_journal(b, WORLD, &q)
+            .await
+            .unwrap()
+            .journal
+            .progress(&second())
+            .unwrap()
+            .revision(),
+        1
+    );
+    store.close().await.unwrap();
+    drop(admin);
+    driver.await.unwrap().unwrap();
+}
+#[tokio::test]
+#[ignore = "requires owned PostgreSQL; run tools/qualify_persistence.py"]
+async fn paired_kill_rollback_lock_barrier_and_old_xp_only_receipt_cannot_partially_advance() {
+    let (url, mut admin, driver) = support::owned().await;
+    let realm = RealmId::random();
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    let xp = ProgressionCatalog::from_json(XP).unwrap();
+    let q = kill_catalog(&xp, "theia.dev.training-creature");
+    let b = character(&mut store, "Atomicrollback").await;
+    initialize(&mut store, b, &xp, &q).await;
+    store
+        .command_quest_journal(b, WORLD, &q, &xp, &command(1, second(), Action::Accept, 0))
+        .await
+        .unwrap();
+    let source = kill_source(31, "theia.dev.training-creature");
+    admin.batch_execute("CREATE FUNCTION theia.fail_atomic_kill() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'owned rollback fixture'; END $$; CREATE TRIGGER fail_atomic_kill AFTER UPDATE ON theia.progression FOR EACH ROW EXECUTE FUNCTION theia.fail_atomic_kill();").await.unwrap();
+    assert!(
+        store
+            .award_progression_and_quest_journal(b, WORLD, &xp, &q, &source)
+            .await
+            .is_err()
+    );
+    admin.batch_execute("DROP TRIGGER fail_atomic_kill ON theia.progression; DROP FUNCTION theia.fail_atomic_kill();").await.unwrap();
+    assert_eq!(
+        store.load_progression(b, WORLD, &xp).await.unwrap().total(),
+        0
+    );
+    assert_eq!(
+        store
+            .load_quest_journal(b, WORLD, &q)
+            .await
+            .unwrap()
+            .revision,
+        1
+    );
+    let counts: (i64, i64) = {
+        let row=admin.query_one("SELECT (SELECT count(*) FROM theia.experience_receipts WHERE realm_id=$1),(SELECT count(*) FROM theia.quest_journal_events WHERE realm_id=$1)",&[&realm.value()]).await.unwrap();
+        (row.get(0), row.get(1))
+    };
+    assert_eq!(counts, (0, 0));
+    let guard = admin.transaction().await.unwrap();
+    guard.query_one("SELECT revision FROM theia.progression WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&b.character.value()]).await.unwrap();
+    let task_xp = xp.clone();
+    let task_q = q.clone();
+    let task_source = source.clone();
+    let mut pending = tokio::spawn(async move {
+        let result = store
+            .award_progression_and_quest_journal(b, WORLD, &task_xp, &task_q, &task_source)
+            .await;
+        (store, result)
+    });
+    assert!(
+        tokio::time::timeout(Duration::from_millis(40), &mut pending)
+            .await
+            .is_err()
+    );
+    let revision: i64 = guard
+        .query_one(
+            "SELECT revision FROM theia.quest_journal_heads WHERE realm_id=$1 AND character_id=$2",
+            &[&realm.value(), &b.character.value()],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(revision, 1);
+    guard.commit().await.unwrap();
+    let (mut store, result) = pending.await.unwrap();
+    let committed = result.unwrap();
+    assert_eq!(committed.experience_granted, 25);
+    assert_eq!(committed.journal.progress(&second()).unwrap().revision(), 2);
+    let independent = kill_source(32, "theia.dev.training-creature");
+    store
+        .award_experience(b, WORLD, &xp, &independent)
+        .await
+        .unwrap();
+    let before = store.load_quest_journal(b, WORLD, &q).await.unwrap();
+    assert!(matches!(
+        store
+            .award_progression_and_quest_journal(b, WORLD, &xp, &q, &independent)
+            .await,
+        Err(Error::QuestJournalConflict)
+    ));
+    assert_eq!(
+        store.load_quest_journal(b, WORLD, &q).await.unwrap(),
+        before
+    );
+    assert_eq!(
+        store.load_progression(b, WORLD, &xp).await.unwrap().total(),
+        50
+    );
+    store.close().await.unwrap();
+    drop(admin);
+    driver.await.unwrap().unwrap();
+}
+
+#[tokio::test]
+#[ignore = "requires owned PostgreSQL; run tools/qualify_persistence.py"]
+async fn atomic_kill_worker_retains_originals_cancelled_answers_and_full_queue_through_shutdown() {
+    let (url, mut admin, driver) = support::owned().await;
+    let realm = RealmId::random();
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    let xp = ProgressionCatalog::from_json(XP).unwrap();
+    let q = kill_catalog(&xp, "theia.dev.training-creature");
+    let b = character(&mut store, "Killqueue").await;
+    initialize(&mut store, b, &xp, &q).await;
+    store
+        .command_quest_journal(b, WORLD, &q, &xp, &command(1, second(), Action::Accept, 0))
+        .await
+        .unwrap();
+    let (publisher, worker) = theia_persistence::Worker::start(store);
+    let guard = admin.transaction().await.unwrap();
+    guard.query_one("SELECT revision FROM theia.quest_journal_heads WHERE realm_id=$1 AND character_id=$2 FOR UPDATE", &[&realm.value(), &b.character.value()]).await.unwrap();
+    let original = kill_source(501, "theia.dev.training-creature");
+    let mut answer = publisher
+        .enqueue_progression_and_quest_journal(b, WORLD, &xp, &q, original.clone())
+        .unwrap();
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            guard.query_one("SELECT pg_stat_clear_snapshot()", &[]).await.unwrap();
+            let waiting:bool=guard.query_one("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE '%quest_journal_heads%' AND pid<>pg_backend_pid())", &[]).await.unwrap().get(0);
+            if waiting {break;}
+            tokio::task::yield_now().await;
+        }
+    }).await.unwrap();
+    assert!(
+        tokio::time::timeout(Duration::from_millis(30), &mut answer)
+            .await
+            .is_err()
+    );
+    let row = guard
+        .query_one(
+            "SELECT experience FROM theia.progression WHERE realm_id=$1 AND character_id=$2",
+            &[&realm.value(), &b.character.value()],
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        row.get::<_, i32>(0),
+        0,
+        "Neither side can publish before COMMIT"
+    );
+    drop(answer);
+    // Include the original twice; a lost answer must not make it a new kill.
+    drop(
+        publisher
+            .enqueue_progression_and_quest_journal(b, WORLD, &xp, &q, original.clone())
+            .unwrap(),
+    );
+    for n in 502..517 {
+        drop(
+            publisher
+                .enqueue_progression_and_quest_journal(
+                    b,
+                    WORLD,
+                    &xp,
+                    &q,
+                    kill_source(n, "theia.dev.training-creature"),
+                )
+                .unwrap(),
+        );
+    }
+    assert!(matches!(
+        publisher.enqueue_progression_and_quest_journal(
+            b,
+            WORLD,
+            &xp,
+            &q,
+            kill_source(999, "theia.dev.training-creature")
+        ),
+        Err(Error::InventoryBusy)
+    ));
+    let mut ending = tokio::spawn(worker.shutdown());
+    assert!(
+        tokio::time::timeout(Duration::from_millis(30), &mut ending)
+            .await
+            .is_err()
+    );
+    guard.commit().await.unwrap();
+    let status = ending.await.unwrap().unwrap();
+    assert!(!status.failed);
+    assert_eq!(status.journal_events, 17);
+    assert_eq!(status.journal_replayed, 1);
+    assert_eq!(status.journal_experience_units, 250);
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    let saved = store.load_quest_journal(b, WORLD, &q).await.unwrap();
+    assert_eq!(saved.revision, 17);
+    assert_eq!(
+        saved
+            .journal
+            .progress(&second())
+            .unwrap()
+            .count(&id("theia.dev.quest-follow-up.objective.wolves")),
+        Some(3)
+    );
+    assert_eq!(
+        store.load_progression(b, WORLD, &xp).await.unwrap().total(),
+        250
+    );
+    let (publisher, worker) = theia_persistence::Worker::start(store);
+    let replay = publisher
+        .award_progression_and_quest_journal(b, WORLD, &xp, &q, &original)
+        .await
+        .unwrap();
+    assert!(replay.replayed);
+    assert_eq!(replay.experience_granted, 0);
+    assert_eq!(replay.journal, saved.journal);
+    worker.shutdown().await.unwrap();
+    drop(admin);
+    driver.await.unwrap().unwrap();
+}
+
+#[path = "quest_journal_contract/reach_areas.rs"]
+mod reach_areas;
+
+#[path = "quest_journal_contract/possession.rs"]
+mod possession;

@@ -1,0 +1,948 @@
+//! Bounded height-patch authoring through the same command engine as agent edits.
+use super::*;
+use bevy::{
+    asset::RenderAssetUsages,
+    mesh::{Indices, PrimitiveTopology},
+    picking::mesh_picking::ray_cast::{MeshRayCast, MeshRayCastSettings},
+};
+use theia_zone::terrain::{Brush, BrushOperation, HeightPatch};
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) enum Tool {
+    Raise,
+    Lower,
+    Flatten,
+    FlattenArea,
+    Smooth,
+    Paint(theia_zone::painting::Surface),
+}
+pub(super) struct Stroke {
+    pub draft: Editor,
+    revision: u64,
+    edits: Vec<Edit>,
+    last: Option<Vec3>,
+    area_anchor: Option<([f64; 2], f32)>,
+}
+/// Bound work before allocation, including discontinuities over panels/outside terrain.
+#[cfg(test)]
+fn stroke_points(last: Option<Vec3>, point: Vec3, remaining: usize) -> Vec<Vec3> {
+    spaced_stroke_points(last, point, remaining, 2.)
+}
+fn spaced_stroke_points(
+    last: Option<Vec3>,
+    point: Vec3,
+    remaining: usize,
+    spacing: f32,
+) -> Vec<Vec3> {
+    if remaining == 0 || !point.is_finite() {
+        return vec![];
+    }
+    let Some(last) = last else {
+        return vec![point];
+    };
+    if !last.is_finite() {
+        return vec![point];
+    }
+    let distance = last.xz().distance(point.xz());
+    if !distance.is_finite() || distance < spacing {
+        return vec![];
+    }
+    let count = ((distance / spacing).floor() as usize).min(remaining);
+    let step = (point - last) * (spacing / distance);
+    (1..=count).map(|i| last + step * i as f32).collect()
+}
+impl Stroke {
+    pub(super) fn commands(&self) -> &[Edit] {
+        &self.edits
+    }
+    pub(super) fn stamps(&self) -> usize {
+        self.edits.len()
+    }
+    fn feedback(&self) -> String {
+        if self.edits.len() == theia_zone::MAX_EDITS {
+            format!(
+                "Stroke limit reached ({0}/{0}) - release to commit, Esc to cancel",
+                theia_zone::MAX_EDITS
+            )
+        } else {
+            format!(
+                "Terrain preview ({}/{}) - release to commit, Esc to cancel",
+                self.edits.len(),
+                theia_zone::MAX_EDITS
+            )
+        }
+    }
+}
+#[derive(Component)]
+pub(super) struct GroundPart(pub usize);
+#[derive(Component)]
+pub(super) struct BrushCursor;
+#[derive(Resource)]
+pub(super) struct GroundMesh {
+    surface: Handle<Mesh>,
+    brush: Handle<Mesh>,
+    lines: Handle<Mesh>,
+    normal: Handle<StandardMaterial>,
+    painted: Handle<StandardMaterial>,
+}
+#[derive(Component)]
+pub(super) struct TerrainGrid;
+pub(super) fn paint_actions() -> [(Action, &'static str); 12] {
+    use theia_zone::painting::Surface;
+    [
+        (Action::TerrainToggle, "Create / remove terrain"),
+        (Action::Brush(Tool::Paint(Surface::Grass)), "Paint grass"),
+        (Action::Brush(Tool::Paint(Surface::Dirt)), "Paint dirt"),
+        (Action::Brush(Tool::Paint(Surface::Rock)), "Paint rock"),
+        (Action::Brush(Tool::Paint(Surface::Sand)), "Paint sand"),
+        (Action::Radius(1), "Larger brush (+4 m)"),
+        (Action::Radius(-1), "Smaller brush (-4 m)"),
+        (Action::Undo, "Undo [Ctrl Z]"),
+        (Action::Redo, "Redo [Ctrl Y]"),
+        (Action::Save, "Save zone [Ctrl S]"),
+        (Action::Load, "Reload zone [Ctrl Shift O]"),
+        (Action::Play, "Enter / leave playtest [F5]"),
+    ]
+}
+pub(super) fn actions() -> [(Action, &'static str); 12] {
+    [
+        (Action::TerrainToggle, "Create / remove terrain"),
+        (Action::Brush(Tool::Raise), "Raise (2 m / stamp)"),
+        (Action::Brush(Tool::Lower), "Lower (2 m / stamp)"),
+        (Action::Brush(Tool::Flatten), "Flatten to 0 m"),
+        (Action::Brush(Tool::Smooth), "Smooth heights"),
+        (
+            Action::Brush(Tool::FlattenArea),
+            "Flatten area (centre height)",
+        ),
+        (Action::Radius(-1), "Smaller brush (-4 m)"),
+        (Action::Undo, "Undo [Ctrl Z]"),
+        (Action::Redo, "Redo [Ctrl Y]"),
+        (Action::Save, "Save zone [Ctrl S]"),
+        (Action::TerrainResolution, "Toggle 2 m / 4 m samples"),
+        (Action::Play, "Enter / leave playtest [F5]"),
+    ]
+}
+pub(super) fn geometry(zone: &Zone) -> Option<theia_network::procedural::Geometry> {
+    let patch = zone.terrain.as_ref()?;
+    let start = patch.origin().expect("Validated patch");
+    let offset = zone
+        .local([start[0], zone.origin[1], start[2]])
+        .expect("Validated local patch");
+    let mut geometry = theia_network::procedural::grid(patch.axis() - 1);
+    for (i, point) in geometry.positions.iter_mut().enumerate() {
+        point[0] = point[0] * f32::from(patch.span_chunks) + offset[0];
+        point[1] = patch.heights[i];
+        point[2] = point[2] * f32::from(patch.span_chunks) + offset[2];
+    }
+    Some(geometry)
+}
+/// Flat surroundings have a real cutout; negative sculpting has no hidden floor.
+pub(super) fn ground_boxes(zone: &Zone) -> Vec<(Vec3, Vec3)> {
+    if zone.imported_terrain.is_some() {
+        return vec![];
+    }
+    let Some(patch) = &zone.terrain else {
+        return vec![(Vec3::new(0., -0.5, 0.), Vec3::new(1024., 1., 1024.))];
+    };
+    let start = patch.origin().expect("Validated patch");
+    let start = zone
+        .local([start[0], zone.origin[1], start[2]])
+        .expect("Validated patch frame");
+    let (x, z) = (start[0], start[2]);
+    let extent = patch.extent_metres() as f32;
+    [
+        (-512., x, -512., 512.),
+        (x + extent, 512., -512., 512.),
+        (x, x + extent, -512., z),
+        (x, x + extent, z + extent, 512.),
+    ]
+    .into_iter()
+    .filter(|(a, b, c, d)| b - a > 0. && d - c > 0.)
+    .map(|(a, b, c, d)| {
+        (
+            Vec3::new((a + b) / 2., -0.5, (c + d) / 2.),
+            Vec3::new(b - a, 1., d - c),
+        )
+    })
+    .collect()
+}
+fn mesh(geometry: theia_network::procedural::Geometry) -> Mesh {
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, geometry.positions);
+    mesh.insert_indices(Indices::U32(
+        geometry.triangles.into_iter().flatten().collect(),
+    ));
+    mesh.compute_normals();
+    mesh
+}
+pub(super) fn surface_mesh(zone: &Zone) -> Option<Mesh> {
+    let mut result = mesh(geometry(zone)?);
+    let patch = zone.terrain.as_ref()?;
+    if !patch.weights.is_empty() {
+        let palette = [
+            Color::srgb(0.18, 0.24, 0.20),
+            Color::srgb(0.38, 0.24, 0.11),
+            Color::srgb(0.37, 0.39, 0.43),
+            Color::srgb(0.65, 0.55, 0.31),
+        ]
+        .map(|c| c.to_linear().to_f32_array());
+        let colours: Vec<[f32; 4]> = patch
+            .weights
+            .iter()
+            .map(|w| {
+                let rgb = std::array::from_fn::<_, 3, _>(|i| {
+                    (0..4)
+                        .map(|channel| palette[channel][i] * (f32::from(w[channel]) / 255.))
+                        .sum::<f32>()
+                });
+                [rgb[0], rgb[1], rgb[2], 1.]
+            })
+            .collect();
+        result.insert_attribute(Mesh::ATTRIBUTE_COLOR, colours);
+    }
+    Some(result)
+}
+fn lines(geometry: &theia_network::procedural::Geometry, axis: usize) -> Mesh {
+    let mut positions = Vec::new();
+    let mut edge = |a: usize, b: usize| {
+        for index in [a, b] {
+            let mut point = geometry.positions[index];
+            point[1] += 0.018;
+            positions.push(point);
+        }
+    };
+    for z in 0..axis {
+        for x in 0..axis {
+            let index = z * axis + x;
+            if x < axis - 1 {
+                edge(index, index + 1);
+            }
+            if z < axis - 1 {
+                edge(index, index + axis);
+            }
+        }
+    }
+    let normals = vec![[0., 1., 0.]; positions.len()];
+    let mut mesh = Mesh::new(PrimitiveTopology::LineList, RenderAssetUsages::default());
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    mesh
+}
+pub(super) fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let material = materials.add(Color::srgb(0.18, 0.24, 0.20));
+    let cube = meshes.add(Cuboid::new(1., 1., 1.));
+    for i in 0..4 {
+        commands.spawn((
+            GroundPart(i),
+            Mesh3d(cube.clone()),
+            MeshMaterial3d(material.clone()),
+            Transform::default(),
+            Visibility::Hidden,
+        ));
+    }
+    let terrain = meshes.add(mesh(theia_network::procedural::grid(32)));
+    commands.spawn((
+        GroundPart(4),
+        Mesh3d(terrain.clone()),
+        MeshMaterial3d(material.clone()),
+        Transform::default(),
+        Visibility::Hidden,
+    ));
+    let grid = meshes.add(lines(&theia_network::procedural::grid(32), 33));
+    commands.spawn((
+        TerrainGrid,
+        Mesh3d(grid.clone()),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::srgb(0.34, 0.45, 0.37),
+            unlit: true,
+            ..default()
+        })),
+        Transform::default(),
+        Visibility::Hidden,
+        bevy::light::NotShadowCaster,
+    ));
+    let brush = meshes.add(mesh(theia_network::procedural::grid(32)));
+    commands.insert_resource(GroundMesh {
+        brush: brush.clone(),
+        surface: terrain,
+        lines: grid,
+        normal: material,
+        painted: materials.add(Color::WHITE),
+    });
+    commands.spawn((
+        BrushCursor,
+        bevy::camera::visibility::NoFrustumCulling,
+        Mesh3d(brush),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::WHITE,
+            unlit: true,
+            alpha_mode: AlphaMode::Blend,
+            ..default()
+        })),
+        Transform::default(),
+        Visibility::Hidden,
+        bevy::light::NotShadowCaster,
+    ));
+}
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+pub(super) fn sync(
+    session: Res<Session>,
+    handle: Res<GroundMesh>,
+    view: Res<View>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut ground: Query<
+        (
+            &GroundPart,
+            &mut Transform,
+            &mut Visibility,
+            &mut MeshMaterial3d<StandardMaterial>,
+        ),
+        Without<BrushCursor>,
+    >,
+    mut cursor: Query<(&mut Transform, &mut Visibility), (With<BrushCursor>, Without<GroundPart>)>,
+    mut terrain_grid: Query<
+        &mut Visibility,
+        (With<TerrainGrid>, Without<GroundPart>, Without<BrushCursor>),
+    >,
+    mut last: Local<Option<(u64, Option<u64>)>>,
+    mut surface_last: Local<Option<([f64; 3], Option<HeightPatch>, Option<[u8; 32]>)>>,
+    mut brush_last: Local<Option<((u64, Option<u64>), [f64; 2], f64, f64)>>,
+) {
+    for mut visibility in &mut terrain_grid {
+        *visibility = if session.editor.zone().terrain.is_some()
+            && session.play.is_none()
+            && view.show_grid
+            && matches!(
+                view.preset,
+                camera_views::Preset::Perspective | camera_views::Preset::Top
+            ) {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
+    }
+    let key = (
+        session.editor.revision(),
+        session.stroke.as_ref().map(|s| s.draft.revision()),
+    );
+    if *last != Some(key) {
+        let zone = session
+            .stroke
+            .as_ref()
+            .map_or(session.editor.zone(), |s| s.draft.zone());
+        let surface_key = (
+            zone.origin,
+            zone.terrain.clone(),
+            zone.imported_terrain.as_ref().map(|t| t.identity),
+        );
+        if surface_last.as_ref() != Some(&surface_key) {
+            let boxes = ground_boxes(zone);
+            let geometry = geometry(zone);
+            let has_terrain = geometry.is_some();
+            if let Some(geometry) = geometry {
+                *meshes
+                    .get_mut(&handle.lines)
+                    .expect("Resident terrain grid") =
+                    lines(&geometry, zone.terrain.as_ref().unwrap().axis());
+                *meshes
+                    .get_mut(&handle.surface)
+                    .expect("Resident terrain mesh") =
+                    surface_mesh(zone).expect("Terrain surface mesh");
+            }
+            for (part, mut transform, mut visibility, mut material) in &mut ground {
+                if part.0 == 4 {
+                    material.0 = if zone.terrain.as_ref().is_some_and(|p| !p.weights.is_empty()) {
+                        handle.painted.clone()
+                    } else {
+                        handle.normal.clone()
+                    };
+                    *transform = Transform::default();
+                    *visibility = if has_terrain {
+                        Visibility::Visible
+                    } else {
+                        Visibility::Hidden
+                    };
+                } else if let Some((centre, size)) = boxes.get(part.0) {
+                    *transform = Transform::from_translation(*centre).with_scale(*size);
+                    *visibility = Visibility::Visible;
+                } else {
+                    *visibility = Visibility::Hidden;
+                }
+            }
+            *surface_last = Some(surface_key);
+        }
+        *last = Some(key);
+    }
+    if let Ok((mut transform, mut visibility)) = cursor.single_mut() {
+        *visibility = Visibility::Hidden;
+        if session.terrain_mode
+            && session.play.is_none()
+            && !session.has_modal()
+            && let Some(point) = session.brush_point
+        {
+            let zone = session
+                .stroke
+                .as_ref()
+                .map_or(session.editor.zone(), |s| s.draft.zone());
+            if let Ok(global) = zone.global(point.to_array()) {
+                let centre = [global[0], global[2]];
+                let radius = session.brush_radius.min(radius_limit(session.brush_tool));
+                let edge = if session.brush_tool == Tool::FlattenArea {
+                    session.flatten_edge
+                } else {
+                    0.
+                };
+                let brush_key = (key, centre, radius, edge);
+                if *brush_last == Some(brush_key) {
+                    *visibility = Visibility::Visible;
+                } else if let Some(mesh) = brush_preview::mesh_with_edge(zone, centre, radius, edge)
+                {
+                    *meshes
+                        .get_mut(&handle.brush)
+                        .expect("Resident brush overlay") = mesh;
+                    *brush_last = Some(brush_key);
+                    *visibility = Visibility::Visible;
+                }
+            }
+        }
+        *transform = Transform::IDENTITY;
+    }
+}
+pub(super) fn palette(
+    session: Res<Session>,
+    mut buttons: Query<(
+        &PaletteSlot,
+        &mut Action,
+        &Children,
+        &Hovered,
+        &mut BackgroundColor,
+        &mut Node,
+    )>,
+    mut labels: Query<(&mut Text, Has<PaletteShortcut>), With<PaletteLabel>>,
+    mut help: Query<&mut Text, (With<Help>, Without<PaletteLabel>)>,
+) {
+    for mut text in &mut help {
+        **text = if session.editor.zone().imported_terrain.is_some() && session.terrain_mode {
+            "Imported terrain editing\nClick / drag: sculpt or paint\nRelease: one undo entry | Esc: cancel\nFlatten area: centre level + blended edge\nI: sample manual flatten height\nCtrl S: save | Ctrl Z / Y: undo / redo\nShift + WASD: fast navigation\nWheel zoom | F: frame terrain".into()
+        } else if session.terrain_paint {
+            "F7: terrain colour paint\nF: frame terrain\n[ / ]: halve/double paint blend\nBlend: 5 to 100%\nClick/drag: paint stroke\nRelease: one undo entry\nUp to 128 stamps per stroke\nEsc cancels preview\nP: spawn at ground cursor\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
+        } else if session.vegetation_mode {
+            "F6: greybox trees / shrubs\nCtrl D: copy plant\nF: focus | H: ground selection\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
+        } else if session.marker_mode {
+            "F4: NPC / quest markers\nCtrl D: copy marker\nF: focus | H: ground selection\nClick to place or select\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/- changes footprint radius\nCtrl O: open zone browser\nCtrl Shift O: reload file\nMarkers are authoring notes;\nplaytest hides them".into()
+        } else if session.path_mode {
+            "F3: guide paths / streams\nCtrl D: copy whole guide\nClick ground to add points\nEnter finishes | Esc cancels\nIns: insert segment midpoint\nBksp: remove point / draft last\nClick guide / point to select\nTab / Shift Tab: cycle points\nF: focus | H: ground selection\nArrows/PgUp/Dn move selection\n+/- changes guide width\nGrade terrain: selected guide\n4 m falloff, surface -0.03 m\nNo water simulation".into()
+        } else if session.terrain_mode {
+            "F1: object tools | F2: terrain
+Click/drag: brush stroke
+Release: one undo entry
+Up to 128 stamps per stroke
+Esc: cancel preview
+WASD / MMB pan | RMB orbit
+F: frame terrain
+Wheel zoom | F5 playtest
+[ / ]: halve/double brush amount
+Raise/lower: 0.05 to 8 m
+Flatten/smooth blend: 5 to 100%
+I: sample flatten level
+P: spawn at ground cursor
+Level is relative to zone origin
+Flatten PgUp/Dn: level +/-
+G: grid / 0.1 m level steps
+Borders locked flat
+Offline collision sandbox"
+                .into()
+        } else {
+            "WASD / MMB pan | RMB orbit | wheel zoom
+Drag selected: X/Z | H: ground
+Tab / Shift Tab: cycle objects
+Ctrl D: duplicate object
+F: focus selection
+Arrows: X/Z | PgUp/Dn: Y
+R / Shift R: yaw +/-15 deg
++ / -: uniform size
+Play: W/S forward/back | A/D turn
+Q/E strafe | Space jump
+Offline collision sandbox"
+                .into()
+        };
+    }
+    let actions = if session.terrain_paint {
+        paint_actions()
+    } else if session.vegetation_mode {
+        vegetation::actions()
+    } else if session.marker_mode {
+        markers::actions()
+    } else if session.path_mode {
+        paths::actions()
+    } else if session.terrain_mode {
+        actions()
+    } else {
+        object_actions()
+    };
+    for (slot, mut action, children, hovered, mut color, mut node) in &mut buttons {
+        *action = actions[slot.0].0;
+        node.display = if (session.editor.zone().imported_terrain.is_some()
+            && matches!(*action, Action::TerrainToggle | Action::TerrainResolution))
+            || matches!(
+                *action,
+                Action::Undo
+                    | Action::Redo
+                    | Action::Save
+                    | Action::Load
+                    | Action::Play
+                    | Action::Snap
+                    | Action::Spawn
+                    | Action::Radius(_)
+            ) {
+            Display::None
+        } else {
+            Display::Flex
+        };
+        let active = match *action {
+            Action::Brush(tool) => session.terrain_mode && tool == session.brush_tool,
+            Action::NewPath(kind) => session
+                .path_draft
+                .as_ref()
+                .is_some_and(|draft| draft.path.kind == kind),
+            Action::Plant(kind, scatter) => {
+                session.plant_palette == Some(kind) && session.plant_scatter == scatter
+            }
+            Action::SelectPlant => session.plant_palette.is_none(),
+            Action::PlaceMarker(kind) => session.marker_palette == Some(kind),
+            Action::SelectMarker => session.marker_palette.is_none(),
+            Action::Place(primitive) => session.palette == Some(primitive),
+            Action::Select => session.palette.is_none(),
+            _ => false,
+        };
+        color.0 = theme::button_color(true, active, hovered.0);
+        for child in children.iter() {
+            if let Ok((mut text, shortcut)) = labels.get_mut(child) {
+                **text = if shortcut {
+                    tool_caption(actions[slot.0].1).1.into()
+                } else if matches!(*action, Action::Brush(Tool::Flatten)) {
+                    format!(
+                        "Flatten {:.2} m ({:.2}%)",
+                        session.flatten_height,
+                        session.sculpt_blend * 100.
+                    )
+                } else {
+                    match *action {
+                        Action::Brush(Tool::Raise) => {
+                            format!("Raise ({:.3} m / stamp)", session.brush_strength)
+                        }
+                        Action::Brush(Tool::Lower) => {
+                            format!("Lower ({:.3} m / stamp)", session.brush_strength)
+                        }
+                        Action::Brush(Tool::Smooth) => {
+                            format!("Smooth ({:.2}%)", session.sculpt_blend * 100.)
+                        }
+                        Action::Brush(Tool::Paint(surface)) => {
+                            format!("Paint {surface:?} ({:.2}%)", session.paint_blend * 100.)
+                        }
+                        _ => tool_caption(actions[slot.0].1).0.into(),
+                    }
+                };
+            }
+        }
+    }
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn pointer(
+    qualifying: Option<Res<imported_terrain::sculpt_qualification::Run>>,
+    keys: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
+    ground: Query<(), imported_terrain::GroundFilter>,
+    mut raycast: MeshRayCast,
+    mut session: ResMut<Session>,
+) {
+    if qualifying.is_some() || imported_terrain::area_qualification::active() {
+        return;
+    }
+    session.brush_point = None;
+    if session.has_modal() {
+        return;
+    }
+    if !session.terrain_mode {
+        return;
+    }
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    if !window.focused || session.play.is_some() {
+        session.stroke = None;
+        return;
+    }
+    let Some(cursor) = canvas_cursor(window, &session) else {
+        if mouse.just_released(MouseButton::Left) {
+            session.stroke = None;
+        } else if let Some(stroke) = &mut session.stroke {
+            stroke.last = None;
+        }
+        return;
+    };
+    let Ok((camera, transform)) = camera.single() else {
+        return;
+    };
+    let Ok(ray) = camera.viewport_to_world(transform, cursor) else {
+        return;
+    };
+    let filter = |entity| ground.contains(entity);
+    let settings = MeshRayCastSettings::default().with_filter(&filter);
+    let point = raycast
+        .cast_ray(ray, &settings)
+        .first()
+        .map(|(_, hit)| ray.get_point(hit.distance));
+    session.brush_point = point;
+    if keys.just_pressed(KeyCode::KeyP)
+        && !keys.pressed(KeyCode::ControlLeft)
+        && !keys.pressed(KeyCode::ControlRight)
+    {
+        spawn::at_cursor(&mut session, point, mouse.pressed(MouseButton::Left));
+        return;
+    }
+    if keys.just_pressed(KeyCode::KeyI)
+        && !keys.pressed(KeyCode::ControlLeft)
+        && !keys.pressed(KeyCode::ControlRight)
+        && !session.terrain_paint
+        && session.stroke.is_none()
+        && !mouse.pressed(MouseButton::Left)
+        && (session.editor.zone().terrain.is_some()
+            || session.editor.zone().imported_terrain.is_some())
+        && let Some(point) = point
+    {
+        let zone = session.editor.zone();
+        let height = zone
+            .global(point.to_array())
+            .and_then(|p| zone.surface_position([p[0], p[2]]))
+            .map(|p| p[1] - zone.origin[1]);
+        match height {
+            Ok(height) => {
+                let limit = height_limit(zone);
+                session.flatten_height = height.clamp(-limit, limit);
+                session.brush_tool = Tool::Flatten;
+                session.status = format!("Sampled flatten level {:.2} m", session.flatten_height);
+            }
+            Err(error) => session.status = error,
+        }
+        return;
+    }
+    if mouse.just_pressed(MouseButton::Left)
+        && (session.editor.zone().terrain.is_some()
+            || session.editor.zone().imported_terrain.is_some())
+    {
+        begin_stroke(&mut session);
+    }
+    if let Some(mut stroke) = session.stroke.take() {
+        let point = point.filter(|point| {
+            let zone = stroke.draft.zone();
+            if zone.imported_terrain.is_some() {
+                return zone
+                    .global(point.to_array())
+                    .is_ok_and(|p| zone.check_position(p, 0.).is_ok());
+            }
+            let Some(patch) = &zone.terrain else {
+                return false;
+            };
+            let Ok(origin) = patch.origin() else {
+                return false;
+            };
+            let Ok(global) = zone.global(point.to_array()) else {
+                return false;
+            };
+            (origin[0]..=origin[0] + patch.extent_metres()).contains(&global[0])
+                && (origin[2]..=origin[2] + patch.extent_metres()).contains(&global[2])
+        });
+        if point.is_none() {
+            stroke.last = None;
+        }
+        let points = if mouse.pressed(MouseButton::Left) {
+            point.map_or_else(Vec::new, |point| {
+                spaced_stroke_points(
+                    stroke.last,
+                    point,
+                    theia_zone::MAX_EDITS - stroke.edits.len(),
+                    if matches!(session.brush_tool, Tool::Smooth | Tool::FlattenArea) {
+                        (session.brush_radius as f32 / 8.).max(2.)
+                    } else {
+                        2.
+                    },
+                )
+            })
+        } else {
+            vec![]
+        };
+        for point in points {
+            stamp_stroke(&mut session, &mut stroke, point);
+        }
+        if mouse.just_released(MouseButton::Left) {
+            commit_stroke(&mut session, stroke);
+        } else if mouse.pressed(MouseButton::Left) {
+            session.stroke = Some(stroke);
+        }
+    }
+}
+pub(super) fn begin_stroke(session: &mut Session) {
+    session.stroke = Some(Stroke {
+        draft: Editor::new(session.editor.zone().clone()).expect("Validated draft"),
+        revision: session.editor.revision(),
+        edits: vec![],
+        last: None,
+        area_anchor: None,
+    });
+}
+pub(super) fn commit_stroke(session: &mut Session, stroke: Stroke) {
+    if !stroke.edits.is_empty() {
+        session.execute(Command::Apply {
+            expected_revision: stroke.revision,
+            edits: stroke.edits,
+        });
+    }
+}
+pub(super) fn stamp_stroke(session: &mut Session, stroke: &mut Stroke, point: Vec3) {
+    if stroke.edits.len() >= theia_zone::MAX_EDITS {
+        return;
+    }
+    let zone = stroke.draft.zone();
+    let global = zone.global(point.to_array()).expect("Bounded terrain hit");
+    let centre = [global[0], global[2]];
+    if session.brush_tool == Tool::FlattenArea && stroke.area_anchor.is_none() {
+        match zone.surface_position(centre) {
+            Ok(surface) => {
+                let height = (surface[1] - zone.origin[1]) as f32;
+                stroke.area_anchor = Some((centre, height));
+                session.flatten_height = f64::from(height);
+            }
+            Err(error) => {
+                session.status = error;
+                return;
+            }
+        }
+    }
+    let height = |operation| Edit::Brush {
+        brush: Brush {
+            centre,
+            radius_metres: session.brush_radius.min(radius_limit(session.brush_tool)),
+            operation,
+        },
+    };
+    let edit = match session.brush_tool {
+        Tool::Raise => height(BrushOperation::Raise {
+            metres: session.brush_strength,
+        }),
+        Tool::Lower => height(BrushOperation::Lower {
+            metres: session.brush_strength,
+        }),
+        Tool::Flatten => height(BrushOperation::Flatten {
+            height: session.flatten_height as f32,
+            blend: session.sculpt_blend,
+        }),
+        Tool::FlattenArea => {
+            let (anchor, level) = stroke.area_anchor.expect("Sampled exact centre");
+            height(BrushOperation::FlattenArea {
+                height: level,
+                edge_metres: session.flatten_edge,
+                noise: session
+                    .flatten_noise
+                    .then_some(theia_zone::terrain::area::AreaNoise {
+                        height_metres: session.noise_height,
+                        width_metres: session.noise_width,
+                        anchor,
+                    }),
+            })
+        }
+        Tool::Smooth => height(BrushOperation::Smooth {
+            blend: session.sculpt_blend,
+        }),
+        Tool::Paint(surface) => Edit::PaintTerrain {
+            paint: theia_zone::painting::Paint {
+                centre,
+                radius_metres: session.brush_radius.min(radius_limit(session.brush_tool)),
+                surface,
+                blend: session.paint_blend,
+            },
+        },
+    };
+    match stroke.draft.execute(Command::Apply {
+        expected_revision: stroke.draft.revision(),
+        edits: vec![edit.clone()],
+    }) {
+        Ok(()) => {
+            stroke.edits.push(edit);
+            stroke.last = Some(point);
+            session.status = stroke.feedback();
+        }
+        Err(error) => {
+            stroke.last = Some(point);
+            session.status = error;
+        }
+    }
+}
+pub(super) fn radius_limit(tool: Tool) -> f64 {
+    if matches!(tool, Tool::Smooth | Tool::FlattenArea) {
+        160.
+    } else {
+        32.
+    }
+}
+pub(super) fn height_limit(zone: &Zone) -> f64 {
+    if zone.imported_terrain.is_some() {
+        1024.
+    } else {
+        64.
+    }
+}
+pub(super) fn toggle(session: &mut Session) {
+    if session.editor.zone().imported_terrain.is_some() {
+        session.status =
+            "Imported terrain keeps its source resolution; use sculpt and paint tools".into();
+        return;
+    }
+    let terrain = if session.editor.zone().terrain.is_some() {
+        None
+    } else {
+        let zone = session.editor.zone();
+        let chunk = theia_core::coordinates::GlobalPosition::new(zone.origin)
+            .unwrap()
+            .chunk(128)
+            .unwrap();
+        Some(HeightPatch::flat([chunk.x, chunk.z]))
+    };
+    session.edit(vec![Edit::SetTerrain { terrain }]);
+}
+
+#[cfg(test)]
+mod stroke_tests {
+    use super::*;
+
+    #[test]
+    fn area_stroke_samples_exact_centre_once_and_cancel_undo_preserve_source() {
+        for chunk in [[0, 0], [1_000_000_000, -1_000_000_000]] {
+            let mut patch = HeightPatch::flat(chunk);
+            for z in 1..32 {
+                for x in 1..32 {
+                    patch.heights[z * 33 + x] = x as f32 * 0.25 + z as f32 * 0.125;
+                }
+            }
+            let mut origin = patch.origin().unwrap();
+            origin[1] = 20.;
+            let zone = Zone {
+                schema: 2,
+                origin,
+                spawn: [origin[0] + 64., 40., origin[2] + 64.],
+                terrain: Some(patch),
+                ..default()
+            };
+            let mut session = Session::new(
+                Editor::new(zone.clone()).unwrap(),
+                "unused.json".into(),
+                Some(zone.clone()),
+            );
+            session.brush_tool = Tool::FlattenArea;
+            session.brush_radius = 12.;
+            session.flatten_edge = 8.;
+            let centre = [origin[0] + 63.25, origin[2] + 64.75];
+            let exact = zone.surface_position(centre).unwrap()[1] - origin[1];
+            let p = Vec3::new(63.25, 999., 64.75); // render hit Y must not supply the target
+            begin_stroke(&mut session);
+            let mut stroke = session.stroke.take().unwrap();
+            stamp_stroke(&mut session, &mut stroke, p);
+            assert_eq!(stroke.area_anchor, Some((centre, exact as f32)));
+            stamp_stroke(&mut session, &mut stroke, Vec3::new(80.25, -999., 64.75));
+            assert_eq!(stroke.area_anchor, Some((centre, exact as f32)));
+            for edit in stroke.commands() {
+                if let Edit::Brush { brush } = edit {
+                    assert!(
+                        matches!(brush.operation,BrushOperation::FlattenArea {height,..} if height == exact as f32)
+                    );
+                }
+            }
+            assert_eq!(session.editor.zone(), &zone);
+            commit_stroke(&mut session, stroke);
+            assert_eq!(session.editor.history(), (1, 0));
+            assert_eq!(
+                session
+                    .editor
+                    .zone()
+                    .surface_position([origin[0] + 80., origin[2] + 64.])
+                    .unwrap()[1],
+                origin[1] + f64::from(exact as f32)
+            );
+            session
+                .editor
+                .execute(Command::Undo {
+                    expected_revision: session.editor.revision(),
+                })
+                .unwrap();
+            assert_eq!(session.editor.zone(), &zone);
+            begin_stroke(&mut session);
+            let mut stroke = session.stroke.take().unwrap();
+            stamp_stroke(&mut session, &mut stroke, p);
+            drop(stroke);
+            assert_eq!(session.editor.zone(), &zone);
+            assert_eq!(session.editor.history(), (0, 1));
+        }
+    }
+    #[test]
+    fn samples_fast_jumps_at_two_metres_in_xz_with_interpolated_height() {
+        let start = Vec3::new(0., -20., 0.);
+        let end = Vec3::new(6., 20., 8.);
+        let points = stroke_points(Some(start), end, 128);
+        assert_eq!(points.len(), 5);
+        let mut last = start;
+        for (i, &p) in points.iter().enumerate() {
+            assert!((p.xz().distance(last.xz()) - 2.).abs() < 1e-5);
+            assert!((p.y - (-20. + (i + 1) as f32 * 8.)).abs() < 1e-5);
+            last = p;
+        }
+        assert!(last.distance(end) < 1e-5);
+        let short = stroke_points(Some(Vec3::ZERO), Vec3::new(5., 40., 0.), 128);
+        assert_eq!(short, vec![Vec3::new(2., 16., 0.), Vec3::new(4., 32., 0.)]);
+    }
+
+    #[test]
+    fn stationary_subspacing_first_and_discontinuous_samples_are_bounded() {
+        let p = Vec3::new(10., 2., 10.);
+        assert_eq!(stroke_points(None, p, 128), vec![p]);
+        assert!(stroke_points(None, p, 0).is_empty());
+        assert!(stroke_points(Some(p), p, 128).is_empty());
+        assert!(stroke_points(Some(p), p + Vec3::Y * 40., 128).is_empty());
+        assert!(stroke_points(Some(p), p + Vec3::X * 1.99, 128).is_empty());
+        assert!(stroke_points(None, Vec3::NAN, 128).is_empty());
+        assert_eq!(
+            stroke_points(Some(Vec3::ZERO), Vec3::X * 512., 1),
+            vec![Vec3::X * 2.]
+        );
+        assert_eq!(
+            stroke_points(Some(Vec3::ZERO), Vec3::X * 512., 128).len(),
+            128
+        );
+        // A reset after leaving the canvas/patch resumes with one fresh stamp.
+        assert_eq!(
+            stroke_points(None, Vec3::X * 100., 127),
+            vec![Vec3::X * 100.]
+        );
+    }
+
+    #[test]
+    fn straight_path_matches_across_coarse_and_fine_input_events() {
+        let one = stroke_points(Some(Vec3::ZERO), Vec3::X * 64., 128);
+        let mut many = vec![];
+        let mut last = Vec3::ZERO;
+        for x in [8., 16., 32., 40., 64.] {
+            let points = stroke_points(Some(last), Vec3::X * x, 128 - many.len());
+            last = *points.last().unwrap();
+            many.extend(points);
+        }
+        assert_eq!(one, many);
+    }
+}

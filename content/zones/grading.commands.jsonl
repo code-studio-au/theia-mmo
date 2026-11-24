@@ -1,0 +1,1 @@
+{"command":"apply","expected_revision":0,"edits":[{"op":"put_path","path":{"id":100,"name":"Graded slope road","kind":"road","width_metres":8,"points":[[64,2.03,48],[64,6.03,96]]}},{"op":"grade_path","grade":{"path_id":100,"surface_offset_metres":-0.03,"falloff_metres":8,"blend":1}},{"op":"set_spawn","position":[64,5.1,84]}]}

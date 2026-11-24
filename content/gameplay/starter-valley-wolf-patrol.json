@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "id": "theia.starter.west-grove-wolf",
+  "route": "theia.starter.west-grove-patrol",
+  "speed_metres_per_second": 2.0,
+  "wait_ms": 1000
+}

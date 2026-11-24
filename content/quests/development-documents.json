@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "id": "theia.dev.documents",
+  "revision": 1,
+  "item_catalog": "theia.dev.equipment-items",
+  "documents": [
+    {
+      "id": "theia.dev.document.roadside-orders",
+      "item": "theia.dev.roadside-orders",
+      "title": "Roadside Orders",
+      "pages": [
+        "Keep watch on the eastern road. A wolf has scattered the courier\u2019s supplies near the training grounds.\n\nRecover the orders and report to the development guide.",
+        "Return a copy of these orders to the guide.\n\nKeep the courier\u2019s message safe until your report is delivered."
+      ]
+    }
+  ]
+}

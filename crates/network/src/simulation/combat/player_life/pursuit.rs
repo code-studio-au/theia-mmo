@@ -1,8 +1,11 @@
-//! Opt-in single-creature pursuit. Searches/polling stay on the owner pump and
+//! Per-creature pursuit policy. Searches/polling stay on the owner pump and
 //! dedicated worker; fixed ticks consume only bounded immutable replies.
 use crate::{
     Result,
-    navigation::worker::{Reply, Request, Tag, Worker},
+    navigation::{
+        scheduler::Scheduler,
+        worker::{Reply, Request, Tag},
+    },
     simulation::creatures::PursuitMotion,
 };
 use std::time::Duration;
@@ -31,11 +34,18 @@ struct Path {
     mode: policy::Mode,
     target: Option<theia_core::player_life::LifeKey>,
 }
+pub(in crate::simulation::combat) struct ThreatTransfer {
+    npc: EntityKey,
+    state: policy::State,
+    policy: theia_core::retaliation::State,
+    revision: u64,
+    cancelled: bool,
+}
 pub(super) struct Runtime {
     settings: policy::Settings,
     state: policy::State,
     rate: TickRate,
-    worker: Worker,
+    navigation: [u8; 32],
     reply: Option<Reply>,
     path: Option<Path>,
     tag: Option<Tag>,
@@ -76,7 +86,7 @@ impl Runtime {
         settings: policy::Settings,
         npc: EntityKey,
         rate: TickRate,
-        worker: Worker,
+        navigation: [u8; 32],
     ) -> Result<Self> {
         let state =
             policy::State::new(settings, npc, rate).map_err(|_| "Invalid pursuit settings")?;
@@ -84,7 +94,7 @@ impl Runtime {
             settings,
             state,
             rate,
-            worker,
+            navigation,
             reply: None,
             path: None,
             tag: None,
@@ -133,23 +143,19 @@ impl Runtime {
             .ok_or("Perception clock exhausted")?;
         Ok(true)
     }
-    /// Owner pump only. Never starts a search or waits for one.
-    pub(super) fn poll(&mut self) -> Result<()> {
-        if let Some(reply) = self
-            .worker
-            .poll()
-            .map_err(|_| "Pursuit worker closed or mismatched")?
-        {
-            self.reply = Some(reply);
-        }
-        Ok(())
-    }
     pub(super) fn advance(
         &mut self,
         now: u64,
         npc: EntityKey,
+        navigation: &mut Scheduler,
         mut observation: policy::Observation<'_>,
     ) -> Result<PursuitMotion> {
+        if navigation.navigation() != self.navigation {
+            return Err("Pursuit navigation identity changed".into());
+        }
+        if !observation.alive {
+            navigation.retire(npc);
+        }
         observation.blocked |= self.failed_route;
         self.failed_route = false;
         let previous = self.state.directive().mode;
@@ -216,7 +222,7 @@ impl Runtime {
         if let Some(reply) = self.reply.take() {
             let points = self
                 .tag
-                .and_then(|tag| reply.current(self.worker.navigation(), tag, now));
+                .and_then(|tag| reply.current(self.navigation, tag, now));
             if let Some(points) = points.filter(|_| {
                 centre(reply.request.start).is_ok_and(|p| distance(p, observation.position) <= 1.)
                     && centre(reply.request.end).is_ok_and(|p| distance(p, goal) <= 2.)
@@ -237,7 +243,7 @@ impl Runtime {
             } else {
                 self.metrics.rejected += 1;
                 let current = self.tag.is_some_and(|tag| reply.request.tag == tag)
-                    && reply.navigation == self.worker.navigation()
+                    && reply.navigation == self.navigation
                     && (reply.request.submitted..=reply.request.expires).contains(&now);
                 // A missing/disconnected route never produces movement. The
                 // next tick feeds confirmed failure back to the policy.
@@ -266,7 +272,12 @@ impl Runtime {
                 p.index >= p.points.len()
                     || p.expires.saturating_sub(now) <= u64::from(self.rate.hz()) / 4
             });
-        if refresh && now >= self.next_request && self.worker.pending().is_none() {
+        if refresh
+            && now >= self.next_request
+            && navigation
+                .pending(npc)
+                .is_none_or(|request| Some(request.tag) != self.tag)
+        {
             let revision = self
                 .revision
                 .checked_add(1)
@@ -286,7 +297,7 @@ impl Runtime {
                 submitted: now,
                 expires,
             };
-            self.worker
+            navigation
                 .submit(request)
                 .map_err(|e| format!("Pursuit request refused: {e:?}"))?;
             self.revision = revision;
@@ -312,12 +323,184 @@ impl Runtime {
 }
 
 impl super::Combat {
-    pub(in crate::simulation) fn poll_pursuit(&mut self) {
-        if let Some(pve) = &mut self.pve
-            && let Some(runtime) = &mut pve.pursuit
-            && let Err(error) = runtime.poll()
-        {
-            pve.error = Some(error.to_string());
+    #[cfg(test)]
+    pub(in crate::simulation::combat) fn threat_policy_target(
+        &self,
+    ) -> Option<theia_core::player_life::LifeKey> {
+        self.threat_policy_target_for(self.pve.as_ref()?.npc)
+    }
+    pub(in crate::simulation::combat) fn threat_policy_target_for(
+        &self,
+        npc: EntityKey,
+    ) -> Option<theia_core::player_life::LifeKey> {
+        self.pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == npc)?
+            .policy
+            .target()
+    }
+    pub(in crate::simulation::combat) fn threat_current_victim_for(
+        &self,
+        npc: EntityKey,
+    ) -> Option<theia_core::player_life::LifeKey> {
+        let actor = self
+            .pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == npc)?;
+        actor
+            .pursuit
+            .as_ref()
+            .and_then(|r| r.directive().target)
+            .or_else(|| actor.policy.target())
+    }
+    #[cfg(test)]
+    pub(in crate::simulation::combat) fn threat_candidate(
+        &self,
+        world: &crate::simulation::World,
+        life: theia_core::player_life::LifeKey,
+    ) -> Option<policy::Target> {
+        self.threat_candidate_for(world, self.pve.as_ref()?.npc, life)
+    }
+    pub(in crate::simulation::combat) fn threat_candidate_for(
+        &self,
+        world: &crate::simulation::World,
+        npc: EntityKey,
+        life: theia_core::player_life::LifeKey,
+    ) -> Option<policy::Target> {
+        let pve = self
+            .pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == npc)?;
+        let runtime = pve.pursuit.as_ref()?;
+        let directive = runtime.directive();
+        let target = self.pursuit_target(
+            world,
+            pve.npc,
+            life.actor.entity.value(),
+            runtime.settings.leash_metres,
+            pve.profile.retaliation().reach_metres(),
+        )?;
+        let anchor = directive.anchor?;
+        let position = self.creatures.iter().find(|c| c.key == pve.npc)?.position;
+        (target.key == life
+            && target.alive
+            && (target.visible || directive.target == Some(life))
+            && distance(anchor, target.position) <= runtime.settings.leash_metres
+            && distance(anchor, position) <= runtime.settings.leash_metres)
+            .then_some(target)
+    }
+    #[cfg(test)]
+    pub(in crate::simulation::combat) fn prepare_threat_transfer(
+        &self,
+        world: &crate::simulation::World,
+        target: policy::Target,
+    ) -> Result<ThreatTransfer> {
+        self.prepare_threat_transfer_for(
+            world,
+            self.pve.as_ref().ok_or("Threat lost player life")?.npc,
+            target,
+        )
+    }
+    pub(in crate::simulation::combat) fn prepare_threat_transfer_for(
+        &self,
+        world: &crate::simulation::World,
+        npc: EntityKey,
+        target: policy::Target,
+    ) -> Result<ThreatTransfer> {
+        let pve = self
+            .pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == npc)
+            .ok_or("Threat lost exact creature life")?;
+        if pve.error.is_some() {
+            return Err("Threat pursuit authority unavailable".into());
+        }
+        let runtime = pve.pursuit.as_ref().ok_or("Threat lost pursuit")?;
+        let position = self
+            .creatures
+            .iter()
+            .find(|c| c.key == pve.npc && c.current > 0)
+            .ok_or("Threat lost living NPC")?
+            .position;
+        let changed = runtime.directive().target != Some(target.key);
+        let mut state = runtime.state.clone();
+        state
+            .transfer(world.tick, position, target)
+            .map_err(|e| format!("Threat pursuit transfer refused: {e:?}"))?;
+        let revision = if changed {
+            runtime
+                .revision
+                .checked_add(1)
+                .ok_or("Threat path revision exhausted")?
+        } else {
+            runtime.revision
+        };
+        let mut policy = pve.policy.clone();
+        let cancelled = if policy.target().is_some() {
+            matches!(
+                policy
+                    .transfer(world.tick, target.key)
+                    .map_err(|e| format!("Threat retaliation transfer refused: {e:?}"))?,
+                theia_core::retaliation::Event::Cancelled { .. }
+            )
+        } else {
+            policy
+                .record_hit(world.tick, target.key)
+                .map_err(|e| format!("Threat retaliation acquisition refused: {e:?}"))?;
+            false
+        };
+        Ok(ThreatTransfer {
+            npc,
+            state,
+            policy,
+            revision,
+            cancelled,
+        })
+    }
+    pub(in crate::simulation::combat) fn commit_threat_transfer(
+        &mut self,
+        transfer: ThreatTransfer,
+    ) {
+        let pve = self
+            .pve
+            .iter_mut()
+            .chain(&mut self.retaliators)
+            .find(|p| p.npc == transfer.npc)
+            .expect("Prepared exact threat life authority");
+        let runtime = pve.pursuit.as_mut().expect("Prepared threat pursuit");
+        if transfer.revision != runtime.revision {
+            runtime.path = None;
+            runtime.reply = None;
+            runtime.tag = None;
+            runtime.requested_goal = None;
+            runtime.failed_route = false;
+            runtime.next_scan = 0;
+        }
+        runtime.state = transfer.state;
+        runtime.revision = transfer.revision;
+        pve.policy = transfer.policy;
+        pve.metrics.cancelled = pve
+            .metrics
+            .cancelled
+            .saturating_add(u64::from(transfer.cancelled));
+    }
+    pub(in crate::simulation) fn poll_pursuit(&mut self, now: u64) {
+        let Some(navigation) = &mut self.pursuit_navigation else {
+            return;
+        };
+        let failure = navigation.pump(now).err();
+        for pve in self.pve.iter_mut().chain(&mut self.retaliators) {
+            if let Some(runtime) = &mut pve.pursuit {
+                if let Some(error) = failure {
+                    pve.error = Some(format!("Pursuit navigation failed: {error:?}"));
+                } else if let Some(reply) = navigation.take_reply(pve.npc, now) {
+                    runtime.reply = Some(reply);
+                }
+            }
         }
     }
     fn pursuit_target(
@@ -349,10 +532,37 @@ impl super::Combat {
         world: &crate::simulation::World,
     ) -> Option<PursuitMotion> {
         let mut pve = self.pve.take()?;
-        let Some(mut runtime) = pve.pursuit.take() else {
-            self.pve = Some(pve);
-            return None;
-        };
+        let blocked = world.patrol.as_ref().is_some_and(|p| p.motion_blocked);
+        let motion = self.advance_creature_pursuit(world, &mut pve, blocked);
+        self.pve = Some(pve);
+        motion
+    }
+    pub(in crate::simulation) fn advance_population_pursuit(
+        &mut self,
+        world: &crate::simulation::World,
+    ) -> Vec<(EntityKey, PursuitMotion)> {
+        let mut actors = std::mem::take(&mut self.retaliators);
+        let mut result = Vec::with_capacity(actors.len());
+        for pve in &mut actors {
+            let blocked = world
+                .population_motion
+                .iter()
+                .find(|p| p.key == pve.npc)
+                .is_none_or(|p| p.blocked);
+            if let Some(motion) = self.advance_creature_pursuit(world, pve, blocked) {
+                result.push((pve.npc, motion));
+            }
+        }
+        self.retaliators = actors;
+        result
+    }
+    fn advance_creature_pursuit(
+        &mut self,
+        world: &crate::simulation::World,
+        pve: &mut super::Authority,
+        blocked: bool,
+    ) -> Option<PursuitMotion> {
+        let mut runtime = pve.pursuit.take()?;
         let result = (|| -> Result<PursuitMotion> {
             if pve.error.is_some() {
                 return Err("Pursuit is halted after an authority error".into());
@@ -400,10 +610,12 @@ impl super::Combat {
             } else {
                 Vec::new()
             };
-            let blocked = world.patrol.as_ref().is_some_and(|p| p.motion_blocked);
             runtime.advance(
                 world.tick,
                 pve.npc,
+                self.pursuit_navigation
+                    .as_mut()
+                    .ok_or("Pursuit navigation unavailable")?,
                 policy::Observation {
                     position,
                     alive,
@@ -442,21 +654,45 @@ impl super::Combat {
                 theia_core::retaliation::State::new(pve.profile.retaliation().clone(), world.rate);
         }
         pve.pursuit = Some(runtime);
-        self.pve = Some(pve);
         Some(motion)
     }
 }
 impl crate::simulation::World {
+    pub fn creature_pursuit_directive_for(&self, npc: EntityKey) -> Option<policy::Directive> {
+        let combat = self.combat.as_ref()?;
+        combat
+            .pve
+            .iter()
+            .chain(&combat.retaliators)
+            .find(|p| p.npc == npc)?
+            .pursuit
+            .as_ref()
+            .map(Runtime::directive)
+    }
+    /// Singleton metrics or sums across the bounded population. A population
+    /// has independent anchors, so its aggregate last_anchor remains None.
     pub fn creature_pursuit_metrics(&self) -> Option<Metrics> {
-        Some(
-            self.combat
-                .as_ref()?
-                .pve
-                .as_ref()?
-                .pursuit
-                .as_ref()?
-                .metrics(),
-        )
+        let combat = self.combat.as_ref()?;
+        if let Some(runtime) = combat.pve.as_ref().and_then(|p| p.pursuit.as_ref()) {
+            return Some(runtime.metrics());
+        }
+        let mut total = Metrics::default();
+        let mut found = false;
+        for runtime in combat.retaliators.iter().filter_map(|p| p.pursuit.as_ref()) {
+            found = true;
+            let m = runtime.metrics();
+            total.acquisitions += m.acquisitions;
+            total.chase_ticks += m.chase_ticks;
+            total.attack_ticks += m.attack_ticks;
+            total.returns += m.returns;
+            total.arrivals += m.arrivals;
+            total.blocked += m.blocked;
+            total.requests += m.requests;
+            total.published += m.published;
+            total.rejected += m.rejected;
+            total.failed += m.failed;
+        }
+        found.then_some(total)
     }
     pub fn creature_pursuit_directive(&self) -> Option<policy::Directive> {
         Some(

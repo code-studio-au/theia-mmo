@@ -1,6 +1,7 @@
 //! Async PostgreSQL boundary. No renderer, transport or simulation dependencies.
 //! Queries and commit acknowledgements belong to an owner worker, never World::step.
 mod characters;
+mod documents;
 mod gameplay_profiles;
 mod inventory;
 mod progression;
@@ -12,6 +13,7 @@ mod store;
 mod vendors;
 mod worker;
 pub use characters::{Character, CharacterName, CharacterSummary, MAX_CHARACTERS_PER_OWNER};
+pub use documents::{DocumentCatalog, DocumentOpenCommand};
 pub use gameplay_profiles::{GameplayProfiles, ProfileCompatibility};
 pub use inventory::{InventoryApplied, InventoryCatalog};
 pub use progression::{ProgressionApplied, ProgressionCatalog};
@@ -20,7 +22,7 @@ pub use quest_journal::{
 };
 pub use quest_lifecycle::{EarnedQuestLifecycle, QuestLifecycleApplied, QuestLifecycleCatalog};
 pub use quests::{EarnedProgression, QuestApplied, QuestCatalog};
-pub use rewards::{RewardCatalog, RewardClaim};
+pub use rewards::{CorpseSource, LIFE_CLAIM_PAGE_SIZE, RewardCatalog, RewardClaim};
 use std::fmt;
 pub use store::Store;
 use theia_core::coordinates::GlobalPosition;
@@ -53,6 +55,7 @@ pub enum Error {
     VendorCommand(theia_core::vendors::Error),
     RewardMissing,
     RewardConsumed,
+    RewardNotNeeded,
     RewardCatalogMismatch,
     RewardData,
     RewardCommand(theia_core::rewards::Error),
@@ -62,6 +65,8 @@ pub enum Error {
     QuestConflict,
     QuestCommand(theia_core::quests::Error),
     QuestLifecycleCommand(theia_core::quests::lifecycle::Error),
+    DocumentProfileMismatch,
+    DocumentCommand(theia_core::documents::OpenError),
     QuestJournalMissing,
     QuestJournalCatalogMismatch,
     QuestJournalData,
@@ -72,6 +77,11 @@ pub enum Error {
     ProgressionData,
     ProgressionConflict,
     ProgressionCommand(theia_core::progression::Error),
+}
+impl From<theia_core::character_name::Error> for Error {
+    fn from(_: theia_core::character_name::Error) -> Self {
+        Self::Invalid(theia_core::character_name::RULES)
+    }
 }
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -99,6 +109,7 @@ impl fmt::Display for Error {
             Self::VendorCommand(_) => "Vendor purchase rejected",
             Self::RewardMissing => "Reward claim unavailable",
             Self::RewardConsumed => "Reward was already claimed",
+            Self::RewardNotNeeded => "Quest item is not currently needed",
             Self::RewardCatalogMismatch => "Persistent reward catalog mismatch",
             Self::RewardData => "Invalid persistent reward claim",
             Self::RewardCommand(_) => "Reward insertion rejected",
@@ -108,6 +119,8 @@ impl fmt::Display for Error {
             Self::QuestConflict => "Victim life belongs to a different objective award",
             Self::QuestCommand(_) => "Objective progress rejected",
             Self::QuestLifecycleCommand(_) => "Quest lifecycle action rejected",
+            Self::DocumentProfileMismatch => "Document content profile mismatch",
+            Self::DocumentCommand(_) => "Document opening rejected",
             Self::QuestJournalMissing => "Persistent quest journal unavailable",
             Self::QuestJournalCatalogMismatch => "Persistent quest journal catalogue mismatch",
             Self::QuestJournalData => "Invalid persistent quest journal",

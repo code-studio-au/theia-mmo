@@ -10,6 +10,8 @@ use theia_core::{
     resources::Pool,
     retaliation,
 };
+mod public_attack;
+mod public_avatar;
 mod pursuit;
 pub use pursuit::Metrics as PursuitMetrics;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -44,13 +46,30 @@ pub(super) struct Player {
     pub(super) state: life::State,
     home: GlobalPosition,
 }
+/// Shared player life ownership is independent of any one NPC engagement.
+/// Installed through paired pursuit or explicitly checked passive-population admission.
+pub(super) struct Lives {
+    pub(super) profile: Arc<Profile>,
+    respawns: u64,
+    held_respawns: u64,
+    error: Option<String>,
+}
+impl Lives {
+    pub(super) fn ready(&self) -> bool {
+        self.error.is_none()
+    }
+}
 pub(super) struct Authority {
     pub(super) profile: Arc<Profile>,
-    npc: EntityKey,
+    pub(super) npc: EntityKey,
     policy: retaliation::State,
     error: Option<String>,
     metrics: Metrics,
     pursuit: Option<pursuit::Runtime>,
+}
+pub(super) struct PreparedRetaliation {
+    pub(super) npc: EntityKey,
+    policy: retaliation::State,
 }
 impl Authority {
     pub(super) fn retired_player(&mut self, id: u64, rate: theia_core::time::TickRate) {
@@ -84,6 +103,33 @@ impl Authority {
     }
 }
 impl Combat {
+    pub(in crate::simulation::combat) fn population_encounter(
+        &self,
+        npc: EntityKey,
+    ) -> Option<(theia_core::pursuit::Mode, Option<LifeKey>)> {
+        let actor = self.retaliators.iter().find(|p| p.npc == npc)?;
+        let directive = actor.pursuit.as_ref()?.directive();
+        Some((
+            if actor.error.is_some() {
+                theia_core::pursuit::Mode::Blocked
+            } else {
+                directive.mode
+            },
+            directive.target,
+        ))
+    }
+    pub(super) fn population_target_ready(&self, npc: EntityKey) -> bool {
+        self.reset.as_ref().is_none_or(|reset| reset.ready())
+            && self.population_threat.iter().all(|threat| threat.ready())
+            && self.population_encounter(npc).is_none_or(|(mode, _)| {
+                matches!(
+                    mode,
+                    theia_core::pursuit::Mode::Patrol
+                        | theia_core::pursuit::Mode::Chase
+                        | theia_core::pursuit::Mode::Attack
+                )
+            })
+    }
     pub(in crate::simulation::combat) fn membership_encounter(
         &self,
     ) -> Option<(EntityKey, theia_core::pursuit::Mode, Option<LifeKey>)> {
@@ -96,25 +142,36 @@ impl Combat {
         };
         Some((pve.npc, mode, directive.target))
     }
-    pub(in crate::simulation::combat) fn checked_reset_encounter(
+    pub(in crate::simulation::combat) fn checked_reset_encounters(
         &self,
-    ) -> Result<(EntityKey, theia_core::pursuit::Mode, Option<LifeKey>)> {
-        let pve = self
-            .pve
-            .as_ref()
-            .ok_or("Reset lost player life authority")?;
-        if pve.error.is_some() {
-            return Err("Reset pursuit authority failed".into());
+    ) -> Result<Vec<(EntityKey, theia_core::pursuit::Mode, Option<LifeKey>)>> {
+        let actors = self.pve.iter().chain(&self.retaliators);
+        let encounters = actors
+            .map(|pve| {
+                if pve.error.is_some() {
+                    return Err("Reset pursuit authority failed".into());
+                }
+                let directive = pve
+                    .pursuit
+                    .as_ref()
+                    .ok_or("Reset lost pursuit")?
+                    .directive();
+                Ok((pve.npc, directive.mode, directive.target))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        if encounters.is_empty()
+            || encounters.len() != self.creatures.len()
+            || encounters.len() > crate::targeting::MAX_TARGETS
+            || encounters
+                .iter()
+                .any(|(npc, _, _)| !self.creatures.iter().any(|c| c.key == *npc))
+        {
+            return Err("Reset requires exact bounded creature encounters".into());
         }
-        let directive = pve
-            .pursuit
-            .as_ref()
-            .ok_or("Reset lost pursuit")?
-            .directive();
-        Ok((pve.npc, directive.mode, directive.target))
+        Ok(encounters)
     }
     pub(in crate::simulation) fn player_alive(&self, id: u64) -> bool {
-        self.pve.is_none()
+        self.lives.is_none()
             || self
                 .actors
                 .get(&id)
@@ -122,25 +179,29 @@ impl Combat {
                 .is_some_and(|p| p.state.alive())
     }
     pub(super) fn register_life(&mut self, world: &World, id: u64) -> Result<()> {
-        let Some(pve) = &self.pve else { return Ok(()) };
+        let Some(lives) = &self.lives else {
+            return Ok(());
+        };
         let position = world
             .global_position(id)
             .ok_or("Missing player life actor")?;
-        let [x, _, z] = position.metres();
+        let mut feet = position.metres();
+        feet[1] -= f64::from(crate::world::PAWN_Y);
+        let feet = GlobalPosition::new(feet).ok_or("Invalid player life feet")?;
         let patch = world
             .procedural
             .as_ref()
             .and_then(|r| r.patch(position))
             .ok_or("Player life collision is not prepared")?;
         let mut home = patch
-            .try_spawn(x, z)
+            .try_landing_spawn(feet)
             .ok_or("Player life has no supported home")?
             .metres();
         home[1] += f64::from(crate::world::PAWN_Y);
         let home = GlobalPosition::new(home).ok_or("Invalid player life home")?;
         world.validate_restored_player(home)?;
         let state = life::State::new(
-            pve.profile.life().clone(),
+            lives.profile.life().clone(),
             world.rate,
             world.entity_key(id).ok_or("Missing player life identity")?,
         );
@@ -156,7 +217,8 @@ impl Combat {
             .collect()
     }
     pub(super) fn ordinary_target_ready(&self) -> bool {
-        self.reset.as_ref().is_none_or(|runtime| runtime.ready())
+        self.threat.as_ref().is_none_or(|runtime| runtime.ready())
+            && self.reset.as_ref().is_none_or(|runtime| runtime.ready())
             && self.pve.as_ref().is_some_and(|p| {
                 p.error.is_none()
                     && p.pursuit.as_ref().is_some_and(|r| {
@@ -180,7 +242,7 @@ impl Combat {
         attacker: EntityKey,
         victim: EntityKey,
         remaining: u32,
-    ) -> Result<Option<retaliation::State>> {
+    ) -> Result<Option<PreparedRetaliation>> {
         if remaining == 0 || world.entity_key(attacker.entity.value()) != Some(attacker) {
             return Ok(None);
         }
@@ -193,10 +255,15 @@ impl Combat {
         else {
             return Ok(None);
         };
-        let Some(pve) = &self.pve else {
+        let Some(pve) = self
+            .pve
+            .iter()
+            .chain(&self.retaliators)
+            .find(|p| p.npc == victim)
+        else {
             return Ok(None);
         };
-        if pve.npc != victim
+        if pve.error.is_some()
             || pve.pursuit.as_ref().is_some_and(|p| {
                 matches!(
                     p.directive().mode,
@@ -212,14 +279,19 @@ impl Combat {
         policy
             .record_hit(world.tick, key)
             .map_err(|_| "Retaliation clock refused an attack")?;
-        Ok(Some(policy))
+        Ok(Some(PreparedRetaliation {
+            npc: victim,
+            policy,
+        }))
     }
-    pub(super) fn commit_retaliation_attempt(&mut self, policy: Option<retaliation::State>) {
-        if let Some(policy) = policy {
+    pub(super) fn commit_retaliation_attempt(&mut self, prepared: Option<PreparedRetaliation>) {
+        if let Some(prepared) = prepared {
             self.pve
-                .as_mut()
+                .iter_mut()
+                .chain(&mut self.retaliators)
+                .find(|p| p.npc == prepared.npc)
                 .expect("Prepared retaliation authority")
-                .policy = policy;
+                .policy = prepared.policy;
         }
     }
     pub(super) fn note_retaliation_hit(
@@ -236,7 +308,12 @@ impl Combat {
         match self.prepare_retaliation_attempt(world, attacker, victim, remaining) {
             Ok(policy) => self.commit_retaliation_attempt(policy),
             Err(error) => {
-                if let Some(pve) = &mut self.pve {
+                if let Some(pve) = self
+                    .pve
+                    .iter_mut()
+                    .chain(&mut self.retaliators)
+                    .find(|p| p.npc == victim)
+                {
                     pve.error = Some(error.to_string());
                 }
             }
@@ -321,6 +398,9 @@ impl Combat {
             .map_err(|_| "Player life refused damage")?;
         if damage.died {
             world.reset_life_controls(id, None)?;
+            if let Some(statuses) = &mut self.statuses {
+                statuses.remove_target(target.actor);
+            }
         }
         let actor = self.actors.get_mut(&id).unwrap();
         actor.life.as_mut().unwrap().state = next;
@@ -338,9 +418,17 @@ impl Combat {
         Ok(Some(damage))
     }
     pub(super) fn advance_retaliation(&mut self, world: &mut World) {
-        let Some(mut pve) = self.pve.take() else {
-            return;
-        };
+        if let Some(mut pve) = self.pve.take() {
+            self.advance_retaliator(world, &mut pve);
+            self.pve = Some(pve);
+        }
+        let mut population = std::mem::take(&mut self.retaliators);
+        for pve in &mut population {
+            self.advance_retaliator(world, pve);
+        }
+        self.retaliators = population;
+    }
+    fn advance_retaliator(&mut self, world: &mut World, pve: &mut Authority) {
         let alive = self
             .creatures
             .iter()
@@ -413,10 +501,9 @@ impl Combat {
             Ok(retaliation::Event::None) => {}
             Err(error) => pve.error = Some(format!("Retaliation clock failed: {error:?}")),
         }
-        self.pve = Some(pve);
     }
     pub(in crate::simulation) fn advance_player_lives(&mut self, world: &mut World, now: u64) {
-        if self.pve.is_none() {
+        if self.lives.is_none() {
             return;
         }
         let ids: Vec<_> = self
@@ -433,8 +520,8 @@ impl Combat {
             let player = self.actors[&id].life.as_ref().unwrap();
             let home = player.home;
             if world.validate_restored_player(home).is_err() {
-                let p = self.pve.as_mut().unwrap();
-                p.metrics.held_respawns = p.metrics.held_respawns.saturating_add(1);
+                let lives = self.lives.as_mut().unwrap();
+                lives.held_respawns = lives.held_respawns.saturating_add(1);
                 continue;
             }
             let mut next = player.state.clone();
@@ -449,7 +536,12 @@ impl Combat {
                     }
                 });
             if let Err(error) = result {
-                self.pve.as_mut().unwrap().error = Some(error.to_string());
+                self.lives.as_mut().unwrap().error = Some(error.to_string());
+                // Preserve the paired adapter's existing fail-closed encounter
+                // behavior while keeping the life failure independently owned.
+                if let Some(pve) = &mut self.pve {
+                    pve.error = Some(error.to_string());
+                }
                 continue;
             }
             let actor = self.actors.get_mut(&id).unwrap();
@@ -466,12 +558,89 @@ impl Combat {
             if let Some(statuses) = &mut self.statuses {
                 statuses.remove_source(id);
             }
-            let p = self.pve.as_mut().unwrap();
-            p.metrics.respawns = p.metrics.respawns.saturating_add(1);
+            let lives = self.lives.as_mut().unwrap();
+            lives.respawns = lives.respawns.saturating_add(1);
         }
     }
 }
 impl World {
+    /// Shared player health/respawn in the checked passive pool. This installs
+    /// no NPC retaliation, pursuit, membership, typed damage or credit policy.
+    /// Normal population launch can bind these lives without installing NPC attacks.
+    pub fn enable_passive_population_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {
+        let binding = self
+            .population_binding
+            .as_ref()
+            .ok_or("Population player life requires a bound passive creature type")?;
+        let combat = self
+            .combat
+            .as_ref()
+            .ok_or("Population player life requires resource combat")?;
+        if self.tick != 0
+            || !self.players.is_empty()
+            || !self.predicted
+            || !self.classic
+            || self.population.is_none()
+            || self.patrol.is_some()
+            || combat.lives.is_some()
+            || combat.pve.is_some()
+            || combat.resources_hash != Some(profile.stats_hash())
+            || binding.definition().identity() != profile.creature_definition_identity()
+            || combat.creatures.is_empty()
+            || combat.creatures.len() > crate::targeting::MAX_TARGETS
+        {
+            return Err(
+                "Population player life requires matching inactive type/stats and checked actors"
+                    .into(),
+            );
+        }
+        self.combat.as_mut().unwrap().lives = Some(Lives {
+            profile,
+            respawns: 0,
+            held_respawns: 0,
+            error: None,
+        });
+        Ok(())
+    }
+    /// Install shared per-creature retaliation, plus configured pursuit when
+    /// prepared navigation and collision bodies were installed before combat.
+    /// Threat transfer and public attack streams remain separate adapters.
+    pub fn enable_population_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {
+        let settings = self
+            .population_binding
+            .as_ref()
+            .and_then(|b| b.definition().aggro());
+        if settings.is_some() && self.population_navigation.is_none() {
+            return Err("Population pursuit navigation unavailable".into());
+        }
+        self.enable_passive_population_player_life(profile.clone())?;
+        let combat = self.combat.as_mut().unwrap();
+        combat.retaliators = combat
+            .creatures
+            .iter()
+            .map(|creature| Authority {
+                npc: creature.key,
+                policy: retaliation::State::new(profile.retaliation().clone(), self.rate),
+                profile: profile.clone(),
+                error: None,
+                metrics: Metrics::default(),
+                pursuit: None,
+            })
+            .collect();
+        if let Some(settings) = settings {
+            let worker = self.population_navigation.take().unwrap();
+            for actor in &mut combat.retaliators {
+                actor.pursuit = Some(pursuit::Runtime::new(
+                    settings,
+                    actor.npc,
+                    self.rate,
+                    worker.navigation(),
+                )?);
+            }
+            combat.pursuit_navigation = Some(crate::navigation::scheduler::Scheduler::new(worker));
+        }
+        Ok(())
+    }
     pub fn enable_player_life(&mut self, profile: Arc<Profile>) -> Result<()> {
         let combat = self
             .combat
@@ -485,6 +654,7 @@ impl World {
             || !self.players.is_empty()
             || !self.predicted
             || combat.pve.is_some()
+            || combat.lives.is_some()
             || combat.creatures.len() != 1
             || combat.resources_hash != Some(profile.stats_hash())
             || patrol.profile_hash() != profile.creature_hash()
@@ -500,37 +670,66 @@ impl World {
                 .worker
                 .take()
                 .ok_or("Pursuit requires prepared navigation worker")?;
-            Some(pursuit::Runtime::new(
-                settings, patrol.key, self.rate, worker,
-            )?)
+            let runtime =
+                pursuit::Runtime::new(settings, patrol.key, self.rate, worker.navigation())?;
+            combat.pursuit_navigation = Some(crate::navigation::scheduler::Scheduler::new(worker));
+            Some(runtime)
         } else {
             None
         };
         combat.pve = Some(Authority {
             npc: patrol.key,
             policy: retaliation::State::new(profile.retaliation().clone(), self.rate),
-            profile,
+            profile: profile.clone(),
             error: None,
             metrics: Metrics::default(),
             pursuit,
         });
+        combat.lives = Some(Lives {
+            profile,
+            respawns: 0,
+            held_respawns: 0,
+            error: None,
+        });
         Ok(())
     }
     pub fn player_life_profile(&self) -> Option<&Arc<Profile>> {
-        self.combat.as_ref()?.pve.as_ref().map(|p| &p.profile)
+        self.combat.as_ref()?.lives.as_ref().map(|p| &p.profile)
     }
     pub fn player_alive(&self, id: u64) -> bool {
         self.players.contains_key(&id) && self.combat.as_ref().is_none_or(|c| c.player_alive(id))
     }
     pub fn player_life_error(&self) -> Option<&str> {
-        self.combat.as_ref()?.pve.as_ref()?.error.as_deref()
+        let combat = self.combat.as_ref()?;
+        combat.lives.as_ref()?.error.as_deref().or_else(|| {
+            combat
+                .pve
+                .iter()
+                .chain(&combat.retaliators)
+                .find_map(|p| p.error.as_deref())
+        })
     }
     pub fn player_life_metrics(&self) -> Option<Metrics> {
-        Some(self.combat.as_ref()?.pve.as_ref()?.metrics)
+        let combat = self.combat.as_ref()?;
+        let lives = combat.lives.as_ref()?;
+        let mut metrics = combat
+            .pve
+            .as_ref()
+            .map_or_else(Metrics::default, |p| p.metrics);
+        for p in &combat.retaliators {
+            metrics.windups = metrics.windups.saturating_add(p.metrics.windups);
+            metrics.cancelled = metrics.cancelled.saturating_add(p.metrics.cancelled);
+            metrics.strikes = metrics.strikes.saturating_add(p.metrics.strikes);
+            metrics.damage = metrics.damage.saturating_add(p.metrics.damage);
+            metrics.deaths = metrics.deaths.saturating_add(p.metrics.deaths);
+        }
+        metrics.respawns = lives.respawns;
+        metrics.held_respawns = lives.held_respawns;
+        Some(metrics)
     }
     pub fn player_life_snapshot(&self, id: u64) -> Option<Observation> {
         let combat = self.combat.as_ref()?;
-        let pve = combat.pve.as_ref()?;
+        let lives = combat.lives.as_ref()?;
         let player = combat.actors.get(&id)?.life.as_ref()?;
         let key = player.state.key();
         Some(Observation {
@@ -543,7 +742,7 @@ impl World {
             } else {
                 None
             },
-            profile: pve.profile.hash(),
+            profile: lives.profile.hash(),
             key,
             tick: self.tick,
             movement_stream: self
@@ -556,15 +755,22 @@ impl World {
             health: player.state.health(),
             maximum_health: player.state.maximum_health(),
             respawn_at: player.state.respawn_at(),
-            windup: if pve.policy.target() == Some(key) {
-                pve.policy.windup_until().map(|completes| Windup {
-                    creature: pve.npc,
-                    target: key,
-                    completes,
+            windup: combat
+                .pve
+                .iter()
+                .chain(&combat.retaliators)
+                // Another attacker can kill this player later in the same tick,
+                // after an earlier controller has retained its pending windup.
+                // Never publish that stale telegraph on a dead life.
+                .filter(|pve| player.state.alive() && pve.policy.target() == Some(key))
+                .filter_map(|pve| {
+                    pve.policy.windup_until().map(|completes| Windup {
+                        creature: pve.npc,
+                        target: key,
+                        completes,
+                    })
                 })
-            } else {
-                None
-            },
+                .min_by_key(|windup| (windup.completes, windup.creature.entity.value())),
         })
     }
     pub(in crate::simulation) fn initialize_player_life(&mut self, id: u64) -> bool {

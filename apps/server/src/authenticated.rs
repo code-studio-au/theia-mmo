@@ -86,6 +86,7 @@ pub async fn run_with_progression(
             rewards: items.1,
             progression,
             quest: None,
+            quest_journal: None,
             quest_lifecycle: None,
             vendor: None,
         },
@@ -94,6 +95,7 @@ pub async fn run_with_progression(
 }
 #[derive(Default)]
 pub struct GameplayProfiles {
+    pub quest_journal: Option<theia_persistence::QuestJournalCatalog>,
     pub quest_lifecycle: Option<theia_persistence::QuestLifecycleCatalog>,
     pub vendor: Option<theia_persistence::VendorCatalog>,
     pub inventory: Option<theia_persistence::InventoryCatalog>,
@@ -111,6 +113,7 @@ pub async fn run_with_profiles(
     profiles: GameplayProfiles,
 ) -> Result<()> {
     let GameplayProfiles {
+        quest_journal,
         inventory,
         rewards,
         progression,
@@ -131,6 +134,11 @@ pub async fn run_with_profiles(
             Some((profile, wire.clone()))
         }
         _ => return Err("Objective authority/admission profile mismatch".into()),
+    };
+    let quest_journal = match (world.quest_journal_profile(), quest_journal) {
+        (None, None) => None,
+        (Some(wire), Some(profile)) if wire.hash() == profile.hash() => Some(profile),
+        _ => return Err("Journal authority/admission profile mismatch".into()),
     };
     let quest_lifecycle = match (world.quest_lifecycle_profile(), quest_lifecycle) {
         (None, None) => None,
@@ -160,13 +168,13 @@ pub async fn run_with_profiles(
     };
     let terrain = world
         .procedural()
-        .ok_or("Account entry requires saved terrain")?;
-    if !matches!(terrain.source, Source::Saved(_))
+        .ok_or("Account entry requires a bound saved or authored world")?;
+    if !matches!(terrain.source, Source::Saved(_) | Source::Authored(_))
         || terrain.speed != 1.
         || world.dev_tour
         || !world.prediction_enabled()
     {
-        return Err("Account entry requires normal predicted saved terrain".into());
+        return Err("Account entry requires normal predicted saved or authored terrain".into());
     }
     let identity = terrain.source.identity();
     let spawn = world
@@ -180,7 +188,15 @@ pub async fn run_with_profiles(
     let gate = service.enable_game_with_profiles(
         issuer,
         crate::accounts::GameProfiles {
-            quest_journal: None,
+            reward_journal: world
+                .quest_journal_profile()
+                .filter(|j| j.item_rewards().is_some())
+                .cloned(),
+            documents: world
+                .quest_journal_profile()
+                .and_then(|j| j.documents())
+                .map(|d| Arc::new(d.clone())),
+            quest_journal,
             inventory,
             rewards,
             progression,

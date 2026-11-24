@@ -4,6 +4,8 @@
 mod inventory;
 #[path = "admissions/progression.rs"]
 mod progression;
+#[path = "admissions/quest_items.rs"]
+mod quest_items;
 use ring::rand::{SecureRandom, SystemRandom};
 use std::{
     fmt,
@@ -53,6 +55,8 @@ enum Phase {
     Retiring,
 }
 struct Entry {
+    display_name: Option<theia_core::character_name::CharacterName>,
+    appearance: theia_core::appearance::Appearance,
     progression: Option<progression::Session>,
     inventory: Option<inventory::Session>,
     generation: u64,
@@ -184,12 +188,84 @@ impl GameAdmissions {
         gate: &mut Arc<Self>,
         profile: theia_persistence::QuestJournalCatalog,
     ) -> Result<()> {
-        Arc::get_mut(gate)
-            .ok_or("Journal configuration requires unshared gate")?
-            .progression
+        if profile.documents().is_some() {
+            return Err("Document journal owner is not installed".into());
+        }
+        Self::install_quest_journal(gate, profile, None, false)
+    }
+    pub(crate) fn with_document_quest_journal(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::QuestJournalCatalog,
+        documents: Arc<theia_network::documents::Profile>,
+    ) -> Result<()> {
+        if profile
+            .documents()
+            .is_none_or(|d| d.hash() != documents.hash())
+        {
+            return Err("Document owner profile mismatch".into());
+        }
+        Self::install_quest_journal(gate, profile, Some(documents), false)
+    }
+    /// Explicit fixed-reward ownership after exact stored/wire policy agreement.
+    /// Normal journal constructors remain closed to reward-bearing profiles.
+    pub(crate) fn with_item_reward_quest_journal(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::QuestJournalCatalog,
+        wire: Arc<theia_network::quest_journal::Profile>,
+    ) -> Result<()> {
+        if profile.item_rewards().is_none()
+            || wire.item_rewards().is_none()
+            || profile.hash() != wire.hash()
+        {
+            return Err("Quest item reward owner requires exact stored/wire policy".into());
+        }
+        let documents = wire.documents().cloned().map(Arc::new);
+        Self::install_quest_journal(gate, profile, documents, true)
+    }
+    fn install_quest_journal(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::QuestJournalCatalog,
+        documents: Option<Arc<theia_network::documents::Profile>>,
+        item_reward_mode: bool,
+    ) -> Result<()> {
+        if profile.item_rewards().is_some() != item_reward_mode {
+            return Err("Quest item reward owner is not installed".into());
+        }
+        let gate = Arc::get_mut(gate).ok_or("Journal configuration requires unshared gate")?;
+        if let Some(items) = profile.inventory() {
+            let inventory = gate
+                .inventory
+                .as_mut()
+                .ok_or("Item journal requires inventory owner")?;
+            if inventory.profile_hash() != items.hash() {
+                return Err("Item journal/inventory profile mismatch".into());
+            }
+            inventory.set_journal(profile.clone(), documents, item_reward_mode)?;
+        }
+        gate.progression
             .as_mut()
             .ok_or("Journal requires progression owner")?
             .set_journal(profile)
+    }
+    /// Explicit conditional adoption after exact item-journal installation.
+    pub(crate) fn with_quest_loot(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::RewardCatalog,
+        wire: Arc<theia_network::reward_wire::Profile>,
+    ) -> Result<()> {
+        let gate = Arc::get_mut(gate).ok_or("Quest loot requires unshared gate")?;
+        if profile.hash() != wire.hash()
+            || wire.quest_journal_hash().is_none()
+            || gate.progression.as_ref().and_then(|p| p.journal_hash()) != wire.quest_journal_hash()
+        {
+            return Err("Quest loot store/wire/owner binding mismatch".into());
+        }
+        let inventory = gate
+            .inventory
+            .as_mut()
+            .ok_or("Quest loot requires inventory")?;
+        inventory.set_quest_loot(profile)?;
+        inventory.set_reward_wire(wire)
     }
     pub(crate) fn with_quest_lifecycle(
         gate: &mut Arc<Self>,
@@ -262,6 +338,8 @@ impl GameAdmissions {
             .map_err(|_| Error::Unavailable)?;
         state.generation = generation;
         state.slots[slot] = Some(Entry {
+            display_name: None,
+            appearance: Default::default(),
             progression: None,
             inventory: None,
             generation,
@@ -441,7 +519,23 @@ impl Reservation {
         Ok(result)
     }
 
-    pub fn issue(mut self, saved: SavedCharacter) -> GateResult<IssuedTicket> {
+    pub fn issue(self, saved: SavedCharacter) -> GateResult<IssuedTicket> {
+        self.issue_with_name(saved, None, Default::default())
+    }
+    /// Accept the whole SQL-selected record so the name and saved binding travel
+    /// together. Neither public gameplay input nor ticket userdata supplies it.
+    pub fn issue_character(
+        self,
+        selected: theia_persistence::Character,
+    ) -> GateResult<IssuedTicket> {
+        self.issue_with_name(selected.saved, Some(selected.name), selected.appearance)
+    }
+    fn issue_with_name(
+        mut self,
+        saved: SavedCharacter,
+        name: Option<theia_core::character_name::CharacterName>,
+        appearance: theia_core::appearance::Appearance,
+    ) -> GateResult<IssuedTicket> {
         let mut state = self.gate.lock()?;
         let entry = state.slots[self.slot]
             .as_mut()
@@ -471,6 +565,8 @@ impl Reservation {
             .issue(self.slot as u64 + 1, Some(&data), TICKET_SECONDS)
             .map_err(|_| Error::Unavailable)?;
         entry.saved = Some(saved);
+        entry.display_name = name;
+        entry.appearance = appearance;
         entry.phase = Phase::Reserved;
         entry.deadline = Instant::now() + Duration::from_secs(TICKET_SECONDS);
         state.sequence = state.sequence.max(saved.sequence);
@@ -486,6 +582,35 @@ impl Drop for Reservation {
     }
 }
 impl AdmissionLease for Lease {
+    fn appearance(&self) -> Result<theia_core::appearance::Appearance> {
+        let state = self.gate.lock()?;
+        let entry = state.slots[self.slot]
+            .as_ref()
+            .filter(|e| {
+                e.generation == self.generation
+                    && matches!(e.phase, Phase::Consumed | Phase::Active)
+            })
+            .ok_or(Error::Unavailable)?;
+        if !self.gate.authorized(entry)? {
+            return Err(Error::Unauthorized.into());
+        }
+        Ok(entry.appearance)
+    }
+    fn display_name(&self) -> Result<Option<theia_core::character_name::CharacterName>> {
+        let state = self.gate.lock()?;
+        let entry = state.slots[self.slot]
+            .as_ref()
+            .filter(|e| {
+                e.generation == self.generation
+                    && matches!(e.phase, Phase::Consumed | Phase::Active)
+            })
+            .ok_or(Error::Unavailable)?;
+        if !self.gate.authorized(entry)? {
+            return Err(Error::Unauthorized.into());
+        }
+        Ok(entry.display_name.clone())
+    }
+
     fn progression(&self) -> Result<Option<theia_network::renet_runtime::progression::Port>> {
         let state = self.gate.lock()?;
         let entry = state.slots[self.slot]
@@ -584,6 +709,7 @@ impl AccountAdmissions for GameAdmissions {
                 entry.generation,
                 entry.binding,
                 self.world,
+                entry.inventory.as_ref().map(|i| i.port.state.clone()),
             ));
         }
         let position = entry.saved.as_ref().ok_or(Error::Unavailable)?.position;

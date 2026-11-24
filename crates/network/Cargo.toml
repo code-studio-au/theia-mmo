@@ -9,6 +9,7 @@ publish.workspace = true
 bevy = { workspace = true, features = ["std"] }
 avian3d.workspace = true
 theia-core.workspace = true
+theia-zone = { path = "../zone" }
 renet.workspace = true
 renet_netcode.workspace = true
 serde.workspace = true

@@ -1,6 +1,9 @@
 //! Bounded cosmetic miss/deflect labels from authoritative events. Standard
 //! Bevy UI and central origin conversion; never invents a combat result.
-use bevy::{prelude::*, text::FontSize};
+use bevy::{
+    prelude::*,
+    text::{FontSize, FontWeight},
+};
 use std::{
     collections::VecDeque,
     time::{Duration, Instant},
@@ -14,7 +17,10 @@ use theia_network::simulation::combat::{
 };
 const MAX_PENDING: usize = 32;
 const MAX_ACTIVE: usize = 32;
-const LIFETIME: Duration = Duration::from_secs(1);
+const LIFETIME: Duration = Duration::from_millis(1250);
+const CRITICAL_FONT: f32 = 42.;
+const NORMAL_FONT: f32 = 32.;
+const TEXT_WIDTH: f32 = 230.;
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct Observed;
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -343,10 +349,20 @@ fn spawn(mut commands: Commands, mut pending: ResMut<Pending>, labels: Query<&La
             },
             Text::new(cue.kind.text()),
             TextFont {
-                font_size: FontSize::Px(if cue.kind.critical() { 28. } else { 20. }),
+                font_size: FontSize::Px(if cue.kind.critical() {
+                    CRITICAL_FONT
+                } else {
+                    NORMAL_FONT
+                }),
+                weight: FontWeight::BOLD,
                 ..default()
             },
             TextColor(cue.kind.color()),
+            TextShadow {
+                offset: Vec2::splat(2.5),
+                color: Color::BLACK,
+            },
+            GlobalZIndex(3),
             Node {
                 position_type: PositionType::Absolute,
                 ..default()
@@ -370,13 +386,22 @@ fn spawn(mut commands: Commands, mut pending: ResMut<Pending>, labels: Query<&La
 }
 fn paint(
     mut commands: Commands,
-    mut labels: Query<(Entity, &Label, &mut Node, &mut TextColor, &mut Visibility)>,
-    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    mut labels: Query<(
+        Entity,
+        &Label,
+        &mut Node,
+        &mut TextColor,
+        &mut TextShadow,
+        &mut Visibility,
+    )>,
+    cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     frame: Res<crate::floating_origin::Frame>,
+    ui_scale: Option<Res<bevy::ui::UiScale>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
     mut pending: ResMut<Pending>,
 ) {
     let camera = cameras.single().ok();
-    for (entity, label, mut node, mut color, mut visibility) in &mut labels {
+    for (entity, label, mut node, mut color, mut shadow, mut visibility) in &mut labels {
         let age = label.born.elapsed();
         if age >= LIFETIME {
             commands.entity(entity).despawn();
@@ -394,12 +419,38 @@ fn paint(
             (position.x >= 0. && position.y >= 0. && position.x <= size.x && position.y <= size.y)
                 .then_some(position)
         });
-        if let Some(position) = projection {
+        if let Some(position) = projection.and_then(|position| {
+            crate::fantasy_ui::projected_ui_point(
+                position,
+                ui_scale.as_ref().map_or(1., |scale| scale.0),
+            )
+        }) {
             pending.metrics.projected_frames += 1;
-            node.left = px(position.x - 30.);
+            let viewport_width = camera
+                .and_then(|(c, _)| c.logical_viewport_size())
+                .and_then(|p| {
+                    crate::fantasy_ui::projected_ui_point(p, ui_scale.as_ref().map_or(1., |s| s.0))
+                })
+                .map(|p| p.x);
+            if skin.is_some()
+                && let Some(width) = viewport_width
+            {
+                let label_width = TEXT_WIDTH.min((width - 8.).max(1.));
+                node.width = px(label_width);
+                node.left = px(crate::nameplates::feedback_left(
+                    position.x,
+                    width,
+                    label_width,
+                ));
+            } else {
+                node.left = px(position.x - 30.);
+            }
             node.top = px(position.y - age.as_secs_f32() * 28.);
             *visibility = Visibility::Inherited;
-            color.0 = color.0.with_alpha((1. - age.as_secs_f32()).clamp(0., 1.));
+            let remaining = (LIFETIME - age).as_secs_f32();
+            let alpha = (remaining / 0.70).min(1.);
+            color.0 = color.0.with_alpha(alpha);
+            shadow.color = Color::BLACK.with_alpha(alpha);
         } else {
             *visibility = Visibility::Hidden;
         }
@@ -591,7 +642,7 @@ mod tests {
                 }
             ) {
                 crits += 1;
-                assert_eq!(font.font_size, FontSize::Px(28.));
+                assert_eq!(font.font_size, FontSize::Px(CRITICAL_FONT));
                 if label.kind.incoming() {
                     assert_eq!(text.0, "8");
                     assert_eq!(color.0, Color::srgb(1., 0.25, 0.2));
@@ -646,7 +697,11 @@ mod tests {
             texts.insert(text.0.clone());
             assert_eq!(
                 font.font_size,
-                FontSize::Px(if label.kind.critical() { 28. } else { 20. })
+                FontSize::Px(if label.kind.critical() {
+                    CRITICAL_FONT
+                } else {
+                    NORMAL_FONT
+                })
             );
             if matches!(
                 label.kind,

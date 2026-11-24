@@ -23,6 +23,7 @@ pub(super) enum Request {
         world: [u8; 32],
         name: CharacterName,
         position: GlobalPosition,
+        appearance: theia_core::appearance::Appearance,
         reply: oneshot::Sender<Result<Character>>,
     },
     List {
@@ -88,6 +89,17 @@ impl Publisher {
         name: CharacterName,
         position: GlobalPosition,
     ) -> Result<Character> {
+        self.create_character_with_appearance(owner, world, name, position, Default::default())
+            .await
+    }
+    pub async fn create_character_with_appearance(
+        &self,
+        owner: OwnerId,
+        world: [u8; 32],
+        name: CharacterName,
+        position: GlobalPosition,
+        appearance: theia_core::appearance::Appearance,
+    ) -> Result<Character> {
         valid_world(world)?;
         let (reply, answer) = oneshot::channel();
         self.account_request(
@@ -96,6 +108,7 @@ impl Publisher {
                 world,
                 name,
                 position,
+                appearance,
                 reply,
             },
             answer,
@@ -198,13 +211,16 @@ impl Request {
                 world,
                 name,
                 position,
+                appearance,
                 reply,
             } => {
                 if reply.is_closed() {
                     return Ok(());
                 }
                 respond(
-                    store.create_character(owner, world, name, position).await,
+                    store
+                        .create_character_with_appearance(owner, world, name, position, appearance)
+                        .await,
                     reply,
                     status,
                     Operation::Create,

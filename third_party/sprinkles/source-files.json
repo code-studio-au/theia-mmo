@@ -1,0 +1,1776 @@
+{
+  "revision": "0e978f5a9afc6b456b3693c8761e73a6c7e155bd",
+  "files": [
+    {
+      "path": "crates/bevy_sprinkles/Cargo.toml",
+      "upstream_path": "crates/bevy_sprinkles/Cargo.toml",
+      "upstream_sha256": "b13d8c229bb6478b0a0f1ec18d5047c472e30f27f4877c0d637d4a50cc58a171",
+      "imported_sha256": "9bb0ede01fa8a6950b7c944cc003345ec9578e48fd833c9e1a5b590dac7ac9d9",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/asset/curve.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/asset/curve.rs",
+      "upstream_sha256": "a51cb8af4b85fc0158686f62bf53eca3c9acf62a013f0da367d85f064272ea04",
+      "imported_sha256": "a51cb8af4b85fc0158686f62bf53eca3c9acf62a013f0da367d85f064272ea04",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/asset/gradient.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/asset/gradient.rs",
+      "upstream_sha256": "c968e5d9a6748e6a658e2189e2f2db9fbfd703811b377e391aa94523b19a26b7",
+      "imported_sha256": "c968e5d9a6748e6a658e2189e2f2db9fbfd703811b377e391aa94523b19a26b7",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/asset/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/asset/mod.rs",
+      "upstream_sha256": "241301c20479daae6add85c5ebfb136b2e1533a643b3f8cba7e2be2cd5319a79",
+      "imported_sha256": "1e0b20150938a149d8e91aee33355b4982d8e51b31a45e507be1338c8be8869d",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/asset/particle_material.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/asset/particle_material.rs",
+      "upstream_sha256": "beb484c55a586684f34a056fcf5ac65d016eb72ddf62c6129a9829b19a9ab9ef",
+      "imported_sha256": "4b00499065e38a29f90dcbf87b9a539e43b0246bbff82897e830bae64a7e3f3f",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/asset/serde_helpers.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/asset/serde_helpers.rs",
+      "upstream_sha256": "c800c6d25cfd3bcb881b435181104d5180da345a807cc69372561c5f26aab6bc",
+      "imported_sha256": "b35e2f5ff6159af6ed2c8de5c1bb2629eab2268708899c3107f10a2508c9be09",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/asset/versions/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/asset/versions/mod.rs",
+      "upstream_sha256": "e418f30f84cf9119bfb37b7eddee4fd2b22dc40a38a2d4ae088fd5df2dd6370e",
+      "imported_sha256": "e418f30f84cf9119bfb37b7eddee4fd2b22dc40a38a2d4ae088fd5df2dd6370e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/asset/versions/v0_1.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/asset/versions/v0_1.rs",
+      "upstream_sha256": "5d1cbb00abd7fa1c353496be2c6b81d0724c8804b0a29e96f6b24cfef837fcd8",
+      "imported_sha256": "5d1cbb00abd7fa1c353496be2c6b81d0724c8804b0a29e96f6b24cfef837fcd8",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/compute.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/compute.rs",
+      "upstream_sha256": "f96b1a17ac379b9dc9e5ad76acf01961db55743c2eb424dfe34eaa6c62b7f6db",
+      "imported_sha256": "63a21b5e7fc051d9942ad5be59237496456c6b02dc813d7e68ba85cf74f01326",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/extract.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/extract.rs",
+      "upstream_sha256": "de6a9b5de472ec03abf4de96bf61532430bd8a2ef0af2d82da1a0aec47fb30d1",
+      "imported_sha256": "fc70cf88ef3612eab861b4742387940dbe2086181138e852f3a91068f84a2004",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/lib.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/lib.rs",
+      "upstream_sha256": "d2f69b00f5380fbcf4342961843bd1df03ff15351d497e0b3de52e7f1e631a17",
+      "imported_sha256": "96c77aa75655787e0aea13e1fb2e61d43540d757484e506c318aa5259a5d82aa",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/material.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/material.rs",
+      "upstream_sha256": "e15a03d637a115922583341ad54b8e790e78e4460668269fc5ac0218e0c57eb1",
+      "imported_sha256": "1256426d6a502ed539dd764e1da6627965b2ad0590138137d34246476d7eaedf",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/mesh.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/mesh.rs",
+      "upstream_sha256": "01a65b5db9001890a7d59ff3b2ae1fdd20013642a0c59ca6e761a7d348baa4d8",
+      "imported_sha256": "ae04d162b7e47f9bebc82d50ae10852faca218686edf065f29557cd1b99bf9ee",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/prelude.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/prelude.rs",
+      "upstream_sha256": "dc79f0791e25a2f2f4df8168f2b884e26dfcb06841977cec793491f5d8e5c97a",
+      "imported_sha256": "dc79f0791e25a2f2f4df8168f2b884e26dfcb06841977cec793491f5d8e5c97a",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/runtime.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/runtime.rs",
+      "upstream_sha256": "f01b4775b18de27c88c14288cc8b65da0a6a48f73b89d999e0662d84c5d701a8",
+      "imported_sha256": "f01b4775b18de27c88c14288cc8b65da0a6a48f73b89d999e0662d84c5d701a8",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/shaders/common.wesl",
+      "upstream_path": "crates/bevy_sprinkles/src/shaders/common.wgsl",
+      "upstream_sha256": "5d6c2aed19a833dafa03a4ebe50e54c4e0d7e0fc82e12ccdfee3091b76e6503a",
+      "imported_sha256": "4a6da20b10a68626b85d93f1a285b903cc3844f21ab9f81023ee255b55d4dcca",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/shaders/particle_material.wesl",
+      "upstream_path": "crates/bevy_sprinkles/src/shaders/particle_material.wgsl",
+      "upstream_sha256": "d01e9e4b0b4e02f2f254a61d9e442c4ca9fcc1294d6c1cebbee4d90da6edbf32",
+      "imported_sha256": "9305900057cbf122299db2581f608574f06660beb8bb04f233190b116da3bf87",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/shaders/particle_simulate.wesl",
+      "upstream_path": "crates/bevy_sprinkles/src/shaders/particle_simulate.wgsl",
+      "upstream_sha256": "6cbb477ed07adb27befd73679b79537900633d67d476801138ab4f411622bb22",
+      "imported_sha256": "4114cdd07541915936e1046344ec2abc9d62d1f42181d60e8f23e3883bb67659",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/shaders/particle_sort.wesl",
+      "upstream_path": "crates/bevy_sprinkles/src/shaders/particle_sort.wgsl",
+      "upstream_sha256": "585704c785d257342ae341aaf462b8d084feadae551f25f873c7e056493f7c76",
+      "imported_sha256": "d4bf50f9c2413563f0731b791cdb479b751bd564dfcb1c403a51abcc1ad9161a",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/sort.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/sort.rs",
+      "upstream_sha256": "74a39320bb6b07806cde5414e7492cbf302df0737157ecdf54a99fc3473c5415",
+      "imported_sha256": "bcf6a40773f0f045040540bb148c7fb3f6626ebb51073c3b4d7ce2175e33dfcd",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/spawning.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/spawning.rs",
+      "upstream_sha256": "898690840746d885a6206e2f28e7ee8e7cf7a4b4415ee7c5019f2e3288fcd7ab",
+      "imported_sha256": "1e80fcf81cdb3d62569ceb6761b4557a549763bdab272d1c72905bda6733ab88",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/circle_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/circle_01.png",
+      "upstream_sha256": "4b2d03683bf0fe4a946567adc3bd86b8ba045da84cee58dc2cf8aef63bbfaa06",
+      "imported_sha256": "4b2d03683bf0fe4a946567adc3bd86b8ba045da84cee58dc2cf8aef63bbfaa06",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/circle_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/circle_02.png",
+      "upstream_sha256": "8a2112a6a5610c7cdcbfe8af0a5162b42dfb3431c63f494743945337b7981e51",
+      "imported_sha256": "8a2112a6a5610c7cdcbfe8af0a5162b42dfb3431c63f494743945337b7981e51",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/circle_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/circle_03.png",
+      "upstream_sha256": "ed6c6f082e666c16bcaca89f15aefb55df9bf69450090518bcae1d3d61f82936",
+      "imported_sha256": "ed6c6f082e666c16bcaca89f15aefb55df9bf69450090518bcae1d3d61f82936",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/circle_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/circle_04.png",
+      "upstream_sha256": "742da1a1b96b93ae446700f6085385d1f62844352da870c89427307b7b7cf03b",
+      "imported_sha256": "742da1a1b96b93ae446700f6085385d1f62844352da870c89427307b7b7cf03b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/circle_05.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/circle_05.png",
+      "upstream_sha256": "925b8ac284436f74f9cadf0ecd058da1c08fba65c098e4e34fd220603022f02e",
+      "imported_sha256": "925b8ac284436f74f9cadf0ecd058da1c08fba65c098e4e34fd220603022f02e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/dirt_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/dirt_01.png",
+      "upstream_sha256": "6827a0a32a293ec9570fb98d63963b8dd6e6aaba9e1096afad932e93a378bea9",
+      "imported_sha256": "6827a0a32a293ec9570fb98d63963b8dd6e6aaba9e1096afad932e93a378bea9",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/dirt_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/dirt_02.png",
+      "upstream_sha256": "fcecc70b561f80568b3391c3dc1180126d86ce4fbd4d1b01518e6045203e10a3",
+      "imported_sha256": "fcecc70b561f80568b3391c3dc1180126d86ce4fbd4d1b01518e6045203e10a3",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/dirt_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/dirt_03.png",
+      "upstream_sha256": "427d6dcad5a8d16b8143d412a5a48ce859716150a074ea5bb36eca577c0ae541",
+      "imported_sha256": "427d6dcad5a8d16b8143d412a5a48ce859716150a074ea5bb36eca577c0ae541",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/fire_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/fire_01.png",
+      "upstream_sha256": "9727a9743ac6ab8dd4dd79f5fc5b0266290efae45f4d4452279eb5e4bcf3a978",
+      "imported_sha256": "9727a9743ac6ab8dd4dd79f5fc5b0266290efae45f4d4452279eb5e4bcf3a978",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/fire_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/fire_02.png",
+      "upstream_sha256": "e2677330b0668033b0744276da74de605164aa5d58203bf251a8ec84e62c2108",
+      "imported_sha256": "e2677330b0668033b0744276da74de605164aa5d58203bf251a8ec84e62c2108",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/flame_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/flame_01.png",
+      "upstream_sha256": "92a70bcb90b1e21c57b2dae42843135703b2e988abee97433f84c3119723d144",
+      "imported_sha256": "92a70bcb90b1e21c57b2dae42843135703b2e988abee97433f84c3119723d144",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/flame_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/flame_02.png",
+      "upstream_sha256": "7afff66979a5a30319d4fa491b13a9027223ebbdadfa38fae4ae76e31d05d9c5",
+      "imported_sha256": "7afff66979a5a30319d4fa491b13a9027223ebbdadfa38fae4ae76e31d05d9c5",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/flame_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/flame_03.png",
+      "upstream_sha256": "366678a08a7d22ebb87baa7b42005aaaeb0fd51ab751f2d4e7c9edfa61a33e38",
+      "imported_sha256": "366678a08a7d22ebb87baa7b42005aaaeb0fd51ab751f2d4e7c9edfa61a33e38",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/flame_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/flame_04.png",
+      "upstream_sha256": "71deb274feea6ae5e6bb82c802a6e4d22f168397aa36b7a9e89de863948f3cf5",
+      "imported_sha256": "71deb274feea6ae5e6bb82c802a6e4d22f168397aa36b7a9e89de863948f3cf5",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/flame_05.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/flame_05.png",
+      "upstream_sha256": "4c5cc587260010e4bb58b03cc2561ca0e96409e7db25ea4183cd3fb1d0237dc8",
+      "imported_sha256": "4c5cc587260010e4bb58b03cc2561ca0e96409e7db25ea4183cd3fb1d0237dc8",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/flame_06.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/flame_06.png",
+      "upstream_sha256": "fc95ac4d0e61b22d079aeb5feabf2914d380858ad95852e5b1638ad820526948",
+      "imported_sha256": "fc95ac4d0e61b22d079aeb5feabf2914d380858ad95852e5b1638ad820526948",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/flare_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/flare_01.png",
+      "upstream_sha256": "254f5bd4f0548612bf29305d27899efdee8cb8d8306292761ebbddebd3e57935",
+      "imported_sha256": "254f5bd4f0548612bf29305d27899efdee8cb8d8306292761ebbddebd3e57935",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/light_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/light_01.png",
+      "upstream_sha256": "caedcc5df5bcac4470244d2520d6a64b45b20c1ccf4d918da516c55e3fa365a6",
+      "imported_sha256": "caedcc5df5bcac4470244d2520d6a64b45b20c1ccf4d918da516c55e3fa365a6",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/light_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/light_02.png",
+      "upstream_sha256": "f1bdb57478703fec539f7b8eeceb494c4a23664652b296389f310104be80cfe0",
+      "imported_sha256": "f1bdb57478703fec539f7b8eeceb494c4a23664652b296389f310104be80cfe0",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/light_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/light_03.png",
+      "upstream_sha256": "b68627734d08aab3eaf3f94718521553628c75aace1de6c74de28501c1a4c147",
+      "imported_sha256": "b68627734d08aab3eaf3f94718521553628c75aace1de6c74de28501c1a4c147",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/magic_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/magic_01.png",
+      "upstream_sha256": "398479ea280c8161d0b6d509ca97eefb27e989c7832b404abcb65faae3e922ff",
+      "imported_sha256": "398479ea280c8161d0b6d509ca97eefb27e989c7832b404abcb65faae3e922ff",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/magic_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/magic_02.png",
+      "upstream_sha256": "6443e90834abcae4c3848d7ebca99ff0d9fcad19a07f49f77ad64710a3e39b36",
+      "imported_sha256": "6443e90834abcae4c3848d7ebca99ff0d9fcad19a07f49f77ad64710a3e39b36",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/magic_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/magic_03.png",
+      "upstream_sha256": "c2ef5fe86cd2fd08e5b9768389ab6580b346c391db3c7c09fc9b0a63e00ec4ce",
+      "imported_sha256": "c2ef5fe86cd2fd08e5b9768389ab6580b346c391db3c7c09fc9b0a63e00ec4ce",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/magic_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/magic_04.png",
+      "upstream_sha256": "8255a4a3bd9209a0d3a45f0636524ff0d2953adc7d6819041703107379ab63ba",
+      "imported_sha256": "8255a4a3bd9209a0d3a45f0636524ff0d2953adc7d6819041703107379ab63ba",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/magic_05.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/magic_05.png",
+      "upstream_sha256": "92fb8c7a1d9bc14e052526c0505502c3e5b37d27502fa3d36d2c80b4565b62ef",
+      "imported_sha256": "92fb8c7a1d9bc14e052526c0505502c3e5b37d27502fa3d36d2c80b4565b62ef",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/muzzle_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/muzzle_01.png",
+      "upstream_sha256": "08f650f6a615b65024b48d8da32178158d74307d7c235f214f0c075b7aa688b9",
+      "imported_sha256": "08f650f6a615b65024b48d8da32178158d74307d7c235f214f0c075b7aa688b9",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/muzzle_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/muzzle_02.png",
+      "upstream_sha256": "96164063353cc0386b3d3ad0d64b9be6c369e1d5d8510f84fcf33604b4729084",
+      "imported_sha256": "96164063353cc0386b3d3ad0d64b9be6c369e1d5d8510f84fcf33604b4729084",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/muzzle_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/muzzle_03.png",
+      "upstream_sha256": "579983452d263ebeca78080714b6dd55a0f95fca7452f309e91a9d466de6c058",
+      "imported_sha256": "579983452d263ebeca78080714b6dd55a0f95fca7452f309e91a9d466de6c058",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/muzzle_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/muzzle_04.png",
+      "upstream_sha256": "2acbc729b7bf38330b7e829cb0b13dcf922fec4b163f7eb2965b7b2932f89aeb",
+      "imported_sha256": "2acbc729b7bf38330b7e829cb0b13dcf922fec4b163f7eb2965b7b2932f89aeb",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/muzzle_05.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/muzzle_05.png",
+      "upstream_sha256": "bc2d012c3bee75e668cc7800f965692b47af6edd6d3584081089a70abbe30a47",
+      "imported_sha256": "bc2d012c3bee75e668cc7800f965692b47af6edd6d3584081089a70abbe30a47",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/scorch_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/scorch_01.png",
+      "upstream_sha256": "ea72697696638786ccd4795a346d177b1b6a904331b5536a7e85a7ed927b93a5",
+      "imported_sha256": "ea72697696638786ccd4795a346d177b1b6a904331b5536a7e85a7ed927b93a5",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/scorch_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/scorch_02.png",
+      "upstream_sha256": "b36daaabbe0480b74e1e8d6b0b2e9a2d01974109b42b8a39c430af7739a953a1",
+      "imported_sha256": "b36daaabbe0480b74e1e8d6b0b2e9a2d01974109b42b8a39c430af7739a953a1",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/scorch_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/scorch_03.png",
+      "upstream_sha256": "531956355c8adcf6fbe0111788e68630c4b16209f9d7a6136978361a308202ec",
+      "imported_sha256": "531956355c8adcf6fbe0111788e68630c4b16209f9d7a6136978361a308202ec",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/scratch_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/scratch_01.png",
+      "upstream_sha256": "7dc0b16a5240738273684bfdf423eefd8a135356af1fee759217cdd560a4a935",
+      "imported_sha256": "7dc0b16a5240738273684bfdf423eefd8a135356af1fee759217cdd560a4a935",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/slash_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/slash_01.png",
+      "upstream_sha256": "cb4787978122bb863866a1681af22a7dec39a4566f08c400f233740eb1d3730c",
+      "imported_sha256": "cb4787978122bb863866a1681af22a7dec39a4566f08c400f233740eb1d3730c",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/slash_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/slash_02.png",
+      "upstream_sha256": "a79a9e297790e6126b78d41015a3045cda3f1863b421c88321d2442ed6f9032e",
+      "imported_sha256": "a79a9e297790e6126b78d41015a3045cda3f1863b421c88321d2442ed6f9032e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/slash_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/slash_03.png",
+      "upstream_sha256": "c77e40ef75084e880f2ea69acf70af4419518f489acda00d29b668a64805608e",
+      "imported_sha256": "c77e40ef75084e880f2ea69acf70af4419518f489acda00d29b668a64805608e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/slash_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/slash_04.png",
+      "upstream_sha256": "1beed6d30b8b3fc0874cca12f57de073360f0b11fc6f4cd99a24b7e033784c47",
+      "imported_sha256": "1beed6d30b8b3fc0874cca12f57de073360f0b11fc6f4cd99a24b7e033784c47",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_01.png",
+      "upstream_sha256": "e8724c219e8d35859167fc0a7e207e13c72ccf0c29704909b9bb3d3dc71c6cf7",
+      "imported_sha256": "e8724c219e8d35859167fc0a7e207e13c72ccf0c29704909b9bb3d3dc71c6cf7",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_02.png",
+      "upstream_sha256": "c405cc0ceb31a239dfd873fffdfdfe3ff2056eebd5fcc77dfba1d9fdfed585c7",
+      "imported_sha256": "c405cc0ceb31a239dfd873fffdfdfe3ff2056eebd5fcc77dfba1d9fdfed585c7",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_03.png",
+      "upstream_sha256": "a71f8abcac64f8d73a94625cc9a10033dbeafa7eaea750560cba0daa73fe8752",
+      "imported_sha256": "a71f8abcac64f8d73a94625cc9a10033dbeafa7eaea750560cba0daa73fe8752",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_04.png",
+      "upstream_sha256": "2db2f69874cdb1e5203f2f86803d5debde30402590cf50a810afaba882184616",
+      "imported_sha256": "2db2f69874cdb1e5203f2f86803d5debde30402590cf50a810afaba882184616",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_05.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_05.png",
+      "upstream_sha256": "e88c8416bd8da1b3f9f19e615dcebdf42f71045799cb4c41f545cb16dd835e35",
+      "imported_sha256": "e88c8416bd8da1b3f9f19e615dcebdf42f71045799cb4c41f545cb16dd835e35",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_06.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_06.png",
+      "upstream_sha256": "d988b03bb46797be913333f06b26ff2aad55ec082cfb7d3d18ce86ccb71559b5",
+      "imported_sha256": "d988b03bb46797be913333f06b26ff2aad55ec082cfb7d3d18ce86ccb71559b5",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_07.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_07.png",
+      "upstream_sha256": "f7419fa4f11e346d0fb36a17ecbf616083c6962633c7847d92119c994ed9b4e4",
+      "imported_sha256": "f7419fa4f11e346d0fb36a17ecbf616083c6962633c7847d92119c994ed9b4e4",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_08.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_08.png",
+      "upstream_sha256": "eae1d92c205a2654254281d470ee70cce86cf4e8e849db29e4d5edff0f67c695",
+      "imported_sha256": "eae1d92c205a2654254281d470ee70cce86cf4e8e849db29e4d5edff0f67c695",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_09.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_09.png",
+      "upstream_sha256": "7c66cf05c52aefb1f3e37c54917289a11d9268a995dbc4effc8ca80242a4122b",
+      "imported_sha256": "7c66cf05c52aefb1f3e37c54917289a11d9268a995dbc4effc8ca80242a4122b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/smoke_10.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/smoke_10.png",
+      "upstream_sha256": "35d1082a87de7558aeeab210fecb43997c958e162ede896587d1930f66e6ae67",
+      "imported_sha256": "35d1082a87de7558aeeab210fecb43997c958e162ede896587d1930f66e6ae67",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/spark_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/spark_01.png",
+      "upstream_sha256": "5902da3a324cad0a4b5a88ce1e3c9cc18fee50922c358ce93d8c9f1ad7708f0a",
+      "imported_sha256": "5902da3a324cad0a4b5a88ce1e3c9cc18fee50922c358ce93d8c9f1ad7708f0a",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/spark_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/spark_02.png",
+      "upstream_sha256": "f7c5f1f849657eed79fd7b663be5a57829450a1e4fdc4a062049a05b9a406e89",
+      "imported_sha256": "f7c5f1f849657eed79fd7b663be5a57829450a1e4fdc4a062049a05b9a406e89",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/spark_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/spark_03.png",
+      "upstream_sha256": "90f322bebe5facea2f60afe88d98dd80a21479ed3212e605d61e88a896f3e1db",
+      "imported_sha256": "90f322bebe5facea2f60afe88d98dd80a21479ed3212e605d61e88a896f3e1db",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/spark_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/spark_04.png",
+      "upstream_sha256": "3cba35b80a97c12283a8ecd41780a0412194de14562cbffc7f04e9157183f772",
+      "imported_sha256": "3cba35b80a97c12283a8ecd41780a0412194de14562cbffc7f04e9157183f772",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/spark_05.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/spark_05.png",
+      "upstream_sha256": "9624ea2017b8b2767a9d3b82e978b7fdf5154d83e6756cd919da51447bb97138",
+      "imported_sha256": "9624ea2017b8b2767a9d3b82e978b7fdf5154d83e6756cd919da51447bb97138",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/spark_06.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/spark_06.png",
+      "upstream_sha256": "fe6d473393d3b9350c7a654b7cb5fbd343766b5b5b11d3e4aba476832d4a6d3f",
+      "imported_sha256": "fe6d473393d3b9350c7a654b7cb5fbd343766b5b5b11d3e4aba476832d4a6d3f",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/spark_07.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/spark_07.png",
+      "upstream_sha256": "216101e7b54c627b4aa780649a21f0ef9146d2566f52699284d091ef00825a26",
+      "imported_sha256": "216101e7b54c627b4aa780649a21f0ef9146d2566f52699284d091ef00825a26",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/star_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/star_01.png",
+      "upstream_sha256": "3ba3999c944a0767677449412d306c1f230daa1743b31f929533cf77a22ecf5d",
+      "imported_sha256": "3ba3999c944a0767677449412d306c1f230daa1743b31f929533cf77a22ecf5d",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/star_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/star_02.png",
+      "upstream_sha256": "a0b7624a2e6f6825a3e93ddec685728c4d3de03b77bbf2a2e425b7a6d3d0215b",
+      "imported_sha256": "a0b7624a2e6f6825a3e93ddec685728c4d3de03b77bbf2a2e425b7a6d3d0215b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/star_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/star_03.png",
+      "upstream_sha256": "dac75aa35e5191de1917ec076d47f3b43a47b80d9aae6eefffb920c5ceba3601",
+      "imported_sha256": "dac75aa35e5191de1917ec076d47f3b43a47b80d9aae6eefffb920c5ceba3601",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/star_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/star_04.png",
+      "upstream_sha256": "6485ac16c773663bd39346f3bedae04465ac14c661eb47cc5cfa935cdbf6c2ec",
+      "imported_sha256": "6485ac16c773663bd39346f3bedae04465ac14c661eb47cc5cfa935cdbf6c2ec",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/star_05.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/star_05.png",
+      "upstream_sha256": "1e8ab968178e507824ab28353c0ffffa918ae3adbcf89513d3db50a17b7bc8a2",
+      "imported_sha256": "1e8ab968178e507824ab28353c0ffffa918ae3adbcf89513d3db50a17b7bc8a2",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/star_06.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/star_06.png",
+      "upstream_sha256": "65d3ff5aa87ec0770c11fe1293fdc70cdc5ccf0eabc2e2fd6a1ead922051035e",
+      "imported_sha256": "65d3ff5aa87ec0770c11fe1293fdc70cdc5ccf0eabc2e2fd6a1ead922051035e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/star_07.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/star_07.png",
+      "upstream_sha256": "d3bc9b8f1960baab452e8a5e816b9edeee4420dbed5ddd7ebe174519860a451a",
+      "imported_sha256": "d3bc9b8f1960baab452e8a5e816b9edeee4420dbed5ddd7ebe174519860a451a",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/star_08.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/star_08.png",
+      "upstream_sha256": "05f24d1ee76c1464074cbca58155e4be517fefd34a7001bb012561647cc3dec3",
+      "imported_sha256": "05f24d1ee76c1464074cbca58155e4be517fefd34a7001bb012561647cc3dec3",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/star_09.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/star_09.png",
+      "upstream_sha256": "4255985e312a0058dc0c4f8b5befc902da17e6be5e5252007f3c7b02bb150157",
+      "imported_sha256": "4255985e312a0058dc0c4f8b5befc902da17e6be5e5252007f3c7b02bb150157",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/symbol_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/symbol_01.png",
+      "upstream_sha256": "3eb3988f3e80acf3fda9df07733f49c3585eafa7d6a7ce5b31765fe180dd6d9c",
+      "imported_sha256": "3eb3988f3e80acf3fda9df07733f49c3585eafa7d6a7ce5b31765fe180dd6d9c",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/symbol_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/symbol_02.png",
+      "upstream_sha256": "1582e947d6793ec74fafabe587750af1b2655d1cd4ffe65bce1967c85b362ba8",
+      "imported_sha256": "1582e947d6793ec74fafabe587750af1b2655d1cd4ffe65bce1967c85b362ba8",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/trace_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/trace_01.png",
+      "upstream_sha256": "34de69bc3f665b23fe9bed15f388efd8e8e4dc1a99f2fc5db9ba8715c525711f",
+      "imported_sha256": "34de69bc3f665b23fe9bed15f388efd8e8e4dc1a99f2fc5db9ba8715c525711f",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/trace_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/trace_02.png",
+      "upstream_sha256": "8c224d6d4544d8437bce5ee51452957b31f5479e337c5f432dc1b55b1e2f9685",
+      "imported_sha256": "8c224d6d4544d8437bce5ee51452957b31f5479e337c5f432dc1b55b1e2f9685",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/trace_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/trace_03.png",
+      "upstream_sha256": "a8c05800698cd502c3416a1f2335292544d52b3c8624c3c829a534c52b364860",
+      "imported_sha256": "a8c05800698cd502c3416a1f2335292544d52b3c8624c3c829a534c52b364860",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/trace_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/trace_04.png",
+      "upstream_sha256": "ca69d82709295663ef1d9fcd90d346319fef5389a15dd63e3b71b4527e620cd8",
+      "imported_sha256": "ca69d82709295663ef1d9fcd90d346319fef5389a15dd63e3b71b4527e620cd8",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/trace_05.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/trace_05.png",
+      "upstream_sha256": "3f3d687bd2c70b10add33bdbd4616deda28f0138f757d358f9f0b78fb38bde6e",
+      "imported_sha256": "3f3d687bd2c70b10add33bdbd4616deda28f0138f757d358f9f0b78fb38bde6e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/trace_06.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/trace_06.png",
+      "upstream_sha256": "22c61c0e280db28b6cb6033c015dde4360a124b3488302ea708566b7f36fd900",
+      "imported_sha256": "22c61c0e280db28b6cb6033c015dde4360a124b3488302ea708566b7f36fd900",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/trace_07.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/trace_07.png",
+      "upstream_sha256": "4e5f177b7717d291464f01538756eb2f471961b09b39ea82ea72447210af7110",
+      "imported_sha256": "4e5f177b7717d291464f01538756eb2f471961b09b39ea82ea72447210af7110",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/twirl_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/twirl_01.png",
+      "upstream_sha256": "ba3f4996a5a91ea3cba6817a9b4770a385a82ef0b9350cbda5c0f140d182af7e",
+      "imported_sha256": "ba3f4996a5a91ea3cba6817a9b4770a385a82ef0b9350cbda5c0f140d182af7e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/twirl_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/twirl_02.png",
+      "upstream_sha256": "3963633f6b2395a3fa95b9f4f65f22a4d38a2c561d9312dfff4646b71c7aa6e2",
+      "imported_sha256": "3963633f6b2395a3fa95b9f4f65f22a4d38a2c561d9312dfff4646b71c7aa6e2",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/twirl_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/twirl_03.png",
+      "upstream_sha256": "69baaab4bc68473e9f926dc249a1d1b58f759c88906e10ac859bf43ac3cfbc8b",
+      "imported_sha256": "69baaab4bc68473e9f926dc249a1d1b58f759c88906e10ac859bf43ac3cfbc8b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/window_01.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/window_01.png",
+      "upstream_sha256": "373747a996fcfc320c76d093bde08252db2adde8d29672aca98430e521e702fa",
+      "imported_sha256": "373747a996fcfc320c76d093bde08252db2adde8d29672aca98430e521e702fa",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/window_02.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/window_02.png",
+      "upstream_sha256": "2b430446f1527409d00b418370975f7b08572282aea732503f9a22837055d54d",
+      "imported_sha256": "2b430446f1527409d00b418370975f7b08572282aea732503f9a22837055d54d",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/window_03.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/window_03.png",
+      "upstream_sha256": "452680cff9e62da90a4b3bff96dd7634d05624ee2d58fd5db7d89f48a60cdf8c",
+      "imported_sha256": "452680cff9e62da90a4b3bff96dd7634d05624ee2d58fd5db7d89f48a60cdf8c",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/assets/window_04.png",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/assets/window_04.png",
+      "upstream_sha256": "096be5e6f21547f16f302747a607020b2f1214842618de7a078587f6b8f1956e",
+      "imported_sha256": "096be5e6f21547f16f302747a607020b2f1214842618de7a078587f6b8f1956e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/baked.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/baked.rs",
+      "upstream_sha256": "ff3250fc59b0573c1b0f6d9cff6bb0afdedce195637c43452156d1984f83e479",
+      "imported_sha256": "14b6d52fd05be5a17bea8cc8219073c44bff306e129840eeef3ebb7f253a24c3",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/mod.rs",
+      "upstream_sha256": "c72599d22f0b32dd6b56b2db691848806cea1198066a8be594816e429adb3248",
+      "imported_sha256": "c72599d22f0b32dd6b56b2db691848806cea1198066a8be594816e429adb3248",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/src/textures/preset.rs",
+      "upstream_path": "crates/bevy_sprinkles/src/textures/preset.rs",
+      "upstream_sha256": "d2740a7e06d6083068d72109e9dc97ab8954e43a0abd683e2a524d0b4fc24cda",
+      "imported_sha256": "bcdc0f22c0da25342b5a2ffcb5c54bcebabd7212b594b8386cbfb33d2401b345",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/tests/asset_loader.rs",
+      "upstream_path": "crates/bevy_sprinkles/tests/asset_loader.rs",
+      "upstream_sha256": "42eab1768a2a94748147c69d253c5b40851ede2353b73cd663adf4733c584893",
+      "imported_sha256": "5d5939dd19ef73270cb9a32673b6e5757f9de4b0c0506560a5f52c128242b86d",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles/tests/fixtures/dummy_data.ron",
+      "upstream_path": "crates/bevy_sprinkles/tests/fixtures/dummy_data.ron",
+      "upstream_sha256": "baea4ae649216b09272dfda91985fe1e516d9944b1b17d8305e55ae5d0cd5d6b",
+      "imported_sha256": "baea4ae649216b09272dfda91985fe1e516d9944b1b17d8305e55ae5d0cd5d6b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/tests/fixtures/invalid_particle_system.ron",
+      "upstream_path": "crates/bevy_sprinkles/tests/fixtures/invalid_particle_system.ron",
+      "upstream_sha256": "f74398c98f3fa106f009d799f21b6a76be7ae3e64b84891ae87330964849ebde",
+      "imported_sha256": "f74398c98f3fa106f009d799f21b6a76be7ae3e64b84891ae87330964849ebde",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/tests/fixtures/unknown_version_particle_system.ron",
+      "upstream_path": "crates/bevy_sprinkles/tests/fixtures/unknown_version_particle_system.ron",
+      "upstream_sha256": "74d0be0cc1d36b818a0b1a22de12dda40d5dc42c11641cf206f31039f45796a7",
+      "imported_sha256": "74d0be0cc1d36b818a0b1a22de12dda40d5dc42c11641cf206f31039f45796a7",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/tests/fixtures/v0_1_particle_system.ron",
+      "upstream_path": "crates/bevy_sprinkles/tests/fixtures/v0_1_particle_system.ron",
+      "upstream_sha256": "d04941614cf2c7a9307af8433c2a25b578a2fdf6eec52fc2db61826dc1b2c500",
+      "imported_sha256": "d04941614cf2c7a9307af8433c2a25b578a2fdf6eec52fc2db61826dc1b2c500",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/tests/fixtures/valid_particle_system.ron",
+      "upstream_path": "crates/bevy_sprinkles/tests/fixtures/valid_particle_system.ron",
+      "upstream_sha256": "f80bc1234f6544dc0cb80a8fa54bff815f994ea8f2bbd396595270f918827632",
+      "imported_sha256": "f80bc1234f6544dc0cb80a8fa54bff815f994ea8f2bbd396595270f918827632",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles/tests/fixtures/valid_particle_system.whatever",
+      "upstream_path": "crates/bevy_sprinkles/tests/fixtures/valid_particle_system.whatever",
+      "upstream_sha256": "7a074b5c410de9e366ba747d5f9b05f579997e83d81d32c462840d005a21f015",
+      "imported_sha256": "7a074b5c410de9e366ba747d5f9b05f579997e83d81d32c462840d005a21f015",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/Cargo.toml",
+      "upstream_path": "crates/bevy_sprinkles_editor/Cargo.toml",
+      "upstream_sha256": "bcebd70ca47b56bc98d94f9eb8053523df53ff721d9b19efe8f0865fc7ace9c3",
+      "imported_sha256": "9d7fdd20731986fd87fc6c6acc76490f4e3ecd5c6953b35d1f04b1bdfa987a24",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/build.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/build.rs",
+      "upstream_sha256": "713ab5a6b00b4799a93f4e69a9a897277ce2887b81c5bfebe2cd5fd66023574e",
+      "imported_sha256": "713ab5a6b00b4799a93f4e69a9a897277ce2887b81c5bfebe2cd5fd66023574e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/examples/theia_validate.rs",
+      "upstream_path": null,
+      "upstream_sha256": null,
+      "imported_sha256": "0db9fb254ee74cd446baaddfca1d3b383d1bbb4062faf99c44e6570d14cab6ba",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets.rs",
+      "upstream_sha256": "3eb4c60a80fc738c053138d6d125aade575d3d51468dc639e032905b69e053fd",
+      "imported_sha256": "6e2199ab3d1e1b5d8c9aece66c0cc674f05b282944263fde5fc6ca615bdb8ced",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/InterVariable.ttf",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/InterVariable.ttf",
+      "upstream_sha256": "4989b125924991b90d05b2d16e0e388c48f7d5bb8b30539bbf9c755278d0ccaf",
+      "imported_sha256": "4989b125924991b90d05b2d16e0e388c48f7d5bb8b30539bbf9c755278d0ccaf",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/3d-explosion.jpg",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/3d-explosion.jpg",
+      "upstream_sha256": "a990297eecd8790240572d1d002ddf214e71dad6babcc5de26c254b1f34fe0cf",
+      "imported_sha256": "a990297eecd8790240572d1d002ddf214e71dad6babcc5de26c254b1f34fe0cf",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/3d-explosion.ron",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/3d-explosion.ron",
+      "upstream_sha256": "2ce2250a9054c169f383ac814eab410be6c10c260acd1b50037c33bfcb791b31",
+      "imported_sha256": "2ce2250a9054c169f383ac814eab410be6c10c260acd1b50037c33bfcb791b31",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/README.md",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/README.md",
+      "upstream_sha256": "40f2a591b5d3239323cb10fb5b7dfb0285084dabdff24e3e3536acf5b6993d0b",
+      "imported_sha256": "40f2a591b5d3239323cb10fb5b7dfb0285084dabdff24e3e3536acf5b6993d0b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/acid-pool.jpg",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/acid-pool.jpg",
+      "upstream_sha256": "f21b986446acede46945a6a86975c84f499d4e154fcc27375d39f024bf7cd72b",
+      "imported_sha256": "f21b986446acede46945a6a86975c84f499d4e154fcc27375d39f024bf7cd72b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/acid-pool.ron",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/acid-pool.ron",
+      "upstream_sha256": "a894170262ccccadac2127243b12f139e52811b2feddf9b0ebf192bc3053a90f",
+      "imported_sha256": "a894170262ccccadac2127243b12f139e52811b2feddf9b0ebf192bc3053a90f",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/loot.jpg",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/loot.jpg",
+      "upstream_sha256": "aa48cb0c62f95a88b6d3edf297fbe2edcfa572965f582db10eb9da2c9070ac4e",
+      "imported_sha256": "aa48cb0c62f95a88b6d3edf297fbe2edcfa572965f582db10eb9da2c9070ac4e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/loot.ron",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/loot.ron",
+      "upstream_sha256": "a13ededc0880aab07b1884dd0301fe3e018fcd6bece0d71dc84ad3720c3106f8",
+      "imported_sha256": "a13ededc0880aab07b1884dd0301fe3e018fcd6bece0d71dc84ad3720c3106f8",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/magic-puff.jpg",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/magic-puff.jpg",
+      "upstream_sha256": "933b14754f69beb9ccdda28305271d5a21bbe1760b16cab08b6c0214fa235104",
+      "imported_sha256": "933b14754f69beb9ccdda28305271d5a21bbe1760b16cab08b6c0214fa235104",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/magic-puff.ron",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/magic-puff.ron",
+      "upstream_sha256": "8bfa243e83e958428933061b3e2860ad97026d1529e775fe605fb75213b00f2d",
+      "imported_sha256": "8bfa243e83e958428933061b3e2860ad97026d1529e775fe605fb75213b00f2d",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/rain.jpg",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/rain.jpg",
+      "upstream_sha256": "291041e09aa8aa4b86dbf25248ce6a907a3da28c710f2d8576089d53c96f43fc",
+      "imported_sha256": "291041e09aa8aa4b86dbf25248ce6a907a3da28c710f2d8576089d53c96f43fc",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/rain.ron",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/rain.ron",
+      "upstream_sha256": "938617989eb4caf496bd8aef7130bab0d93fbec49432c8a28936d2414d0ac911",
+      "imported_sha256": "938617989eb4caf496bd8aef7130bab0d93fbec49432c8a28936d2414d0ac911",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/tube-trails.jpg",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/tube-trails.jpg",
+      "upstream_sha256": "ff5663cd84e825e46794d877565120f03a2f81bad26935068ce993bf955fac44",
+      "imported_sha256": "ff5663cd84e825e46794d877565120f03a2f81bad26935068ce993bf955fac44",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/tube-trails.ron",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/tube-trails.ron",
+      "upstream_sha256": "7461229a7e13c47765a8571b02c93efc288730810b3a890f8cfe395154d79b78",
+      "imported_sha256": "7461229a7e13c47765a8571b02c93efc288730810b3a890f8cfe395154d79b78",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/windy-snow.jpg",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/windy-snow.jpg",
+      "upstream_sha256": "6c585a5e13e6f9a22cc0138dd4bd81ee195914208e6734832f2866c5f6c31071",
+      "imported_sha256": "6c585a5e13e6f9a22cc0138dd4bd81ee195914208e6734832f2866c5f6c31071",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/examples/windy-snow.ron",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/examples/windy-snow.ron",
+      "upstream_sha256": "42d5c42ffd887eb5793e131173b359b566cf4198f20af3f07333f99d5f649ac7",
+      "imported_sha256": "42d5c42ffd887eb5793e131173b359b566cf4198f20af3f07333f99d5f649ac7",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/floor.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/floor.png",
+      "upstream_sha256": "ba6e578414e5713fb70797204dc445d2fff11b0672bdf6b2001890385526a8c0",
+      "imported_sha256": "ba6e578414e5713fb70797204dc445d2fff11b0672bdf6b2001890385526a8c0",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-cone.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-cone.png",
+      "upstream_sha256": "9d344b7fec5ae7b06f2f2cc9a381b7becb22cf545b9ca47a3c266584b6140915",
+      "imported_sha256": "9d344b7fec5ae7b06f2f2cc9a381b7becb22cf545b9ca47a3c266584b6140915",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-cube.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-cube.png",
+      "upstream_sha256": "3fcaf6f32aefe71d41d498efb7bb4349fb01f30cc00e73ab7840e2587cf1a1ad",
+      "imported_sha256": "3fcaf6f32aefe71d41d498efb7bb4349fb01f30cc00e73ab7840e2587cf1a1ad",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-empty-axis.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-empty-axis.png",
+      "upstream_sha256": "45aff44de0a9859a9270f904657f98e6bbca38df7df305612df6a61f92ba44e6",
+      "imported_sha256": "45aff44de0a9859a9270f904657f98e6bbca38df7df305612df6a61f92ba44e6",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-fcurve.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-fcurve.png",
+      "upstream_sha256": "5e23f7eb286f037c7ed21608a34d1c41730aa3faaafbf2cab09e7a788b3e2467",
+      "imported_sha256": "5e23f7eb286f037c7ed21608a34d1c41730aa3faaafbf2cab09e7a788b3e2467",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-mesh-cylinder.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-mesh-cylinder.png",
+      "upstream_sha256": "9946966e97722f373d189fecb35443819cfafdd98c363fa1f695def4aca68125",
+      "imported_sha256": "9946966e97722f373d189fecb35443819cfafdd98c363fa1f695def4aca68125",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-mesh-plane.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-mesh-plane.png",
+      "upstream_sha256": "65875ae69f021ad024c27e26245899a3632aa33227fe93de8cdb6980a289f92a",
+      "imported_sha256": "65875ae69f021ad024c27e26245899a3632aa33227fe93de8cdb6980a289f92a",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-mesh-torus.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-mesh-torus.png",
+      "upstream_sha256": "0b4a5d4c259855fdf5807fc10005a30cd2b354df522ee1384255e7e25781527a",
+      "imported_sha256": "0b4a5d4c259855fdf5807fc10005a30cd2b354df522ee1384255e7e25781527a",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-mesh-uvsphere.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-mesh-uvsphere.png",
+      "upstream_sha256": "2a78d9ed583987f57f20675bc3c8636a43f1693518b588b8ab1971cdb5dcb466",
+      "imported_sha256": "2a78d9ed583987f57f20675bc3c8636a43f1693518b588b8ab1971cdb5dcb466",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-pivot-boundbox.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-pivot-boundbox.png",
+      "upstream_sha256": "cb3638c29b1c11a4edcf0ec72e09c3d5d730ad0ca4f127b1bb29a0d57adc0695",
+      "imported_sha256": "cb3638c29b1c11a4edcf0ec72e09c3d5d730ad0ca4f127b1bb29a0d57adc0695",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-sphere.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-sphere.png",
+      "upstream_sha256": "3aae619a4e8d0eb702f23504db740ecb0fe2c51429e687978ddd5683f5b8ff3b",
+      "imported_sha256": "3aae619a4e8d0eb702f23504db740ecb0fe2c51429e687978ddd5683f5b8ff3b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-texture.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/blender-texture.png",
+      "upstream_sha256": "d8187318d1c5e6b09cb707d92dc55e94fdfd78acc11614079bb994667f5b9a4c",
+      "imported_sha256": "d8187318d1c5e6b09cb707d92dc55e94fdfd78acc11614079bb994667f5b9a4c",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-add-line.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-add-line.png",
+      "upstream_sha256": "313ae1e984a99002a33afe5ca44c0911ffb0257083e7b94676fcf3069fb91237",
+      "imported_sha256": "313ae1e984a99002a33afe5ca44c0911ffb0257083e7b94676fcf3069fb91237",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-arrow-down-s-line.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-arrow-down-s-line.png",
+      "upstream_sha256": "bbfad8978c0c772b1b4900955b1f894852b846d1a26c2aea8a3d6e0c08d9d0dd",
+      "imported_sha256": "bbfad8978c0c772b1b4900955b1f894852b846d1a26c2aea8a3d6e0c08d9d0dd",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-arrow-left-right-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-arrow-left-right-fill.png",
+      "upstream_sha256": "d18c3f7adf173192877c59405f520ddd9e7c140357e595d3ca868dd07b0d0de4",
+      "imported_sha256": "d18c3f7adf173192877c59405f520ddd9e7c140357e595d3ca868dd07b0d0de4",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-box-2-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-box-2-fill.png",
+      "upstream_sha256": "27013b3795c43f21a0175b5bc755c1d49ff6ac09f9cabcf0c6d721314fc8edf5",
+      "imported_sha256": "27013b3795c43f21a0175b5bc755c1d49ff6ac09f9cabcf0c6d721314fc8edf5",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-check-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-check-fill.png",
+      "upstream_sha256": "a9f0d5619f64fe2c25f6a584770c116ee863c99c80b3f285b39bb3bb221178bc",
+      "imported_sha256": "a9f0d5619f64fe2c25f6a584770c116ee863c99c80b3f285b39bb3bb221178bc",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-checkbox-circle-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-checkbox-circle-fill.png",
+      "upstream_sha256": "546cba4c89fe53afbb838b2aba18e4cdbab18af1134d78ceeb76574f60b4202f",
+      "imported_sha256": "546cba4c89fe53afbb838b2aba18e4cdbab18af1134d78ceeb76574f60b4202f",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-close-circle-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-close-circle-fill.png",
+      "upstream_sha256": "c656cb0d343d99971ae1aea5bb1dafb89d43f65d4266495e72ba3c5145917d58",
+      "imported_sha256": "c656cb0d343d99971ae1aea5bb1dafb89d43f65d4266495e72ba3c5145917d58",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-close-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-close-fill.png",
+      "upstream_sha256": "3ef50e65e44d1350c4a41f128ccb06ccd5eb5b5df22eda41a8b5af836f3eec84",
+      "imported_sha256": "3ef50e65e44d1350c4a41f128ccb06ccd5eb5b5df22eda41a8b5af836f3eec84",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-expand-horizontal-s-line.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-expand-horizontal-s-line.png",
+      "upstream_sha256": "412a23b5ccaf0ebf53e6258c5af088b6ec16500f33b71c73581791c657fa3a4f",
+      "imported_sha256": "412a23b5ccaf0ebf53e6258c5af088b6ec16500f33b71c73581791c657fa3a4f",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-file-add-line.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-file-add-line.png",
+      "upstream_sha256": "9b54854e0fac9df26584246b978c52e9201d18913605d9a96318b3ec161717e0",
+      "imported_sha256": "9b54854e0fac9df26584246b978c52e9201d18913605d9a96318b3ec161717e0",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-file-line.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-file-line.png",
+      "upstream_sha256": "fd4723a370b87996c898b8827ea13ea82f4aa6c51a3617ec70ec92f01170a124",
+      "imported_sha256": "fd4723a370b87996c898b8827ea13ea82f4aa6c51a3617ec70ec92f01170a124",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-folder-image-line.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-folder-image-line.png",
+      "upstream_sha256": "a698111b2035cec31f99c1d8e98949043db6887db4cad7c8a46c1e3e3224c7b4",
+      "imported_sha256": "a698111b2035cec31f99c1d8e98949043db6887db4cad7c8a46c1e3e3224c7b4",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-folder-open-line.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-folder-open-line.png",
+      "upstream_sha256": "d88ece81dc5b5f5e918616d7537fa343dd7b133f803d46db4b9c472f64782392",
+      "imported_sha256": "d88ece81dc5b5f5e918616d7537fa343dd7b133f803d46db4b9c472f64782392",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-hashtag.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-hashtag.png",
+      "upstream_sha256": "80bcc4d84cd1e056e02b819e576b778fa81fa3557670d055d52e26db9e4beef2",
+      "imported_sha256": "80bcc4d84cd1e056e02b819e576b778fa81fa3557670d055d52e26db9e4beef2",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-heart-3-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-heart-3-fill.png",
+      "upstream_sha256": "9e5cdbfd3762cb290e8ef2887923d48246aa6d1c7e30209937fc060565717d3b",
+      "imported_sha256": "9e5cdbfd3762cb290e8ef2887923d48246aa6d1c7e30209937fc060565717d3b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-information-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-information-fill.png",
+      "upstream_sha256": "af05047c9539e3801d50a4b4cb235fc051a911718686e7bbe6549c8f34ce140c",
+      "imported_sha256": "af05047c9539e3801d50a4b4cb235fc051a911718686e7bbe6549c8f34ce140c",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-more-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-more-fill.png",
+      "upstream_sha256": "4767a60f4ba8c0420abe23e993f2c0b7eb4ffa7c6272d4af2bd7e9a299d76858",
+      "imported_sha256": "4767a60f4ba8c0420abe23e993f2c0b7eb4ffa7c6272d4af2bd7e9a299d76858",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-node-tree.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-node-tree.png",
+      "upstream_sha256": "125fd955d9ce9de0a9dc1098e7a80663c87d9957e0aa16a2f3e02bc0f5fc7abb",
+      "imported_sha256": "125fd955d9ce9de0a9dc1098e7a80663c87d9957e0aa16a2f3e02bc0f5fc7abb",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-pause-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-pause-fill.png",
+      "upstream_sha256": "cde07c4d022b73b322c8572c335fcb96ab70fb24e59b7f86eeaf64d0865dfe2d",
+      "imported_sha256": "cde07c4d022b73b322c8572c335fcb96ab70fb24e59b7f86eeaf64d0865dfe2d",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-play-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-play-fill.png",
+      "upstream_sha256": "bf14fff748b512dd64ce4cd1d2c12d711981afa74e45c0aff83d44d49530eeab",
+      "imported_sha256": "bf14fff748b512dd64ce4cd1d2c12d711981afa74e45c0aff83d44d49530eeab",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-repeat-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-repeat-fill.png",
+      "upstream_sha256": "d5d8282ee292021dbb1cefdd5bd2c1a8cb25c811f7939a3d29a864b69a9f9b9b",
+      "imported_sha256": "d5d8282ee292021dbb1cefdd5bd2c1a8cb25c811f7939a3d29a864b69a9f9b9b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-seedling-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-seedling-fill.png",
+      "upstream_sha256": "331f660707202e51b2d0311fa3d7971ca4419fd5942bafc945bdddd42554efdc",
+      "imported_sha256": "331f660707202e51b2d0311fa3d7971ca4419fd5942bafc945bdddd42554efdc",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-settings-4-line.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-settings-4-line.png",
+      "upstream_sha256": "5e9b24604fda2846c606ed83877b852b603d10affe447e297b0e438a48e1087d",
+      "imported_sha256": "5e9b24604fda2846c606ed83877b852b603d10affe447e297b0e438a48e1087d",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-showers-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-showers-fill.png",
+      "upstream_sha256": "08944f976f1581934373884b05130297b271172cd718da0102b5c39a110c68d9",
+      "imported_sha256": "08944f976f1581934373884b05130297b271172cd718da0102b5c39a110c68d9",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-stop-fill.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-stop-fill.png",
+      "upstream_sha256": "c4878ce68d5e2b1ebc259f48084f0240512c711786b7eda95e814a574e76c066",
+      "imported_sha256": "c4878ce68d5e2b1ebc259f48084f0240512c711786b7eda95e814a574e76c066",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-time-line.png",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/icons/ri-time-line.png",
+      "upstream_sha256": "2e412c878470bfbb46565217159e36d99936a3728415c42ca26acba73477c07f",
+      "imported_sha256": "2e412c878470bfbb46565217159e36d99936a3728415c42ca26acba73477c07f",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/shaders/color_picker_alpha.wesl",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/shaders/color_picker_alpha.wgsl",
+      "upstream_sha256": "afc1dc04708c32ac5eb2257714f34bd92e9923a1971e7ce9eaa7fdc61a2b134f",
+      "imported_sha256": "5da7195c42948aeed5e0afad945a1860e7ca3ebb06298b89ae5ff054eaf473c5",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/shaders/color_picker_checkerboard.wesl",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/shaders/color_picker_checkerboard.wgsl",
+      "upstream_sha256": "35d65931236eb91aef2db56696a700ca764c7096a7dde401612cb1d5797a1041",
+      "imported_sha256": "9dbad3166c34acd60ecf6e6ec4f36c3b8660316cee1e15387d9d5736cb9a0362",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/shaders/color_picker_hsv_rect.wesl",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/shaders/color_picker_hsv_rect.wgsl",
+      "upstream_sha256": "a3bfc32ec5124382dad15ee4cbbc612513c92aee514b2a86de6623a3b6dddb61",
+      "imported_sha256": "b99c0af0604cdff52407a4cfedb125f344ca55ca0834f37900a57345b8dbed59",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/shaders/color_picker_hue.wesl",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/shaders/color_picker_hue.wgsl",
+      "upstream_sha256": "9a07e6f16d4379a9bfd543f771ec64d3e74c1ddb60ea94786678340bed3d949c",
+      "imported_sha256": "bb7fe68fed0b345a4ca62eb8604bd4162601c863040897a69e84de6039eaac81",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/shaders/common.wesl",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/shaders/common.wgsl",
+      "upstream_sha256": "ea48a4148469a196b18ec6e698845497f9396f22ed125b527acf532458678ad1",
+      "imported_sha256": "296da207785c41a365b37f1984218452e2f82775c946659c445283940a4783d2",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/shaders/curve_edit.wesl",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/shaders/curve_edit.wgsl",
+      "upstream_sha256": "6621090974a72e47bfd63ce437e70af309ff96d31ca7e41006d283055222347c",
+      "imported_sha256": "24491288782b0bd15953532f01b8882183086e86bb482687a051677e19077276",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/assets/shaders/gradient_edit.wesl",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/assets/shaders/gradient_edit.wgsl",
+      "upstream_sha256": "32baea0ee3667a6ce94c9809d9a7c3b256eda38b19dac9751959e24475120d14",
+      "imported_sha256": "68b082a523e6795635b7ae56db47a76d1ef32b6dd8815c27042b3f192f29d909",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/hosting.rs",
+      "upstream_path": null,
+      "upstream_sha256": null,
+      "imported_sha256": "7392f7762068002ccd39fbc1031a10976fdac48a639246ea3f54643017d0bc99",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/io.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/io.rs",
+      "upstream_sha256": "f0d52847e5deb4e1adc33bc8778f813ae90a0a78ba3754f00a805e0278a924c6",
+      "imported_sha256": "cc62aeb7ea90804e83b10d35da699b19cf608ef0953207b1cb39596520225ea3",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/lib.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/main.rs",
+      "upstream_sha256": "bb4a5c53b2ba2e2f1f7b356ff3009d7332e80daaae55db9e3e408a07b50d1774",
+      "imported_sha256": "65a13ae6c46946d552163e13466435298a877a9ab49b87e1e77fef41a615ef4c",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/main.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/main.rs",
+      "upstream_sha256": "bb4a5c53b2ba2e2f1f7b356ff3009d7332e80daaae55db9e3e408a07b50d1774",
+      "imported_sha256": "2e446ed7c70d9deab3b0ea19e6ed34b4a4c4426ef2de6cb72fdaff1d39e07b1f",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/plugin.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/plugin.rs",
+      "upstream_sha256": "b5fb34d613886bc7305cf2becfd5fe40f90a4d604ed2606ff1aacb827c293e63",
+      "imported_sha256": "6583b68a903f3c410aa412dfd1e40b4db9d61bb62fab8ee2f44747c9f5346226",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/project.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/project.rs",
+      "upstream_sha256": "f349f24cff2a96c052ca8295533942e1e9dcf346744dc16e7f2036918ef591b3",
+      "imported_sha256": "d74473e21d64b44fa816d43c128d6c1eea63e97993447fe2124efd1e720b24fa",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/state.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/state.rs",
+      "upstream_sha256": "9dc027c297d8aa306c9ae39e93294fe61e1ccaed702b067b618a2f4152f2e7b3",
+      "imported_sha256": "4386c83a1fb98a92f7f08e885f54fac94f4bd38af478891ae361a7ec92d3802b",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/commit.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/commit.rs",
+      "upstream_sha256": "24ab94b4affdb2fc4b16010168314c3546d18d9cfaec9a3913b37367beb6402f",
+      "imported_sha256": "f7aa94deb58807ed49a8e50cfdf7d1fc2ae7eb2e6c3e1d9c0328852b52589908",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/mod.rs",
+      "upstream_sha256": "4b95e26f5795227b689937cf08ade10d0d113b3dbf117b1b5ec8989bc64042b3",
+      "imported_sha256": "695ea183b67bfb2597b9582f5eb4d73a17f9644d4583fc680e72c61d813dc19b",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/swatch.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/swatch.rs",
+      "upstream_sha256": "bf687afeffbfcddee5106a8d89f9170e5968b2b1bd07dec1be0a4eab3078cc0c",
+      "imported_sha256": "bf687afeffbfcddee5106a8d89f9170e5968b2b1bd07dec1be0a4eab3078cc0c",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/sync.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/sync.rs",
+      "upstream_sha256": "df81ecf670369c262a7a5972e97588ab0e8cb550263551b7bb987f800c9e1744",
+      "imported_sha256": "cb9ea5d7d6884a8d3040d7c5f9c271fea890eb40a825b1a5974ffc7260d383dc",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/data_panel.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/data_panel.rs",
+      "upstream_sha256": "77218abff16ac61e37e54d135acdb28fbce94bb207d8e971cb3cb55713c231af",
+      "imported_sha256": "d7672b181dfaabbb84db351f18cd2926d21334ea03404b6f189e1e9c559c3663",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/examples_dialog.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/examples_dialog.rs",
+      "upstream_sha256": "faf7daf00a7c734bcfab4408341f2a1e890fff3becaf81f1dfa36fdaee70de0d",
+      "imported_sha256": "6bb2aa020d693677f963a939030593f2d3f1fee9cdbf43b52aeafe6cb13071d9",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/fps_overlay.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/fps_overlay.rs",
+      "upstream_sha256": "7ea014f130bbc304a8aabbcce45d9aaa1f9201ac6bfb036ab506b6c5eaf91a8c",
+      "imported_sha256": "eb40cea3841a6795587ee0c242dda58bc92589d3600a989c3e01c5a983042600",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/accelerations.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/accelerations.rs",
+      "upstream_sha256": "baf4264c51c1b9b524511a0db322414355b4b24785c78bf162371c4eedf1591d",
+      "imported_sha256": "baf4264c51c1b9b524511a0db322414355b4b24785c78bf162371c4eedf1591d",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/angle.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/angle.rs",
+      "upstream_sha256": "fccd341a68a86c572a7bdd2abcfb46c84afa29d5965ef7fa76840b4b0bd19cb8",
+      "imported_sha256": "fccd341a68a86c572a7bdd2abcfb46c84afa29d5965ef7fa76840b4b0bd19cb8",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/collider_properties.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/collider_properties.rs",
+      "upstream_sha256": "96d4b5fea9420f5683ea2b8b13b294763ab82d269f652e1341a2438d8d8e956b",
+      "imported_sha256": "45a07d12d2d18be851606e5a48a780f1e6f81487ecd37c13b9bb7a86973fe4de",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/collision.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/collision.rs",
+      "upstream_sha256": "fba58b5ecbeb507e7a686ac16b46546bda62373de6a8754e5ab46d5da4a9bbcd",
+      "imported_sha256": "b2985effad3bf0e313e40a53ba0cfd30bfe903b23fce87853eb383f4327e167b",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/colors.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/colors.rs",
+      "upstream_sha256": "f266096eced3b1d70cb0e5a2cbc2731d5af516faec3a261b03e29acddaaf987a",
+      "imported_sha256": "5644ac18bd01f5d3a45f3c142ac60d92e640799c3ae6fa0009d09f1d8d578ef6",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/draw_pass.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/draw_pass.rs",
+      "upstream_sha256": "9b7adfd7eed60a9dbc331a0d9e9d324f97e3d9bae13d8ec8ae29d4b29771e70a",
+      "imported_sha256": "d5611bfa339591c4ada6b353e62921a6cca4f5da9e6d6cea64ddf251417ee923",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/emission.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/emission.rs",
+      "upstream_sha256": "a6f042f88c39e4117b77e6ab6cd525a0c320d3cbd24503ef014c1c1a35bfa4ed",
+      "imported_sha256": "a6f042f88c39e4117b77e6ab6cd525a0c320d3cbd24503ef014c1c1a35bfa4ed",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/mod.rs",
+      "upstream_sha256": "8062b417bd0570529dbc88ca2a3e0bc07f6f053b1ac40654928073a7d2282f17",
+      "imported_sha256": "89e816acb09d3d9344489fd91e324cf24db32b4dc85b6432681e1b2721a22c2e",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/particle_flags.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/particle_flags.rs",
+      "upstream_sha256": "1ec234d669b22b1ce1a777e2858da2a92e648849ceff5db828332eda380fc77e",
+      "imported_sha256": "600fd242e9df4bc9615de5761fccb06b7f808a6efac05dd908dff38c20b83fc9",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/project_properties.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/project_properties.rs",
+      "upstream_sha256": "ca1e859677dec73f02a12b1f7ef763a0c14fb670b375b395ddb1b3073322c383",
+      "imported_sha256": "388e671023e950a2d9ba6d67a79ab6fdf9215ad7241ccbe707943191a346bddc",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/scale.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/scale.rs",
+      "upstream_sha256": "ad733232ee9227291e49cfab47d7a55ed490a049f74ddf0177023587c9075203",
+      "imported_sha256": "ad733232ee9227291e49cfab47d7a55ed490a049f74ddf0177023587c9075203",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/settings_properties.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/settings_properties.rs",
+      "upstream_sha256": "945074a0ad1055448da1ca60220392bedbe629a9d8065eda348e70257d90d04b",
+      "imported_sha256": "945074a0ad1055448da1ca60220392bedbe629a9d8065eda348e70257d90d04b",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/sub_emitter.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/sub_emitter.rs",
+      "upstream_sha256": "e1ee8a974add5120f6c4693e721c7f2ae0a72b5c7a443a43b5f398617fc04350",
+      "imported_sha256": "f1492ff8b910f1ff2c919c9000d064d937f98751d9bdf8dad290d05d331714a6",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/time.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/time.rs",
+      "upstream_sha256": "c9a4823611bec1a0fcf7c1224a2df77d53148415305034eab5ec29ff94ed996e",
+      "imported_sha256": "c9a4823611bec1a0fcf7c1224a2df77d53148415305034eab5ec29ff94ed996e",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/trail.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/trail.rs",
+      "upstream_sha256": "96f7bd03a7cfe6ee60368e9c168c203b4a2f69f9b765042d63d34559cf1b43b1",
+      "imported_sha256": "d166585a5338fc518407e3ae33f2e0d86f12fdfc4d24e30297c42182a074c780",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/transform.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/transform.rs",
+      "upstream_sha256": "36597048fc2a5b96724be0b68c72236fe43ae6cd20e16a13c7f5a67d5c39cf1c",
+      "imported_sha256": "36597048fc2a5b96724be0b68c72236fe43ae6cd20e16a13c7f5a67d5c39cf1c",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/turbulence.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/turbulence.rs",
+      "upstream_sha256": "8a2d1ea995285f9572d93879b88a2ea41ed5497100795070b76e136febebd71a",
+      "imported_sha256": "0021199c85815ad7c5871a107e8151e78ca962b7acffa44775104995d4838772",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/types.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/types.rs",
+      "upstream_sha256": "d32b896d1a8f940742b5364d4669e4c4f534e96f12d983e5ecfb30f07b13e7de",
+      "imported_sha256": "d32b896d1a8f940742b5364d4669e4c4f534e96f12d983e5ecfb30f07b13e7de",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/utils.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/utils.rs",
+      "upstream_sha256": "ba53f84bbc8dc2168e261f9ebf72b81a2ccd98fcfa176778b77d9c935e36730c",
+      "imported_sha256": "d6a4069552144e418960f7b46ff1679b6201c19931b61c7e12ff11622bb5b3bd",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/velocities.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/velocities.rs",
+      "upstream_sha256": "87eb2a347c479025381927ea8a1de65a6efa73921b14fe06b8d1ae750802207e",
+      "imported_sha256": "4e5f4e45fee89073989eea40e4d6329133301244f9c0a062ebe94644a81f3998",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/visibility_aabb.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/visibility_aabb.rs",
+      "upstream_sha256": "cabc6e877d8875fe2b54a3c4862a1a7fd8f290519138ee610848bc9864cfa9d1",
+      "imported_sha256": "d8c4c7e54b24faf0b885c04f6ccdc16003aa28c515cc193aa30c24b19f723970",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/mod.rs",
+      "upstream_sha256": "91fa86cdbcf2b30734cfa2ebf2cb75a719b64e1ab7d6af036fb3d45b177f5238",
+      "imported_sha256": "621f3b7295f9b9d1d655b1b26aeb0678d38b8d98425615f743a2e7af049e08c6",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/playback_controls.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/playback_controls.rs",
+      "upstream_sha256": "f3025ad70ef9756e5265e43aee717d9e7d81fcd9f183403317470bf0de1a18ea",
+      "imported_sha256": "e13926ca4d0647d1a330545a77c8af39ac19a24253837a31594194313c3f0c13",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/project_selector.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/project_selector.rs",
+      "upstream_sha256": "cbda66c259ce0aa5800a85baecc821b920b4fef575d4a84df07872ac441f77c7",
+      "imported_sha256": "51deb96ccb08565813372e24bd9683898025dadb15fc379614ef95772bf1751a",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/seekbar.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/seekbar.rs",
+      "upstream_sha256": "8dbcee94b97ffc082db11d8f28f313cfcc619a38f45092423f7d8d280c8e1d45",
+      "imported_sha256": "168747ce856d75e61169a5d742262759e9c5ebbaa7ff3c45b56dace1898d658e",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/sidebar.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/sidebar.rs",
+      "upstream_sha256": "8d91eec88a5b8cdadbf394dbc1757686f000b9e8c4961f1f3910167701b13226",
+      "imported_sha256": "795910cb987d35e2dc2109c2a5f20c816d15aadbf9561cda487a578f4cdae9a9",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/toasts.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/toasts.rs",
+      "upstream_sha256": "59b39e130bb97a21dfff278d6f5b16003336565a57f5ed9b4f7dc8222f6ba73a",
+      "imported_sha256": "f2c949730e25d85559acea523820e48b997224a066937764c485e9181aeed341",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/topbar.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/topbar.rs",
+      "upstream_sha256": "6c517808d6c4d866c4dc01282c5804e246254feccfe31646ebe91501a1169cdd",
+      "imported_sha256": "4778963cbc0d0763d469de6aa543b56a5fea4e880057851fc047f4574302dd3c",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/components/viewport.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/viewport.rs",
+      "upstream_sha256": "2669b597e6cf90a386889945d299b694fe9407d4adc1439b67258709415b3bf6",
+      "imported_sha256": "11061d8b06c74ae539f2eb1bd25719de18504453bd36755a669f80bee8112700",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/icons.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/icons.rs",
+      "upstream_sha256": "2bbd882f73a3247936734a6839bdf2a08f2eef23a9dc96cf0335651967b53651",
+      "imported_sha256": "eb601bf36c344899d1ab9247bf9a72e7d9a512fac28de90bc217046f51193801",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/mod.rs",
+      "upstream_sha256": "5e525287c7fb0ff1e94d01665aeb979de3084287675aad9ba890fd0eec9d2205",
+      "imported_sha256": "855769ec62de97c97e24ef150d3e1182122dd7b311e221bfadb7b47511b20d65",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/tokens.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/tokens.rs",
+      "upstream_sha256": "a80616a30cc512f8022f7b418f28673475823a81392184a224e4971cd9fc3251",
+      "imported_sha256": "38fed6ed0e3e98c9d7efb033d44f58ebfe0a39c2d79f742681290d903fe2f824",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/alert.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/alert.rs",
+      "upstream_sha256": "6b0c077a5364f25bf7eb773a5c22ee09b6cdc9286d1bd0a100b98e2b837f0529",
+      "imported_sha256": "b3d4f72f0bdb8853e5a425c1d4381081ce15235a7acc9baa81c88c703647bd24",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/button.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/button.rs",
+      "upstream_sha256": "9398b69f7c8c81215741572ba7f88703a848a537773fdc0a41def90d06bd05c0",
+      "imported_sha256": "31810bd3fb17c593c5b6a8b8e722223800b550e80dc9a121a4e09098a85af263",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/checkbox.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/checkbox.rs",
+      "upstream_sha256": "be68284afb2178e22cf09ef43ab94cc46da93a2f23eb124da61d1408cce23e0d",
+      "imported_sha256": "aa378e9dbd72852e66330ff1adace618b8fc2b90aafcf909630819cc286d6364",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/color_picker/color_math.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/color_picker/color_math.rs",
+      "upstream_sha256": "4d3009dc7c283dfa921e848723496a088490cac18224cf2475d513c5e24e5542",
+      "imported_sha256": "4d3009dc7c283dfa921e848723496a088490cac18224cf2475d513c5e24e5542",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/color_picker/materials.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/color_picker/materials.rs",
+      "upstream_sha256": "a21d0af2bcc904765d213388c0ba6165f5eda36ca1e453d338ad4f576e9d14cf",
+      "imported_sha256": "40842458df9ddc5fe3d30852207c65e89b47c1c8a30a6dd0300e553e4e094f8c",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/color_picker/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/color_picker/mod.rs",
+      "upstream_sha256": "110e8aadcc4994c6c8d85fca8ac6eafafdd9c6b7cfcb8859e1cc50d0f1ee1617",
+      "imported_sha256": "f0e2f93cf09d02a06054dc4a858fa284f3d1f9f54f13d9b14ea5c896c07ef87c",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/combobox.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/combobox.rs",
+      "upstream_sha256": "2a5a4f4a6e7c6a768d4fc6732ffd19dd47978c509de6427ace5a48bcd4067423",
+      "imported_sha256": "19d5e40eeb95596cc6e2b530b7d1c7ae36d98c7951d37c717d694e705d29110a",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/cursor.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/cursor.rs",
+      "upstream_sha256": "d571d88684a81cbd5e9594467b1f21791fd4da82df5aed48af0c548f2b7ebd76",
+      "imported_sha256": "861a62455a25f4124635deff135d0750165f283df4f2eb726f234085d75680b3",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/curve_edit/materials.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/curve_edit/materials.rs",
+      "upstream_sha256": "b59efc0d2d8bdb1c14d97bfff1908a6c0c79727497548a6993caa67b04253e08",
+      "imported_sha256": "04e11b702b1c045d01ce8dd3c738110d6361af208d23fc5ed3f50506b875d5cc",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/curve_edit/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/curve_edit/mod.rs",
+      "upstream_sha256": "b33704648c4e9331488777d532837646788a3fbeee61e11947eefede10cb7dd6",
+      "imported_sha256": "01a5a46659f5ed69ddf0ccd48c38a0439ff56537d6b48f373c0cbafa6938ea02",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/curve_edit/presets.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/curve_edit/presets.rs",
+      "upstream_sha256": "3fa6d83844658f45621dff38a9159a7ba6d7908092ddd5a8ea7e765cdcca2941",
+      "imported_sha256": "3fa6d83844658f45621dff38a9159a7ba6d7908092ddd5a8ea7e765cdcca2941",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/dialog.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/dialog.rs",
+      "upstream_sha256": "08b9ca70d0907adeb2e10be789fdbf026d2c88c687828329cebb36d9b7c37367",
+      "imported_sha256": "2e65ab8d01c3a4c12b1f69862cf145a4b0c34b8e9f9bd99e90f75f2b38e80e24",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/gradient_edit/materials.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/gradient_edit/materials.rs",
+      "upstream_sha256": "430236548a893ad662cd3d9e8fc8bc51d9b51244bf75b2598920c629f2644850",
+      "imported_sha256": "a698f9ae223939873eded66825b52ceeb876b3adf8626cf5b977dabce95fb0d7",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/gradient_edit/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/gradient_edit/mod.rs",
+      "upstream_sha256": "2f9085f99f03859b953154c67a30b9830e03c25a8629d40fbf8cf13d542479a2",
+      "imported_sha256": "c30321b009563450caf8113925babedb8022668cf3d08c9ec5f1833bf1ecd5f7",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/inspector_field.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/inspector_field.rs",
+      "upstream_sha256": "a65322f64a7b4c9c5a3beb8afaabb7781cf28cbef4155e8c5bc3ccebc985ea43",
+      "imported_sha256": "61acb22418f39e0175e96cf7553356734c7f707383c06e3b67621858ad2205a7",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/link.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/link.rs",
+      "upstream_sha256": "007cc78f196124d2a3e0fc8b9d05b99bb3eb7abac22d68c52d678f65ca4c6945",
+      "imported_sha256": "6bda10ded722ff8a02e2c3a0f3fabc1cf980dd32b8454c6dd98e6ede3a0e01fc",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/mod.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/mod.rs",
+      "upstream_sha256": "d6b934c2fdb82d331e43f49a00855a2a81847aa0179dc1bbfab8db4838992277",
+      "imported_sha256": "d6b934c2fdb82d331e43f49a00855a2a81847aa0179dc1bbfab8db4838992277",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/panel.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/panel.rs",
+      "upstream_sha256": "f0e14730a9f7843eac390dc780a0979ab3a4edafd6dc890d5f12731c139a07a2",
+      "imported_sha256": "b8b1993fb498346ddb66ddac5b166ada17f7ca165593014567c67557efb46d4e",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/panel_section.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/panel_section.rs",
+      "upstream_sha256": "25fe71468816adc21badf8da9d9779538eed017cc2191755544ab24364c5893f",
+      "imported_sha256": "0542f97761360b40503286223721d1f6df6bc2182d008343985c8b2c8e585b1c",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/popover.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/popover.rs",
+      "upstream_sha256": "849d50a7d4fd4b27ef23bc377ca6e5f8a12a73b24f346ce68ff942d2c08bd797",
+      "imported_sha256": "f8642692a697f0c48f1c87042f3bbcb4dd1d80c3880545042dda430b4e695cc1",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/scroll.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/scroll.rs",
+      "upstream_sha256": "655502d665c0a8f98ac45ca8a792b4e6830c74dc0ae8aac6ba92b8ad9fdd14c9",
+      "imported_sha256": "852146c98533747b3b91bcb6e5c6b99c97ed5f3f69512471675826fcda97fd7d",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/separator.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/separator.rs",
+      "upstream_sha256": "69b654010df036e9e564caf1d741bedf892c4fc165a2adea9ee265780fc0d62a",
+      "imported_sha256": "69b654010df036e9e564caf1d741bedf892c4fc165a2adea9ee265780fc0d62a",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/text_edit.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/text_edit.rs",
+      "upstream_sha256": "c148ad62ee77ed9eb5ef9df3896efe035a81723b83f4fbfb9a9aa47f26fa90c0",
+      "imported_sha256": "dba4ad82b13ea15d524a88c51915c4cf898728c49f5f8e1715328af574a34436",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/texture_edit.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/texture_edit.rs",
+      "upstream_sha256": "e2a496342f8e7061d03d6b22fb7da3bb809d3623a9a9bfb5a3f00c5a42e3c99e",
+      "imported_sha256": "404d3a2f86ff2108bd30b9e3d598c1a1b7fd67a257ff034bfb04f330827aeb44",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/toast.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/toast.rs",
+      "upstream_sha256": "7078657fd1c75835dbf535e1066b57f12ab5b0757e13e0bd1f7040d1f0842902",
+      "imported_sha256": "6d7a87b6fa5cc042d13d5fa31caf8b4766bcfbdb7060b390d7d02c40c47fb4cc",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/utils.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/utils.rs",
+      "upstream_sha256": "ad511803252ff05dac4aa2851588c5c45be89e5d7c011ddee15c87bbbad800ca",
+      "imported_sha256": "ad511803252ff05dac4aa2851588c5c45be89e5d7c011ddee15c87bbbad800ca",
+      "changed": false
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/variant_edit.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/variant_edit.rs",
+      "upstream_sha256": "607a6a9342c75cb59dfe19f0a281f4571dacf69c130c52c8247c8e6dc4195424",
+      "imported_sha256": "c9af53c7e187f247865a3ac0a249ebcd7a20d3fdf5bc9355bcbc77bca6e88a63",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/ui/widgets/vector_edit.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/vector_edit.rs",
+      "upstream_sha256": "6832d715c709ec537f043514494d21b4bb1dc4ecb945b2034d09258895da4a82",
+      "imported_sha256": "0c4b41d4de688218d75e36df750401d1317df46de7cfda831e8df48c22f56d31",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/utils.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/utils.rs",
+      "upstream_sha256": "063c4b40d55061424758499d69b9d5e9a5ca4985165f458dcea698385e4458dd",
+      "imported_sha256": "94a193e3aa4601cfc63cd278033b3ce3e870a303299bae03c6754ee142880743",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/viewport.rs",
+      "upstream_path": "crates/bevy_sprinkles_editor/src/viewport.rs",
+      "upstream_sha256": "fac62bfd9e3c63bf3474049e605ba9000883228e68b6cceb64fb072f4f84296c",
+      "imported_sha256": "92e7433dfae5049052e66605cac8110a7279f051a9608993c43ce2ac7afef1d0",
+      "changed": true
+    },
+    {
+      "path": "crates/bevy_sprinkles_editor/src/viewport_bounds.rs",
+      "upstream_path": null,
+      "upstream_sha256": null,
+      "imported_sha256": "51f5d83466762f3e640b65849736db92bc3e7d4b5548482a6d600b9b07f2e0ff",
+      "changed": true
+    }
+  ]
+}

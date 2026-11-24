@@ -1,4 +1,6 @@
 //! Actual encrypted production runtime; no mocked health or connections.
+#[path = "support/population_launch.rs"]
+mod population_launch;
 #[path = "support/relay.rs"]
 #[allow(dead_code)]
 mod relay;
@@ -56,6 +58,7 @@ struct Peer {
     stop: watch::Sender<bool>,
     task: JoinHandle<theia_network::Result<()>>,
     _ready: watch::Sender<Option<Vec<ChunkId>>>,
+    _commands: Option<mpsc::Sender<theia_network::prediction_wire::Commands>>,
     catalog: Arc<Catalog>,
 }
 impl Peer {
@@ -86,6 +89,32 @@ impl Peer {
         event_capacity: usize,
         statuses: Option<Arc<theia_core::statuses::Catalog>>,
     ) -> Self {
+        Self::start_mode(
+            address,
+            ticket,
+            identity,
+            chunks,
+            catalog,
+            event_capacity,
+            (statuses, None),
+        )
+    }
+    fn start_mode(
+        address: SocketAddr,
+        ticket: Vec<u8>,
+        identity: [u8; 32],
+        chunks: Vec<ChunkId>,
+        catalog: Arc<Catalog>,
+        event_capacity: usize,
+        profiles: (Option<Arc<theia_core::statuses::Catalog>>, Option<[u8; 32]>),
+    ) -> Self {
+        let (statuses, classic_source) = profiles;
+        let (command_sender, commands) = if classic_source.is_some() {
+            let (tx, rx) = mpsc::channel(8);
+            (Some(tx), Some(rx))
+        } else {
+            (None, None)
+        };
         let (input, inputs) = watch::channel(Intent::default());
         let (ready, readiness) = watch::channel(Some(chunks));
         let (choice, choices) = watch::channel(None);
@@ -103,7 +132,12 @@ impl Peer {
                 shutdown,
                 identity,
                 net::GameplayClient {
-                    classic_source: None,
+                    party: None,
+                    chat: None,
+                    avatar_life: None,
+                    public_attacks: None,
+                    journal: None,
+                    classic_source,
                     dodge: None,
                     player_life: None,
                     lifecycle: None,
@@ -111,7 +145,7 @@ impl Peer {
                     quest: None,
                     progression: None,
                     ready: readiness,
-                    commands: None,
+                    commands,
                     choices: Some(choices),
                     combat: Some(net::CombatActions {
                         melee: None,
@@ -139,6 +173,7 @@ impl Peer {
             stop,
             task,
             _ready: ready,
+            _commands: command_sender,
             catalog,
         }
     }
@@ -164,8 +199,8 @@ impl Peer {
         .unwrap_or_else(|_| {
             let state = self.state.borrow();
             panic!(
-                "Combat client observation timed out: error={:?} chunk_ack={:?} combat={:?}",
-                state.error, state.chunk_ack, state.combat
+                "Combat client observation timed out: error={:?} chunk_ack={:?} combat={:?} players={:?} targeting={:?}",
+                state.error, state.chunk_ack, state.combat, state.snapshot.as_ref().map(|s| s.players.len()), state.targeting
             )
         })
     }
@@ -675,6 +710,7 @@ struct Raw {
     state: Option<theia_network::combat_wire::State>,
     ready: bool,
     disconnected: bool,
+    connection_confirmed: bool,
 }
 impl Raw {
     fn new(address: SocketAddr, ticket: &[u8], identity: [u8; 32], catalog: Arc<Catalog>) -> Self {
@@ -694,6 +730,7 @@ impl Raw {
             state: None,
             ready: false,
             disconnected: false,
+            connection_confirmed: false,
         }
     }
     fn send(&mut self, bytes: Vec<u8>) {
@@ -724,6 +761,11 @@ impl Raw {
                     assert!(predicate(self), "Unexpected raw combat disconnect");
                     break;
                 }
+                theia_network::renet_transport::confirm_connection(
+                    &mut self.client,
+                    &mut self.connection_confirmed,
+                )
+                .unwrap();
                 while let Some(bytes) = self
                     .client
                     .receive_message(theia_network::renet_transport::EVENT_CHANNEL)
@@ -739,6 +781,11 @@ impl Raw {
                         );
                     } else if bytes.starts_with(theia_network::combat_wire::EVENTS_TAG) {
                         theia_network::combat_wire::Batch::decode(&bytes, &self.catalog).unwrap();
+                    } else if bytes.starts_with(theia_network::player_identity_wire::STATE_TAG) {
+                        let view =
+                            theia_network::player_identity_wire::State::decode(&bytes).unwrap();
+                        assert_eq!(view.world, self.identity);
+                        assert_eq!(Some(view.epoch), self.welcome.as_ref().map(|w| w.epoch));
                     } else if bytes.starts_with(theia_network::targeting_wire::STATE_TAG) {
                         theia_network::targeting_wire::State::decode(&bytes).unwrap();
                     } else if matches!(
@@ -1383,4 +1430,275 @@ async fn encrypted_patrol_consumers_share_moving_hit_positions_and_a_fresh_home_
     for worker in workers {
         worker.await.unwrap();
     }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires THEIA_AUTHORED_WORLD, THEIA_AUTHORED_NAV and THEIA_AUTHORED_SPAWNS"]
+async fn checked_authored_population_replicates_to_two_encrypted_peers_with_independent_selection()
+{
+    use theia_network::{
+        authored_world,
+        navigation::{self, spawn_candidates, spawn_preparation},
+        procedural,
+    };
+    let store = Arc::new(
+        authored_world::Store::open(&PathBuf::from(
+            std::env::var_os("THEIA_AUTHORED_WORLD").unwrap(),
+        ))
+        .unwrap(),
+    );
+    let navigation = navigation::Store::open(
+        &PathBuf::from(std::env::var_os("THEIA_AUTHORED_NAV").unwrap()),
+        store.identity(),
+    )
+    .unwrap();
+    let request: spawn_candidates::Request = serde_json::from_slice(
+        &fs::read(std::env::var_os("THEIA_AUTHORED_SPAWNS").unwrap()).unwrap(),
+    )
+    .unwrap();
+    let prepared = spawn_preparation::check_authored(&store, &navigation, &request)
+        .unwrap()
+        .into_prepared()
+        .unwrap();
+    let expected: Vec<_> = prepared
+        .points()
+        .iter()
+        .map(|p| {
+            let mut body = p.metres();
+            body[1] += f64::from(theia_network::world::PAWN_Y);
+            body
+        })
+        .collect();
+    assert_eq!(expected.len(), 5);
+    let spawn = store.spawn(0).unwrap();
+    let source = procedural::Source::Authored(store);
+    let mut world =
+        World::with_terrain_source([spawn.metres()[0], spawn.metres()[2]], 1., source).unwrap();
+    let keys = world.enable_prepared_population(prepared).unwrap();
+    world.enable_combat(DATA, 100, 30_000).unwrap();
+    let identity = world.identity();
+    let chunks: Vec<_> = world
+        .procedural()
+        .unwrap()
+        .patch(spawn)
+        .unwrap()
+        .ids
+        .iter()
+        .copied()
+        .collect();
+    let catalog = Arc::new(Catalog::from_json(DATA).unwrap());
+    let profile = Profile {
+        name: "population-wifi",
+        delay_ms: 15,
+        jitter_ms: 10,
+        loss_every: 10,
+        duplicate_every: 17,
+    };
+    let relays: Vec<_> = (0..3).map(|_| Relay::bind(profile)).collect();
+    let addresses: Vec<_> = relays.iter().map(|r| r.address).collect();
+    let controls: Vec<_> = relays.iter().map(|r| r.control.clone()).collect();
+    let tickets = tickets();
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let backend = socket.local_addr().unwrap();
+    let transport = net::issue_local_advertised(socket, &tickets.0, addresses.clone()).unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let guard = Stop(stop);
+    let workers: Vec<_> = relays
+        .into_iter()
+        .map(|r| tokio::spawn(r.run(backend, shutdown.clone())))
+        .collect();
+    let server = tokio::spawn(net::run_server_measured(transport, shutdown, world));
+    let start = |slot: usize| {
+        Peer::start(
+            addresses[slot],
+            fs::read(tickets.0.join(format!("client-{}.token", slot + 1))).unwrap(),
+            identity,
+            chunks.clone(),
+            catalog.clone(),
+            16,
+        )
+    };
+    let mut a = start(0);
+    let mut b = start(1);
+    let ready = |s: &State, _: &[Event]| {
+        s.chunk_ack.is_some()
+            && s.snapshot.as_ref().is_some_and(|s| s.players.len() == 2)
+            && s.targeting.as_ref().is_some_and(|s| s.targets.len() == 5)
+            && s.combat.as_ref().is_some_and(|s| s.targets.len() == 5)
+    };
+    let first = a.until(ready).await;
+    let second = b.until(ready).await;
+    assert_ne!(first.id, second.id);
+    for state in [&first, &second] {
+        let targets = &state.targeting.as_ref().unwrap().targets;
+        for (index, target) in targets.iter().enumerate() {
+            assert_eq!(target.key, keys[index]);
+            assert!((0..3).all(
+                |axis| (target.position.metres()[axis] - expected[index][axis]).abs() < 0.0001
+            ));
+        }
+        assert!(
+            state
+                .combat
+                .as_ref()
+                .unwrap()
+                .targets
+                .iter()
+                .all(|t| t.current == 100 && t.maximum == 100)
+        );
+    }
+    a.choice.send_replace(Some(Choice {
+        target: Some(keys[0].entity),
+    }));
+    b.choice.send_replace(Some(Choice {
+        target: Some(keys[4].entity),
+    }));
+    a.until(|s, _| {
+        s.targeting
+            .as_ref()
+            .is_some_and(|s| s.selected == Some(keys[0].entity))
+    })
+    .await;
+    b.until(|s, _| {
+        s.targeting
+            .as_ref()
+            .is_some_and(|s| s.selected == Some(keys[4].entity))
+    })
+    .await;
+    a.choice.send_replace(Some(Choice { target: None }));
+    a.until(|s, _| s.targeting.as_ref().is_some_and(|s| s.selected.is_none()))
+        .await;
+    let tick = b.state.borrow().snapshot.as_ref().unwrap().tick;
+    b.until(|s, _| {
+        s.snapshot.as_ref().is_some_and(|s| s.tick >= tick + 30)
+            && s.targeting
+                .as_ref()
+                .is_some_and(|s| s.selected == Some(keys[4].entity) && s.targets.len() == 5)
+    })
+    .await;
+    a.finish().await.unwrap();
+    b.until(|s, _| s.snapshot.as_ref().is_some_and(|s| s.players.len() == 1))
+        .await;
+    let mut fresh = start(2);
+    let fresh_state = fresh.until(ready).await;
+    assert_ne!(fresh_state.id, first.id);
+    assert!(fresh_state.targeting.as_ref().unwrap().selected.is_none());
+    assert_eq!(
+        fresh_state
+            .targeting
+            .as_ref()
+            .unwrap()
+            .targets
+            .iter()
+            .map(|t| t.key)
+            .collect::<Vec<_>>(),
+        keys
+    );
+    fresh.finish().await.unwrap();
+    b.finish().await.unwrap();
+    drop(guard);
+    let stats = server.await.unwrap().unwrap();
+    for worker in workers {
+        worker.await.unwrap();
+    }
+    assert_eq!(stats.max_players, 2);
+    assert_eq!(stats.combat_backpressure_disconnects, 0);
+    for control in &controls {
+        let relay = control.lock().unwrap();
+        assert_eq!(relay.stats.overflow, 0);
+    }
+    assert!(
+        controls[..2]
+            .iter()
+            .all(|c| c.lock().unwrap().stats.configured_drops > 0)
+    );
+    println!(
+        "checked_population_network passed=true targets=5 encrypted_peers=2 independent_selection=true fresh_session=true profile={profile:?} max_players={} scope=target_and_health_replication_not_connected_combat_or_rendering",
+        stats.max_players
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn authored_day_long_respawn_deadline_reaches_an_encrypted_client() {
+    let (world, target, chunks) =
+        world(DATA, 100, theia_network::simulation::combat::MAX_RESPAWN_MS);
+    let identity = world.identity();
+    let catalog = Arc::new(Catalog::from_json(DATA).unwrap());
+    let tickets = tickets();
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let address = socket.local_addr().unwrap();
+    let transport = net::issue_local(socket, &tickets.0).unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let guard = Stop(stop);
+    let server = tokio::spawn(net::run_server_measured(transport, shutdown, world));
+    let mut peer = Peer::start(
+        address,
+        fs::read(tickets.0.join("client-1.token")).unwrap(),
+        identity,
+        chunks,
+        catalog,
+        16,
+    );
+    peer.until(|s, _| s.chunk_ack.is_some() && s.combat.is_some())
+        .await;
+    for remaining in [80, 60, 40, 20, 0] {
+        peer.cast(target).await;
+        let state = peer
+            .until(|s, _| {
+                s.combat
+                    .as_ref()
+                    .is_some_and(|s| s.targets[0].current == remaining)
+            })
+            .await;
+        if remaining > 0 {
+            let deadline = state
+                .combat
+                .unwrap()
+                .cooldowns
+                .iter()
+                .map(|(_, at)| *at)
+                .max()
+                .unwrap();
+            peer.until(|s, _| s.snapshot.as_ref().is_some_and(|s| s.tick >= deadline))
+                .await;
+        }
+    }
+    let state = peer
+        .until(|_, events| {
+            events
+                .iter()
+                .any(|e| matches!(e,Event::Died { target:key,.. } if *key==target))
+        })
+        .await;
+    let health = &state.combat.as_ref().unwrap().targets[0];
+    let death = peer
+        .seen
+        .iter()
+        .find_map(|e| match e {
+            Event::Died {
+                target: key,
+                respawn_at,
+                ..
+            } if *key == target => Some(*respawn_at),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(health.respawn_at, Some(death));
+    assert_eq!(death - state.combat.as_ref().unwrap().tick, 86_400 * 30);
+    let tick = state.snapshot.as_ref().unwrap().tick;
+    peer.until(|s, _| {
+        s.snapshot.as_ref().is_some_and(|s| s.tick >= tick + 30)
+            && s.combat.as_ref().is_some_and(|s| {
+                s.targets[0].current == 0 && s.targets[0].respawn_at == Some(death)
+            })
+    })
+    .await;
+    peer.finish().await.unwrap();
+    drop(guard);
+    let stats = server.await.unwrap().unwrap();
+    assert_eq!(stats.cast_requests_accepted, 5);
+    assert_eq!(stats.combat_backpressure_disconnects, 0);
+    println!(
+        "long_respawn_wire passed=true seconds=86400 hz=30 health=100 normal_casts=5 early_respawn=false elapsed_day_simulated=false"
+    );
 }

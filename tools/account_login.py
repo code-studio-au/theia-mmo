@@ -1,7 +1,9 @@
 """Bounded native-launcher account flow. Credentials stay in memory/private files."""
+import character_appearance
 import ipaddress
 import json
 import os
+import re
 from pathlib import Path
 import time
 import urllib.error
@@ -40,10 +42,11 @@ def _endpoint(value, *, browser=False):
 
 
 class AccountClient:
-    def __init__(self, base, alive=lambda: True):
+    def __init__(self, base, alive=lambda: True, cancelled=lambda: False):
         _endpoint(base)
         self._base = base.rstrip('/')
         self._alive = alive
+        self._cancelled = cancelled
         self._session = None
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
@@ -53,6 +56,8 @@ class AccountClient:
     def request(self, path, body=None):
         if path not in {'/auth/start', '/auth/poll', '/auth/cancel', '/auth/logout', '/characters', '/characters/enter'}:
             raise AccountError('Unknown account operation')
+        if path not in {'/auth/cancel', '/auth/logout'} and self._cancelled():
+            raise KeyboardInterrupt
         if not self._alive():
             raise AccountError('The game server stopped')
         data = json.dumps(body).encode() if body is not None else None
@@ -70,6 +75,8 @@ class AccountClient:
             with response:
                 status = response.code
                 raw = response.read(65537)
+            if path not in {'/auth/cancel', '/auth/logout'} and self._cancelled():
+                raise KeyboardInterrupt
             if len(raw) > 65536:
                 raise AccountError('Account response is too large')
             incompatible = 'Character uses incompatible gameplay content; select a compatible character'
@@ -124,18 +131,54 @@ class AccountClient:
                 except AccountError:
                     pass
 
-    def choose_character(self, read=input, write=print):
+    def characters(self):
+        """Bounded display data for the authenticated account; never credentials."""
         result, _ = self.request('/characters')
         if not isinstance(result, dict) or not isinstance(result.get('characters'), list) or len(result['characters']) > 8:
             raise AccountError('Invalid character list')
-        characters = result['characters']
+        characters = []
+        seen = set()
+        for row in result['characters']:
+            try:
+                identifier = str(uuid.UUID(row['id']))
+                name = row['name']
+                if identifier == str(uuid.UUID(int=0)) or identifier in seen or not isinstance(name, str) or not 1 <= len(name) <= 80 or not name.isprintable():
+                    raise ValueError()
+            except (KeyError, TypeError, ValueError, AttributeError):
+                raise AccountError('Invalid character list') from None
+            seen.add(identifier)
+            entry = dict(id=identifier, name=name)
+            if 'appearance' in row:
+                try:
+                    entry['appearance'] = character_appearance.validate(row['appearance'])
+                except ValueError:
+                    raise AccountError('Invalid character appearance') from None
+            characters.append(entry)
+        return characters
+
+    def create_character(self, name, appearance=None):
+        if not isinstance(name, str) or not 3 <= len(name) <= 20 or re.fullmatch(r"[A-Za-z]+(?:['-][A-Za-z]+)*", name) is None:
+            raise AccountError('Use 3–20 ASCII letters with single interior apostrophes or hyphens')
+        request = {'name': name}
+        if appearance is not None:
+            request['appearance'] = character_appearance.validate(appearance)
+        character, _ = self.request('/characters', request)
+        try:
+            identifier = str(uuid.UUID(character['id']))
+            display = character['name']
+            if identifier == str(uuid.UUID(int=0)) or not isinstance(display, str) or not 1 <= len(display) <= 80 or not display.isprintable():
+                raise ValueError()
+        except (KeyError, TypeError, ValueError, AttributeError):
+            raise AccountError('Invalid created character') from None
+        return dict(id=identifier, name=display)
+
+    def choose_character(self, read=input, write=print):
+        characters = self.characters()
         if not characters:
             name = read('Name your first character (3–20 letters): ').strip()
-            character, _ = self.request('/characters', {'name': name})
+            character = self.create_character(name)
         else:
             for index, character in enumerate(characters, 1):
-                if not isinstance(character, dict) or not isinstance(character.get('name'), str) or not 1 <= len(character['name']) <= 80 or not character['name'].isprintable():
-                    raise AccountError('Invalid character list')
                 write(f"{index}. {character['name']}")
             can_create = len(characters) < 8
             if can_create:
@@ -145,7 +188,7 @@ class AccountClient:
                 if not can_create:
                     raise AccountError('Character limit reached; choose an existing character')
                 name = read('Name your new character (3–20 letters): ').strip()
-                character, _ = self.request('/characters', {'name': name})
+                character = self.create_character(name)
             else:
                 try:
                     index = int(choice or '1') - 1
@@ -199,10 +242,17 @@ class AccountClient:
             file.write(bytes(data))
         return address
 
-    def close(self):
+    def logout(self):
+        """Confirm revocation before a live frontend switches accounts."""
         if self._session is not None:
-            try:
-                self.request('/auth/logout', {})
-            except AccountError:
-                pass
+            _, status = self.request('/auth/logout', {})
+            if status != 204:
+                raise AccountError('Sign out was not confirmed; please try again')
+            self._session = None
+
+    def close(self):
+        try:
+            self.logout()
+        except AccountError:
+            # Shutdown still discards the local credential if the service is gone.
             self._session = None

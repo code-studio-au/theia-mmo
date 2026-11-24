@@ -1,0 +1,84 @@
+diff --git a/crates/bevy_sprinkles_editor/src/io.rs b/crates/bevy_sprinkles_editor/src/io.rs
+index 75d9af3..9d906a0 100644
+--- a/crates/bevy_sprinkles_editor/src/io.rs
++++ b/crates/bevy_sprinkles_editor/src/io.rs
+@@ -141,6 +141,7 @@ impl EditorCache {
+ }
+ 
+ pub fn data_dir() -> PathBuf {
++    if let Some(path) = env::var_os("SPRINKLES_PARITY_DATA_DIR") { return path.into(); }
+     #[cfg(unix)]
+     let home = env::var_os("HOME").map(PathBuf::from).unwrap_or_default();
+     #[cfg(not(unix))]
+diff --git a/crates/bevy_sprinkles_editor/src/main.rs b/crates/bevy_sprinkles_editor/src/main.rs
+index 0d1bdec..3d9843c 100644
+--- a/crates/bevy_sprinkles_editor/src/main.rs
++++ b/crates/bevy_sprinkles_editor/src/main.rs
+@@ -42,5 +42,67 @@ fn main() {
+         .add_plugins(bevy_easings::EasingsPlugin::default())
+         .add_plugins(SprinklesEditorPlugin)
+         .add_plugins(EditorUiPlugin)
++        .insert_resource(bevy::time::TimeUpdateStrategy::ManualDuration(std::time::Duration::from_secs_f64(1. / 60.)))
++        .add_systems(PostUpdate, deterministic_capture)
+         .run();
+ }
++
++fn deterministic_capture(
++    mut commands: Commands,
++    state: Res<state::EditorState>,
++    mut settings: ResMut<io::EditorData>,
++    mut assets: ResMut<Assets<bevy_sprinkles::asset::ParticlesAsset>>,
++    mut emitters: Query<&mut bevy_sprinkles::prelude::EmitterRuntime>,
++    mut systems: Query<&mut bevy_sprinkles::prelude::ParticleSystemRuntime>,
++    mut seeded: Local<bool>,
++    mut warm: Local<Option<std::time::Instant>>,
++    mut frame: Local<Option<usize>>,
++    mut exit: MessageWriter<AppExit>,
++) {
++    if state.current_project.is_none() || emitters.is_empty() {
++        return;
++    }
++    if !*seeded {
++        settings.settings.show_aabb_gizmos = false;
++        let Some(mut asset) = state
++            .current_project
++            .as_ref()
++            .and_then(|handle| assets.get_mut(handle))
++        else {
++            return;
++        };
++        for (index, emitter) in asset.emitters.iter_mut().enumerate() {
++            emitter.time.fixed_seed = Some(1000 + index as u32);
++        }
++        for mut system in &mut systems {
++            system.global_seed = 1000;
++        }
++        *seeded = true;
++        return;
++    }
++    let start = *warm.get_or_insert_with(std::time::Instant::now);
++    if start.elapsed() < std::time::Duration::from_secs(4) {
++        return;
++    }
++    let Some(current) = *frame else {
++        for mut emitter in &mut emitters {
++            let seed = 1000 + emitter.emitter_index as u32;
++            emitter.restart(Some(seed));
++        }
++        *frame = Some(0);
++        return;
++    };
++    let next = current + 1;
++    if [30, 60, 120, 180, 300].contains(&next) {
++        let path = std::path::PathBuf::from(
++            std::env::var_os("SPRINKLES_PARITY_OUTPUT").expect("parity output"),
++        );
++        commands
++            .spawn(bevy::render::view::screenshot::Screenshot::primary_window())
++            .observe(bevy::render::view::screenshot::save_to_disk(path.join(format!("frame-{next}.png"))));
++    }
++    *frame = Some(next);
++    if next >= 420 {
++        exit.write(AppExit::Success);
++    }
++}

@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "id": "theia.dev.quest-item-rewards",
+  "revision": 1,
+  "quest_catalog": "theia.dev.quest-journal-items",
+  "item_catalog": "theia.dev.equipment-items",
+  "rewards": [
+    {
+      "quest": "theia.dev.quest-wolf-pelts",
+      "grants": [
+        {
+          "item": "theia.dev.training-token",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "quest": "theia.dev.quest-roadside-orders",
+      "grants": [
+        {
+          "item": "theia.dev.training-token",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

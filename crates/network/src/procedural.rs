@@ -52,7 +52,7 @@ pub fn geometry(id: ChunkId, cells: usize) -> Geometry {
 }
 /// Shared regular triangulation. Saved terrain never evaluates the recipe.
 pub fn grid(cells: usize) -> Geometry {
-    assert!(matches!(cells, 8 | 32));
+    assert!(matches!(cells, 8 | 32 | 64 | 96 | 128));
     let mut positions = Vec::with_capacity((cells + 1).pow(2));
     for z in 0..=cells {
         for x in 0..=cells {
@@ -82,18 +82,54 @@ pub fn grid(cells: usize) -> Geometry {
 pub enum Source {
     Procedural,
     Saved(Arc<crate::saved_terrain::Store>),
+    Authored(Arc<crate::authored_world::Store>),
 }
 impl Source {
+    pub fn saved(&self) -> Option<&Arc<crate::saved_terrain::Store>> {
+        match self {
+            Self::Saved(store) => Some(store),
+            Self::Authored(store) => store.imported(),
+            Self::Procedural => None,
+        }
+    }
+    pub fn contains(&self, id: ChunkId) -> bool {
+        self.saved()
+            .map_or_else(|| contains(id), |s| s.contains(id))
+    }
+    pub fn cells(&self) -> usize {
+        self.saved().map_or(CELLS, |s| s.cells())
+    }
+    pub fn neighbours(&self, id: ChunkId, radius: i64) -> BTreeSet<ChunkId> {
+        neighbours(id, radius)
+            .into_iter()
+            .filter(|id| self.contains(*id))
+            .collect()
+    }
+    pub fn valid_spawn_xz(&self, xz: [f64; 2]) -> bool {
+        let bounds = self
+            .saved()
+            .map_or([[0., 0.], [SIDE, SIDE]], |s| s.bounds());
+        (0..2)
+            .all(|i| xz[i].is_finite() && (bounds[0][i] + 1. ..=bounds[1][i] - 1.).contains(&xz[i]))
+    }
     pub fn identity(&self) -> [u8; 32] {
         match self {
             Self::Procedural => IDENTITY,
             Self::Saved(s) => s.identity(),
+            Self::Authored(s) => s.identity(),
         }
     }
     pub fn geometry(&self, id: ChunkId, cells: usize) -> crate::Result<Geometry> {
+        if let Some(store) = self.saved() {
+            return store.geometry(id, cells);
+        }
         match self {
             Self::Procedural => Ok(geometry(id, cells)),
             Self::Saved(s) => s.geometry(id, cells),
+            Self::Authored(_) => Err(
+                "Authored visuals require their bound standard GLB, not generated height meshes"
+                    .into(),
+            ),
         }
     }
 }
@@ -108,45 +144,66 @@ impl Patch {
         Self::load(owner, &Source::Procedural).expect("Procedural patch")
     }
     pub fn load(owner: ChunkId, source: &Source) -> crate::Result<Self> {
-        if !contains(owner) {
+        if let Source::Authored(store) = source {
+            return store.patch(owner);
+        }
+        if !source.contains(owner) {
             return Err("Patch outside terrain".into());
         }
         let frame = LocalFrame::new(owner.origin(128).unwrap());
-        let ids = neighbours(owner, PATCH_RADIUS);
+        let ids = source.neighbours(owner, PATCH_RADIUS);
+        let cells = source.cells();
+        let samples = cells + 1;
         let geometry: BTreeMap<_, _> = ids
             .iter()
-            .map(|&id| Ok((id, source.geometry(id, CELLS)?)))
+            .map(|&id| Ok((id, source.geometry(id, cells)?)))
             .collect::<crate::Result<_>>()?;
         // A correctly hashed but incorrectly authored tile must not create a seam.
         for (&id, g) in &geometry {
             if let Some(next) = geometry.get(&ChunkId {
                 x: id.x + 1,
                 z: id.z,
-            }) && (0..=32).any(|i| {
-                g.positions[i * 33 + 32][1].to_bits() != next.positions[i * 33][1].to_bits()
+            }) && (0..samples).any(|i| {
+                g.positions[i * samples + cells][1].to_bits()
+                    != next.positions[i * samples][1].to_bits()
             }) {
                 return Err("Terrain patch X seam mismatch".into());
             }
             if let Some(next) = geometry.get(&ChunkId {
                 x: id.x,
                 z: id.z + 1,
-            }) && (0..=32)
-                .any(|i| g.positions[32 * 33 + i][1].to_bits() != next.positions[i][1].to_bits())
-            {
+            }) && (0..samples).any(|i| {
+                g.positions[cells * samples + i][1].to_bits() != next.positions[i][1].to_bits()
+            }) {
                 return Err("Terrain patch Z seam mismatch".into());
             }
         }
         let colliders = geometry
             .into_iter()
             .map(|(id, g)| PlacedCollider {
-                shape: Collider::trimesh(
-                    g.positions.into_iter().map(Vec3::from_array).collect(),
-                    g.triangles,
-                ),
+                shape: if cells > CELLS {
+                    // Parry stores heightfields column-major. Preserve the same
+                    // [a,c,b]/[b,c,d] diagonal as the visible regular mesh.
+                    Collider::heightfield(
+                        (0..samples)
+                            .map(|x| {
+                                (0..samples)
+                                    .map(|z| g.positions[z * samples + x][1])
+                                    .collect()
+                            })
+                            .collect(),
+                        Vec3::new(128., 1., 128.),
+                    )
+                } else {
+                    Collider::trimesh(
+                        g.positions.into_iter().map(Vec3::from_array).collect(),
+                        g.triangles,
+                    )
+                },
                 center: Vec3::new(
-                    (id.x - owner.x) as f32 * 128.,
+                    (id.x - owner.x) as f32 * 128. + if cells > CELLS { 64. } else { 0. },
                     0.,
-                    (id.z - owner.z) as f32 * 128.,
+                    (id.z - owner.z) as f32 * 128. + if cells > CELLS { 64. } else { 0. },
                 ),
                 layer: SOLID | GROUND | CAMERA,
             })
@@ -163,7 +220,7 @@ impl Patch {
             .expect("Baseline terrain supports spawn")
     }
     pub fn try_spawn(&self, x: f64, z: f64) -> Option<GlobalPosition> {
-        let requested = GlobalPosition::new([x, 256., z])?;
+        let requested = GlobalPosition::new([x, 2048., z])?;
         let mut local = self.frame.to_local(requested)?.metres();
         local[1] = self.scene.ground([local[0], local[2]], local[1])?.0 + 0.03;
         self.frame.to_global(
@@ -173,6 +230,24 @@ impl Patch {
             )
             .ok()?,
         )
+    }
+    /// Resolve only near the trusted full position; never search above its layer.
+    pub fn try_spawn_near(&self, requested: GlobalPosition) -> Option<GlobalPosition> {
+        let local = self.frame.to_local(requested)?;
+        self.frame
+            .to_global(crate::kinematic::spawn(&self.scene, local).ok()?)
+    }
+    /// Resolve the bounded landing support beneath trusted feet, including an
+    /// airborne restored actor. Unlike the XZ fixture lookup, this cannot choose
+    /// an overhead building roof as the actor's respawn home.
+    pub fn try_landing_spawn(&self, requested: GlobalPosition) -> Option<GlobalPosition> {
+        let local = self.frame.to_local(requested)?;
+        crate::kinematic::validate_pose(&self.scene, local, false).ok()?;
+        let mut feet = local.metres();
+        feet[1] = crate::kinematic::support_below(&self.scene, local)?;
+        let supported = theia_core::coordinates::LocalPosition::new(feet)?;
+        self.frame
+            .to_global(crate::kinematic::spawn(&self.scene, supported).ok()?)
     }
     pub fn covers(&self, p: GlobalPosition, ready: Option<&BTreeSet<ChunkId>>) -> bool {
         let [x, y, z] = p.metres();
@@ -208,14 +283,22 @@ impl Runtime {
         Self::with_source(spawn, speed, Source::Procedural)
     }
     pub fn with_source(spawn: [f64; 2], speed: f32, source: Source) -> crate::Result<Self> {
-        if !matches!(speed, 1. | 8. | 32.)
-            || spawn
-                .iter()
-                .any(|v| !v.is_finite() || !(1. ..=SIDE - 1.).contains(v))
-        {
+        if !matches!(speed, 1. | 8. | 32.) || !source.valid_spawn_xz(spawn) {
             return Err(
-                "Graybox spawn must be inside 1..15999m and developer speed 1, 8 or 32".into(),
+                "Terrain spawn must be inside its bounds and developer speed 1, 8 or 32".into(),
             );
+        }
+        if let Source::Authored(store) = &source {
+            let [x, _, z] = store
+                .spawn(0)
+                .ok_or("Authored world has no spawn")?
+                .metres();
+            if spawn != [x, z] {
+                return Err(
+                    "Authored runtime requires the saved player spawn; edit the zone to move it"
+                        .into(),
+                );
+            }
         }
         let id = owner(GlobalPosition::new([spawn[0], 0., spawn[1]]).unwrap()).unwrap();
         let patch = Arc::new(Patch::load(id, &source)?);
@@ -248,6 +331,26 @@ impl Runtime {
         })
     }
     /// Call from the owner pump, outside the fixed simulation step.
+    /// Safe admission feet. Authored slots retain their original XYZ; the older
+    /// generated/saved development worlds retain their four horizontal offsets.
+    pub fn spawn_feet(&self, slot: usize) -> Option<GlobalPosition> {
+        if let Source::Authored(store) = &self.source {
+            let requested = store.spawn(slot)?;
+            return self.patch(requested)?.try_spawn_near(requested);
+        }
+        let offset = (slot % 4) as f64 * 2.;
+        let x = if self
+            .source
+            .valid_spawn_xz([self.spawn[0] + offset, self.spawn[1]])
+        {
+            self.spawn[0] + offset
+        } else {
+            self.spawn[0] - offset
+        };
+        let z = self.spawn[1];
+        self.patch(GlobalPosition::new([x, 0., z])?)?
+            .try_spawn(x, z)
+    }
     pub fn poll(&mut self, positions: &[GlobalPosition]) {
         if self.error.is_some() {
             return;
@@ -269,7 +372,7 @@ impl Runtime {
             owner(GlobalPosition::new([self.spawn[0], 0., self.spawn[1]]).unwrap()).unwrap();
         let mut required = BTreeSet::from([spawn]);
         for p in positions {
-            if let Some(id) = owner(*p) {
+            if let Some(id) = owner(*p).filter(|id| self.source.contains(*id)) {
                 required.insert(id);
             }
         }

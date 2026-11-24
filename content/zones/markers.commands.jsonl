@@ -1,0 +1,1 @@
+{"command":"apply","expected_revision":0,"edits":[{"op":"put_marker","marker":{"id":500,"name":"Village guide","kind":"npc","position":[-4,0,6],"yaw_degrees":45,"radius_metres":1,"definition":"human.guide"}},{"op":"put_marker","marker":{"id":501,"name":"Quest clearing","kind":"quest","position":[6,0,6],"yaw_degrees":0,"radius_metres":4,"definition":"human.clearing"}}]}

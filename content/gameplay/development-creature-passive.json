@@ -1,0 +1,7 @@
+{
+  "schema": 3,
+  "id": "theia.dev.training-creature",
+  "speed_metres_per_second": 2.0,
+  "wait_ms": 1000,
+  "can_deflect": false
+}

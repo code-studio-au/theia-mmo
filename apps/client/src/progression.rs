@@ -1,4 +1,5 @@
 //! Committed own-character progression using standard Bevy UI.
+pub(crate) mod feedback;
 use crate::network::Network;
 use bevy::{prelude::*, text::FontSize};
 use std::sync::Arc;
@@ -8,15 +9,115 @@ pub(crate) struct Profile(pub Arc<theia_network::progression_wire::Profile>);
 pub(crate) struct Label;
 #[derive(Component)]
 struct Fill;
+#[derive(Component)]
+struct InlineLabel;
+#[derive(Component)]
+pub(crate) struct Root;
+/// Actual progression widgets with clearly synthetic values; no Network/owner.
+pub(crate) fn install_preview(app: &mut App) {
+    app.add_systems(Startup, setup).add_systems(
+        PostStartup,
+        |mut labels: Query<(&mut Text, &mut Visibility), With<Label>>,
+         mut fills: Query<&mut Node, With<Fill>>| {
+            for (mut label, mut visibility) in &mut labels {
+                **label = "240 / 600 XP".into();
+                *visibility = Visibility::Inherited;
+            }
+            for mut fill in &mut fills {
+                fill.width = percent(40);
+            }
+        },
+    );
+}
 pub(crate) fn install(app: &mut App, profile: Arc<theia_network::progression_wire::Profile>) {
     qualification::install(app);
+    feedback::install(app);
     app.insert_resource(Profile(profile))
         .add_systems(Startup, setup)
         .add_systems(Update, present.after(crate::network::present));
 }
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
+    if skin.is_some() {
+        use bevy::picking::{Pickable, hover::Hovered};
+        commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(0),
+                    right: px(0),
+                    bottom: px(5),
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                Pickable::IGNORE,
+            ))
+            .with_children(|holder| {
+                holder
+                    .spawn((
+                        Root,
+                        Hovered::default(),
+                        Node {
+                            width: px(crate::fantasy_ui::XP_WIDTH),
+                            max_width: percent(96),
+                            height: px(crate::fantasy_ui::XP_HEIGHT),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                    ))
+                    .with_children(|root| {
+                        root.spawn((
+                            Node {
+                                position_type: PositionType::Absolute,
+                                left: px(5),
+                                right: px(5),
+                                top: px(3),
+                                bottom: px(3),
+                                overflow: Overflow::clip(),
+                                ..default()
+                            },
+                            BackgroundColor(crate::fantasy_ui::PANEL),
+                            Pickable::IGNORE,
+                        ))
+                        .with_child((
+                            Fill,
+                            crate::ui_theme::Sprite("bar.fill-experience"),
+                            Node {
+                                width: percent(0),
+                                height: percent(100),
+                                ..default()
+                            },
+                        ));
+                        root.spawn((
+                            crate::ui_theme::Sprite("bar.frame"),
+                            Node {
+                                position_type: PositionType::Absolute,
+                                width: percent(100),
+                                height: percent(100),
+                                ..default()
+                            },
+                            Pickable::IGNORE,
+                        ));
+                        root.spawn((
+                            Label,
+                            InlineLabel,
+                            Text::new(""),
+                            TextFont {
+                                font_size: FontSize::Px(13.),
+                                ..default()
+                            },
+                            TextColor(Color::WHITE),
+                            crate::fantasy_ui::hud_shadow(),
+                            Visibility::Hidden,
+                            Pickable::IGNORE,
+                        ));
+                    });
+            });
+        return;
+    }
     commands
         .spawn((
+            Root,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(12),
@@ -50,6 +151,7 @@ fn setup(mut commands: Commands) {
             .with_children(|p| {
                 p.spawn((
                     Fill,
+                    crate::ui_theme::Sprite("bar.fill-experience"),
                     Node {
                         width: percent(0),
                         height: percent(100),
@@ -60,11 +162,23 @@ fn setup(mut commands: Commands) {
             });
         });
 }
+fn label_text(progress: theia_core::progression::Progress, inline: bool) -> String {
+    match (progress.required_in_level, inline) {
+        (Some(required), true) => format!("{} / {} XP", progress.earned_in_level, required),
+        (None, true) => "Maximum level".into(),
+        (Some(required), false) => format!(
+            "Level {} | XP {} / {}",
+            progress.level, progress.earned_in_level, required
+        ),
+        (None, false) => format!("Level {} | maximum level", progress.level),
+    }
+}
 fn present(
     network: Res<Network>,
     profile: Res<Profile>,
-    mut labels: Query<&mut Text, With<Label>>,
+    mut labels: Query<(&mut Text, &mut Visibility), With<Label>>,
     mut bars: Query<&mut Node, With<Fill>>,
+    hover: Query<&bevy::picking::hover::Hovered, With<Root>>,
 ) {
     let state = network.state();
     let (text, fraction) = if state.error.is_some() {
@@ -75,26 +189,31 @@ fn present(
             .profile()
             .progress(&view.progress)
             .expect("Validated authoritative progression");
-        match progress.required_in_level {
-            Some(required) => (
-                format!(
-                    "Level {} | XP {} / {}",
-                    progress.level, progress.earned_in_level, required
-                ),
-                f64::from(progress.earned_in_level) / f64::from(required),
-            ),
-            None => (format!("Level {} | maximum level", progress.level), 1.),
-        }
+        let fraction = progress.required_in_level.map_or(1., |required| {
+            f64::from(progress.earned_in_level) / f64::from(required)
+        });
+        (label_text(progress, !hover.is_empty()), fraction)
     } else {
         ("Experience: waiting for server".to_owned(), 0.)
     };
-    for mut label in &mut labels {
+    let visible = if hover.single().is_ok_and(|hovered| !hovered.0) {
+        Visibility::Hidden
+    } else {
+        Visibility::Inherited
+    };
+    for (mut label, mut visibility) in &mut labels {
+        if *visibility != visible {
+            *visibility = visible;
+        }
         if label.0 != text {
             label.0.clone_from(&text);
         }
     }
     for mut bar in &mut bars {
-        bar.width = percent((fraction * 100.) as f32);
+        let width = percent((fraction * 100.) as f32);
+        if bar.width != width {
+            bar.width = width;
+        }
     }
 }
 
@@ -129,7 +248,7 @@ mod qualification {
         network: Res<Network>,
         profile: Res<Profile>,
         mut run: ResMut<Run>,
-        labels: Query<(&Text, &ComputedNode), With<Label>>,
+        labels: Query<(&Text, &ComputedNode, Has<InlineLabel>), With<Label>>,
         bars: Query<&ComputedNode, With<Fill>>,
         windows: Query<&Window, With<bevy::window::PrimaryWindow>>,
     ) {
@@ -149,7 +268,7 @@ mod qualification {
             return;
         }
         let progress = profile.0.profile().progress(&view.progress).unwrap();
-        let Some((label, node)) = labels.iter().next() else {
+        let Some((label, node, inline)) = labels.iter().next() else {
             return;
         };
         let Some(bar) = bars.iter().next() else {
@@ -158,13 +277,7 @@ mod qualification {
         let Some(window) = windows.iter().next() else {
             return;
         };
-        let expected = match progress.required_in_level {
-            Some(required) => format!(
-                "Level {} | XP {} / {}",
-                progress.level, progress.earned_in_level, required
-            ),
-            None => format!("Level {} | maximum level", progress.level),
-        };
+        let expected = label_text(progress, inline);
         let valid = label.0 == expected
             && node.size().x > 0.
             && node.size().x < window.width()

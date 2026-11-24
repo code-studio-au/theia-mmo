@@ -1,0 +1,38 @@
+[package]
+name = "bevy_sprinkles_editor"
+version = "0.3.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "GPU particle system editor for Bevy"
+readme = "../../README.upstream.md"
+repository = "https://github.com/doceazedo/sprinkles"
+keywords = ["bevy", "particle-system", "particles", "vfx"]
+categories = ["game-development", "simulation"]
+
+[[bin]]
+name = "theia-particle-editor"
+path = "src/main.rs"
+
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"
+
+[dependencies]
+bevy = { workspace = true, features = [
+    "default_app", "std", "bevy_winit", "bevy_clipboard", "default_font",
+    "multi_threaded", "x11", "wayland", "custom_cursor", "sysinfo_plugin",
+    "3d_api", "3d_bevy_render", "ui_api", "ui_bevy_render", "picking",
+    "bevy_ui_widgets", "system_clipboard", "bevy_scene", "jpeg", "file_watcher",
+] }
+bevy_sprinkles = { version = "0.3.0", path = "../bevy_sprinkles" }
+theia-core.workspace = true
+serde = { workspace = true }
+ron = { workspace = true }
+rfd = "0.15"
+Inflector = "0.11.4"
+bevy_easings = { version = "=0.20.0" }
+open = "5.3.3"
+
+[dev-dependencies]
+serde_json.workspace = true

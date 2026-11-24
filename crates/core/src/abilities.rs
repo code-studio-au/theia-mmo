@@ -11,6 +11,7 @@ pub const MAX_ABILITIES: usize = 64;
 #[serde(rename_all = "snake_case")]
 pub enum Target {
     HostileAlive,
+    SelfAlive,
 }
 /// Presentation hint only; never defines damage, movement or hit timing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -114,6 +115,13 @@ impl Ability {
     }
     pub fn range_metres(&self) -> f64 {
         self.range_metres
+    }
+    /// Authored time for presentation; simulation uses tick-rounded Catalog::timing.
+    pub fn cast_duration(&self) -> Duration {
+        Duration::from_millis(u64::from(self.cast_ms))
+    }
+    pub fn cooldown_duration(&self) -> Duration {
+        Duration::from_millis(u64::from(self.cooldown_ms))
     }
     pub fn cast_while_moving(&self) -> bool {
         self.cast_while_moving
@@ -234,6 +242,11 @@ impl Catalog {
                     return Err("Status effects require ability schema 3".into());
                 }
             };
+            if ability.target == Target::SelfAlive
+                && (raw.schema < 7 || !matches!(effect, Effect::ApplyStatus { .. }))
+            {
+                return Err("Self-targeted abilities require a schema 7 status effect".into());
+            }
             if ability.hit_table.is_some()
                 && (raw.schema < 5 || !matches!(effect, Effect::Damage { .. }))
             {

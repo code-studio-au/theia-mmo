@@ -1,5 +1,7 @@
 //! Small local walking protocol, not an MMO service stack.
 pub mod appearance_wire;
+pub mod authored_world;
+pub mod avatar_life_wire;
 pub mod chunk_world;
 pub mod chunks;
 pub mod classic;
@@ -9,17 +11,27 @@ pub mod combat_membership_wire;
 pub mod combat_wire;
 pub mod commands;
 pub mod content;
+pub mod creature_attack_wire;
+pub mod development;
 pub mod dialogue;
 pub mod dialogue_wire;
+pub mod document_wire;
+pub mod documents;
 pub mod dodge_input;
 pub mod dodge_prediction;
 pub mod dodge_prediction_wire;
 pub mod dodging;
+pub mod gameplay_bundle;
+pub mod ground_placement;
 pub mod inventory_wire;
 pub mod kinematic;
 pub mod material_profile;
 pub mod navigation;
+pub mod particle_content;
+pub mod party_client;
+pub mod party_wire;
 pub mod physics;
+pub mod player_identity_wire;
 pub mod player_life_wire;
 pub mod prediction;
 pub mod prediction_driver;
@@ -57,3 +69,7 @@ pub mod vendor_wire;
 #[path = "../tests/support/relay.rs"]
 #[allow(dead_code)]
 pub(crate) mod test_relay;
+
+pub mod chat;
+pub mod chat_client;
+pub mod chat_wire;

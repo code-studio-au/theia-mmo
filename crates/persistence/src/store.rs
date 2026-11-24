@@ -21,7 +21,7 @@ mod vendors;
 pub const MAX_BATCH: usize = 8;
 const TIMEOUT: Duration = Duration::from_secs(3);
 const MIGRATION_LOCK: i64 = -0x5448_4549_4100_0001;
-const MIGRATIONS: [&str; 11] = [
+const MIGRATIONS: [&str; 15] = [
     include_str!("../migrations/0001_characters.sql"),
     include_str!("../migrations/0002_development_bindings.sql"),
     include_str!("../migrations/0003_accounts.sql"),
@@ -33,6 +33,10 @@ const MIGRATIONS: [&str; 11] = [
     include_str!("../migrations/0009_quest_lifecycles.sql"),
     include_str!("../migrations/0010_quest_turn_in_xp.sql"),
     include_str!("../migrations/0011_quest_journals.sql"),
+    include_str!("../migrations/0012_creature_loot.sql"),
+    include_str!("../migrations/0013_loot_rolls.sql"),
+    include_str!("../migrations/0014_quest_loot_generation.sql"),
+    include_str!("../migrations/0015_character_appearance.sql"),
 ];
 async fn bounded<T>(
     future: impl Future<Output = std::result::Result<T, tokio_postgres::Error>>,
@@ -166,6 +170,17 @@ impl Store {
         name: CharacterName,
         position: GlobalPosition,
     ) -> Result<Character> {
+        self.create_character_with_appearance(owner, world, name, position, Default::default())
+            .await
+    }
+    pub async fn create_character_with_appearance(
+        &mut self,
+        owner: OwnerId,
+        world: [u8; 32],
+        name: CharacterName,
+        position: GlobalPosition,
+        appearance: theia_core::appearance::Appearance,
+    ) -> Result<Character> {
         if world == [0; 32] {
             return Err(Error::Invalid("World content identity must be nonzero"));
         }
@@ -195,7 +210,8 @@ impl Store {
             return Err(Error::CharacterLimit);
         }
         let [x, y, z] = position.metres();
-        bounded(transaction.execute("INSERT INTO theia.characters(realm_id,character_id,owner_id,world_id,x,y,z,writer_session,checkpoint_sequence) VALUES($1,$2,$3,$4,$5,$6,$7,$8,0)", &[&realm, &character.value(), &owner.value(), &world.as_slice(), &x, &y, &z, &writer])).await?;
+        let appearance_bytes = appearance.values();
+        bounded(transaction.execute("INSERT INTO theia.characters(realm_id,character_id,owner_id,world_id,x,y,z,writer_session,checkpoint_sequence,appearance) VALUES($1,$2,$3,$4,$5,$6,$7,$8,0,$9)", &[&realm, &character.value(), &owner.value(), &world.as_slice(), &x, &y, &z, &writer, &appearance_bytes.as_slice()])).await?;
         let named=bounded(transaction.execute("INSERT INTO theia.character_names(realm_id,character_id,display_name) VALUES($1,$2,$3)", &[&realm, &character.value(), &name.as_str()])).await;
         if let Err(error) = named {
             if matches!(&error, Error::Database(db) if db.as_db_error().is_some_and(|db| db.code()==&tokio_postgres::error::SqlState::UNIQUE_VIOLATION && db.constraint()==Some("character_names_realm_name_unique")))
@@ -213,6 +229,7 @@ impl Store {
                 sequence: 0,
             },
             name,
+            appearance,
         })
     }
     pub async fn list_characters(
@@ -233,7 +250,7 @@ impl Store {
             return Err(Error::AccountMissing);
         }
         let limit = (MAX_CHARACTERS_PER_OWNER + 1) as i64;
-        let rows=bounded(self.client().query(r#"SELECT c.character_id,c.world_id,n.display_name FROM theia.characters c LEFT JOIN theia.character_names n ON c.realm_id=n.realm_id AND c.character_id=n.character_id WHERE c.realm_id=$1 AND c.owner_id=$2 ORDER BY n.name_key COLLATE "C",c.character_id LIMIT $3"#, &[&self.realm.value(), &owner.value(), &limit])).await?;
+        let rows=bounded(self.client().query(r#"SELECT c.character_id,c.world_id,n.display_name,c.appearance FROM theia.characters c LEFT JOIN theia.character_names n ON c.realm_id=n.realm_id AND c.character_id=n.character_id WHERE c.realm_id=$1 AND c.owner_id=$2 ORDER BY n.name_key COLLATE "C",c.character_id LIMIT $3"#, &[&self.realm.value(), &owner.value(), &limit])).await?;
         if rows.len() > MAX_CHARACTERS_PER_OWNER {
             return Err(Error::Invalid(
                 "Character list exceeds bounded owner capacity",
@@ -251,6 +268,7 @@ impl Store {
                 id: CharacterId::new(row.get(0))
                     .ok_or(Error::Invalid("Invalid persistent character identity"))?,
                 name: CharacterName::parse(&name)?,
+                appearance: decode_appearance(row.get(3))?,
             });
         }
         Ok(result)
@@ -276,7 +294,7 @@ impl Store {
             .await?
             .ok_or(Error::CharacterMissing)?;
         let row = bounded(self.client().query_opt(
-            "SELECT display_name FROM theia.character_names WHERE realm_id=$1 AND character_id=$2",
+            "SELECT n.display_name,c.appearance FROM theia.character_names n JOIN theia.characters c USING(realm_id,character_id) WHERE n.realm_id=$1 AND n.character_id=$2",
             &[&self.realm.value(), &binding.character.value()],
         ))
         .await?
@@ -285,6 +303,7 @@ impl Store {
         Ok(Character {
             saved,
             name: CharacterName::parse(&name)?,
+            appearance: decode_appearance(row.get(1))?,
         })
     }
     /// Bind a trusted local ticket slot to stable development identities. Never
@@ -420,4 +439,11 @@ pub(crate) fn validate_identity(issuer: &str, subject: &str) -> Result<()> {
         return Err(Error::Invalid("Invalid bounded external account identity"));
     }
     Ok(())
+}
+
+fn decode_appearance(bytes: Vec<u8>) -> Result<theia_core::appearance::Appearance> {
+    let values = bytes
+        .try_into()
+        .map_err(|_| Error::Invalid("Invalid stored appearance length"))?;
+    theia_core::appearance::Appearance::new(values).map_err(Error::Invalid)
 }

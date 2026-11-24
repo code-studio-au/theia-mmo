@@ -9,6 +9,12 @@ pub const MAX_DEFINITIONS: usize = 16;
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Effect {
     PeriodicDamage { amount: u32 },
+    TimedBuff,
+}
+impl Effect {
+    pub fn periodic(self) -> bool {
+        matches!(self, Self::PeriodicDamage { .. })
+    }
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -23,6 +29,7 @@ struct RawDefinition {
     id: String,
     name: String,
     duration_ms: u32,
+    #[serde(default)]
     interval_ms: u32,
     effect: Effect,
 }
@@ -51,7 +58,11 @@ impl Definition {
         };
         Timing {
             duration_ticks: ticks(self.duration_ms),
-            interval_ticks: ticks(self.interval_ms),
+            interval_ticks: ticks(if self.effect.periodic() {
+                self.interval_ms
+            } else {
+                self.duration_ms
+            }),
         }
     }
 }
@@ -74,10 +85,13 @@ impl Catalog {
         let mut statuses = BTreeMap::new();
         for raw in raw.statuses {
             let id = ContentId::new(&raw.id).ok_or("Invalid status ID")?;
-            if !(50..=60_000).contains(&raw.interval_ms)
-                || raw.duration_ms < raw.interval_ms
-                || raw.duration_ms > 60_000
-            {
+            let valid_timing = if raw.effect.periodic() {
+                (50..=60_000).contains(&raw.interval_ms)
+                    && (raw.interval_ms..=60_000).contains(&raw.duration_ms)
+            } else {
+                raw.interval_ms == 0 && (50..=600_000).contains(&raw.duration_ms)
+            };
+            if !valid_timing {
                 return Err("Status duration/interval exceeds development bounds");
             }
             if !(1..=48).contains(&raw.name.len())

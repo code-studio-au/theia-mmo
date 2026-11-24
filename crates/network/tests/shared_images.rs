@@ -422,3 +422,44 @@ fn staged_shared_world_verifies_actual_manifest_collision_and_all_image_dependen
         manifest.identity()
     );
 }
+
+#[test]
+fn combined_material_and_particle_package_requires_both_verified_dependencies() {
+    let mut fixture = Fixture::new(PNG);
+    let mut uris = Vec::new();
+    for color in ["srgb", "linear"] {
+        let descriptor = json!({"sha256":sha256(PNG),"bytes":PNG.len(),"color_space":color,"sampler":[10497,10497,9729,9729]});
+        let image: SharedImage = serde_json::from_value(descriptor.clone()).unwrap();
+        let path = fixture.root.join("shared").join(image.filename());
+        std::fs::write(&path, PNG).unwrap();
+        fixture.files.push(path);
+        uris.push(image.uri());
+        fixture.manifest["shared_images"]
+            .as_array_mut()
+            .unwrap()
+            .push(descriptor);
+    }
+    fixture.document["materials"][0]["extras"] = json!({"theia_triplanar":1,"theia_triplanar_profile":{"schema":1,"profile":"synty-triplanar-world-v1","id":1,"tiling":0.5,"falloff":4.1,"source_anchor":[0,0,0],"textures":{"top":uris[0],"side":uris[0],"top_normal":uris[1],"side_normal":uris[1]}}});
+    let catalog = serde_json::to_vec(&json!({"schema":1,"effects":[{"id":"vfx.fire","bytes":4,"sha256":sha256(b"fire")}],"placements":[{"id":1,"effect":"vfx.fire","position":[0.,0.,0.],"yaw_degrees":0.,"scale":1.}]})).unwrap();
+    fixture.manifest["schema"] = json!(5);
+    fixture.manifest["particle_bytes"] = json!(catalog.len());
+    fixture.manifest["particle_sha256"] = json!(sha256(&catalog));
+    fixture.write();
+    let visual = fixture.directory.join("terrain.glb");
+    let verify = |f: &Fixture, data: &[u8]| {
+        f.manifest()
+            .verify_visual_in_for_particle_catalog(&visual, &f.root, data)
+    };
+    verify(&fixture, &catalog).unwrap();
+    assert!(fixture.verify().is_err());
+    assert!(verify(&fixture, b"tampered catalog").is_err());
+    std::fs::write(fixture.files.last().unwrap(), b"tampered texture").unwrap();
+    assert!(verify(&fixture, &catalog).is_err());
+    std::fs::write(fixture.files.last().unwrap(), PNG).unwrap();
+    fixture.document["materials"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("extras");
+    fixture.write();
+    assert!(verify(&fixture, &catalog).is_err());
+}

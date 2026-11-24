@@ -1,3 +1,106 @@
+Zone authoring is the current focus. Run `python3 tools/edit_zone.py` to build and
+open the lightweight Bevy editor at **3440x1440 fullscreen**. It reopens
+`build/zone-draft.json` when present; a new draft is written on Save. Use
+`--draft FILE` for another default draft, or pass explicit editor arguments.
+
+Try the original editable example with `python3 tools/edit_zone.py --example`.
+It saves separately to `build/wayfarer-hollow.zone.json` and reopens your edits.
+
+Choose **Objects, Sculpt, Paint, Paths / streams, NPC / quest markers, or Vegetation**
+from the workspace bar. The left panel contains tools; the right column contains
+zone content and properties. **New zone, Save, Save As, Open, Reload, Undo, Redo, Frame selection and
+Playtest** are in the command bar, alongside the snap checkbox.
+**New zone** (Ctrl+N) creates an untitled empty zone; Undo restores the prior content.
+Its first **Save** opens Save As in the previous folder. It never writes to the
+previous file, and the active filename stays untitled through undo/redo until saved.
+Use **Open** (Ctrl+O) or **Save As** (Ctrl+Shift+S) to browse folders and zone
+JSON files. Save As asks before overwriting; Open remains undoable. **Reload**
+(Ctrl+Shift+O) reloads the active file. The footer always shows the active save
+path and saved/unsaved state, and the window title marks unsaved content with *.
+When placing primitives, Properties shows size sliders in metres (0.25–32 m).
+Boxes have X/Y/Z sizes, cylinders diameter/height, and spheres one diameter.
+Focused sliders use Left/Right and Home/End to adjust their values.
+These affect new stamps; existing objects use **Transform...**. New stamps rest
+on the ground or terrain at half their chosen height. Move over the scene to
+preview the stamp: blue is valid, red means placement will be refused. Hovering
+does not change source or history; moving over a panel hides the preview.
+Properties explains a refused candidate. Forms and playtest hide the ghost.
+Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.
+The **Grid** checkbox shows/hides references and displays their spacing in metres.
+Front/Right use adaptive vertical grids; zones without terrain also use an
+adaptive ground grid. Terrain keeps its surface-following sample grid in Top
+and Perspective. Grid spacing is visual and independent of the movement/placement step.
+Drag **middle mouse** to pan the scene in the current view plane. Start inside
+the viewport; reaching a panel or pressing Escape cancels the pan. The wheel
+zooms; WASD pans along the canonical view axes. RMB orbit returns to
+perspective. The camera stays still during a transform drag. Playtest uses its
+normal perspective camera and restores the editor view when you return.
+
+Select a primitive to reveal **red X, green Y and blue Z move arrows**. Drag an
+arrow to preview movement along that world axis, then release for one undo entry.
+Escape cancels. Choose **Move**, **Rotate Y** or **Scale uniformly** in the command bar. Rotation
+uses a green ring; drag the scale cube up/down to preserve proportions. **Snap**
+uses the selected move grid (1 m by default), 15-degree rotation steps or 10%
+scale steps, and
+**Handles** shows/hides them.
+The numeric Transform form remains available for exact values. In Move mode,
+you can also drag an already selected object body across its XZ plane. Stationary
+clicks preserve fractional coordinates; invalid previews retain the last valid pose.
+
+In Properties, **Move / placement step** chooses 0.125, 0.25, 0.5, 1, 2, 4 or 8 m.
+Snapped placement and move handles align to the zone origin; movement keys use
+the chosen relative increment. With Snap off, keys retain 0.1 m nudges. Exact
+numeric properties remain unsnapped, and changing the step preserves undo/redo.
+Terrain properties use sliders for radius, strength, blend and flatten level.
+In Vegetation, choose **Scatter trees** or **Scatter shrubs** to adjust scatter
+radius and plants per click in Properties. One ground click places the group
+as one undo entry.
+The content list has All / Objects / Guides / Markers / Plants / Terrain filters.
+They narrow the list while retaining the world and current selection.
+Use **Find...** (Ctrl+F) for a name, kind or `#ID` substring; Apply updates the list and
+**Clear search** restores entries within the current type filter. Double-click
+an entry to select and frame it; a single click selects it. The spawn row
+continues to frame the spawn immediately.
+Select an object, plant or NPC/quest marker in the content list, then use
+**Transform...** for exact numeric fields in the docked properties area. Objects
+expose position, yaw and XYZ size; plants expose position, yaw and scale; markers
+expose position, yaw and authoring radius. The yaw slider edits the pending form
+in 15-degree steps with Snap enabled or one-degree steps otherwise; exact numeric
+values remain available. Plant scale, marker radius and guide width also have
+quarter-step sliders. **Reset fields** restores the form’s original values
+without closing it. Apply commits one validated undo entry.
+For guides, **Whole guide** exposes width; **Previous point / Next point** select
+a point for exact XYZ and width editing. **Insert point / Remove point** expose
+topology edits directly, with the same validation and undo. Rename, Duplicate
+and Ground are also available there. **Shortcuts** reveals the
+keyboard reference. Visual and structured agent edits retain shared validation
+and undo; pending drafts are protected by workspace controls.
+
+**Edit spawn...** opens exact world X/Y/Z fields in Properties. Apply creates one
+validated undo entry; Cancel leaves the spawn unchanged. Clearance is checked
+when entering playtest.
+F5 enters/leaves offline Avian playtest. In Sculpt/Paint, P places the spawn at
+the ground cursor; the green pointer marks it and hides during playtest. Fast
+drags fill brush strokes every 2 m, with a visible 128-stamp cap. Earlier keyboard
+shortcuts remain available.
+
+Check a saved zone without opening a window using
+`python3 tools/edit_zone.py --zone FILE --check-playtest`. It reports source
+validity and actual offline capsule-spawn readiness as JSON, exits nonzero on
+refusal, and leaves files unchanged. Add `--commands JSONL` to check proposed
+edits in memory. This read-only mode excludes `--output` and `--export`.
+
+For structured commands, use `python3 tools/edit_zone.py --commands JSONL
+--headless --output FILE`. Export a saved zone with `--zone FILE --export NEW_DIR
+--content-id ID --revision N` for the existing server/client world pipeline.
+Inside an Apply command, `{"op":"translate","id":1,"offset":[0.25,0,-0.5]}`
+moves an object, plant, marker or whole guide without reconstructing its metadata.
+Batch several edits for one undo entry. Use `--commands -` to pipe JSONL through
+stdin instead of creating a command file; finish the stream with EOF. This works
+with both headless output and read-only `--check-playtest`.
+[Controls, contracts and qualification](docs/ZONE_EDITOR.md). Normal multiplayer
+uses the existing game launcher. Chat composer and speech bubbles are deferred.
+
 > Development target: the 16 km × 16 km saved graybox world with the POLYGON
 > Base Locomotion player. Bake terrain once, build release binaries, then run `python3 tools/play.py`.
 > See [graybox world](docs/GRAYBOX_WORLD.md) for controls, asset preparation,
@@ -9,15 +112,24 @@ The [story and lore folder](docs/story/README.md) contains the world bible,
 characters, campaign acts, quests and story decisions, including material awaiting
 creator review.
 
+The explicit [public player-life bundle](docs/PUBLIC_AVATAR_LIFE.md) also shows
+remote death and fresh-life animation while keeping owner controls authoritative.
+
+The explicit [public NPC attack bundle](docs/PUBLIC_CREATURE_ATTACKS.md) adds
+bystander-visible wolf attack timing to the normal account/quest development flow.
+Earlier bundles and the bare graybox launcher retain their behavior.
+
 A Rust WoW-style MMO project using **Bevy 0.20.0**.
 The development world is a 16 km × 16 km saved graybox with the POLYGON
 Base Locomotion player. Original or appropriately licensed final world art remains
 planned; imported map experiments are retained as regressions.
 
-The current application is a **local multiplayer walking prototype**, with animated
-players, bounded continental terrain streaming, server-owned capsule movement,
-static collision and an orbit camera. Combat, quests and
-persistence are still future work. See [status](docs/STATUS.md),
+The application includes animated multiplayer movement, bounded continental
+terrain streaming and server-owned capsule collision, plus an explicit authenticated
+combat, persistence and multi-quest development loop. The bare launcher retains
+the walking sandbox; the [expanded quest setup and qualified local launch](docs/QUEST_ENGINE.md)
+use a versioned content bundle. The [offline quest pack workflow](docs/QUEST_PACK_AUTHORING.md)
+validates shared IDs and prerequisites before runtime pack adoption. Production content and MMO-scale capacity remain planned. See [status](docs/STATUS.md),
 [decisions](docs/DECISIONS.md) and the [engineering plan](docs/engineering/README.md).
 The [repository assessment](docs/engineering/REPOSITORY_ASSESSMENT.md) compares the
 current prototype with the October 19 handoff and identifies what to retain or

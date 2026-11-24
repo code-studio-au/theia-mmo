@@ -1,3 +1,127 @@
+15 November 2026 — editor travel inspection:
+Validated NPC quest cards now include escort marker/name/coordinates, run speed,
+wait range and Ready/conversation semantics. Collection cards resolve item names,
+area/position and delivery wording. Destination selection is read-only; changed
+catalogues invalidate old buttons and destination edits refresh details. Native
+starter content checks pass in editor-quest-travel-inspector-v2; see STATUS.
+
+14 November 2026 — starter escort and collection implementation:
+The explicit `development-gameplay-starter-economy.json` package adds named
+contacts, Rowan's ground compass collection/delivery, and Elowen's private escort
+to the eastern ancient tree. Escort schema 5 binds one saved Quest marker and a
+metric speed/range policy; navigation derives and collision-checks the route at
+startup. The ranger runs at 7 m/s within 10 m and waits for the player beyond
+that boundary. Steering-point advancement does not insert idle simulation ticks.
+Arrival marks Ready; speaking to Elowen grants completion. Ready/Completed restore
+at the destination, while an interrupted Active journey restarts at home.
+Ground collection uses private durable reward claims and consumes the compass
+when delivered to Rowan. Its separate test road authors only two endpoints.
+Contacts retain stable identities as their positions move. Overhead names/roles
+use standard Bevy UI; contact bodies remain cyan fixtures without production art.
+See STATUS for actual automated/native acceptance and remaining limitations.
+
+14 November 2026 — runtime/editor continuation implemented:
+The earlier content-only prerequisite below is superseded for the explicit
+`development-gameplay-valley-contacts.json` package. Application loaders dispatch
+schema 1 single profiles or schema 2 catalogues; the core legacy loader still
+refuses catalogues. Authored anchor schema 3 binds every NPC's f64 feet, validates
+support and requires a complete unique catalogue mapping before installation.
+
+The owner installs distinct nonblocking entities atomically and routes one current
+conversation per actor by exact entity and content NPC. Quests may accept/turn in
+at different contacts; semantic choices are credited to the session NPC. Purchases
+require the vendor's specific NPC. Private rate/sequence/revision/range/life checks
+remain. Retirement preserves world identity and only closes affected sessions.
+
+Bounded DG02 presence is separate from DG01: maximum sixteen entries / 709 bytes.
+The client validates exact catalogue indices, unique stable incarnations/positions,
+actor and profile, then resolves each clicked mesh and open node to that contact.
+World/map quest markers and action buttons use the relevant giver or turn-in NPC.
+The native guide-to-steward quest, fixed reward, guide trade and PostgreSQL restart
+pass; see STATUS and build/multi-contact-native-v2/qualification.json. The editor's
+normal Catalog ID field/export path passes two contacts plus five roaming wolves.
+Native contact visuals remain cyan fixtures; broader NPC art/movement is not claimed.
+
+14 November 2026 — P3-11 / P3-12 / P3-15 / P5-17 multiple-contact continuation:
+the user authorized progressing from the qualified single-guide valley to multiple
+authored contacts, including quests accepted from one NPC and returned to another.
+Keep the current playable package working while replacing its single-contact
+assumptions in bounded stages. The manual editor/account session is available for
+human feedback independently of this feature.
+
+Implemented content prerequisite: `theia_core::dialogue::catalog::Catalog` accepts
+schema 2 with `id`, positive `revision` and `contacts` (1..16 existing schema-1
+profiles embedded as objects). The total input is capped at 256 KiB; each compact
+profile retains the existing 16 KiB, eight-node/four-choice and text/acyclicity
+bounds. Sixteen contacts is an explicit initial Theia authoring budget. All catalog,
+profile, NPC, node and choice IDs must be globally distinct. Typed nested decoding
+rejects duplicate/unknown fields. Contacts are indexed by stable NPC content ID.
+
+`validate_quest_contacts` resolves giver and turn-in independently, checks each
+semantic interaction against its exact NPC and refuses quest/catalog/stage/objective
+IDs that alias dialogue definitions. This function does not validate creature,
+item, document or area references, static support, live entity/session/range, or
+persistence. Those retain their respective validators and authority boundaries.
+The old Profile loader still rejects schema 2. No default manifest, editor export,
+World, network, client UI or saved-account format adopts the new collection yet.
+
+Remaining concrete implementation/acceptance:
+- Publish a bounded authored contact collection with checked f64 feet and bind every
+  placement/profile to world admission identity. Preserve legacy schema-1/2 anchor
+  behavior and refuse duplicates, unsupported positions and missing definitions.
+- Install distinct noncombat, nonblocking contact entities. Keep one current
+  dialogue session per player with bounded request counts and monotonic revisions;
+  route choices, quest actions and vendor requests by that session's exact contact.
+  Wrong NPC, retired entity, stale revision and out-of-range actions must refuse.
+- Replicate bounded contact presence and resolve each visible/clicked entity to its
+  matching dialogue/quest marker. Do not substitute nearest-contact identity for
+  the explicitly clicked NPC. Keep the existing single-guide protocol as a tested
+  compatibility path until the new opt-in path passes.
+- Let the editor bind/export two NPC markers and launch their exact snapshot.
+  Demonstrate acceptance at A, a semantic interaction/turn-in at B, vendor binding,
+  and durable restart without duplicate quest/reward grants. Use normal controls
+  and standard Bevy presentation. Keep general NPC animation, roaming, additional
+  services and MMO scaling outside this contact slice.
+
+The core tests cover distinct giver/turn-in, choices on the wrong contact, missing
+contacts, global aliases, strict graphs/fields, byte/count limits and legacy refusal.
+Runtime and native multi-contact acceptance remain pending; see STATUS for checks.
+
+12 November 2026 — P5-17 / P3-12 / P3-15 editor contact binding:
+NPC markers expose an inline Catalog ID with existing validation, history and
+explicit Save. A gameplay-template export binds one matching NPC to its full XYZ
+feet; unknown IDs, multiple bound contacts and unsafe positions refuse. Anchor
+schema 2 includes that contact in world identity; schema 1 retains legacy bytes.
+`--guide-position authored` resolves the verified contact against the selected
+dialogue profile on server and client. Normal x,z/x,y,z options remain supported.
+Unbound markers and exports without gameplay templates retain annotation behavior.
+Marker yaw/radius remain authoring metadata; no new NPC model or facing behavior.
+
+Actual encrypted two-peer valley acceptance opens both private conversations,
+closes on walkaway and retains the moving wolf, with zero rejected movement,
+readiness or dialogue and zero recovery resets. Rebuilt client configuration and
+CLI server agree with the encrypted identity. This tests contact binding, not
+quest acceptance/rewards, persistence, multiple contacts or editor F5 gameplay.
+See build/editor-contact-renet.log and build/editor-contact-cli-proof.json.
+
+12 November 2026 — P3-12 / P3-15 authored contact height:
+Server, client and launcher accept `--guide-position x,y,z` for trusted contact
+feet. Placement resolves only near that support layer; unsupported, penetrating
+and live-world replacements refuse. The full requested XYZ participates in a
+separate world-identity domain. Existing `x,z` fixtures retain their exact old
+identity and highest-terrain behavior. Collision, nonblocking NPCs, the single
+guide budget and three-metre 3D interaction range remain unchanged.
+
+All 480 network authority tests, seven launcher checks and an actual encrypted
+two-client dressed-valley test pass. Each client independently opens the full-XYZ
+guide conversation; walking away closes it while the west-grove wolf patrol
+continues. The rebuilt client configuration matches the encrypted world identity;
+the CLI server starts and shuts down cleanly and refuses unsupported height before
+publishing an endpoint. Formatting and strict workspace/all-target Clippy pass.
+Evidence: `build/layered-guide-{authority-tests,renet-v3,clippy-final,build}.log`
+and `build/layered-guide-cli-proof.json`. No new native dialogue UI or Windows
+qualification; editor NPC markers are still annotations pending binding/export.
+
 Vendor continuation, 2026-10-30: the opt-in guide barter now passes actual
 OIDC/native purchasing at 1280×720, 1920×1200 and 3440×1440. It uses the shared
 item response rather than treating a dialogue-node reply as purchase success.

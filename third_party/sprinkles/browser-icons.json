@@ -1,0 +1,14 @@
+[
+  {
+    "file": "ri-file-line.png",
+    "sha256": "fd4723a370b87996c898b8827ea13ea82f4aa6c51a3617ec70ec92f01170a124",
+    "bytes": 417,
+    "git_blob": "9ca8392e1eac9880055c8e95fcb7a0fb7393bea9"
+  },
+  {
+    "file": "ri-folder-open-line.png",
+    "sha256": "d88ece81dc5b5f5e918616d7537fa343dd7b133f803d46db4b9c472f64782392",
+    "bytes": 588,
+    "git_blob": "8732851fbd643c1b52349c1887d94e80dae3d591"
+  }
+]

@@ -104,7 +104,8 @@ impl Stats {
 }
 #[derive(Default)]
 pub struct Driver {
-    classic_source: Option<[u8; 32]>,
+    classic_world: Option<[u8; 32]>,
+    development_speed: bool,
     dodge: Option<([u8; 32], std::sync::Arc<crate::dodging::Profile>)>,
     life_required: bool,
     life_held: bool,
@@ -118,14 +119,40 @@ pub struct Driver {
 }
 pub struct Driven {
     pub pose: Pose,
+    /// Collision-checked rendering endpoints and the continuous clock phase.
+    /// None while the clock is suspended or life authority owns movement.
+    pub presentation: Option<([theia_core::coordinates::GlobalPosition; 2], f64)>,
     pub tick: u64,
     pub packet: Option<Commands>,
     pub reset: bool,
 }
 impl Driver {
+    pub fn with_development_speed(mut self, enabled: bool) -> Self {
+        self.development_speed = enabled;
+        self
+    }
+
     pub fn with_classic(source_world: [u8; 32], player_life: bool) -> Self {
+        Self::with_classic_social(source_world, player_life, None, false)
+    }
+    /// Preserve the complete admitted identity when opt-in social profiles wrap
+    /// Classic movement. This derives the exact expected hash; it does not relax
+    /// correction ownership or accept an arbitrary world supplied by the server.
+    pub fn with_classic_social(
+        source_world: [u8; 32],
+        player_life: bool,
+        chat_area: Option<theia_core::chat::Area>,
+        parties: bool,
+    ) -> Self {
+        let classic = crate::classic::profile_identity(source_world);
+        let chat = chat_area.map_or(classic, |area| crate::chat::profile_identity(classic, area));
+        let world = if parties {
+            crate::party_wire::profile_identity(chat)
+        } else {
+            chat
+        };
         Self {
-            classic_source: Some(source_world),
+            classic_world: Some(world),
             life_required: player_life,
             ..Self::default()
         }
@@ -171,11 +198,12 @@ impl Driver {
             return Ok(None);
         };
         let c = corrected.state;
-        let classic = if let Some(source) = self.classic_source {
+        let classic = if let Some(world) = self.classic_world {
             if !c.valid()
-                || corrected.speed != 1
+                || (corrected.speed != 1
+                    && (!self.development_speed || !crate::development::valid(corrected.speed)))
                 || self.dodge.is_some()
-                || c.world != crate::classic::profile_identity(source)
+                || c.world != world
                 || c.pose.facing.is_none()
                 || intent.facing.is_none()
             {
@@ -225,6 +253,7 @@ impl Driver {
             self.stats.life_waiting_frames += 1;
             return Ok(Some(Driven {
                 pose: c.pose,
+                presentation: None,
                 tick: c.input.tick,
                 packet: None,
                 reset,
@@ -252,9 +281,14 @@ impl Driver {
             (Some(patch), Some(binding)) => {
                 binding.terrain_step_at(patch, &ready, pose, intent, rate, tick, true)
             }
-            (Some(patch), None) if classic => {
-                crate::classic::terrain_step(patch, &ready, pose, intent, rate)
-            }
+            (Some(patch), None) if classic => crate::classic::terrain_step_development(
+                patch,
+                &ready,
+                pose,
+                intent,
+                rate,
+                f32::from(corrected.speed),
+            ),
             (Some(patch), None) => crate::prediction::terrain_step(
                 patch,
                 &ready,
@@ -335,6 +369,7 @@ impl Driver {
             self.stats.waiting_frames += 1;
             return Ok(Some(Driven {
                 pose: history.pose(),
+                presentation: None,
                 tick: history.input().tick,
                 packet: None,
                 reset,
@@ -429,6 +464,7 @@ impl Driver {
         });
         Ok(Some(Driven {
             pose: history.pose(),
+            presentation: Some((history.presentation_endpoints(), estimate.fract())),
             tick: history.input().tick,
             packet,
             reset,

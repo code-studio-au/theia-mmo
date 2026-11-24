@@ -1,3 +1,1744 @@
+23 November 2026 — P4-12 chat followed by P3-03/P2-14 character layout:
+The user authorized autonomous implementation, native mouse/display checks and
+local commits. Finish the Say/Area composer slice, then return to character
+creation and closely follow the supplied character-customisation reference.
+This supersedes the earlier compact-layout-only decision below. Remove duplicated
+category navigation, omit presets, preserve the central live model, drag rotation,
+curved foot arrows and zoom, and keep unsupported options disabled. Use the
+approved regenerated art; the rejected early ZIP/contact sheet remain excluded.
+Chat retains explicit server-authored area selection and existing authority/rate
+policy; decorative controls do not imply new channels or public moderation.
+
+23 November 2026 — P3-03/P2-14 full-window frontend refinement:
+Login, character selection and customisation fill each client window, including
+single/two/four-player test allocations. Preserve artwork proportions with centred
+cover cropping; anchor controls and the preview to the actual window, independent
+of background crop. This does not force tiled clients into monitor fullscreen.
+Active control text is white for contrast against selected gold artwork. Reduce
+section-title horizontal clearance to 32px. Retain the compact creation layout.
+
+22 November 2026 — P2-14 approved regenerated sprites adopted in the client:
+The user approved v3 regeneration and requested game integration. Use the qualified
+v3 atlas/manifest through standard Bevy ImageNode and TextureSlicer, preserving
+live text, focus, disabled semantics and server-owned values. Generate matching standalone gold glyphs for missing pictograms, with transparent
+exteriors and no button backing. The rejected early
+UI ZIP/contact sheet remain excluded. The editor theme is outside this slice.
+See UI_SPRITE_INTEGRATION.md for implementation and qualification.
+
+22 November 2026 — P3-03/P2-14 reference-kit UI scope:
+The user requires the supplied Theia kit, graphics and party references across
+native game screens, including panel backgrounds/borders, controls, menus and
+links. Recreate these with shared bitmap decoration and standard Bevy widgets.
+Unsupported features remain visible, greyed out and InteractionDisabled; do not
+invent characters, stats, settings effects or live chat. Existing authoritative
+systems and native account flow remain prerequisites. Apply/OK/Cancel operate on
+existing preference resources with live preview and rollback, not a second store.
+The editor remains outside this game theme. See GAME_FRONTEND.md and provenance.
+
+22 November 2026 — P3-01/P3-03, P2-14 native account screens and shared UI:
+User requires login inside the game, with no browser fallback. The adopted future
+launcher handles updates/start only. Use the existing owned local Keycloak
+code/PKCE flow through a bounded in-memory credential adapter; do not claim a
+production native account API or updater. Dedicated character courtyard and
+account roster replace the login-screen live hero; empty accounts show no model.
+Restore the painted adventurer on Login. Use the supplied gold/sapphire UI references
+for shared standard Bevy buttons, panels, checkbox, slider, links and fonts.
+Existing gameplay actions, authority and preference persistence remain unchanged.
+Latch preview readiness after loading so unrelated pipeline work cannot hide it.
+See GAME_FRONTEND.md for implementation and provider/clipboard limitations.
+This supersedes the browser-login and cleared-login-ledge decisions below.
+
+22 November 2026 — P3-01/P3-03 native title and character flow:
+Keep Login, roster, creation and gameplay in one standard Bevy client/window.
+Reuse the existing browser OIDC/account APIs and private bounded atomic launcher
+handoff; defer network admission until the user selects Enter World. Credentials
+remain outside the native UI and no account I/O enters simulation. The live hero
+uses the shared modular catalogue on a separate preview render layer. Project its
+feet onto the cleared artwork ledge across aspect changes. Use illustrated title
+art and the user-supplied sunlit Millhaven scene with matching gold lettering;
+functional inputs remain native widgets. Native restart/same-window checks pass;
+see GAME_FRONTEND.md. This supersedes the earlier standalone-title deferral below.
+
+22 November 2026 — P2-08/P2-09, P3-03 modular player appearance:
+User approved autonomous local implementation and commits for the owned Modular
+Fantasy Hero package, native customization and persistent multiplayer appearance.
+Use a curated, bounded v1 catalogue, standard Bevy glTF skins and palette materials,
+and a separate preview render layer. Retarget source deformation relative to target
+bind axes; source absolute bone poses were visually invalid and rejected.
+Store validated seven-byte appearance with character creation; account ownership
+and async persistence remain authoritative. PN02 public metadata is bounded to
+341 bytes/eight actors. Gameplay protocol 14 rejects older peers/tickets at the
+transport boundary. No client-supplied mesh paths, stats or equipment authority.
+Build on the native account picker; full title-screen work and equipped armour
+appearance stay separate. See MODULAR_HERO.md for implementation and evidence.
+
+22 November 2026 — P5-17 asset group transforms:
+Use transient viewport selection over existing placement IDs and the standard
+Bevy handles/outline rendering. Move preserves offsets; yaw and uniform scale
+share the bounds-centre pivot in checked global f64 coordinates. Preview commits
+as one validated transaction and supports exact undo; the bounded edit budget
+covers every supported asset in a document. Terrain and guide/volume authoring
+remain separate. CPU regressions and isolated native RX 7900 XTX input/render/save
+checks pass; see STATUS and ZONE_EDITOR for controls, evidence and limitations.
+No runtime protocol or persisted selection-group format was added.
+
+22 November 2026 — P2-08 manual Millhaven playtest performance:
+The user reports approximately 16 FPS / 63 ms even on Nearby. Their recorded
+session confirms 81 resident tiles and 66.01 ms mean over its final 24 reports;
+view-distance reduction was applied. This session used unoptimized debug builds,
+reintroducing the build-profile problem measured on 16 November. Build a matching
+release editor/client/server/baker/validator, measure the same populated imported
+scene without gameplay input, and use optimized executables for manual sessions.
+Make release the default in edit_local.py and play_imported_population.py while
+retaining explicit debug selection. Preserve quality, source terrain, editor data,
+server authority and local-service lifetime. No speculative renderer rewrite.
+Acceptance: paired stationary native timing, correct manual launch profile, local
+launcher regressions and current build checks; actual results belong in STATUS.
+
+22 November 2026 — P5-17 / P3-15 / P3-06 populated Millhaven integration:
+User explicitly requests the old population village on Millhaven in both editor
+and live NPC/combat playtest. Preserve its authored relative placement, bindings,
+paths and quest locations; re-ground against the existing gentle-v2 heightfield.
+Preserve originals. Pair one bounded settlement with an immutable copied imported
+terrain package, bind both identities, and stream exact terrain beneath static
+village colliders. Do not render/collide the legacy admission ground snapshot or
+add the old small-world boundary walls. Require both object and terrain readiness.
+Navigation remains bounded to the populated vicinity; surrounding terrain remains
+walkable. Refuse unbaked terrain journals and outlying settlement content rather
+than silently discard edits. Prerequisites are existing static export, saved tiles,
+account population, quest/contact profiles and navigation. Acceptance requires
+source/placement audit, regressions, strict checks and native editor plus connected
+NPC/combat verification. This entry records intent; STATUS records actual results.
+
+22 November 2026 — P5-17 larger smoothing and centre-sampled flatten area:
+User requests five times the maximum Smooth size and a centre-height flatten tool
+with a smooth outer join and optional adjustable bumps. Smooth radius becomes
+160 m (previously 32 m). Keep the old manual-level Flatten; add Flatten area,
+sampling the exact triangle surface at the first stamp X/Z, relative to zone Y,
+and hold that height throughout the stroke. Full strength inside its 4..160 m
+radius, a separate 1..80 m quintic blend band outside, no modification beyond it.
+Optional fixed-seed Perlin bumps expose 0..8 m maximum height deviation and
+4..128 m wavelength; world-anchored noise is zero at the initial sampled centre
+and repeats across stamps/replay. No new random seed per frame. Preserve locked
+small-patch borders, imported shared samples, immutable source, undo and cancel.
+Imported extended brushes require schema 18; old journals still replay unchanged.
+Prerequisites: existing imported edit journal, triangle queries, native sliders,
+transaction history and brush preview. Acceptance: centre/drag semantics, seams,
+falloff/noise bounds, save/replay/undo, rejected edits, widget guards, large-radius
+preview, strict lint/format/tests and a disposable native rendered check. Runtime
+terrain publishing remains separate; these tools do not mutate a running server.
+
+17 November 2026 — local recovery and second gentle terrain pass:
+User request: add a Developer Reset position button after falling through terrain,
+then apply another smoothing/elevation pass. Reuse trusted local owner controls and
+the server's collision-prepared teleport/input-stream reset; preserve speed, show
+server-confirmed status and keep ordinary/player-wire authority strict. Scope the
+automatic below-surface safeguard to opted-in single-player saved/generated terrain;
+never treat roofs as a heightfield in authored scenes. Do not claim a CCD root fix.
+Apply a second identical 40 m smoothing / 60% elevation pass to v1, producing v2
+at cumulative 36% elevation scaling, preserving earlier versions and shared borders.
+
+17 November 2026 — P5-17 / P3-15 / P2-14 gentler seven-zone terrain and cartography:
+The user approved a separate smoothed copy of Millhaven, Stoneford and surrounding
+Valecrown, Deepward Holds, Greenward, Canopy Marches and Treaty Marches. Process the
+continuous original master before cropping: Gaussian sigma 13.333 m, 40 m support,
+60% sea-relative elevations, land-normalized filtering and 40 m coastline fade.
+Preserve the archive and previous editor documents. Convert the combined rectangle
+to 2 m samples, padding only east/south to 7296 x 8192 m. Expand imported editor
+admission to 8192 m per axis, 4096 tiles and 128 MiB source samples; retain checked
++/-4096 m local frames, 8 creations/2 replacements per frame and 25 near-detail
+tiles. Large areas use a 16 m overview. No whole-continent capacity claim.
+
+The user also requests an enabled walkthrough map, reports dark minimap chunks,
+and asks for hover zone-boundary highlighting. Bind local baked cartography to the
+exact saved-terrain identity/bounds; use the original zone-ID mask for geographic
+hover outlines and names. Preserve native aspect/orientation and use baked color
+as presentation fallback where minimap mesh samples are absent; readiness/collision
+and the known-sample metric remain independent. This is not gameplay region ownership.
+Prerequisites: imported sculpt/history, saved terrain, HUD and existing map controls.
+Acceptance: original preservation, crop/tile seam checks, bounded editor/save tests,
+format/lint, and native editor editing/map/hover captures on the actual derived area.
+Implementation qualification is recorded separately in STATUS and ZONE_EDITOR.
+
+17 November 2026 — local developer running speed:
+The user requested F10 → Developer multipliers for the original archive H1/H2
+walkthrough. Add 1×, 2×, 4×, 8×, 16× as a session-only local developer extension,
+not a Classic formula change. Running/backward running scale; walk, jump/gravity,
+facing, collision and readiness retain existing behavior. The loopback local-ticket
+server explicitly enables trusted owner controls. Ordinary/account servers do not
+accept a player speed request. Use a bounded owner queue with file I/O on a worker,
+and an explicit DT03 correction envelope distinct from normal TP03. The menu shows
+server-applied state and writes requests off the render thread. New sessions start
+at 1×; Graphics preferences stay independently persistent.
+
+17 November 2026 — Graphics menu terrain view distance:
+The user requested a saved live View Distance control. Nearby (default), Far and
+Maximum use 4/8/15 tile radii; Maximum instead shows the complete saved zone when
+its layout passes the 32 x 32 bound. Distant terrain keeps existing coarse LOD.
+The setting changes client terrain presentation and camera far clipping only;
+server interest, collision and near readiness remain unchanged. It does not add
+streaming to monolithic/authored object scenes. Legacy preference files default
+to Nearby. THEIA_TERRAIN_VIEW is an initial fallback; explicit saved preferences
+and subsequent menu choices take precedence. The earlier plan to force the WM
+launcher to full view is superseded; terrain design remains set aside.
+
+17 November 2026 — P2-06 / P2-08 / P3-15 maximum terrain view:
+The user requests maximum view/chunk loading for the WM v3 playtest. Provide
+THEIA_TERRAIN_VIEW=full for bounded saved zones up to 32 x 32 tiles; nearby
+remains the default. Full view changes visual residency and camera far clipping,
+not local collision, server simulation or near-detail movement readiness. The
+WM v3 local launcher will opt in after native qualification. Keep the existing
+editor and saved terrain intact; this is not a continent-wide capacity claim.
+
+17 November 2026 — P5-17 / P3-15 imported terrain edits:
+The user explicitly requested implementation after discovering the imported zone
+was read-only. Enable the existing sculpt and colour-paint tools across its whole
+extent. Save a schema-17 deterministic brush journal over the exact immutable
+source; share cached tile buffers across history and copy changed buffers only.
+Support seam-crossing raise/lower/flatten/smooth/paint, preview cancellation,
+one undo entry per completed drag and normal explicit Save/reload. Preserve source
+resolution and identity. Imported flatten heights use absolute source Y metres.
+This supersedes the prior editing limitation; runtime publication remains deferred.
+
+17 November 2026 — P5-17 / P3-15 full imported-zone editor:
+The user explicitly chose full-zone editor support over reopening the legacy
+512 m draft. Use the verified immutable saved-heightfield package as a schema-16
+terrain reference, with independent authored objects and existing undo/save/load.
+Share decoded samples across document history, preserve 1 m grounding, and render
+standard Bevy meshes at 4 m across the zone with at most 25 nearby 1 m tiles.
+Keep source heights read-only in this slice; legacy terrain sculpt/paint and
+static-package playtest/export cannot silently consume this new base. Existing
+walkthrough and old editor drafts remain independent. No runtime publication of
+new object edits or Windows qualification is implied.
+
+17 November 2026 — map orientation and editor navigation correction:
+P2-14 / P3-15: retain Millhaven source +Z north but use -X east in the game's
+right-handed Y-up frame. The earlier +Z-north / +X-east map projection reflected
+turns. Correct cartography, sites, pixel/hover projection and arrows together;
+source positions and gameplay controls remain unchanged. Farm display names
+follow their game compass quadrants. P5-17: perspective editor WASD follows the
+current camera bearing on the horizontal plane, rather than fixed world axes.
+Orthographic navigation retains each authoring plane; mouse drag-pan/orbit remains.
+
+17 November 2026 — P2-14 / P3-15 whole-zone map:
+The user requested an overview of their location relative to the village, bandit
+caves and other Millhaven landmarks. Use a complete offline cartographic image
+and exact source landmark coordinates, bound to the admitted saved-terrain
+identity. M opens the standard Bevy UI map; selection shows a place and straight-
+line distance without requesting gameplay movement. Keep keyboard movement while
+viewing; map mouse input owns camera/steering, and Escape closes the map first.
+Use the supplied +Z-north convention for this overview and its matching minimap.
+This is a package-specific presentation orientation, not a world-coordinate or
+control change; other maps retain their established compass convention. Source
+screenshots guide layout, not asset reuse or a requirement to build their quest
+log/world hierarchy in this slice. See ZONE_OVERVIEW.md for scope and evidence.
+
+17 November 2026 — P1-10 / P2-06/07 / P3-13/15 imported whole-zone terrain:
+Implement the user's full Millhaven walkthrough through the existing saved-terrain
+streamer. Preserve the supplied 1 m samples for collision and nearby meshes;
+2 m is supported, not a mandatory maximum. Rectangular schema 2 packages carry
+explicit tile counts/origin and 33/65/129 samples per 128 m tile. Schema 1 keeps
+its original contract and identity. Use standard Avian heightfields for fine
+sources, bounded full-detail near meshes and 4 m distant meshes. Importing a zone
+does not enlarge finite editor patches or establish full-map editing support.
+Source notes remain reference material, not instructions to alter the landscape.
+This terrain-only slice preserves riverbeds, missing crossings and sharp cuts;
+water, bridges, scenery, navigation and account content need separate work.
+See IMPORTED_HEIGHTFIELDS.md for exact limits, reproducible import and evidence.
+
+16 November 2026 — P2-08 VSync selection:
+The user approved a separate saved VSync On/Off control in F10 -> Graphics,
+defaulting to On. This supersedes the fixed AutoNoVsync policy below. On uses
+Bevy PresentMode::Fifo, which is universally supported and tear-free; do not use
+AutoVsync for this promise because it can select relaxed FIFO and tear on late
+frames. Off uses AutoNoVsync with Bevy's platform fallback. Retain the FPS cap
+independently, including Unlimited: VSync can still impose the refresh ceiling.
+Apply the native Window presentation change live and persist the boolean in the
+existing local schema-1 preferences; absent vsync defaults to true. The explicit
+uncapped benchmark override bypasses VSync and the cap without changing saved
+choices. No display refresh-rate change, custom swapchain, server timing or
+Bevy/plugin version change. Native Windows remains a separate validation target.
+
+16 November 2026 — P2-08 local Graphics / FPS-cap policy:
+The user requested Graphics in the F10 menu and a saved FPS cap after the optimized
+Millhaven performance comparison. Offer 30/60/90/120/144/165/240 FPS and Unlimited,
+defaulting to 60. Apply changes to client presentation immediately; keep simulation
+and authority unchanged. Use the ordinary Bevy render schedule to sleep after frame
+presentation, subtracting elapsed work, with no busy loop or accumulated catch-up.
+Use AutoNoVsync so refresh synchronization does not impose a second ceiling; its
+platform fallback remains Bevy-owned. FPS limiting is distinct from VSync/VRR.
+The explicit THEIA_PERFORMANCE_UNCAPPED benchmark override still bypasses the cap
+without rewriting saved preferences. The installed engine is exact Bevy 0.20;
+reviewed bevy_framepace main still pins 0.19, so no incompatible plugin is added.
+Retain version-1 UI preference compatibility: missing fps_cap means 60, zero means
+Unlimited, and invalid caps fail validation. Editor account playtests share the
+local build/user-preferences/interface.json unless explicitly overridden; test
+fixtures use isolated files. No remote preference service or gameplay setting.
+
+16 November 2026 — Millhaven loading artwork:
+Use the user's supplied Millhaven Valley at Sunset PNG unchanged, with its
+embedded Theia/Millhaven title and no duplicate heading. Preserve its aspect ratio
+at both playtest heights; keep the progress bar, stage message, tip and Cancel
+below it. Bind it to the current legacy `theia.zone.starter-valley` package ID
+and `theia.zone.millhaven`; other zones keep the original valley fallback. This
+cosmetic choice changes no authoring, world/admission identity or persistence.
+Source/hash provenance is in `content/ui/loading/PROVENANCE.md`.
+
+16 November 2026 — loading presentation and progress policy (P2-02/P2-08):
+User feedback requires no unfinished world/T-pose flash before loading and a real
+0–100% preparation bar. Use ordinary Bevy cameras: world rendering continues to
+prepare assets/pipelines, with its final window write suppressed until entry;
+the loading camera clears opaquely even before UI assets can draw. Keep the native
+window hidden until stable loading frames have rendered, then relinquish its
+visibility to ordinary window handling. Tile test windows after native mapping;
+placement made while hidden may be overwritten by the window manager. Verify
+actual desktop coordinates and preserve later user movement. Display the bar and
+stage message without the numeric percentage label, as the user requested. Six
+equally weighted readiness milestones drive progress: connection, world, characters,
+current owner authority acknowledgement, renderer and stable completion. Count
+the completed prefix, allow regression if readiness retracts, and show 100% before
+entry. This is readiness-stage completion, not a byte counter or time estimate.
+Never fabricate percentages from elapsed time. Later in-play readiness losses
+retain the existing authority barrier and do not reopen the startup artwork.
+
+16 November 2026 — P4-11 shared unit-mark policy:
+The eight reference symbols are Skull, Cross, Square, Moon, Triangle, Diamond,
+Circle and Star. Assignments belong to the party, not the target's global state;
+the same unit may have different symbols in different parties. The current
+leader alone assigns or clears them. One unit has at most one symbol per party,
+and each symbol identifies at most one unit. Reassignment replaces both conflicts.
+These permissions and ranges are explicit Theia policies, not claimed verified
+Classic formulas. Reuse the existing 1024-metre XZ relevance bound for requests
+to hostile units/NPCs; current party members may be marked anywhere in the bounded
+world, including self and dead members. No marker request grants extra positions,
+changes selection/facing/movement, or starts an attack. Retain existing marks
+through loss of interest and promotion; remove dead/retired creature IDs, retired
+NPCs, departing members and dissolved parties. Creature respawn uses fresh IDs,
+so marks do not transfer to a new creature life. Ground markers remain separate.
+Implementation and acceptance evidence belong in STATUS/PARTIES, not this policy.
+
+16 November 2026 — P4-11 marker presentation policy:
+Use original geometric symbols in ordinary Bevy ImageNode widgets. Above-unit
+marks require an observed current identity in a loaded chunk, a visible rendered
+transform, static-world line of sight, a camera distance of at most 60 metres and
+an on-screen anchor. This presentation distance is separate from server request
+relevance and does not erase retained marks. The selected-target icon uses the
+private party state even when a member is outside spatial interest. The palette
+binds the painted selected identity/revision; it neither selects nor attacks.
+
+16 November 2026 — P4-11 friendly member selection:
+Select current other party members throughout the current bounded world, matching
+the party-wide vitals policy. This is an explicit Theia extension; no Classic
+range equivalence is claimed. Selection carries identity only, with exact world/
+actor incarnation and membership checks; it does not grant additional position
+visibility or combat eligibility. Keep a separate mutually exclusive friendly
+identity in TG02 so existing hostile lists, Tab search, visuals and damaging
+abilities cannot treat members as creatures. Selection stops prior autoattack
+without turning or moving. Death/respawn and leadership changes retain the member;
+leave/removal/dissolution/disconnect clear it. Profile v2 requires matching rebuilt
+clients/server/editor. The authority prerequisite passes; member-frame selection
+and target-frame presentation remain the next playable UI slice. See STATUS.
+
+16 November 2026 — P4-11 compact invitation prompt:
+Reuse the existing authenticated party invitation/revision/expiry and one-command
+pending guard. When Party management is closed, show the trusted inviter name and
+Accept/Decline in a top-centre nonmodal prompt below the test-route banner. Opening
+Party hides the duplicate prompt; closing Party restores an unexpired invitation.
+Do not dismiss it silently with Escape or steal gameplay keyboard focus. Native
+UI picking owns mouse gestures beginning on the prompt. Cancel, expiry, replacement
+and connection loss remove obsolete presentation; painted stale commands cannot
+bind to a replacement invitation. This presentation is automatically available in
+the editor's already-qualified account playtests because they enable party mode.
+No new server protocol or gameplay formulas are introduced. Acceptance is tracked
+in STATUS; member stats/marks and the title/loading flow remain separate slices.
+
+16 November 2026 — monitor-tiled local playtests (P1-06 / P5-17):
+The user replaces the earlier 1920-wide overlapping test windows with two equal
+halves of the 3440-wide display, and four equal quadrants for four players.
+The user chose to retain the desktop panel and fit above it. On this 3440x1440
+display with a 40-pixel bottom panel, use 1720x1400 left/right or 1720x700 in
+row-major 2x2 order. Query the available desktop work area and intersect it with
+Bevy monitor bounds/origin; keep standard borderless windowed Bevy positioning.
+Bevy 0.20 has no work-area query: the launcher supplies a bounded hint from Linux
+X11 wmctrl or Windows work-area APIs. Native Linux proved monitor-only bounds
+produce a 40-pixel overlap; no custom renderer or desktop preference changes.
+Await native resize acknowledgement before positioning against the new size,
+otherwise the desktop can clamp the lower row using its old height.
+Three clients use the first three quadrants. Placement happens once;
+subsequent user movement is retained. These remain independent clients, not
+multiple local players sharing one camera/input session. Extend the existing
+bounded editor test-pawn/admission path to four without changing gameplay authority.
+Reference UI must also be designed for the smaller tiles. Title/character/loading
+and party invitation/stats/marking screenshots are planned direction recorded in
+CHARACTER_LAUNCHER_MENU and PARTIES; incidental pictured features are not adopted.
+
+16 November 2026 — prepare every bounded authored-world mesh before movement:
+P2-02 / P2-08. A few camera-visible compiled pipelines do not establish readiness
+for an entire retained authored scene. Native capture and diagnostics reproduced
+all friendly contacts disappearing for roughly half a second during the first
+quest approach: a newly visible world pipeline was still compiling, which revoked
+all reported chunks despite all 116 CPU/GPU meshes remaining loaded. This can
+occur in either client and was missed by the earlier stationary captures.
+Use standard Bevy NoFrustumCulling temporarily on authored meshes needing pipeline
+preparation, require a specialized compiled pipeline for every mesh, then remove
+only the temporary overrides and resume ordinary culling. This is bounded scene
+startup/recovery, not a general streaming prewarm or custom renderer. Preserve
+CPU/GPU asset checks, genuine readiness retraction and authoritative movement
+blocking when an asset is absent; do not keep stale readiness through asset loss.
+Expose readiness/retraction counters and require zero retractions during the native
+quest/escort run. Camera sweep, restoration and rebase checks cover the lifecycle.
+A startup loading screen was discussed as presentation polish; none is added by
+this correction. Final acceptance is recorded separately in STATUS.
+
+15 November 2026 — party escort participation and lifecycle:
+Following the user's any-participating-member-in-range rule, participants are
+current party members whose committed journal has the same Active escort.
+Unaccepted, Ready and Completed contacts remain private so other quests stay
+available. Living participants may keep the shared ranger within her existing
+10-metre bound; dead participants observe but cannot drive or receive arrival.
+A late accepted participant or merged party adopts the furthest existing checked
+route progress. Leaving or dissolution forks the current position without rewind;
+disconnect removes that incarnation. These merge/eligibility choices are explicit
+Theia policies, not claimed Classic rules. No search, database work or transport
+await enters fixed ticks. The party v3 profile binds this behavior.
+Arrival facts remain character-specific and require that living character inside
+the destination range. Durable Ready state and speaking to the ranger remain
+required for each player's own reward. A distant member gets no automatic credit.
+Session restart still resets Active travel to home, while saved Ready/Completed
+journeys restore at the destination. Shared XP/loot/general quest credit are
+outside this slice. Headless implementation and native acceptance are recorded
+separately in STATUS/PARTIES.
+
+15 November 2026 — bounded party membership slice:
+P4-11 follows authenticated actor admission and existing encrypted control/UI
+integration. Adopt the five-member/leader model evidenced by the original 2004
+Blizzard manual; record its limits and explicit session/invitation/request policies
+in PARTIES.md. Implement membership independently of shared rewards or escorts.
+Disconnect leaves the initial session-local party; death does not. No persistence
+or distributed service is introduced by this slice.
+
+15 November 2026 — deferred party escort behavior (user direction):
+Keep current solo escorts private per character. Once the party system exists,
+participating party members should see one shared ranger journey. Any participating
+member within the escort range keeps the ranger moving; she waits when none are
+in range. The user explicitly deferred implementation until the party system.
+Eligibility, joins/leaves and completion credit still need a concrete party slice;
+this decision does not claim shared escort behavior is implemented.
+
+15 November 2026 — bound continuous scene readiness waits:
+P2-02. Authored scene readiness may retract after successful initial loading.
+Timeouts measure each uninterrupted pending interval, not total client uptime.
+Readiness clears that interval; a later retraction starts a new bounded wait.
+Keep the existing startup/recovery timeout and actual CPU/GPU readiness gates;
+do not allow movement through an unprepared world or bypass missing assets.
+
+15 November 2026 — interpolate authored population target presentation:
+P3-07 / P4-03. Startup must opt pursuing population definitions into the existing
+TargetMotion/RemotePawn presentation path, just as singleton patrols already do.
+Use the maximum configured chase/return speed and current 1.5 m/s idle travel as
+the nominal speed for the existing catch-up policy. Passive stationary definitions
+remain unchanged. Do not derive authority, hit range or selection eligibility
+from interpolated poses; no protocol or fixed simulation changes. Expose blended
+frame counts alongside existing lag/speed diagnostics to verify actual native
+presentation rather than inferring it from actor movement alone.
+Choose creature gait from successive authoritative positions and server tick
+intervals, retaining the existing brief stop grace. Render catch-up speed after
+loading or screenshot stalls must not select a running clip for a walking actor.
+Facing/placement still use the interpolated path; attacks/death retain priority.
+Discontinuous positions and restarted timelines reset locomotion observation.
+
+15 November 2026 — explicit bounded population patrol guides:
+P3-07 / P4-03 / P5-17. Zone schema 15 adds an optional spawn-group Patrol guide
+reference. Older groups remain stationary or keep their existing roaming radius.
+Inspector assignment sets roaming to zero atomically; stored patrol plus roaming
+is invalid. Each spawned actor prepares home → authored guide → reversed route →
+home with the shared navigation and capsule clearance checks before admission.
+Keep sparse guide points unchanged. Limit every guide/derived point to 64 m from
+that actor's home and the outward route to 128 points (255 with return), inside
+the existing loaded collision patch. These are initial Theia engineering bounds,
+not Classic constants. Use existing 1.5 m/s idle travel and 2–6 second pauses;
+combat return resumes the captured segment, while respawn resets to home. Only
+the current ordinary pursuing definition and existing 16-actor runtime cap are
+supported. No search/I/O enters fixed ticks; no passive patrol or streamed-route
+claim. Route geometry participates in the shared gameplay identity.
+
+15 November 2026 — resume population excursions at the interruption anchor:
+P3-07 / P4-03. The pursuit controller captures the creature's actual location
+when combat begins and returns there after disengagement. Preserve the roaming
+excursion and next waypoint through that interruption, then use the existing idle
+pause before continuing. Only respawn resets progress to home. Resetting progress
+on every combat tick was inconsistent with the return anchor and could cut across
+unvalidated corners. No Classic balance constants or navigation policy change.
+
+15 November 2026 — interpolate moving contacts with existing remote poses:
+Reuse RemotePawn for presentation of authoritative contact positions. Do not add
+physics bodies, client navigation, optimistic quest state or movement requests.
+Contact mesh/name presentation may trail receipt by a bounded interpolation
+interval; interaction range remains authoritative. Missing contacts and identity
+changes reset interpolation, and the existing remote discontinuity policy snaps
+large relocations. This improves moving NPC presentation without a protocol or
+simulation change; packet timing and low frame rates remain measurable limits.
+
+## 15 November 2026 — shared escort export preflight
+
+P4-03 / P3-11/12 / P5-17. An editor export must not appear playable merely because
+its contact catalogue and population spawn points validate. Resolve each escort's
+exact NPC marker and unique Quest destination before geometry publication; reject
+missing/wrong/duplicate references and destinations beyond the 512 m preparation
+budget. Use the same supported-home and grounded navigation/clearance helper in
+the editor worker and authoritative server startup. Distances use capsule feet
+consistently. The server still revalidates its startup content independently.
+
+Prepare routes against the exact staged world/navigation before exposing a
+population package. Failure removes staging and leaves source, prior exports and
+Undo history intact. Record checked quest/NPC/destination IDs and derived steering
+point counts in the export report. This is validation evidence, not player progress
+or a route cache trusted by the runtime. No search or file I/O enters fixed ticks.
+
+## 14 November 2026 — escort navigation, ground collection and optional diagnostics
+
+P3-11/12/15 / P2-14 / P5-17. The user chose the escort as the destination-only
+navmesh experiment, and the collection quest as a separate authored test path.
+Use existing Landmass navigation and checked terrain/capsule grounding during
+startup. An escort authors its home NPC and one Quest destination marker; it does
+not author intermediate waypoints. Keep necessary terrain/corner steering points
+and the existing dense clearance checks. No path search or collision file loading
+enters the fixed simulation step.
+
+Each character has a private escort journey. Elowen travels at the Classic forward run speed, 7 m/s while the
+player remains within 10 m, pauses outside that radius, and becomes Ready at the
+ancient-tree destination. Only speaking to that exact NPC turns in the quest.
+Committed Ready/Completed journals restore the NPC at the destination; an
+interrupted Active journey restarts from home on rejoin. Cooperative shared
+escort groups and saving partial route progress remain outside this slice.
+
+The reported compass-test whole-character stutter was traced to a one-tick render
+tween restarted on each prediction update. At render rates below simulation rate,
+frames alternated between one and two ticks of movement. Render the last two
+reconciled positions using the continuous prediction-clock fraction instead;
+retain one tick of presentation delay and never extrapolate beyond collision.
+This is a presentation correction, not a change to authoritative movement or
+Classic speeds. Automatic escort qualification holds ordinary forward input
+continuously while following, with a small stop/resume distance band near the NPC.
+
+Ground rewards use schema 5: one named position/area, one consuming possession
+quest and one item. Existing async reward claims and bag/journal transactions own
+availability, pickup and consumption. The runtime checks life, current position
+and three-metre interaction range. The once-only delivery item cannot be destroyed
+through the client inventory endpoint. The authored collection path has two
+points; AI test travel derives grounded steering from those points.
+
+The user confirmed 3440x1440 solo and 1920x1440 per player for two-player tests.
+Preserve resolution when arranging multiple windows; overlap when needed rather
+than shrinking each window below 1920 wide. Explicit smaller diagnostic windows
+remain available for the existing responsive-layout qualifications.
+
+Use standard Bevy UI for NPC names/roles, bag/vendor coin rows and slot-anchored,
+viewport-clamped item tooltips. Tab and Shift+Tab remain usable while the backpack
+or conversation is open. Enemy health bars require explicit selection or observed
+attacks against the local player; a three-second simulation-time grace bridges
+swing cooldowns, and death/out-of-combat clears it. This is presentation policy,
+not an authoritative threat-table display.
+
+Debug statistics are hidden by default and toggled through Interface [F10]. Save
+the toggle alongside local UI preferences when a preference file is configured.
+Display measured FPS/average frame time, window dimensions and observed network/
+world stats. Hide the normal connected label; retain loading/disconnection text.
+
+## 14 November 2026 — starter coins, vendor recovery and fixed HUD
+
+User requests fixed visible minimap/objectives when the bag opens, automatic bag
+opening only at an NPC selling items, persistent gold/silver/copper, additional
+starter contacts, replacement sword/wand sales, player item sales and unlimited
+vendor stock/cash. They also request a second NPC introduction quest and smoother
+AI test travel. Work remains local.
+
+P2-14 / P3-05 / P3-11 / P3-12 / P4-03 / P5-17: keep map/tracker anchors fixed;
+place the bag in the adjacent column. Use a schema-3 item/bag copper ledger in the
+existing character backpack transaction, not three floating-point balances or a
+client-authoritative wallet. 100 copper = 1 silver, 100 silver = 1 gold. Initial
+52,550 copper (5g 25s 50c) is a once-only new-character seed in the opt-in starter
+profile. Existing persisted rows are never reseeded. These amounts/prices are
+Theia starter tuning, not claims of historical Classic prices or account-wide
+shared banking. Legacy item/bag schemas and barter content remain available.
+
+Schema-2 vendor recipes exchange coins for items or backpack items for coins.
+One click exchanges the displayed authored quantity. Equipped items must first
+be unequipped; destruction pays nothing. Vendor stock and funds are unlimited:
+only the player's balance, capacity, exact NPC/session and revision constrain a
+trade. Keep cost, output, money and receipt in one async durable commit before
+acknowledgement; retain exact-retry replay and stale/conflicting refusal.
+
+Keep dense navigation/grounding checks, simplify redundant steering points within
+3 cm in full 3D, then recheck every longer segment against the same navigation and
+capsule clearance. Retain the original route if that check fails. Never force five
+points through a bend, wall or floor change. Preparation remains outside fixed
+simulation. The diagnostic AI player still sends ordinary movement input.
+
+## 14 November 2026 — exact multiple-contact runtime and editor adoption
+
+Continue the authorized P3-11 / P3-12 / P3-15 / P5-17 slice through actual native
+play. Keep a separate opt-in valley manifest and retain the qualified single-guide
+path. Bind all schema-3 anchor bytes and sorted placements to world identity;
+validate the entire placement/catalogue bijection before allocating any entity.
+Schema 3 permits 1..16 contacts in 16 KiB; legacy schemas retain 4 KiB limits.
+
+DG02 carries at most sixteen 41-byte entries (catalogue index, incarnation, f64 XYZ),
+709 bytes total. Publish presence before an open view on the existing reliable
+channel. The client validates stable NPC/entity/position bindings, unique entities,
+sorted indices, actor/profile identity and the exact node owner. DG01 stays the
+single-profile compatibility path. This adds no simulation I/O or new transport.
+
+Quest request content NPC must equal the definition of the actual open entity;
+never infer it from proximity. Wrong contact/session/range/incarnation refuses
+before consuming command sequence or queue capacity. Vendor permission additionally
+checks its declared NPC. One contact's retirement closes only its own sessions.
+Keep the core catalogue loader and legacy profile loader separate; application
+entry points explicitly dispatch the validated content schema.
+
+Use the existing editor NPC Catalog ID field and checked export. Render bounded
+standard Bevy contact meshes and per-contact quest/map markers. The new report
+quest accepts at the guide, turns in at the steward and awards one token through
+the existing durable fixed-item transaction. Do not change combat profiles or
+starting inventory to manufacture that proof. Native completion, purchase and
+restart are recorded in STATUS. General NPC art/animation and moving contacts
+remain separate slices.
+
+## 14 November 2026 — playtest readability and idle population movement
+
+The user reports overlapping pursuing enemies, absent idle wandering, confusing
+quest UI and a flickering road, and asks for loot particles and use of the local
+Synty UI. They authorize continuing and native checks while away. Address these
+under P2-13/14, P3-07/09/11 and P5-17. Existing aggro/return and separate threat/
+first-tag ownership remain the baseline.
+
+Use soft authoritative NPC avoidance, never player/NPC physical collision. Keep
+spawn spacing separate from a per-group roaming radius. Legacy groups default to
+zero roaming; newly placed groups default to 4 m. The local valley launcher opts
+its private draft into 4 m roaming. Radius 0..16 m, 1.5 m/s walking, 2..6 s pauses,
+up to four checked excursions per home, 1.6 m preferred combat spacing and 1 m/s maximum
+avoidance are explicit Theia readability policies, not evidenced Classic formulas.
+Navigation/collision preparation stays outside the fixed step. An impossible
+roaming request refuses; combat interrupts travel and normal return restarts the
+checked excursion from home, without skipping its waypoints. Deliberate singleton patrol paths remain available; this
+does not implement individually authored patrol assignments for grouped enemies.
+
+Loot feedback follows local committed corpse availability, including partial
+pickup and refusal. Reference screenshots inform layout only; use the user's
+local licensed Synty icons/fonts and standard Bevy UI. Fix coplanar road rendering
+in shared editor/export geometry without changing saved heights or collision.
+
+## 13 November 2026 — spawn groups share ordinary NPC gameplay
+
+The user clarifies that group spawning should only create independent enemies at
+valid placements, with the same attack, loot and gameplay as individually placed
+NPCs. Treat the current population restrictions as migration gaps, not separate
+rules or a distinct game mode. Reuse the existing per-creature combat, credit,
+loot, quest and AI systems; group policy controls placement/count/respawn only.
+Close and verify each integration gap before enabling it in normal/editor launches.
+Do not introduce alternate population damage, loot or player-facing rules.
+
+## 13 November 2026 — authored respawn timing and protocol bounds
+
+The already adopted spawn-zone authoring range is 1..86400 seconds. Extend the
+underlying combat configuration ceiling to 86400000 ms, retaining its existing
+100 ms development/test minimum and 5000 ms default. Use a separate bounded wire
+respawn deadline; do not widen cast, queue, GCD or ability cooldown limits. Values
+are Theia authoring policy in simulation seconds, not evidenced Classic formulas.
+Existing group export remains blocked pending complete gameplay/model binding.
+
+## 12 November 2026 — NPC quest inspection and authoring source
+
+The user reports missing quest information when selecting the village NPC and asks
+whether quests should be separate files, NPC quest groups or database records,
+then delegates the design. Retain the existing validated quest catalogue as the
+source of definitions: stable quest IDs, prerequisite quests, giver/turn-in NPC
+IDs, stages/objectives and rewards. Derive the NPC inspector's list from these
+links; do not duplicate a second quest list or encode requirements in filenames.
+PostgreSQL remains responsible for per-character quest state and durable awards.
+Initial P5-17 / P5-18 scope is read-only content inspection, with an explicit
+validated gameplay-template selection and expandable quest details. This neither
+adds live player eligibility to the editor nor changes the one-contact runtime
+limit. Full quest authoring and general multi-NPC runtime remain separate slices.
+The loaded template is session context and an export default, not an implicit
+zone save or a live database editor. Invalid loads preserve the current context.
+
+## 12 November 2026 — custom-bound NPC spawn groups requested
+
+The user requests an NPC equivalent of the tree group, with custom editable bounds,
+a monster type/model, target number to spawn and respawn delay. Treat this as a
+separate spawn-group authoring feature, not decorative scattering or trusted client
+spawns. Recommended boundary is an editable polygon with explicit vertical limits.
+Creature definitions bind gameplay and presentation; the server owns population,
+selection of valid spawn locations, fresh identities and respawn timing. Validate
+candidate points against matching navigation, support/slope and world collision;
+exclude unsuitable geometry/layers and report insufficient capacity rather than
+forcing placements. Keep spawn bounds distinct from roaming/chase limits.
+This requires extending the current single-creature runtime as well as editor UI.
+First finish the patrol-export connection and show the user the current editor;
+then implement bounded authoring/validation and actual multi-creature gameplay in
+small tested slices. The spawn-group feature is requested, not yet implemented.
+
+## 12 November 2026 — proposed editor network-test players
+
+The user proposes exposing test player pawns with attachable/detachable AI
+controllers and split camera views to exercise netcode. Recommended follow-on:
+two independent authenticated clients, each using the normal input/ability path;
+bounded repeatable scenario data first, separate from server-controlled NPC AI.
+The user also proposes a per-character network latency property. Apply optional
+delay/jitter/loss/outage to that connection's real traffic, in both directions;
+show one-way versus added RTT and keep measured latency separate. Default to no
+added impairment, with repeatable scenario seeds/presets. Never implement lag by
+delaying only the visible pawn or slowing the authoritative simulation tick.
+Detach returns manual control. Server authority, prediction and readiness remain
+unchanged. Start with movement and side-by-side views, then combat scenarios and
+controlled transport impairment. Reuse actual multi-client Renet qualification
+instead of treating direct editor/offline pawn movement as network evidence.
+Network Playtest should launch one authoritative server and one independent client
+per enabled authored Test Player pawn, initially capped at two. Pawns hold spawn,
+controller and per-connection impairment settings. Keep ordinary F5 offline.
+Start/Stop manages the test processes and separate identities; separate windows
+can precede an embedded split-view dashboard. This is a proposed P5-17 testing
+workflow, not a decision to add an unrestricted scripting engine. The subsequent
+P5-17 / P1-06 bounded implementation and its exact qualification are recorded at
+the top of STATUS.md and in ZONE_EDITOR.md; embedded camera views and scripted
+combat remain future work.
+
+## 12 November 2026 — Bevy editor design inspiration
+
+The user approves the supplied Bevy Editor Figma/SVG as inspiration where useful,
+not a wholesale replacement or pixel-perfect target. Retain our left-hand stacked
+explorer/properties, Sprinkles inline edits/popovers, immediate application and
+explicit Save. Prioritize a separate asset browser for available models/effects,
+clear scene hierarchy, compact transforms, restrained single borders and consistent
+spacing. Model thumbnails and drag-to-place are implementation goals, not features
+proved by the static design. Keep gameplay-facing sections rather than exposing
+generic engine internals. Reference: https://www.figma.com/design/fkYfFPSBgnGkhbQd3HOMsL/Bevy-Editor?node-id=39198-9068
+The supplied SVG was inspected locally; upstream implementation/reuse availability
+was not verified. Current permission allows mouse/display if needed.
+
+## 12 November 2026 — authored worlds through existing prediction
+
+The quest runtime currently depends on procedural/saved-terrain patch preparation;
+a validated monolithic editor export alone cannot run that gameplay loop. Bridge
+bounded authored worlds through the existing `Source`/`Patch` worker and Classic
+prediction pipeline before presenting NPC markers as playable quest contacts.
+Preserve exact static collision, immutable standard GLB bytes and original global
+origin. Bind the origin companion and package identity into admission identity.
+Do not silently resample the editor's 2 m height grid into the saved-terrain 4 m
+grid, replace scenery materials, or change original authoring coordinates.
+The first source retains the existing continental domain and explicitly rejects
+unsupported presentation dependencies. Client readiness must still wait for actual
+scene/dependency/GPU preparation; CPU admission is not native rendering evidence.
+
+## 12 November 2026 — curated Synty scenery collision
+
+Reuse the locally staged Enchanted Forest standard-material assets in the
+integrated editor. Keep immutable hash-checked visual bytes separate from an
+explicit collision binding. For the starter selection, archway/ruins/table/chair/
+log use source triangle surfaces; lantern and pebble clusters are nonblocking
+decoration. This is a Theia static-surface adaptation, not imported Unity collider
+semantics or a claim that arbitrary source render meshes are production collision.
+Do not replace an arch with a solid envelope. Stage bounded geometry separately,
+validate exact bytes, reject unresolved collision policy, and qualify Avian capsule
+passage/contact before admitting offline playtest. Navigation, full footprint
+fitting, gameplay hit shapes and native appearance remain separate requirements.
+
+## 12 November 2026 — complete starter-zone authoring milestone
+
+The user directs autonomous local development toward a complete WoW-style starter
+zone designed in the integrated editor: authored terrain and static boundaries
+with one intended exit, placed NPCs with quest assignments, quest item pickups,
+quest areas and existing minimap integration. Reuse the authoritative gameplay
+catalogs and validation; authoring annotations do not become gameplay implicitly.
+Keep explicit Save and shared undo/redo. Continue across local commits, without
+mouse or display access until the user changes that constraint. P3-17/18 remain
+unspecified.
+
+Finish available headless particle checks, record display-dependent and GPU-soak
+limits, and move to P5-17 / P3-15 authoring slices supporting P3-11/12 and the
+P3-16 starter zone. A single intended exit needs collision/navigation and movement
+checks, not just visual cliffs. Start with the existing quest-area runtime format,
+then NPC/contact/quest binding and pickups; validate references before export.
+A complete playable zone requires server admission and persistent quest/playtest
+evidence in addition to editor previews. No completion is claimed by this decision.
+
+## 11 November 2026 — particle placement data boundary (P2-13)
+
+Extend authoring zone schema 8 with bounded particle placements using checked
+global f64 anchors, Y-up yaw, uniform scale and the existing stable content ID
+rules. The effect ID is a logical unresolved reference, never a machine path;
+the headless zone model has no renderer dependency. The anchor boundary does not
+validate an effect's visual bounds. Until package support is implemented, export
+of a zone containing these placements fails explicitly rather than dropping them.
+This data slice does not claim an editor placement workflow, packaged assets,
+client effects, server gameplay authority or an MMO VFX budget.
+
+## 10 November 2026 — integrated editor refinement, inline values and split panels
+
+The user reopens P5-17 usability refinement after reviewing the integrated UI.
+Adopt inline value editing with immediate application and no separate Apply/edit
+panel in the normal workflow. Numeric attributes must be permanent visible
+textboxes, directly editable without a click-to-reveal state. A single outer
+frame owns background/border; its transparent text area must remain centred
+inside the frame in both focused and unfocused states. Valid edits mark the document dirty; the user
+explicitly chooses Save for disk writes. Preserve exact f64 coordinates,
+validation and undo/redo. Keep the dock on the left, following the user's explicit correction. Stack a persistent object explorer above selected
+attributes with a draggable horizontal divider; both panels must be independently
+collapsible and resizable. Replace the filter-button grid with a dropdown,
+organize attributes under relevant section headings, use three-dot accessors and
+Sprinkles popovers where the underlying functionality exists, simplify popup
+frames/padding and correct input text alignment/baselines/clipping.
+
+Add a compact full-width bottom status bar for tool hints, selection context,
+feedback and save state. Move repeated instructions/selection summaries out of
+the explorer/property bodies; retain actual editable attributes and metadata.
+Use actual counts rather than invented renderer/memory statistics.
+
+Focus product work and native acceptance on the integrated Sprinkles workspace.
+Its runtime/UI library is shared with the retained standalone host, but separate
+standalone support/polish is no longer a requirement. Remove the companion launch
+option from Theia. Keep changes local and continue across commits until stopped.
+
+## 10 November 2026 — original Sprinkles UI in the shared editor window
+
+Use the retained `ParticleAuthoringPlugin` as an in-window workspace, alongside
+Theia's existing authoring tools. Keep mutually exclusive input/update ownership,
+explicit zone/source camera identities and isolated preview render layers.
+Preserve checked zone data and undo/redo while the original UI edits separate
+RON particle assets. Returning restores focus/cursor/root/camera/title and manual
+preview pause behavior; retain the standalone host until later workflow slices
+replace its role. This implements the user's direct-reuse direction, without
+claiming world placement or full gameplay VFX/audio P2-13.
+[Implementation and native evidence](SPRINKLES_INTEGRATION.md).
+
+## 10 November 2026 — first direct Sprinkles source host
+
+Reuse the pinned original runtime/editor as local non-published workspace crates,
+with Bevy 0.20 adapters and selected MIT code licensing plus separate asset
+notices. The first host is a companion authoring window launched from the zone
+editor's File menu. Preserve the zone document/history and allow the particle
+window to finish saving if its parent closes. Keep standalone data under
+`.theia/particles`. This boundary establishes source reuse and native authoring;
+it is not same-window hosting or full gameplay VFX. Use standard Bevy line meshes
+for preview outlines after measured native gizmo upload synchronization hazards.
+[Implementation and evidence](SPRINKLES_INTEGRATION.md).
+
+## 10 November 2026 — accept a close Sprinkles match and begin direct integration
+
+The user accepts a close, usable Sprinkles style/layout/function match without a
+pixel-perfect side-by-side review. Mouse, keyboard and display use are renewed.
+Finish native functional/GPU checks and fix material issues, then begin Sprinkles
+particle/editor integration. Prefer reuse of reviewed upstream runtime and editor
+source; adapt where Bevy 0.19/0.20 APIs or Theia's authoring model require it. Keep
+Theia's current engine/physics pins and guarded source/history semantics. A first
+editor integration slice does not complete authoritative spell VFX/audio P2-13 or
+establish MMO-scale particle budgets. Keep changes local; no push is authorized.
+
+## 10 November 2026 — P5-17 shell follows Sprinkles top bar
+
+Continue the adopted UI migration with upstream's 52 px top bar, primary Save
+and a named inspector section for Theia viewport preferences. Preserve guarded
+commands, exact authoring data, shared viewport coordinate conversion and offline
+playtest semantics. This is implemented headlessly; native visual/input/GPU
+acceptance waits for renewed desktop authorization. The user still needs the
+mouse/display; work continues locally through commits without native input.
+
+## 10 November 2026 — desktop use stopped; continue headlessly
+
+The user needs the mouse and display again. Stop native windows, desktop input
+and capture inspection. No native editor/input process remains. Continue P5-17
+headlessly across local commits; attribute-scroll native acceptance must wait
+for renewed desktop authorization. Completed native evidence remains valid for
+its recorded binaries.
+
+## 10 November 2026 — continue P5-17 through commits, desktop use renewed
+
+The user reauthorizes mouse and display use as needed and explicitly requests
+continuous progress until stopped, including across local commits. Resume owned
+native-window qualification; keep changes local without pushing. Prior desktop
+restrictions are historical and do not apply while this authorization remains.
+
+## 10 November 2026 — desktop use stopped again
+
+The user needs the mouse and display. Stop desktop input, capture inspection and
+native windows; continue headlessly. No editor/input process remains. Keep
+completed native evidence separate from pending preview/playtest checks.
+
+## 10 November 2026 — desktop use renewed for P5-17
+
+The user reauthorizes mouse and display use as needed. Resume guarded native
+editor input, screenshot review and GPU qualification. Prior headless-only
+restrictions remain historical; do not infer native acceptance from CPU checks.
+Keep all changes local and do not push.
+
+## 10 November 2026 — match Sprinkles layout and interaction closely
+
+The user explicitly extends the adopted direction beyond styling: match
+Sprinkles as closely as practical in panel arrangement, property/attribute
+presentation and editing, menus and visual feature access. The browser,
+inspector and viewport structure replaces the old stacked right-hand layout.
+Retain the Theia authoring domain and exact validated transactions. Native
+acceptance remains pending while mouse and display use are stopped.
+
+## 10 November 2026 — adopted Sprinkles editor UI direction (P5-17)
+
+The user adopts Sprinkles as the concrete look, feel and interaction reference
+for the full Theia editor. Adapt its native Bevy UI components where practical;
+create matching controls for Theia-specific functions. Keep the existing validated
+command/history, exact f64 fields, source schemas, agent interface and offline
+playtest underneath the presentation. Continue local implementation and commits
+until stopped; mouse, keyboard and display use are authorized. Do not push.
+
+Reviewed upstream: `doceazedo/sprinkles` commit
+`0e978f5a9afc6b456b3693c8761e73a6c7e155bd` (Bevy 0.19). Adapt to Theia's
+existing Bevy 0.20 pin; no engine downgrade. MIT-selected UI provenance is in
+`third_party/sprinkles/`. Particle runtime remains a candidate requiring its own
+P2-13 compatibility, rebasing, budget and native GPU qualification.
+
+Initial UI prerequisites are the retained editor command/history, standard Bevy
+widgets and existing 3440 x 1440 layout. First slice: shared Sprinkles tokens,
+button states and Inter typography across workspaces, palette, outliner,
+properties and dialogs. Follow with resizable panels and section/inspector
+interaction. Acceptance: formatting, denied-warning Clippy, retained focused
+Rust tests, CPU layout and actual Linux 3440 x 1440 input/GPU checks. Planned
+migration is not a claim of completed UI or particle adoption.
+
+## 9 November 2026 — retain our editor and adopt application-style controls
+
+After reviewing external editor options, the user chooses continued work on our
+editor. Prioritize Blender-like application workflows using standard Bevy UI:
+visible workspaces, a command bar, outliner/properties regions and direct sliders,
+buttons and toggles. Increasing control size does not address this request.
+Keep visual/agent validation and undo underneath the presentation. The first
+slice uses built-in Slider/Checkbox widgets for editor-local terrain presets and
+moves the exact numeric Transform transaction into a docked properties region.
+Source/schema/runtime pins remain unchanged. Names remain a conventional dialog;
+full docking, file browsing and viewport transform handles are subsequent work.
+[Contract/evidence](ZONE_EDITOR.md#application-style-workspaces-and-properties--9-november-2026).
+
+## 8 November 2026 — editor marker visibility and terrain asset reuse
+
+Keep the spawn marker a standard unlit, noncolliding Bevy primitive, anchored
+through checked conversion and hidden during playtest. Cache actual terrain
+origin/patch inputs so unrelated document revisions do not replace resident
+surface/grid meshes. Native review caught an immediate blank world capture
+following an unchanged-terrain rebuild; pixel qualification now verifies the
+marker in the rendered world rather than relying on transform metadata alone.
+[Contract/evidence](ZONE_EDITOR.md#readable-spawn-marker-and-retained-terrain-meshes--8-november-2026).
+
+## 8 November 2026 — surface-supported playtest spawn shortcut
+
+Use P over ground in Sculpt/Paint to author the existing spawn through SetSpawn,
+with 1 m X/Z snapping when enabled, sampled terrain/flat support and the retained
+0.1 m clearance. Route the existing view-centre button through the same checked
+local/global conversion and surface sampler. Preserve pending strokes, modal/UI/
+playtest isolation and the shared command validation/history boundary. Cursor
+placement that equals the current spawn skips visual history; the existing button
+retains its transaction behavior. Physics still qualifies entry separately.
+[Contract/evidence](ZONE_EDITOR.md#surface-supported-playtest-spawn--8-november-2026).
+
+## 8 November 2026 — spatially sampled bounded terrain drags
+
+Connect observed valid terrain cursor positions with stamps every 2 m in X/Z,
+using checked existing local/global conversion and unchanged sculpt/paint edits.
+Carry the last attempted stamp across events; stationary/subspacing input adds
+no work. Bound each event to remaining transaction capacity before allocation.
+Leaving the canvas or terrain patch breaks continuity, preventing an unseen
+connecting stroke after reentry. Preserve preview validation, the 128 accepted
+edit cap, release commit and Escape cancellation. No time-dependent accumulation,
+new command/source schema or renderer is introduced.
+[Contract/evidence](ZONE_EDITOR.md#spatially-sampled-terrain-drags--8-november-2026).
+
+## 8 November 2026 — terrain-conforming sample influence
+
+Share one bounded per-sample falloff calculation between sculpt, paint and visual
+feedback, retaining exact command output and locked borders. Show amber vertex
+alpha on the exact standard-Bevy terrain triangles, lifted 4 cm and following the
+temporary stroke preview. Reuse one resident mesh and hide invalid/empty targets;
+keep feedback outside picking, physics and document history. This shows potential
+grid influence, not an analytic radius outline or a prediction of tool-specific
+height/quantized-colour changes. No decal infrastructure or schema is introduced.
+[Contract/evidence](ZONE_EDITOR.md#terrain-conforming-sample-influence--8-november-2026).
+
+## 8 November 2026 — exact numeric primitive transforms
+
+Use built-in Bevy text inputs and the modal TabNavigation API for seven global
+position/yaw/size fields. Keep f64 round-trip strings and parse finite numbers;
+submit all fields in one existing Transform command. Reuse full-candidate shape,
+coordinate, revision and undo validation. Preserve invalid text for correction,
+isolate world/mailbox input during either dialog and avoid global tab handlers
+that would capture the editor's existing object/guide cycling. No schema or
+coordinate-conversion path is added; numeric fields enter global truth directly.
+Both forms clear the previous attempt's status on actual text edits and restore
+pending instructions; only Apply judges the candidate.
+[Contract/evidence](ZONE_EDITOR.md#numeric-primitive-transform-fields--8-november-2026).
+
+## 8 November 2026 — shared names and standard Bevy text input
+
+Use narrow `rename` / `rename_zone` edits with existing candidate validation and
+transactional undo. Keep IDs, geometry and annotation definitions unchanged.
+Use the pinned Bevy TextInput/EditableText infrastructure in a bounded modal;
+retain its prepared font/layout styles when resetting field text. Isolate world
+input and mailbox mutations during a name draft; invalid submissions retain the
+buffer for correction, unchanged visual submissions add no history. No schema,
+text-editing framework, engine/plugin pin or chat composer is introduced.
+[Contract/evidence](ZONE_EDITOR.md#shared-names-and-standard-bevy-text-input--8-november-2026).
+
+## 8 November 2026 — adjustable sculpt and paint blends
+
+Extend bracket amount controls to Flatten/Smooth and Paint, with independent
+editor-local blend presets bounded to the retained domain's 0.05..1 range.
+Preserve 0.5 sculpt / 1.0 paint defaults and existing raise/lower metre controls.
+Display exact percentages and pass presets through the same validated stroke
+commands/undo. Keep terrain colour weights normalized and collision independent.
+[Contract/evidence](ZONE_EDITOR.md#adjustable-sculpt-and-paint-blends--8-november-2026).
+
+## 8 November 2026 — bounded standard-Bevy content list on the ultrawide editor
+
+Use a fixed 40-row primary-pointer UI pool and paging for named authored content,
+reusing the existing mode transitions and frame-selection path. Keep browsing
+outside document history, refresh it from validated revisions, reveal selections
+and clamp shrinking pages. Exclude both side panels from world mouse actions and
+hide the content list during playtest. Preserve pending drafts on row selection
+attempts. No hierarchy, scene schema or custom renderer is added.
+[Contract/evidence](ZONE_EDITOR.md#paged-content-selection-at-3440x1440--8-november-2026).
+
+## 8 November 2026 — structural guide-point edits with shared validation
+
+Add narrow insert/remove point edits with explicit guide/index/global position,
+retaining the existing 2..64 points and spacing/span/document bounds. Insert
+subdivides the selected or first segment visually; Backspace removes the selected
+committed point while preserving draft-pop behavior. Clear stale point selection
+when structural counts change, including agent edits/undo, then let successful
+visual edits select their new/next point. Use a shared opaque cyan point material
+to distinguish the selected handle from an amber ribbon.
+[Contract/evidence](ZONE_EDITOR.md#inserting-and-removing-guide-points--8-november-2026).
+
+## 8 November 2026 — original replayable example and whole-terrain framing
+
+Provide an original primitive-only Wayfarer Hollow base/command recipe and an
+explicit launcher `--example` path. Seed new drafts in memory with a separate
+save destination; reopen existing edited drafts without reseeding or replacing
+source. Demonstrate existing terrain, grading, painting, props, vegetation,
+notes, collision and export together. F in Sculpt/Paint frames terrain through
+the same checked normal Bevy camera path. Keep source annotations/stream guides
+separate from live NPC/quest/water behavior and leave default game content alone.
+[Contract/evidence](ZONE_EDITOR.md#wayfarer-hollow-example-and-terrain-framing--8-november-2026).
+
+## 8 November 2026 — adjustable bounded raise/lower strength
+
+Expose the retained brush domain's 0.05..8 m stamp amount with bracket keys to
+halve/double it, retaining the 2 m default. Display the actual amount on both
+buttons and keep this editor preset separate from saved terrain. Reuse the
+existing raise/lower command, validated previews and one-entry stroke history.
+[Contract/evidence](ZONE_EDITOR.md#adjustable-raise-lower-strength--8-november-2026).
+
+## 8 November 2026 — bounded duplicate command for greyboxing
+
+Copy authored objects, plants, markers and whole guides through one shared
+`duplicate` edit with explicit source/new IDs and f64 offset. Preserve metadata,
+geometry and schema; append a UTF-8-bounded copy suffix and revalidate the full
+candidate against existing ID, document and per-kind budgets. Ctrl-D uses the
+monotonic shared allocator, offsets one grid step in X/Z and selects the new
+copy. Keep draft/preview/playtest refusals and one-command undo semantics.
+[Contract/evidence](ZONE_EDITOR.md#shared-duplication-for-greyboxing--8-november-2026).
+
+## 8 November 2026 — sampled and adjustable flatten level
+
+Expose the existing validated flatten brush's nonzero level through I surface
+sampling and PageUp/Down adjustments. Use checked domain surface sampling from
+cursor X/Z, local height relative to zone-origin Y, bounded ±64 m, 1 m steps or
+0.1 m with snap off. Keep the preset editor-local; commit strokes through the
+retained brush command, candidate validation and history. Paint mode ignores the
+height sampler. [Contract/evidence](ZONE_EDITOR.md#sampled-and-adjustable-flatten-level--8-november-2026).
+
+## 8 November 2026 — keyboard recovery and bounded selection framing
+
+Cycle object selection with Tab/Shift-Tab in source order, independent of mesh
+visibility, and extend F framing to objects, plants and markers. Keep existing
+guide-point/whole-guide controls and document history separate from camera state.
+Extend the bounded editor orbit range from 240 m to 512 m to frame the largest
+permitted primitive. Reuse checked global/local conversion and standard Bevy
+camera transforms. [Contract/evidence](ZONE_EDITOR.md#keyboard-selection-and-placement-framing--8-november-2026).
+
+## 8 November 2026 — saved content comparison in the editor summary
+
+Track the selected destination's last loaded/saved document independently of
+history revision. Show unsaved state for differing content and pending drafts;
+restore clean state on exact undo, successful Save/Load or draft cancellation.
+Keep Save failure and accepted agent edits distinct from durable file success.
+Use standard Bevy text; retain explicit Save and existing formats.
+[Contract/evidence](ZONE_EDITOR.md#saved-and-unsaved-authoring-state--8-november-2026).
+
+## 8 November 2026 — explicit terrain grounding through shared history
+
+Keep saved placement/guide heights stable during sculpting. Add explicit terrain
+projection for typed placement IDs and guide-point indices, preserving X/Z and
+accounting for primitive centre versus foot anchors. Reuse exact terrain queries,
+whole-candidate validation and bounded transaction/history rules; a whole guide
+is one undo. Keep prop stacking, full footprint fitting and runtime collision
+independent. [Contract/evidence](ZONE_EDITOR.md#explicit-terrain-grounding--8-november-2026).
+
+## 8 November 2026 — optional finite 2 m terrain authoring grid
+
+Zone schema 7 adds a typed 2 m / 4 m sample resolution on the existing 128 m
+patch. Resample heights over the retained exact triangles and colour weights
+with deterministic normalized integer rounding. Keep sculpt, paint, grading,
+render/query and export on the same active grid. Preserve coarse samples on
+refinement and use full-document undo for coarsening's loss of intervening fine
+detail. Extend only the shared bounded generator's allowed cell counts; retain
+normal game procedural/saved-terrain 8/32-cell policies and existing runtime
+package format. No streaming, LOD or capacity claim follows from 4,225 vertices.
+[Contract/evidence](ZONE_EDITOR.md#optional-2-m-terrain-samples--8-november-2026).
+
+## 8 November 2026 — one-command editor entry with nonwriting save-path selection
+
+Provide a small Python launcher for the locked editor build and default draft
+reopen. Reuse the existing Linux SDK when present and the client environment
+helper; preserve explicit editor/caller paths. Add `--save-path` to select the
+later GUI save destination without a startup write. Keep `--output` semantics
+for validated headless pipelines. Invalid source never falls back to replacing
+it with a blank draft. [Contract/evidence](ZONE_EDITOR.md#one-command-editor-launcher-and-deferred-save-destination--8-november-2026).
+
+## 8 November 2026 — normalized terrain colour weights via standard vertex colours
+
+Zone schema 6 adds optional grass/dirt/rock/sand u8 weights per terrain vertex,
+normalized to 255 and grass-locked on the border. Share sculpt's validated stroke
+preview/history for visual and agent paint commands. Render linear blended colour
+through normal Bevy vertex colours/white PBR and export standard glTF COLOR_0 with
+bound identity. Collision, heights and gameplay surface rules stay independent.
+Retain the finite patch/byte budgets and source compatibility. Texture/material
+catalogues, biomes and LOD require further scoped work.
+[Contract/evidence](ZONE_EDITOR.md#terrain-colour-painting--8-november-2026).
+
+## 8 November 2026 — individual guide-point editing with standard Bevy handles
+
+Add narrow `move_path_point` edits to the existing document/undo validator. Select
+ribbons and point handles using normal mesh ray casts; pool at most 64 handles
+on one mesh. Preserve whole-guide moves and cycle point selection with Tab in
+both directions. Guide-only F focus uses bounded local coordinates and the full
+authoring extent. Keep handles out of playtest collision and exported content.
+A point move validates its adjacent segments and entire candidate before commit.
+[Contract/evidence](ZONE_EDITOR.md#individual-guide-point-editing--8-november-2026).
+
+## 8 November 2026 — grade existing terrain from committed guide heights
+
+Add a bounded `grade_path` operation to the existing visual/agent command history.
+Use nearest horizontal segments, explicit authored guide heights, width, surface
+offset and linear falloff/blend; preserve the locked zero border and checked
+local height budget. Keep source guide and other placements unchanged. Reuse the
+resulting heightfield for normal render, offline Avian and world-package export.
+The visual default grades 0.03 m below the selected ribbon with 4 m falloff. Drafts
+refuse without being discarded. Partial/falloff repetition is a new blend; exact
+mailbox retries remain cached. No new terrain/water/navigation runtime format.
+[Contract/evidence](ZONE_EDITOR.md#guide-driven-terrain-grading--8-november-2026).
+
+## 8 November 2026 — bounded seeded greybox vegetation
+
+Zone schema 5 adds finite tree/shrub visual proxies and deterministic bounded
+scatter stamps. Share authoring IDs, checked global/local conversion, exact
+terrain support and atomic history with other editor commands. Use standard
+Bevy geometry/materials and the existing GLB exporter, with inverse-transpose
+normal transformation for ellipsoid foliage. Keep vegetation nonblocking in this
+explicit greybox slice; collision/navigation/gameplay and production asset/LOD
+policies require separate implemented contracts. The 512-plant authoring cap is
+not evidence of population or MMO-scale capacity. Qualify the editor only at the
+user's 3440x1440 viewport. [Contract/evidence](ZONE_EDITOR.md#greybox-vegetation-placementscatter--8-november-2026).
+
+## 8 November 2026 — NPC/quest markers remain explicit authoring annotations
+
+Extend the bounded zone document to schema 4 with shared-ID NPC/quest markers,
+checked placement/footprints and optional syntactically validated catalogue keys.
+Use normal Bevy badges/footprints for visual editing and the same atomic command
+history for agents. Hide annotations during playtest. Preserve them only as source
+metadata in exports; runtime geometry/identity stay unchanged until an explicit
+compiler validates and binds NPC/quest references to authoritative content.
+See [the marker contract and evidence](ZONE_EDITOR.md#npcquest-authoring-markers--8-november-2026).
+
+## 8 November 2026 — 3440x1440 editor and bounded road/stream guides
+
+The user restricts tool development to 3440x1440. Open the editor through standard
+Bevy primary-monitor borderless fullscreen and qualify only that editor viewport
+from now on; retain older evidence as historical. Keep normal client display
+support separate. Schema-3 optional road/stream guides share IDs, validation,
+undo and save/load with primitive/terrain edits. Export standard render-only
+ribbons through the existing world package; terrain grading, water simulation,
+navigation and collision remain separate requirements. Explicit finite limits
+and the combined serialized byte budget apply before state/history mutation.
+See [the current contract and evidence](ZONE_EDITOR.md#roadstream-guides-and-3440x1440-tool--8-november-2026).
+
+## 8 November 2026 — authored zones export through the existing world pipeline
+
+Export standard Bevy meshes as self-contained GLB and existing schema-4 collision
+packages with explicit validated spawns and bound identity. Keep boxes analytic;
+encode spheres as existing zero-length capsules and cylinders as adaptively
+bounded convex meshes, welding render seams only in the collision copy. Rebase
+through checked local conversion; preserve the exact authoring document/origin
+separately. Refuse oversized/invalid/occupied outputs and publish the manifest
+last in a fresh directory. No new runtime format, transport or default-map change.
+Actual headless validation, independent convex/glTF checks and native encrypted
+pairs pass, including direct hillside and far-instance traversal. This is the
+retained raw imported-world development profile; full Classic account/gameplay
+bundle integration and richer zone content remain separate.
+[Contract and evidence](ZONE_EDITOR.md#export-into-admitted-world-packages-p5-17--p3-15--p1-10--p2-0708).
+
+## 8 November 2026 — bounded terrain brushes share command validation
+
+Add one schema-2 128 m / 33x33 height patch to the zone editor using integer chunk
+IDs, global f64 origins and bounded local f32 sample heights. Keep borders flat
+for this first finite patch; use a real cutout in surrounding flat ground.
+Raise/lower/flatten/smooth previews validate through disposable command state;
+release commits the same bounded stamp transaction as one live undo entry.
+Bevy surface/grid meshes and Avian use the same existing regular triangulation.
+Keep terrain authoring outside authoritative simulation and preserve schema-1
+primitive documents. The actual Avian/ray and three-size native gates pass;
+normal server package export, multi-tile seams and richer tools remain open.
+[Contract and evidence](ZONE_EDITOR.md#bounded-terrain-brushes-p5-17--p3-15--p1-10--p2-0607).
+
+## 8 November 2026 — live zone commands use an opt-in local mailbox
+
+Use one explicit local directory and one pending request for agent edits in the
+open zone editor. Bind requests to a fresh editor session, positive monotonic
+request IDs and current revision. Cache the latest exact request/receipt so a
+retry cannot reapply after visual undo. Refuse during drag/playtest; publish
+current validated document and bounded receipts outside fixed-step simulation.
+Receipt success means an editor edit, not a file save or server publication.
+No new network endpoint or gameplay authority is added. The shared core and
+native mixed-agent walkthrough pass; [contract and evidence](ZONE_EDITOR.md#live-local-agent-mailbox-p5-17--p3-15).
+
+## 8 November 2026 — zone authoring uses one validated command history
+
+Prioritize a lightweight standard Bevy authoring app under P5-17/P3-15. Keep
+zone documents/transactions independent of rendering; visual edits and structured
+agent commands share validation and undo. Start with primitive placements,
+transforms, snapping, bounded history, versioned files and an offline Avian
+playtest using the existing capsule solver. Terrain brushes, paths/streams,
+vegetation and NPC/quest markers follow; chat composer/bubbles are deferred.
+Keep the game stack and normal multiplayer path; no new renderer, ECS or network
+transport. Use bounded f64 authoring coordinates and existing local conversion.
+Local commits and desktop qualification are authorized; no push.
+[Contract, prerequisites and evidence](ZONE_EDITOR.md).
+
+## 8 November 2026 — client chat waits independently of gameplay
+
+Explicitly bind the opt-in chat profile after the full gameplay/Classic identity.
+Publish bounded receipt state through shared immutable inbox views and preserve it
+across snapshots. Permit one outstanding request; a five-second local timeout
+discards queued text and marks the chat view without disconnecting gameplay.
+Only a matching reply clears pending state; late replies cannot clear newer work.
+Keep the normal client opt-out until the composer and native/account acceptance
+pass. Stop at this completed worker checkpoint per the latest user request.
+[Evidence](LOCAL_CHAT.md#real-client-worker-integration--8-november-2026).
+
+## 8 November 2026 — world chat serial bounds long-lived client replay state
+
+Assign a checked monotonically increasing server delivery serial across speakers
+and channels, distinct from client request sequences. Keep64 received messages
+and one private reply; no per-speaker replay map grows across join/leave churn.
+Validate context before ignoring stale data; conflicting latest serials and
+regressing chat time fail before mutation. CD02/v3 is opt-in only; normal
+protocol13 remains unchanged. [Evidence](LOCAL_CHAT.md#bounded-client-inbox-and-world-delivery-serial--8-november-2026).
+
+## 8 November 2026 — bounded private chat replies reserve gameplay capacity
+
+Reply to the admitted sender with an exact owner/world-scoped outcome; queue at
+most four replies per peer and flush one alongside one chat delivery after
+priority publishing. Reserve half the shared reliable queue against chat use,
+since future gameplay arrives after the current publishing pass. Drop new replies
+under pressure with counters; a future one-pending composer must handle timeout.
+The explicit chat compatibility profile advances to v2; normal protocol13 remains
+unchanged. [Evidence](LOCAL_CHAT.md#private-replies-and-gameplay-queue-reserve--8-november-2026).
+
+## 8 November 2026 — opt-in server chat compatibility and priority
+
+Bind the initial one-area Say/Area mode into the complete world identity without
+changing default protocol13 worlds. Require named authorized leases; synchronize
+live leases and checked poses in the I/O owner loop and purge retired recipients.
+Flush at most one bounded chat frame per recipient after gameplay-priority
+publishing; never await transport or persistence from the simulation step.
+Retain existing input limits and refuse forged/disabled uploads. Raw encrypted
+fixtures qualify this candidate; normal client chat and explicit submission
+replies remain separate work. The user has restored desktop access as needed.
+[Scope and evidence](LOCAL_CHAT.md#opt-in-encrypted-owner-loop-candidate--8-november-2026).
+
+## 8 November 2026 — bounded Say/Area chat prerequisite
+
+Use server-selected names, authenticated actor incarnations and current checked
+global positions. Client chat intents contain only sequence/channel/text. Start
+with Say at25 metres in3-D and server-authored Area membership, with a shared
+three-message/five-second budget. Those values are provisional Theia extensions.
+Keep plain text at256 UTF-8 bytes; reject controls and direction spoofing marks.
+Muted/rate-limited/no-area requests consume their sequence without spending
+accepted capacity. Persisted/account moderation, runtime routing and native
+composer/bubbles remain separate acceptance work. [Scope](LOCAL_CHAT.md).
+
+## 8 November 2026 — action-bar bindings are local presentation state
+
+Use twelve bounded optional ability IDs with current defaults; book drops copy,
+bar drops swap. Keep cooldowns, eligibility, target and facing in the existing
+authoritative cast path. Editing requires the open book and current focused,
+admitted actor context; stale or cancelled drags make no binding change.
+Persisted layouts and learned/class eligibility require separate work. Continue
+headlessly under the latest user restriction; synthetic event/loopback acceptance
+does not qualify native drag behavior. [Scope](ABILITY_BOOK_ACTION_BAR.md#action-bar-binding-candidate--8-november-2026).
+
+## 8 November 2026 — selected character names are public scoped metadata
+
+Capture the saved SQL-selected name in the authorized admission lease; retain
+opaque nonce-only ticket userdata. Use bounded reliable PN01 metadata for the
+same visible-player roster as movement, with no ownership or account identifiers.
+Defer under queue pressure and allow only one changed view per completed tick.
+Clients validate admitted owner/world/epoch and monotonic updates; UI additionally
+requires current snapshot membership. Names never establish authority. Protocol13
+is required for the integrated path; paired protocol12 playtest packs remain
+preserved. [Scope and qualification](PLAYER_DISPLAY_IDENTITY.md).
+
+## 7 November 2026 — shared player display-name validation
+
+Reuse the existing temporary 3–20 ASCII player-name policy as a pure core value,
+with the persistence re-export and database error mapping retained. Names remain
+display/lookup data; authenticated bindings establish ownership. Future gameplay
+metadata must carry the server-selected saved character name, scoped to the
+admitted actor/world, with no local launcher-name authority or account identifiers.
+NPC authored names retain their separate policy. Parser extraction and one actual
+SQL character contract pass; the standalone bounded codec is now qualified,
+while runtime replication remains planned and protocol12
+remains active. [Work and acceptance](PLAYER_DISPLAY_IDENTITY.md).
+
+## 2026-11-07 — focus gates fresh input, not accepted work
+
+Require one focused game Window for new ability/world/backpack/loot/reader/
+Interface input. Discard unsubmitted local choices on focus loss and do not
+replay them on return. Preserve persistent targets and autoattack, accepted
+transaction/reply processing, matching read completions and prior Loot All intent.
+Do not pause authoritative state receipt or reset gameplay just because focus
+changes. These current guards have headless regression coverage; actual native
+focus/event ordering remains pending while the user forbids desktop/input/display.
+
+## 2026-11-07 — bounded received combat history in the opt-in HUD
+
+Use ordinary Bevy UI and a six-message local history to make received owner combat
+outcomes readable in the bottom-left reference area. Filter unrelated actors,
+suppress duplicate/older batches and reuse existing own-life validation. Show
+server-resolved damage and reported overkill without recalculating a hit or
+calling resolved damage health lost. Keep chat and social systems separate.
+This presentation remains a candidate until native layout and event-flow checks
+are permitted; no display/input testing is authorized now.
+
+## 2026-11-07 — explicit local interface preference persistence
+
+Extend the session-only scale panel with an optional `--ui-preferences FILE`.
+Keep normal launches without this argument session-only. Validate schema 1,
+finite 75–150% scale and a 4 KiB bound before creating the App. Reject malformed
+files without rewriting them. An explicit launch scale overrides the saved value;
+opening the client alone never saves that override. Save actual preferred-size
+changes through one bounded Bevy I/O task at a time, replacing a complete temporary
+file; fitted viewport size is never persisted. Report save failure while retaining
+session behavior. This is a device-local preference, not account persistence.
+Desktop/keyboard/display checks are forbidden by the current user instruction.
+
+## 2026-11-06 — explicit bounded local playtest session lifetime
+
+Keep the existing five-minute default. Permit an explicit server session policy
+of 60 seconds to 12 hours, always capped by signed identity expiry and retaining
+immediate revocation. Use a one-hour policy only for an intentionally configured
+local playtest issuer/session. Keep automatic renewal separate; don't bypass
+expiry in the game client. [Implementation and checks](AUTHENTICATED_ADMISSION.md).
+
+## 2026-11-06 — session-only interface size controls
+
+Use ordinary Bevy buttons to adjust the existing preferred UI scale in game.
+Expose 75/100/125/150% and both preferred/fitted sizes in Interface [F10]. Preserve
+current small-window fitting, Classic controls and the existing panel/target
+Escape chain by giving Interface first close priority. Keep the setting local to
+the current session until a separate saved-preference slice; opening it does not
+pause an authoritative world. [Implementation and evidence](UI_FANTASY_WARRIOR.md#in-game-session-ui-scale--6-november-2026).
+
+## 2026-11-06 — additional UI references refine panels and character screens
+
+Keep the adopted lower-HUD composition. Use the user's four new inline images
+for parchment quest/dialogue bodies, dark portrait headers and icon-grid bags,
+framed equipment/service windows, and future character-selection presentation.
+They guide appearance; visible repair, currency, faction/class or chat controls
+need their own working systems before being exposed. Assess licensed local art
+and portrait sourcing rather than treating reference pictures as runtime assets.
+[Reference mapping and immediate work](UI_FANTASY_WARRIOR.md#additional-panel-and-character-screen-references--6-november-2026).
+
+## 2026-11-06 — AntonilzUI screenshot guides the general HUD
+
+Adopt the user's supplied WoW Classic addon screenshot as the visual composition
+reference: compact lower-centre player/target frames, bottom actions/cast/XP,
+upper-right circular minimap and objectives, readable world nameplates and an
+unobstructed centre. Use restrained local Synty art selectively. This refines
+UI-001 presentation; it does not change strict Classic controls or gameplay
+truth. The current opt-in skin is an earlier draft, not an implementation of the
+new reference. [Reference, exact gaps and next acceptance checks](UI_FANTASY_WARRIOR.md#adopted-visual-reference--6-november-2026).
+
+## 2026-11-06 — preferred UI scale with bounded layout fitting
+
+Use ordinary Bevy `UiScale` for the opt-in fantasy skin. Accept a 75–150% client
+preference, default 100%; fit down when the current window cannot retain the
+1280×720 logical layout and restore the preference as space returns. Keep world
+coordinates, camera and window dimensions independent. Windowless physical-pixel
+exports and a headless Window-component test establish rendering/fit behavior;
+live pointer, native resize, DPI and complete-pane checks remain pending while
+the user uses the desktop. [Implementation and exact scope](UI_FANTASY_WARRIOR.md#preferred-ui-scale-and-resize-fitting).
+
+## 2026-11-06 — general UI with local Fantasy Warrior art
+
+Move beyond quest mechanics to general Classic-style UI, following the user's
+new direction. Reuse selected local PNGs and TrueType fonts with ordinary Bevy
+widgets and a separate asset source. Rebuild behavior rather than importing
+Unity prefabs. Keep the first skin opt-in pending normal connected and input
+qualification. Windowless GPU exports may proceed without desktop/mouse use;
+they are fixture previews and do not establish live interaction correctness.
+[Asset assessment, implementation and acceptance](UI_FANTASY_WARRIOR.md).
+
+## 2026-11-06 — explicit client content configuration report
+
+Expose a developer CLI-only report using the same identity expression as normal
+network setup, returning before any network worker, App, window or renderer.
+Require exclusive predicted Classic graybox configuration and reject connection
+arguments. This permits exact normal client/server configuration comparisons while
+desktop testing is unavailable, without adding gameplay authority or duplicating
+the identity algorithm. [Headless proof and limits](QUEST_ITEM_REWARDS.md#actual-clientserver-configuration-identities-agree-headlessly).
+
+## 2026-11-06 — opt-in exact fixed reward manifest role
+
+Use cumulative manifest schema 21 with one additional `quest_item_rewards` role
+and matching client/server `--quest-item-rewards` paths. Keep schema 20 and all
+older roles/hashes unchanged. Bind exact fixed reward bytes before conditional
+quest loot, and require the account service's stored/wire journal agreement
+before selecting reward ownership. Check prerequisite flags after parsing all
+arguments. [Configuration proof and limits](QUEST_ITEM_REWARDS.md#implemented-normal-configuration-prerequisite).
+Reward UI and combined native proof remain pending while desktop testing is paused.
+
+## 2026-11-06 — explicit fixed reward World admission
+
+Require explicit reward mode rather than broadening legacy World constructors.
+Validate exact inventory/XP, installed quest and reward namespaces, and inactive
+exclusive setup before changing World identity. The existing runtime client may
+then consume the reward-bound private journal under normal exact context and
+pending-command checks. All items, completion and XP still originate in the
+retained SQL owner. [Headless World/encrypted proof and limits](QUEST_ITEM_REWARDS.md#implemented-explicit-world-and-encrypted-bridge).
+Normal manifest/CLI/UI and combined native qualification remain separate.
+
+## 2026-11-06 — explicit fixed reward owner and capacity refusal
+
+Require identical stored/wire reward-bound journal hashes before installing the
+retained inventory/progression owner. Keep ordinary owner constructors closed to
+reward-bearing profiles. Treat a full reward bag as a nonfatal inventory-full
+journal refusal and append code 10 without changing existing codes/frame sizes.
+Accepted SQL work and queued item operations retain the current logout drain;
+only committed projections can acknowledge success. [Qualified headless scope](QUEST_ITEM_REWARDS.md#implemented-retained-owner-adoption).
+World/client/manifest adoption remains separate, and desktop tests are paused.
+
+## 2026-11-06 — atomic fixed quest reward storage
+
+Adopt the existing quest action API and original receipt for fixed bundles.
+Under the existing XP → backpack → journal lock order, use current locked bag
+holdings and capacity, then commit consumption, grants, final quest state, XP and
+receipt together. The quest command carries its expected quest revision; no new
+bag revision is added to the wire intent. Successful retries recover the original
+receipt before fresh holdings checks and return current saved bag/journal state.
+No migration or parallel inventory API is needed. Store/worker support is now
+qualified; keep World, client and retained-owner admission closed until their
+separate ordering/ownership proofs pass. [Scope/evidence](QUEST_ITEM_REWARDS.md#implemented-atomic-storeworker-turn-in).
+
+## 2026-11-06 — explicit fixed quest item reward policy
+
+Use a separate bounded fixed-reward catalogue against known quest and item
+catalogues. Preserve existing quest schemas and legacy profile hashes. Bind the
+exact reward bytes after the item-bound journal/XP/area/document digest; reward-
+only quests still bind inventory. The pure proposal consumes delivery items,
+checks the whole grant bundle and reconciles other quests against final holdings
+with one bag revision. Consume-before-capacity is an explicit Theia policy;
+choice rewards, currency, overflow mail and automatic equipment remain separate.
+Keep reward-bearing runtime/Store/owner admission closed until durable completion,
+items, XP and original receipts commit together. [Scope and evidence](QUEST_ITEM_REWARDS.md).
+
+## 2026-11-05 — original document-open receipts
+
+Reuse existing quest-event receipts with distinct request/command hash domains
+for authorized item-document opens. Validate current bag revision, slot and item
+under bag-before-journal locks, and seal original active-stage eligibility before
+commit. Exact successful retries recover that original authorization without
+becoming fresh reads; new requests require current ownership. Keep historical
+read credit separate from item possession and allow existing bound bag/journal
+transactions to operate without granting read credit. No extra storage migration
+or parallel item transaction API is needed. [Implemented headless scope](QUEST_DOCUMENTS.md#implemented-durable-authorized-document-opening).
+Retained owner/wire/UI adoption remains the next slice.
+
+## 2026-11-05 — explicit quest-required development loot
+
+Adopt opt-in manifest schema 19 / `--quest-loot` with item-journal and per-life
+loot modes. Bind exact item/journal/reward identities before admission; retain
+first committed generation rights and separately check fresh current need before
+paging or pickup. Do not reclassify ordinary drops as quest-only. Keep the 60% /
+25% provisional random content separate from guaranteed low-damage native fixtures.
+[Qualified scope and limits](LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
+Reading a note remains a separate planned historical objective; item possession
+alone must not grant read credit.
+
+## 2026-11-05 — first committed quest-loot generation rights
+
+For the initial async server, serialize conditional generation against a locked
+backpack/journal pair at its first durable generation transaction. Persist that
+eligibility decision, ticket and observed revisions together with any winning
+claim. Later acceptance, removal or replay does not replace the original rights.
+This is an explicit Theia commit-order policy; it does not claim an exact
+simulation death-tick snapshot. The Classic-targeted source stores initial corpse
+permissions, but does not define our asynchronous transaction ordering.
+[Storage semantics and remaining runtime work](LOOT_TABLES.md#quest-only-generation-storage-prerequisite--5-november-2026).
+Preserve current-need checks before paging and pickup as separate requirements;
+generation grants availability only. No world-event log or whole-corpse atomic
+generation is established by these per-entry transactions.
+
+## 2026-11-05 — explicit normal inventory-bound item quests
+
+Adopt opt-in manifest schema 18 and `--quest-items` only with the exact bound
+inventory/journal profiles. Count current backpack holdings across stacks,
+reverse Ready after removal, and recheck/consume required items atomically with
+turn-in and XP. Keep the three-pelt development quest and guaranteed native
+fixture distinct from ordinary random-loot content. [Qualified scope](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-qualification-complete--5-november-2026).
+Quest-only generation rights remain a separate prerequisite; ordinary item drops
+must not silently acquire quest restrictions. Preserve older profile versions.
+
+## 2026-11-05 — authored creature drop chances and explicit corpse pickup
+
+Use independent integer drop chances and optional exclusive groups in reward
+schema 3; preserve old guaranteed recipes. Persist misses and shared group tickets
+as well as winning availability, bound to recipient, victim life, content and
+original metric position. Use the retained async authority owner; opening a loot
+pane grants no inventory. Preserve guaranteed native-test content separately
+from provisional 60% pelt / 25% token gameplay content. [Reference, semantics and
+adoption limits](LOOT_TABLES.md). Quest-only eligibility and live possession quests
+remain gated until their inventory/journal integration is qualified. Standard
+Bevy corpse picking/UI now pass the documented Linux native pickup/rejoin flow.
+
+## 2026-11-04 — separate durable loot availability from pickup
+
+A fatal creature life creates a recipient-bound loot entitlement at its original
+checked metric corpse position. Availability/viewing do not add inventory or
+possession progress. Pickup commits bag, claim receipt and affected journals
+together. Keep life receipts durable and load bounded pending pages; consumed
+history is not a resident owner list. Preserve once-character content and require
+live corpse/life/range checks before runtime adoption. [Storage proof and limits](QUEST_ITEM_OBJECTIVES.md#per-life-loot-storage-prerequisite-qualified--4-november-2026).
+
+## 2026-11-04 — explicit per-creature-life reward scope
+
+Preserve schema-1 once-character recipes. Use schema 2 for explicit repeatable
+victim-life entitlements, reusing the authoritative progression KillId type.
+Pure selectors establish no kill/recipient authority. Keep runtime and storage
+admission closed until durable uniqueness, bounded availability and publication
+are installed. [Core evidence and next work](QUEST_ITEM_OBJECTIVES.md#per-life-loot-core-prerequisite--4-november-2026).
+
+## 2026-11-04 — confirmed item destruction native adoption
+
+Retain split/merge support and the exact confirmed backpack slot/revision in
+IR02 destruction requests. Require a fresh confirmation after close/reopen or
+changed inventory. Preserve server-owned validation and committed views, including
+newer bags accompanying matching replies. Normal Linux native destruction and
+restart/rejoin now pass; per-life loot and possession-quest admission remain next.
+[Qualified scope](QUEST_ITEM_OBJECTIVES.md#confirmed-destruction-ui-qualified--4-november-2026).
+
+## 2026-11-04 — retained item-aware quest owner publication
+
+Initialize inventory before item-aware progression and route supported bag writes
+through compound SQL. Publish only committed views through retained character
+generations; preserve higher bag/journal/XP versions and command replies across
+late responses. Keep live admission closed until remaining loot/UI/native slices
+pass. Treat reading a quest note as a separately authored historical condition,
+not an implicit consequence of possession. [Evidence and scope](QUEST_ITEM_OBJECTIVES.md).
+
+## 2026-11-03 — atomic inventory-bound quest storage
+
+Bind exact item content into new item-quest profiles. Lock XP (when needed), then
+backpack, then journal; commit consumption, completion, XP and receipt together.
+Reconcile current holdings on acceptance/load/replay and in compound bag writes.
+Retain accepted compound jobs through response loss and shutdown. Keep live
+admission closed until all owners and mutation paths use coherent committed views.
+[Qualified storage evidence and remaining work](QUEST_ITEM_OBJECTIVES.md).
+
+## 2026-11-03 — versioned final-stage item possession proposals
+
+Add quest schema 3 with explicit current-possession and consume flags, initially
+restricted to an all-required final hand-in stage. Preserve earlier historical
+facts and completed delivery evidence. Use monotonic mutation revisions for
+reversible item quantities while retaining old exact historical-only validation.
+Recheck supplied current bags at pure turn-in, prepare consumption and completion
+together, and recalculate other quests sharing the materials. Permit codec
+readiness reversal only for that defined item scope. Keep live admission closed
+until the inventory-aware durable path is installed.
+[Qualified core/codec evidence and remaining work](QUEST_ITEM_OBJECTIVES.md).
+
+## 2026-11-03 — qualified reach-area launch and batch snapshot heads
+
+Adopt opt-in manifest 16 and a separate three-quest engineering catalogue,
+preserving existing definitions/content and requiring exact area/profile binding.
+For multi-goal batches, the committed journal head is a monotonic snapshot
+version at least as high as every contained logical revision, not a receipt
+count. Share that checked rule between storage and the encrypted fixture.
+Actual PostgreSQL overlap/rollback/replay/restart and normal native quest/rejoin
+proof pass. Do not migrate existing characters or claim general region support.
+[Qualified behavior, native proof and limits](QUEST_REACH_AREAS.md).
+Next honor the user's possession-based item delivery request, allowing stack
+splits and recalculating readiness after committed item removal.
+
+## 2026-11-03 — bounded typed area observations through retained ownership
+
+Reserve existing character-owner Port capacity before authoritative area
+observation. Retry unavailable capacity without claiming credit; suppress
+unchanged accepted batches while waiting for commit. Reuse the ordered trusted
+producer sequence and retained async owner, leaving client wire actions at
+accept/turn-in. Publish only committed journals and preserve command replies.
+[Queue/encrypted fixture proof and remaining combined native work](QUEST_REACH_AREAS.md).
+
+## 2026-11-03 — atomic stage-bound area observation receipts
+
+Reuse the existing journal head lock, changed-row writes, receipt table and
+bounded critical worker for trusted area batches. Bind exact area bytes and the
+original eligible quest/version/stage/area payload in separate hash domains.
+Commit all affected quests with their receipt; retain accepted work across
+response loss and shutdown. Reject unbound/empty batches and generic raw area
+events. Grant no occupancy XP; retain ordinary turn-in transactions.
+[Actual SQL/restart proof and remaining live integration](QUEST_REACH_AREAS.md).
+
+## 2026-11-03 — explicit area-aware quest profile and server sampling
+
+Bind exact static area bytes into an opt-in quest/XP profile hash. Keep area-free
+hashes unchanged; share reference/namespace checks with persistence and require
+World bounds and installed-content checks before admission. Sample only current
+alive authoritative capsule feet with prepared collision and client footprint
+coverage, never client coordinates. Normal manifests remain unsupported until
+their area role and durable owner are connected. [Qualified scope](QUEST_REACH_AREAS.md).
+
+## 2026-11-03 — stage-scoped area objective proposals
+
+Adopt sampled alive authoritative feet occupancy for the forthcoming reach-area
+adapter. Add schema-2 selectors and bounded logical observations that seal quest,
+definition version and original active stage. Apply each batch once per original
+stage; never retroactively credit later acceptance or cascade through stages.
+Any/at-least stages retain exactly their completion quorum. The observation is a
+pure proposal, not proof of position; World binding and durable publication remain
+required. Preserve existing schema-1 content and fail closed at live admission
+until that adapter is installed. [Evidence and remaining work](QUEST_REACH_AREAS.md).
+
+## 2026-11-03 — read-only executable quest update review
+
+P3-11 / P3-15: add a bounded advisory comparison of two closed executable
+catalogues before content installation/migration work. Preserve exact byte hashes
+and stable IDs/versions; classify current schema-1 gameplay versus presentation/
+layout changes and flag definition/version issues without copying prose. A
+review-only normalized fingerprint never replaces runtime catalogue binding.
+Keep saved compatibility, World-reference validation and migration separate;
+source files and live behavior stay unchanged. [Workflow](QUEST_PACK_AUTHORING.md).
+
+## 2026-11-03 — normal public visual-life adoption
+
+Adopt explicit schema 15 with the same 22 exact gameplay inputs, deriving AV01
+after public NPC timing in World identity. Reuse standard Bevy Death/fresh-life
+reset and old sword-cue invalidation for remote actors; retain owner-private
+control/vitals barriers. Reset remote pose interpolation only on initial/fresh
+public life after an appropriately recent authoritative snapshot. Same-life
+movement keeps blending. Actual native finished-corpse/in-view and respawn proof,
+dead owner input/cast checks, normal quest/database-restart regression and all
+1,123 workspace tests pass. [Scope](PUBLIC_AVATAR_LIFE.md). No new death formula,
+corpse-run rules, durable health, normal default/older version replacement or
+same-backend-endpoint reconnect qualification. All changes remain local.
+
+## 2026-11-03 — public lifecycle shares bounded priority transport
+
+Share the existing priority public presentation channel for AV01 and NA01,
+with exact per-contract receive validation and separate bounded event queues.
+Gate both on validated readiness after Welcome; publish full/changed life rosters
+without owner-private vitals. Reject uploads and fail/retire on capacity loss.
+Actual encrypted death/respawn/leave/rejoin and simultaneous NPC/AV transfer pass
+at 20/30/60 Hz. Rejoin qualification uses a new endpoint and injects old encrypted
+traffic. One earlier same-relay-endpoint replacement timed out; immediate reuse
+of that endpoint remains separate unqualified transport investigation scope.
+Keep the five-second deadline and existing normal versions unchanged until the
+new normal/Bevy slice qualifies. [Evidence](PUBLIC_AVATAR_LIFE.md).
+
+## 2026-11-03 — separate public visual player lifecycle
+
+P3-04 / P3-14 / P3-16: close the observer death-pose gap with a separate optional
+projection of exact actor/life identity and alive/dead status. Deliberately expose
+the existing life generation as visual identity so fresh-life animation resets
+survive render coalescing; this grants no command or respawn authority. Keep
+health, results, incoming windups and movement-stream barriers private/unchanged.
+Use bounded sorted full rosters under the current eight-player development cap.
+Bind a separate profile/World domain and qualify the World/codec prerequisite
+before transport, new normal bundle selection and standard Bevy adoption.
+[Boundary and acceptance](PUBLIC_AVATAR_LIFE.md). This is Theia presentation
+metadata, not a new Classic formula or a population-capacity claim.
+
+## 2026-11-03 — explicit normal public NPC timing adoption
+
+Adopt schema 14 as a separate exact-byte normal bundle, retaining all 22 schema-13
+inputs and adding the derived public timing profile after threat in World
+identity. Enable the same explicit flag in both normal executables. Use standard
+Bevy wolf clips, suppress expired/cancelled windups and face the actual victim;
+never alter the player's target or manual facing. Owner-private vitals and
+incoming damage remain separate. Actual native victim/observer and normal
+quest/database-restart regressions pass, as do 1,106 workspace tests.
+[Qualified scope and checkpoint](PUBLIC_CREATURE_ATTACKS.md). No default/older
+bundle replacement, new combat formula or broader NPC capacity claim.
+
+## 2026-11-03 — public attack stream uses optional priority transport
+
+Use a separate bounded reliable ordered channel ahead of ordinary event/pose
+traffic for the single development NPC's public attack timing. Retain legacy
+two-channel configuration in inactive modes. Gate publication on accepted chunk
+readiness, reject client uploads and retire/disconnect on capacity failure.
+Keep private life/damage facts on the owner path; no new authority command.
+The actual impaired victim/observer and refusal checks qualify the component;
+normal launcher/Bevy/native adoption is a separate next slice.
+[Contract and evidence](PUBLIC_CREATURE_ATTACKS.md).
+
+## 2026-11-03 — public NPC timing without private victim state
+
+P3-07 / P3-14 / P4-08: expose an explicit opt-in NPC windup contract containing
+public entity identities and existing authoritative ticks, without health,
+damage outcomes or private player-life generations. Bind the exact existing
+life/retaliation profile and a public version domain into World identity. Keep
+player targets/facing/controls and gameplay timing unchanged. Qualify observation
+and codec before a dedicated prioritized reliable stream and standard Bevy
+bystander animation. Default modes remain unchanged until normal adoption passes.
+[Implemented boundary and pending acceptance](PUBLIC_CREATURE_ATTACKS.md).
+
+## 2026-11-03 — bounded closed-catalogue compilation
+
+Add an explicit offline handoff from globally validated authoring packs to a
+closed runtime catalogue. Preserve all source quest IDs/versions/behavior and
+include every transitive prerequisite; refuse current runtime count/objective/
+byte overflow rather than dropping dependencies. Keep output metadata and exact
+provenance explicit, then run normal World-reference validation. This does not
+install content, load runtime packs, expand saved history or migrate character
+progress. [Qualified workflow and limits](QUEST_PACK_AUTHORING.md).
+
+## 2026-11-03 — offline quest pack preflight before runtime adoption
+
+Implement the adopted global-registry direction first as a bounded read-only
+core registry and file/index validator. Keep live `Catalog::from_json` closed;
+do not expose partially linked catalogues to journals. Use explicit development
+budgets, stable global definition IDs, checked cross-pack prerequisites and exact
+source hashes. Keep narrative planning, World-reference admission, runtime pack
+selection/history and saved-version migration separate. [Authoring contract and
+proof](QUEST_PACK_AUTHORING.md). This does not raise the live 32-record limit.
+
+## 2026-11-03 — explicit damage-threat development mode
+
+P3-07 / P4-08: adopt the qualified damage-only World adapter through a new
+schema-13 journal/threat bundle and explicit `--creature-threat`. Retain 1:1
+actual-health-loss threat and current-reach 110%/130% transfer from the pinned
+empirical Classic research; exact equality/tie order, transfer visibility,
+recovery and tag-departure behavior remain explicit Theia policies. Keep metres,
+server-owned victim selection and independent credit/reward ownership. Preserve
+older modes until separately replaced. Healing, stances, taunts, social/group
+threat and population scaling remain future work. [Evidence and limitations](CREATURE_THREAT.md).
+
 ## 2026-11-02 — quest catalogue scale direction
 
 Keep narrative planning manifests separate from executable content. Under the
@@ -1458,3 +3199,139 @@ Keep old profile bytes/checkpoints and reject incomplete life/retaliation setup.
 [Final playable qualification](CREATURE_PURSUIT_NATIVE.md). New player melee,
 projectiles, outcomes, quest markers, minimap and HUD work remains in the follow-on
 register; P3-17/P3-18 remain unspecified.
+
+## 2026-11-03 — Confirm encrypted Renet readiness before World admission
+
+Adopt transport revision 1 with exact NC01 reliable preface, eight bounded
+five-second waiters and no game traffic/World actor/account consumption before
+confirmation. Dropping renetcode 2.0.0's initial KeepAlive reproduced the earlier
+Welcome timeout independently of endpoint reuse; continuous game payloads
+suppressed its library retry. Keep pinned libraries, crypto and five-second
+client deadline unchanged; version the Renet protocol ID separately from movement
+wire/Quinn 12. Existing ticket/account/terrain checks follow confirmation.
+Both Renet ends need rebuilding and fresh tickets.
+
+Full 1,128-test workspace, strict Clippy/formatting, two focused loss-policy
+checks, 48 baseline/seeded repeated cases and normal OIDC/PostgreSQL/native
+quest/restart rejoin pass. Preserve the separate 46/48 periodic-loss diagnostic:
+it can erase essentially all snapshots after Welcome. Do not call that universal
+reconnect recovery or silently replace its evidence with seeded loss.
+[Contract and exact limits](RENET_CONNECTION_CONFIRMATION.md). Local only;
+`build/connection-confirmation-client-qualified-v1-20261103`.
+
+## 2026-11-03 — Build a bounded local map from resident render grids
+
+Adopt the initial Classic graybox minimap through standard Bevy UI: north-up
+256-metre square, 64x64 terrain image at up to four refreshes/second and a 16x16
+manual-heading arrow. Reuse resident mesh data and committed owner/guide filters;
+do not read saved terrain, force chunks, add a map camera or create gameplay
+requests. Keep health/mana beside it and hide it while the right-hand backpack
+occupies the space.
+
+All 1,133 workspace checks (50 skips), strict Clippy/fmt and four normal native
+quest/restart starts pass across the three supported sizes with zero GPU
+diagnostics. Measured raster maximum 329 us; visible idle refresh leaves
+81 tiles / one patch / 90 saved reads unchanged. Scope is the Classic greybox;
+legacy heading, native seam traversal and broader map layers remain follow-ups.
+[Exact evidence and limits](MINIMAP.md). Preserve
+`build/minimap-client-qualified-v1-20261103`; changes remain local.
+
+## 2026-11-03 — Compare map coordinates with displayed presentation
+
+Retained walking without explicit facing uses the existing displayed character
+rotation for its arrow; do not change its gameplay or the adopted Classic policy.
+Qualification must compare the map with rendered player coordinates, separately
+from delayed authority, and distinguish sampled frame origins from total origin
+changes. Preserve original failed checker evidence.
+
+Normal owned-account W traversal crosses three chunk owners and a render rebase
+without changing quest rewards. A separate accelerated development-ticket route
+covers the 16-km X extent with 125 origin changes and bounded retirement; it is
+not normal-speed/OIDC or MMO capacity evidence. Full 1,134-test workspace,
+strict Clippy/fmt and five native starts pass.
+[Exact evidence and scope](MINIMAP.md). Preserve
+`build/minimap-traversal-client-qualified-v1-20261103`; changes stay local.
+
+## 3 November 2026 — version-bound Classic ground movement calibration
+
+Implement the documented Classic travel follow-up under a new ground-movement-v3
+world identity, including exact embedded speed-data bytes. Adopt explicit Theia
+mapping of one source gameplay movement unit/s to one m/s: walk 2.5, run 7,
+backward run 4.5, with normalized diagonals and backward selection from accepted
+manual character facing. The pinned Blizzard UI supports the base-7 reference
+and walk/run toggle; pinned CMaNGOS Classic supplies supporting directional
+speed evidence with its uncertainty retained. This is not proof of complete
+Blizzard movement parity. See [source/version/mapping detail](CLASSIC_GROUND_MOVEMENT.md).
+
+Controls schema 2 uses a configurable walk/run toggle, default NumpadDivide,
+and running by default. Shift is no longer a Classic travel boost. Legacy
+non-Classic development movement and immutable earlier binaries retain 5/8 m/s.
+Old controls schema is explicitly refused; client/server must rebuild together
+and obtain fresh tickets. No movement layout, transport revision, physics pin,
+world scale, NPC speed or dodge-policy change. Implementation qualification
+remains pending; preserve the prior qualified playable.
+
+Ground movement qualification completed: all 1,139 workspace tests / 50 skips,
+formatting and strict Clippy; 27 native speed checks at three resolutions plus
+normal unmodified wolf/quests, database restart/rejoin and streamed W traversal.
+Five final native starts have zero Linux GPU diagnostics. Exact checkpoint:
+`build/classic-ground-client-qualified-v1-20261103`. The earlier interrupted
+run and measurement corrections remain documented, not promoted to passes.
+
+## 3 November 2026 — directional locomotion art prerequisite
+
+Use the supplied non-root-motion Base Locomotion clips as optional standard GLB
+animation, retaining the exact existing skin, sockets and eight clips. Fourteen
+additional walk/run directions pass source/retained-content checks and native
+inspection; do not infer live directional gameplay from converted art.
+[Exact proof and pending selection](CLASSIC_DIRECTIONAL_LOCOMOTION.md).
+The 5 mm production-fidelity gate remains failed; the measured four-weight
+preview limitation is unchanged. Preserve the ground-v3 playable until runtime
+selection, priority, grip and local/remote checks pass. No dodge work is resumed.
+
+## 3 November 2026 — optional Classic directional selection qualified
+
+Use checked global interpolation segments relative to displayed manual heading;
+never turn the actor toward motion. Complete optional fourteen-direction art
+selects eight-way walk/run, including backward running at the shared 4.5 m/s
+rate. Retain old-art/profile fallback and the deferred dodge slot namespace.
+Preserve compatible normalized moving-clip phase; crossfades/stride calibration
+remain separate. Existing standard Bevy finger/upper-body masks cover all bases;
+life/critical pose and attack barriers retain priority.
+
+[Runtime evidence and exact fixture distinctions](CLASSIC_DIRECTIONAL_LOCOMOTION.md):
+1,145 workspace tests / 50 skips, strict Clippy, two-account source-pose checks,
+new-art ultrawide controls, normal unmodified new/old-art quest and restart/rejoin
+flows, and actual new-art streamed traversal. Seven final native starts have
+zero Linux GPU diagnostics. Preserve
+`build/classic-directional-client-qualified-v1-20261103`; do not infer full
+animation, skin-production fidelity, Windows or population capacity.
+
+## 12 November 2026 — bounded larger starter-zone authoring
+
+Following the user's request for a village and distinct quest outskirts, extend
+the finite editor height patch to 512 m using schema-11 chunk spans. Reuse height
+samples, brushes, standard Bevy meshes and actual static collision; do not infer
+MMO streaming from this authoring footprint. Bound grids at 129² samples and
+encoded documents/command inputs at 2 MiB (the current painted valley is 1.27 MB).
+Keep two-metre spacing for patches up to 256 m; reject oversized resampling with
+source/history intact. Preserve the smaller existing scenes and explicit Save.
+Actual quest contacts, wolf patrols, navigation residency and authored spawn
+selection need their own runtime slices before this becomes a connected zone.
+
+
+## 16 November 2026 — private party resource observations
+
+P4-11 member frames consume existing authoritative health/mana pools. The bounded
+session party shares these values with its current members across the current
+world, independently of spatial interest. This is an explicit Theia presentation
+policy, not a newly evidenced Classic range rule. No positions, account IDs or
+outsider stats accompany the same-world name roster. Missing resource profiles
+produce an explicit unavailable value; membership does not imply full bars.
+
+Party state PS02 / compatibility profile v4 binds this addition. Observations
+follow exact epoch-qualified membership and join order, coalesce under the
+existing reliable-channel budget, and can change without consuming membership
+revisions or command acknowledgements. Death retains membership; leave, removal,
+disconnect and dissolution remove its resource observations. No new formulas,
+level replication, status effects, friendly targeting or marks are included.

@@ -1,0 +1,250 @@
+//! Bounded offline authored-world navigation publication; existing format/runtime.
+use std::{fs, io::Read, path::Path, time::Instant};
+use theia_core::{content::ContentId, coordinates::GlobalPosition};
+use theia_network::navigation::authored_checks::{Grounding, clearance};
+use theia_network::{
+    Result,
+    authored_world::Store,
+    navigation::{self as nav, Agent, Manifest, Route, TileRecord},
+    procedural,
+};
+
+pub(super) fn bake(source: &Path, output: &Path, route: &Path) -> Result<()> {
+    let (request, endpoints) = request(route)?;
+    let centre = procedural::owner(endpoints[0]).ok_or("Route outside prediction domain")?;
+    bake_region(source, output, centre, Some((request, endpoints)))
+}
+
+/// Passive populations need static navigation, not a fabricated patrol route.
+pub(super) fn bake_area(
+    source: &Path,
+    output: &Path,
+    centre: theia_core::coordinates::ChunkId,
+) -> Result<()> {
+    if !procedural::contains(centre) {
+        return Err("Authored navigation centre outside supported world".into());
+    }
+    bake_region(source, output, centre, None)
+}
+
+fn bake_region(
+    source: &Path,
+    output: &Path,
+    centre: theia_core::coordinates::ChunkId,
+    route: Option<(Route, Vec<GlobalPosition>)>,
+) -> Result<()> {
+    let started = Instant::now();
+    if output.exists() {
+        return Err("Navigation output exists; choose a new directory".into());
+    }
+    let store = Store::open(source)?;
+    let agent = Agent::development();
+    let mut tiles = Vec::new();
+    let mut inputs = Vec::new();
+    let mut empty_tiles = Vec::new();
+    let allow_empty = route.is_none();
+    for id in procedural::neighbours(centre, 1) {
+        let patch = store.patch(id)?;
+        let geometry = if allow_empty {
+            match theia_nav_bake::authored::geometry_if_present(&patch.scene.colliders)? {
+                Some(geometry) => geometry,
+                None => {
+                    empty_tiles.push([id.x, id.z]);
+                    continue;
+                }
+            }
+        } else {
+            theia_nav_bake::authored::geometry(&patch.scene.colliders)?
+        };
+        inputs.push(serde_json::json!({"tile":[id.x,id.z],"vertices":geometry.positions.len(),"triangles":geometry.triangles.len()}));
+        eprintln!(
+            "authored_navigation_input x={} z={} vertices={} triangles={}",
+            id.x,
+            id.z,
+            geometry.positions.len(),
+            geometry.triangles.len()
+        );
+        let tile = theia_nav_bake::bake_if_walkable(id, store.identity(), agent, geometry)
+            .map_err(|error| format!("Authored navigation tile [{},{}]: {error}", id.x, id.z))?;
+        let Some(tile) = tile else {
+            if !allow_empty {
+                return Err(format!(
+                    "Authored navigation tile [{},{}] has no walkable polygons",
+                    id.x, id.z
+                )
+                .into());
+            }
+            empty_tiles.push([id.x, id.z]);
+            continue;
+        };
+        eprintln!(
+            "authored_navigation_tile x={} z={} polygons={}",
+            id.x,
+            id.z,
+            tile.polygons.len()
+        );
+        tiles.push(tile);
+    }
+    if tiles.is_empty() {
+        return Err("Authored navigation area has no walkable tiles".into());
+    }
+    let routes = if let Some((request, endpoints)) = route {
+        let query = theia_nav_bake::Query::new(&tiles)?;
+        vec![Route {
+            id: request.id,
+            points: routed_points(&store, &query, &endpoints)?,
+        }]
+    } else {
+        vec![]
+    };
+    let encoded = tiles
+        .iter()
+        .map(nav::Tile::encode)
+        .collect::<Result<Vec<_>>>()?;
+    let manifest = Manifest {
+        schema: 1,
+        source: store.identity(),
+        agent,
+        tiles: tiles
+            .iter()
+            .zip(&encoded)
+            .map(|(t, b)| TileRecord {
+                id: t.id,
+                sha256: theia_network::terrain::sha256(b),
+            })
+            .collect(),
+        routes,
+    };
+    let bytes = manifest.encode()?;
+    if let Some(parent) = output.parent().filter(|p| !p.as_os_str().is_empty()) {
+        fs::create_dir_all(parent)?;
+    }
+    fs::create_dir(output)?;
+    let result = (|| -> Result<()> {
+        for (tile, bytes) in tiles.iter().zip(encoded) {
+            super::write_new(&output.join(nav::tile_name(tile.id)), &bytes)?;
+        }
+        let partial = output.join("navigation.manifest.partial");
+        super::write_new(&partial, &bytes)?;
+        fs::rename(&partial, output.join(nav::MANIFEST))?;
+        verify(source, output)?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_dir_all(output);
+    }
+    result?;
+    println!(
+        "{}",
+        serde_json::json!({"authored_navigation_bake":{"passed":true,"source":store.identity(),"tiles":tiles.len(),"empty_tiles":empty_tiles,"inputs":inputs,"route_points":manifest.routes.iter().map(|r| r.points.len()).sum::<usize>(),"elapsed_ms":started.elapsed().as_millis(),"scope":"Offline navigation from admitted authored collision; no creature runtime or exhaustive containment acceptance"}})
+    );
+    Ok(())
+}
+// Read-only queries reuse the same route limits, strict layer sampling and
+// collision checks as published patrols. They never modify a package or actor.
+fn request(route: &Path) -> Result<(Route, Vec<GlobalPosition>)> {
+    let mut bytes = Vec::new();
+    fs::File::open(route)?
+        .take(32 * 1024 + 1)
+        .read_to_end(&mut bytes)?;
+    if bytes.len() > 32 * 1024 {
+        return Err("Authored route file exceeds budget".into());
+    }
+    let request: Route = serde_json::from_slice(&bytes)?;
+    if ContentId::new(&request.id).is_none()
+        || !(2..=nav::MAX_ROUTE_POINTS).contains(&request.points.len())
+    {
+        return Err("Authored route requires a logical ID and 2..256 global waypoints".into());
+    }
+    let endpoints = request
+        .points
+        .iter()
+        .map(|&p| GlobalPosition::new(p).ok_or("Invalid route waypoint".into()))
+        .collect::<Result<Vec<_>>>()?;
+    Ok((request, endpoints))
+}
+fn routed_points(
+    store: &Store,
+    query: &theia_nav_bake::Query,
+    endpoints: &[GlobalPosition],
+) -> Result<Vec<[f64; 3]>> {
+    let mut grounding = Grounding::new(store);
+    let mut points = Vec::new();
+    for pair in endpoints.windows(2) {
+        for point in query.route(pair[0], pair[1]).map_err(|error| {
+            format!(
+                "Route {:?} -> {:?}: {error}",
+                pair[0].metres(),
+                pair[1].metres()
+            )
+        })? {
+            let point = grounding.at(point)?.metres();
+            if points.last() != Some(&point) {
+                points.push(point);
+            }
+            if points.len() > nav::MAX_ROUTE_POINTS {
+                return Err("Authored patrol route exceeds point budget".into());
+            }
+        }
+    }
+    Ok(points)
+}
+pub(super) fn route(source: &Path, navigation: &Path, request_path: &Path) -> Result<()> {
+    let store = Store::open(source)?;
+    let nav = nav::Store::open(navigation, store.identity())?;
+    nav.verify()?;
+    let (request, _) = request(request_path)?;
+    let tiles = nav
+        .manifest()
+        .tiles
+        .iter()
+        .map(|t| nav.tile(t.id))
+        .collect::<Result<Vec<_>>>()?;
+    let query = theia_nav_bake::Query::new(&tiles)?;
+    let points: Vec<_> = nav::authored_checks::grounded_route(&store, &nav, &request.points)
+        .map_err(|error| format!("Route preparation: {error}"))?
+        .into_iter()
+        .map(|p| p.metres())
+        .collect();
+    let mut grounding = Grounding::new(&store);
+    let mut samples = 0;
+    clearance(&query, &mut grounding, &points, &mut samples)?;
+    println!(
+        "{}",
+        serde_json::json!({"authored_navigation_route": {
+            "passed": true, "source": store.identity(),
+            "route": Route { id: request.id, points }, "clearance_samples": samples,
+            "scope": "Read-only offline route with 0.2 m sampled capsule clearance; no actor movement or continuous sweep proof"
+        }})
+    );
+    Ok(())
+}
+pub(super) fn verify(source: &Path, output: &Path) -> Result<()> {
+    let store = Store::open(source)?;
+    let nav = nav::Store::open(output, store.identity())?;
+    nav.verify()?;
+    let tiles = nav
+        .manifest()
+        .tiles
+        .iter()
+        .map(|t| nav.tile(t.id))
+        .collect::<Result<Vec<_>>>()?;
+    let query = theia_nav_bake::Query::new(&tiles)?;
+    let mut points = 0;
+    let mut samples = 0usize;
+    let mut grounding = Grounding::new(&store);
+    for route in &nav.manifest().routes {
+        for p in &route.points {
+            let p = GlobalPosition::new(*p).ok_or("Invalid route point")?;
+            query.sample(p)?;
+            grounding.at(p)?;
+            points += 1;
+        }
+        clearance(&query, &mut grounding, &route.points, &mut samples)?;
+    }
+    println!(
+        "{}",
+        serde_json::json!({"authored_navigation_verify":{"passed":true,"tiles":tiles.len(),"route_points":points,"clearance_samples":samples,"source":store.identity(),"scope":"Package, navigation and 0.2 m sampled route capsule clearance; native creature acceptance remains separate"}})
+    );
+    Ok(())
+}

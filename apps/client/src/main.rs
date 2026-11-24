@@ -1,29 +1,45 @@
 //! Bevy presentation: offline sandbox or server-owned multiplayer walking.
 mod asset_preview;
+mod authored_scene;
 mod camera;
 mod capture_ready;
+mod chat;
 mod chunk_scene;
 mod chunk_world;
-mod classic_controls;
+#[path = "../../common/classic_controls.rs"]
+pub mod classic_controls;
 mod combat;
 mod combat_feedback;
+#[path = "../../common/creature_asset.rs"]
+mod creature_asset;
 mod creature_visual;
 mod dialogue;
+mod documents;
 mod dodge;
 mod equipment;
+mod fantasy_ui;
 mod floating_origin;
+mod frontend;
 mod graybox;
 mod inventory;
+mod loading;
+mod loot;
 mod melee_qualification;
+mod minimap;
 mod movement;
 mod movement_metrics;
+mod nameplates;
 mod network;
+mod particle_world;
+mod party;
 mod physics;
 mod player_life;
+mod population_qualification;
 mod progression;
 mod projectile_qualification;
 mod projectile_visual;
 mod pursuit_qualification;
+mod quest_journal;
 mod quest_lifecycle;
 mod quest_marker;
 mod quests;
@@ -37,8 +53,13 @@ mod spell_feedback;
 mod status_effects;
 mod targeting;
 mod terrain_scene;
+mod test_controller;
+mod test_window;
 mod triplanar;
+mod ui_buttons;
+mod ui_theme;
 mod world_input;
+mod zone_map;
 
 use bevy::{app::AppExit, prelude::*, time::TimeUpdateStrategy, window::WindowResolution};
 use movement::{LocalPawn, MoveIntent};
@@ -46,18 +67,45 @@ use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args: Vec<_> = std::env::args().skip(1).collect();
+    theia_network::simulation::population::configuration::validate_launch(&args)
+        .map_err(|e| e.to_string())?;
+    if args.first().is_some_and(|a| a == "--preview-fantasy-ui") {
+        return fantasy_ui::preview::run(&args);
+    }
     if args.first().is_some_and(|a| a == "--inspect-asset") {
         return asset_preview::run(&args);
     }
     if args.first().is_some_and(|a| a == "--chunk-smoke") {
         return chunk_scene::run(&args);
     }
+    let frontend_directory = frontend::arguments(&mut args)?;
+    let hide_world_particles =
+        if let Some(i) = args.iter().position(|a| a == "--hide-world-particles") {
+            args.remove(i);
+            true
+        } else {
+            false
+        };
+    let configuration_report =
+        if let Some(i) = args.iter().position(|a| a == "--configuration-report") {
+            args.remove(i);
+            if args.iter().any(|a| a == "--configuration-report") {
+                return Err("Choose configuration report once".into());
+            }
+            true
+        } else {
+            false
+        };
     let fullscreen = if let Some(i) = args.iter().position(|a| a == "--fullscreen") {
         args.remove(i);
         true
     } else {
         false
     };
+    let test_view = test_window::from_args(&mut args)?;
+    if test_view.is_some() && fullscreen {
+        return Err("Test windows require windowed mode".into());
+    }
     let window_size = if let Some(i) = args.iter().position(|a| a == "--window-size") {
         args.remove(i);
         if i >= args.len() {
@@ -65,7 +113,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         args.remove(i)
     } else {
-        std::env::var("THEIA_WINDOW_SIZE").unwrap_or_else(|_| "1920x1200".into())
+        std::env::var("THEIA_WINDOW_SIZE").unwrap_or_else(|_| "3440x1440".into())
     };
     let (width, height) = window_size
         .split_once('x')
@@ -86,20 +134,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let mut loading_artwork = loading::Artwork::default();
+    let authored = if let Some(i) = args.iter().position(|a| a == "--authored-world") {
+        args.remove(i);
+        if i >= args.len() {
+            return Err("Missing authored world directory".into());
+        }
+        let directory = std::path::PathBuf::from(args.remove(i));
+        let store =
+            theia_network::authored_world::Store::open(&directory).map_err(|e| e.to_string())?;
+        loading_artwork = loading::Artwork::for_package(&directory).map_err(|e| e.to_string())?;
+        Some(std::sync::Arc::new(store))
+    } else {
+        None
+    };
     let graybox_flag = if let Some(i) = args.iter().position(|a| a == "--graybox-world") {
         args.remove(i);
         true
     } else {
         false
     };
-    if graybox_flag && saved.is_some() {
-        return Err("Choose generated or saved terrain".into());
+    if usize::from(graybox_flag) + usize::from(saved.is_some()) + usize::from(authored.is_some())
+        > 1
+    {
+        return Err("Choose generated, saved or authored terrain".into());
     }
-    let graybox = graybox_flag || saved.is_some();
-    let source = saved.map_or(
-        theia_network::procedural::Source::Procedural,
-        theia_network::procedural::Source::Saved,
-    );
+    let graybox = graybox_flag || saved.is_some() || authored.is_some();
+    let source = if let Some(store) = authored {
+        theia_network::procedural::Source::Authored(store)
+    } else {
+        saved.map_or(
+            theia_network::procedural::Source::Procedural,
+            theia_network::procedural::Source::Saved,
+        )
+    };
     let prediction = if let Some(i) = args.iter().position(|a| a == "--prediction") {
         args.remove(i);
         true
@@ -116,6 +184,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         false
     };
     let classic_controller = classic_controls::Controller::from_args(&mut args, classic)?;
+    let parties = party::parse(&mut args, classic)?;
+    let chat_area = chat::parse(&mut args, classic)?;
+    let test_controller = test_controller::from_args(&mut args, classic && graybox, &source)?;
     if classic && !prediction {
         return Err("Classic controls require predicted terrain".into());
     }
@@ -183,6 +254,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let population = if let Some(i) = args.iter().position(|a| a == "--population-config") {
+        args.remove(i);
+        if i >= args.len() {
+            return Err("Missing population configuration".into());
+        }
+        Some(
+            theia_network::simulation::population::configuration::Loaded::open(
+                std::path::Path::new(&args.remove(i)),
+                &source,
+            )
+            .map_err(|e| e.to_string())?,
+        )
+    } else {
+        None
+    };
+    let respawn_ms = population.as_ref().map_or(
+        theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS,
+        |p| p.respawn_ms(),
+    );
     let patrol_binding = if let Some(i) = args.iter().position(|a| a == "--creature-profile") {
         use std::io::Read;
         use theia_network::simulation::creatures;
@@ -211,6 +301,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             source.identity(),
         )
         .map_err(|e| e.to_string())?;
+        navigation.verify().map_err(|e| e.to_string())?;
+        profile
+            .navigation_route(navigation.manifest())
+            .map_err(|e| e.to_string())?;
         Some((profile, navigation.identity(), bytes))
     } else {
         if args.iter().any(|a| a == "--navigation") {
@@ -218,13 +312,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         None
     };
-    let creature_asset = creature_visual::parse(&mut args, patrol_binding.is_some())?;
+    let creature_asset =
+        creature_visual::parse(&mut args, patrol_binding.is_some() || population.is_some())?;
+    let fantasy_ui = fantasy_ui::parse(&mut args, classic && combat_catalog.is_some())?;
+    let explicit_ui_scale = args.iter().any(|arg| arg == "--ui-scale");
+    let ui_scale = fantasy_ui::parse_scale(&mut args, fantasy_ui.is_some())?;
+    let ui_preferences = fantasy_ui::preferences::Config::parse(
+        &mut args,
+        fantasy_ui.is_some(),
+        ui_scale,
+        explicit_ui_scale,
+    )?;
+    let ui_scale = ui_preferences
+        .as_ref()
+        .map_or(ui_scale, |config| config.scale);
+    let world_effects_visible = !hide_world_particles
+        && ui_preferences
+            .as_ref()
+            .and_then(|config| config.world_effects)
+            .unwrap_or(true);
     let player_life_profile = player_life::parse(
         &mut args,
         character_stats.as_ref().map(|(bytes, _)| bytes.as_slice()),
         patrol_binding
             .as_ref()
-            .map(|(_, _, bytes)| bytes.as_slice()),
+            .map(|(_, _, bytes)| bytes.as_slice())
+            .or_else(|| population.as_ref().map(|p| p.creature_bytes())),
     )?;
     if patrol_binding
         .as_ref()
@@ -241,7 +354,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if i >= args.len() {
             return Err("Missing progression catalog".into());
         }
-        if !graybox || !prediction || patrol_binding.is_none() || combat_catalog.is_none() {
+        if !graybox
+            || !prediction
+            || (patrol_binding.is_none() && population.is_none())
+            || combat_catalog.is_none()
+        {
             return Err("Progression requires predicted saved terrain and creature combat".into());
         }
         let mut bytes = Vec::new();
@@ -263,10 +380,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         let mut bytes = Vec::new();
         std::fs::File::open(args.remove(i))?
-            .take(theia_core::dialogue::MAX_PROFILE_BYTES as u64 + 1)
+            .take(theia_core::dialogue::catalog::MAX_CATALOG_BYTES as u64 + 1)
             .read_to_end(&mut bytes)?;
         let profile = std::sync::Arc::new(
-            theia_network::dialogue::Profile::from_json(&bytes).map_err(|e| e.to_string())?,
+            theia_network::dialogue::Profile::from_content(&bytes).map_err(|e| e.to_string())?,
         );
         let i = args
             .iter()
@@ -276,18 +393,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if i >= args.len() {
             return Err("Missing guide position".into());
         }
-        let values: Vec<f64> = args
-            .remove(i)
-            .split(',')
-            .map(str::parse)
-            .collect::<Result<_, _>>()?;
-        let xz: [f64; 2] = values.try_into().map_err(|_| "Expected guide x,z")?;
-        let focus = theia_core::coordinates::GlobalPosition::new([xz[0], 0., xz[1]])
-            .ok_or("Invalid guide position")?;
-        if theia_network::procedural::owner(focus).is_none() {
-            return Err("Guide outside graybox".into());
-        }
-        Some((profile, xz))
+        let placement = profile
+            .placements(&args.remove(i), &source)
+            .map_err(|error| error.to_string())?;
+        Some((profile, placement))
     } else {
         if args.iter().any(|a| a == "--guide-position") {
             return Err("Guide position requires dialogue".into());
@@ -300,6 +409,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         false
     };
+    let journal_mode = if let Some(i) = args.iter().position(|a| a == "--quest-journal") {
+        args.remove(i);
+        true
+    } else {
+        false
+    };
+    let quest_items = if let Some(i) = args.iter().position(|a| a == "--quest-items") {
+        args.remove(i);
+        true
+    } else {
+        false
+    };
+    let quest_loot = if let Some(i) = args.iter().position(|a| a == "--quest-loot") {
+        args.remove(i);
+        true
+    } else {
+        false
+    };
+    if quest_loot && !quest_items {
+        return Err("Quest loot requires explicit item-journal mode".into());
+    }
+    if quest_items
+        && (!journal_mode
+            || !args.iter().any(|a| a == "--quest-catalog")
+            || !args.iter().any(|a| a == "--item-catalog"))
+    {
+        return Err("Quest items require journal mode, quest and item catalogues".into());
+    }
+    if journal_mode && explicit_quest {
+        return Err("Choose expanded journal or legacy quest mode".into());
+    }
     let quest_turn_in_xp = if let Some(i) = args.iter().position(|a| a == "--quest-turn-in-xp") {
         use std::io::Read;
         if !explicit_quest {
@@ -317,7 +457,60 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    let (quest_profile, lifecycle_profile) =
+    let quest_area_bytes = if let Some(i) = args.iter().position(|a| a == "--quest-areas") {
+        use std::io::Read;
+        args.remove(i);
+        if i >= args.len() || !journal_mode || !args.iter().any(|a| a == "--quest-catalog") {
+            return Err("Quest areas require expanded journal mode and a catalogue".into());
+        }
+        let mut bytes = Vec::new();
+        std::fs::File::open(args.remove(i))?
+            .take(theia_core::quests::areas::MAX_CATALOG_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        Some(bytes)
+    } else {
+        None
+    };
+    let document_bytes = if let Some(i) = args.iter().position(|a| a == "--document-catalog") {
+        use std::io::Read;
+        args.remove(i);
+        if i >= args.len()
+            || !journal_mode
+            || !args.iter().any(|a| a == "--quest-catalog")
+            || !args.iter().any(|a| a == "--item-catalog")
+        {
+            return Err("Documents require journal, quest and item catalogues".into());
+        }
+        let mut bytes = Vec::new();
+        std::fs::File::open(args.remove(i))?
+            .take(theia_core::documents::MAX_CATALOG_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        Some(bytes)
+    } else {
+        None
+    };
+    let quest_item_reward_bytes = if let Some(i) =
+        args.iter().position(|a| a == "--quest-item-rewards")
+    {
+        use std::io::Read;
+        args.remove(i);
+        if i >= args.len()
+            || !journal_mode
+            || !args.iter().any(|a| a == "--quest-catalog")
+            || !args.iter().any(|a| a == "--item-catalog")
+        {
+            return Err("Fixed quest rewards require journal, quest and item catalogues".into());
+        }
+        let mut bytes = Vec::new();
+        std::fs::File::open(args.remove(i))?
+            .take(theia_core::quests::item_rewards::MAX_CATALOG_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        Some(bytes)
+    } else {
+        None
+    };
+    let mut document_journal_bytes = None;
+    let (quest_profile, lifecycle_profile, mut journal_profile) =
         if let Some(i) = args.iter().position(|a| a == "--quest-catalog") {
             use std::io::Read;
             args.remove(i);
@@ -326,12 +519,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             let xp = progression_profile
                 .as_ref()
-                .ok_or("Objectives require progression")?;
+                .ok_or("Quests require progression")?;
             let mut bytes = Vec::new();
+            let budget = if journal_mode {
+                theia_core::quests::catalog::MAX_CATALOG_BYTES
+            } else {
+                theia_core::quests::MAX_PROFILE_BYTES
+            };
             std::fs::File::open(args.remove(i))?
-                .take(theia_core::quests::MAX_PROFILE_BYTES as u64 + 1)
+                .take(budget as u64 + 1)
                 .read_to_end(&mut bytes)?;
-            let profiles = if explicit_quest {
+            let profiles = if journal_mode {
+                if dialogue_profile.is_none() {
+                    return Err("Journal requires guide dialogue".into());
+                }
+                if document_bytes.is_some() {
+                    document_journal_bytes = Some(bytes);
+                    (None, None, None)
+                } else {
+                    (
+                        None,
+                        None,
+                        Some(std::sync::Arc::new(
+                            if let Some(areas) = &quest_area_bytes {
+                                theia_network::quest_journal::Profile::from_json_with_areas(
+                                    &bytes, areas, xp,
+                                )
+                                .map_err(|e| e.to_string())?
+                            } else {
+                                theia_network::quest_journal::Profile::from_json(&bytes, xp)
+                                    .map_err(|e| e.to_string())?
+                            },
+                        )),
+                    )
+                }
+            } else if explicit_quest {
                 if dialogue_profile.is_none() {
                     return Err("Explicit quests require guide dialogue".into());
                 }
@@ -344,7 +566,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     theia_network::quest_lifecycle_wire::Profile::from_json(&bytes)
                         .map_err(|e| e.to_string())?
                 };
-                (None, Some(std::sync::Arc::new(profile)))
+                (None, Some(std::sync::Arc::new(profile)), None)
             } else {
                 (
                     Some(std::sync::Arc::new(
@@ -352,23 +574,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .map_err(|e| e.to_string())?,
                     )),
                     None,
+                    None,
                 )
             };
-            let creature = profiles
+            if let Some(creature) = profiles
                 .0
                 .as_ref()
                 .map(|p| p.profile().creature())
                 .or_else(|| profiles.1.as_ref().map(|p| p.profile().creature()))
-                .unwrap();
-            if xp.profile().kill_experience(creature).is_none() {
+                && xp.profile().kill_experience(creature).is_none()
+            {
                 return Err("Objective/progression creature mismatch".into());
             }
             profiles
         } else {
-            if explicit_quest {
-                return Err("Explicit quests require quest catalog".into());
+            if explicit_quest || journal_mode {
+                return Err("Quest mode requires quest catalog".into());
             }
-            (None, None)
+            (None, None, None)
         };
     let mut item_bytes = None;
     let mut inventory_profile = if let Some(i) = args.iter().position(|a| a == "--item-catalog") {
@@ -389,6 +612,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    if let Some(bytes) = &document_bytes {
+        let items = inventory_profile
+            .take()
+            .ok_or("Documents require inventory")?
+            .with_documents(bytes)
+            .map_err(|e| e.to_string())?;
+        journal_profile = Some(std::sync::Arc::new(
+            theia_network::quest_journal::Profile::from_json_with_documents(
+                document_journal_bytes
+                    .as_deref()
+                    .ok_or("Documents require quest catalogue")?,
+                quest_area_bytes.as_deref(),
+                progression_profile
+                    .as_ref()
+                    .ok_or("Documents require progression")?,
+                items.documents().ok_or("Document profile missing")?,
+            )
+            .map_err(|e| e.to_string())?,
+        ));
+        inventory_profile = Some(items);
+    }
     let melee_profile = if let Some(i) = args.iter().position(|a| a == "--melee-weapons") {
         use std::io::Read;
         args.remove(i);
@@ -458,10 +702,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .as_ref()
                         .ok_or("Physical damage requires abilities")?
                         .1,
-                    creature: &patrol_binding
+                    creature: patrol_binding
                         .as_ref()
-                        .ok_or("Physical damage requires creature")?
-                        .0,
+                        .map(|p| p.0.definition())
+                        .or_else(|| population.as_ref().map(|p| p.definition()))
+                        .ok_or("Physical damage requires creature")?,
                     player_maximum_health: character_stats
                         .as_ref()
                         .ok_or("Physical damage requires vitals")?
@@ -487,11 +732,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let physical = physical_profile
             .clone()
             .ok_or("Ordinary outcomes require physical damage")?;
-        if patrol_binding
-            .as_ref()
-            .is_none_or(|p| p.0.aggro().is_none())
+        if population.is_none()
+            && patrol_binding
+                .as_ref()
+                .is_none_or(|p| p.0.aggro().is_none())
         {
-            return Err("Ordinary outcomes require pursuit".into());
+            return Err("Ordinary outcomes require pursuit or a checked passive population".into());
         }
         let mut bytes = Vec::new();
         std::fs::File::open(args.remove(i))?
@@ -567,18 +813,58 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reset_profile = player_life::parse_reset(
         &mut args,
         credit_bytes.is_some(),
-        patrol_binding.as_ref().map(|p| &p.0),
+        patrol_binding
+            .as_ref()
+            .map(|p| p.0.definition())
+            .or_else(|| population.as_ref().map(|p| p.definition())),
     )?;
+    let threat_bytes = player_life::parse_threat(&mut args, reset_profile.is_some())?;
+    let public_attack_profile = player_life::parse_public_attacks(
+        &mut args,
+        classic
+            && (patrol_binding
+                .as_ref()
+                .is_some_and(|p| p.0.aggro().is_some())
+                || population
+                    .as_ref()
+                    .is_some_and(|p| p.definition().aggro().is_some())),
+        player_life_profile.as_ref(),
+    )?;
+    let public_population_attack_profile = population
+        .as_ref()
+        .and(public_attack_profile.as_ref())
+        .map(|source| {
+            std::sync::Arc::new(
+                theia_network::creature_attack_wire::population::PopulationProfile::new(
+                    source.clone(),
+                ),
+            )
+        });
+    let public_avatar_profile =
+        player_life::parse_public_avatar(&mut args, classic, player_life_profile.as_ref())?;
     if let Some((_, catalog)) = &combat_catalog {
         catalog.validate_equipment(inventory_profile.as_ref().map(|p| p.catalog()))?;
     }
+    let creature_loot = if let Some(i) = args.iter().position(|a| a == "--creature-loot") {
+        args.remove(i);
+        true
+    } else {
+        false
+    };
+    if creature_loot && !args.iter().any(|a| a == "--reward-catalog") {
+        return Err("Creature loot requires a reward catalog".into());
+    }
+    if quest_loot && !creature_loot {
+        return Err("Quest loot requires explicit creature loot".into());
+    }
+    let mut quest_loot_bytes = None;
     if let Some(i) = args.iter().position(|a| a == "--reward-catalog") {
         use std::io::Read;
         args.remove(i);
         if i >= args.len() {
             return Err("Missing reward catalog".into());
         }
-        if patrol_binding.is_none() || combat_catalog.is_none() {
+        if (patrol_binding.is_none() && population.is_none()) || combat_catalog.is_none() {
             return Err("Rewards require authoritative creature combat".into());
         }
         let mut bytes = Vec::new();
@@ -586,7 +872,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .take(theia_core::rewards::MAX_CATALOG_BYTES as u64 + 1)
             .read_to_end(&mut bytes)?;
         let profile = inventory_profile.take().ok_or("Rewards require items")?;
-        inventory_profile = Some(profile.with_rewards(&bytes).map_err(|e| e.to_string())?);
+        inventory_profile = Some(
+            if quest_loot {
+                quest_loot_bytes = Some(bytes);
+                Ok(profile)
+            } else if creature_loot {
+                profile.with_creature_loot(&bytes)
+            } else {
+                profile.with_rewards(&bytes)
+            }
+            .map_err(|e| e.to_string())?,
+        );
     }
     if let Some(i) = args.iter().position(|a| a == "--vendor-catalog") {
         use std::io::Read;
@@ -603,13 +899,64 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok_or("Vendor requires items")?
             .with_vendor(&bytes)
             .map_err(|e| e.to_string())?;
-        if dialogue_profile
-            .as_ref()
-            .is_none_or(|(d, _)| d.profile().npc() != profile.vendor().unwrap().catalog().npc())
-        {
+        if dialogue_profile.as_ref().is_none_or(|(d, _)| {
+            d.contact(profile.vendor().unwrap().catalog().npc())
+                .is_none()
+        }) {
             return Err("Vendor NPC differs from dialogue guide".into());
         }
         inventory_profile = Some(profile);
+    }
+    let has_possession = journal_profile
+        .as_ref()
+        .is_some_and(|p| p.catalog().quests().any(|q| q.has_possession_objectives()));
+    if has_possession != quest_items {
+        return Err("Possession quests require explicit --quest-items mode".into());
+    }
+    if quest_items && document_bytes.is_none() {
+        let profile = journal_profile
+            .take()
+            .ok_or("Quest items require a journal")?;
+        journal_profile = Some(std::sync::Arc::new(
+            (*profile)
+                .clone()
+                .with_inventory(
+                    inventory_profile
+                        .as_ref()
+                        .ok_or("Quest items require inventory")?,
+                )
+                .map_err(|e| e.to_string())?,
+        ));
+    }
+    if let Some(bytes) = quest_item_reward_bytes {
+        let profile = journal_profile
+            .take()
+            .ok_or("Fixed rewards require journal")?;
+        journal_profile = Some(std::sync::Arc::new(
+            (*profile)
+                .clone()
+                .with_item_rewards(
+                    &bytes,
+                    inventory_profile
+                        .as_ref()
+                        .ok_or("Fixed rewards require inventory")?,
+                )
+                .map_err(|e| e.to_string())?,
+        ));
+    }
+    if let Some(bytes) = quest_loot_bytes {
+        inventory_profile = Some(
+            inventory_profile
+                .take()
+                .ok_or("Quest loot requires inventory")?
+                .with_quest_loot(
+                    &bytes,
+                    journal_profile
+                        .as_ref()
+                        .ok_or("Quest loot requires journal")?,
+                )
+                .map_err(|e| e.to_string())?,
+        );
     }
     if inventory_profile.is_some() && (!graybox || !prediction) {
         return Err("Inventory requires predicted saved terrain".into());
@@ -640,8 +987,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Targeting requires a graybox world".into());
     }
     let camera_collision = camera::CollisionMode::parse(&mut args)?;
-    let chunks = chunk_world::Config::parse(&mut args)?;
-    let terrain = terrain_scene::Config::parse(&mut args)?;
+    let mut chunks = chunk_world::Config::parse(&mut args)?;
+    let chunk_particles = chunks.as_mut().and_then(|chunks| chunks.particles.take());
+    let mut terrain = terrain_scene::Config::parse(&mut args)?;
+    let particle_world = terrain
+        .as_mut()
+        .and_then(|terrain| terrain.particles.take());
+    let authored_particles = if let theia_network::procedural::Source::Authored(store) = &source {
+        particle_world::prepare_authored(store)?.map(|prepared| (prepared, store.origin()))
+    } else {
+        None
+    };
     if chunks.is_some() && terrain.is_some() {
         return Err("Choose either chunk or monolithic terrain world".into());
     }
@@ -650,6 +1006,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let content_world = graybox || chunks.is_some() || terrain.is_some();
     let references = reference_scene::Config::parse(&mut args)?;
+    if frontend_directory.is_some()
+        && references
+            .as_ref()
+            .is_none_or(|r| !r.players_only || !r.directory.join("modular-hero.json").is_file())
+    {
+        return Err("Game front end requires the prepared modular hero player assets".into());
+    }
     if let Some(references) = &references
         && content_world != references.players_only
     {
@@ -667,154 +1030,223 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "--connect" | "--network-smoke" | "--renet-connect" | "--renet-smoke"
         )
     });
-    if inventory_profile.is_some() && !connected {
+    if inventory_profile.is_some() && !connected && !configuration_report {
         return Err("Inventory requires a network connection".into());
     }
-    if content_world && !connected {
+    if content_world && !connected && !configuration_report {
         return Err(
             "World walking requires --connect, --renet-connect or a network smoke mode".into(),
         );
     }
-    if graybox && args.first().is_none_or(|a| !a.starts_with("--renet-")) {
+    if graybox && !configuration_report && args.first().is_none_or(|a| !a.starts_with("--renet-")) {
         return Err("Graybox requires secure Renet".into());
+    }
+    let content_identity = if graybox {
+        let base = if targeted {
+            theia_network::targeting::profile_identity(source.identity())
+        } else {
+            source.identity()
+        };
+        let base = patrol_binding
+            .as_ref()
+            .map_or(base, |(profile, navigation, _)| {
+                theia_network::simulation::creatures::profile_identity(base, profile, *navigation)
+            });
+        let base = population
+            .as_ref()
+            .map_or(base, |p| p.profile_identity(base));
+        let base = if let Some((bytes, _)) = &combat_catalog {
+            use theia_network::simulation::combat::{self, DEVELOPMENT_HEALTH};
+            if let Some((stats, _)) = &character_stats {
+                if let Some((statuses, _)) = &status_catalog {
+                    combat::status_profile_identity(
+                        base,
+                        bytes,
+                        DEVELOPMENT_HEALTH,
+                        respawn_ms,
+                        stats,
+                        statuses,
+                    )
+                } else {
+                    combat::resource_profile_identity(
+                        base,
+                        bytes,
+                        DEVELOPMENT_HEALTH,
+                        respawn_ms,
+                        stats,
+                    )
+                }
+            } else {
+                combat::profile_identity(base, bytes, DEVELOPMENT_HEALTH, respawn_ms)
+            }
+            .map_err(|e| e.to_string())?
+        } else {
+            base
+        };
+        let base = player_life_profile.as_ref().map_or(base, |profile| {
+            theia_network::player_life_wire::profile_identity(base, profile)
+        });
+        let base = if population.is_some() && player_life_profile.is_some() {
+            theia_network::player_life_wire::population_retaliation_identity(base)
+        } else {
+            base
+        };
+        let base = if let Some((weapons, _)) = &melee_profile {
+            theia_network::simulation::combat::autoattack::profile_identity(
+                base,
+                weapons,
+                item_bytes.as_deref().ok_or("Missing melee item bytes")?,
+            )
+            .map_err(|e| e.to_string())?
+        } else {
+            base
+        };
+        let base = physical_profile
+            .as_ref()
+            .map_or(base, |profile| profile.identity(base));
+        let base = white_profile
+            .as_ref()
+            .map_or(base, |profile| profile.identity(base));
+        let base = ability_profile
+            .as_ref()
+            .map_or(base, |profile| profile.identity(base));
+        let base = membership_profile.as_ref().map_or(base, |profile| {
+            theia_network::simulation::combat::membership::identity_for_profile(base, profile)
+        });
+        let base = if let Some(bytes) = &credit_bytes {
+            theia_network::simulation::combat::credit::profile_identity(base, bytes)
+                .map_err(|error| error.to_string())?
+        } else {
+            base
+        };
+        let base = reset_profile
+            .as_ref()
+            .map_or(base, |profile| profile.identity(base));
+        let base = if let Some(bytes) = &threat_bytes {
+            theia_network::simulation::combat::threat::profile_identity(base, bytes)
+                .map_err(|error| error.to_string())?
+        } else {
+            base
+        };
+        let base = if let Some(profile) = &public_population_attack_profile {
+            profile.identity(base)
+        } else {
+            public_attack_profile
+                .as_ref()
+                .map_or(base, |profile| profile.identity(base))
+        };
+        let base = public_avatar_profile
+            .as_ref()
+            .map_or(base, |p| p.identity(base));
+        let base = inventory_profile
+            .as_ref()
+            .and_then(|p| p.rewards())
+            .map_or(base, |r| {
+                theia_network::simulation::rewards::profile_identity(base, r.hash())
+            });
+        let base = progression_profile.as_ref().map_or(base, |p| {
+            theia_network::progression_wire::profile_identity(base, p.hash())
+        });
+        let base = quest_profile.as_ref().map_or(base, |p| {
+            theia_network::quest_wire::profile_identity(base, p.hash())
+        });
+        let base = lifecycle_profile.as_ref().map_or(base, |p| {
+            theia_network::quest_lifecycle_wire::profile_identity(base, p.hash())
+        });
+        let base = journal_profile.as_ref().map_or(base, |p| {
+            theia_network::quest_journal::profile_identity(base, p.hash())
+        });
+        let base = dialogue_profile
+            .as_ref()
+            .map_or(base, |(profile, placement)| {
+                placement
+                    .iter()
+                    .fold(base, |base, (_, p)| p.identity(base, profile.hash()))
+            });
+        inventory_profile
+            .as_ref()
+            .and_then(|p| p.vendor())
+            .map_or(base, |v| {
+                theia_network::vendor_wire::profile_identity(base, v.hash())
+            })
+    } else {
+        chunks.as_ref().map_or_else(
+            || {
+                terrain
+                    .as_ref()
+                    .map_or(theia_network::terrain::GRAYBOX_ID, |t| t.terrain.identity)
+            },
+            |chunks| chunks.data.identity(),
+        )
+    };
+    if test_controller.is_some()
+        && !configuration_report
+        && args.first().is_none_or(|a| a != "--renet-connect")
+    {
+        return Err("Test controllers require a connected local client".into());
+    }
+    if configuration_report {
+        if connected || !args.is_empty() || !graybox || !prediction || !classic {
+            return Err("Configuration report requires exclusive predicted Classic graybox content without connection arguments".into());
+        }
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&serde_json::json!({
+                "schema": 1,
+                "scope": "Client content configuration only; no network, renderer or saved admission",
+                "world": party::world_identity(chat::world_identity(theia_network::classic::profile_identity(content_identity), chat_area), parties),
+                "parties": parties,
+                "chat_area": chat_area.map(theia_core::chat::Area::value),
+                "classic_source": content_identity,
+                "test_controller":test_controller.as_ref().map(|run|run.description()),
+                "inventory_profile": inventory_profile.as_ref().map(|p|p.hash()),
+                "journal_profile": journal_profile.as_ref().map(|p|p.hash()),
+                "progression_profile": progression_profile.as_ref().map(|p|p.hash()),
+                "typed_combat": {"physical":physical_profile.is_some(), "ordinary":white_profile.is_some(),
+                    "abilities":ability_profile.is_some(), "membership":membership_profile.is_some(), "solo_credit":credit_bytes.is_some()},
+                "player_life_profile": player_life_profile.as_ref().map(|p|p.hash()),
+                "public_avatar_life_profile": public_avatar_profile.as_ref().map(|p|p.hash()),
+                "public_creature_attack_profile": public_attack_profile.as_ref().filter(|_| public_population_attack_profile.is_none()).map(|p|p.hash()),
+                "public_population_attack_profile": public_population_attack_profile.as_ref().map(|p|p.hash()),
+                "interface": {"enabled": fantasy_ui.is_some(), "preferred_scale": ui_scale, "saved_preferences": ui_preferences.is_some(), "world_effects_visible": world_effects_visible},
+                "fixed_reward_catalog": journal_profile.as_ref().and_then(|p|p.item_rewards()).map(|r|r.id().as_str()),
+                "population": population.as_ref().map(|p| serde_json::json!({"count":p.count(), "respawn_ms":p.respawn_ms()})),
+                "creature_appearance": creature_asset.is_some(),
+                "renderer_started": false, "network_started": false, "saved_state_admitted": false
+            }))?
+        );
+        return Ok(());
+    }
+    if frontend_directory.is_some() && (!connected || !classic) {
+        return Err("Game front end requires Classic secure account entry".into());
     }
     let mut net = if connected {
         Some(network::Network::from_args(
             &args,
+            frontend_directory.clone(),
             prediction,
-            if graybox {
-                let base = if targeted {
-                    theia_network::targeting::profile_identity(source.identity())
-                } else {
-                    source.identity()
-                };
-                let base = patrol_binding
-                    .as_ref()
-                    .map_or(base, |(profile, navigation, _)| {
-                        theia_network::simulation::creatures::profile_identity(
-                            base,
-                            profile,
-                            *navigation,
-                        )
-                    });
-                let base = if let Some((bytes, _)) = &combat_catalog {
-                    use theia_network::simulation::combat::{
-                        self, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS,
-                    };
-                    if let Some((stats, _)) = &character_stats {
-                        if let Some((statuses, _)) = &status_catalog {
-                            combat::status_profile_identity(
-                                base,
-                                bytes,
-                                DEVELOPMENT_HEALTH,
-                                DEVELOPMENT_RESPAWN_MS,
-                                stats,
-                                statuses,
-                            )
-                        } else {
-                            combat::resource_profile_identity(
-                                base,
-                                bytes,
-                                DEVELOPMENT_HEALTH,
-                                DEVELOPMENT_RESPAWN_MS,
-                                stats,
-                            )
-                        }
-                    } else {
-                        combat::profile_identity(
-                            base,
-                            bytes,
-                            DEVELOPMENT_HEALTH,
-                            DEVELOPMENT_RESPAWN_MS,
-                        )
-                    }
-                    .map_err(|e| e.to_string())?
-                } else {
-                    base
-                };
-                let base = player_life_profile.as_ref().map_or(base, |profile| {
-                    theia_network::player_life_wire::profile_identity(base, profile)
-                });
-                let base = if let Some((weapons, _)) = &melee_profile {
-                    theia_network::simulation::combat::autoattack::profile_identity(
-                        base,
-                        weapons,
-                        item_bytes.as_deref().ok_or("Missing melee item bytes")?,
-                    )
-                    .map_err(|e| e.to_string())?
-                } else {
-                    base
-                };
-                let base = physical_profile
-                    .as_ref()
-                    .map_or(base, |profile| profile.identity(base));
-                let base = white_profile
-                    .as_ref()
-                    .map_or(base, |profile| profile.identity(base));
-                let base = ability_profile
-                    .as_ref()
-                    .map_or(base, |profile| profile.identity(base));
-                let base = membership_profile.as_ref().map_or(base, |profile| {
-                    theia_network::simulation::combat::membership::identity_for_profile(
-                        base, profile,
-                    )
-                });
-                let base = if let Some(bytes) = &credit_bytes {
-                    theia_network::simulation::combat::credit::profile_identity(base, bytes)
-                        .map_err(|error| error.to_string())?
-                } else {
-                    base
-                };
-                let base = reset_profile
-                    .as_ref()
-                    .map_or(base, |profile| profile.identity(base));
-                let base = inventory_profile
-                    .as_ref()
-                    .and_then(|p| p.rewards())
-                    .map_or(base, |r| {
-                        theia_network::simulation::rewards::profile_identity(base, r.hash())
-                    });
-                let base = progression_profile.as_ref().map_or(base, |p| {
-                    theia_network::progression_wire::profile_identity(base, p.hash())
-                });
-                let base = quest_profile.as_ref().map_or(base, |p| {
-                    theia_network::quest_wire::profile_identity(base, p.hash())
-                });
-                let base = lifecycle_profile.as_ref().map_or(base, |p| {
-                    theia_network::quest_lifecycle_wire::profile_identity(base, p.hash())
-                });
-                let base = dialogue_profile.as_ref().map_or(base, |(profile, xz)| {
-                    theia_network::dialogue::profile_identity(base, profile.hash(), *xz)
-                });
-                inventory_profile
-                    .as_ref()
-                    .and_then(|p| p.vendor())
-                    .map_or(base, |v| {
-                        theia_network::vendor_wire::profile_identity(base, v.hash())
-                    })
-            } else {
-                chunks.as_ref().map_or_else(
-                    || {
-                        terrain
-                            .as_ref()
-                            .map_or(theia_network::terrain::GRAYBOX_ID, |t| t.terrain.identity)
-                    },
-                    |chunks| chunks.data.identity(),
-                )
-            },
+            content_identity,
             targeted,
             player_life_profile.clone(),
+            public_attack_profile
+                .clone()
+                .filter(|_| public_population_attack_profile.is_none()),
+            public_population_attack_profile.clone(),
+            public_avatar_profile.clone(),
             combat_catalog.as_ref().map(|(_, catalog)| catalog.clone()),
             inventory_profile.clone(),
             status_catalog.as_ref().map(|(_, catalog)| catalog.clone()),
             progression_profile.clone(),
             quest_profile.clone(),
             lifecycle_profile.clone(),
+            journal_profile.clone(),
             dialogue_profile
                 .as_ref()
                 .map(|(profile, _)| profile.clone()),
             dodge_profile.clone(),
             classic,
+            parties,
+            chat_area,
             melee_profile.as_ref().map(|(_, catalog)| catalog.clone()),
             physical_profile.clone(),
             white_profile.clone(),
@@ -827,6 +1259,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if membership_profile.is_some() && net.is_none() {
         return Err("Combat membership requires network admission".into());
     }
+    if chat_area.is_some() && net.is_none() {
+        return Err("Chat requires a connected account client".into());
+    }
+    if parties && net.is_none() {
+        return Err("Parties require a connected account client".into());
+    }
     if ability_profile.is_some() && net.is_none() {
         return Err("Ability damage requires network admission".into());
     }
@@ -835,6 +1273,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if classic && (net.is_none() || dodge_profile.is_some()) {
         return Err("Classic controls require network admission and exclude dodge".into());
+    }
+    if journal_profile.is_some() && net.is_none() {
+        return Err("Journal requires network admission".into());
     }
     if lifecycle_profile.is_some() && net.is_none() {
         return Err("Explicit quests require network admission".into());
@@ -848,10 +1289,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         smoke::Run::from_args(args.into_iter())?
     };
     let scripted = smoke.is_some();
+    let fantasy_skin = fantasy_ui.is_some();
     let mut app = App::new();
+    if let Some(directory) = fantasy_ui {
+        fantasy_ui::register(&mut app, directory);
+    }
     pursuit_qualification::install(&mut app)?;
     melee_qualification::install(&mut app)?;
     projectile_qualification::install(&mut app)?;
+    population_qualification::install(
+        &mut app,
+        connected
+            && population.is_some()
+            && ability_profile.is_some()
+            && membership_profile.is_some(),
+        connected
+            && population.is_some()
+            && player_life_profile.is_some()
+            && character_stats.is_some()
+            && combat_catalog.is_some(),
+    )?;
     app.add_systems(Last, reference_scene::grip::observe);
     app.add_systems(Last, reference_scene::attack::observe);
     app.insert_resource(camera_collision.unwrap_or(if graybox || chunks.is_some() {
@@ -882,12 +1339,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let mut plugins = DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
-            title: if content_world {
+            // Map interactive entry once its loading view has rendered.
+            visible: !(connected && classic),
+            title: if frontend_directory.is_some() {
+                "Theia Online"
+            } else if content_world {
                 "Theia MMO — development map"
             } else {
                 "Theia MMO — movement sandbox"
             }
             .into(),
+            decorations: test_view.is_none(),
+            resize_constraints: bevy::window::WindowResizeConstraints {
+                min_width: if test_view.is_some() { 1. } else { 640. },
+                min_height: if test_view.is_some() { 1. } else { 480. },
+                ..default()
+            },
             resolution: WindowResolution::new(width, height).with_scale_factor_override(1.),
             mode: if fullscreen {
                 bevy::window::WindowMode::BorderlessFullscreen(
@@ -1003,11 +1470,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_plugins(physics::WorldPhysicsPlugin)
         .add_plugins(capture_ready::CaptureReadyPlugin)
         .add_plugins(graybox::ReadinessPlugin)
+        .add_plugins(authored_scene::ReadinessPlugin)
         .add_plugins((
             triplanar::TriplanarPlugin,
             runtime_materials::RuntimeMaterialsPlugin,
         ))
         .add_systems(Startup, scene::setup)
+        .add_systems(PostUpdate, ui_buttons::clear_released_presses)
         .add_systems(
             PreUpdate,
             (camera::controls, input)
@@ -1016,8 +1485,45 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .after(bevy::picking::PickingSystems::Last),
         )
         .add_systems(FixedUpdate, movement::move_local_pawn);
+    if let Some(view) = test_view {
+        test_window::install(&mut app, view);
+    }
+    if let Some(run) = test_controller {
+        test_controller::install(&mut app, run);
+    }
+    if let Some(prepared) = particle_world {
+        particle_world::install(&mut app, prepared, world_effects_visible);
+    }
+    if let Some((prepared, origin)) = authored_particles {
+        particle_world::install_authored(&mut app, prepared, origin, world_effects_visible);
+    }
+    if let Some(prepared) = chunk_particles {
+        particle_world::install_chunks(&mut app, prepared, world_effects_visible);
+    }
+    if fantasy_skin {
+        fantasy_ui::install_scale(&mut app, ui_scale);
+        app.insert_resource(fantasy_ui::display::State::new(
+            fantasy_ui::display::Choice::launch(fullscreen, width, height),
+            ui_preferences
+                .as_ref()
+                .and_then(|preferences| preferences.display),
+            test_view.is_some(),
+        ));
+        if let Some(preferences) = ui_preferences {
+            preferences.install(&mut app);
+        }
+        fantasy_ui::load(&mut app);
+        nameplates::install(&mut app);
+    }
     if let Some(controller) = classic_controller {
         app.insert_resource(controller);
+    }
+    if parties {
+        party::install(&mut app);
+    }
+    if chat_area.is_some() {
+        chat::install(&mut app);
+        combat::log::install(&mut app);
     }
     if let Some(profile) = dodge_profile {
         app.insert_resource(dodge::animation::Policy(profile))
@@ -1034,7 +1540,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &mut app,
             patrol_binding
                 .as_ref()
-                .map(|(profile, _, _)| profile.speed_metres_per_second()),
+                .map(|(profile, _, _)| profile.speed_metres_per_second())
+                .or_else(|| {
+                    population
+                        .as_ref()
+                        .and_then(|p| p.definition().aggro())
+                        .map(|settings| settings.chase_speed.max(settings.return_speed).max(1.5))
+                }),
         );
     }
     if let Some((_, catalog)) = status_catalog {
@@ -1045,6 +1557,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if let Some(profile) = lifecycle_profile {
         quest_lifecycle::install(&mut app, profile);
+    }
+    if let Some(profile) = journal_profile {
+        quest_journal::install(&mut app, profile);
     }
     if let Some(profile) = quest_profile {
         quests::install(&mut app, profile);
@@ -1083,6 +1598,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
             .add_systems(Last, network::capture);
     }
+    if connected && classic {
+        app.insert_resource(loading_artwork);
+        loading::install(&mut app);
+    }
     app.add_systems(Update, toggle_fullscreen)
         .add_systems(
             Update,
@@ -1113,6 +1632,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .add_systems(Last, smoke::observe);
     }
     info!("Theia; connected mode: {connected}; offline smoke mode: {scripted}");
+    if let Some(directory) = frontend_directory {
+        frontend::install(&mut app, directory);
+    }
     match app.run() {
         AppExit::Success => Ok(()),
         AppExit::Error(code) => Err(format!("Client exited with code {code}").into()),
@@ -1122,10 +1644,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn toggle_fullscreen(
     keys: Res<ButtonInput<KeyCode>>,
     mut windows: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+    display: Option<ResMut<fantasy_ui::display::State>>,
+    tile: Option<Res<test_window::View>>,
 ) {
     if keys.just_pressed(KeyCode::F11)
+        && tile.is_none()
         && let Ok(mut window) = windows.single_mut()
     {
+        if let Some(mut display) = display {
+            display.toggle(&mut window);
+            return;
+        }
         window.mode = match window.mode {
             bevy::window::WindowMode::Windowed => bevy::window::WindowMode::BorderlessFullscreen(
                 bevy::window::MonitorSelection::Current,
@@ -1137,8 +1666,17 @@ fn toggle_fullscreen(
 
 #[derive(bevy::ecs::system::SystemParam)]
 struct InputMode<'w> {
+    chat: Option<Res<'w, chat::Ui>>,
+    zone_map: Option<Res<'w, zone_map::Ui>>,
+    loading: Option<Res<'w, loading::State>>,
+    party: Option<Res<'w, party::Ui>>,
+    book: Option<Res<'w, combat::book::Ui>>,
+    interface: Option<Res<'w, fantasy_ui::settings::Ui>>,
+    main_menu: Option<Res<'w, fantasy_ui::kit::menu::State>>,
     dialogue: Option<Res<'w, dialogue::Ui>>,
     inventory: Option<Res<'w, inventory::Ui>>,
+    documents: Option<Res<'w, documents::Ui>>,
+    loot: Option<Res<'w, loot::Ui>>,
     smoke: Option<Res<'w, smoke::Run>>,
     network: Option<Res<'w, network::Network>>,
     references: Option<Res<'w, reference_scene::Config>>,
@@ -1164,8 +1702,17 @@ fn input(
     buttons: Res<ButtonInput<MouseButton>>,
     gesture: Option<Res<world_input::Gesture>>,
     time: Res<Time>,
+    test_controller: Option<Res<test_controller::Run>>,
 ) {
     intent.jump = false;
+    if mode.loading.as_ref().is_some_and(|s| s.blocks_input()) {
+        intent.direction = Vec2::ZERO;
+        intent.sprint = false;
+        return;
+    }
+    if test_controller.is_some_and(|run| run.active) {
+        return;
+    }
     if windows.single().is_ok_and(|window| !window.focused) {
         intent.direction = Vec2::ZERO;
         intent.sprint = false;
@@ -1182,11 +1729,30 @@ fn input(
         });
     if let Some(classic) = classic.as_mut() {
         classic.escape_owned_by_panel = keys.just_pressed(KeyCode::Escape)
-            && (talking || mode.inventory.as_ref().is_some_and(|u| u.open));
+            && (party::owns_escape(mode.party.as_deref())
+                || combat::book::owns_escape(mode.book.as_deref())
+                || fantasy_ui::settings::owns_escape(mode.interface.as_deref())
+                || fantasy_ui::kit::menu::owns_escape(mode.main_menu.as_deref())
+                || talking
+                || mode
+                    .documents
+                    .as_ref()
+                    .is_some_and(|u| u.open || u.closed_this_frame)
+                || mode.inventory.as_ref().is_some_and(|u| u.panel_open())
+                || mode.loot.as_ref().is_some_and(|u| u.open));
     }
     if keys.just_pressed(KeyCode::Escape)
+        && !party::owns_escape(mode.party.as_deref())
+        && !combat::book::owns_escape(mode.book.as_deref())
+        && !fantasy_ui::settings::owns_escape(mode.interface.as_deref())
+        && !fantasy_ui::kit::menu::owns_escape(mode.main_menu.as_deref())
         && !talking
-        && !mode.inventory.as_ref().is_some_and(|ui| ui.open)
+        && !mode
+            .documents
+            .as_ref()
+            .is_some_and(|u| u.open || u.closed_this_frame)
+        && !mode.loot.as_ref().is_some_and(|u| u.open)
+        && !mode.inventory.as_ref().is_some_and(|ui| ui.panel_open())
         && !camera_mode
             .as_ref()
             .is_some_and(|mode| mode.consumed_escape)
@@ -1230,11 +1796,13 @@ fn input(
             .and_then(|n| n.state().correction.map(|c| c.state));
         classic.sync(correction);
         let allowed = !talking
+            && !mode.chat.as_ref().is_some_and(|c| c.typing)
             && mode
                 .network
                 .as_ref()
                 .is_some_and(|n| n.connected() && n.can_act());
-        let world_mouse = gesture.as_ref().is_none_or(|g| g.world_origin());
+        let world_mouse = !zone_map::blocks_pointer(mode.zone_map.as_deref())
+            && gesture.as_ref().is_none_or(|g| g.world_origin());
         let both = world_mouse
             && buttons.pressed(MouseButton::Left)
             && buttons.pressed(MouseButton::Right);
@@ -1284,8 +1852,125 @@ fn input(
 mod control_tests {
     use super::*;
     #[test]
+    fn interface_escape_preserves_reader_loot_bag_and_classic_target_clear_priority() {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<ButtonInput<MouseButton>>()
+            .init_resource::<Time>()
+            .init_resource::<MoveIntent>()
+            .init_resource::<camera::Orbit>()
+            .init_resource::<inventory::Ui>()
+            .init_resource::<loot::Ui>()
+            .init_resource::<documents::Ui>()
+            .init_resource::<fantasy_ui::settings::Ui>()
+            .init_resource::<combat::book::Ui>()
+            .init_resource::<party::Ui>()
+            .insert_resource(fantasy_ui::Skin::fixture())
+            .insert_resource(
+                classic_controls::Controller::parse(include_bytes!(
+                    "../../../content/input/classic-controls.json"
+                ))
+                .unwrap(),
+            )
+            .add_message::<AppExit>()
+            .add_systems(
+                PreUpdate,
+                (
+                    fantasy_ui::settings::keyboard,
+                    party::keyboard,
+                    combat::book::keyboard,
+                )
+                    .chain(),
+            )
+            .add_systems(
+                Update,
+                (
+                    documents::close_panel,
+                    input,
+                    loot::close_panel,
+                    inventory::close_panel,
+                )
+                    .chain(),
+            );
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
+        app.world_mut()
+            .resource_mut::<fantasy_ui::settings::Ui>()
+            .open = true;
+        app.world_mut().resource_mut::<documents::Ui>().open = true;
+        app.world_mut().resource_mut::<loot::Ui>().open = true;
+        app.world_mut().resource_mut::<inventory::Ui>().open = true;
+        app.world_mut().resource_mut::<combat::book::Ui>().open = true;
+        app.world_mut().resource_mut::<party::Ui>().open = true;
+        for step in 0..6 {
+            {
+                let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+                keys.release(KeyCode::Escape);
+                keys.clear();
+                keys.press(KeyCode::Escape);
+            }
+            app.update();
+            assert!(!app.world().resource::<fantasy_ui::settings::Ui>().open);
+            assert_eq!(app.world().resource::<party::Ui>().open, step < 1);
+            assert_eq!(app.world().resource::<combat::book::Ui>().open, step < 2);
+            assert_eq!(app.world().resource::<documents::Ui>().open, step < 3);
+            assert_eq!(app.world().resource::<loot::Ui>().open, step < 4);
+            assert_eq!(app.world().resource::<inventory::Ui>().open, step < 5);
+            assert!(
+                app.world()
+                    .resource::<classic_controls::Controller>()
+                    .escape_owned_by_panel
+            );
+            assert!(app.world().resource::<Messages<AppExit>>().is_empty());
+        }
+    }
+    #[test]
+    fn escape_closes_loot_before_backpack_without_quitting() {
+        let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
+        app.init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<ButtonInput<MouseButton>>()
+            .init_resource::<Time>()
+            .init_resource::<MoveIntent>()
+            .init_resource::<camera::Orbit>()
+            .init_resource::<inventory::Ui>()
+            .init_resource::<loot::Ui>()
+            .add_message::<AppExit>()
+            .add_systems(
+                Update,
+                (input, loot::close_panel, inventory::close_panel).chain(),
+            );
+        app.world_mut().resource_mut::<inventory::Ui>().open = true;
+        app.world_mut().resource_mut::<loot::Ui>().open = true;
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Escape);
+        app.update();
+        assert!(!app.world().resource::<loot::Ui>().open);
+        assert!(app.world().resource::<inventory::Ui>().open);
+        assert!(app.world().resource::<Messages<AppExit>>().is_empty());
+        {
+            let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            keys.release(KeyCode::Escape);
+            keys.clear();
+            keys.press(KeyCode::Escape);
+        }
+        app.update();
+        assert!(!app.world().resource::<inventory::Ui>().open);
+        assert!(app.world().resource::<Messages<AppExit>>().is_empty());
+    }
+    #[test]
     fn escape_closes_dialogue_then_backpack_before_allowing_quit() {
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.init_resource::<ButtonInput<KeyCode>>()
             .init_resource::<ButtonInput<MouseButton>>()
             .init_resource::<Time>()
@@ -1325,3 +2010,6 @@ mod control_tests {
         assert_eq!(app.world().resource::<Messages<AppExit>>().len(), 1);
     }
 }
+
+#[path = "../../common/modular_hero.rs"]
+mod modular_hero;

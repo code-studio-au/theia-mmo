@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "name": "Wayfarer Hollow",
+  "origin": [
+    0,
+    0,
+    0
+  ],
+  "spawn": [
+    64,
+    0.1,
+    116
+  ],
+  "objects": []
+}

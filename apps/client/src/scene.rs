@@ -24,7 +24,10 @@ pub fn setup(
         Option<Res<crate::terrain_scene::Config>>,
         Option<Res<crate::graybox::Graybox>>,
     ),
-    chunks: Option<Res<crate::chunk_world::Config>>,
+    (chunks, authored): (
+        Option<Res<crate::chunk_world::Config>>,
+        Option<Res<crate::authored_scene::Scene>>,
+    ),
 ) {
     if terrain.is_some() || chunks.is_some() {
         commands.insert_resource(GlobalAmbientLight {
@@ -105,7 +108,7 @@ pub fn setup(
     ));
     commands.spawn((
         Camera3d::default(),
-        if references.is_some() || terrain.is_some() || chunks.is_some() {
+        if references.is_some() || terrain.is_some() || chunks.is_some() || authored.is_some() {
             Tonemapping::Reinhard
         } else {
             Tonemapping::None
@@ -114,12 +117,13 @@ pub fn setup(
         Transform::from_xyz(0., 7.9, 12.).looking_at(START, Vec3::Y),
     ));
     commands.spawn((
+        crate::fantasy_ui::Panel::Connection,
         Node { position_type: PositionType::Absolute, left: px(12), top: px(12),
             padding: UiRect::all(px(12)), ..default() },
         BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
     )).with_child((
         NetworkHud,
-        Text::new(if network.is_some() { "THEIA\nConnecting to local server...\nEsc: quit" } else { "THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run | Space: jump\nR: reset | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset" }),
+        Text::new(if network.is_some() { "Connecting to server..." } else { "THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run | Space: jump\nR: reset | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset" }),
         TextFont { font_size: FontSize::Px(18.), ..default() },
         TextColor(Color::WHITE),
     ));

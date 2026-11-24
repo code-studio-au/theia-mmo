@@ -1,0 +1,40 @@
+--- a/crates/bevy_sprinkles_editor/src/io.rs
++++ b/crates/bevy_sprinkles_editor/src/io.rs
+@@ -141,6 +141,7 @@
+ }
+ 
+ pub fn data_dir() -> PathBuf {
++    if let Some(path) = env::var_os("SPRINKLES_PARITY_DATA_DIR") { return path.into(); }
+     #[cfg(unix)]
+     let home = env::var_os("HOME").map(PathBuf::from).unwrap_or_default();
+     #[cfg(not(unix))]
+--- a/crates/bevy_sprinkles_editor/src/main.rs
++++ b/crates/bevy_sprinkles_editor/src/main.rs
+@@ -42,5 +42,27 @@
+         .add_plugins(bevy_easings::EasingsPlugin::default())
+         .add_plugins(SprinklesEditorPlugin)
+         .add_plugins(EditorUiPlugin)
++        .add_systems(Update, parity_capture)
+         .run();
+ }
++
++fn parity_capture(
++    mut commands: Commands,
++    time: Res<Time>,
++    state: Res<state::EditorState>,
++    emitters: Query<&bevy_sprinkles::prelude::EmitterRuntime>,
++    mut start: Local<Option<f64>>,
++    mut stage: Local<usize>,
++    mut exit: MessageWriter<AppExit>,
++) {
++    if state.current_project.is_none() || emitters.is_empty() { return; }
++    let started = *start.get_or_insert(time.elapsed_secs_f64());
++    let elapsed = time.elapsed_secs_f64() - started;
++    if *stage < 3 && elapsed >= [3., 6., 9.][*stage] {
++        let path = std::path::PathBuf::from(std::env::var_os("SPRINKLES_PARITY_OUTPUT").expect("parity output"));
++        commands.spawn(bevy::render::view::screenshot::Screenshot::primary_window())
++            .observe(bevy::render::view::screenshot::save_to_disk(path.join(format!("capture-{}.png", *stage))));
++        *stage += 1;
++    }
++    if *stage == 3 && elapsed > 12. { exit.write(AppExit::Success); }
++}

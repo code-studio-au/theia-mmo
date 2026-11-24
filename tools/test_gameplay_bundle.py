@@ -39,6 +39,200 @@ class GameplayBundle(unittest.TestCase):
             shutil.copy2(original.parent / raw[role], self.source / raw[role])
         self.session = self.root / 'session'
 
+    def test_journal_bundle_keeps_canonical_nested_content_and_selects_exclusive_launcher_mode(self):
+        original = Path('content/development-gameplay-classic-journal.json')
+        raw = json.loads(original.read_text())
+        shutil.copy2(original, self.manifest)
+        for role in bundle.JOURNAL_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual(report['manifest_schema'], 12)
+            self.assertEqual(set(paths), bundle.JOURNAL_ROLES)
+            self.assertEqual(paths['quest'].read_bytes(), Path('content/quests/development-journal.json').read_bytes())
+            self.assertNotIn('quest_turn_in_xp', paths)
+        observed = {}
+        def launch(*args):
+            observed.update(PLAY_SIGNATURE.bind(*args).arguments)
+            self.assertTrue(observed['quest_journal'])
+            self.assertFalse(observed['quest_lifecycle'])
+            self.assertIsNone(observed['quest_turn_in_xp'])
+            self.assertTrue(observed['quest_catalog'].is_file())
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+        self.assertFalse(observed['quest_catalog'].exists())
+
+    def test_area_bundle_copies_geometry_and_selects_area_journal_public_life(self):
+        original = Path('content/development-gameplay-classic-quest-areas.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.AREA_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual(report['manifest_schema'], 16)
+            self.assertEqual(set(paths), bundle.AREA_ROLES)
+            self.assertEqual(paths['quest_areas'].read_bytes(), Path('content/quests/development-quest-areas.json').read_bytes())
+        observed = {}
+        def launch(*args):
+            observed.update(PLAY_SIGNATURE.bind(*args).arguments)
+            self.assertTrue(observed['quest_journal'])
+            self.assertTrue(observed['public_avatar_life'])
+            self.assertTrue(observed['public_creature_attacks'])
+            self.assertTrue(observed['quest_areas'].is_file())
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+        self.assertFalse(observed['quest_areas'].exists())
+
+    def test_loot_bundle_selects_explicit_pickup_mode_and_exact_new_content(self):
+        original = Path('content/development-gameplay-classic-creature-loot.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.AREA_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual(report['manifest_schema'], 17)
+            self.assertEqual(paths['items'].read_bytes(), (original.parent / raw['items']).read_bytes())
+            self.assertEqual(paths['rewards'].read_bytes(), (original.parent / raw['rewards']).read_bytes())
+        def launch(*args):
+            observed = PLAY_SIGNATURE.bind(*args).arguments
+            self.assertTrue(observed['creature_loot'])
+            self.assertTrue(observed['public_avatar_life'])
+            self.assertTrue(observed['quest_areas'].is_file())
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+
+    def test_random_loot_bundle_preserves_authored_chances_and_pickup_mode(self):
+        original = Path('content/development-gameplay-classic-random-loot.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.AREA_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual(report['manifest_schema'], 17)
+            self.assertEqual(paths['items'].read_bytes(), (original.parent / raw['items']).read_bytes())
+            self.assertEqual(paths['rewards'].read_bytes(), (original.parent / raw['rewards']).read_bytes())
+        def launch(*args):
+            observed = PLAY_SIGNATURE.bind(*args).arguments
+            self.assertTrue(observed['creature_loot'])
+            self.assertTrue(observed['public_avatar_life'])
+            self.assertTrue(observed['quest_areas'].is_file())
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+
+    def test_item_quest_bundles_bind_exact_inventory_and_select_explicit_modes(self):
+        for filename in ['development-gameplay-classic-quest-items.json', 'development-gameplay-classic-quest-items-fixture.json', 'development-gameplay-classic-quest-loot.json', 'development-gameplay-classic-quest-loot-fixture.json']:
+            original = Path('content')/filename
+            raw = json.loads(original.read_text())
+            self.manifest.write_bytes(original.read_bytes())
+            for role in bundle.AREA_ROLES:
+                dest = self.source / raw[role]
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(original.parent / raw[role], dest)
+            with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+                self.assertEqual(report['manifest_schema'], raw['schema'])
+                self.assertEqual(paths['quest'].read_bytes(), (original.parent / raw['quest']).read_bytes())
+                self.assertEqual(paths['items'].read_bytes(), (original.parent / raw['items']).read_bytes())
+            def launch(*args):
+                observed = PLAY_SIGNATURE.bind(*args).arguments
+                self.assertEqual(observed['quest_loot'], raw['schema'] >= 19)
+                self.assertTrue(observed['quest_items'])
+                self.assertTrue(observed['quest_journal'])
+                self.assertTrue(observed['creature_loot'])
+            with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+                play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+
+    def test_quest_loot_override_refuses_legacy_bundle(self):
+        with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator), '--quest-loot'])
+
+    def test_item_quest_override_refuses_legacy_bundle(self):
+        with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator), '--quest-items'])
+
+    def test_avatar_bundle_selects_both_public_contracts_with_unchanged_roles(self):
+        original = Path('content/development-gameplay-classic-public-life.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.THREAT_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual(report['manifest_schema'], 15)
+            self.assertEqual(set(paths), bundle.THREAT_ROLES)
+        def launch(*args):
+            observed = PLAY_SIGNATURE.bind(*args).arguments
+            self.assertTrue(observed['public_avatar_life'])
+            self.assertTrue(observed['public_creature_attacks'])
+            self.assertTrue(observed['classic'])
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+
+    def test_public_attack_bundle_selects_explicit_contract_and_retains_exact_profiles(self):
+        original = Path('content/development-gameplay-classic-public-attacks.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.THREAT_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual(report['manifest_schema'], 14)
+            self.assertEqual(set(paths), bundle.THREAT_ROLES)
+        observed = {}
+        def launch(*args):
+            observed.update(PLAY_SIGNATURE.bind(*args).arguments)
+            self.assertTrue(observed['public_creature_attacks'])
+            self.assertFalse(observed['public_avatar_life'])
+            self.assertTrue(observed['classic'])
+            self.assertTrue(observed['quest_journal'])
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+
+    def test_threat_bundle_retains_exact_policy_and_forwards_exclusive_journal_mode(self):
+        original = Path('content/development-gameplay-classic-threat.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.THREAT_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual(report['manifest_schema'], 13)
+            self.assertEqual(set(paths), bundle.THREAT_ROLES)
+            before = paths['creature_threat'].read_bytes()
+            (self.source / raw['creature_threat']).write_bytes(b'later edit')
+            self.assertEqual(paths['creature_threat'].read_bytes(), before)
+        shutil.copy2(original.parent / raw['creature_threat'], self.source / raw['creature_threat'])
+        observed = {}
+        def launch(*args):
+            observed.update(PLAY_SIGNATURE.bind(*args).arguments)
+            self.assertTrue(observed['classic'])
+            self.assertTrue(observed['quest_journal'])
+            self.assertFalse(observed['quest_lifecycle'])
+            self.assertIsNone(observed['quest_turn_in_xp'])
+            self.assertTrue(observed['creature_threat'].is_file())
+            self.assertFalse(observed['public_creature_attacks'])
+            self.assertTrue(observed['creature_reset'].is_file())
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+        self.assertFalse(observed['creature_threat'].exists())
+
+    def test_threat_requires_reset_and_manifest_rejects_profile_overrides_before_children(self):
+        with patch.object(play.subprocess, 'Popen') as child, self.assertRaisesRegex(ValueError, 'Creature threat'):
+            play.play(None, Path('.'), 1, Path('.'), creature_threat=Path('threat.json'))
+        child.assert_not_called()
+        with patch.object(play, 'play') as child, redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            play.main(['--gameplay-manifest', str(self.manifest), '--creature-threat', 'threat.json'])
+        child.assert_not_called()
+
     def test_snapshot_retains_validated_bytes_after_author_edits_and_cleans_on_exit(self):
         before = {p.name: p.read_bytes() for p in self.source.iterdir()}
         with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
@@ -373,6 +567,55 @@ class GameplayBundle(unittest.TestCase):
         self.assertEqual(args['controls_file'],controls)
         self.assertIsNone(args['dodge_profile'])
 
+    def test_fantasy_ui_remains_a_client_presentation_option_beside_sealed_gameplay(self):
+        directory = self.root / 'licensed HUD'
+        directory.mkdir()
+        with patch.object(play, 'play') as launch, redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator), '--classic', '--fantasy-ui', str(directory)])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['fantasy_ui'], directory)
+        self.assertEqual(play.fantasy_ui_options(directory, args['classic'], args['combat_catalog']), ['--fantasy-ui', str(directory.resolve())])
+        self.assertEqual(play.fantasy_ui_options(None, False, None), [])
+        self.assertIsNone(args['dodge_profile'])
+
+    def test_fantasy_ui_preferences_handoff_never_touches_the_file(self):
+        import play
+        directory = Path(self.temp.name) / 'hud'
+        directory.mkdir()
+        preferences = Path(self.temp.name) / 'preferences.json'
+        with patch.object(play, 'play') as launch:
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator), '--classic', '--fantasy-ui', str(directory), '--ui-preferences', str(preferences)])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['ui_preferences'], preferences)
+        options = play.fantasy_ui_options(directory, True, args['combat_catalog'], None, preferences)
+        self.assertEqual(options[-2:], ['--ui-preferences', str(preferences.resolve())])
+        self.assertNotIn('--ui-scale', options)
+        self.assertFalse(preferences.exists())
+        with self.assertRaises(ValueError):
+            play.fantasy_ui_options(None, True, args['combat_catalog'], None, preferences)
+
+    def test_fantasy_ui_scale_handoff_and_refusal_remain_headless(self):
+        directory = self.root / 'scaled HUD'
+        directory.mkdir()
+        with patch.object(play, 'play') as launch, redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator), '--classic', '--fantasy-ui', str(directory), '--ui-scale', '1.25'])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['ui_scale'], 1.25)
+        self.assertEqual(play.fantasy_ui_options(directory, True, args['combat_catalog'], args['ui_scale']), ['--fantasy-ui', str(directory.resolve()), '--ui-scale', '1.25'])
+        with self.assertRaisesRegex(ValueError, 'requires --fantasy-ui'):
+            play.fantasy_ui_options(None, True, args['combat_catalog'], 1.25)
+        for value in [float('nan'), float('inf'), .74, 1.51]:
+            with self.subTest(value=value), patch.object(play.subprocess, 'Popen') as child, self.assertRaisesRegex(ValueError, 'UI scale'):
+                play.play(None, Path('.'), 1, Path('.'), classic=True, combat_catalog=Path('abilities.json'), fantasy_ui=directory, ui_scale=value)
+            child.assert_not_called()
+
+    def test_fantasy_ui_refuses_bad_mode_or_missing_directory_without_children(self):
+        base = dict(world=None, players=Path('.'), clients=1, binaries=Path('.'), fantasy_ui=self.root / 'missing HUD')
+        for change in [dict(), dict(classic=True), dict(classic=True, combat_catalog=Path('abilities.json'))]:
+            with self.subTest(change=change), patch.object(play.subprocess, 'Popen') as child, self.assertRaisesRegex(ValueError, 'Fantasy UI|Missing fantasy UI'):
+                play.play(**(base | change))
+            child.assert_not_called()
+
     def test_classic_launcher_refuses_mixed_or_unqualified_movement_before_starting_children(self):
         base=dict(world=None,players=Path('.'),clients=1,binaries=Path('.'),graybox=True,prediction=True,classic=True)
         for change in [dict(prediction=False),dict(graybox=False),dict(transport='quinn'),dict(dev_tour=True),dict(dev_speed=8),dict(dodge_profile=Path('dodge.json'))]:
@@ -466,6 +709,66 @@ class GameplayBundle(unittest.TestCase):
     def test_reset_without_explicit_credit_refuses_before_child_startup(self):
         with patch.object(play.subprocess, 'Popen') as child, self.assertRaises(ValueError):
             play.play(None, Path('.'), 1, Path('.'), creature_reset=Path('reset.json'))
+        child.assert_not_called()
+
+    def test_document_bundle_copies_exact_text_and_passes_bound_paths_to_both_children(self):
+        original = Path('content/development-gameplay-classic-documents.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.DOCUMENT_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual((report['manifest_schema'], len(paths)), (20, 24))
+            self.assertEqual(paths['documents'].read_bytes(), (original.parent / raw['documents']).read_bytes())
+        observed = {}
+        def launch(*args):
+            observed.update(PLAY_SIGNATURE.bind(*args).arguments)
+            self.assertTrue(observed['quest_journal'] and observed['quest_items'] and observed['quest_loot'])
+            self.assertTrue(observed['document_catalog'].is_file())
+            self.assertNotEqual(observed['document_catalog'].parent, original.parent)
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+        self.assertFalse(observed['document_catalog'].exists())
+
+    def test_fixed_reward_bundle_retains_exact_policy_and_passes_sealed_path(self):
+        original = Path('content/development-gameplay-classic-item-rewards.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.ITEM_REWARD_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        reward_file = self.source / raw['quest_item_rewards']
+        before = reward_file.read_bytes()
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual((report['manifest_schema'], len(paths)), (21, 25))
+            self.assertEqual(set(paths), bundle.ITEM_REWARD_ROLES)
+            reward_file.write_bytes(b'later author edit')
+            self.assertEqual(paths['quest_item_rewards'].read_bytes(), before)
+        reward_file.write_bytes(before)
+        observed = {}
+        def launch(*args):
+            observed.update(PLAY_SIGNATURE.bind(*args).arguments)
+            self.assertTrue(observed['quest_journal'] and observed['quest_items'] and observed['quest_loot'])
+            self.assertEqual(observed['quest_item_rewards'].read_bytes(), before)
+            self.assertNotEqual(observed['quest_item_rewards'], reward_file)
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+        self.assertFalse(observed['quest_item_rewards'].exists())
+
+    def test_fixed_rewards_require_inventory_journal_and_cannot_override_sealed_content(self):
+        with patch.object(play.subprocess, 'Popen') as child, self.assertRaisesRegex(ValueError, 'Fixed quest rewards'):
+            play.play(None, Path('.'), 1, Path('.'), quest_item_rewards=Path('rewards.json'))
+        child.assert_not_called()
+        with patch.object(play, 'play') as child, redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            play.main(['--gameplay-manifest', str(self.manifest), '--quest-item-rewards', 'rewards.json'])
+        child.assert_not_called()
+
+    def test_documents_without_bound_items_and_journal_refuse_before_child_start(self):
+        with patch.object(play.subprocess, 'Popen') as child, self.assertRaises(ValueError):
+            play.play(None, Path('.'), 1, Path('.'), document_catalog=Path('notes.json'))
         child.assert_not_called()
 
 

@@ -1,6 +1,9 @@
 //! Offline-only Recast bake/query adapter. No backend dependency enters the server.
 //! Pipeline uses the published Rerecast 0.5 API, reviewed against its C++ comparison
 //! test. World-facing geometry remains Y-up; Landmass's internal frame is Z-up.
+pub mod authored;
+mod contour_holes;
+
 use nav_glam::{UVec3, Vec3A};
 use rerecast::{AreaType, ConfigBuilder, DetailNavmesh, HeightfieldBuilder, TriMesh};
 use theia_core::coordinates::ChunkId;
@@ -9,13 +12,31 @@ use theia_network::{
     navigation::{Agent, Tile},
     procedural::Geometry,
 };
+// A dressed village on exact 2m imported ground needs more clipped input than
+// the old 4m valley. Keep bounded offline admission (64K vertices/128K triangles).
+// These offline input caps do not change the runtime polygon/tile budgets.
+pub(crate) const MAX_INPUT_VERTICES: usize = 65_536;
+pub(crate) const MAX_INPUT_TRIANGLES: usize = 131_072;
+
 pub fn bake(id: ChunkId, source: [u8; 32], agent: Agent, geometry: Geometry) -> Result<Tile> {
+    bake_if_walkable(id, source, agent, geometry)?
+        .ok_or("Navigation tile has no walkable polygons".into())
+}
+
+/// An area bake may omit a valid tile with no walkable polygons after filtering.
+/// Input, budget and pipeline failures remain errors.
+pub fn bake_if_walkable(
+    id: ChunkId,
+    source: [u8; 32],
+    agent: Agent,
+    geometry: Geometry,
+) -> Result<Option<Tile>> {
     if !agent.valid()
         || !theia_network::procedural::contains(id)
         || geometry.positions.is_empty()
-        || geometry.positions.len() > 16_384
+        || geometry.positions.len() > MAX_INPUT_VERTICES
         || geometry.triangles.is_empty()
-        || geometry.triangles.len() > 32_768
+        || geometry.triangles.len() > MAX_INPUT_TRIANGLES
     {
         return Err("Navigation bake input exceeds supported profile/geometry bounds".into());
     }
@@ -78,13 +99,16 @@ pub fn bake(id: ChunkId, source: [u8; 32], agent: Agent, geometry: Geometry) -> 
         config.min_region_area,
         config.merge_region_area,
     )?;
-    let mesh = compact
-        .build_contours(
-            config.max_simplification_error,
-            config.max_edge_len,
-            config.contour_flags,
-        )
-        .into_polygon_mesh(config.max_vertices_per_polygon)?;
+    let mut contours = compact.build_contours(
+        config.max_simplification_error,
+        config.max_edge_len,
+        config.contour_flags,
+    );
+    contour_holes::join(&mut contours)?;
+    let mesh = contours.into_polygon_mesh(config.max_vertices_per_polygon)?;
+    if mesh.polygons().next().is_none() {
+        return Ok(None);
+    }
     let detail = DetailNavmesh::new(
         &mesh,
         &compact,
@@ -142,7 +166,7 @@ pub fn bake(id: ChunkId, source: [u8; 32], agent: Agent, geometry: Geometry) -> 
         },
     };
     tile.validate()?;
-    Ok(tile)
+    Ok(Some(tile))
 }
 
 // Preserve the offline tool API while sharing the reviewed query implementation.

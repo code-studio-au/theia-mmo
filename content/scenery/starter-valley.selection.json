@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "id": "theia.scenery.starter-valley",
+  "assets": [
+    {
+      "id": "synty.forest.archway",
+      "name": "Forest archway",
+      "category": "Structures",
+      "prefab": "SM_Prop_Archway_01",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.ruins",
+      "name": "Forest ruins",
+      "category": "Structures",
+      "prefab": "SM_Prop_Ruins_03",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.table",
+      "name": "Woodland table",
+      "category": "Props",
+      "prefab": "SM_Prop_Table_01",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.chair",
+      "name": "Woodland chair",
+      "category": "Props",
+      "prefab": "SM_Prop_Chair_01",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.lantern",
+      "name": "Forest lantern",
+      "category": "Props",
+      "prefab": "SM_Prop_Lantern_01",
+      "collision": "decorative"
+    },
+    {
+      "id": "synty.forest.log",
+      "name": "Fallen log",
+      "category": "Nature",
+      "prefab": "SM_Env_Log_01",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.forest.pebbles",
+      "name": "Rock cluster",
+      "category": "Nature",
+      "prefab": "SM_Env_Rock_Pebbles_05",
+      "collision": "decorative"
+    },
+    {
+      "id": "synty.forest.tree-small",
+      "name": "Small forest tree",
+      "category": "Nature",
+      "prefab": "SM_Env_Tree_Small_01",
+      "profile": "full-static",
+      "prototype": "10618a86d3b418d8644d3e3d3d92020c5dc413b4fc37a6e62aee2cf37289664e",
+      "collision": "trunk_triangles"
+    },
+    {
+      "id": "synty.forest.tree-trunk",
+      "name": "Ancient hollow trunk",
+      "category": "Nature",
+      "prefab": "SM_Env_Tree_Trunk_01",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.kingdom.hut-01",
+      "name": "Kingdom hut 1",
+      "category": "Buildings",
+      "prefab": "SM_Bld_Preset_Hut_01_Optimized",
+      "profile": "standard-normal",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.kingdom.hut-02",
+      "name": "Kingdom hut 2",
+      "category": "Buildings",
+      "prefab": "SM_Bld_Preset_Hut_02_Optimized",
+      "profile": "standard-normal",
+      "collision": "triangle_mesh"
+    }
+  ]
+}

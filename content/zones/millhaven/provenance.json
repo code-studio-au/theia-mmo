@@ -1,0 +1,10 @@
+{
+  "terrain_manifest_sha256": "db309e721340734d4795a07229dfeac700296c8914dcc10f691fb86de406ac7f",
+  "features_sha256": "f04eff9183f8d058e8e27168e952339fcc9d2a3b2932cf00654dbaf15eae572f",
+  "overview_sha256": "3eb843bd97092c1d10eb155d5574f28d4556876d6423ec3119aed8b2e4cb0b82",
+  "dimensions": [
+    1024,
+    768
+  ],
+  "method": "4 m sample cartography, pixel-centre average, shaded relief and 10 m contours; source route/watercourse lines; +Z north, -X east (Y-up game orientation)"
+}

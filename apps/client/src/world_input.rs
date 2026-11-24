@@ -13,6 +13,8 @@ use bevy::{
 };
 use theia_core::{content::ContentId, identity::EntityKey};
 
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct Interactions;
 #[derive(Resource)]
 struct Bindings {
     basic_attack: ContentId,
@@ -31,10 +33,17 @@ pub(crate) struct Selection {
 #[derive(Clone, Copy)]
 enum Actor {
     Enemy(EntityKey),
-    Guide,
+    Guide(Option<EntityKey>),
+    Corpse(theia_core::progression::KillId),
+    Ground(theia_core::rewards::ClaimId),
 }
 #[derive(Resource, Default)]
 struct Pending(Option<(Actor, PointerButton, Vec3)>);
+impl Pending {
+    fn take_focused(&mut self, focused: bool) -> Option<(Actor, PointerButton, Vec3)> {
+        self.0.take().filter(|_| focused)
+    }
+}
 #[derive(Resource, Default)]
 pub(crate) struct Gesture {
     travel: f32,
@@ -70,18 +79,27 @@ type ActorNode<'a> = (
     Has<crate::dialogue::GuideVisual>,
     Option<&'a ChildOf>,
     Has<Node>,
+    Option<&'a crate::loot::CorpseVisual>,
+    Option<&'a crate::dialogue::ContactKey>,
+    Option<&'a crate::inventory::ground::Pickup>,
 );
 fn actor(mut entity: Entity, nodes: &Query<ActorNode<'_>>) -> Option<Actor> {
     for _ in 0..32 {
-        let (target, guide, parent, ui) = nodes.get(entity).ok()?;
+        let (target, guide, parent, ui, corpse, contact, ground) = nodes.get(entity).ok()?;
         if ui {
             return None;
+        }
+        if let Some(ground) = ground {
+            return Some(Actor::Ground(ground.0));
+        }
+        if let Some(corpse) = corpse {
+            return Some(Actor::Corpse(corpse.0.life));
         }
         if let Some(target) = target {
             return Some(Actor::Enemy(target.key));
         }
         if guide {
-            return Some(Actor::Guide);
+            return Some(Actor::Guide(contact.and_then(|k| k.0)));
         }
         entity = parent?.parent();
     }
@@ -98,14 +116,24 @@ fn dragged(event: On<PointerDrag>, mut gesture: ResMut<Gesture>) {
         gesture.travel = gesture.travel.max(event.distance.length());
     }
 }
+#[allow(clippy::too_many_arguments)]
 fn clicked(
     mut event: On<PointerClick>,
+    loading: Option<Res<crate::loading::State>>,
     nodes: Query<ActorNode<'_>>,
     gesture: Res<Gesture>,
     mut pending: ResMut<Pending>,
     mut selection: ResMut<Selection>,
     mode: Option<Res<crate::camera::mode::Mode>>,
+    windows: Query<&Window>,
 ) {
+    if loading.is_some_and(|s| s.blocks_input())
+        || !windows.single().is_ok_and(|window| window.focused)
+    {
+        pending.0 = None;
+        event.propagate(false);
+        return;
+    }
     if mode.as_ref().is_some_and(|mode| mode.active)
         || event.pointer.id != PointerId::Mouse
         || !matches!(
@@ -127,20 +155,25 @@ fn clicked(
         pending.0 = Some((actor, event.button, point));
     }
 }
+type MeshForPicking = (Entity, Has<crate::loot::CorpsePick>);
 fn mark_meshes(
     mut commands: Commands,
     nodes: Query<ActorNode<'_>>,
-    meshes: Query<Entity, (With<Mesh3d>, Without<bevy::picking::Pickable>)>,
+    meshes: Query<MeshForPicking, (With<Mesh3d>, Without<bevy::picking::Pickable>)>,
 ) {
-    for entity in &meshes {
-        if actor(entity, &nodes).is_some() {
+    for (entity, surface) in &meshes {
+        if let Some(picked) = actor(entity, &nodes) {
             commands
                 .entity(entity)
-                .insert(bevy::picking::Pickable::default());
+                .insert(if matches!(picked, Actor::Corpse(_)) && !surface {
+                    bevy::picking::Pickable::IGNORE
+                } else {
+                    bevy::picking::Pickable::default()
+                });
         }
     }
 }
-fn cameras(mut commands: Commands, cameras: Query<Entity, With<Camera3d>>) {
+fn cameras(mut commands: Commands, cameras: Query<Entity, crate::frontend::WorldCamera>) {
     for camera in &cameras {
         commands.entity(camera).insert(MeshPickingCamera);
     }
@@ -148,7 +181,7 @@ fn cameras(mut commands: Commands, cameras: Query<Entity, With<Camera3d>>) {
 fn reticle_click(
     mode: Res<crate::camera::mode::Mode>,
     buttons: Res<ButtonInput<MouseButton>>,
-    camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    camera: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     nodes: Query<ActorNode<'_>>,
     mut ray_cast: bevy::picking::mesh_picking::ray_cast::MeshRayCast,
     mut pending: ResMut<Pending>,
@@ -180,7 +213,7 @@ fn reticle_click(
         && let Some(picked) = actor(*entity, &nodes)
     {
         // Friendly reticle clicks select only. F remains the interaction key.
-        let button = if matches!(picked, Actor::Guide) {
+        let button = if matches!(picked, Actor::Guide(_)) {
             PointerButton::Primary
         } else {
             button
@@ -200,20 +233,24 @@ fn consume(
     keys: Res<ButtonInput<KeyCode>>,
     mut pending: ResMut<Pending>,
     mut selection: ResMut<Selection>,
-    cameras: Query<&GlobalTransform, With<Camera3d>>,
+    cameras: Query<&GlobalTransform, crate::frontend::WorldCamera>,
     spatial: SpatialQuery,
     classic: Option<Res<crate::classic_controls::Controller>>,
+    mut loot: Option<ResMut<crate::loot::Ui>>,
+    windows: Query<&Window>,
 ) {
+    let focused = windows.single().is_ok_and(|window| window.focused);
     let state = network.state();
     if state.error.is_some() || !network.connected() {
         selection.friendly = None;
         pending.0 = None;
         return;
     }
-    if (classic.is_none() && keys.just_pressed(KeyCode::Tab))
-        || keys.just_pressed(KeyCode::Backspace)
-        || (keys.just_pressed(KeyCode::Escape)
-            && classic.as_ref().is_some_and(|c| !c.escape_owned_by_panel))
+    if focused
+        && ((classic.is_none() && keys.just_pressed(KeyCode::Tab))
+            || keys.just_pressed(KeyCode::Backspace)
+            || (keys.just_pressed(KeyCode::Escape)
+                && classic.as_ref().is_some_and(|c| !c.escape_owned_by_panel)))
     {
         selection.friendly = None;
     }
@@ -228,7 +265,7 @@ fn consume(
     let guide = state
         .guide
         .as_ref()
-        .and_then(|p| p.guide)
+        .and_then(|p| selection.friendly.and_then(|key| p.find(key)).or(p.guide))
         .filter(|g| resident(g.position));
     if selection.friendly.is_some_and(|key| {
         if classic.is_some() {
@@ -239,7 +276,11 @@ fn consume(
                     .as_ref()
                     .map(|v| v.actor.epoch.value())
                     .or_else(|| state.targeting.as_ref().map(|v| v.epoch)),
-                state.guide.as_ref().and_then(|v| v.guide).map(|g| g.key),
+                state
+                    .guide
+                    .as_ref()
+                    .and_then(|v| v.find(key))
+                    .map(|g| g.key),
             )
         } else {
             guide.is_none_or(|g| g.key != key)
@@ -247,7 +288,7 @@ fn consume(
     }) {
         selection.friendly = None;
     }
-    let Some((picked, button, point)) = pending.0.take() else {
+    let Some((picked, button, point)) = pending.take_focused(focused) else {
         return;
     };
     let Ok(camera) = cameras.single() else {
@@ -273,6 +314,31 @@ fn consume(
         return;
     }
     match picked {
+        Actor::Ground(claim) => {
+            if button == PointerButton::Secondary
+                && state
+                    .rewards
+                    .as_ref()
+                    .is_some_and(|r| r.available.iter().any(|r| r.claim == claim))
+            {
+                network.request_reward(claim);
+            }
+        }
+        Actor::Corpse(life) => {
+            if state.rewards.as_ref().is_some_and(|r| {
+                r.available.iter().any(|r| {
+                    r.corpse
+                        .is_some_and(|c| c.life == life && resident(c.position))
+                })
+            }) {
+                selection.friendly = None;
+                if button == PointerButton::Secondary
+                    && let Some(ui) = loot.as_mut()
+                {
+                    ui.show(life);
+                }
+            }
+        }
         Actor::Enemy(key) => {
             if !state.targeting.as_ref().is_some_and(|v| {
                 v.targets
@@ -300,8 +366,20 @@ fn consume(
                 selection.basic_requests += u64::from(requested);
             }
         }
-        Actor::Guide => {
-            let Some(guide) = guide else {
+        Actor::Guide(key) => {
+            if let Some(ui) = loot.as_mut() {
+                ui.close();
+            }
+            let Some(guide) = state
+                .guide
+                .as_ref()
+                .and_then(|p| match key {
+                    Some(key) => p.find(key),
+                    None if p.contacts.is_empty() => p.guide,
+                    None => None,
+                })
+                .filter(|g| resident(g.position))
+            else {
                 return;
             };
             selection.friendly = Some(guide.key);
@@ -320,7 +398,23 @@ fn consume(
         }
     }
 }
+/// UI gesture ownership also applies to terrain-only sessions without targeting.
+pub(crate) fn install_gestures(app: &mut App) {
+    if app.world().contains_resource::<Gesture>() {
+        return;
+    }
+    app.init_resource::<Gesture>()
+        .add_observer(pressed)
+        .add_observer(dragged)
+        .add_systems(
+            PreUpdate,
+            track
+                .after(bevy::input::InputSystems)
+                .before(PickingSystems::ProcessInput),
+        );
+}
 pub(crate) fn install(app: &mut App) {
+    install_gestures(app);
     crate::camera::mode::install(app);
     qualification::install(app);
     #[derive(serde::Deserialize)]
@@ -339,22 +433,13 @@ pub(crate) fn install(app: &mut App) {
     })
     .init_resource::<Selection>()
     .init_resource::<Pending>()
-    .init_resource::<Gesture>()
     .insert_resource(MeshPickingSettings {
         require_markers: true,
         ..default()
     })
     .add_plugins(MeshPickingPlugin)
     .add_observer(clicked)
-    .add_observer(pressed)
-    .add_observer(dragged)
     .add_systems(Startup, cameras.after(crate::scene::setup))
-    .add_systems(
-        PreUpdate,
-        track
-            .after(bevy::input::InputSystems)
-            .before(PickingSystems::ProcessInput),
-    )
     .add_systems(Update, mark_meshes)
     .add_systems(
         Update,
@@ -363,6 +448,7 @@ pub(crate) fn install(app: &mut App) {
     .add_systems(
         Update,
         consume
+            .in_set(Interactions)
             .after(crate::targeting::controls)
             .after(crate::network::present)
             .before(crate::targeting::Presentation)
@@ -376,6 +462,93 @@ mod tests {
     use bevy::picking::{backend::HitData, events::Pointer, pointer::Location};
     use std::time::Duration;
     use theia_core::identity::{EntityId, WorldEpoch};
+    #[test]
+    fn terrain_only_ui_press_owns_drag_without_installing_targeting() {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<MouseButton>>()
+            .init_resource::<AccumulatedMouseMotion>();
+        install_gestures(&mut app);
+        install_gestures(&mut app);
+        assert!(!app.world().contains_resource::<Selection>());
+        let window = app.world_mut().spawn(Window::default()).id();
+        let ui = app.world_mut().spawn(Node::default()).id();
+        app.world_mut().trigger(PointerPress {
+            entity: ui,
+            pointer: pointer(window),
+            button: PointerButton::Secondary,
+            hit: HitData::new(ui, 0., None, None),
+            count: 1,
+        });
+        app.world_mut().resource_mut::<Gesture>().travel = 50.;
+        app.update();
+        let gesture = app.world().resource::<Gesture>();
+        assert!(!gesture.world_origin());
+        assert!(!gesture.camera_dragging());
+        let ground = app.world_mut().spawn_empty().id();
+        app.world_mut().trigger(PointerPress {
+            entity: ground,
+            pointer: pointer(window),
+            button: PointerButton::Secondary,
+            hit: HitData::new(ground, 0., None, None),
+            count: 1,
+        });
+        app.world_mut().resource_mut::<Gesture>().travel = 50.;
+        assert!(app.world().resource::<Gesture>().camera_dragging());
+    }
+    #[test]
+    fn corpse_art_ignores_bind_pose_picking_and_uses_only_nonblocking_pick_surface() {
+        let mut app = App::new();
+        app.add_systems(Update, mark_meshes);
+        let key = EntityKey {
+            epoch: WorldEpoch::new(7).unwrap(),
+            entity: EntityId::new(9).unwrap(),
+        };
+        let owner = app
+            .world_mut()
+            .spawn(crate::loot::CorpseVisual(
+                theia_core::rewards::CorpseSource {
+                    life: theia_core::progression::KillId::from_victim(key),
+                    position: theia_core::coordinates::GlobalPosition::new([0.; 3]).unwrap(),
+                },
+            ))
+            .id();
+        let skin = app
+            .world_mut()
+            .spawn((Mesh3d::default(), ChildOf(owner)))
+            .id();
+        let surface = app
+            .world_mut()
+            .spawn((Mesh3d::default(), ChildOf(owner), crate::loot::CorpsePick))
+            .id();
+        let live = app
+            .world_mut()
+            .spawn((Mesh3d::default(), crate::targeting::TargetVisual { key }))
+            .id();
+        app.update();
+        assert!(
+            !app.world()
+                .get::<bevy::picking::Pickable>(skin)
+                .unwrap()
+                .is_hoverable
+        );
+        assert!(
+            app.world()
+                .get::<bevy::picking::Pickable>(surface)
+                .unwrap()
+                .is_hoverable
+        );
+        assert!(
+            app.world()
+                .get::<bevy::picking::Pickable>(live)
+                .unwrap()
+                .is_hoverable
+        );
+        assert!(
+            app.world()
+                .get::<avian3d::prelude::Collider>(surface)
+                .is_none()
+        );
+    }
     #[test]
     fn friendly_survives_missing_interest_but_not_a_known_replacement_or_world_change() {
         let key = EntityKey {
@@ -410,16 +583,12 @@ mod tests {
             .init_resource::<AccumulatedMouseScroll>()
             .add_systems(Update, crate::camera::controls);
         app.world_mut().resource_mut::<crate::inventory::Ui>().open = true;
-        let window = app
-            .world_mut()
-            .spawn((
-                Window {
-                    focused: true,
-                    ..default()
-                },
-                CursorOptions::default(),
-            ))
-            .id();
+        let world = app.world_mut();
+        let window = world
+            .query_filtered::<Entity, With<Window>>()
+            .single(world)
+            .unwrap();
+        world.entity_mut(window).insert(CursorOptions::default());
         let original = app.world().resource::<crate::camera::Orbit>().angles();
         app.world_mut()
             .resource_mut::<ButtonInput<MouseButton>>()
@@ -478,9 +647,14 @@ mod tests {
         )
     }
     fn click(world: &mut World, entity: Entity, button: PointerButton) {
+        let window = world
+            .query_filtered::<Entity, With<Window>>()
+            .iter(world)
+            .next()
+            .unwrap_or(entity);
         world.trigger(PointerClick {
             entity,
-            pointer: pointer(entity),
+            pointer: pointer(window),
             button,
             hit: HitData::new(entity, 3., Some(Vec3::new(0., 1., 3.)), None),
             duration: Duration::from_millis(100),
@@ -489,6 +663,10 @@ mod tests {
     }
     fn app() -> App {
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.init_resource::<Pending>()
             .init_resource::<Gesture>()
             .init_resource::<Selection>()
@@ -496,6 +674,68 @@ mod tests {
             .add_observer(pressed)
             .add_observer(dragged);
         app
+    }
+    #[test]
+    fn unfocused_or_missing_window_clicks_discard_pending_actions_but_keep_selection() {
+        for mode in 0..3 {
+            let mut app = app();
+            let guide = app.world_mut().spawn(crate::dialogue::GuideVisual).id();
+            let key = EntityKey {
+                entity: EntityId::new(2).unwrap(),
+                epoch: WorldEpoch::new(7).unwrap(),
+            };
+            app.world_mut().resource_mut::<Selection>().friendly = Some(key);
+            click(app.world_mut(), guide, PointerButton::Secondary);
+            assert!(app.world().resource::<Pending>().0.is_some());
+            let world = app.world_mut();
+            let window = world
+                .query_filtered::<Entity, With<Window>>()
+                .single(world)
+                .unwrap();
+            match mode {
+                0 => world.get_mut::<Window>(window).unwrap().focused = false,
+                1 => {
+                    world.despawn(window);
+                }
+                _ => {
+                    world.spawn(Window {
+                        focused: true,
+                        ..default()
+                    });
+                }
+            }
+            click(app.world_mut(), guide, PointerButton::Secondary);
+            assert!(app.world().resource::<Pending>().0.is_none());
+            assert_eq!(app.world().resource::<Selection>().friendly, Some(key));
+            assert_eq!(app.world().resource::<Selection>().interaction_requests, 0);
+        }
+    }
+    #[test]
+    fn focus_loss_between_click_and_consumption_does_not_replay_after_refocus() {
+        let mut app = app();
+        let guide = app.world_mut().spawn(crate::dialogue::GuideVisual).id();
+        click(app.world_mut(), guide, PointerButton::Secondary);
+        assert!(app.world().resource::<Pending>().0.is_some());
+        assert!(
+            app.world_mut()
+                .resource_mut::<Pending>()
+                .take_focused(false)
+                .is_none()
+        );
+        assert!(
+            app.world_mut()
+                .resource_mut::<Pending>()
+                .take_focused(true)
+                .is_none()
+        );
+        click(app.world_mut(), guide, PointerButton::Primary);
+        let choice = app
+            .world_mut()
+            .resource_mut::<Pending>()
+            .take_focused(true)
+            .unwrap();
+        assert!(matches!(choice.0, Actor::Guide(_)));
+        assert_eq!(choice.1, PointerButton::Primary);
     }
     #[test]
     fn child_mesh_click_keeps_exact_enemy_key_and_coalesces_pending_commands() {
@@ -528,7 +768,7 @@ mod tests {
         click(app.world_mut(), guide, PointerButton::Primary);
         assert!(matches!(
             app.world().resource::<Pending>().0.unwrap().0,
-            Actor::Guide
+            Actor::Guide(_)
         ));
         app.world_mut().resource_mut::<Pending>().0 = None;
         let ui = app
@@ -543,10 +783,15 @@ mod tests {
     #[test]
     fn right_drag_suppresses_attack_and_next_press_starts_a_fresh_click() {
         let mut app = app();
+        let world = app.world_mut();
+        let window = world
+            .query_filtered::<Entity, With<Window>>()
+            .single(world)
+            .unwrap();
         let guide = app.world_mut().spawn(crate::dialogue::GuideVisual).id();
         app.world_mut().trigger(PointerDrag {
             entity: guide,
-            pointer: pointer(guide),
+            pointer: pointer(window),
             button: PointerButton::Secondary,
             distance: Vec2::new(8., 0.),
             delta: Vec2::new(8., 0.),
@@ -556,7 +801,7 @@ mod tests {
         assert_eq!(app.world().resource::<Selection>().drag_suppressed, 1);
         app.world_mut().trigger(PointerPress {
             entity: guide,
-            pointer: pointer(guide),
+            pointer: pointer(window),
             button: PointerButton::Secondary,
             hit: HitData::new(guide, 3., Some(Vec3::ZERO), None),
             count: 1,

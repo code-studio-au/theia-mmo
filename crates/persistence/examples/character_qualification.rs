@@ -11,6 +11,7 @@ async fn main() -> theia_persistence::Result<()> {
         .ok_or(Error::Invalid("Expected write or read"))?;
     let realm = RealmId::parse("74686569-6100-0000-0000-000000000005").unwrap();
     let world = [83; 32];
+    let appearance = theia_core::appearance::Appearance::new([1, 3, 4, 0, 2, 3, 1]).unwrap();
     let position = GlobalPosition::new([8123.5, -17.125, 8000.5]).unwrap();
     let mut store = Store::connect_loopback(&url, realm).await?;
     let owner = store
@@ -22,11 +23,12 @@ async fn main() -> theia_persistence::Result<()> {
     let character = match mode.as_str() {
         "write" => {
             let mut character = store
-                .create_character(
+                .create_character_with_appearance(
                     owner,
                     world,
                     CharacterName::parse("Restarted")?,
                     GlobalPosition::new([8060., -17., 8000.]).unwrap(),
+                    appearance,
                 )
                 .await?;
             character.saved.sequence = 9;
@@ -41,7 +43,7 @@ async fn main() -> theia_persistence::Result<()> {
         }
         "read" => {
             let entries = store.list_characters(owner, world).await?;
-            if entries.len() != 1 {
+            if entries.len() != 1 || entries[0].appearance != appearance {
                 return Err(Error::Invalid("Named restart character list mismatch"));
             }
             let character = store
@@ -53,7 +55,8 @@ async fn main() -> theia_persistence::Result<()> {
                     world,
                 )
                 .await?;
-            if character.name.as_str() != "Restarted"
+            if character.appearance != appearance
+                || character.name.as_str() != "Restarted"
                 || character.saved.position != position
                 || character.saved.sequence != 9
             {
@@ -66,7 +69,7 @@ async fn main() -> theia_persistence::Result<()> {
     };
     println!(
         "character_probe {}",
-        serde_json::json!({"owner":owner.value().to_string(),"character":character.saved.binding.character.value().to_string(),"name":character.name.as_str(),"position":character.saved.position.metres(),"sequence":character.saved.sequence})
+        serde_json::json!({"owner":owner.value().to_string(),"character":character.saved.binding.character.value().to_string(),"name":character.name.as_str(),"position":character.saved.position.metres(),"sequence":character.saved.sequence,"appearance":character.appearance})
     );
     drop(admin);
     driver

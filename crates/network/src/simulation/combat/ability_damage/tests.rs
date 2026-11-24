@@ -38,7 +38,7 @@ fn physical_with(definitions: &[u8], stats: &[u8]) -> Arc<physical::Profile> {
                 weapons: &weapons,
                 items: &items,
                 abilities: &abilities,
-                creature: &creature,
+                creature: creature.definition(),
                 player_maximum_health: 100,
                 creature_maximum_health: 100,
             },

@@ -1,3 +1,10 @@
+Journal-aware vendor diagnostics and native authored guide purchase, 14 November
+2026: purchase jobs now update existing vendor commit/replay/refusal counters as
+well as the existing inventory success counters. Transaction/receipt semantics
+remain unchanged. Owned SQL rollback/worker/retry/refusal and native OS purchase/
+PostgreSQL restart pass. See STATUS and
+`build/starter-valley-population-vendor-native-v3/qualification.json`.
+
 Vendor continuation, 2026-10-30: purchases now share the existing bag revision,
 sequence, pending controller and durable owner. The owner closes new acceptance
 and drains accepted queued as well as executing item work before releasing a

@@ -1,0 +1,428 @@
+use std::{
+    io::{BufRead, BufReader, Read},
+    path::PathBuf,
+};
+use theia_zone::{Command, Editor, MAX_DOCUMENT_BYTES, Result, Zone};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CaptureView {
+    Spawn,
+    TestPlayer,
+    PropertyActions,
+    Particle,
+    ParticlePreview,
+    ParticleBind,
+    ParticleLibrary,
+}
+
+#[derive(Default)]
+pub struct Options {
+    pub zone: Option<PathBuf>,
+    pub imported_terrain: Option<PathBuf>,
+    pub commands: Option<PathBuf>,
+    pub output: Option<PathBuf>,
+    pub save_path: Option<PathBuf>,
+    pub headless: bool,
+    pub check_playtest: bool,
+    pub capture: Option<PathBuf>,
+    pub capture_view: Option<CaptureView>,
+    pub report: Option<PathBuf>,
+    pub mailbox: Option<PathBuf>,
+    pub export: Option<PathBuf>,
+    pub network_test: bool,
+    pub population: bool,
+    pub population_creature: Option<PathBuf>,
+    pub navigation_baker: Option<PathBuf>,
+    pub population_spacing: Option<f64>,
+    pub population_access_path: Option<u64>,
+    pub export_quest_areas: Option<PathBuf>,
+    pub quest_catalog: Option<PathBuf>,
+    pub gameplay_template: Option<PathBuf>,
+    pub creature_definition: Option<PathBuf>,
+    pub scenery_library: Option<PathBuf>,
+    pub player_assets: Option<PathBuf>,
+    pub creature_asset: Option<PathBuf>,
+    pub check_scenery: bool,
+    pub content_id: Option<String>,
+    pub revision: Option<u32>,
+}
+impl Options {
+    pub fn parse() -> Result<Self> {
+        let mut result = Self::default();
+        let mut args = std::env::args().skip(1);
+        while let Some(arg) = args.next() {
+            match arg.as_str() {
+                "--imported-terrain" => {
+                    result.imported_terrain = Some(
+                        args.next()
+                            .ok_or("--imported-terrain needs a package directory")?
+                            .into(),
+                    )
+                }
+                "--zone" => result.zone = Some(args.next().ok_or("--zone needs a path")?.into()),
+                "--creature-definition" => {
+                    result.creature_definition = Some(
+                        args.next()
+                            .ok_or("--creature-definition needs a file")?
+                            .into(),
+                    );
+                }
+                "--commands" => {
+                    result.commands = Some(
+                        args.next()
+                            .ok_or("--commands needs a JSONL path or - for stdin")?
+                            .into(),
+                    )
+                }
+                "--save-path" => {
+                    result.save_path = Some(args.next().ok_or("--save-path needs a path")?.into());
+                }
+                "--output" => {
+                    result.output = Some(args.next().ok_or("--output needs a path")?.into())
+                }
+                "--capture" => {
+                    result.capture = Some(args.next().ok_or("--capture needs a PNG path")?.into())
+                }
+                "--capture-view" => {
+                    result.capture_view = Some(match args.next().as_deref() {
+                        Some("spawn") => CaptureView::Spawn,
+                        Some("test-player") => CaptureView::TestPlayer,
+                        Some("property-actions") => CaptureView::PropertyActions,
+                        Some("particle") => CaptureView::Particle,
+                        Some("particle-preview") => CaptureView::ParticlePreview,
+                        Some("particle-bind") => CaptureView::ParticleBind,
+                        Some("particle-library") => CaptureView::ParticleLibrary,
+                        _ => {
+                            return Err(
+                                "--capture-view requires spawn, test-player, property-actions, particle, particle-preview, particle-bind or particle-library"
+                                    .into(),
+                            );
+                        }
+                    });
+                }
+                "--report" => {
+                    result.report = Some(args.next().ok_or("--report needs a path")?.into())
+                }
+                "--mailbox" => {
+                    result.mailbox = Some(args.next().ok_or("--mailbox needs a directory")?.into())
+                }
+                "--export-quest-areas" => {
+                    result.export_quest_areas = Some(
+                        args.next()
+                            .ok_or("--export-quest-areas needs a new file")?
+                            .into(),
+                    )
+                }
+                "--quests" => {
+                    result.quest_catalog = Some(
+                        args.next()
+                            .ok_or("--quests needs an executable quest catalog")?
+                            .into(),
+                    )
+                }
+                "--check-scenery" => {
+                    result.check_scenery = true;
+                    result.headless = true;
+                }
+                "--scenery-library" => {
+                    result.scenery_library = Some(
+                        args.next()
+                            .ok_or("--scenery-library needs a catalog")?
+                            .into(),
+                    );
+                }
+                "--gameplay-template" => {
+                    result.gameplay_template = Some(
+                        args.next()
+                            .ok_or("--gameplay-template needs a manifest")?
+                            .into(),
+                    );
+                }
+                "--creature-asset" => {
+                    result.creature_asset = Some(
+                        args.next()
+                            .ok_or("--creature-asset needs an embedded creature GLB")?
+                            .into(),
+                    );
+                }
+                "--player-assets" => {
+                    result.player_assets = Some(
+                        args.next()
+                            .ok_or("--player-assets needs a directory containing character.glb")?
+                            .into(),
+                    );
+                }
+                "--network-test" => result.network_test = true,
+                "--export" => {
+                    result.export = Some(
+                        args.next()
+                            .ok_or("--export needs a fresh directory")?
+                            .into(),
+                    )
+                }
+                "--content-id" => {
+                    result.content_id = Some(args.next().ok_or("--content-id needs a logical ID")?)
+                }
+                "--revision" => {
+                    result.revision = Some(
+                        args.next()
+                            .ok_or("--revision needs a nonzero number")?
+                            .parse()
+                            .map_err(|_| "Invalid content revision")?,
+                    )
+                }
+                "--headless" => result.headless = true,
+                "--population" => result.population = true,
+                "--population-creature" => {
+                    result.population_creature = Some(
+                        args.next()
+                            .ok_or("--population-creature needs a profile")?
+                            .into(),
+                    )
+                }
+                "--navigation-baker" => {
+                    result.navigation_baker = Some(
+                        args.next()
+                            .ok_or("--navigation-baker needs an executable")?
+                            .into(),
+                    )
+                }
+                "--population-access-path" => {
+                    result.population_access_path = Some(
+                        args.next()
+                            .ok_or("--population-access-path needs a road guide ID")?
+                            .parse()
+                            .map_err(|_| "Invalid population access path ID")?,
+                    );
+                }
+                "--population-spacing" => {
+                    result.population_spacing = Some(
+                        args.next()
+                            .ok_or("--population-spacing needs metres")?
+                            .parse()
+                            .map_err(|_| "Invalid population spacing")?,
+                    )
+                }
+                "--check-playtest" => {
+                    result.check_playtest = true;
+                    result.headless = true;
+                }
+                "--help" => {
+                    println!(
+                        "theia-zone-editor [--zone FILE | --imported-terrain DIRECTORY] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--scenery-library CATALOG] [--player-assets DIRECTORY] [--creature-asset EMBEDDED_GLB] [--gameplay-template MANIFEST] [--creature-definition FILE] [--check-scenery] [--check-playtest] [--capture PNG] [--capture-view spawn|test-player|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N [--network-test] [--population --population-creature FILE [--navigation-baker BIN] [--population-spacing METRES] [--population-access-path ID]]] [--export-quest-areas NEW_FILE --quests FILE --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                    );
+                    std::process::exit(0);
+                }
+                _ => return Err(format!("Unknown argument: {arg}")),
+            }
+        }
+        if result.creature_definition.is_some()
+            && (result.export.is_some()
+                || result.export_quest_areas.is_some()
+                || result.check_scenery)
+        {
+            return Err("--creature-definition loads editor context; use --population-creature for population export".into());
+        }
+        if result.population
+            && (result.export.is_none()
+                || result.population_creature.is_none()
+                || result.output.is_some())
+        {
+            return Err(
+                "--population requires --export and --population-creature; excludes output".into(),
+            );
+        }
+        if result.population && result.network_test && result.gameplay_template.is_some() {
+            return Err(
+                "Population quest snapshots require an account launch, not Test Player mode".into(),
+            );
+        }
+        if !result.population
+            && (result.population_creature.is_some()
+                || result.navigation_baker.is_some()
+                || result.population_spacing.is_some()
+                || (result.population_access_path.is_some()
+                    && (result.headless || result.export.is_some() || result.output.is_some())))
+        {
+            return Err("Population profile/baker/spacing options require --population".into());
+        }
+        if result.network_test && (result.export.is_none() || result.output.is_some()) {
+            return Err("--network-test requires --export and excludes --output".into());
+        }
+        if result.check_scenery
+            && (result.scenery_library.is_none()
+                || result.export.is_some()
+                || result.export_quest_areas.is_some()
+                || result.output.is_some()
+                || result.check_playtest)
+        {
+            return Err(
+                "--check-scenery requires a library and excludes export/output/playtest".into(),
+            );
+        }
+        if result.check_playtest
+            && (result.output.is_some()
+                || result.export.is_some()
+                || result.export_quest_areas.is_some())
+        {
+            return Err("--check-playtest is read-only; omit --output and --export".into());
+        }
+        if result.export_quest_areas.is_some()
+            && (result.export.is_some() || result.quest_catalog.is_none())
+        {
+            return Err(
+                "Quest area export requires --quests and cannot combine with --export".into(),
+            );
+        }
+        if result.quest_catalog.is_some() && result.export_quest_areas.is_none() {
+            return Err("--quests requires --export-quest-areas".into());
+        }
+        if result.export.is_some() || result.export_quest_areas.is_some() {
+            if result.content_id.is_none() || result.revision.is_none_or(|r| r == 0) {
+                return Err("Export requires --content-id and positive --revision".into());
+            }
+            result.headless = true;
+        } else if result.content_id.is_some() || result.revision.is_some() {
+            return Err("Content identity options require --export or --export-quest-areas".into());
+        }
+        if result.capture_view.is_some() && result.capture.is_none() {
+            return Err("--capture-view requires --capture".into());
+        }
+        if result.headless
+            && (result.capture.is_some() || result.report.is_some() || result.mailbox.is_some())
+        {
+            return Err("--capture, --report and --mailbox require a window".into());
+        }
+        if result.creature_asset.is_some() && result.headless && !result.population {
+            return Err(
+                "Creature appearance requires a population export or interactive editor".into(),
+            );
+        }
+        Ok(result)
+    }
+    pub fn editor_path(&self) -> PathBuf {
+        self.save_path
+            .clone()
+            .or_else(|| self.output.clone())
+            .or_else(|| self.zone.clone())
+            .unwrap_or_else(|| "build/zone-draft.json".into())
+    }
+    pub fn prepare(&self) -> Result<Editor> {
+        if self.zone.is_some() && self.imported_terrain.is_some() {
+            return Err(
+                "Choose an existing zone document or a new imported terrain package".into(),
+            );
+        }
+        let zone = if let Some(path) = &self.imported_terrain {
+            let imported = theia_zone::imported::Imported::open(path)?;
+            let centre = [
+                (imported.bounds[0][0] + imported.bounds[1][0]) * 0.5,
+                (imported.bounds[0][1] + imported.bounds[1][1]) * 0.5,
+            ];
+            Zone {
+                schema: 16,
+                name: "Imported zone".into(),
+                origin: [centre[0], 0., centre[1]],
+                spawn: [
+                    centre[0],
+                    f64::from(imported.height(centre)?) + 0.1,
+                    centre[1],
+                ],
+                imported_terrain: Some(imported),
+                ..Default::default()
+            }
+        } else if let Some(path) = &self.zone {
+            Zone::load(path)?
+        } else {
+            Zone::default()
+        };
+        let mut editor = Editor::new(zone)?;
+        if let Some(path) = &self.commands {
+            let reader: Box<dyn BufRead> = if path == std::path::Path::new("-") {
+                let mut bytes = Vec::new();
+                std::io::stdin()
+                    .take(MAX_DOCUMENT_BYTES + 1)
+                    .read_to_end(&mut bytes)
+                    .map_err(|e| e.to_string())?;
+                if bytes.len() as u64 > MAX_DOCUMENT_BYTES {
+                    return Err("Command stream too large".into());
+                }
+                Box::new(std::io::Cursor::new(bytes))
+            } else {
+                let bytes = std::fs::metadata(path).map_err(|e| e.to_string())?.len();
+                if bytes > MAX_DOCUMENT_BYTES {
+                    return Err("Command file too large".into());
+                }
+                Box::new(BufReader::new(
+                    std::fs::File::open(path)
+                        .map_err(|e| e.to_string())?
+                        .take(MAX_DOCUMENT_BYTES + 1),
+                ))
+            };
+            let mut total = 0;
+            for (index, line) in reader.lines().enumerate() {
+                let line = line.map_err(|e| e.to_string())?;
+                total += line.len() + 1;
+                if total as u64 > MAX_DOCUMENT_BYTES || index >= 1024 {
+                    return Err("Command budget exceeded".into());
+                }
+                let command: Command =
+                    serde_json::from_str(&line).map_err(|e| format!("Line {}: {e}", index + 1))?;
+                editor
+                    .execute(command)
+                    .map_err(|e| format!("Line {}: {e}", index + 1))?;
+            }
+        }
+        if let Some(path) = &self.output {
+            editor.zone().save(path)?;
+        }
+        Ok(editor)
+    }
+}
+
+pub(super) fn summary(editor: &Editor) -> serde_json::Value {
+    serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"markers":editor.zone().markers.len(),"quest_areas":editor.zone().quest_areas.len(),"scenery":editor.zone().scenery.len(),"test_players":editor.zone().test_players.len(),"plants":editor.zone().plants.len(),"history":editor.history(),"valid":true})
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn opening_or_redirecting_editor_save_path_does_not_write_source_or_destination() {
+        let root = std::env::temp_dir().join(format!(
+            "theia-zone-cli-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        let input = root.join("input.json");
+        let target = root.join("draft.json");
+        let blank = Options {
+            save_path: Some(target.clone()),
+            ..Options::default()
+        };
+        blank.prepare().unwrap();
+        assert!(!target.exists());
+        assert_eq!(blank.editor_path(), target);
+        let bytes = serde_json::to_vec(&Zone::default()).unwrap();
+        std::fs::write(&input, &bytes).unwrap();
+        let options = Options {
+            zone: Some(input.clone()),
+            save_path: Some(target.clone()),
+            ..Options::default()
+        };
+        options.prepare().unwrap();
+        assert_eq!(std::fs::read(&input).unwrap(), bytes);
+        assert!(!target.exists());
+        assert_eq!(options.editor_path(), target);
+        let ordinary = Options {
+            zone: Some(input.clone()),
+            ..Options::default()
+        };
+        assert_eq!(ordinary.editor_path(), input);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+}

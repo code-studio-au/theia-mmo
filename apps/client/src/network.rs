@@ -14,6 +14,15 @@ use tokio::sync::watch;
 
 #[derive(Resource)]
 pub struct Network {
+    chat_actions: Option<tokio::sync::mpsc::Sender<theia_network::chat_client::Compose>>,
+    party_actions: Option<tokio::sync::mpsc::Sender<theia_network::party_client::Intent>>,
+    pub(crate) avatar_pose_resets: u64,
+    avatar_life_events:
+        Option<tokio::sync::mpsc::Receiver<theia_network::avatar_life_wire::Observation>>,
+    public_attack_events:
+        Option<tokio::sync::mpsc::Receiver<theia_network::creature_attack_wire::Observation>>,
+    public_population_events:
+        Option<tokio::sync::mpsc::Receiver<theia_network::creature_attack_wire::population::Frame>>,
     physical_profile: Option<std::sync::Arc<theia_network::simulation::combat::physical::Profile>>,
     white_profile: Option<std::sync::Arc<theia_network::simulation::combat::white_melee::Profile>>,
     pub(crate) dodge_input: Option<theia_network::dodge_input::Input>,
@@ -21,11 +30,17 @@ pub struct Network {
     life_events: Option<
         tokio::sync::mpsc::Receiver<theia_network::simulation::combat::player_life::Observation>,
     >,
+    journal_actions:
+        Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::quest_journal::Intent>>,
     quest_actions:
         Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::quest_lifecycle::Intent>>,
     dialogue: Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::dialogue::Intent>>,
     items: Option<tokio::sync::mpsc::Sender<theia_core::inventory::ItemCommand>>,
+    pickups: Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::inventory::Pickup>>,
+    /// Reserves one UI intent across panels until a later item reply arrives.
+    item_reservation: std::sync::atomic::AtomicU64,
     input: watch::Sender<Intent>,
+    pub(crate) loading_blocked: bool,
     chunk_ready: watch::Sender<Option<Vec<theia_core::coordinates::ChunkId>>>,
     state: watch::Receiver<State>,
     stop: watch::Sender<bool>,
@@ -47,6 +62,13 @@ pub struct Network {
     melee: Option<watch::Sender<Option<theia_network::renet_runtime::MeleeChoice>>>,
     combat_events: Option<tokio::sync::mpsc::Receiver<theia_network::combat_wire::Batch>>,
 }
+fn target_choice_matches(
+    selected: theia_core::identity::EntityId,
+    desired: Option<theia_network::targeting::Choice>,
+) -> bool {
+    desired.is_none_or(|choice| choice.target == Some(selected))
+}
+
 pub struct Smoke {
     output: PathBuf,
     direction: [i16; 2],
@@ -84,7 +106,8 @@ pub struct Smoke {
 impl Network {
     pub(crate) fn can_act(&self) -> bool {
         let state = self.state.borrow();
-        state.error.is_none()
+        !self.loading_blocked
+            && state.error.is_none()
             && (self.life_events.is_none()
                 || state.player_life.as_ref().is_some_and(|life| {
                     state
@@ -92,10 +115,40 @@ impl Network {
                         .is_some_and(|correction| life.movement_allowed(&correction.state))
                 }))
     }
+    pub(crate) fn next_avatar_life_event(
+        &mut self,
+    ) -> Option<theia_network::avatar_life_wire::Observation> {
+        self.avatar_life_events.as_mut()?.try_recv().ok()
+    }
+    pub(crate) fn next_public_attack_event(
+        &mut self,
+    ) -> Option<theia_network::creature_attack_wire::Observation> {
+        self.public_attack_events.as_mut()?.try_recv().ok()
+    }
+    pub(crate) fn next_public_population_event(
+        &mut self,
+    ) -> Option<theia_network::creature_attack_wire::population::Frame> {
+        self.public_population_events.as_mut()?.try_recv().ok()
+    }
     pub(crate) fn next_life_event(
         &mut self,
     ) -> Option<theia_network::simulation::combat::player_life::Observation> {
         self.life_events.as_mut()?.try_recv().ok()
+    }
+    pub(crate) fn request_quest_journal(
+        &self,
+        intent: theia_network::renet_runtime::quest_journal::Intent,
+    ) -> bool {
+        if !self.can_act() {
+            return false;
+        }
+        let state = self.state.borrow();
+        if state.error.is_some() || state.quest_journal_pending || state.quest_journal.is_none() {
+            return false;
+        }
+        self.journal_actions
+            .as_ref()
+            .is_some_and(|queue| queue.try_send(intent).is_ok())
     }
     pub(crate) fn request_quest(
         &self,
@@ -138,14 +191,60 @@ impl Network {
                 .is_ok()
         })
     }
-    pub(crate) fn request_reward(&self, claim: theia_core::rewards::ClaimId) -> bool {
-        if !self
-            .state
-            .borrow()
-            .rewards
-            .as_ref()
-            .is_some_and(|s| s.available.iter().any(|r| r.claim == claim))
+    pub(crate) fn request_pickup(
+        &self,
+        claim: theia_core::rewards::ClaimId,
+        life: theia_core::progression::KillId,
+    ) -> bool {
+        let state = self.state.borrow();
+        let Some(view) = &state.inventory else {
+            return false;
+        };
+        if self.loading_blocked
+            || !self.connected()
+            || !state.rewards.as_ref().is_some_and(|r| {
+                r.available
+                    .iter()
+                    .any(|r| r.claim == claim && r.corpse.is_some_and(|c| c.life == life))
+            })
+            || !self.reserve_item(&state)
         {
+            return false;
+        }
+        let accepted = self.pickups.as_ref().is_some_and(|queue| {
+            queue
+                .try_send(theia_network::renet_runtime::inventory::Pickup {
+                    command: theia_core::rewards::ClaimCommand {
+                        claim,
+                        expected_revision: view.bag.revision(),
+                    },
+                    life,
+                })
+                .is_ok()
+        });
+        if !accepted {
+            self.item_reservation
+                .store(0, std::sync::atomic::Ordering::Release);
+        }
+        accepted
+    }
+    fn reserve_item(&self, state: &State) -> bool {
+        reserve_item_slot(
+            &self.item_reservation,
+            state.inventory_pending,
+            state
+                .inventory
+                .as_ref()
+                .and_then(|i| i.reply)
+                .map_or(0, |r| r.sequence),
+        )
+    }
+    pub(crate) fn request_reward(&self, claim: theia_core::rewards::ClaimId) -> bool {
+        if !self.state.borrow().rewards.as_ref().is_some_and(|s| {
+            s.available
+                .iter()
+                .any(|r| r.claim == claim && r.corpse.is_none())
+        }) {
             return false;
         }
         self.request_item(|revision| {
@@ -168,11 +267,30 @@ impl Network {
         }
         self.request_item(|_| command.into())
     }
+    pub(crate) fn request_document(&self, command: theia_core::documents::OpenCommand) -> bool {
+        self.request_item(|_| command.into())
+    }
     pub(crate) fn request_inventory(&self, operation: theia_core::inventory::Operation) -> bool {
         self.request_item(|revision| {
             theia_core::inventory::Command {
                 expected_revision: revision,
                 operation,
+            }
+            .into()
+        })
+    }
+    /// Destruction stays bound to the stack/revision explicitly confirmed by
+    /// the player; never substitute a newer observed revision during enqueue.
+    pub(crate) fn request_destruction(
+        &self,
+        expected_revision: u64,
+        from: u8,
+        amount: u32,
+    ) -> bool {
+        self.request_item(|_| {
+            theia_core::inventory::Command {
+                expected_revision,
+                operation: theia_core::inventory::Operation::Destroy { from, amount },
             }
             .into()
         })
@@ -202,19 +320,25 @@ impl Network {
         &self,
         command: impl FnOnce(u64) -> theia_core::inventory::ItemCommand,
     ) -> bool {
-        if !self.connected() {
+        if self.loading_blocked || !self.connected() {
             return false;
         }
         let state = self.state.borrow();
         let Some(view) = &state.inventory else {
             return false;
         };
-        if state.inventory_pending {
+        if !self.reserve_item(&state) {
             return false;
         }
-        self.items
+        let accepted = self
+            .items
             .as_ref()
-            .is_some_and(|sender| sender.try_send(command(view.bag.revision())).is_ok())
+            .is_some_and(|sender| sender.try_send(command(view.bag.revision())).is_ok());
+        if !accepted {
+            self.item_reservation
+                .store(0, std::sync::atomic::Ordering::Release);
+        }
+        accepted
     }
     pub(crate) fn white_profile(
         &self,
@@ -269,9 +393,28 @@ impl Network {
         self.combat_events.as_mut()?.try_recv().ok()
     }
     pub(crate) fn request_target(&self, target: Option<theia_core::identity::EntityId>) {
+        if self.loading_blocked {
+            return;
+        }
         if let Some(choices) = &self.target_choice {
             choices.send_replace(Some(theia_network::targeting::Choice { target }));
         }
+    }
+    /// Suppress the old hostile immediately when a newer choice is waiting for
+    /// acknowledgement. The mailbox retains the latest intent across old replies.
+    pub(crate) fn confirmed_hostile_target(
+        &self,
+        state: &State,
+    ) -> Option<theia_core::identity::EntityId> {
+        let selected = state.targeting.as_ref()?.selected?;
+        let desired = self.target_choice.as_ref().and_then(|s| *s.borrow());
+        target_choice_matches(selected, desired).then_some(selected)
+    }
+    pub(crate) fn target_intent_matches(&self, selected: theia_core::identity::EntityId) -> bool {
+        target_choice_matches(
+            selected,
+            self.target_choice.as_ref().and_then(|s| *s.borrow()),
+        )
     }
     pub(crate) fn current_intent(&self) -> Intent {
         *self.input.borrow()
@@ -309,8 +452,37 @@ impl Network {
     pub(crate) fn rendered_global(&self) -> Option<GlobalPosition> {
         self.local_global
     }
+    pub(crate) fn local_motion_segment(&self) -> Option<[GlobalPosition; 2]> {
+        self.local_track.as_ref().map(RemotePawn::global_endpoints)
+    }
+    pub(crate) fn local_actor_id(&self) -> Option<u64> {
+        self.state.borrow().id
+    }
     pub(crate) fn state(&self) -> State {
         self.state.borrow().clone()
+    }
+    pub(crate) fn chat_action(&self, compose: theia_network::chat_client::Compose) -> bool {
+        let state = self.state.borrow();
+        if self.loading_blocked
+            || state.error.is_some()
+            || state
+                .chat
+                .as_ref()
+                .is_none_or(|view| view.pending || view.exhausted)
+        {
+            return false;
+        }
+        self.chat_actions
+            .as_ref()
+            .is_some_and(|actions| actions.try_send(compose).is_ok())
+    }
+    pub(crate) fn party_action(&self, intent: theia_network::party_client::Intent) -> bool {
+        if self.loading_blocked {
+            return false;
+        }
+        self.party_actions
+            .as_ref()
+            .is_some_and(|actions| actions.try_send(intent).is_ok())
     }
     pub fn camera_test_blocked(&self) -> bool {
         self.smoke.as_ref().is_some_and(|s| {
@@ -326,19 +498,28 @@ impl Network {
     #[allow(clippy::too_many_arguments)]
     pub fn from_args(
         args: &[String],
+        frontend: Option<std::path::PathBuf>,
         prediction: bool,
         expected_world: [u8; 32],
         targeted: bool,
         player_life_profile: Option<std::sync::Arc<theia_network::player_life_wire::Profile>>,
+        public_attack_profile: Option<std::sync::Arc<theia_network::creature_attack_wire::Profile>>,
+        public_population_profile: Option<
+            std::sync::Arc<theia_network::creature_attack_wire::population::PopulationProfile>,
+        >,
+        public_avatar_profile: Option<std::sync::Arc<theia_network::avatar_life_wire::Profile>>,
         combat_catalog: Option<std::sync::Arc<theia_core::abilities::Catalog>>,
         inventory_profile: Option<theia_network::renet_runtime::inventory::Profile>,
         status_catalog: Option<std::sync::Arc<theia_core::statuses::Catalog>>,
         progression_profile: Option<std::sync::Arc<theia_network::progression_wire::Profile>>,
         quest_profile: Option<std::sync::Arc<theia_network::quest_wire::Profile>>,
         lifecycle_profile: Option<std::sync::Arc<theia_network::quest_lifecycle_wire::Profile>>,
+        journal_profile: Option<std::sync::Arc<theia_network::quest_journal::Profile>>,
         dialogue_profile: Option<std::sync::Arc<theia_network::dialogue::Profile>>,
         dodge_profile: Option<std::sync::Arc<theia_network::dodging::Profile>>,
         classic: bool,
+        parties: bool,
+        chat_area: Option<theia_core::chat::Area>,
         melee_catalog: Option<std::sync::Arc<theia_core::melee::Catalog>>,
         physical_profile: Option<
             std::sync::Arc<theia_network::simulation::combat::physical::Profile>,
@@ -358,6 +539,17 @@ impl Network {
         }
         if player_life_profile.is_some() && (!prediction || combat_catalog.is_none()) {
             return Err("Player life requires predicted combat".into());
+        }
+        if journal_profile.is_some()
+            && (lifecycle_profile.is_some()
+                || quest_profile.is_some()
+                || progression_profile.is_none()
+                || dialogue_profile.is_none()
+                || !prediction)
+        {
+            return Err(
+                "Journal requires exclusive predicted quest mode, progression and dialogue".into(),
+            );
         }
         if lifecycle_profile.is_some()
             && (quest_profile.is_some()
@@ -398,6 +590,10 @@ impl Network {
                 theia_network::dodging::profile_identity(source_world, p)
             })
         };
+        let chat_source = expected_world;
+        let expected_world = crate::chat::world_identity(expected_world, chat_area);
+        let party_source = expected_world;
+        let expected_world = crate::party::world_identity(expected_world, parties);
         let dodge_input = dodge_profile
             .as_ref()
             .map(|p| theia_network::dodge_input::Input::new(source_world, p.clone()));
@@ -418,7 +614,12 @@ impl Network {
         if !address.ip().is_loopback() {
             return Err("Only loopback connections qualified in this prototype".into());
         }
-        let cert = std::fs::read(&args[2])?;
+        let ticket_path = std::path::PathBuf::from(&args[2]);
+        let cert = if frontend.is_none() {
+            std::fs::read(&ticket_path)?
+        } else {
+            Vec::new()
+        };
         let smoke = if smoke {
             let house = args[4] == "house";
             let jump_demo = args[4].ends_with("-jump");
@@ -499,13 +700,41 @@ impl Network {
             theia_network::renet_runtime::player_life::PRESENTATION_CAPACITY,
         );
         let life_enabled = player_life_profile.is_some();
+        let avatar_enabled = public_avatar_profile.is_some();
+        let (avatar_life_events, avatar_life_queue) = tokio::sync::mpsc::channel(
+            theia_network::renet_runtime::avatar_life::PRESENTATION_CAPACITY,
+        );
+        if public_attack_profile.is_some() && public_population_profile.is_some() {
+            return Err("Choose one public creature timing mode".into());
+        }
+        let public_attacks_enabled = public_attack_profile.is_some();
+        let public_population_enabled = public_population_profile.is_some();
+        let (public_population_events, public_population_queue) = tokio::sync::mpsc::channel(
+            theia_network::renet_runtime::creature_attacks::population::PRESENTATION_CAPACITY,
+        );
+        let (public_attack_events, public_attack_queue) = tokio::sync::mpsc::channel(
+            theia_network::renet_runtime::creature_attacks::PRESENTATION_CAPACITY,
+        );
         let combat_enabled = combat_catalog.is_some();
         let inventory_enabled = inventory_profile.is_some();
         let dialogue_enabled = dialogue_profile.is_some();
+        let journal_enabled = journal_profile.is_some();
+        let (journal_actions, journal_queue) = tokio::sync::mpsc::channel(4);
         let lifecycle_enabled = lifecycle_profile.is_some();
         let (quest_actions, quest_queue) = tokio::sync::mpsc::channel(4);
         let (dialogue_actions, dialogue_queue) = tokio::sync::mpsc::channel(4);
         let (items, item_queue) = tokio::sync::mpsc::channel(1);
+        let (chat_actions, chat_queue) = tokio::sync::mpsc::channel(1);
+        let (party_actions, party_queue) = tokio::sync::mpsc::channel(4);
+        let (pickups, pickup_queue) = tokio::sync::mpsc::channel(1);
+        let loot_enabled = inventory_profile
+            .as_ref()
+            .and_then(|p| p.rewards())
+            .is_some_and(|p| {
+                p.catalog()
+                    .definitions()
+                    .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+            });
         let (states, state) = watch::channel(State::default());
         let (stop, shutdown) = watch::channel(false);
         let runtime = tokio::runtime::Builder::new_current_thread()
@@ -517,6 +746,9 @@ impl Network {
             .name("theia-network".into())
             .spawn(move || {
                 let result = runtime.block_on(async {
+                    let (address, cert) = if let Some(directory) = frontend {
+                        crate::frontend::admission(&directory, &ticket_path, shutdown.clone()).await?
+                    } else { (address, cert) };
                     if classic
                         || dodge_mode.is_some()
                         || inventory_profile.is_some()
@@ -533,6 +765,28 @@ impl Network {
                             shutdown,
                             expected_world,
                             theia_network::renet_runtime::GameplayClient {
+                                party: if parties { Some(theia_network::party_client::Client::new(party_source, party_queue)?) } else { None },
+                                chat: chat_area.map(|area| theia_network::chat_client::Client::new(chat_source, area, chat_queue)).transpose()?,
+                                avatar_life: public_avatar_profile.map(|profile| {
+                                    theia_network::renet_runtime::avatar_life::Client {
+                                        profile,
+                                        events: avatar_life_events,
+                                    }
+                                }),
+                                public_attacks: public_population_profile.map(|profile| theia_network::renet_runtime::creature_attacks::Mode::Population(theia_network::renet_runtime::creature_attacks::population::Client { profile, events:public_population_events })).or_else(|| public_attack_profile.map(|profile| {
+                                    theia_network::renet_runtime::creature_attacks::Mode::Singleton(
+                                        theia_network::renet_runtime::creature_attacks::Client {
+                                            profile,
+                                            events: public_attack_events,
+                                        },
+                                    )
+                                })),
+                                journal: journal_profile.map(|profile| {
+                                    theia_network::renet_runtime::quest_journal::Client {
+                                        profile,
+                                        actions: journal_queue,
+                                    }
+                                }),
                                 classic_source: classic.then_some(source_world),
                                 dodge: dodge_mode,
                                 player_life: player_life_profile.map(|profile| {
@@ -578,6 +832,7 @@ impl Network {
                                 statuses: status_catalog,
                                 inventory: inventory_profile.map(|profile| {
                                     theia_network::renet_runtime::inventory::Client {
+                                        pickups: loot_enabled.then_some(pickup_queue),
                                         profile,
                                         commands: item_queue,
                                     }
@@ -663,14 +918,20 @@ impl Network {
                 }
             })?;
         Ok(Self {
+            chat_actions: chat_area.map(|_| chat_actions),
+            party_actions: parties.then_some(party_actions),
             physical_profile: physical_presentation,
             white_profile: white_presentation,
             dodge_input,
             dodge_request: None,
+            journal_actions: journal_enabled.then_some(journal_actions),
             quest_actions: lifecycle_enabled.then_some(quest_actions),
             dialogue: dialogue_enabled.then_some(dialogue_actions),
             items: inventory_enabled.then_some(items),
+            pickups: loot_enabled.then_some(pickups),
+            item_reservation: std::sync::atomic::AtomicU64::new(0),
             input,
+            loading_blocked: false,
             chunk_ready,
             state,
             stop,
@@ -685,9 +946,14 @@ impl Network {
             local_track: None,
             prediction: prediction.then(|| {
                 if classic {
-                    theia_network::prediction_driver::Driver::with_classic(
+                    theia_network::prediction_driver::Driver::with_classic_social(
                         source_world,
                         life_enabled,
+                        chat_area,
+                        parties,
+                    )
+                    .with_development_speed(
+                        std::env::var_os(theia_network::development::ENV).is_some(),
                     )
                 } else if let Some(profile) = dodge_profile {
                     theia_network::prediction_driver::Driver::with_dodge(
@@ -708,6 +974,10 @@ impl Network {
             melee: melee_enabled.then_some(melee),
             combat_events: combat_enabled.then_some(combat_events),
             life_events: life_enabled.then_some(life_queue),
+            public_attack_events: public_attacks_enabled.then_some(public_attack_queue),
+            public_population_events: public_population_enabled.then_some(public_population_queue),
+            avatar_life_events: avatar_enabled.then_some(avatar_life_queue),
+            avatar_pose_resets: 0,
         })
     }
     pub fn configure_map_access(
@@ -743,6 +1013,7 @@ impl Drop for Network {
 
 #[derive(Component)]
 pub struct RemotePawn {
+    life_key: Option<theia_core::player_life::LifeKey>,
     heading: Option<[f64; 2]>,
     id: u64,
     from: GlobalPosition,
@@ -754,6 +1025,7 @@ pub struct RemotePawn {
 impl RemotePawn {
     pub(crate) fn stationary(id: u64, position: GlobalPosition) -> Self {
         Self {
+            life_key: None,
             heading: None,
             id,
             from: position,
@@ -761,6 +1033,24 @@ impl RemotePawn {
             elapsed: 0.,
             duration: 1. / 30.,
         }
+    }
+    /// A new public life starts at its own authoritative pose, never at the
+    /// previous life's interpolation endpoints. Ordinary samples keep blending.
+    fn sync_life(
+        &mut self,
+        key: theia_core::player_life::LifeKey,
+        position: GlobalPosition,
+        facing: Option<theia_core::facing::Facing>,
+    ) -> bool {
+        if self.life_key == Some(key) {
+            return false;
+        }
+        self.life_key = Some(key);
+        self.from = position;
+        self.to = position;
+        self.elapsed = 0.;
+        self.heading = facing.map(|f| [f.radians(); 2]);
+        true
     }
     pub(crate) fn advance_presentation(&mut self, seconds: f32) {
         self.elapsed += seconds.clamp(0., 0.25);
@@ -959,6 +1249,15 @@ pub fn send_input(
     if let Some(run) = projectile {
         value = run.intent();
     }
+    if network.loading_blocked {
+        value = Intent {
+            facing: state
+                .correction
+                .and_then(|c| c.state.pose.facing)
+                .or(value.facing),
+            ..default()
+        };
+    }
     network.input.send_replace(value);
 }
 
@@ -1053,13 +1352,16 @@ impl Smoke {
 #[derive(bevy::ecs::system::SystemParam)]
 pub struct SceneState<'w> {
     classic: Option<Res<'w, crate::classic_controls::Controller>>,
+    fantasy_skin: Option<Res<'w, crate::fantasy_ui::Skin>>,
     camera_mode: Option<Res<'w, crate::camera::mode::Mode>>,
     inventory: Option<Res<'w, crate::inventory::Ui>>,
+    loot: Option<Res<'w, crate::loot::Ui>>,
     dialogue: Option<Res<'w, crate::dialogue::Ui>>,
     graybox: Option<Res<'w, crate::graybox::Graybox>>,
     frame: Res<'w, crate::floating_origin::Frame>,
     pipelines: Res<'w, crate::capture_ready::CaptureReady>,
     time: Res<'w, Time>,
+    real_time: Res<'w, Time<Real>>,
     references: Option<Res<'w, crate::reference_scene::Config>>,
     ready: Option<Res<'w, crate::reference_scene::Ready>>,
     terrain: Option<Res<'w, crate::terrain_scene::Config>>,
@@ -1079,13 +1381,16 @@ pub fn present(
 ) {
     let SceneState {
         classic,
+        fantasy_skin,
         camera_mode,
         inventory,
+        loot,
         dialogue,
         graybox,
         frame,
         pipelines,
         time,
+        real_time,
         references,
         ready,
         terrain,
@@ -1109,8 +1414,11 @@ pub fn present(
     }
     if let Some(error) = &state.error {
         if let Ok(mut text) = hud.single_mut() {
-            **text =
-                format!("THEIA\nDisconnected: {error}\nEsc: quit; restart client to reconnect");
+            let value =
+                format!("Disconnected: {error}\nClose this window and relaunch to reconnect.");
+            if text.0 != value {
+                **text = value;
+            }
         }
         for (entity, _, _, _) in &remotes {
             commands.entity(entity).despawn();
@@ -1131,18 +1439,25 @@ pub fn present(
     if let Some(snapshot) = &state.snapshot {
         let id = state.id.expect("Snapshot requires welcome");
         if let Ok(mut text) = hud.single_mut() {
-            **text = if (terrain.is_some() && terrain_ready.is_none())
+            let value = if (terrain.is_some() && terrain_ready.is_none())
                 || (chunks.is_some() && chunks_ready.is_none())
                 || (references.is_some() && ready.is_none())
             {
-                format!(
-                    "THEIA\nPlayer {id} | connected\nLoading world and characters...\nEsc: quit"
-                )
+                if fantasy_skin.is_some() {
+                    "Loading world and characters...".into()
+                } else {
+                    format!("THEIA\nPlayer {id} | connected\nLoading world and characters...")
+                }
+            } else if fantasy_skin.is_some() {
+                String::new()
             } else {
                 let controls = if let Some(classic) = classic.as_ref() {
                     classic.hint()
                 } else if let Some(mode) = camera_mode.as_ref() {
-                    let panel = inventory.as_ref().is_some_and(|ui| ui.open)
+                    let panel = loot
+                        .as_ref()
+                        .is_some_and(|ui| ui.open || ui.closed_this_frame)
+                        || inventory.as_ref().is_some_and(|ui| ui.open)
                         || dialogue
                             .as_ref()
                             .is_some_and(|ui| ui.open || ui.pending || ui.close_when_open);
@@ -1183,6 +1498,9 @@ pub fn present(
                     snapshot.tick
                 )
             };
+            if text.0 != value {
+                **text = value;
+            }
         }
         if snapshot.tick > network.latest_tick {
             network.tick_hz = snapshot.tick_hz;
@@ -1235,6 +1553,7 @@ pub fn present(
                         track.retarget(global, interval)
                     } else {
                         network.local_track = Some(RemotePawn {
+                            life_key: None,
                             heading: None,
                             id,
                             from: global,
@@ -1257,6 +1576,7 @@ pub fn present(
                 } else {
                     commands.spawn((
                         RemotePawn {
+                            life_key: None,
                             heading: player.facing.map(|f| [f.radians(); 2]),
                             id: player.id,
                             from: global,
@@ -1284,7 +1604,9 @@ pub fn present(
             &raw,
             current_intent,
             graybox.as_ref().and_then(|gray| gray.patch.as_deref()),
-            Instant::now(),
+            // Sample at Bevy's frame timestamp, not at a variable point in the
+            // Update schedule after asset/network work has consumed CPU time.
+            real_time.last_update().unwrap_or_else(Instant::now),
         ) {
             Ok(value) => value,
             Err(error) => {
@@ -1293,6 +1615,7 @@ pub fn present(
             }
         }
     });
+    let mut clock_sampled = false;
     if let Some(driven) = driven {
         if let Some(packet) = driven.packet
             && network
@@ -1307,13 +1630,43 @@ pub fn present(
         let mut p = driven.pose.feet.metres();
         p[1] += f64::from(theia_network::world::PAWN_Y);
         let global = GlobalPosition::new(p).unwrap();
-        if network.predicted_tick != driven.tick || driven.reset || network.local_track.is_none() {
+        if let Some((feet, fraction)) = driven.presentation {
+            // Use the same continuous clock as fixed prediction, including
+            // frames that cross zero or multiple simulation ticks. Restarting
+            // a one-tick tween each render frame produces a speed sawtooth.
+            let [from, to] = feet.map(|p| {
+                let mut p = p.metres();
+                p[1] += f64::from(theia_network::world::PAWN_Y);
+                GlobalPosition::new(p).unwrap()
+            });
+            let interval = 1. / network.tick_hz as f32;
+            network.local_track = Some(RemotePawn {
+                life_key: None,
+                heading: None,
+                id: state.id.unwrap_or(0),
+                from,
+                to,
+                elapsed: fraction as f32 * interval,
+                duration: interval,
+            });
+            network.predicted_tick = driven.tick;
+            clock_sampled = true;
+            if let Ok((_, _, mut motion)) = local.single_mut() {
+                let a = from.metres();
+                let b = to.metres();
+                motion.0 = ((b[0] - a[0]).hypot(b[2] - a[2]) / f64::from(interval)) as f32;
+            }
+        } else if network.predicted_tick != driven.tick
+            || driven.reset
+            || network.local_track.is_none()
+        {
             network.predicted_tick = driven.tick;
             let interval = 1. / network.tick_hz as f32;
             let speed = if let Some(track) = &mut network.local_track {
                 track.retarget(global, interval)
             } else {
                 network.local_track = Some(RemotePawn {
+                    life_key: None,
                     heading: None,
                     id: state.id.unwrap_or(0),
                     from: global,
@@ -1329,7 +1682,9 @@ pub fn present(
         }
     }
     if let Some(track) = &mut network.local_track {
-        track.elapsed += time.delta_secs();
+        if !clock_sampled {
+            track.elapsed += time.delta_secs();
+        }
         if let Some(global) = track.global_in_frame(&frame, state.authority_focus()) {
             if let Ok((mut transform, _, _)) = local.single_mut() {
                 if let Some(classic) = classic.as_ref() {
@@ -1342,7 +1697,23 @@ pub fn present(
             network.local_global = Some(global);
         }
     }
-    for (_, mut remote, mut transform, _) in &mut remotes {
+    for (_, mut remote, mut transform, mut motion) in &mut remotes {
+        if let (Some(roster), Some(snapshot)) = (
+            raw.public_avatar_life.as_ref().and_then(|s| s.current()),
+            raw.snapshot.as_ref(),
+        ) && snapshot.tick >= roster.tick
+            && snapshot.epoch == roster.epoch.value()
+            && let Some(life) = roster
+                .actors
+                .iter()
+                .find(|a| a.key.actor.entity.value() == remote.id)
+            && let Some(player) = snapshot.players.iter().find(|p| p.id == remote.id)
+            && let Some(position) = snapshot.global_position(player)
+            && remote.sync_life(life.key, position, player.facing)
+        {
+            motion.0 = 0.;
+            network.avatar_pose_resets += 1;
+        }
         remote.elapsed += time.delta_secs();
         let position = remote.sample(&frame);
         if let Some(yaw) = remote.heading_sample() {
@@ -1374,14 +1745,19 @@ pub struct ReferenceArt<'w, 's> {
     houses: Query<'w, 's, Entity, With<crate::reference_scene::House>>,
     pipelines: Res<'w, crate::capture_ready::CaptureReady>,
     terrain: Option<Res<'w, crate::terrain_scene::Config>>,
+    particles: Option<Res<'w, crate::particle_world::Metrics>>,
     chunks: Option<Res<'w, crate::chunk_world::Config>>,
     chunk_roots: Query<'w, 's, &'static crate::chunk_world::Root>,
     chunk_stream: Option<Res<'w, crate::chunk_world::Stream>>,
     shared_images: crate::shared_images::Bindings<'w, 's>,
     material_profiles: crate::runtime_materials::Evidence<'w, 's>,
-    camera: Query<'w, 's, &'static Transform, With<Camera3d>>,
-    camera_projection:
-        Query<'w, 's, (&'static Projection, &'static GlobalTransform), With<Camera3d>>,
+    camera: Query<'w, 's, &'static Transform, crate::frontend::WorldCamera>,
+    camera_projection: Query<
+        'w,
+        's,
+        (&'static Projection, &'static GlobalTransform),
+        crate::frontend::WorldCamera,
+    >,
     scenery_stats: Res<'w, crate::camera::SceneryCameraStats>,
 }
 
@@ -1577,6 +1953,7 @@ pub fn capture(
         "clip_from_world":art.camera_projection.single().ok().map(|(p,t)|(p.get_clip_from_view()*t.to_matrix().inverse()).to_cols_array()),
         "chunk_world":art.chunks.as_ref().map(|c|serde_json::json!({"identity":c.data.identity(),"loaded":c.active.loaded().iter().map(|id|[id.x,id.z]).collect::<Vec<_>>(),"roots":art.chunk_roots.iter().map(|r|[r.0.x,r.0.z]).collect::<Vec<_>>(),"report":state.chunk_report,"ack":state.chunk_ack,"offer":state.chunk_offer,"generation":c.active.generation(),"stream":art.chunk_stream.as_ref().map(|s|s.report()),"authority_confirmed":state.chunk_permission_confirmed(&c.active.loaded()),"shared_images":art.shared_images.report(),"material_profiles":art.material_profiles.report()})),
         "jump":smoke.jump_demo.then_some(serde_json::json!({"local_peak":smoke.jump_peak,"remote_peak":smoke.remote_jump_peak})),
+        "world_particles":art.particles.as_deref(),
         "content_package":art.terrain.as_ref().and_then(|t|t.terrain.package.as_ref()).map(|p|serde_json::json!({"content_id":p.content_id().as_str(),"revision":p.revision()})),
         "pipelines":{"pending":art.pipelines.pending,"failed":art.pipelines.failed,"compiled":art.pipelines.compiled,"clear_frames":art.pipelines.clear_frames},
         "physics_backend":{"engine":"avian","revision":theia_network::physics::AVIAN_REVISION,
@@ -1620,6 +1997,41 @@ pub fn capture(
 mod rebase_tests {
     use super::*;
     #[test]
+    fn remote_fresh_life_resets_pose_without_resetting_ordinary_movement_samples() {
+        use std::num::NonZeroU64;
+        use theia_core::{
+            identity::{EntityId, EntityKey, WorldEpoch},
+            player_life::LifeKey,
+        };
+        let key = LifeKey {
+            actor: EntityKey {
+                epoch: WorldEpoch::new(1).unwrap(),
+                entity: EntityId::new(1).unwrap(),
+            },
+            generation: NonZeroU64::MIN,
+        };
+        let old = GlobalPosition::new([8000., 2., 8000.]).unwrap();
+        let moving = GlobalPosition::new([8004., 2., 8000.]).unwrap();
+        let fresh = GlobalPosition::new([8001., 2., 8001.]).unwrap();
+        let mut remote = RemotePawn::stationary(1, old);
+        assert!(remote.sync_life(key, old, None));
+        remote.retarget(moving, 0.1);
+        remote.advance_presentation(0.05);
+        let blended = remote.global_sample();
+        assert!(!remote.sync_life(key, moving, None));
+        assert_eq!(remote.global_sample(), blended);
+        assert!(remote.sync_life(
+            LifeKey {
+                generation: NonZeroU64::new(2).unwrap(),
+                ..key
+            },
+            fresh,
+            None
+        ));
+        assert_eq!(remote.global_endpoints(), [fresh; 2]);
+        assert_eq!(remote.global_sample(), fresh);
+    }
+    #[test]
     fn interpolation_preserves_global_path_and_camera_delta_across_rebases() {
         use crate::floating_origin::Frame;
         use theia_core::coordinates::LocalPosition;
@@ -1641,6 +2053,7 @@ mod rebase_tests {
             .to_global(LocalPosition::new([3.5, 0.9, -4.25]).unwrap())
             .unwrap();
         let remote = RemotePawn {
+            life_key: None,
             heading: None,
             id: 2,
             from,
@@ -1702,6 +2115,7 @@ mod smoothing_tests {
     #[test]
     fn thirty_hz_authority_is_presented_at_every_120_hz_render_frame() {
         let mut track = RemotePawn {
+            life_key: None,
             heading: None,
             id: 1,
             from: p(8000.),
@@ -1726,6 +2140,7 @@ mod smoothing_tests {
     #[test]
     fn skipped_snapshot_intervals_and_teleports_use_explicit_durations_and_snap() {
         let mut track = RemotePawn {
+            life_key: None,
             heading: None,
             id: 1,
             from: p(8000.),
@@ -1754,6 +2169,7 @@ mod smoothing_tests {
         let mut frame = crate::floating_origin::Frame::default();
         frame.focus_large(new);
         let mut track = RemotePawn {
+            life_key: None,
             heading: None,
             id: 1,
             from: old,
@@ -1766,5 +2182,89 @@ mod smoothing_tests {
         assert!(track.global_in_frame(&frame, None).is_none());
         track.retarget(new, 1. / 30.);
         assert_eq!(track.global_in_frame(&frame, Some(old)), Some(new));
+    }
+}
+
+fn reserve_item_slot(
+    reservation: &std::sync::atomic::AtomicU64,
+    pending: bool,
+    sequence: u64,
+) -> bool {
+    use std::sync::atomic::Ordering;
+    if pending {
+        return false;
+    }
+    let reserved = reservation.load(Ordering::Acquire);
+    if reserved != 0 && sequence >= reserved {
+        let _ = reservation.compare_exchange(reserved, 0, Ordering::AcqRel, Ordering::Acquire);
+    }
+    sequence.checked_add(1).is_some_and(|next| {
+        reservation
+            .compare_exchange(0, next, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
+    })
+}
+#[cfg(test)]
+mod item_reservation_tests {
+    use super::reserve_item_slot;
+    use std::sync::{Arc, atomic::AtomicU64};
+    #[test]
+    fn concurrent_panels_reserve_only_one_intent_and_wait_for_a_later_reply() {
+        let reservation = Arc::new(AtomicU64::new(0));
+        let start = Arc::new(std::sync::Barrier::new(9));
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let r = reservation.clone();
+                let start = start.clone();
+                std::thread::spawn(move || {
+                    start.wait();
+                    reserve_item_slot(&r, false, 7)
+                })
+            })
+            .collect();
+        start.wait();
+        assert_eq!(
+            handles
+                .into_iter()
+                .map(|h| usize::from(h.join().unwrap()))
+                .sum::<usize>(),
+            1
+        );
+        assert!(!reserve_item_slot(&reservation, false, 7));
+        assert!(!reserve_item_slot(&reservation, true, 8));
+        assert!(reserve_item_slot(&reservation, false, 8));
+        assert!(!reserve_item_slot(&reservation, false, 8));
+        assert!(!reserve_item_slot(&reservation, false, u64::MAX));
+    }
+    #[test]
+    fn newer_friendly_or_clear_choice_blocks_old_hostile_observations_until_matching_choice() {
+        use super::target_choice_matches;
+        use theia_core::identity::EntityId;
+        use theia_network::targeting::Choice;
+        let enemy = EntityId::new(1).unwrap();
+        let friend = EntityId::new(2).unwrap();
+        assert!(target_choice_matches(enemy, None));
+        assert!(target_choice_matches(
+            enemy,
+            Some(Choice {
+                target: Some(enemy)
+            })
+        ));
+        assert!(!target_choice_matches(
+            enemy,
+            Some(Choice {
+                target: Some(friend)
+            })
+        ));
+        assert!(!target_choice_matches(enemy, Some(Choice { target: None })));
+        // Older or repeated enemy observations cannot consume the latest intent.
+        for _ in 0..3 {
+            assert!(!target_choice_matches(
+                enemy,
+                Some(Choice {
+                    target: Some(friend)
+                })
+            ));
+        }
     }
 }

@@ -47,7 +47,8 @@ def canonical(source,stage,probe):
         for p in doc['meshes'][doc['nodes'][i]['mesh']]['primitives']:
             v=accessor(doc,binary,p['attributes']['POSITION']);actual.extend(v@matrix[:3,:3].T+matrix[:3,3])
     error=point_error(points,actual)
-    return {'passed':True,'max_position_error_metres':error,'tolerance_metres':.0001,
+    return {'passed':True,'asset_sha256':hashlib.sha256((stage/'preview.glb').read_bytes()).hexdigest(),
+            'max_position_error_metres':error,'tolerance_metres':.0001,
             'source_points':len(points),'prototype_vertices':len(actual),
             'scope':'canonical mesh-local positions/metres against independent ufbx; not topology, Unity Editor or material equivalence'}
 

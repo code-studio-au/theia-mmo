@@ -1,4 +1,32 @@
-Current implementation: the [qualified `--classic` profile](CLASSIC_MOVEMENT.md)
+Focus handling, 7 November 2026 (P2-05 / P2-11/14 / P3-05/06/09):
+Ability, world-click, backpack, corpse-loot, reader and Interface input require
+one focused game
+Window. New unfocused choices are discarded; focus loss alone does not cancel
+persistent selection/autoattack or already accepted transaction work. Existing
+Loot All intent can continue serial pickups; matching read replies still open.
+220 client cases, formatting, strict Clippy and builds pass. Native background
+I/F10/1 delivery to a second test-owned window causes no action or replay; broader
+pointer/focus ordering remains pending. Desktop access is restored. Local commits
+only; no push. The earlier headless-only qualification is retained in dated records.
+[Ability](UI_FANTASY_WARRIOR.md#ability-input-focus-guard--7-november-2026),
+[world clicks](UI_FANTASY_WARRIOR.md#world-click-focus-boundary--7-november-2026),
+[backpack](UI_FANTASY_WARRIOR.md#backpack-focus-handling--7-november-2026),
+[loot](UI_FANTASY_WARRIOR.md#corpse-loot-focus-handling--7-november-2026),
+[reader](UI_FANTASY_WARRIOR.md#reader-focus-handling--7-november-2026),
+[Interface](UI_FANTASY_WARRIOR.md#interface-widget-focus-handling--7-november-2026).
+The retained optimized v1/d9df562 pack predates panel-focus follow-ups;
+`build/local-play-release-20261107-v2` at c05ac56 includes them and predates the
+later save-retry change. Network startup/loading/disconnect hints no longer claim
+Classic Escape quits; on disconnect close the window and relaunch to reconnect.
+Actual timeout/disabled ability-input presentation passes at 1280×720. The dated notes
+below retain their historical implementation and qualification scope; use STATUS
+for the current repository checkpoint.
+F10/Interface now offers Exit game through the normal Bevy shutdown path. It
+requires a focused open pane; native small/ultrawide exit and database rejoin pass.
+The preserved optimized v4 pack includes Exit, with an actual timeout-to-Exit
+check after database rejoin at 1280×720.
+
+Historical implementation checkpoint, 1 November 2026: the [qualified `--classic` profile](CLASSIC_MOVEMENT.md)
 now supplies the manual movement/camera controls below, disables action camera
 and dodge, and supports movement-key remapping. [Persistent Tab targeting](CLASSIC_TARGETING.md) is qualified;
 weapon-timed autoattack remains next. Earlier experimental controls are

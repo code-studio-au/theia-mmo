@@ -1,9 +1,8 @@
 //! Explicit fixture startup, outside the simulation and before opening endpoints.
 use std::{sync::Arc, time::Duration};
-use theia_core::coordinates::GlobalPosition;
 use theia_network::{
     Result,
-    dialogue::{Guide, Profile},
+    dialogue::{Guide, Placement, Profile},
     simulation::World,
 };
 pub async fn prepare_guide(
@@ -11,7 +10,14 @@ pub async fn prepare_guide(
     profile: Arc<Profile>,
     xz: [f64; 2],
 ) -> Result<Guide> {
-    let focus = GlobalPosition::new([xz[0], 0., xz[1]]).ok_or("Invalid guide position")?;
+    prepare_placed_guide(world, profile, Placement::Horizontal(xz)).await
+}
+pub async fn prepare_placed_guide(
+    world: &mut World,
+    profile: Arc<Profile>,
+    placement: Placement,
+) -> Result<Guide> {
+    let focus = placement.focus()?;
     if world.completed_tick() != 0
         || world.procedural().is_none()
         || theia_network::procedural::owner(focus).is_none()
@@ -33,12 +39,54 @@ pub async fn prepare_guide(
         }
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
-    world.spawn_development_guide(profile, xz)
+    world.spawn_placed_guide(profile, placement)
+}
+
+/// Prepare all contact support outside the fixed step, then install atomically.
+pub async fn prepare_contacts(
+    world: &mut World,
+    profile: Arc<Profile>,
+    placements: Vec<(theia_core::content::ContentId, Placement)>,
+) -> Result<Vec<theia_network::dialogue::ContactPresence>> {
+    if world.completed_tick() != 0 || world.procedural().is_none() {
+        return Err("Contacts require inactive prepared world".into());
+    }
+    let focuses = placements
+        .iter()
+        .map(|(_, p)| p.focus())
+        .collect::<Result<Vec<_>>>()?;
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+    loop {
+        world.poll_terrain_keeping(&focuses)?;
+        if focuses
+            .iter()
+            .all(|p| world.procedural().and_then(|r| r.patch(*p)).is_some())
+        {
+            break;
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err("Contact support preparation timed out".into());
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    if profile.catalog().is_some() {
+        world.spawn_placed_contacts(profile, placements)
+    } else {
+        if placements.len() != 1 || &placements[0].0 != profile.profile().npc() {
+            return Err("Invalid legacy placement".into());
+        }
+        let guide = world.spawn_placed_guide(profile, placements[0].1)?;
+        Ok(vec![theia_network::dialogue::ContactPresence {
+            npc: placements[0].0.clone(),
+            guide,
+        }])
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use theia_core::coordinates::GlobalPosition;
     #[tokio::test]
     async fn distant_guide_preparation_uses_the_existing_loader_before_simulation_starts() {
         let profile = Arc::new(

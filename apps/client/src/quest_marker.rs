@@ -1,12 +1,18 @@
 //! One bounded guide marker derived only from the owner's committed journal.
 //! This presentation never grants interaction entitlement or mutates progress.
 use avian3d::prelude::{SpatialQuery, SpatialQueryFilter};
-use bevy::{prelude::*, text::FontSize};
+use bevy::{
+    prelude::*,
+    text::{FontSize, FontWeight},
+};
 use theia_core::{coordinates::GlobalPosition, quests::lifecycle::Phase};
 
 const MAX_DISTANCE: f64 = 60.;
 const WIDTH: f32 = 224.;
-const HEIGHT: f32 = 68.;
+const HEIGHT: f32 = 86.;
+const BADGE_WIDTH: f32 = 48.;
+const BADGE_HEIGHT: f32 = 48.;
+const NAME_SPACE: f32 = crate::dialogue::names::HEIGHT + 5.;
 
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
@@ -20,7 +26,7 @@ pub(crate) struct Metrics {
     pub last_font_px: f32,
 }
 #[derive(Component)]
-struct Marker;
+struct Marker(usize);
 
 pub(crate) fn install(app: &mut App) {
     app.init_resource::<Metrics>()
@@ -30,26 +36,34 @@ pub(crate) fn install(app: &mut App) {
             PostUpdate,
             present
                 .after(crate::camera::sync_camera_global)
+                .after(crate::dialogue::names::LayoutReady)
                 .after(avian3d::prelude::PhysicsSystems::StepSimulation)
                 .before(bevy::ui::UiSystems::Layout),
         );
 }
 fn setup(mut commands: Commands) {
-    commands.spawn((
-        Marker,
-        Text::new(""),
-        TextFont::default(),
-        TextColor(Color::WHITE),
-        TextLayout::justify(Justify::Center),
-        Node {
-            position_type: PositionType::Absolute,
-            width: px(WIDTH),
-            height: px(HEIGHT),
-            ..default()
-        },
-        Visibility::Hidden,
-        bevy::picking::Pickable::IGNORE,
-    ));
+    for index in 0..theia_core::dialogue::catalog::MAX_CONTACTS {
+        commands.spawn((
+            Marker(index),
+            Text::new(""),
+            TextFont::from_font_weight(FontWeight::BOLD),
+            TextColor(Color::WHITE),
+            TextLayout::justify(Justify::Center),
+            TextShadow {
+                offset: Vec2::splat(2.5),
+                color: Color::BLACK,
+            },
+            GlobalZIndex(2),
+            Node {
+                position_type: PositionType::Absolute,
+                width: px(WIDTH),
+                height: px(HEIGHT),
+                ..default()
+            },
+            Visibility::Hidden,
+            bevy::picking::Pickable::IGNORE,
+        ));
+    }
 }
 fn appearance(phase: Phase) -> Option<(usize, &'static str, Color)> {
     match phase {
@@ -60,23 +74,32 @@ fn appearance(phase: Phase) -> Option<(usize, &'static str, Color)> {
     }
 }
 /// Refuse disconnected, foreign-owner, unknown/unloaded guide and stale profiles.
-fn observed(
+fn observed_context(
     state: &theia_network::client::State,
-    profile: &theia_network::quest_lifecycle_wire::Profile,
-) -> Option<(Phase, GlobalPosition, f64)> {
+    actor: theia_core::identity::EntityKey,
+) -> Option<(GlobalPosition, f64)> {
+    if state.error.is_some() {
+        return None;
+    }
+    let presence = state.guide.as_ref()?;
+    let guide = presence.guide?;
+    observed_contact_context(state, actor, guide)
+}
+fn observed_contact_context(
+    state: &theia_network::client::State,
+    actor: theia_core::identity::EntityKey,
+    guide: theia_network::dialogue::Guide,
+) -> Option<(GlobalPosition, f64)> {
     if state.error.is_some() {
         return None;
     }
     let welcome = state.welcome.as_ref()?;
-    let journal = state.quest_lifecycle.as_ref()?;
     let presence = state.guide.as_ref()?;
-    let guide = presence.guide?;
-    if journal.actor != presence.actor
-        || journal.actor.epoch.value() != welcome.epoch
-        || Some(journal.actor.entity.value()) != state.id
-        || guide.key.epoch != journal.actor.epoch
-        || guide.key.entity == journal.actor.entity
-        || journal.profile_hash != profile.hash()
+    if actor != presence.actor
+        || actor.epoch.value() != welcome.epoch
+        || Some(actor.entity.value()) != state.id
+        || guide.key.epoch != actor.epoch
+        || guide.key.entity == actor.entity
     {
         return None;
     }
@@ -99,20 +122,128 @@ fn observed(
     if distance > MAX_DISTANCE {
         return None;
     }
-    let phase = journal.progress.progress(profile.profile()).ok()?.phase;
-    Some((phase, guide.position, distance))
+    Some((guide.position, distance))
 }
+fn observed(
+    state: &theia_network::client::State,
+    profile: &theia_network::quest_lifecycle_wire::Profile,
+) -> Option<(Phase, GlobalPosition, f64)> {
+    let journal = state
+        .quest_lifecycle
+        .as_ref()
+        .filter(|j| j.profile_hash == profile.hash())?;
+    let (position, distance) = observed_context(state, journal.actor)?;
+    let phase = journal.progress.progress(profile.profile()).ok()?.phase;
+    Some((phase, position, distance))
+}
+fn observed_journal(
+    state: &theia_network::client::State,
+    profile: &theia_network::quest_journal::Profile,
+) -> Option<(Phase, GlobalPosition, f64)> {
+    observed_journal_contact(state, profile, None)
+}
+fn observed_journal_contact(
+    state: &theia_network::client::State,
+    profile: &theia_network::quest_journal::Profile,
+    contact: Option<&theia_network::dialogue::ContactPresence>,
+) -> Option<(Phase, GlobalPosition, f64)> {
+    use theia_core::quests::journal::Status;
+    let journal = state
+        .quest_journal
+        .as_ref()
+        .filter(|j| j.profile_hash == profile.hash())?;
+    journal
+        .validate_successor(profile, journal.actor, None)
+        .ok()?;
+    let (position, distance) = match contact {
+        Some(c) => observed_contact_context(state, journal.actor, c.guide)?,
+        None => observed_context(state, journal.actor)?,
+    };
+    let ready = profile.catalog().quests().any(|q| {
+        contact.is_none_or(|c| q.turn_in() == &c.npc)
+            && journal
+                .journal
+                .progress(q.id())
+                .is_some_and(|p| p.status() == Status::Ready)
+    });
+    let available = profile.catalog().quests().any(|q| {
+        contact.is_none_or(|c| q.giver() == &c.npc)
+            && journal.journal.progress(q.id()).is_none()
+            && q.prerequisites().iter().all(|id| {
+                journal
+                    .journal
+                    .progress(id)
+                    .is_some_and(|p| p.status() == Status::Completed)
+            })
+    });
+    let active = profile.catalog().quests().any(|q| {
+        contact.is_none_or(|c| q.turn_in() == &c.npc || q.giver() == &c.npc)
+            && journal
+                .journal
+                .progress(q.id())
+                .is_some_and(|p| p.status() == Status::Active)
+    });
+    let phase = if ready {
+        Phase::Ready
+    } else if available {
+        Phase::Available
+    } else if active {
+        Phase::Active
+    } else {
+        Phase::TurnedIn
+    };
+    Some((phase, position, distance))
+}
+
+/// Share the same committed owner/guide/prerequisite checks with the local map.
+pub(crate) fn guide_observation(
+    state: &theia_network::client::State,
+    lifecycle: Option<&theia_network::quest_lifecycle_wire::Profile>,
+    journal: Option<&theia_network::quest_journal::Profile>,
+) -> Option<(Phase, GlobalPosition, f64)> {
+    guide_observations(state, lifecycle, journal)
+        .into_iter()
+        .next()
+}
+pub(crate) fn guide_observations(
+    state: &theia_network::client::State,
+    lifecycle: Option<&theia_network::quest_lifecycle_wire::Profile>,
+    journal: Option<&theia_network::quest_journal::Profile>,
+) -> Vec<(Phase, GlobalPosition, f64)> {
+    if let (None, Some(profile), Some(presence)) = (lifecycle, journal, state.guide.as_ref())
+        && presence.guide.is_none()
+    {
+        return presence
+            .contacts
+            .iter()
+            .filter_map(|c| observed_journal_contact(state, profile, Some(c)))
+            .filter(|(phase, _, _)| *phase != Phase::TurnedIn)
+            .collect();
+    }
+    match (lifecycle, journal) {
+        (Some(profile), None) => observed(state, profile),
+        (None, Some(profile)) => observed_journal(state, profile),
+        _ => None,
+    }
+    .into_iter()
+    .collect()
+}
+
 fn anchor(position: GlobalPosition, frame: &crate::floating_origin::Frame) -> Option<Vec3> {
     let mut p = position.metres();
-    p[1] += 1.9;
+    p[1] += f64::from(crate::dialogue::names::ANCHOR_HEIGHT);
     Some(Vec3::from_array(
         frame.render.to_local(GlobalPosition::new(p)?)?.metres(),
     ))
 }
-fn font_size(distance: f64) -> f32 {
-    (25. - distance as f32 * 0.18).round().clamp(15., 24.)
+fn font_size(distance: f64, badge: bool) -> f32 {
+    if badge {
+        (38. - distance as f32 * 0.16).round().clamp(28., 38.)
+    } else {
+        (31. - distance as f32 * 0.17).round().clamp(21., 30.)
+    }
 }
-fn occluded(spatial: &SpatialQuery, eye: Vec3, point: Vec3) -> bool {
+pub(crate) fn occluded(spatial: &SpatialQuery, eye: Vec3, point: Vec3) -> bool {
     let ray = point - eye;
     let Ok(direction) = Dir3::new(ray) else {
         return true;
@@ -129,78 +260,139 @@ fn occluded(spatial: &SpatialQuery, eye: Vec3, point: Vec3) -> bool {
         )
         .is_some()
 }
+type MarkerLabel<'a> = (
+    &'a Marker,
+    &'a mut Text,
+    &'a mut TextFont,
+    &'a mut TextColor,
+    &'a mut Node,
+    &'a mut Visibility,
+);
 #[allow(clippy::too_many_arguments)]
 fn present(
     network: Res<crate::network::Network>,
-    definitions: Res<crate::quest_lifecycle::Definitions>,
+    definitions: Option<Res<crate::quest_lifecycle::Definitions>>,
+    journal: Option<Res<crate::quest_journal::Definitions>>,
     frame: Res<crate::floating_origin::Frame>,
-    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    ui_scale: Option<Res<bevy::ui::UiScale>>,
+    cameras: Query<(&Camera, &GlobalTransform), crate::frontend::WorldCamera>,
     spatial: SpatialQuery,
-    mut labels: Query<
-        (
-            &mut Text,
-            &mut TextFont,
-            &mut TextColor,
-            &mut Node,
-            &mut Visibility,
-        ),
-        With<Marker>,
-    >,
+    mut labels: Query<MarkerLabel<'_>>,
     mut metrics: ResMut<Metrics>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
+    names: Option<Res<crate::dialogue::names::Layout>>,
 ) {
     metrics.visible_now = false;
     metrics.phase_now = None;
-    let Ok((mut text, mut font, mut color, mut node, mut visibility)) = labels.single_mut() else {
-        return;
-    };
-    *visibility = Visibility::Hidden;
     let state = network.state();
-    let Some((phase, guide, distance)) = observed(&state, &definitions.0) else {
-        return;
-    };
-    let Some((index, caption, tint)) = appearance(phase) else {
-        return;
-    };
-    metrics.phase_frames[index] += 1;
-    let (Some(point), Ok((camera, transform))) = (anchor(guide, &frame), cameras.single()) else {
-        return;
-    };
-    let Ok(screen) = camera.world_to_viewport(transform, point) else {
-        return;
-    };
-    let Some(viewport) = camera.logical_viewport_size() else {
-        return;
-    };
-    if screen.x < WIDTH * 0.5
-        || screen.x > viewport.x - WIDTH * 0.5
-        || screen.y < HEIGHT
-        || screen.y > viewport.y
-    {
-        return;
+    let observations = guide_observations(
+        &state,
+        definitions.as_ref().map(|d| d.0.as_ref()),
+        journal.as_ref().map(|d| d.0.as_ref()),
+    );
+    let scale = ui_scale.as_ref().map_or(1., |scale| scale.0);
+    let mut occupied = Vec::<Rect>::new();
+    for (marker, mut text, mut font, mut color, mut node, mut visibility) in &mut labels {
+        *visibility = Visibility::Hidden;
+        let observed = observations.get(marker.0).copied();
+        let Some((phase, guide, distance)) = observed else {
+            continue;
+        };
+        let Some((index, caption, tint)) = appearance(phase) else {
+            continue;
+        };
+        let badge = skin.is_some();
+        let caption = if badge {
+            ["!", "…", "?"][index]
+        } else {
+            caption
+        };
+        let (width, height) = if badge {
+            (BADGE_WIDTH, BADGE_HEIGHT)
+        } else {
+            (WIDTH, HEIGHT)
+        };
+        metrics.phase_frames[index] += 1;
+        let (Some(point), Ok((camera, transform))) = (anchor(guide, &frame), cameras.single())
+        else {
+            continue;
+        };
+        let Ok(screen) = camera.world_to_viewport(transform, point) else {
+            continue;
+        };
+        let Some(viewport) = camera.logical_viewport_size() else {
+            continue;
+        };
+        let (Some(screen), Some(viewport)) = (
+            crate::fantasy_ui::projected_ui_point(screen, scale),
+            crate::fantasy_ui::projected_ui_point(viewport, scale),
+        ) else {
+            continue;
+        };
+        let key = state.guide.as_ref().and_then(|presence| {
+            presence
+                .guide
+                .into_iter()
+                .chain(presence.contacts.iter().map(|contact| contact.guide))
+                .find(|contact| contact.position == guide)
+                .map(|contact| contact.key)
+        });
+        let stack = names.as_ref().and_then(|names| {
+            names
+                .0
+                .iter()
+                .find(|(id, _)| Some(*id) == key)
+                .map(|(_, bounds)| *bounds)
+        });
+        let bottom = stack.map_or(screen - Vec2::Y * NAME_SPACE, |bounds| {
+            Vec2::new(bounds.center().x, bounds.min.y - 5.)
+        });
+        let ideal = Rect::from_corners(
+            bottom - Vec2::new(width * 0.5, height),
+            bottom + Vec2::X * width * 0.5,
+        );
+        let Some(rect) = crate::dialogue::names::clear_rect(ideal, viewport, |rect| {
+            occupied
+                .iter()
+                .chain(
+                    names
+                        .iter()
+                        .flat_map(|names| names.0.iter().map(|(_, r)| r)),
+                )
+                .any(|other| !rect.intersect(*other).is_empty())
+        }) else {
+            continue;
+        };
+        let eye = transform.translation();
+        if occluded(&spatial, eye, point) {
+            metrics.occluded_frames += 1;
+            continue;
+        }
+        if text.0 != caption {
+            text.0 = caption.to_owned();
+        }
+        if color.0 != tint {
+            color.0 = tint;
+        }
+        let size = font_size(distance, badge);
+        if !matches!(font.font_size, FontSize::Px(current) if current == size) {
+            font.font_size = FontSize::Px(size);
+        }
+        metrics.last_font_px = size;
+        node.width = px(width);
+        node.height = px(height);
+        occupied.push(rect);
+        node.left = px(rect.min.x);
+        node.top = px(rect.min.y);
+        if badge {
+            node.padding.top = px(((height - size * 1.15) * 0.5).max(0.));
+        }
+        *visibility = Visibility::Inherited;
+        metrics.visible_now = true;
+        metrics.phase_now = Some(index);
+        metrics.projected_frames += 1;
+        metrics.visible_frames[index] += 1;
     }
-    let eye = transform.translation();
-    if occluded(&spatial, eye, point) {
-        metrics.occluded_frames += 1;
-        return;
-    }
-    if text.0 != caption {
-        text.0 = caption.to_owned();
-    }
-    if color.0 != tint {
-        color.0 = tint;
-    }
-    let size = font_size(distance);
-    if !matches!(font.font_size, FontSize::Px(current) if current == size) {
-        font.font_size = FontSize::Px(size);
-    }
-    metrics.last_font_px = size;
-    node.left = px(screen.x - WIDTH * 0.5);
-    node.top = px(screen.y - HEIGHT);
-    *visibility = Visibility::Inherited;
-    metrics.visible_now = true;
-    metrics.phase_now = Some(index);
-    metrics.projected_frames += 1;
-    metrics.visible_frames[index] += 1;
 }
 
 fn observe(
@@ -215,10 +407,11 @@ fn observe(
     mut metrics: ResMut<Metrics>,
 ) {
     if let Some(index) = metrics.phase_now
-        && let Ok((node, visible, glyphs)) = labels.single()
-        && visible.get()
-        && node.size().min_element() > 0.
-        && glyphs.is_some_and(|g| !g.glyphs.is_empty())
+        && labels.iter().any(|(node, visible, glyphs)| {
+            visible.get()
+                && node.size().min_element() > 0.
+                && glyphs.is_some_and(|g| !g.glyphs.is_empty())
+        })
     {
         metrics.renderable_frames[index] += 1;
     }
@@ -313,6 +506,7 @@ mod tests {
             guide: Some(theia_network::dialogue_wire::Presence {
                 actor,
                 profile_hash: [1; 32],
+                contacts: vec![],
                 guide: Some(theia_network::dialogue::Guide {
                     key: EntityKey {
                         entity: EntityId::new(2).unwrap(),
@@ -387,11 +581,17 @@ mod tests {
         cases.push(s);
         for (index, s) in cases.iter().enumerate() {
             assert!(observed(s, &profile).is_none(), "case {index}");
+            assert!(
+                guide_observation(s, Some(&profile), None).is_none(),
+                "map case {index}"
+            );
         }
         let mut s = state;
         s.guide.as_mut().unwrap().guide.as_mut().unwrap().position =
             GlobalPosition::new([60., 0.9, 0.]).unwrap();
         assert!(observed(&s, &profile).is_some());
+        assert!(guide_observation(&s, Some(&profile), None).is_some());
+        assert!(guide_observation(&s, None, None).is_none());
     }
     #[test]
     fn phase_shape_and_text_distinguish_progress_and_completion() {
@@ -399,8 +599,8 @@ mod tests {
         assert!(appearance(Phase::Active).unwrap().1.starts_with("..."));
         assert!(appearance(Phase::Ready).unwrap().1.starts_with('?'));
         assert!(appearance(Phase::TurnedIn).is_none());
-        assert_eq!(font_size(0.), 24.);
-        assert_eq!(font_size(60.), 15.);
+        assert_eq!(font_size(0., true), 38.);
+        assert_eq!(font_size(60., true), 28.);
     }
     #[test]
     fn anchor_preserves_large_global_coordinates_across_render_rebases() {
@@ -416,6 +616,82 @@ mod tests {
         );
         let second = anchor(p, &frame).unwrap();
         assert!((first - second - Vec3::new(128., 0., -128.)).length() < 0.0001);
-        assert!((first.y - 21.9).abs() < 0.00001);
+        assert!((first.y - (20. + crate::dialogue::names::ANCHOR_HEIGHT)).abs() < 0.00001);
+    }
+    #[test]
+    fn expanded_marker_prioritizes_ready_then_available_and_uses_committed_history() {
+        use crate::quest_journal::tests::{completed_introduction, fixture, set_journal};
+        use theia_core::quests::{catalog::EventKey, journal::Status};
+        let (mut state, profile) = fixture();
+        let id = |s: &str| theia_core::content::ContentId::new(s).unwrap();
+        assert_eq!(
+            observed_journal(&state, &profile).unwrap().0,
+            Phase::Available
+        );
+        state.quest_journal_pending = true;
+        assert_eq!(
+            observed_journal(&state, &profile).unwrap().0,
+            Phase::Available,
+            "Pending acceptance is not committed progress"
+        );
+        state.quest_journal_pending = false;
+        let mut journal = completed_introduction(&profile);
+        set_journal(&mut state, journal.clone());
+        assert_eq!(
+            observed_journal(&state, &profile).unwrap().0,
+            Phase::Available,
+            "Completed first quest unlocks the next offer"
+        );
+        let quest = id("theia.dev.quest-follow-up");
+        let npc = id("theia.dev.guide");
+        journal = journal
+            .propose_accept(profile.catalog(), &quest, &npc)
+            .unwrap()
+            .journal;
+        set_journal(&mut state, journal.clone());
+        assert_eq!(observed_journal(&state, &profile).unwrap().0, Phase::Active);
+        for _ in 0..3 {
+            journal = journal
+                .propose_trusted_event(
+                    profile.catalog(),
+                    &EventKey::Kill(id("theia.dev.training-creature")),
+                )
+                .unwrap()
+                .journal;
+        }
+        journal = journal
+            .propose_trusted_event(
+                profile.catalog(),
+                &EventKey::NpcInteraction {
+                    npc: npc.clone(),
+                    interaction: id("theia.dev.interaction.training"),
+                },
+            )
+            .unwrap()
+            .journal;
+        set_journal(&mut state, journal.clone());
+        assert_eq!(observed_journal(&state, &profile).unwrap().0, Phase::Ready);
+        journal = journal
+            .propose_turn_in(profile.catalog(), &quest, &npc, 5)
+            .unwrap()
+            .journal;
+        set_journal(&mut state, journal);
+        assert_eq!(
+            state
+                .quest_journal
+                .as_ref()
+                .unwrap()
+                .journal
+                .progress(&quest)
+                .unwrap()
+                .status(),
+            Status::Completed
+        );
+        assert_eq!(
+            observed_journal(&state, &profile).unwrap().0,
+            Phase::TurnedIn
+        );
+        state.quest_journal.as_mut().unwrap().profile_hash = [9; 32];
+        assert!(observed_journal(&state, &profile).is_none());
     }
 }

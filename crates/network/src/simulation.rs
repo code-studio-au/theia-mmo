@@ -2,8 +2,13 @@
 mod classic;
 pub mod combat;
 pub mod creatures;
+#[cfg(test)]
+mod development_tests;
 pub mod dialogue;
 mod dodging;
+mod follow;
+mod parties;
+pub mod population;
 pub mod progression;
 pub mod quest_journal;
 pub mod quests;
@@ -26,15 +31,24 @@ pub struct World {
     rate: TickRate,
     tick: u64,
     next_id: u64,
+    has_admitted_players: bool,
     movement_recoveries: u64,
     players: BTreeMap<u64, Actor>,
     targets: BTreeMap<u64, crate::targeting::Target>,
     targeting_enabled: bool,
+    local_chat: Option<theia_core::chat::Area>,
+    parties: Option<theia_core::party::Authority>,
     dialogue: Option<dialogue::Authority>,
+    follow: follow::Authority,
     vendor: Option<std::sync::Arc<crate::vendor_wire::Profile>>,
     combat: Option<combat::Authority>,
     patrol: Option<creatures::Patrol>,
     patrol_identity: Option<[u8; 32]>,
+    population: Option<crate::navigation::spawn_preparation::Prepared>,
+    population_binding: Option<population::Binding>,
+    population_motion: Vec<population::motion::Actor>,
+    population_navigation: Option<crate::navigation::worker::Worker>,
+    quest_journal: Option<std::sync::Arc<crate::quest_journal::Profile>>,
     quest: Option<std::sync::Arc<crate::quest_wire::Profile>>,
     quest_lifecycle: Option<std::sync::Arc<crate::quest_lifecycle_wire::Profile>>,
     progression: Option<std::sync::Arc<crate::progression_wire::Profile>>,
@@ -49,6 +63,7 @@ pub struct World {
     tour_started: Option<std::time::Instant>,
     predicted: bool,
     classic: bool,
+    development_speed_enabled: bool,
     dodge: Option<std::sync::Arc<crate::dodging::Profile>>,
 }
 struct Actor {
@@ -59,6 +74,7 @@ struct Actor {
     input_tick: u64,
     body: crate::kinematic::Motion,
     spawn: LocalPosition,
+    development_home: Option<GlobalPosition>,
     ready: Option<std::collections::BTreeSet<theia_core::coordinates::ChunkId>>,
     ready_sequence: u64,
     commands: Option<crate::commands::Timeline>,
@@ -87,15 +103,24 @@ impl Default for World {
             rate: TickRate::default(),
             tick: 0,
             next_id: 0,
+            has_admitted_players: false,
             movement_recoveries: 0,
             players: BTreeMap::new(),
             targets: BTreeMap::new(),
             targeting_enabled: false,
+            local_chat: None,
+            parties: None,
             dialogue: None,
+            follow: follow::Authority::default(),
             vendor: None,
             combat: None,
             patrol: None,
             patrol_identity: None,
+            population: None,
+            population_binding: None,
+            population_motion: Vec::new(),
+            population_navigation: None,
+            quest_journal: None,
             quest: None,
             quest_lifecycle: None,
             progression: None,
@@ -110,6 +135,7 @@ impl Default for World {
             tour_started: None,
             predicted: false,
             classic: false,
+            development_speed_enabled: false,
             dodge: None,
         }
     }
@@ -121,6 +147,9 @@ impl World {
         }
         self.predicted = true;
         Ok(())
+    }
+    pub(crate) fn has_players(&self) -> bool {
+        !self.players.is_empty()
     }
     pub fn prediction_enabled(&self) -> bool {
         self.predicted
@@ -193,14 +222,94 @@ impl World {
             ..Self::default()
         })
     }
+    pub fn enable_development_speed(&mut self) -> crate::Result<()> {
+        if !self.classic
+            || !self.predicted
+            || self.tick != 0
+            || !self.players.is_empty()
+            || self.dev_tour
+            || self.procedural.as_ref().is_none_or(|r| {
+                !matches!(
+                    r.source,
+                    crate::procedural::Source::Saved(_) | crate::procedural::Source::Procedural
+                )
+            })
+        {
+            return Err(
+                "Developer speed requires an inactive local Classic terrain walkthrough".into(),
+            );
+        }
+        self.development_speed_enabled = true;
+        Ok(())
+    }
+    pub fn development_speed_enabled(&self) -> bool {
+        self.development_speed_enabled
+    }
+    /// Trusted owner operation; clients have no request message for this.
+    pub fn set_development_speed(&mut self, speed: u8) -> bool {
+        if !self.development_speed_enabled || !crate::development::valid(speed) {
+            return false;
+        }
+        self.procedural.as_mut().unwrap().speed = f32::from(speed);
+        true
+    }
     pub fn procedural(&self) -> Option<&crate::procedural::Runtime> {
         self.procedural.as_ref()
+    }
+    /// Reset the single local walkthrough actor to its original admitted spawn.
+    /// Destination collision is prepared by the existing teleport owner pump.
+    pub fn reset_development_position(&mut self) -> bool {
+        if !self.development_speed_enabled || self.players.len() != 1 {
+            return false;
+        }
+        let (&id, actor) = self.players.iter().next().unwrap();
+        let Some(home) = actor.development_home else {
+            return false;
+        };
+        let [x, _, z] = home.metres();
+        if self.terrain_teleport == Some((id, [x, z])) {
+            return true;
+        }
+        self.teleport_development(id, [x, z])
+    }
+
+    fn recover_development_fall(&mut self) {
+        if !self.development_speed_enabled || self.terrain_teleport.is_some() {
+            return;
+        }
+        // Only enabled for saved/generated single-surface terrain walkthroughs.
+        // Authored caves/buildings and ordinary/account gameplay are excluded.
+        let below = self.players.values().any(|actor| {
+            let Some(patch) = self
+                .procedural
+                .as_ref()
+                .and_then(|r| r.patch(actor.position))
+            else {
+                return false;
+            };
+            let Some(local) = patch.frame.to_local(actor.position) else {
+                return false;
+            };
+            let [x, y, z] = local.metres();
+            patch
+                .scene
+                .ground([x, z], 2048.)
+                .is_some_and(|(ground, _)| y - crate::world::PAWN_Y < ground - 2.)
+        });
+        if below && self.reset_development_position() {
+            self.movement_recoveries += 1;
+            eprintln!("development_fall_recovery queued=true");
+        }
     }
     /// Trusted owner-side developer operation. No wire message can set coordinates.
     pub fn teleport_development(&mut self, id: u64, xz: [f64; 2]) -> bool {
         if self.procedural.is_none()
             || !self.players.contains_key(&id)
             || self.terrain_teleport.is_some()
+            || self
+                .procedural
+                .as_ref()
+                .is_some_and(|r| !r.source.valid_spawn_xz(xz))
             || xz
                 .iter()
                 .any(|v| !v.is_finite() || !(1. ..=crate::procedural::SIDE - 1.).contains(v))
@@ -239,8 +348,9 @@ impl World {
         Ok(())
     }
     fn poll_terrain_inner(&mut self, additional: &[GlobalPosition]) {
+        self.recover_development_fall();
         if let Some(combat) = &mut self.combat {
-            combat.poll_pursuit();
+            combat.poll_pursuit(self.tick);
         }
         if self.dev_tour
             && let Some(&id) = self.players.keys().next()
@@ -275,6 +385,9 @@ impl World {
             }
             positions.extend_from_slice(additional);
             positions.extend(respawns);
+            if let Some(population) = &self.population {
+                positions.extend_from_slice(population.points());
+            }
             if let Some(patrol) = &self.patrol {
                 positions.push(patrol.home());
             }
@@ -363,6 +476,14 @@ impl World {
                 actor.input_tick = applied.fresh_tick;
                 actor.applied_sequence = applied.applied_sequence;
             }
+            if self
+                .terrain_teleport
+                .is_some_and(|(id, _)| id == actor.id.value())
+            {
+                actor.intent = Intent::default();
+                actor.body.reset(false);
+                continue;
+            }
             let request = actor.intent.dodge;
             let alive = self
                 .combat
@@ -437,6 +558,18 @@ impl World {
             intent.facing = None;
             let result = match movement {
                 crate::dodging::Movement::None => continue,
+                crate::dodging::Movement::Ordinary if self.classic => {
+                    intent.facing = actor.facing;
+                    crate::kinematic::advance_classic_development(
+                        &patch.scene,
+                        &mut actor.body,
+                        start,
+                        intent,
+                        self.rate,
+                        Some(&coverage),
+                        terrain.speed,
+                    )
+                }
                 crate::dodging::Movement::Ordinary => crate::kinematic::advance_development(
                     &patch.scene,
                     &mut actor.body,
@@ -561,6 +694,8 @@ impl World {
             || !self.players.is_empty()
             || self.combat.is_some()
             || self.patrol_identity.is_some()
+            || self.population.is_some()
+            || self.parties.is_some()
         {
             return false;
         }
@@ -628,7 +763,12 @@ impl World {
             .collect();
         if ids.iter().any(|&id| {
             self.chunks.as_ref().map_or_else(
-                || !crate::procedural::contains(id),
+                || {
+                    self.procedural.as_ref().map_or_else(
+                        || !crate::procedural::contains(id),
+                        |runtime| !runtime.source.contains(id),
+                    )
+                },
                 |chunks| !chunks.residency().index().contains(id),
             )
         }) {
@@ -685,7 +825,35 @@ impl World {
             .ok_or("World has no chunk backend")?
             .activate(epoch, prepared, &actors)
     }
+    /// Explicit candidate profile: one authored chat area for this local world.
+    /// Names/admission and routing remain outside the fixed simulation step.
+    pub fn enable_local_chat(&mut self, area: theia_core::chat::Area) -> crate::Result<()> {
+        if self.tick != 0
+            || !self.players.is_empty()
+            || self.procedural.is_none()
+            || self.local_chat.is_some()
+            || self.dev_tour
+        {
+            return Err("Local chat requires an inactive normal procedural world".into());
+        }
+        self.local_chat = Some(area);
+        Ok(())
+    }
+    pub fn local_chat_area(&self) -> Option<theia_core::chat::Area> {
+        self.local_chat
+    }
     pub fn identity(&self) -> [u8; 32] {
+        let identity = self.identity_without_chat();
+        let identity = self.local_chat.map_or(identity, |area| {
+            crate::chat::profile_identity(identity, area)
+        });
+        if self.parties.is_some() {
+            parties::profile_identity(identity)
+        } else {
+            identity
+        }
+    }
+    fn identity_without_chat(&self) -> [u8; 32] {
         if let Some(terrain) = &self.procedural {
             let identity = terrain.source.identity();
             let identity = if self.targeting_enabled {
@@ -694,6 +862,14 @@ impl World {
                 identity
             };
             let identity = self.patrol_identity.unwrap_or(identity);
+            let identity = self
+                .population
+                .as_ref()
+                .map_or(identity, |p| p.profile_identity(identity));
+            let identity = self
+                .population_binding
+                .as_ref()
+                .map_or(identity, |d| d.profile_identity(identity));
             let identity = self
                 .combat
                 .as_ref()
@@ -711,9 +887,13 @@ impl World {
             let identity = self.quest_lifecycle.as_ref().map_or(identity, |p| {
                 crate::quest_lifecycle_wire::profile_identity(identity, p.hash())
             });
-            let identity = self.dialogue.as_ref().map_or(identity, |d| {
-                crate::dialogue::profile_identity(identity, d.profile.hash(), d.placement)
+            let identity = self.quest_journal.as_ref().map_or(identity, |p| {
+                crate::quest_journal::profile_identity(identity, p.hash())
             });
+            let identity = self
+                .dialogue
+                .as_ref()
+                .map_or(identity, |d| d.identity(identity));
             let identity = self.vendor.as_ref().map_or(identity, |v| {
                 crate::vendor_wire::profile_identity(identity, v.hash())
             });
@@ -749,15 +929,7 @@ impl World {
             return None;
         }
         let runtime = self.procedural.as_ref()?;
-        let offset = f64::from((slot - 1) % 4) * 2.;
-        let x = if runtime.spawn[0] + offset <= 15999. {
-            runtime.spawn[0] + offset
-        } else {
-            runtime.spawn[0] - offset
-        };
-        let z = runtime.spawn[1];
-        let requested = GlobalPosition::new([x, 0., z])?;
-        let mut p = runtime.patch(requested)?.try_spawn(x, z)?.metres();
+        let mut p = runtime.spawn_feet(usize::from(slot - 1))?.metres();
         p[1] += f64::from(crate::world::PAWN_Y);
         GlobalPosition::new(p)
     }
@@ -800,15 +972,19 @@ impl World {
         self.next_id = self.next_id.checked_add(1)?;
         let id = self.next_id;
         let x = ((id - 1) % 4) as f32 * 2.;
-        let spawn = if let Some(runtime) = &self.procedural {
-            let [x, _, z] = restored.map_or(
-                [runtime.spawn[0] + f64::from(x), 0., runtime.spawn[1]],
-                GlobalPosition::metres,
-            );
-            let patch = runtime.patch(GlobalPosition::new([x, 0., z]).unwrap())?;
-            let p = patch.try_spawn(x, z)?.metres();
-            // Spawn storage is unused for this backend; global truth is assigned below.
-            [0., (p[1] + f64::from(crate::world::PAWN_Y)) as f32, 0.]
+        let global_spawn = if let Some(position) = restored {
+            Some(position)
+        } else if let Some(runtime) = &self.procedural {
+            let mut p = runtime.spawn_feet((id - 1) as usize)?.metres();
+            p[1] += f64::from(crate::world::PAWN_Y);
+            Some(GlobalPosition::new(p)?)
+        } else {
+            None
+        };
+        let spawn = if let Some(position) = global_spawn {
+            // Local spawn storage is unused for this backend. Keep the already
+            // validated full global position instead of resolving XZ a second time.
+            [0., position.metres()[1] as f32, 0.]
         } else if let Some(chunks) = &self.chunks {
             let [x, y, z] = chunks.spawn((id - 1) as usize).metres();
             [x, y + crate::world::PAWN_Y, z]
@@ -852,24 +1028,26 @@ impl World {
                 body: crate::kinematic::Motion::default(),
                 spawn: LocalPosition::new([spawn[0], spawn[1] - crate::world::PAWN_Y, spawn[2]])
                     .expect("Validated capsule spawn"),
+                development_home: global_spawn,
             },
         );
-        if let Some(position) = restored {
+        if let Some(position) = global_spawn {
             self.players.get_mut(&id).unwrap().position = position;
-        } else if let Some(runtime) = &self.procedural {
-            let x = runtime.spawn[0] + f64::from(x);
-            let z = runtime.spawn[1];
-            let mut p = runtime
-                .patch(GlobalPosition::new([x, 0., z]).unwrap())?
-                .try_spawn(x, z)?
-                .metres();
-            p[1] += f64::from(crate::world::PAWN_Y);
-            self.players.get_mut(&id).unwrap().position = GlobalPosition::new(p)?;
         }
         if !self.initialize_player_life(id) {
             self.players.remove(&id);
+            self.follow.leave(id);
             return None;
         }
+        if let Some(parties) = &mut self.parties {
+            parties
+                .admit(EntityKey {
+                    epoch: self.epoch,
+                    entity: EntityId::new(id).unwrap(),
+                })
+                .expect("Party capacity and incarnation match admitted World actors");
+        }
+        self.has_admitted_players = true;
         Some(id)
     }
     /// Trusted developer placement on prepared graybox geometry, before admission.
@@ -878,6 +1056,7 @@ impl World {
         if self.tick != 0
             || !self.players.is_empty()
             || self.combat.is_some()
+            || self.population.is_some()
             || self.targets.len() >= crate::targeting::MAX_TARGETS
         {
             return Err(
@@ -895,10 +1074,22 @@ impl World {
         let patch = runtime
             .patch(focus)
             .ok_or("Target collision is not prepared")?;
-        let mut position = patch
+        let feet = patch
             .try_spawn(xz[0], xz[1])
-            .ok_or("Target has no supported placement")?
-            .metres();
+            .ok_or("Target has no supported placement")?;
+        self.spawn_prepared_target(feet)
+    }
+    /// Trusted, already collision-validated feet; preserve the selected floor.
+    fn spawn_prepared_target(&mut self, feet: GlobalPosition) -> crate::Result<EntityKey> {
+        if self.tick != 0
+            || !self.players.is_empty()
+            || self.combat.is_some()
+            || self.population.is_some()
+            || self.targets.len() >= crate::targeting::MAX_TARGETS
+        {
+            return Err("Targets require inactive world and available target budget".into());
+        }
+        let mut position = feet.metres();
         position[1] += f64::from(crate::world::PAWN_Y);
         let position = GlobalPosition::new(position).ok_or("Invalid supported target position")?;
         let next_id = self
@@ -920,23 +1111,54 @@ impl World {
     }
     /// The caller binds actor_id from its admitted session, never from payload data.
     pub fn select_target(&mut self, actor_id: u64, target: Option<EntityKey>) -> bool {
-        let Some(actor) = self.players.get_mut(&actor_id) else {
+        if !self.players.contains_key(&actor_id)
+            || target.is_some_and(|key| !self.valid_selection(actor_id, key, true))
+        {
             return false;
-        };
-        if let Some(key) = target {
-            let Some(entity) = self.targets.get(&key.entity.value()) else {
-                return false;
-            };
-            if key != entity.key || !crate::targeting::relevant(actor.position, entity.position) {
-                return false;
-            }
         }
+        let actor = self.players.get_mut(&actor_id).unwrap();
         let changed = actor.selected_target != target;
         actor.selected_target = target;
         if changed && let Some(combat) = &mut self.combat {
             combat.stop_autoattack(actor_id, self.tick);
         }
         true
+    }
+    /// Party-wide friendly selection is independent of spatial interest. This
+    /// grants no combat eligibility, positions or authority over another actor.
+    fn is_member_target(&self, actor: u64, key: EntityKey) -> bool {
+        self.entity_key(key.entity.value()) == Some(key)
+            && self.entity_key(actor) != Some(key)
+            && self.party_view(actor).is_some_and(|view| {
+                view.membership
+                    .party
+                    .is_some_and(|p| p.members.contains(&key))
+            })
+    }
+    fn valid_selection(&self, actor: u64, key: EntityKey, requested: bool) -> bool {
+        self.is_member_target(actor, key)
+            || self.targets.get(&key.entity.value()).is_some_and(|target| {
+                target.key == key
+                    && ((!requested && self.classic)
+                        || self.players.get(&actor).is_some_and(|owner| {
+                            crate::targeting::relevant(owner.position, target.position)
+                        }))
+            })
+    }
+    fn retire_invalid_selections(&mut self) {
+        let retired: Vec<_> = self
+            .players
+            .iter()
+            .filter_map(|(&id, actor)| {
+                actor
+                    .selected_target
+                    .filter(|key| !self.valid_selection(id, *key, false))
+                    .map(|_| id)
+            })
+            .collect();
+        for id in retired {
+            self.select_target(id, None);
+        }
     }
     pub fn remove_development_target(&mut self, key: EntityKey) -> bool {
         let patrol = self.patrol.as_ref().is_some_and(|p| p.key == key);
@@ -959,6 +1181,11 @@ impl World {
             return false;
         }
         self.targets.remove(&key.entity.value());
+        if let Some(parties) = &mut self.parties {
+            parties
+                .retain_mark_targets(|target| target != key)
+                .expect("Bounded party marker retirement");
+        }
         for actor in self.players.values_mut() {
             if actor.selected_target == Some(key) {
                 actor.selected_target = None;
@@ -970,7 +1197,12 @@ impl World {
     pub fn targeting_snapshot(&self, actor_id: u64) -> Option<crate::targeting::Snapshot> {
         let actor = self.players.get(&actor_id)?;
         Some(crate::targeting::Snapshot {
-            selected: actor.selected_target,
+            selected: actor
+                .selected_target
+                .filter(|key| !self.is_member_target(actor_id, *key)),
+            selected_member: actor
+                .selected_target
+                .filter(|key| self.is_member_target(actor_id, *key)),
             targets: self
                 .targets
                 .values()
@@ -983,6 +1215,14 @@ impl World {
         })
     }
     pub fn leave(&mut self, id: u64) {
+        if let Some(key) = self.entity_key(id)
+            && let Some(parties) = &mut self.parties
+        {
+            parties
+                .retire(key)
+                .expect("Admitted party incarnation retirement");
+        }
+        self.follow.leave(id);
         self.players.remove(&id);
         if let Some(dialogue) = &mut self.dialogue {
             dialogue.leave(id);
@@ -990,6 +1230,7 @@ impl World {
         if let Some(combat) = &mut self.combat {
             combat.leave(id, self.rate);
         }
+        self.retire_invalid_selections();
     }
     pub fn input(&mut self, id: u64, input: Input) -> bool {
         if !self.player_alive(id) {
@@ -1024,7 +1265,14 @@ impl World {
                 .collect()
         });
         let snapshot = self.step_movement();
+        if let Some(parties) = &mut self.parties {
+            parties
+                .advance(snapshot.tick)
+                .expect("Monotonic World party clock");
+        }
+        self.advance_creature_threat();
         self.advance_patrol();
+        self.advance_population_pursuit();
         self.advance_creature_credit();
         self.advance_creature_reset();
         if let Some(before) = before {
@@ -1033,20 +1281,10 @@ impl World {
         self.sync_patrol_life();
         self.advance_combat_membership();
         self.advance_creature_credit();
+        self.advance_follow();
         self.advance_dialogue();
-        if !self.targets.is_empty() {
-            for actor in self.players.values_mut() {
-                if actor.selected_target.is_some_and(|key| {
-                    self.targets.get(&key.entity.value()).is_none_or(|target| {
-                        target.key != key
-                            || (!self.classic
-                                && !crate::targeting::relevant(actor.position, target.position))
-                    })
-                }) {
-                    actor.selected_target = None;
-                }
-            }
-        }
+        self.retire_invalid_selections();
+        self.retire_invalid_marks();
         snapshot
     }
     fn step_movement(&mut self) -> Snapshot {

@@ -1,0 +1,198 @@
+window {
+  color: #fff2d7;
+  background: #071827;
+}
+.app-header {
+  border-bottom: 1px solid #98652d;
+  background-image: linear-gradient(to bottom, #030c17, #071f33 75%, #0d2941);
+  padding: 9px 0 5px;
+}
+.header-ornament {
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+.navigation {
+  background-image: linear-gradient(to bottom, rgba(8, 12, 17, 0.84), rgba(7, 22, 34, 0.88));
+  border-top: 1px solid #825c33;
+  border-bottom: 1px solid #825c33;
+}
+button {
+  color: #fff0d1;
+  font: 700 16px serif;
+  text-shadow: 0 1px 2px #000;
+  box-shadow: none;
+  background: transparent;
+  border: 1px solid transparent;
+}
+button:hover {
+  color: #fff7e8;
+}
+button:focus {
+  outline-color: #f7d289;
+  outline-style: dashed;
+  outline-width: 1px;
+  outline-offset: -7px;
+}
+button:disabled {
+  color: #b4bac1;
+}
+button drawingarea {
+  color: #ffdf9c;
+}
+button:disabled drawingarea {
+  color: #a0aab5;
+}
+button.nav {
+  min-height: 49px;
+  padding: 2px 8px;
+  font: 700 19px serif;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+button.nav:hover {
+  background-color: rgba(255, 199, 107, 0.09);
+}
+button.nav-active {
+  color: #fff8e9;
+}
+button.window-control {
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+}
+button.window-control:hover {
+  background-color: rgba(255, 212, 134, 0.12);
+}
+button.window-control:hover drawingarea {
+  color: #ffffff;
+}
+
+.surface,
+.status-card {
+  background-image: linear-gradient(to bottom, #0a263e, #041525 76%, #071c2d);
+  border: 15px solid transparent;
+  padding: 4px 7px 6px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 7, 15, 0.8);
+}
+.surface {
+  border-width: 18px;
+}
+.status-card {
+  min-height: 82px;
+  padding: 3px 11px;
+}
+.status-icon {
+  color: #ffda88;
+}
+.footer {
+  padding: 11px 17px 9px;
+  border-top: 1px solid #644626;
+  background-image: linear-gradient(to bottom, #0a2235, #030f1c);
+}
+.footer-line {
+  border-top: 1px solid #634925;
+  padding: 7px 18px 2px;
+}
+label.heading {
+  font: 700 28px serif;
+  color: #ffe3a3;
+  text-shadow: 0 2px 2px #000;
+}
+label.heading-star {
+  color: #f7cb75;
+  font: 700 20px serif;
+}
+label.section {
+  font: 700 21px serif;
+  color: #fff0ce;
+  text-shadow: 0 1px 2px #000;
+}
+label.detail {
+  font: 16px serif;
+  color: #e8dfcd;
+}
+label.news-title {
+  font: 700 19px serif;
+  color: #ffebba;
+}
+label.server-label, label.version, label.progress-value {
+  font: 700 15px serif;
+  color: #fff0d3;
+}
+label.online {
+  color: #80ff62;
+}
+label.unavailable {
+  color: #efaa98;
+}
+.login-dot {
+  min-width: 10px;
+  min-height: 10px;
+  border-radius: 8px;
+  border: 1px solid #95a4ad;
+  background-image: radial-gradient(circle at 35% 28%, #cad5de, #627482 70%);
+}
+.login-dot.online {
+  border-color: #86ef4d;
+  background-image: radial-gradient(circle at 35% 28%, #d6ffa3, #4ac821 55%, #227c12);
+  box-shadow: 0 0 7px rgba(86, 232, 45, 0.5);
+}
+.login-dot.unavailable {
+  border-color: #c68b75;
+  background-image: radial-gradient(circle at 35% 28%, #f6bb9d, #985747 65%, #5c3028);
+}
+.news-story {
+  padding: 3px 0;
+  border: 0;
+}
+.news-story:hover {
+  background-color: rgba(213, 167, 87, 0.11);
+}
+.news-image {
+  border: 1px solid #97733c;
+  padding: 2px;
+  border-radius: 3px;
+}
+button.action {
+  min-height: 32px;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  padding: 4px 11px;
+}
+button.action:hover {
+  box-shadow: inset 0 0 11px rgba(250, 193, 107, 0.2);
+}
+button.action:disabled {
+  color: #a3a9ae;
+  opacity: 0.54;
+}
+button.primary {
+  min-height: 93px;
+  min-width: 298px;
+  font: 700 32px serif;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  color: #fff8e9;
+  padding: 4px 16px;
+  text-shadow: 0 2px 3px #020e1a;
+}
+button.primary:disabled {
+  color: #bec7d1;
+  opacity: 0.86;
+}
+progressbar trough {
+  background: #040e19;
+  border: 1px solid #c39c58;
+  min-height: 12px;
+  border-radius: 7px;
+}
+progressbar progress {
+  background-image: linear-gradient(to bottom, #d5fcff, #32d4ff 37%, #0370ce 68%, #1ba4f2);
+  border-radius: 7px;
+}
+separator {
+  min-height: 1px;
+  background-image: linear-gradient(to right, #9e7339, #6a512f 70%, rgba(68, 45, 24, 0.3));
+}

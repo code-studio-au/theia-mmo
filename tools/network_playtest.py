@@ -1,0 +1,325 @@
+#!/usr/bin/env python3
+"""Managed local Classic network playtest: one real client per enabled test player."""
+import argparse
+from contextlib import ExitStack
+from dataclasses import asdict, dataclass
+import json
+import math
+import os
+from pathlib import Path
+import re
+import signal
+import sys
+import threading
+import subprocess
+import tempfile
+import time
+
+from launch_environment import client_environment
+from playtest_windows import work_area_options
+from launcher_owner import watch_owner
+from network_profile import Profile
+from udp_impairment import Relay
+
+MAX_SCENARIO_BYTES = 16 * 1024
+
+
+@dataclass(frozen=True)
+class Player:
+    client_id: int
+    feet: tuple[float, float, float]
+    network: Profile
+    controller: Path | None = None
+    route: Path | None = None
+
+
+@dataclass(frozen=True)
+class Scenario:
+    identity: tuple[int, ...]
+    players: tuple[Player, ...]
+
+    @classmethod
+    def load(cls, path):
+        with Path(path).open('rb') as source:
+            data = source.read(MAX_SCENARIO_BYTES + 1)
+        if len(data) > MAX_SCENARIO_BYTES:
+            raise ValueError('Test scenario exceeds 16 KiB')
+        document = json.loads(data)
+        if (not isinstance(document, dict) or set(document) != {'schema', 'world_identity', 'players'}
+                or type(document['schema']) is not int or document['schema'] != 1):
+            raise ValueError('Expected test scenario schema 1')
+        identity = document['world_identity']
+        if (not isinstance(identity, list) or len(identity) != 32
+                or any(type(b) is not int or not 0 <= b <= 255 for b in identity)):
+            raise ValueError('Expected 32-byte authored world identity')
+        entries = document['players']
+        if not isinstance(entries, list) or not 1 <= len(entries) <= 4:
+            raise ValueError('A test scenario supports one to four players')
+        players, ids = [], set()
+        for entry in entries:
+            if (not isinstance(entry, dict) or set(entry) - {'client_id', 'feet', 'enabled', 'network', 'controller', 'route'}
+                    or not {'client_id', 'feet'} <= set(entry)):
+                raise ValueError('Unsupported test player fields')
+            client_id, feet = entry['client_id'], entry['feet']
+            if type(client_id) is not int or client_id not in (1, 2, 3, 4) or client_id in ids:
+                raise ValueError('Test player IDs must be distinct IDs from 1 to 4')
+            ids.add(client_id)
+            if (not isinstance(feet, list) or len(feet) != 3
+                    or any(type(v) not in (int, float) or (type(v) is float and not math.isfinite(v)) for v in feet)
+                    or not all(0 <= feet[i] < 16000 for i in (0, 2)) or abs(feet[1]) > 2048):
+                raise ValueError('Expected finite XYZ feet in the supported authored world domain')
+            enabled = entry.get('enabled', True)
+            if type(enabled) is not bool:
+                raise ValueError('Test player enabled must be a boolean')
+            profile = entry.get('network', {})
+            if not isinstance(profile, dict) or set(profile) - {'delay_ms', 'jitter_ms', 'loss_percent', 'seed', 'outages'}:
+                raise ValueError('Unsupported network profile fields')
+            profile = dict(profile)
+            if 'outages' in profile:
+                windows = profile['outages']
+                if not isinstance(windows, list) or any(not isinstance(window, list) for window in windows):
+                    raise ValueError('Outages must be arrays of [start_ms, duration_ms]')
+                profile['outages'] = tuple(tuple(window) for window in windows)
+            network = Profile(**profile)
+            def script_path(field):
+                value = entry.get(field)
+                if value is None:
+                    return None
+                if not isinstance(value, str) or not value or len(value) > 1024:
+                    raise ValueError(f'{field} must be a script path or null for manual input')
+                script = (Path(path).resolve().parent / value).resolve()
+                if enabled and (not script.is_file() or script.stat().st_size > 32 * 1024):
+                    raise ValueError(f'{field} script is missing or exceeds 32 KiB')
+                return script
+            controller, route = script_path('controller'), script_path('route')
+            if controller is not None and route is not None:
+                raise ValueError('Choose a step controller or a checked route, not both')
+            if enabled:
+                players.append(Player(client_id, tuple(feet), network, controller, route))
+        if not players:
+            raise ValueError('Enable at least one test player')
+        return cls(tuple(identity), tuple(sorted(players, key=lambda player: player.client_id)))
+
+    def server_profile(self):
+        return dict(schema=1, world_identity=self.identity,
+                    players=[dict(client_id=p.client_id, feet=p.feet) for p in self.players])
+
+
+def stop(process, server=False):
+    if process.poll() is None:
+        if server and os.name != 'nt':
+            process.send_signal(signal.SIGINT)
+        else:
+            process.terminate()
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+
+
+def run(scenario_path, world, players, binaries, output, *, duration=None, window_size=None, stop_requested=lambda: False,
+        population_config=None, combat_catalog=None, creature_asset=None, player_life=False):
+    if stop_requested():
+        return
+    scenario = Scenario.load(scenario_path)
+    if duration is not None and (not math.isfinite(duration) or not 0 < duration <= 3600):
+        raise ValueError('Duration must be positive and at most one hour')
+    window_size = window_size or ('3440x1440' if len(scenario.players) == 1 else ('1720x1440' if len(scenario.players) == 2 else '1720x720'))
+    size = re.fullmatch(r'(\d+)x(\d+)', window_size)
+    if not size or not (640 <= int(size[1]) <= 7680 and 480 <= int(size[2]) <= 4320):
+        raise ValueError('Window size must be within 640x480..7680x4320')
+    world, players, binaries, output = (Path(p).resolve() for p in (world, players, binaries, output))
+    suffix = '.exe' if os.name == 'nt' else ''
+    server_binary, client_binary = (binaries / (name + suffix) for name in ('theia-server', 'theia-client'))
+    for path in (server_binary, client_binary, players / 'character.glb', world / 'authored.world.json'):
+        if not path.is_file():
+            raise ValueError(f'Missing test dependency: {path}')
+    if output.exists():
+        raise ValueError('Choose a fresh playtest output directory')
+    if population_config is None and (combat_catalog is not None or creature_asset is not None or player_life):
+        raise ValueError('Population combat and creature presentation require a population configuration')
+    if population_config is not None:
+        population_config = Path(population_config).resolve()
+        combat_catalog = Path(combat_catalog or Path(__file__).resolve().parent.parent /
+                              'content/gameplay/development-abilities.json').resolve()
+        for path in (population_config, combat_catalog):
+            if not path.is_file():
+                raise ValueError(f'Missing population dependency: {path}')
+    if creature_asset is not None:
+        creature_asset = Path(creature_asset).resolve()
+        if not creature_asset.is_file():
+            raise ValueError(f'Missing creature presentation: {creature_asset}')
+    environment = client_environment(os.environ)
+    # Ordinary manual controls until a controller is explicitly assigned.
+    for name in list(environment):
+        if name.startswith('THEIA_GRAYBOX_AUTOPLAY') or name == 'THEIA_GRAYBOX_CONTINENT':
+            del environment[name]
+    scene = ['--authored-world', str(world), '--prediction', '--classic']
+    checked = subprocess.run([str(client_binary), *scene, '--configuration-report'],
+                             env=environment, capture_output=True, text=True, timeout=30)
+    if checked.returncode:
+        raise ValueError(f'Client content validation failed: {checked.stderr.strip()}')
+    start = checked.stdout.find('{')
+    configuration = json.loads(checked.stdout[start:]) if start >= 0 else {}
+    if configuration.get('classic_source') != list(scenario.identity):
+        raise ValueError('Test scenario belongs to a different authored world')
+    # Bind player starts to the static world, then independently validate the
+    # complete population/combat identity before starting any owned child.
+    if population_config is not None:
+        scene.extend(['--population-config', str(population_config), '--combat-catalog', str(combat_catalog)])
+        if player_life:
+            for flag, name in [('--character-stats', 'character-stats.json'),
+                               ('--creature-retaliation', 'retaliation.json'),
+                               ('--player-respawn', 'player-respawn.json')]:
+                path = population_config.parent / name
+                if not path.is_file():
+                    raise ValueError(f'Missing population player-life dependency: {path}')
+                scene.extend([flag, str(path)])
+            scene.append('--public-avatar-life')
+        checked = subprocess.run([str(client_binary), *scene,
+                                  *(['--creature-asset', str(creature_asset)] if creature_asset else []),
+                                  '--configuration-report'], env=environment,
+                                 capture_output=True, text=True, timeout=30)
+        if checked.returncode:
+            raise ValueError(f'Population validation failed: {checked.stderr.strip()}')
+        start = checked.stdout.find('{')
+        configuration = json.loads(checked.stdout[start:]) if start >= 0 else {}
+        if player_life and any(not isinstance(configuration.get(name), list) or len(configuration[name]) != 32
+                               for name in ('player_life_profile', 'public_avatar_life_profile')):
+            raise ValueError('Client did not validate population player-life profiles')
+        population = configuration.get('population')
+        if (not isinstance(population, dict) or type(population.get('count')) is not int
+                or not 1 <= population['count'] <= 16):
+            raise ValueError('Client did not validate a bounded population')
+    scripts = {('--test-controller', p.controller) for p in scenario.players if p.controller is not None}
+    scripts.update(('--test-route', p.route) for p in scenario.players if p.route is not None)
+    for flag, script in scripts:
+        checked_script = subprocess.run([str(client_binary), *scene, flag, str(script), '--configuration-report'],
+                                        env=environment, capture_output=True, text=True, timeout=30)
+        if checked_script.returncode:
+            raise ValueError(f'Invalid test controller: {checked_script.stderr.strip()}')
+    if stop_requested():
+        return
+    output.mkdir(parents=True, exist_ok=False)
+    (output / 'server-players.json').write_text(json.dumps(scenario.server_profile(), indent=2) + '\n')
+    (output / 'client-configuration.json').write_text(json.dumps(configuration, indent=2) + '\n')
+    processes, relays = [], []
+    launched_ids = set()
+    reason = 'startup failure'
+    # Stop file, private owner EOF, Ctrl-C and CLI SIGTERM all clean up children.
+    stop_file = output / 'stop'
+    cleanup_errors = []
+    def cleanup(action, *args, **kwargs):
+        try:
+            action(*args, **kwargs)
+        except Exception as error:
+            cleanup_errors.append(str(error))
+    try:
+        with ExitStack() as files:
+            tickets = files.enter_context(tempfile.TemporaryDirectory(prefix='tickets-', dir=output))
+            for player in scenario.players:
+                relays.append(Relay(player.network))
+                files.callback(cleanup, relays[-1].close)
+            endpoints = ','.join(f'{r.address[0]}:{r.address[1]}' for r in relays)
+            server_log = output / 'server.log'
+            server = subprocess.Popen([str(server_binary), '127.0.0.1:0', str(output / 'unused.der'),
+                                       *scene, '--renet-tickets', tickets, '--test-players', str(output / 'server-players.json'),
+                                       '--dev-relays', endpoints], env=environment,
+                                      stdout=files.enter_context(server_log.open('w')), stderr=subprocess.STDOUT)
+            processes.append(server)
+            files.callback(cleanup, stop, server, server=True)
+            deadline = time.monotonic() + 30
+            while True:
+                if stop_file.exists() or stop_requested():
+                    reason = 'stop requested during startup'
+                    return
+                if server.poll() is not None:
+                    raise RuntimeError(f'Test server exited; see {server_log}')
+                found = re.search(r'listening=(127\.0\.0\.1):(\d+) local_tickets=', server_log.read_text())
+                if found:
+                    backend = (found[1], int(found[2]))
+                    break
+                if time.monotonic() >= deadline:
+                    raise TimeoutError('Test server startup timed out')
+                time.sleep(.02)
+            window_area = work_area_options()
+            for view_index, (player, relay) in enumerate(zip(scenario.players, relays), 1):
+                if stop_file.exists() or stop_requested():
+                    reason = "stop requested during client startup"
+                    return
+                relay.start(backend)
+                processes.append(subprocess.Popen([str(client_binary), *scene, '--window-size', window_size,
+                    '--test-window', f'{view_index}/{len(scenario.players)}', *window_area,
+                    '--player-assets', str(players), *(['--creature-asset', str(creature_asset)] if creature_asset else []), *(['--test-controller', str(player.controller)] if player.controller else []), *(['--test-route', str(player.route)] if player.route else []), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
+                    str(Path(tickets) / f'client-{player.client_id}.token')], env=environment,
+                    stdout=files.enter_context((output / f'client-{player.client_id}.log').open('w')), stderr=subprocess.STDOUT))
+                files.callback(cleanup, stop, processes[-1])
+                launched_ids.add(player.client_id)
+            started = time.monotonic()
+            print(f'Launching network playtest: {len(scenario.players)} clients; write {stop_file} or press Ctrl-C to stop.', flush=True)
+            while True:
+                exited = [p for p in processes if p.poll() is not None]
+                if exited:
+                    if any(p.returncode != 0 for p in exited):
+                        raise RuntimeError(f'A playtest process failed; see {output}')
+                    reason = 'a playtest window closed'
+                    break
+                if stop_file.exists() or stop_requested():
+                    reason = 'stop requested'
+                    break
+                if duration is not None and time.monotonic() - started >= duration:
+                    reason = 'duration reached'
+                    break
+                if any(r.error is not None for r in relays):
+                    raise RuntimeError('A test connection relay failed')
+                time.sleep(.05)
+    except KeyboardInterrupt:
+        reason = 'interrupted'
+    except Exception:
+        reason = 'failed'
+        raise
+    finally:
+        summary = dict(reason=reason, cleanup_errors=cleanup_errors, population=configuration.get('population'),
+                       player_life=player_life,
+                       player_life_profile=configuration.get('player_life_profile'),
+                       public_avatar_life_profile=configuration.get('public_avatar_life_profile'),
+                       creature_appearance=configuration.get('creature_appearance', False),
+                       creature_asset=str(creature_asset) if creature_asset else None,
+                       clients=[dict(client_id=p.client_id, started=p.client_id in launched_ids, network=asdict(p.network),
+                       added_base_rtt_ms=p.network.added_rtt_ms, controller=str(p.controller) if p.controller else None, route=str(p.route) if p.route else None, relay=r.stats)
+                       for p, r in zip(scenario.players, relays)],
+                       scope='Local encrypted development tickets; optional bounded movement controllers; no account persistence or scripted combat')
+        (output / 'session.json').write_text(json.dumps(summary, indent=2) + '\n')
+        if cleanup_errors:
+            raise RuntimeError('Playtest cleanup failed: ' + '; '.join(cleanup_errors))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--scenario', type=Path, required=True)
+    parser.add_argument('--world', type=Path, required=True)
+    parser.add_argument('--players', type=Path, required=True)
+    parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
+    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--duration', type=float)
+    parser.add_argument('--population-config', type=Path)
+    parser.add_argument('--combat-catalog', type=Path)
+    parser.add_argument('--creature-asset', type=Path)
+    parser.add_argument('--player-life', action='store_true', help='Use frozen population player-life files beside the population configuration')
+    parser.add_argument('--window-size')
+    parser.add_argument('--stop-on-stdin-eof', action='store_true', help='Stop owned children when the launching editor closes its stdin pipe')
+    args = parser.parse_args()
+    def terminate(_signal, _frame):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, terminate)
+    stopped = threading.Event()
+    if args.stop_on_stdin_eof:
+        threading.Thread(target=watch_owner, args=(sys.stdin.buffer, stopped), daemon=True).start()
+    run(args.scenario, args.world, args.players, args.binaries, args.output,
+        duration=args.duration, window_size=args.window_size, stop_requested=stopped.is_set,
+        population_config=args.population_config, combat_catalog=args.combat_catalog, creature_asset=args.creature_asset, player_life=args.player_life)
+
+
+if __name__ == '__main__':
+    main()
