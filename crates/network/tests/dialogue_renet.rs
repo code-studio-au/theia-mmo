@@ -13,7 +13,7 @@ use std::{
 use theia_core::{content::ContentId, coordinates::ChunkId};
 use theia_network::{
     client::State,
-    dialogue::{Action, Profile, Rejection},
+    dialogue::{Action, Guide, Profile, Rejection},
     renet_runtime::{
         self as net,
         dialogue::{Client, Intent as DialogueIntent},
@@ -152,6 +152,17 @@ impl Peer {
 fn id(s: &str) -> ContentId {
     ContentId::new(s).unwrap()
 }
+fn in_contact_range(state: &State, guide: Guide) -> bool {
+    let Some((snapshot, actor)) = state.snapshot.as_ref().zip(state.id) else {
+        return false;
+    };
+    snapshot
+        .players
+        .iter()
+        .find(|player| player.id == actor)
+        .and_then(|player| snapshot.global_position(player))
+        .is_some_and(|position| theia_network::dialogue::in_range(position, guide.position))
+}
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_clients_keep_independent_dialogue_and_acknowledge_refusals_and_walkaway() {
     let profile = Arc::new(Profile::from_json(DATA).unwrap());
@@ -182,6 +193,7 @@ async fn encrypted_clients_keep_independent_dialogue_and_acknowledge_refusals_an
             && s.guide.as_ref().is_some_and(|p| p.guide == Some(guide))
             && s.chunk_ack.is_some()
             && s.snapshot.as_ref().is_some_and(|v| v.players.len() == 2)
+            && in_contact_range(s, guide)
     };
     let initial_a = a.until(ready).await;
     let initial_b = b.until(ready).await;
@@ -396,14 +408,15 @@ async fn encrypted_collection_keeps_exact_contacts_and_independent_sessions() {
         .unwrap(),
     );
     let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+    // Keep both contacts inside both spawn slots' range, independent of admission order.
     let contacts = world
         .spawn_placed_contacts(
             profile.clone(),
             vec![
-                (id("theia.dev.guide"), Placement::Horizontal([8063., 8000.])),
+                (id("theia.dev.guide"), Placement::Horizontal([8064., 8000.])),
                 (
                     id("theia.dev.steward"),
-                    Placement::Horizontal([8064., 8000.]),
+                    Placement::Horizontal([8065., 8000.]),
                 ),
             ],
         )
@@ -432,6 +445,8 @@ async fn encrypted_collection_keeps_exact_contacts_and_independent_sessions() {
                 .as_ref()
                 .is_some_and(|p| p.contacts == contacts && p.guide.is_none())
             && s.chunk_ack.is_some()
+            // Chunk readiness can precede falling into the actual 3D interaction range.
+            && contacts.iter().all(|contact| in_contact_range(s, contact.guide))
     };
     a.until(ready).await;
     b.until(ready).await;
