@@ -1,0 +1,75 @@
+name: Theia development host
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Verify AWS sign-in or provision the approved host
+        required: true
+        type: choice
+        options: [verify, deploy]
+        default: verify
+      ubuntu_ami_id:
+        description: Approved Ubuntu AMD64 AMI for deploy
+        type: string
+      availability_zone:
+        description: Approved Sydney availability zone for deploy
+        type: string
+      monthly_budget_usd:
+        description: Approved monthly budget in USD for deploy
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: theia-development-host
+  cancel-in-progress: false
+
+jobs:
+  host:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: theia-infrastructure
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: infrastructure/aws
+    env:
+      THEIA_AWS_ACCOUNT_ID: ${{ vars.THEIA_AWS_ACCOUNT_ID }}
+      THEIA_AWS_SESSION_NAME: theia-${{ github.run_id }}-${{ github.run_attempt }}
+      AWS_PAGER: ''
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: infrastructure/aws/.nvmrc
+          cache: npm
+          cache-dependency-path: infrastructure/aws/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
+      - run: npm run synth -- --quiet
+      - name: Sign in to AWS with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
+        with:
+          aws-region: ap-southeast-2
+          role-to-assume: arn:aws:iam::${{ vars.THEIA_AWS_ACCOUNT_ID }}:role/theia/TheiaDevelopmentDeployer
+          allowed-account-ids: ${{ vars.THEIA_AWS_ACCOUNT_ID }}
+          role-session-name: ${{ env.THEIA_AWS_SESSION_NAME }}
+          mask-aws-account-id: true
+      - name: Verify the AWS identity and template
+        run: bash bin/deploy-development-host.sh verify
+      - name: Provision the reviewed host
+        if: inputs.operation == 'deploy'
+        env:
+          THEIA_UBUNTU_AMI_ID: ${{ inputs.ubuntu_ami_id }}
+          THEIA_HOST_AZ: ${{ inputs.availability_zone }}
+          THEIA_MONTHLY_BUDGET_USD: ${{ inputs.monthly_budget_usd }}
+          THEIA_BUDGET_ALERT_EMAIL: ${{ secrets.THEIA_BUDGET_ALERT_EMAIL }}
+        run: bash bin/deploy-development-host.sh deploy

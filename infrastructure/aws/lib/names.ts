@@ -1,0 +1,12 @@
+export const REGION = 'ap-southeast-2';
+export const HOST_STACK = 'TheiaDevelopmentHost';
+export const IDENTITY_STACK = 'TheiaDeploymentIdentity';
+export const PROJECT = 'TheiaMMO';
+export const BUDGET_NAME = 'TheiaMMO-development';
+export const ROLE_PATH = '/theia/';
+export const HOST_ROLE = 'TheiaDevelopmentHostRuntime';
+export const HOST_PROFILE = 'TheiaDevelopmentHostProfile';
+export const DEPLOY_ROLE = 'TheiaDevelopmentDeployer';
+export const EXECUTION_ROLE = 'TheiaDevelopmentExecution';
+export const GITHUB_ENVIRONMENT = 'theia-infrastructure';
+export const GITHUB_REPOSITORY = 'code-studio-au/theia-mmo';

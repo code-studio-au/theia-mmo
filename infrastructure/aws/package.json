@@ -1,0 +1,21 @@
+{
+  "name": "theia-aws",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=26" },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node --test test/*.test.ts",
+    "synth": "cdk synth --no-lookups"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.265.0",
+    "constructs": "10.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.2.0",
+    "aws-cdk": "2.1136.0",
+    "typescript": "npm:@typescript/typescript6@6.0.2"
+  }
+}
