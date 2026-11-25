@@ -5,9 +5,10 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from build_linux_client_candidate import build
-from client_install import InstallError, metadata, target
+from client_install import InstallError, install, launch, metadata, target
 
 
 @unittest.skipUnless(target() == 'linux-x86_64', 'the public candidate is Linux AMD64')
@@ -47,6 +48,31 @@ class ApprovedCandidate(unittest.TestCase):
         self.assertEqual((out / 'payload/assets/approved.dat').read_bytes(), self.asset.read_bytes())
         manifest, _ = metadata(out)
         self.assertEqual({row['path'] for row in manifest['files']}, {'assets/approved.dat', 'theia-client'})
+
+    def test_release_budget_measures_only_the_stripped_distribution_copy(self):
+        source = self.repo / 'client.c'
+        source.write_text('int main(void) { return 0; }\n')
+        client = self.repo / 'client'
+        subprocess.run(['cc', '-g', '-o', client, source], check=True)
+        original = client.read_bytes()
+        self.git('add', 'content')
+        self.approve(self.asset)
+
+        with patch('build_linux_client_candidate.MAX_RELEASE_BYTES', len(original) - 1):
+            release = build(self.repo, client, self.approval, self.output, '0.1.0.12')
+
+        executable = release / 'payload/theia-client'
+        manifest, _ = metadata(release)
+        entry = next(row for row in manifest['files'] if row['path'] == 'theia-client')
+        self.assertEqual(client.read_bytes(), original)
+        self.assertLess(entry['bytes'], len(original))
+        self.assertEqual(entry['sha256'], hashlib.sha256(executable.read_bytes()).hexdigest())
+        sections = subprocess.check_output(['readelf', '-SW', executable], text=True)
+        self.assertNotIn('.debug_info', sections)
+        self.assertNotIn('.symtab', sections)
+        root = self.repo / 'installed'
+        install(release, root)
+        self.assertEqual(launch(root, []).wait(timeout=5), 0)
 
     def test_untracked_or_changed_files_are_refused(self):
         self.approve(self.asset)

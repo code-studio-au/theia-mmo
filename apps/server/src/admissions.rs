@@ -31,6 +31,7 @@ type AccountSessions = Arc<Mutex<Sessions<OwnerId>>>;
 pub enum Error {
     Unauthorized,
     Conflict,
+    HostedJoinExpired,
     Busy,
     Unavailable,
 }
@@ -39,6 +40,7 @@ impl fmt::Display for Error {
         f.write_str(match self {
             Self::Unauthorized => "Account authorization required",
             Self::Conflict => "Account or character already reserved",
+            Self::HostedJoinExpired => "Join reservation expired; launch the game again",
             Self::Busy => "Game admission capacity reached",
             Self::Unavailable => "Game admission unavailable",
         })
@@ -61,6 +63,7 @@ struct Entry {
     inventory: Option<inventory::Session>,
     generation: u64,
     binding: Binding,
+    hosted_join: Option<HostedJoin>,
     context: SessionAuthorization<OwnerId>,
     deadline: Instant,
     phase: Phase,
@@ -71,6 +74,7 @@ struct Entry {
     version: u64,
     queued: Option<(u64, u64)>, // exact pose version and SQL mailbox generation
 }
+#[derive(Default)]
 struct State {
     slots: [Option<Entry>; MAX_PLAYERS],
     generation: u64,
@@ -78,6 +82,7 @@ struct State {
     failed: bool,
     draining: bool,
     hosted_joins: std::collections::BTreeMap<OwnerId, HostedJoin>,
+    hosted_snapshot_at: u64,
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -85,6 +90,31 @@ pub(crate) struct HostedJoin {
     pub id: String,
     pub subject: String,
 }
+impl State {
+    fn register_hosted_join(
+        &mut self,
+        owner: OwnerId,
+        join: HostedJoin,
+        snapshot_at: u64,
+        allows: impl Fn(&HostedJoin) -> bool,
+    ) -> GateResult<()> {
+        if self.draining {
+            return Err(Error::Busy);
+        }
+        // A delayed request must not prune leases learned from a newer snapshot.
+        if snapshot_at < self.hosted_snapshot_at || !allows(&join) {
+            return Err(Error::HostedJoinExpired);
+        }
+        self.hosted_snapshot_at = snapshot_at;
+        self.hosted_joins.retain(|_, pending| allows(pending));
+        if !self.hosted_joins.contains_key(&owner) && self.hosted_joins.len() >= MAX_PLAYERS {
+            return Err(Error::Busy);
+        }
+        self.hosted_joins.insert(owner, join);
+        Ok(())
+    }
+}
+
 pub(crate) struct LifecycleStatus {
     pub players: usize,
     pub occupied: bool,
@@ -121,14 +151,7 @@ impl GameAdmissions {
         Arc::new(Self {
             progression: None,
             inventory: None,
-            state: Mutex::new(State {
-                slots: std::array::from_fn(|_| None),
-                generation: 0,
-                sequence: 0,
-                failed: false,
-                draining: false,
-                hosted_joins: Default::default(),
-            }),
+            state: Mutex::new(State::default()),
             sessions,
             issuer,
             world,
@@ -322,6 +345,22 @@ impl GameAdmissions {
         context: SessionAuthorization<OwnerId>,
         binding: Binding,
     ) -> GateResult<Reservation> {
+        self.reserve_with_join(context, binding, None)
+    }
+    pub(crate) fn reserve_hosted(
+        self: &Arc<Self>,
+        context: SessionAuthorization<OwnerId>,
+        binding: Binding,
+        allows: impl Fn(&HostedJoin) -> bool,
+    ) -> GateResult<Reservation> {
+        self.reserve_with_join(context, binding, Some(&allows))
+    }
+    fn reserve_with_join(
+        self: &Arc<Self>,
+        context: SessionAuthorization<OwnerId>,
+        binding: Binding,
+        allows: Option<&dyn Fn(&HostedJoin) -> bool>,
+    ) -> GateResult<Reservation> {
         let mut state = self.lock()?;
         self.prune(&mut state)?;
         if state.draining {
@@ -345,6 +384,16 @@ impl GameAdmissions {
         {
             return Err(Error::Conflict);
         }
+        let hosted_join = allows
+            .map(|allows| {
+                state
+                    .hosted_joins
+                    .get(&binding.owner)
+                    .filter(|join| allows(join))
+                    .cloned()
+                    .ok_or(Error::HostedJoinExpired)
+            })
+            .transpose()?;
         let slot = state
             .slots
             .iter()
@@ -363,6 +412,7 @@ impl GameAdmissions {
             inventory: None,
             generation,
             binding,
+            hosted_join,
             context,
             deadline: Instant::now() + Duration::from_secs(10),
             phase: Phase::Selecting,
@@ -460,22 +510,15 @@ impl GameAdmissions {
             state.failed = true;
         }
     }
-    pub(crate) fn hosted_join(&self, owner: OwnerId, join: HostedJoin) -> GateResult<()> {
-        let mut state = self.lock()?;
-        if state.draining
-            || (!state.hosted_joins.contains_key(&owner) && state.hosted_joins.len() >= MAX_PLAYERS)
-        {
-            return Err(Error::Busy);
-        }
-        state.hosted_joins.insert(owner, join);
-        Ok(())
-    }
-
-    pub(crate) fn pending_hosted_join(&self, owner: OwnerId) -> GateResult<Option<HostedJoin>> {
-        let state = self.lock()?;
-        Ok((!state.draining)
-            .then(|| state.hosted_joins.get(&owner).cloned())
-            .flatten())
+    pub(crate) fn hosted_join(
+        &self,
+        owner: OwnerId,
+        join: HostedJoin,
+        snapshot_at: u64,
+        allows: impl Fn(&HostedJoin) -> bool,
+    ) -> GateResult<()> {
+        self.lock()?
+            .register_hosted_join(owner, join, snapshot_at, allows)
     }
 
     pub(crate) fn lifecycle(&self, request_drain: bool) -> GateResult<LifecycleStatus> {
@@ -490,7 +533,7 @@ impl GameAdmissions {
             .filter(|entry| entry.phase == Phase::Active)
             .filter_map(|entry| {
                 players += 1;
-                state.hosted_joins.get(&entry.binding.owner).cloned()
+                entry.hosted_join.clone()
             })
             .collect();
         if request_drain && !occupied {
@@ -794,5 +837,59 @@ impl AccountAdmissions for GameAdmissions {
                 .filter(|e| e.phase != Phase::Active)
                 .and_then(|e| e.saved.map(|r| r.position))
         }))
+    }
+}
+
+#[cfg(test)]
+mod hosted_join_tests {
+    use super::*;
+
+    fn join(index: usize) -> HostedJoin {
+        HostedJoin {
+            id: format!("reservation-{index}"),
+            subject: format!("tester-{index}"),
+        }
+    }
+
+    #[test]
+    fn expired_or_released_reservations_reclaim_capacity_for_new_accounts() {
+        let mut state = State::default();
+        for index in 0..MAX_PLAYERS {
+            state
+                .register_hosted_join(OwnerId::random(), join(index), 1, |_| true)
+                .unwrap();
+        }
+        assert!(matches!(
+            state.register_hosted_join(OwnerId::random(), join(MAX_PLAYERS), 1, |_| true),
+            Err(Error::Busy)
+        ));
+
+        for index in MAX_PLAYERS..MAX_PLAYERS + 2 {
+            let current = join(index);
+            state
+                .register_hosted_join(OwnerId::random(), current.clone(), index as u64, |join| {
+                    join.id == current.id
+                })
+                .unwrap();
+            assert_eq!(state.hosted_joins.len(), 1);
+        }
+    }
+
+    #[test]
+    fn older_snapshot_cannot_evict_a_newly_registered_join() {
+        let mut state = State::default();
+        let current = OwnerId::random();
+        state
+            .register_hosted_join(current, join(1), 2, |_| true)
+            .unwrap();
+        assert!(matches!(
+            state.register_hosted_join(OwnerId::random(), join(2), 1, |join| join.id
+                == "reservation-2"),
+            Err(Error::HostedJoinExpired)
+        ));
+        assert_eq!(
+            state.hosted_joins.get(&current).unwrap().id,
+            "reservation-1"
+        );
     }
 }

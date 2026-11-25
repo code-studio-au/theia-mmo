@@ -165,6 +165,9 @@ Ubuntu 24.04 or Linux Mint 22 system. Add only redistribution-approved files to
 `source`, `path`, `bytes` and `sha256` entries. Sources must be tracked under
 `content/`, `apps/client/assets/` or `release/`. Paths are relative to the
 installed payload. The locked Linux client build supplies `theia-client`.
+The candidate exporter uses GNU binutils to fully strip the distribution copy
+before measuring or hashing it. The Cargo output keeps its debug information.
+Treat the unstripped build or separate debug symbols as private diagnostics.
 The executable-only private test export is insufficient as a public payload.
 
 1. Enable GitHub Actions as the Pages source on `theia-mmo`. Protect the
@@ -177,7 +180,10 @@ The executable-only private test export is insufficient as a public payload.
    and versions. Choose `first` only when the feed does not exist. For an
    `update`, enter the exact previous client version. The publisher verifies
    it and carries its live files forward before replacing the Pages artifact.
-   The optional `delta_base_run` generates patches and is independent of retention.
+   For a client update, supply the previous successful candidate as
+   `delta_base_run` to generate patches against the exact bytes already installed.
+   The executable must fit the 256 MiB patch limit in both exports. Verify the
+   offered download and rebuilt hash before relying on a patch in rollout.
 4. After post-deploy verification passes for the live feed, stable installer
    and executable, set `ENABLE_LINUX_DOWNLOADS=true` in `theia-website` and
    dispatch the website deployment. The site build verifies the live links.

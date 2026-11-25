@@ -24,16 +24,16 @@ def build(repo, client, approval, output, release_version):
     with tempfile.TemporaryDirectory(prefix='linux-client-', dir=output.parent) as folder:
         staging = Path(folder)
         client = client.resolve(strict=True)
-        remaining = MAX_RELEASE_BYTES
-        client_size = client.stat().st_size
         with client.open('rb') as stream:
             header = stream.read(20)
         if (header[:6] != b'\x7fELF\x02\x01' or len(header) != 20
-                or int.from_bytes(header[18:20], 'little') != 62
-                or not 0 < client_size < remaining):
+                or int.from_bytes(header[18:20], 'little') != 62):
             raise InstallError('Expected a built Linux AMD64 client')
-        copy_file(client, staging / 'theia-client', client_size, lambda _: None)
-        remaining -= client_size
+        executable = staging / 'theia-client'
+        subprocess.run(['strip', '--strip-all', '-o', executable, '--', client], check=True)
+        remaining = MAX_RELEASE_BYTES - executable.stat().st_size
+        if remaining <= 0:
+            raise InstallError('The stripped Linux client exceeds the release size budget')
         for row in data['files']:
             if not isinstance(row, dict) or set(row) != {'source', 'path', 'bytes', 'sha256'}:
                 raise InstallError('Invalid public asset approval entry')

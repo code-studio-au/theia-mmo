@@ -36,8 +36,8 @@ fn publish(dir: &Path, name: &str, value: serde_json::Value) -> Result<()> {
 }
 
 #[derive(Deserialize)]
-struct LeaseSnapshot {
-    at: u64,
+pub(crate) struct LeaseSnapshot {
+    pub(crate) at: u64,
     leases: std::collections::BTreeMap<String, Lease>,
 }
 
@@ -47,26 +47,23 @@ struct Lease {
     expires: u64,
 }
 
-pub(crate) fn allows(join: &HostedJoin) -> bool {
-    let Some(dir) = std::env::var_os("THEIA_REALM_LIFECYCLE_DIR") else {
-        return false;
-    };
-    let Ok(file) = fs::read(PathBuf::from(dir).join("leases.json")) else {
-        return false;
-    };
-    if file.len() > 4096 {
-        return false;
+impl LeaseSnapshot {
+    pub(crate) fn current() -> Option<Self> {
+        let dir = std::env::var_os("THEIA_REALM_LIFECYCLE_DIR")?;
+        let file = fs::read(PathBuf::from(dir).join("leases.json")).ok()?;
+        if file.len() > 4096 {
+            return None;
+        }
+        let snapshot: Self = serde_json::from_slice(&file).ok()?;
+        let at = now();
+        (snapshot.at <= at && at - snapshot.at < 12).then_some(snapshot)
     }
-    let Ok(snapshot) = serde_json::from_slice::<LeaseSnapshot>(&file) else {
-        return false;
-    };
-    let at = now();
-    snapshot.at <= at
-        && at - snapshot.at < 12
-        && snapshot
-            .leases
+
+    pub(crate) fn allows(&self, join: &HostedJoin) -> bool {
+        self.leases
             .get(&join.id)
-            .is_some_and(|lease| lease.subject == join.subject && lease.expires > at)
+            .is_some_and(|lease| lease.subject == join.subject && lease.expires > now())
+    }
 }
 
 impl Lifecycle {

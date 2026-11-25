@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - run: test -x /usr/bin/dpkg-deb && test -x /usr/bin/openssl && test -x /usr/bin/zstd
+      - run: test -x /usr/bin/dpkg-deb && test -x /usr/bin/openssl && test -x /usr/bin/zstd && test -x /usr/bin/strip && test -x /usr/bin/readelf && test -x /usr/bin/cc
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '24'

@@ -109,6 +109,10 @@ The host removes a reservation on authoritative admission; launcher cancellation
 removes its own reservation, and heartbeats prune expired entries. Idle shutdown
 requires an empty reservation map. The same item retains release compatibility
 and lifecycle metadata while the instance is stopped.
+The game drops locally cached joins absent from the current valid lease snapshot
+when a tester signs in. An admission reports the reservation captured when its
+character ticket was issued, even if that account has since requested another
+join.
 
 While EC2 runs, the controller reads the small item roughly every four seconds
 to deliver new reservations to the game. It writes on a change or when its last

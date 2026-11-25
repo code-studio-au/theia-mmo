@@ -2363,8 +2363,15 @@ async fn main() -> theia_network::Result<()> {
         ..character.saved
     };
     assert!(reservation.issue(invalid).is_err());
+    let pending = admissions::HostedJoin {
+        id: "8e3c4f65-b063-42eb-9f88-52346bfff3c4".into(),
+        subject: identity.subject().into(),
+    };
+    let allows =
+        |join: &admissions::HostedJoin| join.id == pending.id && join.subject == pending.subject;
+    gate.hosted_join(owner, pending.clone(), 1, allows)?;
     let ticket = gate
-        .reserve(context.clone(), binding)?
+        .reserve_hosted(context.clone(), binding, allows)?
         .issue_character(character.clone())?;
     let data = connected_data(&mut transport, ticket.bytes()).await;
     let mut tampered = data;
@@ -2383,6 +2390,17 @@ async fn main() -> theia_network::Result<()> {
         entity: EntityId::new(1).unwrap(),
     };
     lease.record(actor, position, 1)?;
+    let replacement = admissions::HostedJoin {
+        id: "8e3c4f65-b063-42eb-9f88-52346bfff3c5".into(),
+        subject: identity.subject().into(),
+    };
+    gate.hosted_join(owner, replacement.clone(), 2, |join| {
+        join.id == replacement.id
+    })?;
+    let status = gate.lifecycle(false)?;
+    assert_eq!(status.players, 1);
+    assert_eq!(status.admitted.len(), 1);
+    assert_eq!(status.admitted[0].id, pending.id);
     assert_eq!(gate.flush(&publisher, &worker.status())?, 1);
     tokio::time::timeout(Duration::from_secs(5), async {
         while worker.status().completed_generation < 1 {
@@ -2442,19 +2460,18 @@ async fn main() -> theia_network::Result<()> {
     let expired_data = connected_data(&mut transport, expired.bytes()).await;
     tokio::time::sleep(Duration::from_secs(21)).await;
     assert!(gate.clone().consume(1, &expired_data)?.is_none());
-    let pending = admissions::HostedJoin {
-        id: "8e3c4f65-b063-42eb-9f88-52346bfff3c4".into(),
-        subject: identity.subject().into(),
-    };
-    gate.hosted_join(owner, pending.clone())?;
-    assert_eq!(gate.pending_hosted_join(owner)?.unwrap().id, pending.id);
-    let reservation = gate.reserve(next.clone(), binding)?;
+    gate.hosted_join(owner, pending.clone(), 3, allows)?;
+    assert!(matches!(
+        gate.reserve_hosted(next.clone(), binding, |_| false),
+        Err(admissions::Error::HostedJoinExpired)
+    ));
+    let reservation = gate.reserve_hosted(next.clone(), binding, allows)?;
     let busy = gate.lifecycle(true)?;
     assert!(busy.occupied && !busy.draining && busy.players == 0 && busy.admitted.is_empty());
     drop(reservation);
     let idle = gate.lifecycle(true)?;
     assert!(!idle.occupied && idle.draining && idle.players == 0);
-    assert!(gate.pending_hosted_join(owner)?.is_none());
+    assert!(gate.reserve_hosted(next.clone(), binding, allows).is_err());
     assert!(gate.reserve(next, binding).is_err());
     let status = worker.shutdown().await?;
     assert!(!status.failed && status.stale_records == 0);
