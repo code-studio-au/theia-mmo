@@ -10,9 +10,12 @@ from pathlib import Path
 import subprocess
 import tempfile
 from threading import Timer
-from urllib.error import URLError
+from time import sleep
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
+from zipfile import BadZipFile, ZIP_DEFLATED, ZIP_STORED, ZipFile
+from zlib import error as CompressionError
 
 from client_install import (
     CHUNK_BYTES, MAX_MANIFEST_BYTES, InstallError, active, copy_file, decode_json,
@@ -25,6 +28,10 @@ CHANNEL_FILE = 'development.json'
 CHANNEL = 'Development'
 MAX_ENVELOPE = 6 * 1024**2
 MAX_RELEASE_BYTES = 950_000_000
+DOWNLOAD_ATTEMPTS = 3
+RETRYABLE_HTTP_STATUS = {408, 500, 502, 503, 504}
+BUNDLE_FORMAT = 'zip-v1'
+MAX_BUNDLE_METADATA = 8192
 DELTA_MIN_BYTES = 256 * 1024
 DELTA_MAX_BYTES = 256 * 1024**2
 DELTA_LIMIT = 256
@@ -61,6 +68,65 @@ def release_packages(files):
 
 def content_key(row):
     return row['sha256'], row['bytes']
+
+
+def bundle_groups(manifest):
+    groups = {}
+    for row in manifest['files']:
+        group = 'client' if row['path'] == 'theia-client' else 'assets'
+        groups.setdefault(group, {})[row['path']] = row
+    return groups
+
+
+def validate_bundles(data, manifest):
+    groups = bundle_groups(manifest)
+    if (not isinstance(data, dict) or set(data) != {'format', 'version', 'entries'}
+            or data['format'] != BUNDLE_FORMAT or data['version'] != manifest['version']
+            or not isinstance(data['entries'], list) or len(data['entries']) != len(groups)):
+        raise InstallError('Invalid install bundle metadata')
+    bundles = {}
+    for entry in data['entries']:
+        if (not isinstance(entry, dict) or set(entry) != {'id', 'bytes', 'sha256'}
+                or not isinstance(entry['id'], str) or entry['id'] not in groups or entry['id'] in bundles
+                or type(entry['bytes']) is not int or not 0 < entry['bytes'] <= MAX_RELEASE_BYTES
+                or not isinstance(entry['sha256'], str) or not re.fullmatch('[a-f0-9]{64}', entry['sha256'])):
+            raise InstallError('Invalid install bundle entry')
+        bundles[entry['id']] = entry
+    if sum(entry['bytes'] for entry in bundles.values()) > MAX_RELEASE_BYTES:
+        raise InstallError('Install bundles exceed the download size limit')
+    return bundles
+
+
+def unpack_bundle(path, rows, destination, check_cancelled):
+    """Write only exact, signed file paths and validate bytes before activation."""
+    try:
+        with ZipFile(path) as archive:
+            entries = archive.infolist()
+            if len(entries) != len(rows) or {entry.filename for entry in entries} != rows.keys():
+                raise InstallError('Install bundle does not match its release file list')
+            for entry in entries:
+                row = rows[entry.filename]
+                if (entry.file_size != row['bytes'] or entry.flag_bits & 1
+                        or entry.compress_type not in (ZIP_DEFLATED, ZIP_STORED)):
+                    raise InstallError('Invalid file in install bundle')
+                target = destination / row['path']
+                target.parent.mkdir(parents=True, exist_ok=True)
+                digest = hashlib.sha256()
+                size = 0
+                with archive.open(entry) as source, target.open('xb') as output:
+                    while chunk := source.read(min(CHUNK_BYTES, row['bytes'] - size + 1)):
+                        size += len(chunk)
+                        if size > row['bytes']:
+                            raise InstallError('Install bundle file exceeds its signed size')
+                        output.write(chunk)
+                        digest.update(chunk)
+                        check_cancelled()
+                    if (size, digest.hexdigest()) != (row['bytes'], row['sha256']):
+                        raise InstallError('Install bundle file failed verification')
+                    output.flush()
+                    os.fsync(output.fileno())
+    except (BadZipFile, CompressionError, EOFError, NotImplementedError) as error:
+        raise InstallError('Could not read install bundle') from error
 
 
 def delta_eligible(old, new):
@@ -143,8 +209,11 @@ class HostedRelease:
     manifest: dict
     total: int
     deltas: dict
+    bundles: dict
 
     def download_size(self, previous_files=()):
+        if self.bundles and not previous_files:
+            return sum(row['bytes'] for row in self.bundles.values())
         known = {content_key(row) for row in previous_files}
         patches = delta_candidates(previous_files, self.deltas)
         missing = set()
@@ -166,11 +235,53 @@ class HostedRelease:
             raise InstallError('The download cache must be a local directory')
         digests = {row['sha256'] for row in self.manifest['files']}
         digests.update(patch['sha256'] for patch in self.deltas.values())
+        digests.update(bundle['sha256'] for bundle in self.bundles.values())
         for entry in cache.iterdir():
             if entry.name not in digests:
                 entry.unlink()
 
         current = active(root)['current']
+        if current or not self.bundles or not self.try_bundles(cache, stage, progress, cancelled):
+            self.populate_files(root, current, cache, stage, progress, cancelled)
+
+        # Only verified bytes reach this point. Activation remains under the installer lock.
+        for entry in cache.iterdir():
+            entry.unlink()
+
+    def try_bundles(self, cache, stage, progress, cancelled):
+        groups = bundle_groups(self.manifest)
+        complete = 0
+        total = self.download_size()
+
+        def check_cancelled():
+            if cancelled and cancelled():
+                raise InstallError('Update cancelled')
+
+        def advance(count):
+            check_cancelled()
+            if progress:
+                progress(complete + count, total)
+
+        with tempfile.TemporaryDirectory(prefix='bundles-', dir=stage) as folder:
+            payload = Path(folder) / 'payload'
+            try:
+                for name, row in self.bundles.items():
+                    archive = cache / row['sha256']
+                    self.library.download(row, archive, advance)
+                    if copy_file(archive, None, row['bytes'], lambda _: check_cancelled()) != (row['bytes'], row['sha256']):
+                        archive.unlink()
+                        raise InstallError('Install bundle failed verification')
+                    unpack_bundle(archive, groups[name], payload, check_cancelled)
+                    complete += row['bytes']
+            except DownloadInterrupted:
+                raise
+            except InstallError:
+                check_cancelled()
+                return False
+            payload.rename(stage / 'payload')
+        return True
+
+    def populate_files(self, root, current, cache, stage, progress, cancelled):
         old_directory, old_files, patches = None, {}, {}
         if current:
             old_directory, manifest, _ = installed(root, current)
@@ -230,10 +341,6 @@ class HostedRelease:
             advance(row['bytes'])
             completed += row['bytes']
 
-        # Only verified bytes reach this point. Activation remains under the installer lock.
-        for entry in cache.iterdir():
-            entry.unlink()
-
 
 class HostedLibrary:
     def __init__(self, url, public_keys, *, opener=None):
@@ -252,7 +359,15 @@ class HostedLibrary:
         request = Request(self.url + name, headers=headers)
         try:
             response = self.opener.open(request, timeout=20)
-        except (URLError, TimeoutError) as error:
+        except HTTPError as error:
+            error.close()
+            if error.code in RETRYABLE_HTTP_STATUS:
+                raise DownloadInterrupted('The download server is temporarily unavailable') from error
+            raise InstallError('Could not reach the Theia download server. Try again.') from error
+        except (URLError, TimeoutError, ConnectionError, http.client.HTTPException) as error:
+            reason = error.reason if isinstance(error, URLError) else error
+            if isinstance(reason, (TimeoutError, ConnectionError, http.client.HTTPException)):
+                raise DownloadInterrupted('The connection to the download server was interrupted') from error
             raise InstallError('Could not reach the Theia download server. Try again.') from error
         if response.geturl() != request.full_url or response.headers.get('Content-Encoding', 'identity') != 'identity':
             response.close()
@@ -286,8 +401,20 @@ class HostedLibrary:
             if ZSTD.is_file() and any(delta_eligible(old_by_path.get(row['path']), row)
                                       for row in manifest['files']):
                 deltas = self.deltas(manifest)
-        release = HostedRelease(self, manifest, total, deltas)
+        bundles = self.bundles(manifest) if not current else {}
+        release = HostedRelease(self, manifest, total, deltas, bundles)
         return release, manifest['version'], release.download_size(previous_files)
+
+    def bundles(self, manifest):
+        try:
+            with self.open(f"bundles/{manifest['version']}.json") as response:
+                data = response.read(MAX_BUNDLE_METADATA + 1)
+            if len(data) > MAX_BUNDLE_METADATA:
+                raise InstallError('Install bundle metadata exceeds its size limit')
+            signed = verified_payload(decode_json(data), self.public_keys)
+            return validate_bundles(signed, manifest)
+        except (InstallError, OSError, http.client.HTTPException):
+            return {}
 
     def deltas(self, manifest):
         try:
@@ -302,11 +429,22 @@ class HostedLibrary:
             return {}
 
     def download(self, row, partial, progress):
+        for attempt in range(DOWNLOAD_ATTEMPTS):
+            try:
+                self._download_once(row, partial, progress)
+                return
+            except DownloadInterrupted as error:
+                if attempt + 1 == DOWNLOAD_ATTEMPTS:
+                    raise DownloadInterrupted('Download interrupted. Choose Install Game or Update Game to resume.') from error
+                sleep(2 ** attempt)
+
+    def _download_once(self, row, partial, progress):
         size = row['bytes']
         offset = regular(partial).stat().st_size if partial.exists() or partial.is_symlink() else 0
         if offset > size:
             partial.unlink()
             offset = 0
+        progress(offset)
         if size == 0:
             partial.touch()
             return
@@ -327,10 +465,10 @@ class HostedLibrary:
                         output.write(chunk)
                         offset += len(chunk)
                         progress(offset)
-                except (http.client.HTTPException, TimeoutError) as error:
-                    raise DownloadInterrupted('The download was interrupted. Try again to resume.') from error
+                except (http.client.HTTPException, TimeoutError, ConnectionError) as error:
+                    raise DownloadInterrupted('The download was interrupted') from error
         if offset != size:
-            raise DownloadInterrupted('The download was interrupted. Try again to resume.')
+            raise DownloadInterrupted('The download was interrupted')
 
 
 def verified_payload(envelope, public_keys):

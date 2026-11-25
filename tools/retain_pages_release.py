@@ -5,7 +5,8 @@ from urllib.error import HTTPError
 
 from client_install import InstallError, copy_file, decode_json, validate_metadata, version_key
 from hosted_release import (
-    CHANNEL_FILE, MAX_ENVELOPE, MAX_RELEASE_BYTES, validate_deltas, verified_payload, verify_envelope,
+    CHANNEL_FILE, MAX_BUNDLE_METADATA, MAX_ENVELOPE, MAX_RELEASE_BYTES, validate_bundles,
+    validate_deltas, verified_payload, verify_envelope,
 )
 
 STABLE_LAUNCHER = 'theia-launcher_amd64.deb'
@@ -63,10 +64,16 @@ def retain_previous(library, downloads, current, launcher_version, *, first_rele
     if delta_raw is not None:
         delta_rows = list(validate_deltas(verified_payload(decode_json(delta_raw), library.public_keys),
                                          previous_manifest).values())
+    bundle_path = f"bundles/{previous_manifest['version']}.json"
+    bundle_raw = read_remote(library, bundle_path, MAX_BUNDLE_METADATA)
+    bundle_rows = []
+    if bundle_raw is not None:
+        bundle_rows = list(validate_bundles(verified_payload(decode_json(bundle_raw), library.public_keys),
+                                           previous_manifest).values())
 
     used = sum(path.stat().st_size for path in downloads.rglob('*') if path.is_file())
     seen = set()
-    for row in previous_manifest['files'] + delta_rows:
+    for row in previous_manifest['files'] + delta_rows + bundle_rows:
         digest = row['sha256']
         if digest in seen:
             continue
@@ -89,9 +96,10 @@ def retain_previous(library, downloads, current, launcher_version, *, first_rele
     if data is None or hashlib.sha256(data).hexdigest() != old_digest:
         raise InstallError('The live launcher download failed verification')
     destination.write_bytes(data)
-    if delta_raw is not None:
-        path = downloads / delta_path
-        path.parent.mkdir(exist_ok=True)
-        path.write_bytes(delta_raw)
+    for name, raw_data in ((delta_path, delta_raw), (bundle_path, bundle_raw)):
+        if raw_data is not None:
+            path = downloads / name
+            path.parent.mkdir(exist_ok=True)
+            path.write_bytes(raw_data)
 
     return previous

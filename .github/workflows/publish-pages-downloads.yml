@@ -51,6 +51,7 @@ jobs:
       launcher_sha256: ${{ steps.stage.outputs.launcher_sha256 }}
       client_sha256: ${{ steps.stage.outputs.client_sha256 }}
       news_sha256: ${{ steps.stage.outputs.news_sha256 }}
+      bundle_checksums: ${{ steps.stage.outputs.bundle_checksums }}
     permissions:
       contents: read
       actions: read
@@ -127,13 +128,23 @@ jobs:
             --launcher-version "$LAUNCHER_VERSION" --signing-key "$key" \
             --native-auth-bundle apps/launcher/native-auth/dist/cognito-sign-in.cjs \
             --launcher-notes="$LAUNCHER_NOTES" --client-notes="$CLIENT_NOTES" \
-            "${release_args[@]}" "${delta_args[@]}"
+            --bundle-initial-install "${release_args[@]}" "${delta_args[@]}"
           cd "$RUNNER_TEMP/game-pages/downloads"
           printf 'news_sha256=%s\n' "$(sha256sum release-news.json | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
           printf 'feed_sha256=%s\n' "$(sha256sum development.json | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
           printf 'launcher_sha256=%s\n' "$(sha256sum theia-launcher_amd64.deb | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
           client_hash=$(jq -er '.files[] | select(.path == "theia-client") | .sha256' "$RUNNER_TEMP/client-export/client-release.json")
           printf 'client_sha256=%s\n' "$client_hash" >> "$GITHUB_OUTPUT"
+          bundle_index="bundles/$CLIENT_VERSION.json"
+          bundle_digests=$(jq -er .payload "$bundle_index" | base64 --decode | jq -er '.entries[].sha256')
+          {
+            printf 'bundle_checksums<<BUNDLE_CHECKSUMS\n'
+            sha256sum "$bundle_index"
+            while read -r digest; do
+              sha256sum "blobs/$digest"
+            done <<< "$bundle_digests"
+            printf 'BUNDLE_CHECKSUMS\n'
+          } >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: ${{ runner.temp }}/game-pages
@@ -151,26 +162,34 @@ jobs:
     steps:
       - uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
         id: pages
-      - name: Verify live feed and stable launcher
+      - name: Verify live feed, launcher and install bundles
         env:
           FEED_SHA256: ${{ needs.stage.outputs.feed_sha256 }}
           LAUNCHER_SHA256: ${{ needs.stage.outputs.launcher_sha256 }}
           CLIENT_SHA256: ${{ needs.stage.outputs.client_sha256 }}
           NEWS_SHA256: ${{ needs.stage.outputs.news_sha256 }}
+          BUNDLE_CHECKSUMS: ${{ needs.stage.outputs.bundle_checksums }}
         run: |
           set -o pipefail
           base=https://code-studio-au.github.io/theia-mmo/downloads
           verify() {
             local path="$1" expected="$2" actual
             actual=$(curl --fail --silent --show-error --max-time 45 \
-              --header 'Cache-Control: no-cache' "$base/$path?build=$GITHUB_RUN_ID" | sha256sum)
+              --header 'Cache-Control: no-cache' "$base/$path?build=$GITHUB_RUN_ID" | sha256sum) || return 1
             [[ "${actual%% *}" == "$expected" ]]
+          }
+          verify_bundles() {
+            local digest path
+            while read -r digest path; do
+              verify "$path" "$digest" || return 1
+            done <<< "$BUNDLE_CHECKSUMS"
           }
           for attempt in {1..12}; do
             if verify development.json "$FEED_SHA256" \
               && verify theia-launcher_amd64.deb "$LAUNCHER_SHA256" \
               && verify "blobs/$CLIENT_SHA256" "$CLIENT_SHA256" \
-              && verify release-news.json "$NEWS_SHA256"; then
+              && verify release-news.json "$NEWS_SHA256" \
+              && verify_bundles; then
               exit 0
             fi
             sleep 10

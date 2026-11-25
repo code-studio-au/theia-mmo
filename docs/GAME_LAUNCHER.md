@@ -119,10 +119,19 @@ equipment, animation, objects, audio, gameplay and each terrain zone independent
 using hashes of their file entries. Organize an export under `ui/`, `characters/`,
 `equipment/`, `animations/`, `objects/`, `audio/` and `terrain/<zone>/`, optionally
 under `assets/` or `content/`. Other files belong to the gameplay package.
-The launcher estimates only missing bytes and downloads files by hash. It reuses
-verified installed files even if their paths moved. Partial downloads can resume
-when the server supports byte ranges. A failed signature, failed hash check,
-cancelled download or incomplete package leaves the active version in place.
+Launcher 0.1.10 uses the signed `bundles/<client-version>.json` index for a
+fresh install. It downloads a ZIP for the executable and a ZIP for the assets,
+checks the archive hashes, and verifies every extracted file against the signed
+client manifest before activation. Releases without a usable bundle index or
+with a corrupt bundle can still install from individual files.
+
+For updates, the launcher estimates only missing bytes and downloads files by
+hash. It reuses verified installed files even if their paths moved. The
+launcher automatically retries interrupted file transfers twice. When the server
+supports byte ranges, each retry continues from the saved offset. If the retries
+run out, choose **Install Game** or **Update Game** again in the same game folder.
+A failed signature, failed hash check, cancelled download or incomplete package
+leaves the active version in place.
 Launcher 0.1.8 can also download a binary patch for a changed large file.
 The publishing workflow accepts an optional previous successful Linux client
 export via `delta_base_run` (or `--delta-base` when staging locally). It stages
@@ -132,15 +141,17 @@ remains readable. The launcher checks the installed file's hash, verifies the
 downloaded patch, and verifies the complete rebuilt file against the release
 manifest before activation. A missing patch, mismatched base, invalid signature
 or corrupt patch falls back to the full changed file. A partial patch can
-resume on servers that support byte ranges. Full files remain available for
-clean installs. The launcher uses `zstd` when installed.
+resume on servers that support byte ranges. The launcher uses `zstd` for
+binary patches when installed.
 
 Local folders are still selectable in Settings.
 
 The separate Pages project keeps packages available across website builds.
 The public website links to a stable `downloads/theia-launcher_amd64.deb` URL.
 Each publish points that file at the current installer and preserves its
-versioned copy, plus the previous installer, client files and patch files.
+versioned copy, plus the previous installer, client files, install bundles and
+patch files. The publish workflow checks the live signed bundle index and the
+hash of each archive before it triggers the website rebuild.
 The update feed stays at `downloads/development.json`. Keep using the
 existing signing key for updates; the current publisher requires it to verify
 the live feed. If both releases do not fit the Pages budget, publishing fails
