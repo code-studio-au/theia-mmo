@@ -24,6 +24,7 @@ use std::{
     },
     time::{Duration, Instant},
 };
+use theia_auth::cognito;
 use theia_auth::{LoginAttempt, Provider, SessionAuthorization, Sessions, VerifiedIdentity};
 use theia_core::coordinates::GlobalPosition;
 use theia_persistence::{OwnerId, Publisher, WorkerStatus};
@@ -45,6 +46,12 @@ pub struct Config {
 }
 pub const fn default_session_seconds() -> u64 {
     300
+}
+
+impl Config {
+    pub fn hosted(&self) -> bool {
+        self.issuer.starts_with("https://")
+    }
 }
 
 /// Static/redacted errors only. Never format provider/SQL errors, bearer headers,
@@ -150,7 +157,8 @@ pub struct Stats {
     pub active_account_sessions: usize,
 }
 struct Inner {
-    provider: Arc<Provider>,
+    provider: Option<Arc<Provider>>,
+    cognito: Option<cognito::Verifier>,
     publisher: Publisher,
     sessions: Arc<Mutex<Sessions<OwnerId>>>,
     game: Mutex<Option<Arc<crate::admissions::GameAdmissions>>>,
@@ -237,6 +245,14 @@ impl Inner {
     }
 }
 fn credential(headers: &axum::http::HeaderMap) -> Result<&str> {
+    let token = bearer(headers)?;
+    if token.len() != 64 {
+        return Err(ApiError::unauthorized());
+    }
+    Ok(token)
+}
+
+fn bearer(headers: &axum::http::HeaderMap) -> Result<&str> {
     let mut values = headers.get_all(axum::http::header::AUTHORIZATION).iter();
     let value = values
         .next()
@@ -247,7 +263,7 @@ fn credential(headers: &axum::http::HeaderMap) -> Result<&str> {
         return Err(ApiError::unauthorized());
     }
     let (scheme, token) = value.split_once(' ').ok_or_else(ApiError::unauthorized)?;
-    if !scheme.eq_ignore_ascii_case("Bearer") || token.len() != 64 {
+    if !scheme.eq_ignore_ascii_case("Bearer") || token.is_empty() {
         return Err(ApiError::unauthorized());
     }
     Ok(token)
@@ -343,16 +359,26 @@ impl AccountService {
         let address = listener.local_addr().map_err(|_| ApiError::internal())?;
         let base = format!("http://{address}");
         let host = address.to_string();
-        let provider = Provider::discover_loopback(
-            &config.issuer,
-            &config.client_id,
-            &format!("{base}/callback"),
-        )
-        .await
-        .map_err(|_| ApiError::internal())?;
+        let (provider, cognito) = if config.hosted() {
+            let verifier = cognito::Verifier::discover(&config.issuer, &config.client_id)
+                .await
+                .map_err(|_| ApiError::internal())?;
+            (None, Some(verifier))
+        } else {
+            let provider = Provider::discover_loopback(
+                &config.issuer,
+                &config.client_id,
+                &format!("{base}/callback"),
+            )
+            .await
+            .map_err(|_| ApiError::internal())?;
+            (Some(provider), None)
+        };
         let (fatal, fatal_receiver) = watch::channel(false);
+        let hosted = cognito.is_some();
         let state = Arc::new(Inner {
             provider,
+            cognito,
             publisher,
             sessions: Arc::new(Mutex::new(sessions)),
             game: Mutex::new(None),
@@ -366,17 +392,22 @@ impl AccountService {
             spawn,
             fatal,
         });
-        let router = Router::new()
+        let router = if hosted {
+            Router::new().route("/auth/hosted", post(routes::hosted))
+        } else {
+            Router::new()
+                .route("/auth/start", post(routes::start))
+                .route("/callback", get(routes::callback))
+                .route("/auth/poll", post(routes::poll))
+                .route("/auth/cancel", post(routes::cancel))
+                .route("/development/auth-metrics", get(routes::metrics))
+        };
+        let router = router
             .route("/ready", get(routes::ready))
-            .route("/auth/start", post(routes::start))
-            .route("/callback", get(routes::callback))
-            .route("/auth/poll", post(routes::poll))
-            .route("/auth/cancel", post(routes::cancel))
             .route("/auth/logout", post(routes::logout))
             .route("/characters", get(routes::list).post(routes::create))
             .route("/characters/select", post(routes::select))
             .route("/characters/enter", post(routes::enter))
-            .route("/development/auth-metrics", get(routes::metrics))
             .layer(DefaultBodyLimit::max(4096))
             .layer(middleware::from_fn_with_state(
                 state.clone(),

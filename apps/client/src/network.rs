@@ -742,12 +742,24 @@ impl Network {
             .build()?;
         let physical_presentation = physical_profile.clone();
         let white_presentation = white_profile.clone();
+        let hosted_address = std::env::var_os("THEIA_HOSTED_GAME_ADDRESS")
+            .map(|value| {
+                value
+                    .to_str()
+                    .and_then(|value| value.parse().ok())
+                    .filter(|address| {
+                        frontend.is_some()
+                            && theia_network::renet_runtime::is_hosted_endpoint(*address)
+                    })
+                    .ok_or("Hosted game endpoint requires a native front-end session")
+            })
+            .transpose()?;
         let worker = std::thread::Builder::new()
             .name("theia-network".into())
             .spawn(move || {
                 let result = runtime.block_on(async {
                     let (address, cert) = if let Some(directory) = frontend {
-                        crate::frontend::admission(&directory, &ticket_path, shutdown.clone()).await?
+                        crate::frontend::admission(&directory, &ticket_path, hosted_address, shutdown.clone()).await?
                     } else { (address, cert) };
                     if classic
                         || dodge_mode.is_some()

@@ -1,3 +1,25 @@
+# Wednesday, 25 November 2026 — Sydney development realm
+
+**Pick up P5-23 with the launcher wake flow.** The Sydney realm is live with
+Cognito managed sign-in and two enrolled testers. Launcher 0.1.6 and client
+0.1.0.12 passed browser sign-in, native character selection, and movement in
+Millhaven for one tester over the public encrypted connection.
+
+1. Build the API Gateway HTTP API, scoped Rust Lambda, and DynamoDB lifecycle
+   state described in the [hosting requirements](engineering/HOSTING_AND_OPERATIONS_REQUIREMENTS.md#initial-hosting-scope-and-cost-priority-creator-approved-supersedes-earlier-phase-scheduling).
+   Connect launcher **Play** to authenticated wake and poll until the game and
+   database are ready.
+2. Test two remote players together. Verify that concurrent Play requests
+   start the instance once and that pending joins prevent idle shutdown.
+   Check that the five-minute idle stop runs after a successful persistence
+   flush and that progress survives restart.
+
+Launch locally with `./build/hosted-development-launch/open-launcher`. The
+launcher and client are staged in `build/launcher-client-exports/`. Live
+changes are recorded in [STATUS.md](STATUS.md). The working tree contains
+local changes for the Cognito and launcher work. Review that diff before
+committing. The new builds are staged for private testing.
+
 # Current checkpoint — 16 November 2026: shared-marker UI accepted
 
 16 November 2026 — P4-11 shared-marker presentation accepted:

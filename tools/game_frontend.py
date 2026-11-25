@@ -26,18 +26,24 @@ def run(account, directory, ticket, stopped):
         credentials.close()
 
 
+def run_hosted(account, directory, ticket, stopped):
+    return _run(account, directory, ticket, stopped, None)
+
+
 def _run(account, directory, ticket, stopped, credentials):
-    phase, characters, serial = 'login', [], 0
+    hosted = credentials is None
+    phase, characters, serial = ('characters', account.characters(), 0) if hosted else ('login', [], 0)
 
     def state(message='', busy=False):
         publish(directory, 'frontend-state.json', dict(schema=1, serial=serial,
                 phase=phase, busy=busy, message=message, characters=characters,
-                registration=os.environ.get('THEIA_NATIVE_REGISTRATION') == '1'))
+                registration=not hosted and os.environ.get('THEIA_NATIVE_REGISTRATION') == '1'))
 
-    state('Sign in to choose your adventurer.')
+    state(('Choose your adventurer.' if characters else 'Create your first adventurer.')
+          if hosted else 'Sign in to choose your adventurer.')
     while not stopped():
         command = directory / 'frontend-command.json'
-        data = credentials.receive()
+        data = credentials.receive() if credentials is not None else None
         native_credentials = data is not None
         if data is None:
             try:
@@ -74,6 +80,8 @@ def _run(account, directory, ticket, stopped, credentials):
             elif action == 'logout' and phase == 'characters' and set(data) == fields:
                 state('Signing out…', busy=True)
                 account.logout()
+                if hosted:
+                    return False
                 characters = []
                 phase = 'login'
                 state()
@@ -91,7 +99,7 @@ def _run(account, directory, ticket, stopped, credentials):
                 publish(directory, 'frontend-admission.json', {'address': address})
                 phase = 'entering'
                 state('Entering the world…')
-                return
+                return True
             else:
                 raise ValueError('This action is unavailable on the current screen.')
         except (ValueError, AccountError) as error:

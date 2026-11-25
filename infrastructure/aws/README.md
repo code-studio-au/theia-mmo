@@ -7,6 +7,26 @@ are no inbound rules. Use Systems Manager after the instance registers with
 the agent included in the Canonical AWS image. The host has outbound HTTPS.
 Use HTTPS package sources for host preparation.
 
+## Hosted development authentication
+
+Synthesize the bootstrapless `TheiaDevelopmentCognito` stack to provision
+managed browser login. The pool permits administrator-created accounts. The
+public launcher client uses authorization code with PKCE and the registered
+desktop callback. Add enrolled testers to `theia-testers`. The game server
+verifies the access token's signature, issuer, client, expiry, group and scope.
+
+```sh
+npm exec -- cdk synth --app 'node bin/theia-cognito.ts' \
+  --no-lookups --output cdk.out/cognito --quiet
+npm exec -- cdk synth --app 'node bin/theia-realm-ingress.ts' \
+  --no-lookups --output cdk.out/realm-ingress --quiet
+```
+
+The approved `TheiaDevelopmentRealmIngress` stack adds TCP 443 and UDP 5000
+to the game's security group after the host TLS and admission checks pass.
+Removing the ingress stack closes tester access. Store the CA signing key and
+tester credentials privately. The launcher configuration carries the CA certificate.
+
 The stack enables termination protection on the stack and on the instance.
 The root volume survives stop/start and is retained on instance termination.
 A replacement instance starts with a new root volume. Take and verify a

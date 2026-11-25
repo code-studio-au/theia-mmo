@@ -82,7 +82,10 @@ impl Loaded {
         ) {
             return Err("Unsupported population configuration schema".into());
         }
-        let zone = theia_zone::Zone::load(&contained(root, &document.zone)?)?;
+        let zone = theia_zone::Zone::load_with_ground(
+            &contained(root, &document.zone)?,
+            store.imported().map(|ground| &***ground),
+        )?;
         let creature_bytes = crate::content::read_bounded(
             &contained(root, &document.creature)?,
             creatures::MAX_PROFILE_BYTES as u64,

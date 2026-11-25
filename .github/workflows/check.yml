@@ -11,7 +11,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: ${{ matrix.os == 'windows-latest' && 55 || 45 }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Linux window and audio dependencies
@@ -23,10 +23,16 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          cache-on-failure: true
-          cache-workspace-crates: true
+          # Start a new key so old multi-gigabyte workspace caches aren't restored.
+          prefix-key: dependency-only-v1
+          cache-workspace-crates: false
+          cache-bin: false
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - run: cargo fmt --check
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - name: Build workspace test binaries
+        run: cargo test --locked --workspace --no-run -j 2
+      # Keep the existing test execution settings for the socket-based fixtures.
       - run: cargo test --locked --workspace --no-fail-fast -j 1
       - name: Content authoring validators
         run: cargo test --locked -p theia-network --example validate_gameplay --example validate_quest_packs --example validate_quest_documents --example review_quest_update -j 1

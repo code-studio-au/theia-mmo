@@ -181,7 +181,11 @@ pub async fn run_with_profiles(
         .development_player_spawn(1)
         .ok_or("Account spawn lacks collision support")?;
     world.validate_restored_player(spawn)?;
-    let (transport, issuer) = renet_runtime::secure_issuer(socket, advertised)?;
+    let (transport, issuer) = if config.hosted() {
+        renet_runtime::secure_hosted_issuer(socket, advertised)?
+    } else {
+        renet_runtime::secure_issuer(socket, advertised)?
+    };
     let (publisher, worker) = Worker::start(store);
     let status = worker.subscribe_status();
     let mut service = AccountService::prepare(config, publisher.clone(), identity, spawn).await?;

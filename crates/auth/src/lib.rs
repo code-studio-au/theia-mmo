@@ -1,5 +1,6 @@
-//! Provider-neutral OIDC boundary. Initial loopback qualification only; no game
-//! session/character authorization is established by a verified identity alone.
+//! Identity verification for local OIDC and the hosted Cognito realm. Game
+//! sessions and character ownership are established by the account service.
+pub mod cognito;
 mod session;
 mod transport;
 use openidconnect::{

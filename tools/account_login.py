@@ -42,20 +42,40 @@ def _endpoint(value, *, browser=False):
 
 
 class AccountClient:
-    def __init__(self, base, alive=lambda: True, cancelled=lambda: False):
-        _endpoint(base)
+    def __init__(self, base, alive=lambda: True, cancelled=lambda: False, *, tls=None, game_address=None):
+        if tls is None:
+            _endpoint(base)
+            if game_address is not None:
+                raise AccountError('Hosted game admission requires HTTPS')
+        elif not base.startswith('https://') or game_address is None:
+            raise AccountError('Hosted game admission requires HTTPS and a game endpoint')
         self._base = base.rstrip('/')
         self._alive = alive
         self._cancelled = cancelled
         self._session = None
-        self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+        self._game_address = game_address
+        handlers = [urllib.request.ProxyHandler({}), _NoRedirect()]
+        if tls is not None:
+            handlers.append(urllib.request.HTTPSHandler(context=tls))
+        self._opener = urllib.request.build_opener(*handlers)
 
     def __repr__(self):
         return 'AccountClient([redacted])'
 
-    def request(self, path, body=None):
-        if path not in {'/auth/start', '/auth/poll', '/auth/cancel', '/auth/logout', '/characters', '/characters/enter'}:
+    def ready(self):
+        try:
+            with self._opener.open(self._base + '/ready', timeout=3) as response:
+                return response.status == 200 and response.read(32) == b'theia-account-ready\n'
+        except (OSError, urllib.error.URLError):
+            return False
+
+    def request(self, path, body=None, *, access_token=None):
+        if path not in {'/auth/start', '/auth/poll', '/auth/cancel', '/auth/logout', '/auth/hosted', '/characters', '/characters/enter'}:
             raise AccountError('Unknown account operation')
+        if (access_token is not None or path == '/auth/hosted') and (
+                path != '/auth/hosted' or not self._game_address or not isinstance(access_token, str)
+                or not re.fullmatch(r'[A-Za-z0-9._-]{1,8192}', access_token)):
+            raise AccountError('Invalid hosted sign-in')
         if path not in {'/auth/cancel', '/auth/logout'} and self._cancelled():
             raise KeyboardInterrupt
         if not self._alive():
@@ -64,8 +84,9 @@ class AccountClient:
         if data is not None and len(data) > 4096:
             raise AccountError('Account request is too large')
         headers = {'Content-Type': 'application/json'}
-        if self._session is not None:
-            headers['Authorization'] = 'Bearer ' + self._session
+        token = access_token if access_token is not None else self._session
+        if token is not None:
+            headers['Authorization'] = 'Bearer ' + token
         request = urllib.request.Request(self._base + path, data=data, headers=headers)
         try:
             try:
@@ -94,6 +115,13 @@ class AccountClient:
             raise
         except (OSError, ValueError, urllib.error.URLError):
             raise AccountError('Could not complete the account operation') from None
+
+    def use_access_token(self, token):
+        result, _ = self.request('/auth/hosted', {}, access_token=token)
+        session = result.get('session') if isinstance(result, dict) else None
+        if not isinstance(session, str) or not re.fullmatch(r'[0-9a-f]{64}', session):
+            raise AccountError('Invalid account session')
+        self._session = session
 
     def login(self, open_browser=webbrowser.open):
         collected = False
@@ -228,7 +256,9 @@ class AccountClient:
         try:
             address = result['address']
             parsed = urllib.parse.urlsplit('http://' + address)
-            if not ipaddress.ip_address(parsed.hostname).is_loopback or not parsed.port or parsed.path or parsed.query or parsed.fragment or parsed.username is not None or parsed.password is not None:
+            valid_host = (address == self._game_address if self._game_address is not None
+                          else ipaddress.ip_address(parsed.hostname).is_loopback)
+            if not valid_host or not parsed.port or parsed.path or parsed.query or parsed.fragment or parsed.username is not None or parsed.password is not None:
                 raise ValueError()
             data = result['ticket']
             if result['id'] != character or not isinstance(data, list) or not 1 <= len(data) <= 2048 or any(type(value) is not int or not 0 <= value <= 255 for value in data):

@@ -44,6 +44,37 @@ pub fn secure_issuer(
     {
         return Err("Development ticket issuer requires bounded loopback endpoints".into());
     }
+    issuer(socket, advertised)
+}
+
+pub fn secure_hosted_issuer(
+    socket: UdpSocket,
+    advertised: Vec<SocketAddr>,
+) -> Result<(NetcodeServerTransport, TicketIssuer)> {
+    let bound = socket.local_addr()?;
+    let [address] = advertised.as_slice() else {
+        return Err("Hosted admission requires one advertised game endpoint".into());
+    };
+    if !bound.is_ipv4()
+        || bound.ip().is_loopback()
+        || bound.port() != address.port()
+        || !is_hosted_endpoint(*address)
+    {
+        return Err("Hosted admission requires a valid IPv4 game endpoint".into());
+    }
+    issuer(socket, advertised)
+}
+
+pub fn is_hosted_endpoint(address: SocketAddr) -> bool {
+    matches!(address.ip(), std::net::IpAddr::V4(ip) if !ip.is_loopback() && !ip.is_unspecified()
+        && !ip.is_multicast() && !ip.is_broadcast() && !ip.is_link_local())
+        && address.port() != 0
+}
+
+fn issuer(
+    socket: UdpSocket,
+    advertised: Vec<SocketAddr>,
+) -> Result<(NetcodeServerTransport, TicketIssuer)> {
     let key = generate_random_bytes();
     let current = now()?;
     let transport = NetcodeServerTransport::new(
