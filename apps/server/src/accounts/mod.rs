@@ -159,6 +159,7 @@ pub struct Stats {
 struct Inner {
     provider: Option<Arc<Provider>>,
     cognito: Option<cognito::Verifier>,
+    lifecycle: bool,
     publisher: Publisher,
     sessions: Arc<Mutex<Sessions<OwnerId>>>,
     game: Mutex<Option<Arc<crate::admissions::GameAdmissions>>>,
@@ -379,6 +380,7 @@ impl AccountService {
         let state = Arc::new(Inner {
             provider,
             cognito,
+            lifecycle: hosted && std::env::var_os("THEIA_REALM_LIFECYCLE_DIR").is_some(),
             publisher,
             sessions: Arc::new(Mutex::new(sessions)),
             game: Mutex::new(None),

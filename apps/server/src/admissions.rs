@@ -76,6 +76,20 @@ struct State {
     generation: u64,
     sequence: u64,
     failed: bool,
+    draining: bool,
+    hosted_joins: std::collections::BTreeMap<OwnerId, HostedJoin>,
+}
+
+#[derive(Clone, serde::Serialize)]
+pub(crate) struct HostedJoin {
+    pub id: String,
+    pub subject: String,
+}
+pub(crate) struct LifecycleStatus {
+    pub players: usize,
+    pub occupied: bool,
+    pub admitted: Vec<HostedJoin>,
+    pub draining: bool,
 }
 pub struct GameAdmissions {
     progression: Option<progression::Config>,
@@ -112,6 +126,8 @@ impl GameAdmissions {
                 generation: 0,
                 sequence: 0,
                 failed: false,
+                draining: false,
+                hosted_joins: Default::default(),
             }),
             sessions,
             issuer,
@@ -308,6 +324,9 @@ impl GameAdmissions {
     ) -> GateResult<Reservation> {
         let mut state = self.lock()?;
         self.prune(&mut state)?;
+        if state.draining {
+            return Err(Error::Unavailable);
+        }
         if self
             .sessions
             .lock()
@@ -441,6 +460,50 @@ impl GameAdmissions {
             state.failed = true;
         }
     }
+    pub(crate) fn hosted_join(&self, owner: OwnerId, join: HostedJoin) -> GateResult<()> {
+        let mut state = self.lock()?;
+        if state.draining
+            || (!state.hosted_joins.contains_key(&owner) && state.hosted_joins.len() >= MAX_PLAYERS)
+        {
+            return Err(Error::Busy);
+        }
+        state.hosted_joins.insert(owner, join);
+        Ok(())
+    }
+
+    pub(crate) fn pending_hosted_join(&self, owner: OwnerId) -> GateResult<Option<HostedJoin>> {
+        let state = self.lock()?;
+        Ok((!state.draining)
+            .then(|| state.hosted_joins.get(&owner).cloned())
+            .flatten())
+    }
+
+    pub(crate) fn lifecycle(&self, request_drain: bool) -> GateResult<LifecycleStatus> {
+        let mut state = self.lock()?;
+        self.prune(&mut state)?;
+        let occupied = state.slots.iter().any(Option::is_some);
+        let mut players = 0;
+        let admitted = state
+            .slots
+            .iter()
+            .flatten()
+            .filter(|entry| entry.phase == Phase::Active)
+            .filter_map(|entry| {
+                players += 1;
+                state.hosted_joins.get(&entry.binding.owner).cloned()
+            })
+            .collect();
+        if request_drain && !occupied {
+            state.draining = true;
+        }
+        Ok(LifecycleStatus {
+            players,
+            occupied,
+            admitted,
+            draining: state.draining,
+        })
+    }
+
     fn abandon(&self, slot: usize, generation: u64) {
         if let Ok(mut state) = self.state.lock()
             && let Some(entry) = state.slots[slot].as_mut()

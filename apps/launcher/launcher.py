@@ -481,7 +481,7 @@ class Launcher:
         self.hosted_button.set_visible(bool(self.hosted and self.library))
         self.hosted_button.set_sensitive(ready)
         self.root_button.set_sensitive(ready)
-        self.cancel_button.set_visible(transferring)
+        self.cancel_button.set_visible(transferring or bool(self.realm and self.job == 'play'))
         self.cancel_button.set_sensitive(not self.cancelled.is_set())
         self.progress_row.set_visible(transferring)
         self.play_installed.set_visible(update)
@@ -743,11 +743,17 @@ class Launcher:
             return
         if self.realm:
             self.start('play', 'Sign in with your browser…',
-                       lambda: self.realm.launch(self.install_root, self.game_args, self.cancelled.is_set),
+                       lambda: self.realm.launch(self.install_root, self.game_args, self.cancelled.is_set,
+                                                 lambda message: GLib.idle_add(self.realm_progress, message)),
                        self.playing)
             return
         self.start('play', 'Verifying installed client…',
                    lambda: client_install.launch(self.install_root, self.game_args), self.playing)
+
+    def realm_progress(self, message):
+        if self.job == 'play' and not self.cancelled.is_set():
+            self.status.set_text(message)
+        return GLib.SOURCE_REMOVE
 
     def playing(self, process):
         self.game = process

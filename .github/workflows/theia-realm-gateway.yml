@@ -1,0 +1,100 @@
+name: Theia realm gateway
+
+on:
+  pull_request:
+    paths:
+      - infrastructure/gateway/**
+      - infrastructure/aws/**
+      - apps/launcher/realm_gateway.py
+      - tools/test_realm_gateway.py
+      - .github/workflows/theia-realm-gateway.yml
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Validate locally, prepare an AWS change set, or execute a reviewed change set
+        type: choice
+        options: [validate, prepare, execute]
+        default: validate
+      change_set_arn:
+        description: ARN produced by a successful prepare run (execute only)
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: theia-realm-gateway-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: infrastructure/aws/.nvmrc
+          cache: npm
+          cache-dependency-path: infrastructure/aws/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: infrastructure/aws
+      - run: npm run check && npm test && npm run synth -- --app 'node bin/theia-realm-gateway.ts' --quiet
+        working-directory: infrastructure/aws
+      - run: npm run synth -- --app 'node bin/theia-realm-gateway-identity.ts' --output cdk.out/realm-identity --quiet
+        working-directory: infrastructure/aws
+      - run: rustup show active-toolchain && rustup target add x86_64-unknown-linux-musl
+      - run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: cargo fmt --manifest-path infrastructure/gateway/Cargo.toml --check
+      - run: cargo clippy --locked --manifest-path infrastructure/gateway/Cargo.toml --all-targets -- -D warnings
+      - run: cargo test --locked --manifest-path infrastructure/gateway/Cargo.toml
+      - run: python3 -m unittest discover -s tools -p test_realm_gateway.py
+      - run: bash infrastructure/gateway/package.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: realm-gateway
+          path: |
+            build/realm-gateway/*
+            infrastructure/aws/cdk.out/TheiaDevelopmentRealmGateway.template.json
+            infrastructure/aws/cdk.out/realm-identity/TheiaRealmGatewayIdentity.template.json
+          if-no-files-found: error
+
+  aws:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.operation != 'validate'
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: theia-infrastructure
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ap-southeast-2
+      AWS_PAGER: ''
+      THEIA_AWS_ACCOUNT_ID: ${{ vars.THEIA_AWS_ACCOUNT_ID }}
+      THEIA_GATEWAY_EXECUTION_ROLE: ${{ vars.THEIA_GATEWAY_EXECUTION_ROLE }}
+      THEIA_GATEWAY_BUCKET: ${{ vars.THEIA_GATEWAY_BUCKET }}
+      THEIA_COGNITO_ISSUER: ${{ vars.THEIA_GATEWAY_COGNITO_ISSUER }}
+      THEIA_COGNITO_CLIENT: ${{ vars.THEIA_GATEWAY_COGNITO_CLIENT_ID }}
+      THEIA_CHANGE_SET: ${{ inputs.change_set_arn }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: realm-gateway
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
+        with:
+          aws-region: ap-southeast-2
+          role-to-assume: ${{ vars.THEIA_GATEWAY_DEPLOY_ROLE }}
+          allowed-account-ids: ${{ vars.THEIA_AWS_ACCOUNT_ID }}
+          mask-aws-account-id: true
+      - name: Prepare a reviewable change set
+        if: inputs.operation == 'prepare'
+        run: bash infrastructure/gateway/deploy.sh prepare
+      - name: Execute the reviewed change set
+        if: inputs.operation == 'execute'
+        run: bash infrastructure/gateway/deploy.sh execute

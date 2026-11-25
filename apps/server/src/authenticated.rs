@@ -1,5 +1,8 @@
 //! In-process account API, Renet authority and asynchronous checkpoint lifecycle.
 //! The simulation never awaits identity-provider, HTTP or SQL operations.
+#[path = "authenticated_lifecycle.rs"]
+pub(crate) mod lifecycle;
+
 use crate::{
     accounts::{AccountService, Config},
     admissions::GameAdmissions,
@@ -186,6 +189,7 @@ pub async fn run_with_profiles(
     } else {
         renet_runtime::secure_issuer(socket, advertised)?
     };
+    let mut lifecycle = lifecycle::Lifecycle::from_environment(config.hosted())?;
     let (publisher, worker) = Worker::start(store);
     let status = worker.subscribe_status();
     let mut service = AccountService::prepare(config, publisher.clone(), identity, spawn).await?;
@@ -245,12 +249,16 @@ pub async fn run_with_profiles(
         external,
         done,
         stop.clone(),
+        &mut lifecycle,
     );
     let (game, api, saved) = tokio::join!(game, api, saving);
     gate.fail_closed();
     game?;
     api?;
     saved?;
+    if let Some(lifecycle) = lifecycle {
+        lifecycle.flushed()?;
+    }
     Ok(())
 }
 async fn manage(
@@ -260,6 +268,7 @@ async fn manage(
     mut external: watch::Receiver<bool>,
     mut done: watch::Receiver<bool>,
     stop: watch::Sender<bool>,
+    lifecycle: &mut Option<lifecycle::Lifecycle>,
 ) -> Result<()> {
     let mut status = worker.subscribe_status();
     let mut cadence = tokio::time::interval(Duration::from_secs(1));
@@ -284,6 +293,16 @@ async fn manage(
             _=external.changed(),if external_open=>{external_open=false;stop.send_replace(true);},
             _=cadence.tick()=>{
                 if gate.flush(&publisher,&worker.status()).is_err() {failure=true;gate.fail_closed();stop.send_replace(true);break;}
+                if let Some(lifecycle) = lifecycle {
+                    match lifecycle.tick(&gate) {
+                        Ok(true) => stop.send_replace(true),
+                        Ok(false) => false,
+                        Err(error) => {
+                            eprintln!("Lifecycle coordination unavailable: {error}");
+                            false
+                        }
+                    };
+                }
             },
         }
     }

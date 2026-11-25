@@ -210,4 +210,6 @@ to the client export and `--realm-config` pointing to the JSON file, then instal
 the client. Provision accounts through Cognito and distribute credentials privately.
 The launcher uses the bundled CA certificate for the realm's HTTPS endpoint.
 The only public game ports are TCP 443 and UDP 5000. PostgreSQL and the account
-backend are bound to loopback. Automatic wake and idle stop are pending.
+backend are bound to loopback. The [gateway rollout runbook](../infrastructure/gateway/README.md)
+covers opt-in automatic wake and idle stop. Live gateway rollout and the two-tester
+wake, play, idle stop and progress restoration check remain pending.
