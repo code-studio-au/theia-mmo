@@ -10,6 +10,7 @@ import tempfile
 from client_install import MANIFEST, InstallError, copy_file, metadata, version, version_key, write_json
 from package_client_launcher import package
 from retain_pages_release import STABLE_LAUNCHER, retain_previous
+from release_news import NEWS_FILE, NEWS_LIMIT, next_archive
 from hosted_release import (
     CHANNEL, CHANNEL_FILE, DEFAULT_URL, DELTA_LIMIT, MAX_RELEASE_BYTES, HostedLibrary,
     ZSTD, apply_delta, delta_eligible, release_packages, validate_deltas, verified_payload, verify_envelope,
@@ -78,7 +79,7 @@ def build_deltas(base, candidate, blobs, scratch, budget):
 
 
 def stage(release, output, launcher_version, signing_key, retained=(), *, delta_base=None,
-          live_mode=None, live_url=DEFAULT_URL, live_opener=None, expected_previous=None):
+          live_mode=None, live_url=DEFAULT_URL, live_opener=None, expected_previous=None, release_notes=None):
     output = output.resolve()
     launcher_version = version(launcher_version)
     if output.exists():
@@ -118,9 +119,14 @@ def stage(release, output, launcher_version, signing_key, retained=(), *, delta_
         package(launcher, launcher_version, (root_key,))
         previous = None
         if live_mode is not None:
-            previous = retain_previous(HostedLibrary(live_url, (root_key,), opener=live_opener), downloads,
-                                       manifest, launcher_version, first_release=live_mode == 'first',
-                                       expected_previous=expected_previous)
+            live = HostedLibrary(live_url, (root_key,), opener=live_opener)
+            previous = retain_previous(live, downloads, manifest, launcher_version,
+                                       first_release=live_mode == 'first', expected_previous=expected_previous)
+            news = next_archive(live, previous, launcher_version, manifest['version'], release_notes or {})
+            news_path = downloads / NEWS_FILE
+            write_json(news_path, sign(news, scratch, signing_key))
+            if news_path.stat().st_size > NEWS_LIMIT:
+                raise InstallError('The signed release news archive exceeds its size limit')
         shutil.copyfile(launcher, downloads / STABLE_LAUNCHER)
         sums = []
         for installer in sorted(downloads.glob('theia-launcher_*.deb')):
@@ -129,7 +135,7 @@ def stage(release, output, launcher_version, signing_key, retained=(), *, delta_
         (downloads / 'SHA256SUMS').write_text(''.join(sums), encoding='ascii')
         (tree / '.nojekyll').touch()
         write_json(downloads / CHANNEL_FILE, envelope)
-        if delta_base is not None and previous != manifest:
+        if delta_base is not None and (previous is None or previous['client'] != manifest):
             used = sum(path.stat().st_size for path in tree.rglob('*') if path.is_file())
             # Leave space for the signed sidecar even at the artifact limit.
             payload = build_deltas(delta_base, manifest, blobs, scratch, MAX_RELEASE_BYTES - used - 512 * 1024)
@@ -155,11 +161,14 @@ def main():
     parser.add_argument('--live-mode', choices=('first', 'update'),
                         help='Check the public feed and retain the live release before publishing')
     parser.add_argument('--expected-previous', help='Exact live client version in update mode')
+    parser.add_argument('--launcher-notes', default='', help='Reviewed launcher changes, one per line')
+    parser.add_argument('--client-notes', default='', help='Reviewed client changes, one per line')
     args = parser.parse_args()
     try:
         print(stage(args.client_export, args.output, args.launcher_version, args.signing_key,
                     args.retain_client, delta_base=args.delta_base, live_mode=args.live_mode,
-                    expected_previous=version(args.expected_previous) if args.expected_previous else None))
+                    expected_previous=version(args.expected_previous) if args.expected_previous else None,
+                    release_notes={'launcher': args.launcher_notes, 'client': args.client_notes}))
     except (OSError, InstallError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'Could not stage the Pages downloads: {error}\n')
 

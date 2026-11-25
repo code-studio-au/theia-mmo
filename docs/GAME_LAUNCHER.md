@@ -187,6 +187,40 @@ The previous-release retention window covers one rollout. Installed releases
 can still roll back locally. Client-only releases can reuse the existing
 installer. Launcher-only releases can reuse the exact client manifest and its
 published patch files. Changes to either artifact require advancing its version.
+## Automatic website release notes
+
+When publishing Linux downloads, enter reviewed public notes for whichever of
+`launcher_version` or `client_version` changed. Use one plain-text change per
+line. Leave notes blank for an unchanged product; on first publish, supply
+both. The publisher signs the download feed, any patch metadata, and a
+separate `release-news.json` archive. The archive preserves prior news even
+when packages fall out of the previous-release retention window. Updates
+fail before deployment if signed news history is missing or does not match
+the live release. Review every line for public disclosure.
+
+One-time setup after the first verified publish:
+
+1. In `theia-website`, set `ENABLE_RELEASE_NEWS=true` and set the
+   `THEIA_RELEASE_PUBLIC_KEY` repository variable to the existing game release
+   signing **public** key as base64-encoded Ed25519 DER (SPKI). Dispatch
+   the normal website workflow once to backfill the posts. The website uses
+   the public key only.
+2. To dispatch future website builds automatically, set
+   `ENABLE_WEBSITE_RELEASE_NEWS=true` on the game publisher's `github-pages`
+   environment. Add the `THEIA_WEBSITE_NEWS_TOKEN` secret there. Use a
+   fine-grained token authorized for `code-studio-au/theia-website` with
+   **Actions: write** only (plus required Metadata read). This token runs
+   the existing website workflow on main after the game files and news are
+   verified live. It does not need Contents write or access to AWS.
+
+If the automatic dispatch fails, the game release is already live. Retry
+the website workflow manually; it reimports the same archive and produces the
+same articles and RSS entries. Do not republish the same game versions. A
+hand-written article with the matching version takes precedence in the
+website build. No per-release edit to the website or the download manifest
+is required.
+
+
 Local HTTPS tests cover install, partial transfer resume, executable-only and
 single-zone updates, corruption rejection and rollback. The update tests assert
 that no unrelated UI, settings or terrain bytes are requested. A public download candidate and

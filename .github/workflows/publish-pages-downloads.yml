@@ -23,6 +23,12 @@ on:
         description: New immutable version for the Linux launcher package
         required: true
         type: string
+      launcher_notes:
+        description: Reviewed public changes, one per line (required when launcher advances)
+        type: string
+      client_notes:
+        description: Reviewed public changes, one per line (required when client advances)
+        type: string
       delta_base_run:
         description: Optional successful main run with the previous Linux client export
         type: string
@@ -44,6 +50,7 @@ jobs:
       feed_sha256: ${{ steps.stage.outputs.feed_sha256 }}
       launcher_sha256: ${{ steps.stage.outputs.launcher_sha256 }}
       client_sha256: ${{ steps.stage.outputs.client_sha256 }}
+      news_sha256: ${{ steps.stage.outputs.news_sha256 }}
     permissions:
       contents: read
       actions: read
@@ -87,6 +94,8 @@ jobs:
           LAUNCHER_VERSION: ${{ inputs.launcher_version }}
           RELEASE_MODE: ${{ inputs.release_mode }}
           EXPECTED_PREVIOUS: ${{ inputs.expected_previous }}
+          LAUNCHER_NOTES: ${{ inputs.launcher_notes }}
+          CLIENT_NOTES: ${{ inputs.client_notes }}
           DELTA_BASE_RUN: ${{ inputs.delta_base_run }}
         run: |
           jq -e --arg version "$CLIENT_VERSION" '.version == $version' "$RUNNER_TEMP/client-export/client-release.json"
@@ -108,8 +117,10 @@ jobs:
           fi
           python3 tools/stage_hosted_release.py "$RUNNER_TEMP/client-export" "$RUNNER_TEMP/game-pages" \
             --launcher-version "$LAUNCHER_VERSION" --signing-key "$key" \
+            --launcher-notes="$LAUNCHER_NOTES" --client-notes="$CLIENT_NOTES" \
             "${release_args[@]}" "${delta_args[@]}"
           cd "$RUNNER_TEMP/game-pages/downloads"
+          printf 'news_sha256=%s\n' "$(sha256sum release-news.json | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
           printf 'feed_sha256=%s\n' "$(sha256sum development.json | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
           printf 'launcher_sha256=%s\n' "$(sha256sum theia-launcher_amd64.deb | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
           client_hash=$(jq -er '.files[] | select(.path == "theia-client") | .sha256' "$RUNNER_TEMP/client-export/client-release.json")
@@ -136,6 +147,7 @@ jobs:
           FEED_SHA256: ${{ needs.stage.outputs.feed_sha256 }}
           LAUNCHER_SHA256: ${{ needs.stage.outputs.launcher_sha256 }}
           CLIENT_SHA256: ${{ needs.stage.outputs.client_sha256 }}
+          NEWS_SHA256: ${{ needs.stage.outputs.news_sha256 }}
         run: |
           set -o pipefail
           base=https://code-studio-au.github.io/theia-mmo/downloads
@@ -148,10 +160,22 @@ jobs:
           for attempt in {1..12}; do
             if verify development.json "$FEED_SHA256" \
               && verify theia-launcher_amd64.deb "$LAUNCHER_SHA256" \
-              && verify "blobs/$CLIENT_SHA256" "$CLIENT_SHA256"; then
+              && verify "blobs/$CLIENT_SHA256" "$CLIENT_SHA256" \
+              && verify release-news.json "$NEWS_SHA256"; then
               exit 0
             fi
             sleep 10
           done
           echo 'The live release does not yet match the approved artifact.' >&2
           exit 1
+
+      - name: Rebuild the website with the verified release news
+        if: vars.ENABLE_WEBSITE_RELEASE_NEWS == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.THEIA_WEBSITE_NEWS_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]] || ! gh workflow run deploy.yml --repo code-studio-au/theia-website --ref main; then
+            echo '::warning::Game downloads are live. Dispatch the website workflow manually to import the signed release notes.'
+            exit 1
+          fi

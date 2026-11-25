@@ -94,4 +94,4 @@ def retain_previous(library, downloads, current, launcher_version, *, first_rele
         path.parent.mkdir(exist_ok=True)
         path.write_bytes(delta_raw)
 
-    return previous_manifest
+    return previous
