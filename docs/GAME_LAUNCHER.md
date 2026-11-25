@@ -170,11 +170,31 @@ before measuring or hashing it. The Cargo output keeps its debug information.
 Treat the unstripped build or separate debug symbols as private diagnostics.
 The executable-only private test export is insufficient as a public payload.
 
+Generated runtime assets can come from one reviewed build input. Freeze the
+inventory's selected payload paths from an existing Linux export with:
+
+```sh
+python3 tools/linux_client_asset_bundle.py /path/to/client-export paths.txt theia-linux-assets.tar.gz
+```
+
+`paths.txt` contains one reviewed payload path per line. The command verifies
+those bytes against the original export manifest and prints the archive byte
+count and SHA-256. Add that object as `bundle` in
+`release/linux-client-files.json` alongside the `files` array. Keep required
+notices, including `content/ui/fonts/LICENSE.txt` for Liberation fonts, among
+the reviewed files. Put the archive at the root of the configured private
+GitHub build-input repository. Configure `THEIA_LINUX_ASSETS_REPOSITORY` and a
+`THEIA_LINUX_ASSETS_TOKEN` secret scoped to Contents read on that repository in
+the `game-downloads-release` environment. Pass the exact Git commit as
+`asset_commit` when building. The workflow verifies the pinned archive and
+exports separate files. The launcher still downloads individual content blobs.
+
 1. Enable GitHub Actions as the Pages source on `theia-mmo`. Protect the
    `game-downloads-release` environment and configure its Ed25519
    `THEIA_RELEASE_SIGNING_KEY` secret.
 2. Dispatch **Build Linux client release candidate** on `main`. It verifies
-   the approved files by size and hash and uploads `theia-linux-client-release`.
+   the approved files and optional asset bundle by size and hash and uploads
+   `theia-linux-client-release`.
    Smoke-test the exact export on a clean Linux install before approving it.
 3. Dispatch **Publish Linux downloads to GitHub Pages** with the candidate run
    and versions. Choose `first` only when the feed does not exist. For an

@@ -1,14 +1,17 @@
 """The artifact uploaded to the public release workflow contains only reviewed files."""
 import hashlib
+import io
 import json
 from pathlib import Path
 import subprocess
+import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from build_linux_client_candidate import build
-from client_install import InstallError, install, launch, metadata, target
+from client_install import InstallError, export, install, launch, metadata, target
+from linux_client_asset_bundle import pack
 
 
 @unittest.skipUnless(target() == 'linux-x86_64', 'the public candidate is Linux AMD64')
@@ -38,8 +41,16 @@ class ApprovedCandidate(unittest.TestCase):
         }]}))
         self.git('add', str(self.approval))
 
-    def build(self):
-        return build(self.repo, Path('/usr/bin/true'), self.approval, self.output, '0.1.0.12')
+    def build(self, **options):
+        return build(self.repo, Path('/usr/bin/true'), self.approval, self.output, '0.1.0.12', **options)
+
+    def approve_bundle(self, bundle):
+        data = self.approval.read_text() if self.approval.exists() else '{"files":[]}'
+        payload = bundle.read_bytes()
+        approval = json.loads(data)
+        approval['bundle'] = {'bytes': len(payload), 'sha256': hashlib.sha256(payload).hexdigest()}
+        self.approval.write_text(json.dumps(approval))
+        self.git('add', str(self.approval))
 
     def test_only_reviewed_bytes_reach_candidate(self):
         self.git('add', 'content')
@@ -83,3 +94,46 @@ class ApprovedCandidate(unittest.TestCase):
         with self.assertRaisesRegex(InstallError, 'differs from the reviewed bytes'):
             self.build()
         self.assertFalse(self.output.exists())
+
+    def test_pin_a_reproducible_bundle_beside_tracked_files(self):
+        source = self.repo / 'source'
+        source.mkdir()
+        (source / 'theia-client').write_bytes(b'original binary')
+        (source / 'terrain.height').write_bytes(b'reviewed ground')
+        (source / 'navigation.json').write_bytes(b'reviewed navigation')
+        (source / 'unreviewed.fbx').write_bytes(b'private source')
+        original = export(source, self.repo / 'original', '0.1.0.11')
+        one, two = self.repo / 'one.tar.gz', self.repo / 'two.tar.gz'
+        paths = ['terrain.height', 'navigation.json']
+        self.assertEqual(pack(original, paths, one), pack(original, reversed(paths), two))
+        self.assertEqual(one.read_bytes(), two.read_bytes())
+
+        self.git('add', 'content')
+        self.approve(self.asset)
+        self.approve_bundle(one)
+        with self.assertRaisesRegex(InstallError, 'Supply the Linux asset bundle'):
+            self.build()
+        one.write_bytes(one.read_bytes()[:-1] + b'x')
+        with self.assertRaisesRegex(InstallError, 'differs from the approved bytes'):
+            self.build(asset_bundle=one)
+        release = self.build(asset_bundle=two)
+        manifest, _ = metadata(release)
+        self.assertEqual({row['path'] for row in manifest['files']}, {
+            'theia-client', 'terrain.height', 'navigation.json', 'assets/approved.dat',
+        })
+        self.assertEqual((release / 'payload/terrain.height').read_bytes(), b'reviewed ground')
+
+    def test_bundle_members_cannot_escape_or_override_the_payload(self):
+        for paths in (('../outside',), ('theia-client',), ('duplicate', 'duplicate')):
+            with self.subTest(paths=paths):
+                bundle = self.repo / 'malformed.tar.gz'
+                with tarfile.open(bundle, 'w:gz') as archive:
+                    for path in paths:
+                        entry = tarfile.TarInfo(path)
+                        entry.size = 1
+                        archive.addfile(entry, io.BytesIO(b'x'))
+                self.approve_bundle(bundle)
+                with self.assertRaises(InstallError):
+                    self.build(asset_bundle=bundle)
+                self.assertFalse(self.output.exists())
+                self.assertFalse((self.repo / 'outside').exists())

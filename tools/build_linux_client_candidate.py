@@ -1,22 +1,33 @@
 """Export a Linux client with a reviewed list of redistributable payload files."""
 import argparse
 from pathlib import Path
+import re
 import subprocess
 import sys
+import tarfile
 import tempfile
 
 from client_install import InstallError, copy_file, export, read_json, relative, version
+from linux_client_asset_bundle import unpack
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'apps' / 'launcher'))
 from hosted_release import MAX_RELEASE_BYTES
 
 
-def build(repo, client, approval, output, release_version):
+def build(repo, client, approval, output, release_version, *, asset_bundle=None):
     repo, output = repo.resolve(strict=True), output.resolve()
     version(release_version)
     approval = approval.absolute()
     data = read_json(approval, 1024 * 1024)
-    if not isinstance(data, dict) or set(data) != {'files'} or not isinstance(data['files'], list) or not data['files']:
+    if (not isinstance(data, dict) or set(data) not in ({'files'}, {'files', 'bundle'})
+            or not isinstance(data['files'], list) or not (data['files'] or 'bundle' in data)):
         raise InstallError('A reviewed public asset list is required')
+    bundle = data.get('bundle')
+    if 'bundle' in data and (not isinstance(bundle, dict) or set(bundle) != {'bytes', 'sha256'}
+            or type(bundle['bytes']) is not int or not 0 < bundle['bytes'] <= MAX_RELEASE_BYTES
+            or not isinstance(bundle['sha256'], str) or not re.fullmatch('[a-f0-9]{64}', bundle['sha256'])):
+        raise InstallError('Invalid reviewed Linux asset bundle')
+    if (bundle is None) != (asset_bundle is None):
+        raise InstallError('Supply the Linux asset bundle pinned in the reviewed list')
     tracked = set(subprocess.check_output(['git', '-C', repo, 'ls-files', '-z']).decode().split('\0'))
     if approval.resolve().relative_to(repo).as_posix() not in tracked:
         raise InstallError('The public asset approval must be checked into the repository')
@@ -34,6 +45,8 @@ def build(repo, client, approval, output, release_version):
         remaining = MAX_RELEASE_BYTES - executable.stat().st_size
         if remaining <= 0:
             raise InstallError('The stripped Linux client exceeds the release size budget')
+        if asset_bundle is not None:
+            remaining = unpack(asset_bundle.absolute(), bundle, staging, remaining)
         for row in data['files']:
             if not isinstance(row, dict) or set(row) != {'source', 'path', 'bytes', 'sha256'}:
                 raise InstallError('Invalid public asset approval entry')
@@ -60,10 +73,11 @@ def main():
     parser.add_argument('--version', required=True)
     parser.add_argument('--client', type=Path, default=Path('target/release/theia-client'))
     parser.add_argument('--approval', type=Path, default=Path('release/linux-client-files.json'))
+    parser.add_argument('--asset-bundle', type=Path, help='Path to the reviewed asset bundle')
     args = parser.parse_args()
     try:
-        print(build(Path.cwd(), args.client, args.approval, args.output, args.version))
-    except (OSError, InstallError, ValueError, subprocess.CalledProcessError) as error:
+        print(build(Path.cwd(), args.client, args.approval, args.output, args.version, asset_bundle=args.asset_bundle))
+    except (OSError, ValueError, subprocess.CalledProcessError, tarfile.TarError) as error:
         parser.exit(1, f'Could not build the release candidate: {error}\n')
 
 

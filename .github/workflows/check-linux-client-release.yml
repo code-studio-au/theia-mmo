@@ -10,6 +10,7 @@ on:
       - tools/package_client_launcher.py
       - tools/stage_hosted_release.py
       - tools/build_linux_client_candidate.py
+      - tools/linux_client_asset_bundle.py
       - tools/retain_pages_release.py
       - tools/release_news.py
       - tools/test_*client*.py
@@ -25,6 +26,7 @@ on:
       - tools/package_client_launcher.py
       - tools/stage_hosted_release.py
       - tools/build_linux_client_candidate.py
+      - tools/linux_client_asset_bundle.py
       - tools/retain_pages_release.py
       - tools/release_news.py
       - tools/test_*client*.py

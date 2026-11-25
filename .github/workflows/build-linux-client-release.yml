@@ -7,6 +7,9 @@ on:
         description: New immutable client version
         required: true
         type: string
+      asset_commit:
+        description: Exact private build-input commit (required for a bundled release)
+        type: string
 
 permissions:
   contents: read
@@ -22,7 +25,37 @@ jobs:
         with:
           persist-credentials: false
       - name: Require a reviewed public asset list
-        run: test -s release/linux-client-files.json
+        env:
+          ASSET_COMMIT: ${{ inputs.asset_commit }}
+        run: |
+          test -s release/linux-client-files.json
+          bundled=$(jq -r 'has("bundle")' release/linux-client-files.json)
+          if [[ "$bundled" == true ]]; then
+            test -n "$ASSET_COMMIT"
+          else
+            test -z "$ASSET_COMMIT"
+          fi
+      - name: Check the asset bundle source
+        if: inputs.asset_commit != ''
+        env:
+          ASSET_COMMIT: ${{ inputs.asset_commit }}
+          ASSET_REPO: ${{ vars.THEIA_LINUX_ASSETS_REPOSITORY }}
+          GH_TOKEN: ${{ secrets.THEIA_LINUX_ASSETS_TOKEN }}
+        run: |
+          [[ "$ASSET_COMMIT" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$ASSET_REPO" =~ ^[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+$ && -n "$GH_TOKEN" ]]
+          gh api "repos/$ASSET_REPO" | jq -e '.visibility == "private"'
+      - name: Fetch the pinned asset bundle
+        if: inputs.asset_commit != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ vars.THEIA_LINUX_ASSETS_REPOSITORY }}
+          ref: ${{ inputs.asset_commit }}
+          token: ${{ secrets.THEIA_LINUX_ASSETS_TOKEN }}
+          path: .release-assets
+          sparse-checkout: theia-linux-assets.tar.gz
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - run: sudo apt-get update && sudo apt-get install -y binutils pkg-config libasound2-dev libwayland-dev libxkbcommon-dev libx11-dev libxi-dev libxrandr-dev libxcursor-dev
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -31,7 +64,14 @@ jobs:
       - name: Strip the distributable client and export the approved payload
         env:
           CLIENT_VERSION: ${{ inputs.client_version }}
-        run: python3 tools/build_linux_client_candidate.py "$RUNNER_TEMP/client-export" --version "$CLIENT_VERSION"
+          ASSET_COMMIT: ${{ inputs.asset_commit }}
+        run: |
+          bundle=()
+          if [[ -n "$ASSET_COMMIT" ]]; then
+            bundle=(--asset-bundle .release-assets/theia-linux-assets.tar.gz)
+          fi
+          python3 tools/build_linux_client_candidate.py "$RUNNER_TEMP/client-export" \
+            --version "$CLIENT_VERSION" "${bundle[@]}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: theia-linux-client-release
