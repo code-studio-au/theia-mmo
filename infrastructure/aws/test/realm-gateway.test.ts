@@ -60,6 +60,14 @@ test('identity owns an unpublished API and separates deployment, execution and r
   assert.ok(!allows(execution, 'dynamodb:DeleteTable') && !allows(execution, 'ec2:StartInstances'));
   assert.ok(!allows(deploy, 'lambda:CreateFunction') && !allows(deploy, 'ec2:StartInstances'));
   assert.match(JSON.stringify(allows(execution, 'apigateway:POST')?.Resource), /RealmApi/);
+  const stageArn = (suffix: string) => ({ 'Fn::Join': ['', [
+    'arn:', { Ref: 'AWS::Partition' }, ':apigateway:', { Ref: 'AWS::Region' },
+    '::/apis/', { Ref: 'RealmApi' }, suffix,
+  ]] });
+  for (const action of ['apigateway:TagResource', 'apigateway:UntagResource']) {
+    assert.deepEqual(allows(execution, action)?.Resource, [stageArn('/stages'), stageArn('/stages/$default')]);
+    assert.ok(!allows(runtime, action) && !allows(deploy, action));
+  }
   assert.match(JSON.stringify(allows(deploy, 'cloudformation:CreateChangeSet')?.Resource), /stack\/TheiaDevelopmentRealmGateway\/\*/);
   assert.match(JSON.stringify(allows(deploy, 's3:PutObject')?.Resource), /theia\/realm-gateway\/\*\.zip/);
 });

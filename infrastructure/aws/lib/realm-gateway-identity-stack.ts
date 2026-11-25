@@ -88,6 +88,11 @@ export class RealmGatewayIdentityStack extends Stack {
               [`${apiArn}/${kind}`, `${apiArn}/${kind}/*`]),
           }),
           new iam.PolicyStatement({
+            // CreateStage also authorizes the tags against the stage collection.
+            actions: ['apigateway:TagResource', 'apigateway:UntagResource'],
+            resources: [`${apiArn}/stages`, `${apiArn}/stages/$default`],
+          }),
+          new iam.PolicyStatement({
             actions: [
               'lambda:CreateFunction', 'lambda:GetFunction', 'lambda:GetFunctionConfiguration',
               'lambda:UpdateFunctionCode', 'lambda:UpdateFunctionConfiguration', 'lambda:DeleteFunction',
