@@ -1,9 +1,11 @@
 """Exercise signed client updates over a real, isolated HTTPS connection."""
+from base64 import b64decode
 from contextlib import contextmanager
 import hashlib
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from random import Random
 import ssl
 import subprocess
 import tempfile
@@ -12,7 +14,7 @@ import unittest
 
 from client_install import InstallError, active, export, installed, rollback
 from stage_hosted_release import stage
-from hosted_release import HostedLibrary, NoRedirect
+from hosted_release import HostedLibrary, NoRedirect, ZSTD
 from urllib.request import HTTPSHandler, build_opener
 
 
@@ -136,6 +138,54 @@ class HostedDelivery(unittest.TestCase):
         self.assertEqual(rollback(self.game), '0.1.0.12')
         directory, _, _ = installed(self.game, '0.1.0.12')
         self.assertEqual((directory / 'payload/terrain/millhaven/land.bin').read_bytes(), b'millhaven terrain')
+
+    @unittest.skipUnless(ZSTD.is_file(), 'zstd is required for binary patch qualification')
+    def test_binary_patch_resume_and_corrupt_patch_full_file_fallback(self):
+        executable = self.source / 'theia-client'
+        initial = Random(1729).randbytes(512 * 1024)
+        executable.write_bytes(initial)
+        old = export(self.source, self.root / 'base', '0.1.0.11')
+        base_pages = stage(old, self.root / 'base-pages', '0.1.5', self.key)
+        with self.serve(base_pages) as (library, _):
+            self.install(library)
+
+        target = initial[:100_000] + b'one changed byte range' + initial[100_022:]
+        executable.write_bytes(target)
+        new = export(self.source, self.root / 'target', '0.1.0.12')
+        tree = stage(new, self.root / 'target-pages', '0.1.5', self.key, delta_base=old)
+        sidecar = json.loads((tree / 'downloads/deltas/0.1.0.12.json').read_bytes())
+        patch, = json.loads(b64decode(sidecar['payload']))['entries']
+        patch_url = '/downloads/blobs/' + patch['sha256']
+        full_url = '/downloads/blobs/' + hashlib.sha256(target).hexdigest()
+        cache = self.game / '.hosted-download'
+        (cache / patch['sha256']).write_bytes((tree / patch_url.lstrip('/')).read_bytes()[:32])
+
+        with self.serve(tree) as (library, requests):
+            offer, version, size = library.newest('0.1.0.11', '0.1.8', install_root=self.game)
+            self.assertLess(size, len(target) // 100)
+            self.assertEqual(size, patch['bytes'])
+            self.assertEqual(offer.install(self.game, None, None, offered_version=version), '0.1.0.12')
+            self.assertIn((patch_url, 'bytes=32-'), requests)
+            self.assertFalse(any(path == full_url for path, _ in requests))
+        installed_dir, _, _ = installed(self.game, '0.1.0.12')
+        self.assertEqual((installed_dir / 'payload/theia-client').read_bytes(), target)
+
+        for problem in ('corrupt patch', 'invalid signature'):
+            with self.subTest(problem=problem):
+                self.game = self.root / problem
+                with self.serve(base_pages) as (library, _):
+                    self.install(library)
+                (tree / patch_url.lstrip('/')).write_bytes(b'x' * patch['bytes'])
+                if problem == 'invalid signature':
+                    (tree / 'downloads/deltas/0.1.0.12.json').write_text(
+                        json.dumps({**sidecar, 'signature': 'bad!'}))
+                with self.serve(tree) as (library, requests):
+                    self.assertEqual(self.install(library, '0.1.0.11'), '0.1.0.12')
+                    self.assertIn((full_url, None), requests)
+                    self.assertEqual((patch_url, None) in requests, problem == 'corrupt patch')
+                directory, _, _ = installed(self.game, '0.1.0.12')
+                self.assertEqual((directory / 'payload/theia-client').read_bytes(), target)
+                self.assertEqual(rollback(self.game), '0.1.0.11')
 
     def test_rejects_corrupt_download_and_preserves_current_version(self):
         with self.serve(self.publish('0.1.0.11')) as (library, _):

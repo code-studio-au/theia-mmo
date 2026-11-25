@@ -123,6 +123,18 @@ The launcher estimates only missing bytes and downloads files by hash. It reuses
 verified installed files even if their paths moved. Partial downloads can resume
 when the server supports byte ranges. A failed signature, failed hash check,
 cancelled download or incomplete package leaves the active version in place.
+Launcher 0.1.8 can also download a binary patch for a changed large file.
+The publishing workflow accepts an optional previous successful Linux client
+export via `delta_base_run` (or `--delta-base` when staging locally). It stages
+Zstandard patches only when they save at least 20% and fit the Pages size
+budget. Patch metadata is signed separately so the original release format
+remains readable. The launcher checks the installed file's hash, verifies the
+downloaded patch, and verifies the complete rebuilt file against the release
+manifest before activation. A missing patch, mismatched base, invalid signature
+or corrupt patch falls back to the full changed file. A partial patch can
+resume on servers that support byte ranges. Full files remain available for
+clean installs. The launcher uses `zstd` when installed.
+
 Local folders are still selectable in Settings.
 
 The separate Pages project keeps packages available while `theia-website`
