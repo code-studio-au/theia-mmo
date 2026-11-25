@@ -184,8 +184,9 @@ count and SHA-256. Add that object as `bundle` in
 notices, including `content/ui/fonts/LICENSE.txt` for Liberation fonts, among
 the reviewed files. Put the archive at the root of the configured private
 GitHub build-input repository. Configure `THEIA_LINUX_ASSETS_REPOSITORY` and a
-`THEIA_LINUX_ASSETS_TOKEN` secret scoped to Contents read on that repository in
-the `game-downloads-release` environment. Pass the exact Git commit as
+`THEIA_LINUX_ASSETS_SSH_KEY` secret in the `game-downloads-release` environment.
+Register the matching public key as a read-only deploy key on the asset
+repository. Pass the exact Git commit as
 `asset_commit` when building. The workflow verifies the pinned archive and
 exports separate files. The launcher still downloads individual content blobs.
 

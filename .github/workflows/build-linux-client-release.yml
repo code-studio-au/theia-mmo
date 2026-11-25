@@ -40,18 +40,19 @@ jobs:
         env:
           ASSET_COMMIT: ${{ inputs.asset_commit }}
           ASSET_REPO: ${{ vars.THEIA_LINUX_ASSETS_REPOSITORY }}
-          GH_TOKEN: ${{ secrets.THEIA_LINUX_ASSETS_TOKEN }}
         run: |
           [[ "$ASSET_COMMIT" =~ ^[a-f0-9]{40}$ ]]
-          [[ "$ASSET_REPO" =~ ^[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+$ && -n "$GH_TOKEN" ]]
-          gh api "repos/$ASSET_REPO" | jq -e '.visibility == "private"'
+          [[ "$ASSET_REPO" =~ ^[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+$ ]]
+          status=$(curl --silent --show-error --max-time 15 --output /dev/null \
+            --write-out '%{http_code}' "https://api.github.com/repos/$ASSET_REPO")
+          [[ "$status" == 404 ]] || { echo 'Expected a private asset repository'; exit 1; }
       - name: Fetch the pinned asset bundle
         if: inputs.asset_commit != ''
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: ${{ vars.THEIA_LINUX_ASSETS_REPOSITORY }}
           ref: ${{ inputs.asset_commit }}
-          token: ${{ secrets.THEIA_LINUX_ASSETS_TOKEN }}
+          ssh-key: ${{ secrets.THEIA_LINUX_ASSETS_SSH_KEY }}
           path: .release-assets
           sparse-checkout: theia-linux-assets.tar.gz
           sparse-checkout-cone-mode: false
