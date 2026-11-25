@@ -25,6 +25,7 @@ from state import DEFAULT_LOGIN_BIND, data_directory, game_launch_args, login_ad
 from state import read_settings, save_settings
 from browser_sign_in import SignInConfig, rehearse_sign_in
 from hosted_realm import HostedRealm
+from native_login_dialog import NativeLoginDialog
 
 
 def box(vertical=False, spacing=10):
@@ -111,6 +112,7 @@ class Launcher:
         self.probe_pending = False
         self.login_server = args.login_server
         self.realm = args.realm
+        self.login_dialog = None
         self.cancelled = threading.Event()
         self.game_args = game_launch_args(game_args)
         self.test_login = args.test_login
@@ -601,7 +603,12 @@ class Launcher:
             self.window.destroy()
             return GLib.SOURCE_REMOVE
         if error:
-            if job == 'launcher-update':
+            if job == 'play' and self.login_dialog is not None:
+                if self.cancelled.is_set():
+                    self.dismiss_login()
+                else:
+                    self.login_dialog.failed(error)
+            elif job == 'launcher-update':
                 self.launcher_feedback = error
             elif job == 'test-login':
                 self.test_login_status = error
@@ -739,23 +746,41 @@ class Launcher:
                    lambda release: self.check(f'Client {release} restored'))
 
     def play(self):
-        if not self.record['current']:
+        if not self.record['current'] or self.job is not None or self.game is not None:
             return
         if self.realm:
-            self.start('play', 'Sign in with your browser…',
-                       lambda: self.realm.launch(self.install_root, self.game_args, self.cancelled.is_set,
-                                                 lambda message: GLib.idle_add(self.realm_progress, message)),
-                       self.playing)
+            if self.realm.native_sign_in:
+                if self.login_dialog is None:
+                    self.login_dialog = NativeLoginDialog(self)
+                else:
+                    self.login_dialog.present()
+            else:
+                self.start_hosted_play()
             return
         self.start('play', 'Verifying installed client…',
                    lambda: client_install.launch(self.install_root, self.game_args), self.playing)
 
+    def start_hosted_play(self, authenticate=None):
+        self.start('play', 'Signing in…' if authenticate else 'Sign in with your browser…',
+                   lambda: self.realm.launch(self.install_root, self.game_args, self.cancelled.is_set,
+                                             lambda message: GLib.idle_add(self.realm_progress, message),
+                                             authenticate=authenticate),
+                   self.playing)
+
+    def dismiss_login(self):
+        if self.login_dialog is not None:
+            dialog, self.login_dialog = self.login_dialog, None
+            dialog.dismiss()
+
     def realm_progress(self, message):
         if self.job == 'play' and not self.cancelled.is_set():
             self.status.set_text(message)
+            if self.login_dialog is not None:
+                self.login_dialog.status.set_text(message)
         return GLib.SOURCE_REMOVE
 
     def playing(self, process):
+        self.dismiss_login()
         self.game = process
         self.window.iconify()
 

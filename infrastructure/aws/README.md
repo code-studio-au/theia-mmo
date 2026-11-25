@@ -27,6 +27,33 @@ to the game's security group after the host TLS and admission checks pass.
 Removing the ingress stack closes tester access. Store the CA signing key and
 tester credentials privately. The launcher configuration carries the CA certificate.
 
+### Native launcher authentication
+
+Native SRP on the existing launcher app client is opt-in. The Cognito
+Essentials pool uses a V2 pre-token trigger to add `theia-development/play` to
+native access tokens for the designated app client and `theia-testers` group.
+Deploy the helper separately so its invoke permission exists before updating
+the pool. Use the existing pool and app client IDs from the Cognito stack
+outputs. Check the CloudFormation change set retains the current pool, app
+client and managed login domain before applying it.
+
+```sh
+npm exec -- cdk synth --app 'node bin/theia-cognito-native.ts' \
+  --no-lookups --output cdk.out/cognito-native --quiet
+npm exec -- cdk synth --app 'node bin/theia-cognito.ts' \
+  --no-lookups --output cdk.out/cognito --quiet
+```
+
+1. Deploy `TheiaDevelopmentNativeSignIn` in the existing Sydney AWS account,
+   passing `ExistingPoolId` and `ExistingLauncherClientId`.
+2. Update `TheiaDevelopmentCognito` with the helper stack's `NativePlayScopeArn`
+   output, reusing the existing `DomainPrefix` parameter value.
+3. Enable `native_sign_in` in the tester's [realm configuration](../../docs/GAME_LAUNCHER.md#native-cognito-sign-in).
+
+For AWS rollback, update `TheiaDevelopmentCognito` with an explicitly empty
+`NativePlayScopeArn` before removing the helper stack. A missing override on a
+stack update may reuse the previous parameter value.
+
 The stack enables termination protection on the stack and on the instance.
 The root volume survives stop/start and is retained on instance termination.
 A replacement instance starts with a new root volume. Take and verify a

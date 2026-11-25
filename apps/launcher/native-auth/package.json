@@ -1,0 +1,15 @@
+{
+  "name": "theia-native-cognito-sign-in",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild sign-in.cjs --bundle --platform=node --target=node18 --format=cjs --legal-comments=linked --outfile=dist/cognito-sign-in.cjs && node include-licenses.cjs",
+    "test": "python3 ../../../tools/test_cognito_native.py"
+  },
+  "dependencies": {
+    "amazon-cognito-identity-js": "6.3.22"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

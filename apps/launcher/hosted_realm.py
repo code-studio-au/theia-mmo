@@ -11,6 +11,7 @@ import uuid
 
 from account_login import AccountClient, AccountError
 from browser_sign_in import SignInConfig, browser_access_token
+import cognito_native
 import client_install
 from game_frontend import run_hosted
 from launcher_update import VERSION
@@ -21,8 +22,11 @@ class HostedRealm:
     def __init__(self, path):
         data = client_install.read_json(path, 16384)
         fields = {'identity', 'address', 'certificate', 'client_version', 'game_arguments'}
-        if not isinstance(data, dict) or set(data) not in (fields, fields | {'gateway'}):
+        if (not isinstance(data, dict) or not fields <= set(data)
+                or set(data) - fields - {'gateway', 'native_sign_in'}
+                or type(data.get('native_sign_in', False)) is not bool):
             raise client_install.InstallError('Invalid development realm configuration')
+        self.native_sign_in = data.get('native_sign_in', False) and cognito_native.available()
         if not isinstance(data['identity'], dict) or data['identity'].keys() != SignInConfig.__dataclass_fields__.keys():
             raise client_install.InstallError('Invalid Cognito sign-in configuration')
         self.identity = SignInConfig(**data['identity'])
@@ -73,7 +77,7 @@ class HostedRealm:
     def ready(self):
         return self.account().ready()
 
-    def launch(self, root, window_arguments, cancelled, progress=lambda _message: None):
+    def launch(self, root, window_arguments, cancelled, progress=lambda _message: None, *, authenticate=None):
         if client_install.active(root)['current'] != self.client_version:
             raise client_install.InstallError(f'Install client {self.client_version} to play this realm')
         account = self.account(cancelled)
@@ -84,9 +88,12 @@ class HostedRealm:
             if self.gateway:
                 installed, manifest, total = client_install.installed(root, self.client_version)
                 client_install.verify(installed, manifest, total, cancelled=cancelled)
-            token = browser_access_token(
+            token = (authenticate(cancelled) if authenticate is not None else browser_access_token(
                 self.identity, cancelled, scope='openid theia-development/play', timeout=240,
-            )
+            ))
+            if cancelled():
+                raise KeyboardInterrupt
+            progress('Signed in. Connecting to the Sydney realm…')
             if self.gateway:
                 reservation = str(uuid.uuid4())
                 self.gateway.wait_ready(token, reservation, self.build, cancelled, progress, account.ready)

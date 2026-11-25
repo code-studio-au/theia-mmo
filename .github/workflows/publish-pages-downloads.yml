@@ -86,6 +86,14 @@ jobs:
           run-id: ${{ inputs.delta_base_run }}
           name: theia-linux-client-release
           path: ${{ runner.temp }}/delta-base
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/launcher/native-auth/package-lock.json
+      - name: Build the pinned Cognito SRP client
+        working-directory: apps/launcher/native-auth
+        run: npm ci --no-audit && npm run build && npm test
       - name: Sign and stage approved Linux downloads
         id: stage
         env:
@@ -117,6 +125,7 @@ jobs:
           fi
           python3 tools/stage_hosted_release.py "$RUNNER_TEMP/client-export" "$RUNNER_TEMP/game-pages" \
             --launcher-version "$LAUNCHER_VERSION" --signing-key "$key" \
+            --native-auth-bundle apps/launcher/native-auth/dist/cognito-sign-in.cjs \
             --launcher-notes="$LAUNCHER_NOTES" --client-notes="$CLIENT_NOTES" \
             "${release_args[@]}" "${delta_args[@]}"
           cd "$RUNNER_TEMP/game-pages/downloads"
