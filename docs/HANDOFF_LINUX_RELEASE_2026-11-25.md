@@ -2,8 +2,8 @@
 
 Safe Pages publishing and optional native Cognito sign-in are merged into
 `theia-mmo/main`. The website download link and automatic news import are in
-the website draft. The public release still needs approval for the actual
-Linux payload and clean-machine qualification. Native sign-in and automatic
+the website draft. The public release still needs the CI build and
+clean-machine qualification. Native sign-in and automatic
 Sydney wake are separate AWS rollouts.
 
 ## Checkouts
@@ -27,8 +27,8 @@ branches. Read [the game launcher runbook](GAME_LAUNCHER.md) and
   It still returned HTTP 200 after the game merges.
 - The launcher expects
   `https://code-studio-au.github.io/theia-mmo/downloads/development.json`.
-  The feed still returned HTTP 404 after the game merges. The release workflow
-  is manually dispatched and the reviewed asset list is absent from `main`.
+  The feed still returned HTTP 404 before publication. The release workflow
+  is manually dispatched and reads the reviewed asset list from `main`.
   Game Pages now uses GitHub Actions. The `game-downloads-release` environment
   requires the repository owner's approval and accepts `main`. The Ed25519
   secret is stored in that environment with a private local backup. The
@@ -168,19 +168,11 @@ GitHub Pages is deployed.
 1. Use [the main-only release environment](https://github.com/code-studio-au/theia-mmo/settings/environments)
    for candidate and publish runs. Keep the existing Ed25519 key stable. Use
    its public key for the website setup after the first verified publication.
-2. On the local playtest machine, look for
-   `build/hosted-development-launch/open-launcher` in the `theia-mmo` checkout
-   first. If it is missing, find the actual command in local terminal history.
-   Inventory the files that launch loads. Confirm public redistribution rights
-   before committing `release/linux-client-files.json`. The list records each
-   file's tracked source path, destination in the installed payload, byte count
-   and SHA-256. The build supplies the executable. Change the list only when
-   reviewed external payload files change. Review assets embedded in the
-   executable too. Do not publish the executable-only private test export,
-   unapproved art, private configuration, credentials or terminal history.
-   [Use a pinned build input](GAME_LAUNCHER.md#development-downloads-on-github-pages)
-   for generated terrain, navigation and other runtime assets. Review the
-   purchased character and wolf licences against the actual delivery format.
+2. Use the approved Millhaven input in `release/linux-client-files.json`.
+   The list pins the archive and tracks additional notices by exact bytes.
+   Dispatch the candidate with asset commit
+   `2defc01ec05974cab79c7f22ddfceae16ee4ef1e`. This includes the approved player
+   and wolf runtime files. The original source models remain outside the bundle.
    The Sydney test also used a separately supplied `realm.json`, CA certificate
    and launch arguments. Verify how the exact public package works on clean
    Linux, including any trusted realm setup needed by testers.

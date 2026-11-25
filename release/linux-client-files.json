@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "source": "content/ui/fonts/LICENSE.txt",
+      "path": "licenses/liberation-fonts.txt",
+      "bytes": 5756,
+      "sha256": "f32df582a2aab128c07b2f7e36e7b928dc5f6bd82657b905c04f91459f9e5cf9"
+    }
+  ],
+  "bundle": {
+    "bytes": 64073362,
+    "sha256": "a17a7865033d3e0fd3afedb3f5615e06c509034ae5ab8e493c51c9f40158a8f5"
+  }
+}
