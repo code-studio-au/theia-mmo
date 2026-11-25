@@ -50,6 +50,7 @@ jobs:
       feed_sha256: ${{ steps.stage.outputs.feed_sha256 }}
       launcher_sha256: ${{ steps.stage.outputs.launcher_sha256 }}
       launcher_feed_sha256: ${{ steps.stage.outputs.launcher_feed_sha256 }}
+      realm_feed_sha256: ${{ steps.stage.outputs.realm_feed_sha256 }}
       client_sha256: ${{ steps.stage.outputs.client_sha256 }}
       news_sha256: ${{ steps.stage.outputs.news_sha256 }}
       bundle_checksums: ${{ steps.stage.outputs.bundle_checksums }}
@@ -100,6 +101,7 @@ jobs:
         id: stage
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.THEIA_RELEASE_SIGNING_KEY }}
+          PUBLIC_REALM_PROFILE: ${{ vars.THEIA_PUBLIC_REALM_PROFILE }}
           CLIENT_VERSION: ${{ inputs.client_version }}
           LAUNCHER_VERSION: ${{ inputs.launcher_version }}
           RELEASE_MODE: ${{ inputs.release_mode }}
@@ -110,6 +112,8 @@ jobs:
         run: |
           jq -e --arg version "$CLIENT_VERSION" '.version == $version' "$RUNNER_TEMP/client-export/client-release.json"
           test -n "$RELEASE_SIGNING_KEY"
+          test -n "$PUBLIC_REALM_PROFILE" || { echo 'Set the public Theia realm profile before publishing.'; exit 1; }
+          printf '%s\n' "$PUBLIC_REALM_PROFILE" > "$RUNNER_TEMP/public-realm.json"
           umask 077
           key=$(mktemp "$RUNNER_TEMP/theia-key.XXXXXX")
           trap 'rm -f "$key"' EXIT
@@ -128,6 +132,7 @@ jobs:
           python3 tools/stage_hosted_release.py "$RUNNER_TEMP/client-export" "$RUNNER_TEMP/game-pages" \
             --launcher-version "$LAUNCHER_VERSION" --signing-key "$key" \
             --native-auth-bundle apps/launcher/native-auth/dist/cognito-sign-in.cjs \
+            --public-realm-profile "$RUNNER_TEMP/public-realm.json" \
             --launcher-notes="$LAUNCHER_NOTES" --client-notes="$CLIENT_NOTES" \
             --bundle-initial-install "${release_args[@]}" "${delta_args[@]}"
           cd "$RUNNER_TEMP/game-pages/downloads"
@@ -135,6 +140,7 @@ jobs:
           printf 'feed_sha256=%s\n' "$(sha256sum development.json | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
           printf 'launcher_sha256=%s\n' "$(sha256sum theia-launcher_amd64.deb | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
           printf 'launcher_feed_sha256=%s\n' "$(sha256sum launcher.json | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
+          printf 'realm_feed_sha256=%s\n' "$(sha256sum realm.json | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
           client_hash=$(jq -er '.files[] | select(.path == "theia-client") | .sha256' "$RUNNER_TEMP/client-export/client-release.json")
           printf 'client_sha256=%s\n' "$client_hash" >> "$GITHUB_OUTPUT"
           bundle_index="bundles/$CLIENT_VERSION.json"
@@ -169,6 +175,7 @@ jobs:
           FEED_SHA256: ${{ needs.stage.outputs.feed_sha256 }}
           LAUNCHER_SHA256: ${{ needs.stage.outputs.launcher_sha256 }}
           LAUNCHER_FEED_SHA256: ${{ needs.stage.outputs.launcher_feed_sha256 }}
+          REALM_FEED_SHA256: ${{ needs.stage.outputs.realm_feed_sha256 }}
           LAUNCHER_VERSION: ${{ inputs.launcher_version }}
           CLIENT_SHA256: ${{ needs.stage.outputs.client_sha256 }}
           NEWS_SHA256: ${{ needs.stage.outputs.news_sha256 }}
@@ -191,6 +198,7 @@ jobs:
           for attempt in {1..12}; do
             if verify development.json "$FEED_SHA256" \
               && verify launcher.json "$LAUNCHER_FEED_SHA256" \
+              && verify realm.json "$REALM_FEED_SHA256" \
               && verify theia-launcher_amd64.deb "$LAUNCHER_SHA256" \
               && verify "theia-launcher_${LAUNCHER_VERSION}_amd64.deb" "$LAUNCHER_SHA256" \
               && verify "blobs/$CLIENT_SHA256" "$CLIENT_SHA256" \

@@ -5,6 +5,9 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
+[features]
+public-client = []
+
 [dependencies]
 bevy = { workspace = true, features = [
     "std", "async_executor", "multi_threaded", "bevy_asset", "bevy_log",

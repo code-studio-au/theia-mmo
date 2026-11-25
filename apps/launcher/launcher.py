@@ -116,6 +116,7 @@ class Launcher:
         self.probe_pending = False
         self.login_server = args.login_server or login_address(DEFAULT_LOGIN_BIND)
         self.realm = args.realm
+        self.realm_feedback = None
         self.login_dialog = None
         self.cancelled = threading.Event()
         self.game_args = game_launch_args(game_args)
@@ -133,9 +134,12 @@ class Launcher:
             config.get('install_root', data_directory() / 'game')
         )).expanduser().resolve()
         self.library = args.release_library.expanduser().resolve() if args.release_library else None
-        self.show_login_status = bool(self.realm or self.library or self.developer_tools or args.login_server)
+        self.local_play = args.local_sandbox
         keys = sorted((HERE / 'release-keys').glob('*.der'))
         self.hosted = HostedLibrary(DEFAULT_URL, keys) if keys else None
+        self.public_realm = bool(self.hosted and not (self.realm or self.local_play or self.test_login))
+        self.show_login_status = bool(self.realm or self.public_realm or self.library
+                                      or self.developer_tools or args.login_server)
 
         load_skin(HERE / 'launcher.css')
         self.window = Gtk.Window(title='Theia Online Launcher')
@@ -197,7 +201,8 @@ class Launcher:
         GLib.timeout_add(400, self.poll_game)
         if self.show_login_status:
             GLib.timeout_add_seconds(5, self.probe_login)
-            self.probe_login()
+            if not self.public_realm:
+                self.probe_login()
 
     def build_header(self):
         header = style(Gtk.Overlay(), 'app-header')
@@ -286,7 +291,8 @@ class Launcher:
             self.login_dot = style(Gtk.Box(), 'login-dot')
             self.login_dot.set_valign(Gtk.Align.CENTER)
             bottom.pack_start(self.login_dot, False, False, 0)
-            status_label = label('Realm Status' if self.realm else 'Login Server Status', 'server-label')
+            status_label = label('Realm Status' if self.realm or self.public_realm else 'Login Server Status',
+                                 'server-label')
             bottom.pack_start(status_label, False, False, 0)
             self.login_label = label('Checking…', 'detail')
             bottom.pack_start(self.login_label, False, False, 0)
@@ -332,11 +338,14 @@ class Launcher:
         return False
 
     def probe_login(self):
+        realm = self.realm
+        if self.public_realm and realm is None:
+            return GLib.SOURCE_CONTINUE
         if not self.probe_pending:
             self.probe_pending = True
 
             def probe():
-                online = self.realm.ready() if self.realm else login_ready(self.login_server)
+                online = realm.ready() if realm else login_ready(self.login_server)
                 GLib.idle_add(self.login_state, online)
 
             threading.Thread(target=probe, daemon=True).start()
@@ -464,6 +473,7 @@ class Launcher:
             'Update Game' if update else 'Install Game'
         )
         launcher_action = self.launcher_action
+        play_ready = (current == self.realm.client_version if self.realm else self.local_play)
         action_name = launcher_action or game_action
         self.primary_button.caption.set_text(action_name)
         self.primary_button.get_accessible().set_name(action_name)
@@ -471,7 +481,8 @@ class Launcher:
             'Play': 'play', 'Update Game': 'update', 'Install Game': 'install',
         }[game_action])
         self.install_glyph.show_kind('update' if launcher_action or update else 'ready' if current else 'install')
-        self.primary_button.set_sensitive(ready and bool(launcher_action or current or self.library or self.hosted))
+        can_act = play_ready if game_action == 'Play' else bool(self.library or self.hosted)
+        self.primary_button.set_sensitive(ready and bool(launcher_action or can_act))
         if self.test_login:
             signing_in = self.job == 'test-login'
             self.test_login_label.set_text(self.test_login_status)
@@ -482,7 +493,7 @@ class Launcher:
             game_ready = ready and not launcher_action
             self.rollback_button.set_sensitive(game_ready and bool(previous))
             self.play_installed.set_visible(update)
-            self.play_installed.set_sensitive(game_ready)
+            self.play_installed.set_sensitive(game_ready and play_ready)
         self.root_button.set_sensitive(ready)
         self.cancel_button.set_visible(transferring or bool(self.realm and self.job == 'play'))
         self.cancel_button.set_sensitive(not self.cancelled.is_set())
@@ -528,7 +539,12 @@ class Launcher:
                 title = 'Game not installed'
             self.status.set_text(title)
         if not transferring:
-            self.detail.set_text(launcher_status if launcher_action else self.feedback or offer)
+            play_error = ''
+            if current and not play_ready and not self.available:
+                play_error = (self.realm_feedback or
+                              (f'Install client {self.realm.client_version} to play.' if self.realm
+                               else 'Theia realm information is unavailable. Check for updates to retry.'))
+            self.detail.set_text(launcher_status if launcher_action else self.feedback or play_error or offer)
 
 
     def pick_folder(self, title, folder):
@@ -618,9 +634,15 @@ class Launcher:
             try:
                 record = client_install.active(self.install_root)
             except (OSError, client_install.InstallError) as error:
-                return self.record, None, str(error), launcher, launcher_error
+                return self.record, None, str(error), launcher, launcher_error, self.realm, None
             if launcher:
-                return record, None, None, launcher, launcher_error
+                return record, None, None, launcher, launcher_error, self.realm, None
+            realm, realm_error = self.realm, None
+            if self.public_realm:
+                try:
+                    realm = HostedRealm.from_public(self.hosted.realm_metadata())
+                except (OSError, client_install.InstallError):
+                    realm, realm_error = None, 'Theia realm information is unavailable. Check for updates to retry.'
             try:
                 if not self.library and self.hosted:
                     available = self.hosted.newest(record['current'], VERSION, install_root=self.install_root)
@@ -630,11 +652,17 @@ class Launcher:
                 available, client_error = None, str(error)
             else:
                 client_error = None
-            return record, available, client_error, None, launcher_error
+            return record, available, client_error, None, launcher_error, realm, realm_error
 
         def checked(result):
-            self.record, self.available, error, self.launcher_update, self.launcher_feedback = result
+            (self.record, self.available, error, self.launcher_update, self.launcher_feedback,
+             self.realm, self.realm_feedback) = result
             self.feedback = error or message
+            if self.public_realm:
+                if self.realm:
+                    self.probe_login()
+                elif self.realm_feedback:
+                    self.login_state(False)
 
         self.start('check', 'Checking for releases…', discover, checked)
 
@@ -746,6 +774,8 @@ class Launcher:
         if self.launcher_action or not self.record['current'] or self.job is not None or self.game is not None:
             return
         if self.realm:
+            if self.record['current'] != self.realm.client_version:
+                return
             if self.realm.native_sign_in:
                 if self.login_dialog is None:
                     self.login_dialog = NativeLoginDialog(self)
@@ -754,11 +784,12 @@ class Launcher:
             else:
                 self.start_hosted_play()
             return
-        self.start('play', 'Verifying installed client…',
-                   lambda: client_install.launch(self.install_root, self.game_args), self.playing)
+        if self.local_play:
+            self.start('play', 'Verifying installed client…',
+                       lambda: client_install.launch(self.install_root, self.game_args), self.playing)
 
     def start_hosted_play(self, authenticate=None):
-        if self.launcher_action:
+        if self.launcher_action or not self.realm:
             return
         self.start('play', 'Signing in…' if authenticate else 'Sign in with your browser…',
                    lambda: self.realm.launch(self.install_root, self.game_args, self.cancelled.is_set,
@@ -812,6 +843,7 @@ def main():
     parser.add_argument('--install-root', type=Path)
     parser.add_argument('--release-library', type=Path, help='Use a local development release folder')
     parser.add_argument('--developer-tools', action='store_true', help='Show previous-client controls in Settings')
+    parser.add_argument('--local-sandbox', action='store_true', help='Play without a realm in local development')
     parser.add_argument('--login-server', type=login_address, default=os.environ.get('THEIA_ACCOUNT_BIND'),
                         help='Show readiness for a local game login service at this loopback address')
     parser.add_argument('--settings-file', type=Path, default=data_directory() / 'launcher.json')
@@ -823,8 +855,8 @@ def main():
     options = parser.parse_args(args[:split])
     try:
         options.realm = HostedRealm(options.realm_config.resolve(strict=True)) if options.realm_config else None
-        if options.realm and options.test_login_config:
-            parser.error('Choose a hosted realm or the test sign-in rehearsal')
+        if sum(map(bool, (options.realm, options.test_login_config, options.local_sandbox))) > 1:
+            parser.error('Choose a hosted realm, local sandbox, or test sign-in rehearsal')
         options.test_login = SignInConfig.load(options.test_login_config) if options.test_login_config else None
     except (OSError, client_install.InstallError) as error:
         parser.error(f'Could not load the launcher sign-in configuration: {error}')

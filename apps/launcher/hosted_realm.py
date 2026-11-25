@@ -18,9 +18,28 @@ from launcher_update import VERSION
 from realm_gateway import GatewayUnavailable, RealmGateway
 
 
+PUBLIC_REALM_FORMAT = 'theia-public-realm-v1'
+PUBLIC_PATH_OPTIONS = {
+    '--authored-world', '--population-config', '--combat-catalog', '--character-stats',
+    '--status-catalog', '--creature-retaliation', '--player-respawn', '--creature-asset', '--player-assets',
+}
+PUBLIC_SWITCHES = {'--prediction', '--classic'}
+
+
 class HostedRealm:
     def __init__(self, path):
-        data = client_install.read_json(path, 16384)
+        self._configure(client_install.read_json(path, 16384), path.parent)
+
+    @classmethod
+    def from_public(cls, payload):
+        if (not isinstance(payload, dict) or set(payload) != {'format', 'realm'}
+                or payload['format'] != PUBLIC_REALM_FORMAT):
+            raise client_install.InstallError('Theia realm information is unavailable')
+        realm = cls.__new__(cls)
+        realm._configure(payload['realm'], None)
+        return realm
+
+    def _configure(self, data, certificate_directory):
         fields = {'identity', 'address', 'certificate', 'client_version', 'game_arguments'}
         if (not isinstance(data, dict) or not fields <= set(data)
                 or set(data) - fields - {'gateway', 'native_sign_in'}
@@ -49,11 +68,18 @@ class HostedRealm:
         self.address = address
         self.origin = 'https://' + ip
         certificate = data['certificate']
-        if not isinstance(certificate, str) or Path(certificate).name != certificate:
-            raise client_install.InstallError('Use the realm certificate supplied with this configuration')
         self.tls = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.tls.minimum_version = ssl.TLSVersion.TLSv1_2
-        self.tls.load_verify_locations(cafile=path.parent / certificate)
+        if certificate_directory is None:
+            if not isinstance(certificate, str) or not re.fullmatch(
+                    r'-----BEGIN CERTIFICATE-----\r?\n(?:[A-Za-z0-9+/=]{1,128}\r?\n)+'
+                    r'-----END CERTIFICATE-----(?:\r?\n)?', certificate):
+                raise client_install.InstallError('Invalid public realm certificate')
+            self.tls.load_verify_locations(cadata=certificate)
+        else:
+            if not isinstance(certificate, str) or Path(certificate).name != certificate:
+                raise client_install.InstallError('Use the realm certificate supplied with this configuration')
+            self.tls.load_verify_locations(cafile=certificate_directory / certificate)
         self.client_version = client_install.version(data['client_version'])
         self.gateway = None
         if 'gateway' in data:
@@ -70,6 +96,25 @@ class HostedRealm:
                 or any(not isinstance(arg, str) or not 0 < len(arg) <= 4096 or '\0' in arg
                        for arg in self.game_arguments)):
             raise client_install.InstallError('Invalid development game configuration')
+        self.asset_paths = ()
+        if certificate_directory is None:
+            if not self.gateway:
+                raise client_install.InstallError('The public realm requires its authenticated gateway')
+            self.asset_paths = self.public_assets()
+
+    def public_assets(self):
+        arguments = iter(self.game_arguments)
+        seen = set()
+        assets = []
+        for option in arguments:
+            if option in seen or option not in PUBLIC_PATH_OPTIONS | PUBLIC_SWITCHES:
+                raise client_install.InstallError('Unexpected public realm game option')
+            seen.add(option)
+            if option in PUBLIC_PATH_OPTIONS:
+                assets.append(client_install.relative(next(arguments, None)))
+        if not {'--authored-world', '--prediction', '--classic'} <= seen:
+            raise client_install.InstallError('The public realm requires an authored Classic world')
+        return tuple(assets)
 
     def account(self, cancelled=lambda: False):
         return AccountClient(self.origin, cancelled=cancelled, tls=self.tls, game_address=self.address)

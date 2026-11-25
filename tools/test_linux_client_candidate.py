@@ -79,6 +79,7 @@ class ApprovedCandidate(unittest.TestCase):
         self.assertLess(entry['bytes'], len(original))
         self.assertEqual(entry['sha256'], hashlib.sha256(executable.read_bytes()).hexdigest())
         sections = subprocess.check_output(['readelf', '-SW', executable], text=True)
+        self.assertNotIn('.comment', sections)
         self.assertNotIn('.debug_info', sections)
         self.assertNotIn('.symtab', sections)
         root = self.repo / 'installed'
