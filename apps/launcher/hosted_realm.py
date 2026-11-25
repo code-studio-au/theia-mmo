@@ -82,7 +82,7 @@ class HostedRealm:
             raise client_install.InstallError(f'Install client {self.client_version} to play this realm')
         account = self.account(cancelled)
         if not self.gateway and not account.ready():
-            raise client_install.InstallError('The Sydney game server is unavailable')
+            raise client_install.InstallError('Theia is unavailable')
         directory = token = reservation = None
         try:
             if self.gateway:
@@ -93,7 +93,7 @@ class HostedRealm:
             ))
             if cancelled():
                 raise KeyboardInterrupt
-            progress('Signed in. Connecting to the Sydney realm…')
+            progress('Signed in. Connecting to Theia…')
             if self.gateway:
                 reservation = str(uuid.uuid4())
                 self.gateway.wait_ready(token, reservation, self.build, cancelled, progress, account.ready)

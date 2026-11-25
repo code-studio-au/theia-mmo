@@ -100,7 +100,10 @@ def read_settings(path):
         return {}
     config = client_install.read_json(path, 16 * 1024)
     keys = {'install_root', 'release_library'}
-    if not isinstance(config, dict) or set(config) - keys or any(
+    if not isinstance(config, dict) or set(config) - keys:
+        raise client_install.InstallError('Invalid launcher preferences')
+    config.pop('release_library', None)
+    if any(
         not isinstance(value, str) or not Path(value).is_absolute()
         for value in config.values()
     ):
@@ -108,10 +111,8 @@ def read_settings(path):
     return config
 
 
-def save_settings(path, install_root, release_library):
+def save_settings(path, install_root):
     conf = {'install_root': str(install_root.resolve())}
-    if release_library is not None:
-        conf['release_library'] = str(release_library.resolve())
     path.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.settings-', dir=path.parent) as directory:
         staged = Path(directory) / 'settings.json'

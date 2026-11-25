@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import threading
 import time
+import webbrowser
 
 import gi
 
@@ -20,12 +21,15 @@ if not (HERE / 'assets').is_dir():
 
 import client_install
 from hosted_release import DEFAULT_URL, HostedLibrary, HostedRelease
-from launcher_update import SYSTEM_LAUNCHER, VERSION, install_launcher_update, newest_launcher_release
+from launcher_update import (
+    SYSTEM_LAUNCHER, VERSION, install_launcher_update, newest_hosted_launcher_release, newest_launcher_release,
+)
 from state import DEFAULT_LOGIN_BIND, data_directory, game_launch_args, login_address, login_ready, newest_release
 from state import read_settings, save_settings
 from browser_sign_in import SignInConfig, rehearse_sign_in
 from hosted_realm import HostedRealm
 from native_login_dialog import NativeLoginDialog
+from news_feed import NEWS_URL, fetch_news
 
 
 def box(vertical=False, spacing=10):
@@ -97,7 +101,7 @@ class Scene(Gtk.DrawingArea):
 
 
 class Launcher:
-    PAGES = ('Play', 'News', 'Updates', 'Account', 'Settings')
+    PAGES = ('Play', 'News', 'Settings')
 
     def __init__(self, args, game_args):
         self.prefs = args.settings_file.expanduser().resolve()
@@ -110,12 +114,13 @@ class Launcher:
         self.closing = False
         self.feedback = None
         self.probe_pending = False
-        self.login_server = args.login_server
+        self.login_server = args.login_server or login_address(DEFAULT_LOGIN_BIND)
         self.realm = args.realm
         self.login_dialog = None
         self.cancelled = threading.Event()
         self.game_args = game_launch_args(game_args)
         self.test_login = args.test_login
+        self.developer_tools = args.developer_tools
         self.test_login_status = 'Use the browser to sign in to the test identity provider.'
         self.record = {'current': None, 'previous': None}
         config = {}
@@ -127,8 +132,8 @@ class Launcher:
         self.install_root = (args.install_root or Path(
             config.get('install_root', data_directory() / 'game')
         )).expanduser().resolve()
-        library = args.release_library or config.get('release_library')
-        self.library = Path(library).expanduser().resolve() if library else None
+        self.library = args.release_library.expanduser().resolve() if args.release_library else None
+        self.show_login_status = bool(self.realm or self.library or self.developer_tools or args.login_server)
         keys = sorted((HERE / 'release-keys').glob('*.der'))
         self.hosted = HostedLibrary(DEFAULT_URL, keys) if keys else None
 
@@ -187,11 +192,12 @@ class Launcher:
         self.window.show_all()
         self.feedback = settings_error
         self.refresh_view()
-        if not settings_error:
-            self.check()
+        self.check(settings_error)
+        threading.Thread(target=self.load_news, daemon=True).start()
         GLib.timeout_add(400, self.poll_game)
-        GLib.timeout_add_seconds(5, self.probe_login)
-        self.probe_login()
+        if self.show_login_status:
+            GLib.timeout_add_seconds(5, self.probe_login)
+            self.probe_login()
 
     def build_header(self):
         header = style(Gtk.Overlay(), 'app-header')
@@ -207,8 +213,7 @@ class Launcher:
         navigation.set_margin_bottom(5)
         navigation.set_margin_end(70)
         row.pack_start(navigation, True, True, 0)
-        icons = (Glyph('play', 25), picture('news-icon', 25, 25), Glyph('update', 25),
-                 picture('account-icon', 25, 25), picture('settings-icon', 25, 25))
+        icons = (Glyph('play', 25), picture('news-icon', 25, 25), picture('settings-icon', 25, 25))
         self.page_buttons = {}
         for page, icon in zip(self.PAGES, icons):
             control = button(page, lambda page=page: self.select_page(page), 'nav', icon)
@@ -277,15 +282,14 @@ class Launcher:
 
         bottom = style(box(spacing=8), 'footer-line')
         footer.pack_start(bottom, False, False, 0)
-        self.login_dot = style(Gtk.Box(), 'login-dot')
-        self.login_dot.set_valign(Gtk.Align.CENTER)
-        bottom.pack_start(self.login_dot, False, False, 0)
-        login_label = label('Login Server Status', 'server-label')
-        host, port = self.login_server
-        login_label.set_tooltip_text(f'[{host}]:{port}' if ':' in host else f'{host}:{port}')
-        bottom.pack_start(login_label, False, False, 0)
-        self.login_label = label('Checking…', 'detail')
-        bottom.pack_start(self.login_label, False, False, 0)
+        if self.show_login_status:
+            self.login_dot = style(Gtk.Box(), 'login-dot')
+            self.login_dot.set_valign(Gtk.Align.CENTER)
+            bottom.pack_start(self.login_dot, False, False, 0)
+            status_label = label('Realm Status' if self.realm else 'Login Server Status', 'server-label')
+            bottom.pack_start(status_label, False, False, 0)
+            self.login_label = label('Checking…', 'detail')
+            bottom.pack_start(self.login_label, False, False, 0)
         self.version_label = label('', 'version')
         bottom.pack_end(self.version_label, False, False, 0)
         return footer
@@ -340,7 +344,8 @@ class Launcher:
 
     def login_state(self, online):
         self.probe_pending = False
-        self.login_label.set_text('Online' if online else 'Unavailable')
+        inactive = 'Sign in to start' if self.realm and self.realm.gateway else 'Unavailable'
+        self.login_label.set_text('Online' if online else inactive)
         for widget in (self.login_dot, self.login_label):
             color = widget.get_style_context()
             color.remove_class('online' if not online else 'unavailable')
@@ -363,79 +368,65 @@ class Launcher:
 
     def build_pages(self):
         play = self.page('Play', 'Latest News')
-        story = style(Gtk.Button(), 'news-story')
-        story.connect('clicked', lambda _: self.select_page('News'))
-        story.get_accessible().set_name('Read Version 0.1.0.1 news')
-        row = box(spacing=12)
-        art = style(Gtk.Frame(), 'news-image')
-        art.set_shadow_type(Gtk.ShadowType.NONE)
-        art.add(picture('news', 125, 73))
-        row.pack_start(art, False, False, 0)
-        heading = box(vertical=True, spacing=3)
-        heading.set_valign(Gtk.Align.CENTER)
-        heading.pack_start(label('Version 0.1.0.1', 'news-title'), False, False, 0)
-        heading.pack_start(label('Theia Online client preview', 'detail'), False, False, 0)
-        row.pack_start(heading, True, True, 0)
-        arrow = Glyph('right', 23)
-        arrow.set_valign(Gtk.Align.CENTER)
-        row.pack_end(arrow, False, False, 0)
-        story.add(row)
-        play.pack_start(story, False, False, 0)
-        play.pack_start(Gtk.Separator(), False, False, 0)
-        self.launcher_notice = button('Launcher Update Available', lambda: self.select_page('Updates'))
-        play.pack_start(self.launcher_notice, False, False, 0)
+        self.latest_news = box(vertical=True)
+        play.pack_start(self.latest_news, False, False, 0)
+        play.pack_start(button('All News', lambda: self.select_page('News')), False, False, 0)
 
-        news = self.page('News', 'Version 0.1.0.1')
-        news.pack_start(picture('news', 345, 194), False, False, 0)
-        news.pack_start(label('Theia Online client preview', 'news-title'), False, False, 0)
-        news.pack_start(label(
-            'Install the client from a local release library, verify updates and restore the previous version. '
-            'Select Play to open the game, then sign in there.', 'detail'
-        ), False, False, 0)
-
-        updates = self.page('Updates', 'Updates')
-        self.check_button = button('Check for Updates', self.check)
-        updates.pack_start(self.check_button, False, False, 0)
-        updates.pack_start(label('Launcher', 'section'), False, False, 0)
-        self.launcher_release_label = label('', 'detail')
-        updates.pack_start(self.launcher_release_label, False, False, 0)
-        self.launcher_update_button = button('Update Launcher', self.update_launcher)
-        updates.pack_start(self.launcher_update_button, False, False, 0)
-        updates.pack_start(Gtk.Separator(), False, False, 0)
-        updates.pack_start(label('Game Client', 'section'), False, False, 0)
-        self.release_label = label('', 'detail')
-        updates.pack_start(self.release_label, False, False, 0)
-        self.update_button = button('Install Update', self.install)
-        updates.pack_start(self.update_button, False, False, 0)
-        self.rollback_button = button('Restore Previous Version', self.rollback)
-        updates.pack_start(self.rollback_button, False, False, 0)
-        self.play_installed = button('Play Installed Version', self.play)
-        updates.pack_start(self.play_installed, False, False, 0)
-
-        account = self.page('Account', 'Account')
-        copy = label('Sign in and manage your characters in the game client.', 'detail')
-        copy.set_max_width_chars(38)
-        account.pack_start(copy, False, False, 0)
-        self.account_button = button('Open Game', self.play)
-        account.pack_start(self.account_button, False, False, 0)
-        if self.test_login:
-            self.test_login_label = label(self.test_login_status, 'detail')
-            account.pack_start(self.test_login_label, False, False, 0)
-            self.test_login_button = button('Test Sign-in', self.start_test_login)
-            account.pack_start(self.test_login_button, False, False, 0)
+        news = self.page('News', 'News')
+        self.news_articles = box(vertical=True)
+        news.pack_start(self.news_articles, False, False, 0)
+        news.pack_start(button('News on the Website', lambda: webbrowser.open(NEWS_URL)), False, False, 0)
+        for panel in (self.latest_news, self.news_articles):
+            panel.add(label('Loading news…', 'detail'))
 
         settings = self.page('Settings', 'Settings')
-        settings.pack_start(label('Release library', 'section'), False, False, 0)
-        self.source_label = self.path_label(settings)
-        self.source_button = button('Choose Release Folder…', self.choose_source)
-        settings.pack_start(self.source_button, False, False, 0)
-        self.hosted_button = button('Use Online Releases', self.use_hosted)
-        self.hosted_button.set_no_show_all(True)
-        settings.pack_start(self.hosted_button, False, False, 0)
+        settings.pack_start(label(f'Launcher {VERSION}', 'detail'), False, False, 0)
+        self.check_button = button('Check for Updates', self.check)
+        settings.pack_start(self.check_button, False, False, 0)
+        self.launcher_release_label = label('', 'detail')
+        settings.pack_start(self.launcher_release_label, False, False, 0)
         settings.pack_start(label('Game installation', 'section'), False, False, 0)
         self.root_label = self.path_label(settings)
         self.root_button = button('Choose Game Folder…', self.choose_install_root)
         settings.pack_start(self.root_button, False, False, 0)
+        if self.developer_tools:
+            self.rollback_button = button('Restore Previous Version', self.rollback)
+            settings.pack_start(self.rollback_button, False, False, 0)
+            self.play_installed = button('Play Installed Version', self.play)
+            settings.pack_start(self.play_installed, False, False, 0)
+        if self.test_login:
+            self.test_login_label = label(self.test_login_status, 'detail')
+            settings.pack_start(self.test_login_label, False, False, 0)
+            self.test_login_button = button('Test Sign-in', self.start_test_login)
+            settings.pack_start(self.test_login_button, False, False, 0)
+
+    def load_news(self):
+        try:
+            articles = fetch_news()
+        except (OSError, ValueError):
+            articles = []
+        GLib.idle_add(self.show_news, articles)
+
+    def show_news(self, articles):
+        if self.closing:
+            return GLib.SOURCE_REMOVE
+        for panel, entries in ((self.latest_news, articles[:1]), (self.news_articles, articles)):
+            for child in panel.get_children():
+                panel.remove(child)
+            if not entries:
+                panel.add(label('News is unavailable right now.', 'detail'))
+            for article in entries:
+                card = style(Gtk.Button(), 'news-story')
+                card.connect('clicked', lambda _, url=article.url: webbrowser.open(url))
+                card.get_accessible().set_name(article.title)
+                copy = box(vertical=True, spacing=5)
+                copy.pack_start(label(article.title, 'news-title'), False, False, 0)
+                if article.summary:
+                    copy.pack_start(label(article.summary, 'detail'), False, False, 0)
+                card.add(copy)
+                panel.pack_start(card, False, False, 0)
+            panel.show_all()
+        return GLib.SOURCE_REMOVE
 
     @staticmethod
     def path_label(parent):
@@ -454,6 +445,14 @@ class Launcher:
             else:
                 style.remove_class('nav-active')
 
+    @property
+    def launcher_action(self):
+        if self.launcher_installed:
+            return 'Restart Launcher'
+        if self.launcher_update:
+            return 'Update Launcher'
+        return None
+
     def refresh_view(self):
         current, previous = self.record['current'], self.record['previous']
         busy = self.job is not None
@@ -461,56 +460,46 @@ class Launcher:
         ready = not (busy or running)
         transferring = self.job == 'install'
         update = bool(current and self.available)
-        action_name = 'Play' if transferring or (current and not update) else (
+        game_action = 'Play' if transferring or (current and not update) else (
             'Update Game' if update else 'Install Game'
         )
+        launcher_action = self.launcher_action
+        action_name = launcher_action or game_action
         self.primary_button.caption.set_text(action_name)
         self.primary_button.get_accessible().set_name(action_name)
-        self.primary_glyph.show_kind({'Play': 'play', 'Update Game': 'update', 'Install Game': 'install'}[action_name])
-        self.install_glyph.show_kind('update' if update else 'ready' if current else 'install')
-        self.primary_button.set_sensitive(ready)
-        self.account_button.set_sensitive(ready and bool(current))
+        self.primary_glyph.show_kind('update' if launcher_action else {
+            'Play': 'play', 'Update Game': 'update', 'Install Game': 'install',
+        }[game_action])
+        self.install_glyph.show_kind('update' if launcher_action or update else 'ready' if current else 'install')
+        self.primary_button.set_sensitive(ready and bool(launcher_action or current or self.library or self.hosted))
         if self.test_login:
             signing_in = self.job == 'test-login'
             self.test_login_label.set_text(self.test_login_status)
             self.test_login_button.set_label('Cancel Sign-in' if signing_in else 'Test Sign-in')
             self.test_login_button.set_sensitive(ready or (signing_in and not self.cancelled.is_set()))
         self.check_button.set_sensitive(ready)
-        self.update_button.set_sensitive(ready and self.available is not None)
-        self.update_button.set_label('Install Update' if current else 'Install Game')
-        self.rollback_button.set_sensitive(ready and bool(previous))
-        self.source_button.set_sensitive(ready)
-        self.hosted_button.set_visible(bool(self.hosted and self.library))
-        self.hosted_button.set_sensitive(ready)
+        if self.developer_tools:
+            game_ready = ready and not launcher_action
+            self.rollback_button.set_sensitive(game_ready and bool(previous))
+            self.play_installed.set_visible(update)
+            self.play_installed.set_sensitive(game_ready)
         self.root_button.set_sensitive(ready)
         self.cancel_button.set_visible(transferring or bool(self.realm and self.job == 'play'))
         self.cancel_button.set_sensitive(not self.cancelled.is_set())
         self.progress_row.set_visible(transferring)
-        self.play_installed.set_visible(update)
-        self.play_installed.set_sensitive(ready)
-        self.launcher_notice.set_visible(bool(self.launcher_installed or self.launcher_update))
-        self.launcher_notice.set_label('Launcher Update Installed' if self.launcher_installed else 'Launcher Update Available')
-        self.launcher_update_button.set_label('Restart Launcher' if self.launcher_installed else 'Update Launcher')
-        self.launcher_update_button.set_sensitive(ready and bool(self.launcher_installed or self.launcher_update))
         if self.job == 'launcher-update':
-            launcher_status = 'Waiting for the system installer…'
+            launcher_status = 'Verifying the package and opening the system installer…'
         elif self.launcher_feedback:
             launcher_status = self.launcher_feedback
         elif self.launcher_installed:
             launcher_status = f'Version {self.launcher_installed} installed. Restart to finish.'
         elif self.launcher_update:
             launcher_status = f'Version {self.launcher_update[1]} is available.'
-        elif self.library:
-            launcher_status = 'No launcher update in the selected library.'
-        elif self.hosted:
-            launcher_status = 'Launcher packages are available on the Theia Online website.'
         else:
-            launcher_status = 'Choose a release folder in Settings.'
-        self.launcher_release_label.set_text(f'Running version {VERSION}\n{launcher_status}')
+            launcher_status = ''
+        self.launcher_release_label.set_text(launcher_status)
+        self.launcher_release_label.set_visible(bool(launcher_status))
 
-        self.source_label.set_text(str(self.library) if self.library else (
-            'Theia Online · Development' if self.hosted else 'No folder selected'))
-        self.source_label.set_tooltip_text(str(self.library) if self.library else None)
         self.root_label.set_text(str(self.install_root))
         self.root_label.set_tooltip_text(str(self.install_root))
         self.version_label.set_text(f'Client v{current}' if current else 'Client not installed')
@@ -523,11 +512,14 @@ class Launcher:
         elif self.hosted:
             offer = 'No newer client release.' if current else 'Check for a client release.'
         else:
-            offer = 'Choose a release folder in Settings.'
-        self.release_label.set_text(offer + (f'\nPrevious version {previous}' if previous else ''))
+            offer = 'Use --release-library to select a local development export.'
         if self.job is None:
             if running:
                 title = 'Game is running'
+            elif self.launcher_installed:
+                title = 'Restart required'
+            elif launcher_action:
+                title = 'Launcher update required'
             elif update:
                 title = 'Update required'
             elif current:
@@ -536,7 +528,7 @@ class Launcher:
                 title = 'Game not installed'
             self.status.set_text(title)
         if not transferring:
-            self.detail.set_text(self.feedback or offer)
+            self.detail.set_text(launcher_status if launcher_action else self.feedback or offer)
 
 
     def pick_folder(self, title, folder):
@@ -551,31 +543,20 @@ class Launcher:
         finally:
             chooser.destroy()
 
-    def set_paths(self, root, library):
+    def choose_install_root(self):
+        chosen = self.pick_folder('Choose the game installation folder', self.install_root)
+        if chosen is None:
+            return
         try:
-            save_settings(self.prefs, root, library)
+            save_settings(self.prefs, chosen)
         except OSError as error:
             self.feedback = str(error)
             self.refresh_view()
             return
-        self.install_root, self.library = root, library
+        self.install_root = chosen.resolve()
         self.record = {'current': None, 'previous': None}
         self.available = None
-        self.launcher_update = None
         self.check()
-
-    def choose_source(self):
-        chosen = self.pick_folder('Choose a local release library', self.library)
-        if chosen is not None:
-            self.set_paths(self.install_root, chosen)
-
-    def use_hosted(self):
-        self.set_paths(self.install_root, None)
-
-    def choose_install_root(self):
-        chosen = self.pick_folder('Choose the game installation folder', self.install_root)
-        if chosen is not None:
-            self.set_paths(chosen, self.library)
 
     def start(self, job, message, operation, done):
         if self.job is not None or self.game is not None:
@@ -621,7 +602,25 @@ class Launcher:
 
     def check(self, message=None):
         def discover():
-            record = client_install.active(self.install_root)
+            launcher = None
+            launcher_error = None
+            try:
+                if self.hosted and not self.library:
+                    launcher = newest_hosted_launcher_release(self.hosted, VERSION)
+                else:
+                    launcher = newest_launcher_release(self.library, VERSION)
+            except (OSError, client_install.InstallError) as error:
+                launcher_error = str(error)
+            previous_offer = self.launcher_update
+            if self.hosted and not self.library and previous_offer and (
+                    launcher is None or client_install.version_key(launcher[1]) < client_install.version_key(previous_offer[1])):
+                launcher = previous_offer
+            try:
+                record = client_install.active(self.install_root)
+            except (OSError, client_install.InstallError) as error:
+                return self.record, None, str(error), launcher, launcher_error
+            if launcher:
+                return record, None, None, launcher, launcher_error
             try:
                 if not self.library and self.hosted:
                     available = self.hosted.newest(record['current'], VERSION, install_root=self.install_root)
@@ -631,11 +630,7 @@ class Launcher:
                 available, client_error = None, str(error)
             else:
                 client_error = None
-            try:
-                launcher = newest_launcher_release(self.library, VERSION)
-            except OSError as error:
-                return record, available, client_error, None, str(error)
-            return record, available, client_error, launcher, None
+            return record, available, client_error, None, launcher_error
 
         def checked(result):
             self.record, self.available, error, self.launcher_update, self.launcher_feedback = result
@@ -663,14 +658,14 @@ class Launcher:
         self.start('launcher-update', 'Updating launcher…', lambda: install_launcher_update(offer), complete)
 
     def primary(self):
-        if self.available:
+        if self.launcher_action:
+            self.update_launcher()
+        elif self.available:
             self.install()
         elif self.record['current']:
             self.play()
-        elif not self.library and self.hosted:
-            self.check()
         else:
-            self.choose_source()
+            self.check()
 
     def start_test_login(self):
         if self.job == 'test-login':
@@ -689,7 +684,7 @@ class Launcher:
                    lambda: rehearse_sign_in(self.test_login, self.cancelled.is_set), complete)
 
     def install(self):
-        if not self.available:
+        if self.launcher_action or not self.available:
             return
         package, offered_version, _ = self.available
         self.progress.set_fraction(0)
@@ -741,12 +736,14 @@ class Launcher:
         self.status.set_text('Cancelling…')
 
     def rollback(self):
+        if not self.developer_tools or self.launcher_action:
+            return
         self.start('rollback', 'Verifying the previous version…',
                    lambda: client_install.rollback(self.install_root),
                    lambda release: self.check(f'Client {release} restored'))
 
     def play(self):
-        if not self.record['current'] or self.job is not None or self.game is not None:
+        if self.launcher_action or not self.record['current'] or self.job is not None or self.game is not None:
             return
         if self.realm:
             if self.realm.native_sign_in:
@@ -761,6 +758,8 @@ class Launcher:
                    lambda: client_install.launch(self.install_root, self.game_args), self.playing)
 
     def start_hosted_play(self, authenticate=None):
+        if self.launcher_action:
+            return
         self.start('play', 'Signing in…' if authenticate else 'Sign in with your browser…',
                    lambda: self.realm.launch(self.install_root, self.game_args, self.cancelled.is_set,
                                              lambda message: GLib.idle_add(self.realm_progress, message),
@@ -811,10 +810,10 @@ class Launcher:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--install-root', type=Path)
-    parser.add_argument('--release-library', type=Path)
-    parser.add_argument('--login-server', type=login_address,
-                        default=os.environ.get('THEIA_ACCOUNT_BIND', DEFAULT_LOGIN_BIND),
-                        help='Numeric loopback address and port for the game login service')
+    parser.add_argument('--release-library', type=Path, help='Use a local development release folder')
+    parser.add_argument('--developer-tools', action='store_true', help='Show previous-client controls in Settings')
+    parser.add_argument('--login-server', type=login_address, default=os.environ.get('THEIA_ACCOUNT_BIND'),
+                        help='Show readiness for a local game login service at this loopback address')
     parser.add_argument('--settings-file', type=Path, default=data_directory() / 'launcher.json')
     parser.add_argument('--test-login-config', type=Path,
                         help='Opt in to an isolated browser sign-in rehearsal')

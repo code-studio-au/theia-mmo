@@ -1,5 +1,5 @@
 """Exercise signed client updates over a real, isolated HTTPS connection."""
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from contextlib import contextmanager
 import hashlib
 import json
@@ -17,6 +17,7 @@ from client_install import InstallError, active, export, installed, rollback
 from stage_hosted_release import stage
 from retain_pages_release import retain_previous
 from hosted_release import HostedLibrary, NoRedirect, ZSTD, verified_payload
+from launcher_update import install_launcher_update, newest_hosted_launcher_release
 from urllib.error import URLError
 from urllib.request import HTTPSHandler, build_opener
 
@@ -147,7 +148,7 @@ class HostedDelivery(unittest.TestCase):
         faults = {blob: [(None, 5), (503, None), (503, None)]}
         with self.serve(self.publish('0.1.0.11'), faults=faults) as (library, requests):
             with patch('hosted_release.sleep'):
-                with self.assertRaisesRegex(InstallError, 'Choose Install Game or Update Game to resume'):
+                with self.assertRaisesRegex(InstallError, 'Try again to resume'):
                     self.install(library)
             self.assertEqual([offset for path, offset in requests if path == blob], [None, 'bytes=5-', 'bytes=5-'])
             self.assertEqual((self.game / '.hosted-download' / digest).read_bytes(), payload[:5])
@@ -178,6 +179,53 @@ class HostedDelivery(unittest.TestCase):
             digest = hashlib.sha256(self.ui.read_bytes()).hexdigest()
             self.assertEqual([req for req in requests if '/blobs/' in req[0] or '/bundles/' in req[0]],
                              [(f'/downloads/blobs/{digest}', None)])
+
+    def test_signed_launcher_offer_is_independent_of_the_installed_client(self):
+        tree = self.publish('0.1.0.11')
+        launcher = tree / 'downloads/theia-launcher_0.1.5_amd64.deb'
+        system_run = subprocess.run
+
+        def mocked_installer(command, **options):
+            if command[0] == '/usr/bin/pkexec':
+                self.assertEqual(Path(command[-1]).read_bytes(), launcher.read_bytes())
+                return subprocess.CompletedProcess(command, 0, '', '')
+            if command[0] == '/usr/bin/dpkg-query':
+                return subprocess.CompletedProcess(command, 0, b'install ok installed\t0.1.5', b'')
+            return system_run(command, **options)
+
+        with self.serve(tree) as (library, requests):
+            self.assertIsNone(library.newest('0.1.0.11', '0.1.4'))
+            self.assertIsNone(newest_hosted_launcher_release(library, '0.1.5'))
+            offer = newest_hosted_launcher_release(library, '0.1.4')
+            self.assertEqual(offer[1], '0.1.5')
+            with patch('launcher_update.subprocess.run', side_effect=mocked_installer), \
+                    patch('launcher_update.SYSTEM_LAUNCHER', launcher):
+                self.assertEqual(install_launcher_update(offer), '0.1.5')
+            self.assertIn(('/downloads/theia-launcher_0.1.5_amd64.deb', None), requests)
+            self.assertNotIn(('/downloads/theia-launcher_amd64.deb', None), requests)
+
+    def test_launcher_offer_rejects_tampered_metadata_and_packages(self):
+        tree = self.publish('0.1.0.11')
+        feed = tree / 'downloads/launcher.json'
+        launcher = tree / 'downloads/theia-launcher_0.1.5_amd64.deb'
+        with self.serve(tree) as (library, _):
+            offer = newest_hosted_launcher_release(library, '0.1.4')
+            with launcher.open('r+b') as output:
+                first = output.read(1)
+                output.seek(0)
+                output.write(bytes([first[0] ^ 1]))
+            with patch('launcher_update.subprocess.run') as run:
+                with self.assertRaisesRegex(InstallError, 'failed verification'):
+                    install_launcher_update(offer)
+                run.assert_not_called()
+
+            envelope = json.loads(feed.read_bytes())
+            envelope['signature'] = b64encode(bytes(64)).decode('ascii')
+            feed.write_text(json.dumps(envelope))
+            with self.assertRaisesRegex(InstallError, 'signature'):
+                newest_hosted_launcher_release(library, '0.1.4')
+            feed.unlink()
+            self.assertIsNone(newest_hosted_launcher_release(library, '0.1.4'))
 
     def test_corrupt_bundle_falls_back_to_verified_individual_files(self):
         tree = self.publish('0.1.0.11', bundle_initial_install=True)

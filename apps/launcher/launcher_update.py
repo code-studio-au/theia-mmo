@@ -1,14 +1,37 @@
-"""Discover trusted local Debian releases of the launcher application."""
+"""Discover and stage verified Debian releases of the launcher application."""
+from dataclasses import dataclass
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 
-from client_install import InstallError, version_key
+from client_install import InstallError, copy_file, version_key
+from hosted_release import DownloadInterrupted, HostedLibrary
 
 PACKAGE = 'theia-launcher'
 SYSTEM_LAUNCHER = Path('/usr/bin') / PACKAGE
 VERSION = Path(__file__).with_name('VERSION').read_text(encoding='utf-8').strip()
+
+
+def launcher_package_name(release):
+    return f'{PACKAGE}_{release}_amd64.deb'
+
+
+@dataclass(frozen=True)
+class HostedLauncherUpdate:
+    library: HostedLibrary
+    metadata: dict
+
+    def download(self, destination):
+        try:
+            self.library.download(self.metadata, destination, lambda _: None,
+                                  name=launcher_package_name(self.metadata['version']))
+        except DownloadInterrupted as error:
+            raise InstallError('Launcher download interrupted. Choose Update Launcher to retry.') from error
+        size = self.metadata['bytes']
+        digest = self.metadata['sha256']
+        if copy_file(destination, None, size, lambda _: None) != (size, digest):
+            raise InstallError('Launcher package failed verification. Check for updates again.')
 
 
 def package_matches(path, release):
@@ -44,11 +67,22 @@ def newest_launcher_release(library, current):
     return None
 
 
+def newest_hosted_launcher_release(library, current):
+    metadata = library.launcher_metadata()
+    if metadata is not None and version_key(metadata['version']) > version_key(current):
+        return HostedLauncherUpdate(library, metadata), metadata['version']
+    return None
+
+
 def install_launcher_update(offer):
-    path, release = offer
+    source, release = offer
     with tempfile.TemporaryDirectory(prefix='theia-launcher-update-') as directory:
-        staged = Path(directory) / path.name
-        shutil.copyfile(path, staged)
+        if isinstance(source, HostedLauncherUpdate):
+            staged = Path(directory) / launcher_package_name(release)
+            source.download(staged)
+        else:
+            staged = Path(directory) / source.name
+            shutil.copyfile(source, staged)
         if not package_matches(staged, release):
             raise InstallError('The launcher package changed. Check for updates again.')
         result = subprocess.run(

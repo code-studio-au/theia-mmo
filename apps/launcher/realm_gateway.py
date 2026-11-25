@@ -54,9 +54,9 @@ class RealmGateway:
                    *, seconds=300, interval=5):
         deadline = time.monotonic() + seconds
         labels = {
-            'offline': 'Waiting to start the Sydney realm…',
-            'starting': 'Starting the Sydney host…',
-            'initialising': 'Waiting for Millhaven and its database…',
+            'offline': 'Waiting to start Theia…',
+            'starting': 'Starting Theia…',
+            'initialising': 'Waiting for Theia to become ready…',
             'ready': 'Checking the game connection…',
             'shutting_down': 'Waiting for the previous session to shut down…',
         }
@@ -66,12 +66,12 @@ class RealmGateway:
                     'reservation': reservation, 'build': build,
                 }).get('state')
             except GatewayUnavailable:
-                progress('Retrying the Sydney realm gateway…')
+                progress('Retrying the connection to Theia…')
             else:
                 if state == 'maintenance':
-                    raise InstallError('The Sydney realm is in maintenance')
+                    raise InstallError('Theia is in maintenance')
                 if state == 'error' or state not in labels:
-                    raise InstallError('The Sydney realm could not start')
+                    raise InstallError('Theia could not start')
                 progress(labels[state])
                 if state == 'ready' and account_ready():
                     return
@@ -80,7 +80,7 @@ class RealmGateway:
                 time.sleep(min(.25, max(0, until - time.monotonic())))
         if cancelled():
             raise InstallError('Play cancelled')
-        raise InstallError('The Sydney realm did not become ready in time')
+        raise InstallError('Theia did not become ready in time')
 
     def release(self, token, reservation):
         try:

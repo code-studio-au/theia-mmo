@@ -4,6 +4,10 @@ P5-23 / P6-09. This adds on-demand Play to the existing Cognito launcher,
 hosted account service and encrypted Renet connection. The Lambda does no
 gameplay work. The server remains the authority for admission and occupancy.
 
+For deployment announcements and public release notes, name the realm and
+game server **Theia**. **Millhaven** is the playtest zone. Sydney denotes the
+hosting location and remains part of the infrastructure identifiers.
+
 ## Build and review
 
 Use Rust 1.99, Node 26, the Rust x86_64 Linux musl target, musl-gcc and zip.

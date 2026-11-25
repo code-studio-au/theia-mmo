@@ -80,7 +80,7 @@ def preview(identity, config, directory):
     with open(credentials, 'x', encoding='utf-8', opener=private_file) as stream:
         for name, password in identity.users:
             stream.write(f'{name}\t{password}\n')
-    print(f'Account → Test Sign-in. Temporary account details are in {credentials}', flush=True)
+    print(f'Settings → Test Sign-in. Temporary account details are in {credentials}', flush=True)
     subprocess.run(['/usr/bin/python3', str(ROOT / 'apps/launcher/launcher.py'),
                     '--settings-file', str(directory / 'launcher.json'),
                     '--install-root', str(directory / 'game'),

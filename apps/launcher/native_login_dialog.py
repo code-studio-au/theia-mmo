@@ -23,7 +23,7 @@ class NativeLoginDialog(Gtk.Dialog):
         body = self.get_content_area()
         body.set_spacing(8)
         body.set_border_width(18)
-        heading = Gtk.Label(label='Sydney development realm', xalign=0)
+        heading = Gtk.Label(label='Theia', xalign=0)
         heading.get_style_context().add_class('heading')
         body.pack_start(heading, False, False, 0)
         self.username_label = Gtk.Label(label='Username', xalign=0)
