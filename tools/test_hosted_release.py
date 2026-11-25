@@ -14,6 +14,7 @@ import unittest
 
 from client_install import InstallError, active, export, installed, rollback
 from stage_hosted_release import stage
+from retain_pages_release import retain_previous
 from hosted_release import HostedLibrary, NoRedirect, ZSTD
 from urllib.request import HTTPSHandler, build_opener
 
@@ -186,6 +187,56 @@ class HostedDelivery(unittest.TestCase):
                 directory, _, _ = installed(self.game, '0.1.0.12')
                 self.assertEqual((directory / 'payload/theia-client').read_bytes(), target)
                 self.assertEqual(rollback(self.game), '0.1.0.11')
+
+    @unittest.skipUnless(ZSTD.is_file(), 'zstd is needed to verify retention of old patch blobs')
+    def test_second_pages_release_keeps_previous_installer_full_file_and_delta(self):
+        entry = self.source / 'theia-client'
+        initial = Random(19).randbytes(300 * 1024)
+        entry.write_bytes(initial)
+        base = export(self.source, self.root / 'pre-release', '0.1.0.10')
+        previous_payload = b'old' + initial[3:]
+        entry.write_bytes(previous_payload)
+        previous = export(self.source, self.root / 'first-export', '0.1.0.11')
+        with self.serve(self.root / 'empty') as (library, _):
+            first = stage(previous, self.root / 'first-pages', '0.1.8', self.key, delta_base=base,
+                          live_mode='first', live_url=library.url, live_opener=library.opener)
+
+        entry.write_bytes(b'new' + initial[3:])
+        current = export(self.source, self.root / 'second-export', '0.1.0.12')
+        with self.serve(first) as (library, _):
+            with self.assertRaisesRegex(InstallError, 'expected previous release'):
+                retain_previous(library, self.root / 'unused-downloads', {'version': '0.1.0.12'},
+                                '0.1.9', first_release=False, expected_previous='0.1.0.10')
+            second = stage(current, self.root / 'second-pages', '0.1.9', self.key,
+                           live_mode='update', live_url=library.url, live_opener=library.opener,
+                           expected_previous='0.1.0.11')
+
+        old_downloads, new_downloads = first / 'downloads', second / 'downloads'
+        stable = 'theia-launcher_amd64.deb'
+        self.assertEqual((new_downloads / stable).read_bytes(),
+                         (new_downloads / 'theia-launcher_0.1.9_amd64.deb').read_bytes())
+        self.assertEqual((new_downloads / 'theia-launcher_0.1.8_amd64.deb').read_bytes(),
+                         (old_downloads / stable).read_bytes())
+        sidecar = 'deltas/0.1.0.11.json'
+        self.assertEqual((new_downloads / sidecar).read_bytes(), (old_downloads / sidecar).read_bytes())
+        delta, = json.loads(b64decode(json.loads((new_downloads / sidecar).read_bytes())['payload']))['entries']
+        self.assertEqual((new_downloads / 'blobs' / delta['sha256']).read_bytes(),
+                         (old_downloads / 'blobs' / delta['sha256']).read_bytes())
+        old_blob = '/downloads/blobs/' + hashlib.sha256(previous_payload).hexdigest()
+        with self.serve(second) as (library, requests):
+            with library.open(old_blob.removeprefix('/downloads/'), offset=17) as response:
+                self.assertEqual(response.read(), previous_payload[17:])
+            self.assertIn((old_blob, 'bytes=17-'), requests)
+            _, version, _ = library.newest(None, '0.1.9')
+            self.assertEqual(version, '0.1.0.12')
+            launcher_only = stage(current, self.root / 'launcher-only-pages', '0.1.10', self.key,
+                                  live_mode='update', live_url=library.url, live_opener=library.opener,
+                                  expected_previous='0.1.0.12')
+        newest_downloads = launcher_only / 'downloads'
+        self.assertEqual((newest_downloads / stable).read_bytes(),
+                         (newest_downloads / 'theia-launcher_0.1.10_amd64.deb').read_bytes())
+        self.assertEqual((newest_downloads / 'theia-launcher_0.1.9_amd64.deb').read_bytes(),
+                         (new_downloads / stable).read_bytes())
 
     def test_rejects_corrupt_download_and_preserves_current_version(self):
         with self.serve(self.publish('0.1.0.11')) as (library, _):

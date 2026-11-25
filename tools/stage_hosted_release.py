@@ -2,14 +2,16 @@
 import argparse
 import base64
 import hashlib
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
 
 from client_install import MANIFEST, InstallError, copy_file, metadata, version, version_key, write_json
 from package_client_launcher import package
+from retain_pages_release import STABLE_LAUNCHER, retain_previous
 from hosted_release import (
-    CHANNEL, CHANNEL_FILE, DELTA_LIMIT, MAX_RELEASE_BYTES,
+    CHANNEL, CHANNEL_FILE, DEFAULT_URL, DELTA_LIMIT, MAX_RELEASE_BYTES, HostedLibrary,
     ZSTD, apply_delta, delta_eligible, release_packages, validate_deltas, verified_payload, verify_envelope,
 )
 
@@ -75,7 +77,8 @@ def build_deltas(base, candidate, blobs, scratch, budget):
     return {'format': 'zstd-patch-v1', 'version': candidate['version'], 'entries': entries}
 
 
-def stage(release, output, launcher_version, signing_key, retained=(), *, delta_base=None):
+def stage(release, output, launcher_version, signing_key, retained=(), *, delta_base=None,
+          live_mode=None, live_url=DEFAULT_URL, live_opener=None, expected_previous=None):
     output = output.resolve()
     launcher_version = version(launcher_version)
     if output.exists():
@@ -113,19 +116,27 @@ def stage(release, output, launcher_version, signing_key, retained=(), *, delta_
         verify_envelope(envelope, (root_key,))
         launcher = downloads / f'theia-launcher_{launcher_version}_amd64.deb'
         package(launcher, launcher_version, (root_key,))
-        with launcher.open('rb') as stream:
-            digest = hashlib.file_digest(stream, 'sha256').hexdigest()
-        (downloads / 'SHA256SUMS').write_text(f'{digest}  {launcher.name}\n', encoding='ascii')
+        previous = None
+        if live_mode is not None:
+            previous = retain_previous(HostedLibrary(live_url, (root_key,), opener=live_opener), downloads,
+                                       manifest, launcher_version, first_release=live_mode == 'first',
+                                       expected_previous=expected_previous)
+        shutil.copyfile(launcher, downloads / STABLE_LAUNCHER)
+        sums = []
+        for installer in sorted(downloads.glob('theia-launcher_*.deb')):
+            with installer.open('rb') as stream:
+                sums.append(f"{hashlib.file_digest(stream, 'sha256').hexdigest()}  {installer.name}\n")
+        (downloads / 'SHA256SUMS').write_text(''.join(sums), encoding='ascii')
         (tree / '.nojekyll').touch()
         write_json(downloads / CHANNEL_FILE, envelope)
-        if delta_base is not None:
+        if delta_base is not None and previous != manifest:
             used = sum(path.stat().st_size for path in tree.rglob('*') if path.is_file())
             # Leave space for the signed sidecar even at the artifact limit.
             payload = build_deltas(delta_base, manifest, blobs, scratch, MAX_RELEASE_BYTES - used - 512 * 1024)
             if payload['entries']:
                 signed = sign(payload, scratch, signing_key)
                 validate_deltas(verified_payload(signed, (root_key,)), manifest)
-                (downloads / 'deltas').mkdir()
+                (downloads / 'deltas').mkdir(exist_ok=True)
                 write_json(downloads / 'deltas' / f"{manifest['version']}.json", signed)
         if sum(path.stat().st_size for path in tree.rglob('*') if path.is_file()) > MAX_RELEASE_BYTES:
             raise InstallError('Pages artifact exceeds the size budget')
@@ -141,10 +152,14 @@ def main():
     parser.add_argument('--signing-key', required=True, type=Path)
     parser.add_argument('--retain-client', action='append', default=[], type=Path)
     parser.add_argument('--delta-base', type=Path, help='Verified older client export to generate binary patches from')
+    parser.add_argument('--live-mode', choices=('first', 'update'),
+                        help='Check the public feed and retain the live release before publishing')
+    parser.add_argument('--expected-previous', help='Exact live client version in update mode')
     args = parser.parse_args()
     try:
         print(stage(args.client_export, args.output, args.launcher_version, args.signing_key,
-                    args.retain_client, delta_base=args.delta_base))
+                    args.retain_client, delta_base=args.delta_base, live_mode=args.live_mode,
+                    expected_previous=version(args.expected_previous) if args.expected_previous else None))
     except (OSError, InstallError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'Could not stage the Pages downloads: {error}\n')
 
