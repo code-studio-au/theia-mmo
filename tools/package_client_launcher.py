@@ -61,6 +61,7 @@ def package(output, release, public_keys=()):
             'Architecture: amd64\n'
             'Maintainer: Theia Online\n'
             'Depends: apt, pkexec, python3 (>= 3.10), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, openssl (>= 3.0), ca-certificates\n'
+            'Recommends: zstd\n'
             'Description: Theia Online client installer and launcher\n'
             ' Install and update the game client separately from this application.\n',
             encoding='utf-8',

@@ -4,9 +4,12 @@ from dataclasses import dataclass
 import hashlib
 import http.client
 import json
+import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
+from threading import Timer
 from urllib.error import URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -22,6 +25,10 @@ CHANNEL_FILE = 'development.json'
 CHANNEL = 'Development'
 MAX_ENVELOPE = 6 * 1024**2
 MAX_RELEASE_BYTES = 950_000_000
+DELTA_MIN_BYTES = 256 * 1024
+DELTA_MAX_BYTES = 256 * 1024**2
+DELTA_LIMIT = 256
+ZSTD = Path('/usr/bin/zstd')
 ED25519_PUBLIC_DER_PREFIX = bytes.fromhex('302a300506032b6570032100')
 
 
@@ -56,6 +63,75 @@ def content_key(row):
     return row['sha256'], row['bytes']
 
 
+def delta_eligible(old, new):
+    return bool(old and old['sha256'] != new['sha256']
+                and 1 <= old['bytes'] <= DELTA_MAX_BYTES
+                and DELTA_MIN_BYTES <= new['bytes'] <= DELTA_MAX_BYTES)
+
+
+def delta_candidates(previous_files, deltas):
+    old = {row['path']: row for row in previous_files}
+    return {name: patch for name, patch in deltas.items()
+            if name in old and content_key(old[name]) == (patch['base_sha256'], patch['base_bytes'])}
+
+
+def validate_deltas(data, manifest):
+    if (not isinstance(data, dict) or set(data) != {'format', 'version', 'entries'}
+            or data['format'] != 'zstd-patch-v1' or data['version'] != manifest['version']
+            or not isinstance(data['entries'], list) or len(data['entries']) > DELTA_LIMIT):
+        raise InstallError('Invalid binary patch metadata')
+    targets = {row['path']: row for row in manifest['files']}
+    patches = {}
+    for entry in data['entries']:
+        if not isinstance(entry, dict) or set(entry) != {
+                'path', 'base_sha256', 'base_bytes', 'target_sha256', 'sha256', 'bytes'}:
+            raise InstallError('Invalid binary patch entry')
+        path = entry['path']
+        target = targets.get(path) if isinstance(path, str) else None
+        if (target is None or path in patches or entry['target_sha256'] != target['sha256']
+                or not DELTA_MIN_BYTES <= target['bytes'] <= DELTA_MAX_BYTES
+                or entry['base_sha256'] == target['sha256']
+                or any(not isinstance(entry[key], str) or not re.fullmatch('[a-f0-9]{64}', entry[key])
+                       for key in ('sha256', 'base_sha256'))
+                or type(entry['base_bytes']) is not int or not 1 <= entry['base_bytes'] <= DELTA_MAX_BYTES
+                or type(entry['bytes']) is not int or not 0 < entry['bytes'] * 5 <= target['bytes'] * 4):
+            raise InstallError('Binary patch does not match the signed release')
+        patches[path] = entry
+    return patches
+
+
+def apply_delta(base, patch, destination, row, advance):
+    """Bound the decoded output by the signed target size and verify it before use."""
+    digest = hashlib.sha256()
+    size = 0
+    with subprocess.Popen([ZSTD, '-dq', '-M512MB', f'--patch-from={base}', '-c', '--', patch],
+                          stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as decoder:
+        timeout = Timer(60, decoder.kill)
+        timeout.start()
+        try:
+            with destination.open('xb') as output:
+                while chunk := decoder.stdout.read(min(CHUNK_BYTES, row['bytes'] - size + 1)):
+                    size += len(chunk)
+                    if size > row['bytes']:
+                        raise InstallError('Binary patch exceeds its signed target size')
+                    output.write(chunk)
+                    digest.update(chunk)
+                    advance(size)
+                if decoder.wait() or (size, digest.hexdigest()) != (row['bytes'], row['sha256']):
+                    raise InstallError('Binary patch verification failed')
+                output.flush()
+                os.fsync(output.fileno())
+        finally:
+            timeout.cancel()
+            if decoder.poll() is None:
+                decoder.kill()
+            timeout.join()
+
+
+class DownloadInterrupted(InstallError):
+    pass
+
+
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, request, fp, code, msg, headers, newurl):
         return None
@@ -66,10 +142,15 @@ class HostedRelease:
     library: 'HostedLibrary'
     manifest: dict
     total: int
+    deltas: dict
 
     def download_size(self, previous_files=()):
         known = {content_key(row) for row in previous_files}
-        missing = {content_key(row) for row in self.manifest['files']} - known
+        patches = delta_candidates(previous_files, self.deltas)
+        missing = set()
+        for row in self.manifest['files']:
+            if content_key(row) not in known:
+                missing.add(content_key(patches.get(row['path'], row)))
         return sum(size for _, size in missing)
 
     def install(self, root, progress, cancelled, *, offered_version):
@@ -84,15 +165,17 @@ class HostedRelease:
         if cache.is_symlink():
             raise InstallError('The download cache must be a local directory')
         digests = {row['sha256'] for row in self.manifest['files']}
+        digests.update(patch['sha256'] for patch in self.deltas.values())
         for entry in cache.iterdir():
             if entry.name not in digests:
                 entry.unlink()
 
         current = active(root)['current']
-        old_directory, old_files = None, {}
+        old_directory, old_files, patches = None, {}, {}
         if current:
             old_directory, manifest, _ = installed(root, current)
             old_files = {content_key(row): row['path'] for row in manifest['files']}
+            patches = delta_candidates(manifest['files'], self.deltas)
 
         completed = 0
         for row in self.manifest['files']:
@@ -117,6 +200,26 @@ class HostedRelease:
                     pass
                 if not reused:
                     destination.unlink(missing_ok=True)
+            if not reused and name in patches and ZSTD.is_file():
+                patch = patches[name]
+                base = old_directory / 'payload' / name
+                partial = cache / patch['sha256']
+                try:
+                    if copy_file(base, None, patch['base_bytes'], lambda _: advance(0)) != (
+                            patch['base_bytes'], patch['base_sha256']):
+                        raise InstallError('Installed base does not match binary patch')
+                    self.library.download(patch, partial, advance)
+                    if copy_file(partial, None, patch['bytes'], lambda _: advance(0)) != (patch['bytes'], patch['sha256']):
+                        partial.unlink()
+                        raise InstallError('Binary patch download failed verification')
+                    apply_delta(base, partial, destination, row, advance)
+                    reused = True
+                except DownloadInterrupted:
+                    raise
+                except (OSError, InstallError):
+                    destination.unlink(missing_ok=True)
+                    if cancelled and cancelled():
+                        raise InstallError('Update cancelled') from None
             if not reused:
                 partial = cache / row['sha256']
                 self.library.download(row, partial, advance)
@@ -174,12 +277,29 @@ class HostedLibrary:
             return None
         if version_key(launcher_version) < version_key(payload['minimum_launcher']):
             raise InstallError('Download the latest launcher from the Theia Online website to update the game.')
-        release = HostedRelease(self, manifest, total)
         previous_files = ()
+        deltas = {}
         if current and install_root is not None:
             _, previous, _ = installed(install_root, current)
             previous_files = previous['files']
+            old_by_path = {row['path']: row for row in previous_files}
+            if ZSTD.is_file() and any(delta_eligible(old_by_path.get(row['path']), row)
+                                      for row in manifest['files']):
+                deltas = self.deltas(manifest)
+        release = HostedRelease(self, manifest, total, deltas)
         return release, manifest['version'], release.download_size(previous_files)
+
+    def deltas(self, manifest):
+        try:
+            with self.open(f"deltas/{manifest['version']}.json") as response:
+                data = response.read(MAX_ENVELOPE + 1)
+            if len(data) > MAX_ENVELOPE:
+                raise InstallError('Binary patch metadata exceeds its size limit')
+            signed = verified_payload(decode_json(data), self.public_keys)
+            return validate_deltas(signed, manifest)
+        except (InstallError, OSError, http.client.HTTPException):
+            # The signed release remains usable with full file downloads.
+            return {}
 
     def download(self, row, partial, progress):
         size = row['bytes']
@@ -208,12 +328,12 @@ class HostedLibrary:
                         offset += len(chunk)
                         progress(offset)
                 except (http.client.HTTPException, TimeoutError) as error:
-                    raise InstallError('The download was interrupted. Try again to resume.') from error
+                    raise DownloadInterrupted('The download was interrupted. Try again to resume.') from error
         if offset != size:
-            raise InstallError('The download was interrupted. Try again to resume.')
+            raise DownloadInterrupted('The download was interrupted. Try again to resume.')
 
 
-def verify_envelope(envelope, public_keys):
+def verified_payload(envelope, public_keys):
     if not isinstance(envelope, dict) or set(envelope) != {'payload', 'signature'}:
         raise InstallError('Invalid hosted release envelope')
     try:
@@ -245,7 +365,11 @@ def verify_envelope(envelope, public_keys):
                 break
         else:
             raise InstallError('Could not verify the Theia release signature')
-    data = decode_json(payload)
+    return decode_json(payload)
+
+
+def verify_envelope(envelope, public_keys):
+    data = verified_payload(envelope, public_keys)
     fields = {'channel', 'minimum_launcher', 'client'}
     if (not isinstance(data, dict) or set(data) not in (fields, fields | {'packages'})
             or data['channel'] != CHANNEL):

@@ -15,6 +15,9 @@ on:
         description: New immutable version for the Linux launcher package
         required: true
         type: string
+      delta_base_run:
+        description: Optional successful main run with the previous Linux client export
+        type: string
 
 permissions:
   contents: read
@@ -40,22 +43,35 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CANDIDATE_RUN: ${{ inputs.candidate_run }}
+          DELTA_BASE_RUN: ${{ inputs.delta_base_run }}
         run: |
           [[ "$CANDIDATE_RUN" =~ ^[0-9]+$ ]]
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" |
-            jq -e --arg repo "$GITHUB_REPOSITORY" '
-              .conclusion == "success" and .head_branch == "main" and .head_repository.full_name == $repo'
+          for run in "$CANDIDATE_RUN" "$DELTA_BASE_RUN"; do
+            [[ -n "$run" ]] || continue
+            [[ "$run" =~ ^[0-9]+$ ]] || exit 1
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" |
+              jq -e --arg repo "$GITHUB_REPOSITORY" '
+                .conclusion == "success" and .head_branch == "main" and .head_repository.full_name == $repo'
+          done
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.candidate_run }}
           name: theia-linux-client-release
           path: ${{ runner.temp }}/client-export
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        if: inputs.delta_base_run != ''
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.delta_base_run }}
+          name: theia-linux-client-release
+          path: ${{ runner.temp }}/delta-base
       - name: Sign and stage approved Linux downloads
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.THEIA_RELEASE_SIGNING_KEY }}
           CLIENT_VERSION: ${{ inputs.client_version }}
           LAUNCHER_VERSION: ${{ inputs.launcher_version }}
+          DELTA_BASE_RUN: ${{ inputs.delta_base_run }}
         run: |
           jq -e --arg version "$CLIENT_VERSION" '.version == $version' "$RUNNER_TEMP/client-export/client-release.json"
           test -n "$RELEASE_SIGNING_KEY"
@@ -65,8 +81,12 @@ jobs:
           printf '%s\n' "$RELEASE_SIGNING_KEY" > "$key"
           unset RELEASE_SIGNING_KEY
           umask 022
+          delta_args=()
+          if [[ -n "$DELTA_BASE_RUN" ]]; then
+            delta_args=(--delta-base "$RUNNER_TEMP/delta-base")
+          fi
           python3 tools/stage_hosted_release.py "$RUNNER_TEMP/client-export" "$RUNNER_TEMP/game-pages" \
-            --launcher-version "$LAUNCHER_VERSION" --signing-key "$key"
+            --launcher-version "$LAUNCHER_VERSION" --signing-key "$key" "${delta_args[@]}"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: ${{ runner.temp }}/game-pages

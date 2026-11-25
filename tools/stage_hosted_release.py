@@ -6,12 +6,76 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from client_install import MANIFEST, InstallError, copy_file, metadata, version, write_json
+from client_install import MANIFEST, InstallError, copy_file, metadata, version, version_key, write_json
 from package_client_launcher import package
-from hosted_release import CHANNEL, CHANNEL_FILE, MAX_RELEASE_BYTES, release_packages, verify_envelope
+from hosted_release import (
+    CHANNEL, CHANNEL_FILE, DELTA_LIMIT, MAX_RELEASE_BYTES,
+    ZSTD, apply_delta, delta_eligible, release_packages, validate_deltas, verified_payload, verify_envelope,
+)
 
 
-def stage(release, output, launcher_version, signing_key, retained=()):
+def sign(payload, scratch, key):
+    with tempfile.TemporaryDirectory(prefix='sign-', dir=scratch) as directory:
+        body, signature = Path(directory) / 'payload', Path(directory) / 'signature'
+        write_json(body, payload)
+        subprocess.run(['/usr/bin/openssl', 'pkeyutl', '-sign', '-rawin', '-inkey', str(key),
+                        '-in', str(body), '-out', str(signature)], check=True)
+        return {'payload': base64.b64encode(body.read_bytes()).decode('ascii'),
+                'signature': base64.b64encode(signature.read_bytes()).decode('ascii')}
+
+
+def build_deltas(base, candidate, blobs, scratch, budget):
+    """Build useful patches for one verified older export while keeping full target blobs."""
+    base = base.resolve(strict=True)
+    previous, _ = metadata(base)
+    if (previous['target'] != candidate['target']
+            or version_key(previous['version']) >= version_key(candidate['version'])):
+        raise InstallError('Choose an older binary patch base for the same platform')
+    if not ZSTD.is_file():
+        raise InstallError('Install zstd to publish binary patches')
+    old_files = {row['path']: row for row in previous['files']}
+    entries = []
+    for row in sorted(candidate['files'], key=lambda entry: (-entry['bytes'], entry['path'])):
+        if len(entries) >= DELTA_LIMIT or budget <= 0:
+            break
+        old = old_files.get(row['path'])
+        if not delta_eligible(old, row):
+            continue
+        source = base / 'payload' / row['path']
+        if copy_file(source, None, old['bytes'], lambda _: None) != (old['bytes'], old['sha256']):
+            raise InstallError(f'Binary patch base failed verification: {row["path"]}')
+        with tempfile.TemporaryDirectory(prefix='delta-', dir=scratch) as directory:
+            patch = Path(directory) / 'patch.zst'
+            try:
+                subprocess.run([ZSTD, '-q', '-T1', '-3', f'--patch-from={source}',
+                                '-o', patch, '--', blobs / row['sha256']],
+                               check=True, timeout=45, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL)
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                continue
+            size = patch.stat().st_size
+            if not 0 < size * 5 <= row['bytes'] * 4:
+                continue
+            with patch.open('rb') as stream:
+                digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+            destination = blobs / digest
+            charged = 0 if destination.exists() else size
+            if charged > budget:
+                continue
+            try:
+                apply_delta(source, patch, Path(directory) / 'rebuilt', row, lambda _: None)
+            except InstallError:
+                continue
+            if charged:
+                patch.rename(destination)
+                budget -= charged
+            entries.append({'path': row['path'], 'base_sha256': old['sha256'],
+                            'base_bytes': old['bytes'], 'target_sha256': row['sha256'],
+                            'sha256': digest, 'bytes': size})
+    return {'format': 'zstd-patch-v1', 'version': candidate['version'], 'entries': entries}
+
+
+def stage(release, output, launcher_version, signing_key, retained=(), *, delta_base=None):
     output = output.resolve()
     launcher_version = version(launcher_version)
     if output.exists():
@@ -44,13 +108,8 @@ def stage(release, output, launcher_version, signing_key, retained=()):
         root_key = scratch / 'public.der'
         subprocess.run(['/usr/bin/openssl', 'pkey', '-in', str(signing_key),
                         '-pubout', '-outform', 'DER', '-out', str(root_key)], check=True)
-        body, signature = scratch / 'manifest', scratch / 'signature'
-        write_json(body, {'channel': CHANNEL, 'minimum_launcher': launcher_version, 'client': manifest,
-                          'packages': release_packages(manifest['files'])})
-        subprocess.run(['/usr/bin/openssl', 'pkeyutl', '-sign', '-rawin', '-inkey', str(signing_key),
-                        '-in', str(body), '-out', str(signature)], check=True)
-        envelope = {'payload': base64.b64encode(body.read_bytes()).decode('ascii'),
-                    'signature': base64.b64encode(signature.read_bytes()).decode('ascii')}
+        envelope = sign({'channel': CHANNEL, 'minimum_launcher': launcher_version, 'client': manifest,
+                         'packages': release_packages(manifest['files'])}, scratch, signing_key)
         verify_envelope(envelope, (root_key,))
         launcher = downloads / f'theia-launcher_{launcher_version}_amd64.deb'
         package(launcher, launcher_version, (root_key,))
@@ -59,6 +118,15 @@ def stage(release, output, launcher_version, signing_key, retained=()):
         (downloads / 'SHA256SUMS').write_text(f'{digest}  {launcher.name}\n', encoding='ascii')
         (tree / '.nojekyll').touch()
         write_json(downloads / CHANNEL_FILE, envelope)
+        if delta_base is not None:
+            used = sum(path.stat().st_size for path in tree.rglob('*') if path.is_file())
+            # Leave space for the signed sidecar even at the artifact limit.
+            payload = build_deltas(delta_base, manifest, blobs, scratch, MAX_RELEASE_BYTES - used - 512 * 1024)
+            if payload['entries']:
+                signed = sign(payload, scratch, signing_key)
+                validate_deltas(verified_payload(signed, (root_key,)), manifest)
+                (downloads / 'deltas').mkdir()
+                write_json(downloads / 'deltas' / f"{manifest['version']}.json", signed)
         if sum(path.stat().st_size for path in tree.rglob('*') if path.is_file()) > MAX_RELEASE_BYTES:
             raise InstallError('Pages artifact exceeds the size budget')
         tree.rename(output)
@@ -72,10 +140,11 @@ def main():
     parser.add_argument('--launcher-version', required=True)
     parser.add_argument('--signing-key', required=True, type=Path)
     parser.add_argument('--retain-client', action='append', default=[], type=Path)
+    parser.add_argument('--delta-base', type=Path, help='Verified older client export to generate binary patches from')
     args = parser.parse_args()
     try:
         print(stage(args.client_export, args.output, args.launcher_version, args.signing_key,
-                    args.retain_client))
+                    args.retain_client, delta_base=args.delta_base))
     except (OSError, InstallError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'Could not stage the Pages downloads: {error}\n')
 
