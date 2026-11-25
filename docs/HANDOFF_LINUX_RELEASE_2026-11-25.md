@@ -2,8 +2,8 @@
 
 Safe Pages publishing and optional native Cognito sign-in are merged into
 `theia-mmo/main`. The website download link and automatic news import are in
-the website draft. The public release still needs GitHub Pages setup and an
-approved asset list from the local Linux playtest. Native sign-in and automatic
+the website draft. The public release still needs approval for the actual
+Linux payload and clean-machine qualification. Native sign-in and automatic
 Sydney wake are separate AWS rollouts.
 
 ## Checkouts
@@ -29,12 +29,10 @@ branches. Read [the game launcher runbook](GAME_LAUNCHER.md) and
   `https://code-studio-au.github.io/theia-mmo/downloads/development.json`.
   The feed still returned HTTP 404 after the game merges. The release workflow
   is manually dispatched and the reviewed asset list is absent from `main`.
-  At the last configuration check GitHub reported no game Pages site or
-  `theia-linux-client-release` artifact.
-  The Cloud GitHub connection then received HTTP 403 on both creating the game
-  Pages site and creating the protected `game-downloads-release` environment.
-  Neither setting changed. No signing key or website trigger credential was
-  created.
+  Game Pages now uses GitHub Actions. The `game-downloads-release` environment
+  requires the repository owner's approval and accepts `main`. The Ed25519
+  secret is stored in that environment with a private local backup. The
+  website release-news trigger credential remains pending.
 - Sydney Cognito sign-in and native Millhaven entry previously passed for one
   Linux tester using launcher `0.1.6` and client `0.1.0.12`. See
   [STATUS.md](STATUS.md). This is evidence for the manually configured tester
@@ -117,6 +115,12 @@ for a user outside `theia-testers`, and Play through the browser fallback.
   executables with a test asset list. The 1,285,153,712-byte build became
   191,360,224 bytes. The signed local HTTPS update from 0.1.0.11 to 0.1.0.12
   downloaded only the 25,453,963-byte patch and verified the rebuilt hash.
+- The Millhaven inventory produced a byte-reproducible 64,073,362-byte private
+  build input with 3,719 assets. The local candidate builder verified that
+  archive against a draft approval and installed the resulting 296,429,555-byte
+  payload with the font notice. Its offline world configuration matched the
+  playtest. The owner-only private build-input repository has a read-only
+  deploy key. Clean Linux live admission remains pending.
 - The read-only **Linux launcher release checks** workflow runs candidate,
   installer, launcher and hosted-release tests for relevant changes.
 - Website `npm run check` passed. Static builds with the link off and on both
@@ -161,13 +165,9 @@ GitHub Pages is deployed.
 
 ## Resume here
 
-1. Use the signed-in GitHub owner account to enable **GitHub Actions** as the
-   source in [theia-mmo Settings → Pages](https://github.com/code-studio-au/theia-mmo/settings/pages).
-   In [Settings → Environments](https://github.com/code-studio-au/theia-mmo/settings/environments),
-   create `game-downloads-release`, restrict deployments to `main`, and add the
-   owner as a reviewer. Create the Ed25519 release key with a protected private
-   backup on the local machine. Store the private key in that environment as
-   `THEIA_RELEASE_SIGNING_KEY`. Keep the public key for the website setup.
+1. Use [the main-only release environment](https://github.com/code-studio-au/theia-mmo/settings/environments)
+   for candidate and publish runs. Keep the existing Ed25519 key stable. Use
+   its public key for the website setup after the first verified publication.
 2. On the local playtest machine, look for
    `build/hosted-development-launch/open-launcher` in the `theia-mmo` checkout
    first. If it is missing, find the actual command in local terminal history.
@@ -178,6 +178,9 @@ GitHub Pages is deployed.
    reviewed external payload files change. Review assets embedded in the
    executable too. Do not publish the executable-only private test export,
    unapproved art, private configuration, credentials or terminal history.
+   [Use a pinned build input](GAME_LAUNCHER.md#development-downloads-on-github-pages)
+   for generated terrain, navigation and other runtime assets. Review the
+   purchased character and wolf licences against the actual delivery format.
    The Sydney test also used a separately supplied `realm.json`, CA certificate
    and launch arguments. Verify how the exact public package works on clean
    Linux, including any trusted realm setup needed by testers.
