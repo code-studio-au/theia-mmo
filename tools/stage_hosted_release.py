@@ -6,14 +6,16 @@ import shutil
 from pathlib import Path
 import subprocess
 import tempfile
+from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 from client_install import MANIFEST, InstallError, copy_file, metadata, version, version_key, write_json
 from package_client_launcher import package
 from retain_pages_release import STABLE_LAUNCHER, retain_previous
 from release_news import NEWS_FILE, NEWS_LIMIT, next_archive
 from hosted_release import (
-    CHANNEL, CHANNEL_FILE, DEFAULT_URL, DELTA_LIMIT, MAX_RELEASE_BYTES, HostedLibrary,
-    ZSTD, apply_delta, delta_eligible, release_packages, validate_deltas, verified_payload, verify_envelope,
+    BUNDLE_FORMAT, CHANNEL, CHANNEL_FILE, DEFAULT_URL, DELTA_LIMIT, MAX_RELEASE_BYTES, HostedLibrary,
+    ZSTD, apply_delta, bundle_groups, delta_eligible, release_packages, validate_bundles, validate_deltas,
+    verified_payload, verify_envelope,
 )
 
 
@@ -78,8 +80,27 @@ def build_deltas(base, candidate, blobs, scratch, budget):
     return {'format': 'zstd-patch-v1', 'version': candidate['version'], 'entries': entries}
 
 
+def build_bundles(manifest, blobs, scratch):
+    entries = []
+    for name, rows in sorted(bundle_groups(manifest).items(), reverse=True):
+        path = scratch / f'{name}.zip'
+        with ZipFile(path, 'w') as archive:
+            for filename, row in sorted(rows.items()):
+                member = ZipInfo(filename)
+                member.compress_type = ZIP_DEFLATED
+                member.file_size = row['bytes']
+                with (blobs / row['sha256']).open('rb') as source, archive.open(member, 'w') as target:
+                    shutil.copyfileobj(source, target)
+        with path.open('rb') as archive:
+            digest = hashlib.file_digest(archive, 'sha256').hexdigest()
+        entries.append({'id': name, 'bytes': path.stat().st_size, 'sha256': digest})
+        path.replace(blobs / digest)
+    return {'format': BUNDLE_FORMAT, 'version': manifest['version'], 'entries': entries}
+
+
 def stage(release, output, launcher_version, signing_key, retained=(), *, delta_base=None,
-          live_mode=None, live_url=DEFAULT_URL, live_opener=None, expected_previous=None, release_notes=None, native_auth_bundle=None):
+          live_mode=None, live_url=DEFAULT_URL, live_opener=None, expected_previous=None,
+          release_notes=None, native_auth_bundle=None, bundle_initial_install=False):
     output = output.resolve()
     launcher_version = version(launcher_version)
     if output.exists():
@@ -135,6 +156,12 @@ def stage(release, output, launcher_version, signing_key, retained=(), *, delta_
         (downloads / 'SHA256SUMS').write_text(''.join(sums), encoding='ascii')
         (tree / '.nojekyll').touch()
         write_json(downloads / CHANNEL_FILE, envelope)
+        bundle_path = downloads / 'bundles' / f"{manifest['version']}.json"
+        if bundle_initial_install and not bundle_path.exists():
+            payload = build_bundles(manifest, blobs, scratch)
+            validate_bundles(payload, manifest)
+            bundle_path.parent.mkdir(exist_ok=True)
+            write_json(bundle_path, sign(payload, scratch, signing_key))
         if delta_base is not None and (previous is None or previous['client'] != manifest):
             used = sum(path.stat().st_size for path in tree.rglob('*') if path.is_file())
             # Leave space for the signed sidecar even at the artifact limit.
@@ -164,13 +191,14 @@ def main():
     parser.add_argument('--launcher-notes', default='', help='Reviewed launcher changes, one per line')
     parser.add_argument('--client-notes', default='', help='Reviewed client changes, one per line')
     parser.add_argument('--native-auth-bundle', type=Path)
+    parser.add_argument('--bundle-initial-install', action='store_true')
     args = parser.parse_args()
     try:
         print(stage(args.client_export, args.output, args.launcher_version, args.signing_key,
                     args.retain_client, delta_base=args.delta_base, live_mode=args.live_mode,
                     expected_previous=version(args.expected_previous) if args.expected_previous else None,
                     release_notes={'launcher': args.launcher_notes, 'client': args.client_notes},
-                    native_auth_bundle=args.native_auth_bundle))
+                    native_auth_bundle=args.native_auth_bundle, bundle_initial_install=args.bundle_initial_install))
     except (OSError, InstallError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'Could not stage the Pages downloads: {error}\n')
 
