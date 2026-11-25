@@ -1,5 +1,9 @@
 name: Rust checks
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   check:
@@ -32,10 +36,8 @@ jobs:
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Build workspace test binaries
         run: cargo test --locked --workspace --no-run -j 2
-      # Keep the existing test execution settings for the socket-based fixtures.
+      # Keep test targets running serially for the socket-based fixtures.
       - run: cargo test --locked --workspace --no-fail-fast -j 1
-      - name: Content authoring validators
-        run: cargo test --locked -p theia-network --example validate_gameplay --example validate_quest_packs --example validate_quest_documents --example review_quest_update -j 1
 
   asset-tools:
     strategy:

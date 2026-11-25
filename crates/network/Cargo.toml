@@ -27,3 +27,20 @@ landmass = "=0.9.3"
 [dev-dependencies]
 # Match the client's shared task pool when testing nested query initialization.
 bevy = { workspace = true, features = ["multi_threaded"] }
+
+# Run the authoring tests with the workspace so they share its dependency build.
+[[example]]
+name = "validate_gameplay"
+test = true
+
+[[example]]
+name = "validate_quest_packs"
+test = true
+
+[[example]]
+name = "validate_quest_documents"
+test = true
+
+[[example]]
+name = "review_quest_update"
+test = true
