@@ -1,0 +1,39 @@
+name: Build Linux client release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_version:
+        description: New immutable client version
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: game-downloads-release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Require a reviewed public asset list
+        run: test -s release/linux-client-files.json
+      - run: sudo apt-get update && sudo apt-get install -y pkg-config libasound2-dev libwayland-dev libxkbcommon-dev libx11-dev libxi-dev libxrandr-dev libxcursor-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.99.0
+      - run: cargo build --release --locked -p theia-client -j 2
+      - name: Export only the approved public payload
+        env:
+          CLIENT_VERSION: ${{ inputs.client_version }}
+        run: python3 tools/build_linux_client_candidate.py "$RUNNER_TEMP/client-export" --version "$CLIENT_VERSION"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: theia-linux-client-release
+          path: ${{ runner.temp }}/client-export
+          if-no-files-found: error

@@ -137,12 +137,14 @@ clean installs. The launcher uses `zstd` when installed.
 
 Local folders are still selectable in Settings.
 
-The separate Pages project keeps packages available while `theia-website`
-publishes news and site updates. The website's Linux button uses the approved
-`LINUX_LAUNCHER_VERSION` setting. It stays unavailable until a package and feed
-have been published. The launcher uses the website for newer online launcher
-installers. Existing local launcher updates still use the package installer.
-
+The separate Pages project keeps packages available across website builds.
+The public website links to a stable `downloads/theia-launcher_amd64.deb` URL.
+Each publish points that file at the current installer and preserves its
+versioned copy, plus the previous installer, client files and patch files.
+The update feed stays at `downloads/development.json`. Keep using the
+existing signing key for updates; the current publisher requires it to verify
+the live feed. If both releases do not fit the Pages budget, publishing fails
+before changing the live site.
 Prepare and inspect an artifact locally with a disposable testing key:
 
 ```sh
@@ -157,18 +159,67 @@ only in the protected publishing environment. The command also supports
 `--retain-client` for previously reviewed client exports whose files must stay
 available. Use new launcher and client versions for changed packages.
 
-For publication, prepare a Linux client export containing the executable and
-the redistribution-approved assets and configuration needed to launch it on a
-clean Ubuntu 24.04 or Linux Mint 22 system. The existing local development export
-contains only the executable and relies on the developer's separate playtest
-setup for normal realm entry. Review redistribution rights, then verify native
-launch and game entry from the exact staged package. Retain the export as the
-`theia-linux-client-release` artifact of a successful `main` build. Enable the
-game repository's GitHub Pages Actions source and protect the
-`game-downloads-release` environment with the `THEIA_RELEASE_SIGNING_KEY` secret.
-Dispatch **Publish Linux downloads to GitHub Pages** with the approved run and
-versions. Verify the live feed and package, then set the website version and
-dispatch its deployment.
+For publication, review the files needed to run the Linux client on a clean
+Ubuntu 24.04 or Linux Mint 22 system. Add only redistribution-approved files to
+`release/linux-client-files.json` on `main`. It contains a `files` array of
+`source`, `path`, `bytes` and `sha256` entries. Sources must be tracked under
+`content/`, `apps/client/assets/` or `release/`. Paths are relative to the
+installed payload. The locked Linux client build supplies `theia-client`.
+The executable-only private test export is insufficient as a public payload.
+
+1. Enable GitHub Actions as the Pages source on `theia-mmo`. Protect the
+   `game-downloads-release` environment and configure its Ed25519
+   `THEIA_RELEASE_SIGNING_KEY` secret.
+2. Dispatch **Build Linux client release candidate** on `main`. It verifies
+   the approved files by size and hash and uploads `theia-linux-client-release`.
+   Smoke-test the exact export on a clean Linux install before approving it.
+3. Dispatch **Publish Linux downloads to GitHub Pages** with the candidate run
+   and versions. Choose `first` only when the feed does not exist. For an
+   `update`, enter the exact previous client version. The publisher verifies
+   it and carries its live files forward before replacing the Pages artifact.
+   The optional `delta_base_run` generates patches and is independent of retention.
+4. After post-deploy verification passes for the live feed, stable installer
+   and executable, set `ENABLE_LINUX_DOWNLOADS=true` in `theia-website` and
+   dispatch the website deployment. The site build verifies the live links.
+   Future releases use the same website link.
+
+The previous-release retention window covers one rollout. Installed releases
+can still roll back locally. Client-only releases can reuse the existing
+installer. Launcher-only releases can reuse the exact client manifest and its
+published patch files. Changes to either artifact require advancing its version.
+## Automatic website release notes
+
+When publishing Linux downloads, enter reviewed public notes for whichever of
+`launcher_version` or `client_version` changed. Use one plain-text change per
+line. Leave notes blank for an unchanged product; on first publish, supply
+both. The publisher signs the download feed, any patch metadata, and a
+separate `release-news.json` archive. The archive preserves prior news even
+when packages fall out of the previous-release retention window. Updates
+fail before deployment if signed news history is missing or does not match
+the live release. Review every line for public disclosure.
+
+One-time setup after the first verified publish:
+
+1. In `theia-website`, set `ENABLE_RELEASE_NEWS=true` and set the
+   `THEIA_RELEASE_PUBLIC_KEY` repository variable to the existing game release
+   signing **public** key as base64-encoded Ed25519 DER (SPKI). Dispatch
+   the normal website workflow once to backfill the posts. The website uses
+   the public key only.
+2. To dispatch future website builds automatically, set
+   `ENABLE_WEBSITE_RELEASE_NEWS=true` on the game publisher's `github-pages`
+   environment. Add the `THEIA_WEBSITE_NEWS_TOKEN` secret there. Use a
+   fine-grained token authorized for `code-studio-au/theia-website` with
+   **Actions: write** only (plus required Metadata read). This token runs
+   the existing website workflow on main after the game files and news are
+   verified live. It does not need Contents write or access to AWS.
+
+If the automatic dispatch fails, the game release is already live. Retry
+the website workflow manually; it reimports the same archive and produces the
+same articles and RSS entries. Do not republish the same game versions. A
+hand-written article with the matching version takes precedence in the
+website build. No per-release edit to the website or the download manifest
+is required.
+
 
 Local HTTPS tests cover install, partial transfer resume, executable-only and
 single-zone updates, corruption rejection and rollback. The update tests assert

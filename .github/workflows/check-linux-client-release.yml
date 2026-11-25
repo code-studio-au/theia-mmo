@@ -1,0 +1,49 @@
+name: Linux launcher release checks
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/*linux*release*.yml
+      - .github/workflows/publish-pages-downloads.yml
+      - apps/launcher/**
+      - tools/client_install.py
+      - tools/package_client_launcher.py
+      - tools/stage_hosted_release.py
+      - tools/build_linux_client_candidate.py
+      - tools/retain_pages_release.py
+      - tools/release_news.py
+      - tools/test_*client*.py
+      - tools/test_hosted_release.py
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/*linux*release*.yml
+      - .github/workflows/publish-pages-downloads.yml
+      - apps/launcher/**
+      - tools/client_install.py
+      - tools/package_client_launcher.py
+      - tools/stage_hosted_release.py
+      - tools/build_linux_client_candidate.py
+      - tools/retain_pages_release.py
+      - tools/release_news.py
+      - tools/test_*client*.py
+      - tools/test_hosted_release.py
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - run: test -x /usr/bin/dpkg-deb && test -x /usr/bin/openssl && test -x /usr/bin/zstd
+      - name: Verify candidate packaging, signed updates and Pages retention
+        run: |
+          umask 022
+          for suite in test_linux_client_candidate.py test_client_install.py test_client_launcher.py test_hosted_release.py; do
+            python3 -m unittest discover -s tools -p "$suite"
+          done

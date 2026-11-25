@@ -1,0 +1,176 @@
+# Linux launcher and Pages handoff · 25 November 2026
+
+The stable download link, safe Pages publishing and automatic release news are
+implemented on two draft PRs. The next steps are to enable game Pages as the
+GitHub owner and inventory the working Linux playtest on the local machine.
+The approved public payload is still missing. The public release and AWS wake
+rollout have not been activated.
+
+## Checkouts
+
+| Repo | Branch to fetch | Contents |
+| --- | --- | --- |
+| [code-studio-au/theia-mmo](https://github.com/code-studio-au/theia-mmo/tree/development/safe-pages-releases) | `development/safe-pages-releases` | Release candidate build, safe Pages publishing, release news and this handoff. Latest pushed implementation `5ace54f5`, based on `main` at `a0ae08d4`. |
+| [code-studio-au/theia-website](https://github.com/code-studio-au/theia-website/tree/development/verified-linux-download-link) | `development/verified-linux-download-link` | Website opt-in, pre-deploy checks, stable Linux link and signed news import. Latest pushed implementation `dcd5583`, based on `main` at `25c61f6d`. |
+
+Review the [game release draft](https://github.com/code-studio-au/theia-mmo/pull/58)
+and [website draft](https://github.com/code-studio-au/theia-website/pull/1).
+Check the latest remote state and preserve any local work before switching
+branches. Neither site needs to be deployed to review these changes. Read [the game launcher runbook](GAME_LAUNCHER.md) and
+[the website deployment notes](https://github.com/code-studio-au/theia-website/blob/development/verified-linux-download-link/README.md).
+
+## What is live
+
+- `https://theiaonline.com/download/` is the website project on GitHub Pages.
+  The Linux download is currently unavailable there. The live page was checked
+  and had no Debian package link.
+- [The site's RSS feed](https://theiaonline.com/rss.xml) is already live.
+  It returned HTTP 200 and five posts, with Client 0.1.0.11 listed first.
+- The launcher expects
+  `https://code-studio-au.github.io/theia-mmo/downloads/development.json`.
+  This separate project returned HTTP 404 for the feed. The game download
+  publishing workflow had not run, GitHub did not report a game Pages site,
+  and there was no `theia-linux-client-release` artifact when checked.
+  The Cloud GitHub connection then received HTTP 403 on both creating the game
+  Pages site and creating the protected `game-downloads-release` environment.
+  Neither setting changed. No signing key or website trigger credential was
+  created.
+- Sydney Cognito sign-in and native Millhaven entry previously passed for one
+  Linux tester using launcher `0.1.6` and client `0.1.0.12`. See
+  [STATUS.md](STATUS.md). This is evidence for the manually configured tester
+  package, not for a download from the public site.
+- Gateway and scoped AWS roles are merged in
+  [PR #56](https://github.com/code-studio-au/theia-mmo/pull/56). Binary patches
+  are merged in [PR #57](https://github.com/code-studio-au/theia-mmo/pull/57).
+  Full GitHub Rust CI passed on their combined `main` revision
+  [`a0ae08d4`](https://github.com/code-studio-au/theia-mmo/actions/runs/45540097315).
+  No AWS gateway deployment was dispatched.
+
+## How the new release flow works
+
+1. **Build Linux client release candidate** builds the locked Linux AMD64
+   client. It packages only files listed in the tracked
+   `release/linux-client-files.json`, checking each size and SHA-256. It emits
+   the `theia-linux-client-release` Actions artifact.
+2. **Publish Linux downloads to GitHub Pages** accepts a successful build
+   from that workflow on `main`. It signs the Development feed, versions
+   the installer, and also publishes the fixed URL
+   `https://code-studio-au.github.io/theia-mmo/downloads/theia-launcher_amd64.deb`.
+   In update mode it compares the live signed feed with the exact previous
+   client version entered by the operator. It copies the previous versioned
+   installer, referenced files, and optional binary patches into the new
+   artifact. The retention window is one previous release. The current and
+   previous assets must fit the Pages limit or the workflow fails before deploy.
+3. The game publishing workflow verifies the live signed-feed bytes, stable
+   installer, client executable, and signed news archive against the staged
+   hashes after deploy.
+   Launcher-only releases may reuse the exact client manifest and its patches.
+   Client-only releases can reuse the existing versioned installer bytes.
+   `delta_base_run` is optional and independent of retention.
+4. The website builds without a Linux link by default. Once
+   `ENABLE_LINUX_DOWNLOADS=true` is set in `theia-website`, its deploy workflow
+   checks the live feed and stable installer before it replaces the website.
+   Later game releases reuse the same link. Opening the launcher or checking
+   updates never wakes the Sydney host.
+5. Enter reviewed, plain-text notes for each product whose version changes.
+   The game publisher adds one entry per changed version to the signed
+   `release-news.json` archive. Earlier news survives even after its installers
+   leave the retention window. The website imports the signed archive during
+   its build and renders it in News and RSS. A matching hand-written article
+   takes precedence. Once configured, the publisher triggers the website build
+   only after live verification succeeds. If the trigger fails, retry the
+   website workflow manually rather than republishing the game. There is no
+   per-release update-manifest or website edit.
+
+## Verification completed
+
+- Python hosted-release suite passed over a local HTTPS server. This covered
+  signed feeds, binary patching, corruption fallback, resume and rollback. The
+  final retention scenario passed after the last changes: first publish,
+  rejection when the expected prior version is wrong, second publish retaining
+  the previous installer and patch, a byte-range download from the old release,
+  and a launcher-only update.
+- The candidate command runs directly from a fresh checkout. Tests export only
+  the reviewed file bytes and reject untracked files or changed bytes. They use
+  a Linux ELF fixture rather than the public game build.
+- The read-only **Linux launcher release checks** workflow runs candidate,
+  installer, launcher and hosted-release tests for relevant changes.
+- Website `npm run check` passed. Static builds with the link off and on both
+  passed, and the generated page was checked for the correct button or URL.
+  The local environment used `ASTRO_TELEMETRY_DISABLED=1` as in CI.
+- The signed release-news tests covered first publication, updates and a
+  launcher-only release without an extra client post. The website importer
+  rejected invalid signatures and duplicate entries, preserved the hand-written
+  post, and rendered a generated post in the built index, article and RSS.
+- [Linux launcher release CI](https://github.com/code-studio-au/theia-mmo/actions/runs/45557712945)
+  passed on `5ace54f5`. The full Rust workflow for that revision was still
+  running when checked. [Website PR CI](https://github.com/code-studio-au/theia-website/actions/runs/45557730120)
+  passed on `dcd5583`; it was a PR build, not a live Pages deployment.
+- YAML and embedded Bash syntax checks passed.
+
+Useful focused checks from the respective checkout roots:
+
+```sh
+# theia-mmo
+umask 022
+python3 -m unittest discover -s tools -p test_hosted_release.py
+
+# theia-website
+npm ci
+node --test scripts/test-import-release-news.mjs
+ASTRO_TELEMETRY_DISABLED=1 npm run check
+ASTRO_TELEMETRY_DISABLED=1 PUBLIC_LINUX_DOWNLOADS=false npm run build
+ASTRO_TELEMETRY_DISABLED=1 PUBLIC_LINUX_DOWNLOADS=true npm run build
+```
+
+The game test needs Linux packaging tools, OpenSSL, zstd and loopback sockets.
+Do not treat a local HTTPS fixture or a static website build as proof that
+GitHub Pages is deployed.
+
+## Resume here
+
+1. Use the signed-in GitHub owner account to enable **GitHub Actions** as the
+   source in [theia-mmo Settings → Pages](https://github.com/code-studio-au/theia-mmo/settings/pages).
+   In [Settings → Environments](https://github.com/code-studio-au/theia-mmo/settings/environments),
+   create `game-downloads-release`, restrict deployments to `main`, and add the
+   owner as a reviewer. Create the Ed25519 release key with a protected private
+   backup on the local machine. Store the private key in that environment as
+   `THEIA_RELEASE_SIGNING_KEY`. Keep the public key for the website setup.
+2. On the local playtest machine, look for
+   `build/hosted-development-launch/open-launcher` in the `theia-mmo` checkout
+   first. If it is missing, find the actual command in local terminal history.
+   Inventory the files that launch loads. Confirm public redistribution rights
+   before committing `release/linux-client-files.json`. The list records each
+   file's tracked source path, destination in the installed payload, byte count
+   and SHA-256. The build supplies the executable. Change the list only when
+   reviewed external payload files change. Review assets embedded in the
+   executable too. Do not publish the executable-only private test export,
+   unapproved art, private configuration, credentials or terminal history.
+   The Sydney test also used a separately supplied `realm.json`, CA certificate
+   and launch arguments. Verify how the exact public package works on clean
+   Linux, including any trusted realm setup needed by testers.
+3. Review and merge the two draft branches. Keep the website opt-ins unset
+   during review. Build a candidate on `main` and test the actual export on
+   clean Linux. Dispatch the publisher in `first` mode only if the live feed
+   is absent. Enter both launcher and client notes for a first release.
+4. After live verification, set `ENABLE_LINUX_DOWNLOADS=true` and
+   `ENABLE_RELEASE_NEWS=true` in `theia-website`. Set
+   `THEIA_RELEASE_PUBLIC_KEY` there to the game release public key in base64
+   Ed25519 DER format. Run the website workflow once and verify the download
+   button, news and RSS. For subsequent automatic dispatch, set
+   `ENABLE_WEBSITE_RELEASE_NEWS=true` and add `THEIA_WEBSITE_NEWS_TOKEN` in the
+   **game repo's** `github-pages` environment. Use a fine-grained credential
+   scoped to the website repo with Actions write permission, as described in
+   [the release runbook](GAME_LAUNCHER.md#automatic-website-release-notes).
+   Verify the launcher installs the signed client and the next release leaves
+   a previous download resumable. Keep the signing key stable for updates.
+5. Separately for automatic Sydney wake and idle stop, apply the reviewed
+   identity stack with an AWS administrator, then follow
+   [the gateway rollout runbook](../infrastructure/gateway/README.md). The
+   existing host deploy role is limited to the host stack. Install the lifecycle
+   controller and qualify two testers through stopped → wake → play → idle stop
+   → wake, verifying saved progress. This rollout is independent of the Pages
+   publishing mechanics.
+
+Keep merges, public publishing and live AWS changes separate. Do not store or
+print signing keys, AWS credentials or tester passwords in the repository.
