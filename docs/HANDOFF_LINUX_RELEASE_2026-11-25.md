@@ -1,22 +1,21 @@
 # Linux launcher and Pages handoff · 25 November 2026
 
-The stable download link, safe Pages publishing and automatic release news are
-implemented on two draft PRs. The next steps are to enable game Pages as the
-GitHub owner and inventory the working Linux playtest on the local machine.
-The approved public payload is still missing. The public release and AWS wake
-rollout have not been activated.
+Safe Pages publishing and optional native Cognito sign-in are merged into
+`theia-mmo/main`. The website download link and automatic news import are in
+the website draft. The public release still needs GitHub Pages setup and an
+approved asset list from the local Linux playtest. Native sign-in and automatic
+Sydney wake are separate AWS rollouts.
 
 ## Checkouts
 
 | Repo | Branch to fetch | Contents |
 | --- | --- | --- |
-| [code-studio-au/theia-mmo](https://github.com/code-studio-au/theia-mmo/tree/development/safe-pages-releases) | `development/safe-pages-releases` | Release candidate build, safe Pages publishing, release news and this handoff. Latest pushed implementation `5ace54f5`, based on `main` at `a0ae08d4`. |
+| [code-studio-au/theia-mmo](https://github.com/code-studio-au/theia-mmo/tree/main) | `main` | Release candidate build, safe Pages publishing and signed release news merged in [PR #58](https://github.com/code-studio-au/theia-mmo/pull/58) as `d066546b`. Native sign-in merged in [PR #59](https://github.com/code-studio-au/theia-mmo/pull/59) as `ae89892a`. |
 | [code-studio-au/theia-website](https://github.com/code-studio-au/theia-website/tree/development/verified-linux-download-link) | `development/verified-linux-download-link` | Website opt-in, pre-deploy checks, stable Linux link and signed news import. Latest pushed implementation `dcd5583`, based on `main` at `25c61f6d`. |
 
-Review the [game release draft](https://github.com/code-studio-au/theia-mmo/pull/58)
-and [website draft](https://github.com/code-studio-au/theia-website/pull/1).
+The [website PR #1](https://github.com/code-studio-au/theia-website/pull/1) is open as a draft.
 Check the latest remote state and preserve any local work before switching
-branches. Neither site needs to be deployed to review these changes. Read [the game launcher runbook](GAME_LAUNCHER.md) and
+branches. Read [the game launcher runbook](GAME_LAUNCHER.md) and
 [the website deployment notes](https://github.com/code-studio-au/theia-website/blob/development/verified-linux-download-link/README.md).
 
 ## What is live
@@ -25,12 +24,13 @@ branches. Neither site needs to be deployed to review these changes. Read [the g
   The Linux download is currently unavailable there. The live page was checked
   and had no Debian package link.
 - [The site's RSS feed](https://theiaonline.com/rss.xml) is already live.
-  It returned HTTP 200 and five posts, with Client 0.1.0.11 listed first.
+  It still returned HTTP 200 after the game merges.
 - The launcher expects
   `https://code-studio-au.github.io/theia-mmo/downloads/development.json`.
-  This separate project returned HTTP 404 for the feed. The game download
-  publishing workflow had not run, GitHub did not report a game Pages site,
-  and there was no `theia-linux-client-release` artifact when checked.
+  The feed still returned HTTP 404 after the game merges. The release workflow
+  is manually dispatched and the reviewed asset list is absent from `main`.
+  At the last configuration check GitHub reported no game Pages site or
+  `theia-linux-client-release` artifact.
   The Cloud GitHub connection then received HTTP 403 on both creating the game
   Pages site and creating the protected `game-downloads-release` environment.
   Neither setting changed. No signing key or website trigger credential was
@@ -45,6 +45,24 @@ branches. Neither site needs to be deployed to review these changes. Read [the g
   Full GitHub Rust CI passed on their combined `main` revision
   [`a0ae08d4`](https://github.com/code-studio-au/theia-mmo/actions/runs/45540097315).
   No AWS gateway deployment was dispatched.
+
+## Native Sydney sign-in
+
+Launcher `0.1.9` includes a GTK sign-in dialog and the packaged Cognito SRP
+helper when built by the Pages workflow. The game client still uses Bevy for
+the in-game UI, including the character roster. The launcher dialog supports
+temporary password changes and SMS or authenticator codes, and offers managed
+browser sign-in. Existing realm configurations continue using browser login.
+Native sign-in requires Node.js 18 or newer and the opt-in `native_sign_in`
+setting in the trusted tester `realm.json`.
+
+The AWS rollout is pending. Deploy `TheiaDevelopmentNativeSignIn` first, then
+update the existing Cognito stack with the helper's `NativePlayScopeArn`.
+The trigger grants `theia-development/play` to `theia-testers` using the
+designated launcher client. Use the [AWS runbook](../infrastructure/aws/README.md#native-launcher-authentication)
+for rollout and rollback. Once deployed, enable `"native_sign_in": true` on a
+tester config. Verify Play with a tester, a temporary password and MFA, denial
+for a user outside `theia-testers`, and Play through the browser fallback.
 
 ## How the new release flow works
 
@@ -102,10 +120,18 @@ branches. Neither site needs to be deployed to review these changes. Read [the g
   launcher-only release without an extra client post. The website importer
   rejected invalid signatures and duplicate entries, preserved the hand-written
   post, and rendered a generated post in the built index, article and RSS.
-- [Linux launcher release CI](https://github.com/code-studio-au/theia-mmo/actions/runs/45557712945)
-  passed on `5ace54f5`. The full Rust workflow for that revision was still
-  running when checked. [Website PR CI](https://github.com/code-studio-au/theia-website/actions/runs/45557730120)
-  passed on `dcd5583`; it was a PR build, not a live Pages deployment.
+- PR #58 passed Rust and Linux launcher release CI. PR #59 passed
+  [Rust](https://github.com/code-studio-au/theia-mmo/actions/runs/45572036507),
+  [AWS infrastructure](https://github.com/code-studio-au/theia-mmo/actions/runs/45572036620),
+  [Linux launcher release](https://github.com/code-studio-au/theia-mmo/actions/runs/45572036759)
+  and [realm gateway](https://github.com/code-studio-au/theia-mmo/actions/runs/45572036564)
+  checks before merging.
+- The launcher `0.1.9` Debian package was extracted and exercised with GTK on
+  Xvfb. Simulated Cognito responses covered inline errors, cancellation,
+  temporary password changes, authenticator MFA, successful sign-in and
+  browser handoff. Live Cognito tester verification remains pending.
+- [Website PR CI](https://github.com/code-studio-au/theia-website/actions/runs/45557730120)
+  passed on `dcd5583` using a PR build.
 - YAML and embedded Bash syntax checks passed.
 
 Useful focused checks from the respective checkout roots:
@@ -149,10 +175,10 @@ GitHub Pages is deployed.
    The Sydney test also used a separately supplied `realm.json`, CA certificate
    and launch arguments. Verify how the exact public package works on clean
    Linux, including any trusted realm setup needed by testers.
-3. Review and merge the two draft branches. Keep the website opt-ins unset
-   during review. Build a candidate on `main` and test the actual export on
-   clean Linux. Dispatch the publisher in `first` mode only if the live feed
-   is absent. Enter both launcher and client notes for a first release.
+3. Review and merge website PR #1 with the website opt-ins unset. Build the
+   game candidate on `main` and test the actual export on clean Linux.
+   Dispatch the publisher in `first` mode only if the live feed is absent.
+   Enter both launcher and client notes for a first release.
 4. After live verification, set `ENABLE_LINUX_DOWNLOADS=true` and
    `ENABLE_RELEASE_NEWS=true` in `theia-website`. Set
    `THEIA_RELEASE_PUBLIC_KEY` there to the game release public key in base64
