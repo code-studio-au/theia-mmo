@@ -1,4 +1,5 @@
 """Regression checks for release selection and standalone launcher preferences."""
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -11,6 +12,7 @@ from client_install import InstallError, executable, export, target
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'apps/launcher'))
 from launcher_update import install_launcher_update, newest_launcher_release
+from news_feed import MAX_FEED_BYTES, NEWS_URL, NewsArticle, parse_news
 from state import DEFAULT_LOGIN_BIND, game_launch_args, login_address, login_ready, newest_release, read_settings
 from state import save_settings
 
@@ -57,18 +59,40 @@ class ClientLauncher(unittest.TestCase):
         settings = self.root / 'app-data' / 'launcher.json'
         game = self.root / 'game'
         self.assertEqual(read_settings(settings), {})
-        save_settings(settings, game, self.library)
+        save_settings(settings, game)
+        settings.write_text(json.dumps({'install_root': str(game), 'release_library': str(self.library)}))
         self.assertEqual(read_settings(settings), {
-            'install_root': str(game), 'release_library': str(self.library),
+            'install_root': str(game),
         })
         self.assertFalse(game.exists())
         moved = game.with_name('game-moved')
-        save_settings(settings, moved, None)
+        save_settings(settings, moved)
         self.assertEqual(read_settings(settings), {'install_root': os.fspath(moved)})
         self.assertEqual(list(settings.parent.iterdir()), [settings])
         settings.write_text('{"install_root":"relative"}')
         with self.assertRaisesRegex(InstallError, 'Invalid launcher preferences'):
             read_settings(settings)
+
+
+class LauncherNews(unittest.TestCase):
+    def test_uses_plain_summaries_and_unique_article_links_on_the_official_site(self):
+        data = f'''<rss><channel>
+          <item><title>Latest update</title><description>New &amp; improved</description>
+                <link>{NEWS_URL}latest-update/</link></item>
+          <item><title>Duplicate</title><link>{NEWS_URL}latest-update/</link></item>
+          <item><title>External</title><link>https://another.example/news/more/</link></item>
+          <item><title>Unsafe</title><link>{NEWS_URL}../download/</link></item>
+          <item><title>Older update</title><link>{NEWS_URL}older-update/</link></item>
+        </channel></rss>'''.encode()
+        self.assertEqual(parse_news(data), [
+            NewsArticle('Latest update', 'New & improved', NEWS_URL + 'latest-update/'),
+            NewsArticle('Older update', '', NEWS_URL + 'older-update/'),
+        ])
+
+    def test_rejects_oversized_and_invalid_xml(self):
+        for data in (b'x' * (MAX_FEED_BYTES + 1), b'<!DOCTYPE rss><rss/>', b'<broken>'):
+            with self.subTest(length=len(data)), self.assertRaises(ValueError):
+                parse_news(data)
 
 
 class GameLaunchMode(unittest.TestCase):

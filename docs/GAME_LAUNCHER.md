@@ -2,8 +2,9 @@
 
 The desktop launcher is a separate Linux AMD64 application with its own Debian
 package and application menu entry. The package installs the launcher and its
-artwork. The launcher then installs the game into a separate directory. The
-native game window owns sign-in, registration and character selection.
+artwork. The launcher then installs the game into a separate directory.
+**Play** opens hosted tester sign-in when a realm configuration is supplied.
+The game owns character selection and any enabled account registration.
 
 ## Local development use
 
@@ -11,59 +12,63 @@ Build the standalone launcher package with `dpkg-deb` available on the build
 machine.
 
 ```sh
-python3 tools/package_client_launcher.py build/theia-launcher_0.1.3_amd64.deb
+python3 tools/package_client_launcher.py build/theia-launcher_amd64.deb
 ```
 
-Install the Debian package through the system's package installer and open
-**Theia Online Launcher**. In **Settings**, choose a trusted client release
-folder containing `client-release.json`, or a library containing versioned
-subfolders. The default game installation is
+Install the Debian package through the system's package installer. To use
+a trusted local release or a directory of versioned exports, start the
+launcher with `theia-launcher --release-library /path/to/releases`. The default
+game installation is
 `$XDG_DATA_HOME/theia-online/game` (normally `~/.local/share/theia-online/game`).
-The launcher saves its folder choices in `launcher.json` beside that default
-directory.
+The launcher saves the game folder in `launcher.json` beside that default
+directory. Standard launches use GitHub Pages for online releases.
 
 **Install Game** stages and verifies the selected release, then enables **Play**.
 Play opens the game fullscreen by default and minimises the launcher. When the
 game closes, the launcher is available again. Forward `--window-size WIDTHxHEIGHT`
 after `--` for a windowed launch or use F11 to toggle fullscreen in the client.
 When a newer release is found, the main action becomes **Update Game**.
-**Updates** also offers **Check for Updates**, **Restore Previous Version** and
-**Play Installed Version** while a newer release is offered. Install and update
-show verified bytes, percentage and, after enough time to measure the transfer,
-a rate and estimated time left. Cancel stops the transfer. The bottom bar
+**Settings** has **Check for Updates**, the game folder, and the launcher
+version. To expose **Restore Previous Version** and **Play Installed Version**
+for development, start with `--developer-tools`. Install and update show
+progress and an estimated time left. Cancel stops the transfer. The bottom bar
 displays the active client version.
 
-The Play screen links to the bundled 0.1.0.1 client preview announcement.
+**News** lists recent articles from the public site's RSS feed. **Play** shows
+the latest article, and selecting an article opens it in the browser.
 
 ## Launcher updates
 
-Install the 0.1.3 launcher package once to enable checks for future launcher
-releases. At startup and on **Updates → Check for Updates**, the launcher looks
-in the `launcher/` subfolder of the selected trusted release library for Debian
-packages named `theia-launcher_VERSION_amd64.deb`. It checks the package name,
-version and architecture, then offers the newest compatible version above the
-running version. The Updates tab displays launcher and game client versions
-independently, and Play shows a link to any available launcher update.
+Launcher 0.1.11 checks the signed GitHub Pages `launcher.json` feed at startup
+and on **Settings → Check for Updates**. A newer version takes priority over
+**Play**, **Install Game**, and **Update Game**. The launcher downloads the
+versioned Debian package and verifies its signed size and SHA-256, then checks
+the Debian package name, version, and architecture. Versions before 0.1.11
+require the website's installer once to adopt this update path.
 
 Select **Update Launcher** to install the offered package with the system APT
 installer and desktop administrator approval. **Restart Launcher** becomes
 available after the system confirms the offered version is installed. The app
 keeps its settings, game installation and launch arguments across the restart.
-Publish packages only to a library you trust. This path uses local files.
+The explicit `--release-library` mode discovers trusted packages from that
+directory's `launcher/` subfolder for offline development.
 
-## Login server status
+## Realm status
 
-The launcher probes the development account service's `GET /ready` every five
-seconds. Green **Online** requires the account service's readiness response.
-Other responses or connection failures show **Unavailable**. The default is
-`127.0.0.1:5050`. With a custom numeric loopback bind, set
-`THEIA_ACCOUNT_BIND` for the launcher or pass `--login-server 127.0.0.1:PORT`.
-Use the matching current account server build.
+Use **Theia** as the realm and server name in the launcher, deployment
+announcements, and release news. **Millhaven** is the test zone on Theia.
+Sydney identifies the hosting location.
 
-The endpoint is available on the existing guarded account listener once
-startup has completed. The probe sends no credentials, starts no login session
-and does not test a complete identity-provider sign-in. Public realm
-monitoring remains separate.
+**Realm Status** appears with a hosted realm configuration. The launcher probes
+the realm's account service every five seconds and shows **Online** when the
+service is ready. If the realm supports wake on demand and the service is
+unreachable, the launcher shows **Sign in to start**. Play can request startup
+through the gateway after successful sign-in.
+
+Local development can display **Login Server Status** via `--login-server`,
+`THEIA_ACCOUNT_BIND`, the local library, or developer tools. The default
+loopback address is `127.0.0.1:5050`. Readiness probes send no credentials and
+never wake a realm.
 
 ## Preparing a client release
 
@@ -143,8 +148,6 @@ manifest before activation. A missing patch, mismatched base, invalid signature
 or corrupt patch falls back to the full changed file. A partial patch can
 resume on servers that support byte ranges. The launcher uses `zstd` for
 binary patches when installed.
-
-Local folders are still selectable in Settings.
 
 The separate Pages project keeps packages available across website builds.
 The public website links to a stable `downloads/theia-launcher_amd64.deb` URL.
@@ -267,7 +270,7 @@ installer and native qualification.
 
 ## Test sign-in without a game server
 
-P3-01 adds an opt-in launcher sign-in rehearsal. The Account tab opens the
+P3-01 adds an opt-in launcher sign-in rehearsal. The Settings test control opens the
 system browser and completes the authorization-code exchange with PKCE through
 a loopback callback. The provider confirms the account using the access token.
 The launcher reports success without retaining the token, waking a realm or
@@ -279,7 +282,7 @@ Run the two-account check against the existing owned Keycloak SDK:
 python3 tools/qualify_launcher_test_sign_in.py
 ```
 
-Add `--desktop` to open the launcher and select **Account → Test Sign-in**.
+Add `--desktop` to open the launcher and select **Settings → Test Sign-in**.
 The command prints the path of a private file with two temporary test accounts.
 The provider and credentials are removed when the rehearsal closes.
 
@@ -340,3 +343,48 @@ passed through `--realm-config`. Verify native Play with a tester account, a
 temporary password, and configured MFA. Verify that a user outside
 `theia-testers` is denied and that a tester can still play through managed
 browser login. Remove the field to return that launcher to browser login.
+
+## Launcher artwork
+
+The launcher uses a graded [harbour](../content/ui/frontend/launcher-harbour-v2.png)
+and [adventurer portrait](../content/ui/frontend/launcher-adventurer-v2.png).
+Both were edited with the built-in ImageGen tool using the website's homepage
+art as the lighting and colour reference.
+
+**Harbour prompt**
+
+```text
+Use case: style-transfer.
+Asset type: wide fantasy harbour background for the Theia launcher.
+Image 1 is the exact edit target. Image 2 is a lighting and color reference
+from the website only.
+Apply an extremely subtle grade to image 1. Soften the brightest sky, pale
+stone and lake reflections, pull vivid electric blue and cyan back slightly
+toward the website's quieter blue and slate, and give the light the
+reference's warm natural daylight. Keep the image luminous and readable with
+open shadows and crisp details. Preserve the original very wide 2.1:1
+framing, left tree and arch, bridges, mountains, city, banners, lake and
+crop as precisely as possible. Preserve the whole composition and all
+existing content. Add no people, words, overlays, or new objects. Output
+only the edited opaque landscape, as close to the original dimensions as
+possible.
+```
+
+**Adventurer prompt**
+
+```text
+Use case: identity-preserve.
+Asset type: existing foreground character overlay for the Theia launcher.
+Image 1 is the exact edit target, the brunette woman in navy-and-gold
+Covenant armour. Image 2 is the website's reference for lighting and colour
+only.
+Give image 1 the same extremely subtle softer grade as the website: pull
+back shiny gold highlights a little, slightly quiet the bright blue, and
+keep the face naturally warm and clearly legible. This is a colour and
+contrast pass, not a redesign. Keep the exact woman, face, hair, expression,
+proportions, profile pose looking right, blue cape and tree emblems,
+clothing and silhouette. Keep her in the same place and the same tall 2:3
+crop, with the same soft edge treatment and transparent surround fit for
+layering over the harbour. Output a genuinely transparent PNG. Do not add a
+scene, extra characters, or text.
+```

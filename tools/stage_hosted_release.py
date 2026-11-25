@@ -13,10 +13,11 @@ from package_client_launcher import package
 from retain_pages_release import STABLE_LAUNCHER, retain_previous
 from release_news import NEWS_FILE, NEWS_LIMIT, next_archive
 from hosted_release import (
-    BUNDLE_FORMAT, CHANNEL, CHANNEL_FILE, DEFAULT_URL, DELTA_LIMIT, MAX_RELEASE_BYTES, HostedLibrary,
-    ZSTD, apply_delta, bundle_groups, delta_eligible, release_packages, validate_bundles, validate_deltas,
-    verified_payload, verify_envelope,
+    BUNDLE_FORMAT, CHANNEL, CHANNEL_FILE, DEFAULT_URL, DELTA_LIMIT, LAUNCHER_FEED, LAUNCHER_FORMAT,
+    MAX_RELEASE_BYTES, HostedLibrary, ZSTD, apply_delta, bundle_groups, delta_eligible, release_packages,
+    validate_bundles, validate_deltas, validate_launcher_metadata, verified_payload, verify_envelope,
 )
+from launcher_update import launcher_package_name
 
 
 def sign(payload, scratch, key):
@@ -136,7 +137,7 @@ def stage(release, output, launcher_version, signing_key, retained=(), *, delta_
         envelope = sign({'channel': CHANNEL, 'minimum_launcher': launcher_version, 'client': manifest,
                          'packages': release_packages(manifest['files'])}, scratch, signing_key)
         verify_envelope(envelope, (root_key,))
-        launcher = downloads / f'theia-launcher_{launcher_version}_amd64.deb'
+        launcher = downloads / launcher_package_name(launcher_version)
         package(launcher, launcher_version, (root_key,), native_auth_bundle=native_auth_bundle)
         previous = None
         if live_mode is not None:
@@ -149,11 +150,15 @@ def stage(release, output, launcher_version, signing_key, retained=(), *, delta_
             if news_path.stat().st_size > NEWS_LIMIT:
                 raise InstallError('The signed release news archive exceeds its size limit')
         shutil.copyfile(launcher, downloads / STABLE_LAUNCHER)
-        sums = []
+        sums = {}
         for installer in sorted(downloads.glob('theia-launcher_*.deb')):
             with installer.open('rb') as stream:
-                sums.append(f"{hashlib.file_digest(stream, 'sha256').hexdigest()}  {installer.name}\n")
-        (downloads / 'SHA256SUMS').write_text(''.join(sums), encoding='ascii')
+                sums[installer.name] = hashlib.file_digest(stream, 'sha256').hexdigest()
+        (downloads / 'SHA256SUMS').write_text(''.join(f'{digest}  {name}\n' for name, digest in sums.items()),
+                                            encoding='ascii')
+        launcher_metadata = validate_launcher_metadata({'format': LAUNCHER_FORMAT, 'version': launcher_version,
+                                                        'bytes': launcher.stat().st_size, 'sha256': sums[launcher.name]})
+        write_json(downloads / LAUNCHER_FEED, sign(launcher_metadata, scratch, signing_key))
         (tree / '.nojekyll').touch()
         write_json(downloads / CHANNEL_FILE, envelope)
         bundle_path = downloads / 'bundles' / f"{manifest['version']}.json"

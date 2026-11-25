@@ -26,6 +26,10 @@ from client_install import (
 DEFAULT_URL = 'https://code-studio-au.github.io/theia-mmo/downloads/'
 CHANNEL_FILE = 'development.json'
 CHANNEL = 'Development'
+LAUNCHER_FEED = 'launcher.json'
+LAUNCHER_FORMAT = 'theia-launcher-deb-amd64-v1'
+MAX_LAUNCHER_FEED = 8192
+MAX_INSTALLER = 64 * 1024**2
 MAX_ENVELOPE = 6 * 1024**2
 MAX_RELEASE_BYTES = 950_000_000
 DOWNLOAD_ATTEMPTS = 3
@@ -68,6 +72,16 @@ def release_packages(files):
 
 def content_key(row):
     return row['sha256'], row['bytes']
+
+
+def validate_launcher_metadata(data):
+    if (not isinstance(data, dict) or set(data) != {'format', 'version', 'bytes', 'sha256'}
+            or data['format'] != LAUNCHER_FORMAT
+            or type(data['bytes']) is not int or not 0 < data['bytes'] <= MAX_INSTALLER
+            or not isinstance(data['sha256'], str) or not re.fullmatch('[a-f0-9]{64}', data['sha256'])):
+        raise InstallError('Invalid launcher update metadata')
+    version_key(data['version'])
+    return data
 
 
 def bundle_groups(manifest):
@@ -416,6 +430,20 @@ class HostedLibrary:
         except (InstallError, OSError, http.client.HTTPException):
             return {}
 
+    def launcher_metadata(self):
+        try:
+            with self.open(LAUNCHER_FEED) as response:
+                data = response.read(MAX_LAUNCHER_FEED + 1)
+        except InstallError as error:
+            if isinstance(error.__cause__, HTTPError) and error.__cause__.code == 404:
+                return None
+            raise
+        except (http.client.HTTPException, TimeoutError, ConnectionError) as error:
+            raise InstallError('Could not read launcher updates. Try again.') from error
+        if len(data) > MAX_LAUNCHER_FEED:
+            raise InstallError('Launcher update metadata exceeds its size limit')
+        return validate_launcher_metadata(verified_payload(decode_json(data), self.public_keys))
+
     def deltas(self, manifest):
         try:
             with self.open(f"deltas/{manifest['version']}.json") as response:
@@ -428,17 +456,18 @@ class HostedLibrary:
             # The signed release remains usable with full file downloads.
             return {}
 
-    def download(self, row, partial, progress):
+    def download(self, row, partial, progress, *, name=None):
+        source = name or 'blobs/' + row['sha256']
         for attempt in range(DOWNLOAD_ATTEMPTS):
             try:
-                self._download_once(row, partial, progress)
+                self._download_once(row, partial, progress, source)
                 return
             except DownloadInterrupted as error:
                 if attempt + 1 == DOWNLOAD_ATTEMPTS:
-                    raise DownloadInterrupted('Download interrupted. Choose Install Game or Update Game to resume.') from error
+                    raise DownloadInterrupted('Download interrupted. Try again to resume.') from error
                 sleep(2 ** attempt)
 
-    def _download_once(self, row, partial, progress):
+    def _download_once(self, row, partial, progress, source):
         size = row['bytes']
         offset = regular(partial).stat().st_size if partial.exists() or partial.is_symlink() else 0
         if offset > size:
@@ -450,7 +479,7 @@ class HostedLibrary:
             return
         if offset == size:
             return
-        with self.open('blobs/' + row['sha256'], offset=offset) as response:
+        with self.open(source, offset=offset) as response:
             if response.status == 200:
                 offset = 0
             elif (not offset or response.status != 206 or response.headers.get('Content-Range')

@@ -144,16 +144,11 @@ label.unavailable {
   background-image: radial-gradient(circle at 35% 28%, #f6bb9d, #985747 65%, #5c3028);
 }
 .news-story {
-  padding: 3px 0;
+  padding: 8px 10px;
   border: 0;
 }
 .news-story:hover {
   background-color: rgba(213, 167, 87, 0.11);
-}
-.news-image {
-  border: 1px solid #97733c;
-  padding: 2px;
-  border-radius: 3px;
 }
 button.action {
   min-height: 32px;
