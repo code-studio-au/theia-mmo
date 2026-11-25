@@ -15,7 +15,7 @@ from artwork import ASSET_SOURCES
 from hosted_release import ED25519_PUBLIC_DER_PREFIX
 
 
-def package(output, release, public_keys=()):
+def package(output, release, public_keys=(), *, native_auth_bundle=None):
     release = version(release)
     output = output.resolve()
     if output.exists() or output.suffix != '.deb':
@@ -27,8 +27,14 @@ def package(output, release, public_keys=()):
         assets = application / 'assets'
         assets.mkdir(parents=True)
         for filename in ('launcher.py', 'state.py', 'launcher_update.py', 'launcher.css', 'chrome.py',
-                         'artwork.py', 'hosted_release.py', 'browser_sign_in.py', 'hosted_realm.py', 'realm_gateway.py'):
+                         'artwork.py', 'hosted_release.py', 'browser_sign_in.py', 'hosted_realm.py', 'realm_gateway.py',
+                         'cognito_native.py', 'native_login_dialog.py'):
             shutil.copyfile(APP / filename, application / filename)
+        if native_auth_bundle is not None:
+            shutil.copyfile(native_auth_bundle, application / 'cognito-sign-in.cjs')
+            notices = native_auth_bundle.with_name(native_auth_bundle.name + '.LEGAL.txt')
+            if notices.is_file():
+                shutil.copyfile(notices, application / 'cognito-sign-in.cjs.LEGAL.txt')
         if public_keys:
             trust = application / 'release-keys'
             trust.mkdir()
@@ -60,8 +66,8 @@ def package(output, release, public_keys=()):
             'Priority: optional\n'
             'Architecture: amd64\n'
             'Maintainer: Theia Online\n'
-            'Depends: apt, pkexec, python3 (>= 3.10), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, openssl (>= 3.0), ca-certificates\n'
-            'Recommends: zstd\n'
+            'Depends: apt, pkexec, python3 (>= 3.10), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, openssl (>= 3.0), ca-certificates\n' +
+            ('Recommends: zstd, nodejs (>= 18)\n' if native_auth_bundle else 'Recommends: zstd\n') +
             'Description: Theia Online client installer and launcher\n'
             ' Install and update the game client separately from this application.\n',
             encoding='utf-8',
@@ -82,8 +88,9 @@ def main():
     parser.add_argument('output', type=Path)
     parser.add_argument('--version', default=(APP / 'VERSION').read_text(encoding='utf-8').strip())
     parser.add_argument('--release-public-key', type=Path, action='append', default=[])
+    parser.add_argument('--native-auth-bundle', type=Path)
     args = parser.parse_args()
-    print(package(args.output, args.version, args.release_public_key))
+    print(package(args.output, args.version, args.release_public_key, native_auth_bundle=args.native_auth_bundle))
 
 
 if __name__ == '__main__':

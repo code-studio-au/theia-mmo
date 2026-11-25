@@ -1,4 +1,4 @@
-import { Aws, CfnOutput, CfnParameter, RemovalPolicy, Stack, Tags, aws_cognito as cognito } from 'aws-cdk-lib';
+import { Aws, CfnCondition, CfnOutput, CfnParameter, Fn, RemovalPolicy, Stack, Tags, aws_cognito as cognito } from 'aws-cdk-lib';
 import type { StackProps } from 'aws-cdk-lib';
 import type { Construct } from 'constructs';
 import { PROJECT } from './names.ts';
@@ -19,9 +19,20 @@ export class TheiaCognitoStack extends Stack {
     const prefix = new CfnParameter(this, 'DomainPrefix', {
       type: 'String', allowedPattern: '^[a-z0-9][a-z0-9-]{2,61}[a-z0-9]$',
     });
+    const scopeArn = new CfnParameter(this, 'NativePlayScopeArn', {
+      type: 'String', default: '',
+      allowedPattern: '(arn:aws:lambda:ap-southeast-2:[0-9]{12}:function:theia-development-native-play-scope)?',
+      description: 'Set only after the native sign-in stack grants this existing pool access.',
+    }).valueAsString;
+    const native = new CfnCondition(this, 'EnableNativeSignIn', {
+      expression: Fn.conditionNot(Fn.conditionEquals(scopeArn, '')),
+    });
     const pool = new cognito.CfnUserPool(this, 'UserPool', {
       userPoolName: 'Theia development testers',
       userPoolTier: 'ESSENTIALS',
+      lambdaConfig: Fn.conditionIf(native.logicalId, {
+        PreTokenGenerationConfig: { LambdaArn: scopeArn, LambdaVersion: 'V2_0' },
+      }, Aws.NO_VALUE) as unknown as cognito.CfnUserPool.LambdaConfigProperty,
       deletionProtection: 'ACTIVE',
       usernameConfiguration: { caseSensitive: false },
       adminCreateUserConfig: { allowAdminCreateUserOnly: true },
@@ -44,7 +55,9 @@ export class TheiaCognitoStack extends Stack {
       supportedIdentityProviders: ['COGNITO'],
       allowedOAuthFlowsUserPoolClient: true, allowedOAuthFlows: ['code'],
       allowedOAuthScopes: ['openid', `${RESOURCE}/${SCOPE}`], callbackUrLs: [CALLBACK],
-      explicitAuthFlows: ['ALLOW_REFRESH_TOKEN_AUTH'],
+      explicitAuthFlows: Fn.conditionIf(native.logicalId,
+        ['ALLOW_REFRESH_TOKEN_AUTH', 'ALLOW_USER_SRP_AUTH'], ['ALLOW_REFRESH_TOKEN_AUTH'],
+      ) as unknown as string[],
       preventUserExistenceErrors: 'ENABLED', enableTokenRevocation: true,
       accessTokenValidity: 1, idTokenValidity: 1, refreshTokenValidity: 1,
       tokenValidityUnits: { accessToken: 'hours', idToken: 'hours', refreshToken: 'days' },

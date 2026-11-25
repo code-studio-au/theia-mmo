@@ -79,7 +79,7 @@ def build_deltas(base, candidate, blobs, scratch, budget):
 
 
 def stage(release, output, launcher_version, signing_key, retained=(), *, delta_base=None,
-          live_mode=None, live_url=DEFAULT_URL, live_opener=None, expected_previous=None, release_notes=None):
+          live_mode=None, live_url=DEFAULT_URL, live_opener=None, expected_previous=None, release_notes=None, native_auth_bundle=None):
     output = output.resolve()
     launcher_version = version(launcher_version)
     if output.exists():
@@ -116,7 +116,7 @@ def stage(release, output, launcher_version, signing_key, retained=(), *, delta_
                          'packages': release_packages(manifest['files'])}, scratch, signing_key)
         verify_envelope(envelope, (root_key,))
         launcher = downloads / f'theia-launcher_{launcher_version}_amd64.deb'
-        package(launcher, launcher_version, (root_key,))
+        package(launcher, launcher_version, (root_key,), native_auth_bundle=native_auth_bundle)
         previous = None
         if live_mode is not None:
             live = HostedLibrary(live_url, (root_key,), opener=live_opener)
@@ -163,12 +163,14 @@ def main():
     parser.add_argument('--expected-previous', help='Exact live client version in update mode')
     parser.add_argument('--launcher-notes', default='', help='Reviewed launcher changes, one per line')
     parser.add_argument('--client-notes', default='', help='Reviewed client changes, one per line')
+    parser.add_argument('--native-auth-bundle', type=Path)
     args = parser.parse_args()
     try:
         print(stage(args.client_export, args.output, args.launcher_version, args.signing_key,
                     args.retain_client, delta_base=args.delta_base, live_mode=args.live_mode,
                     expected_previous=version(args.expected_previous) if args.expected_previous else None,
-                    release_notes={'launcher': args.launcher_notes, 'client': args.client_notes}))
+                    release_notes={'launcher': args.launcher_notes, 'client': args.client_notes},
+                    native_auth_bundle=args.native_auth_bundle))
     except (OSError, InstallError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'Could not stage the Pages downloads: {error}\n')
 

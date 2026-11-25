@@ -276,3 +276,29 @@ The only public game ports are TCP 443 and UDP 5000. PostgreSQL and the account
 backend are bound to loopback. The [gateway rollout runbook](../infrastructure/gateway/README.md)
 covers opt-in automatic wake and idle stop. Live gateway rollout and the two-tester
 wake, play, idle stop and progress restoration check remain pending.
+
+### Native Cognito sign-in
+
+Launcher 0.1.9 can sign testers in from the Play dialog using Cognito SRP.
+The dialog supports temporary password changes and SMS or authenticator app
+codes. **Sign in with browser** opens managed login for account recovery and
+MFA enrollment. Passwords and Cognito tokens stay in process memory. The
+gateway and game server still validate the tester group and play scope.
+
+The Pages workflow builds and includes the native helper in the signed launcher
+package. For local source testing, run the following from the repository root.
+The installed launcher uses `/usr/bin/node` version 18 or later. Browser sign-in
+opens directly if the native helper or Node.js is missing.
+
+```sh
+npm --prefix apps/launcher/native-auth ci
+npm --prefix apps/launcher/native-auth run build
+npm --prefix apps/launcher/native-auth test
+```
+
+After [deploying native authentication in Sydney](../infrastructure/aws/README.md#native-launcher-authentication),
+set the top-level field `"native_sign_in": true` in the trusted `realm.json`
+passed through `--realm-config`. Verify native Play with a tester account, a
+temporary password, and configured MFA. Verify that a user outside
+`theia-testers` is denied and that a tester can still play through managed
+browser login. Remove the field to return that launcher to browser login.
