@@ -21,7 +21,10 @@ launcher with `theia-launcher --release-library /path/to/releases`. The default
 game installation is
 `$XDG_DATA_HOME/theia-online/game` (normally `~/.local/share/theia-online/game`).
 The launcher saves the game folder in `launcher.json` beside that default
-directory. Standard launches use GitHub Pages for online releases.
+directory. Standard launches use GitHub Pages for online releases and sign in
+to Theia with no command-line options. Use `--realm-config` to test another
+realm. Use `--local-sandbox` to play an offline sandbox with a development
+client build. Selecting a local release library changes the install source.
 
 **Install Game** stages and verifies the selected release, then enables **Play**.
 Play opens the game fullscreen by default and minimises the launcher. When the
@@ -59,7 +62,10 @@ Use **Theia** as the realm and server name in the launcher, deployment
 announcements, and release news. **Millhaven** is the test zone on Theia.
 Sydney identifies the hosting location.
 
-**Realm Status** appears with a hosted realm configuration. The launcher probes
+**Realm Status** appears during normal public startup and with a hosted realm
+override. The launcher verifies the signed `downloads/realm.json` profile and
+requires its client version for Play. If the profile is unavailable or fails
+verification, Play stays disabled and **Check for Updates** can retry. The launcher probes
 the realm's account service every five seconds and shows **Online** when the
 service is ready. If the realm supports wake on demand and the service is
 unreachable, the launcher shows **Sign in to start**. Play can request startup
@@ -215,6 +221,13 @@ exports separate files. The launcher still downloads individual content blobs.
    and versions. Choose `first` only when the feed does not exist. For an
    `update`, enter the exact previous client version. The publisher verifies
    it and carries its live files forward before replacing the Pages artifact.
+   Set `THEIA_PUBLIC_REALM_PROFILE` on the `game-downloads-release` environment
+   to the reviewed public Theia profile. Include the deployed client's version,
+   its runtime arguments, the public Cognito and gateway details, and the
+   public TLS certificate in PEM form as `certificate`. The signed profile is
+   published with the client. Keep tester credentials and private keys outside
+   this profile. Staging requires a version match and checks the referenced
+   runtime paths against the approved payload.
    For a client update, supply the previous successful candidate as
    `delta_base_run` to generate patches against the exact bytes already installed.
    The executable must fit the 256 MiB patch limit in both exports. Verify the
@@ -223,6 +236,10 @@ exports separate files. The launcher still downloads individual content blobs.
    and executable, set `ENABLE_LINUX_DOWNLOADS=true` in `theia-website` and
    dispatch the website deployment. The site build verifies the live links.
    Future releases use the same website link.
+
+The candidate workflow builds the client with `public-client`. Bare starts and
+development preview modes require a development build. The public build allows
+the authenticated launcher entry and the headless configuration report.
 
 The previous-release retention window covers one rollout. Installed releases
 can still roll back locally. Client-only releases can reuse the existing

@@ -16,7 +16,8 @@ from unittest.mock import patch
 from client_install import InstallError, active, export, installed, rollback
 from stage_hosted_release import stage
 from retain_pages_release import retain_previous
-from hosted_release import HostedLibrary, NoRedirect, ZSTD, verified_payload
+from hosted_release import REALM_FEED, HostedLibrary, NoRedirect, ZSTD, verified_payload
+from hosted_realm import HostedRealm
 from launcher_update import install_launcher_update, newest_hosted_launcher_release
 from urllib.error import URLError
 from urllib.request import HTTPSHandler, build_opener
@@ -226,6 +227,48 @@ class HostedDelivery(unittest.TestCase):
                 newest_hosted_launcher_release(library, '0.1.4')
             feed.unlink()
             self.assertIsNone(newest_hosted_launcher_release(library, '0.1.4'))
+
+    def test_public_realm_is_signed_and_tied_to_the_approved_client(self):
+        version = '0.1.0.11'
+        release = export(self.source, self.root / version, version)
+        domain = 'https://theia-fixture.auth.ap-southeast-2.amazoncognito.com'
+        profile = {
+            'identity': {
+                'issuer': 'https://cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_Fixture',
+                'authorization_endpoint': domain + '/oauth2/authorize',
+                'token_endpoint': domain + '/oauth2/token',
+                'userinfo_endpoint': domain + '/oauth2/userInfo',
+                'client_id': 'public-fixture', 'redirect_uri': 'http://127.0.0.1:4321/callback',
+            },
+            'address': '8.8.8.8:5000', 'certificate': self.cert.read_text(), 'client_version': version,
+            'game_arguments': ['--authored-world', 'terrain/millhaven', '--prediction', '--classic'],
+            'gateway': {'origin': 'https://abcdefghij.execute-api.ap-southeast-2.amazonaws.com',
+                        'protocol': 'fixture', 'content': 'fixture'},
+        }
+        profile_path = self.root / 'public-realm.json'
+        profile_path.write_text(json.dumps(profile))
+        tree = stage(release, self.root / 'realm-pages', '0.1.5', self.key, public_realm_profile=profile_path)
+        with self.serve(tree) as (library, _):
+            actual = HostedRealm.from_public(library.realm_metadata())
+            self.assertEqual(actual.client_version, version)
+            self.assertEqual(actual.asset_paths, ('terrain/millhaven',))
+            published = tree / 'downloads' / REALM_FEED
+            envelope = json.loads(published.read_bytes())
+            envelope['signature'] = b64encode(bytes(64)).decode()
+            published.write_text(json.dumps(envelope))
+            with self.assertRaisesRegex(InstallError, 'signature'):
+                library.realm_metadata()
+
+        for overrides, error in (({'client_version': '0.1.0.12'}, 'approved client version'),
+                                 ({'game_arguments': profile['game_arguments'] + ['--inspect-asset']},
+                                  'Unexpected public realm game option'),
+                                 ({'game_arguments': ['--authored-world', 'missing', '--prediction', '--classic']},
+                                  'asset is missing')):
+            with self.subTest(overrides=overrides):
+                profile_path.write_text(json.dumps(profile | overrides))
+                with self.assertRaisesRegex(InstallError, error):
+                    stage(release, self.root / 'invalid-pages', '0.1.5', self.key,
+                          public_realm_profile=profile_path)
 
     def test_corrupt_bundle_falls_back_to_verified_individual_files(self):
         tree = self.publish('0.1.0.11', bundle_initial_install=True)

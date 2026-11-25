@@ -41,7 +41,8 @@ def build(repo, client, approval, output, release_version, *, asset_bundle=None)
                 or int.from_bytes(header[18:20], 'little') != 62):
             raise InstallError('Expected a built Linux AMD64 client')
         executable = staging / 'theia-client'
-        subprocess.run(['strip', '--strip-all', '-o', executable, '--', client], check=True)
+        subprocess.run(['strip', '--strip-all', '--remove-section=.debug_gdb_scripts',
+                        '--remove-section=.comment', '-o', executable, '--', client], check=True)
         remaining = MAX_RELEASE_BYTES - executable.stat().st_size
         if remaining <= 0:
             raise InstallError('The stripped Linux client exceeds the release size budget')

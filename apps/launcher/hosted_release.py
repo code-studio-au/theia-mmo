@@ -26,6 +26,8 @@ from client_install import (
 DEFAULT_URL = 'https://code-studio-au.github.io/theia-mmo/downloads/'
 CHANNEL_FILE = 'development.json'
 CHANNEL = 'Development'
+REALM_FEED = 'realm.json'
+MAX_REALM_FEED = 32 * 1024
 LAUNCHER_FEED = 'launcher.json'
 LAUNCHER_FORMAT = 'theia-launcher-deb-amd64-v1'
 MAX_LAUNCHER_FEED = 8192
@@ -431,18 +433,25 @@ class HostedLibrary:
             return {}
 
     def launcher_metadata(self):
+        metadata = self.optional_signed_feed(LAUNCHER_FEED, MAX_LAUNCHER_FEED)
+        return validate_launcher_metadata(metadata) if metadata is not None else None
+
+    def realm_metadata(self):
+        return self.optional_signed_feed(REALM_FEED, MAX_REALM_FEED)
+
+    def optional_signed_feed(self, name, limit):
         try:
-            with self.open(LAUNCHER_FEED) as response:
-                data = response.read(MAX_LAUNCHER_FEED + 1)
+            with self.open(name) as response:
+                data = response.read(limit + 1)
         except InstallError as error:
             if isinstance(error.__cause__, HTTPError) and error.__cause__.code == 404:
                 return None
             raise
         except (http.client.HTTPException, TimeoutError, ConnectionError) as error:
-            raise InstallError('Could not read launcher updates. Try again.') from error
-        if len(data) > MAX_LAUNCHER_FEED:
-            raise InstallError('Launcher update metadata exceeds its size limit')
-        return validate_launcher_metadata(verified_payload(decode_json(data), self.public_keys))
+            raise InstallError('Could not read signed release information. Try again.') from error
+        if len(data) > limit:
+            raise InstallError('Signed release information exceeds its size limit')
+        return verified_payload(decode_json(data), self.public_keys)
 
     def deltas(self, manifest):
         try:

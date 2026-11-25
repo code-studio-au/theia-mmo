@@ -65,18 +65,29 @@ use bevy::{app::AppExit, prelude::*, time::TimeUpdateStrategy, window::WindowRes
 use movement::{LocalPawn, MoveIntent};
 use std::time::Duration;
 
+const PUBLIC_ENTRY_ERROR: &str = "Start Theia Online from the launcher to sign in";
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args: Vec<_> = std::env::args().skip(1).collect();
+    if cfg!(feature = "public-client")
+        && !args
+            .iter()
+            .any(|arg| arg == "--game-front-end" || arg == "--configuration-report")
+    {
+        return Err(PUBLIC_ENTRY_ERROR.into());
+    }
     theia_network::simulation::population::configuration::validate_launch(&args)
         .map_err(|e| e.to_string())?;
-    if args.first().is_some_and(|a| a == "--preview-fantasy-ui") {
-        return fantasy_ui::preview::run(&args);
-    }
-    if args.first().is_some_and(|a| a == "--inspect-asset") {
-        return asset_preview::run(&args);
-    }
-    if args.first().is_some_and(|a| a == "--chunk-smoke") {
-        return chunk_scene::run(&args);
+    if !cfg!(feature = "public-client") {
+        if args.first().is_some_and(|a| a == "--preview-fantasy-ui") {
+            return fantasy_ui::preview::run(&args);
+        }
+        if args.first().is_some_and(|a| a == "--inspect-asset") {
+            return asset_preview::run(&args);
+        }
+        if args.first().is_some_and(|a| a == "--chunk-smoke") {
+            return chunk_scene::run(&args);
+        }
     }
     let frontend_directory = frontend::arguments(&mut args)?;
     let hide_world_particles =
@@ -1216,6 +1227,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }))?
         );
         return Ok(());
+    }
+    if cfg!(feature = "public-client")
+        && (frontend_directory.is_none() || args.first().is_none_or(|arg| arg != "--renet-connect"))
+    {
+        return Err(PUBLIC_ENTRY_ERROR.into());
     }
     if frontend_directory.is_some() && (!connected || !classic) {
         return Err("Game front end requires Classic secure account entry".into());

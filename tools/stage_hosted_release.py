@@ -8,15 +8,16 @@ import subprocess
 import tempfile
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
-from client_install import MANIFEST, InstallError, copy_file, metadata, version, version_key, write_json
+from client_install import MANIFEST, InstallError, copy_file, metadata, read_json, version, version_key, write_json
 from package_client_launcher import package
 from retain_pages_release import STABLE_LAUNCHER, retain_previous
 from release_news import NEWS_FILE, NEWS_LIMIT, next_archive
 from hosted_release import (
     BUNDLE_FORMAT, CHANNEL, CHANNEL_FILE, DEFAULT_URL, DELTA_LIMIT, LAUNCHER_FEED, LAUNCHER_FORMAT,
-    MAX_RELEASE_BYTES, HostedLibrary, ZSTD, apply_delta, bundle_groups, delta_eligible, release_packages,
+    MAX_REALM_FEED, MAX_RELEASE_BYTES, REALM_FEED, HostedLibrary, ZSTD, apply_delta, bundle_groups, delta_eligible, release_packages,
     validate_bundles, validate_deltas, validate_launcher_metadata, verified_payload, verify_envelope,
 )
+from hosted_realm import PUBLIC_REALM_FORMAT, HostedRealm
 from launcher_update import launcher_package_name
 
 
@@ -101,7 +102,7 @@ def build_bundles(manifest, blobs, scratch):
 
 def stage(release, output, launcher_version, signing_key, retained=(), *, delta_base=None,
           live_mode=None, live_url=DEFAULT_URL, live_opener=None, expected_previous=None,
-          release_notes=None, native_auth_bundle=None, bundle_initial_install=False):
+          release_notes=None, native_auth_bundle=None, bundle_initial_install=False, public_realm_profile=None):
     output = output.resolve()
     launcher_version = version(launcher_version)
     if output.exists():
@@ -161,6 +162,19 @@ def stage(release, output, launcher_version, signing_key, retained=(), *, delta_
         write_json(downloads / LAUNCHER_FEED, sign(launcher_metadata, scratch, signing_key))
         (tree / '.nojekyll').touch()
         write_json(downloads / CHANNEL_FILE, envelope)
+        if public_realm_profile is not None:
+            profile = read_json(public_realm_profile.resolve(), MAX_REALM_FEED // 2)
+            payload = {'format': PUBLIC_REALM_FORMAT, 'realm': profile}
+            realm = HostedRealm.from_public(payload)
+            if realm.client_version != manifest['version']:
+                raise InstallError('The Theia realm profile must match the approved client version')
+            files = [row['path'] for row in manifest['files']]
+            for asset in realm.asset_paths:
+                if not any(path == asset or path.startswith(asset + '/') for path in files):
+                    raise InstallError(f'Public realm asset is missing from the approved client: {asset}')
+            write_json(downloads / REALM_FEED, sign(payload, scratch, signing_key))
+            if (downloads / REALM_FEED).stat().st_size > MAX_REALM_FEED:
+                raise InstallError('The signed public realm profile exceeds its size limit')
         bundle_path = downloads / 'bundles' / f"{manifest['version']}.json"
         if bundle_initial_install and not bundle_path.exists():
             payload = build_bundles(manifest, blobs, scratch)
@@ -197,13 +211,15 @@ def main():
     parser.add_argument('--client-notes', default='', help='Reviewed client changes, one per line')
     parser.add_argument('--native-auth-bundle', type=Path)
     parser.add_argument('--bundle-initial-install', action='store_true')
+    parser.add_argument('--public-realm-profile', type=Path, help='Public Theia connection profile with a PEM certificate')
     args = parser.parse_args()
     try:
         print(stage(args.client_export, args.output, args.launcher_version, args.signing_key,
                     args.retain_client, delta_base=args.delta_base, live_mode=args.live_mode,
                     expected_previous=version(args.expected_previous) if args.expected_previous else None,
                     release_notes={'launcher': args.launcher_notes, 'client': args.client_notes},
-                    native_auth_bundle=args.native_auth_bundle, bundle_initial_install=args.bundle_initial_install))
+                    native_auth_bundle=args.native_auth_bundle, bundle_initial_install=args.bundle_initial_install,
+                    public_realm_profile=args.public_realm_profile))
     except (OSError, InstallError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'Could not stage the Pages downloads: {error}\n')
 

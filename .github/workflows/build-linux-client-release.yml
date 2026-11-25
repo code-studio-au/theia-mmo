@@ -61,7 +61,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.99.0
-      - run: cargo build --release --locked -p theia-client -j 2
+      - run: cargo build --release --locked -p theia-client --features public-client -j 2
+      - name: Verify the public client rejects a bare launch
+        run: |
+          if output=$(timeout 10s target/release/theia-client 2>&1); then
+            echo 'Expected the public client to require sign-in through the launcher.'
+            exit 1
+          fi
+          [[ "$output" == *"Start Theia Online from the launcher to sign in"* ]]
       - name: Strip the distributable client and export the approved payload
         env:
           CLIENT_VERSION: ${{ inputs.client_version }}
