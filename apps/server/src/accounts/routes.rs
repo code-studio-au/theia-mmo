@@ -1,4 +1,5 @@
 use super::*;
+use crate::authenticated::lifecycle::LeaseSnapshot;
 use axum::{
     Json,
     extract::{OriginalUri, State, rejection::JsonRejection},
@@ -303,10 +304,8 @@ pub(super) async fn hosted(
             id,
             subject: identity.subject().into(),
         };
-        if !crate::authenticated::lifecycle::allows(&join) {
-            return Err(ApiError::busy());
-        }
-        game.hosted_join(owner, join)
+        let leases = LeaseSnapshot::current().ok_or_else(ApiError::busy)?;
+        game.hosted_join(owner, join, leases.at, |join| leases.allows(join))
             .map_err(|_| ApiError::busy())?;
     }
     let secret = state
@@ -430,27 +429,26 @@ pub(super) async fn enter(
         .map_err(|_| ApiError::internal())?
         .clone()
         .ok_or_else(ApiError::busy)?;
-    let admission_error = |error| match error {
+    let admission_error = |error: crate::admissions::Error| match error {
         crate::admissions::Error::Unauthorized => ApiError::unauthorized(),
         crate::admissions::Error::Conflict => ApiError(
             StatusCode::CONFLICT,
             "Account or character already reserved",
         ),
-        _ => ApiError::busy(),
-    };
-    if state.lifecycle
-        && !gate
-            .pending_hosted_join(binding.owner)
-            .map_err(admission_error)?
-            .as_ref()
-            .is_some_and(crate::authenticated::lifecycle::allows)
-    {
-        return Err(ApiError(
+        crate::admissions::Error::HostedJoinExpired => ApiError(
             StatusCode::CONFLICT,
             "Join reservation expired; launch the game again",
-        ));
+        ),
+        _ => ApiError::busy(),
+    };
+    let reservation = if state.lifecycle {
+        let leases = LeaseSnapshot::current()
+            .ok_or_else(|| admission_error(crate::admissions::Error::HostedJoinExpired))?;
+        gate.reserve_hosted(context, binding, |join| leases.allows(join))
+    } else {
+        gate.reserve(context, binding)
     }
-    let reservation = gate.reserve(context, binding).map_err(admission_error)?;
+    .map_err(admission_error)?;
     let selected = state
         .publisher
         .select_character(binding, state.world)
