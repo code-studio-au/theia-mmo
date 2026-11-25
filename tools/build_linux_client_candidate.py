@@ -2,9 +2,11 @@
 import argparse
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 from client_install import InstallError, copy_file, export, read_json, relative, version
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'apps' / 'launcher'))
 from hosted_release import MAX_RELEASE_BYTES
 
 

@@ -131,7 +131,7 @@ class ClientInstaller(unittest.TestCase):
         argv = ['--window-size', '1280x720']
         with patch('client_install.subprocess.Popen') as spawn:
             launch(self.store, argv)
-            spawn.assert_called_once_with([str(entry), *argv], cwd=entry.parent)
+            spawn.assert_called_once_with([str(entry), *argv], cwd=entry.parent, env=None)
             spawn.reset_mock()
             entry.write_bytes(b'corrupted')
             with self.assertRaises(InstallError):

@@ -12,8 +12,9 @@ have not been activated.
 | [code-studio-au/theia-mmo](https://github.com/code-studio-au/theia-mmo/tree/development/safe-pages-releases) | `development/safe-pages-releases` | Release candidate build, safe Pages publishing and this handoff. Implementation starts at `1b4c5d57`, based on `main` at `a0ae08d4`. |
 | [code-studio-au/theia-website](https://github.com/code-studio-au/theia-website/tree/development/verified-linux-download-link) | `development/verified-linux-download-link` | Website opt-in, pre-deploy checks and stable Linux link. Commit `8886852`, based on `main` at `25c61f6d`. |
 
-These branches are for review. Check the latest remote state and preserve any
-local work before switching branches. Neither site needs to be deployed to
+Review the [game release draft](https://github.com/code-studio-au/theia-mmo/pull/58)
+and [website draft](https://github.com/code-studio-au/theia-website/pull/1).
+Check the latest remote state and preserve any local work before switching branches. Neither site needs to be deployed to
 review these changes. Read [the game launcher runbook](GAME_LAUNCHER.md) and
 [the website deployment notes](https://github.com/code-studio-au/theia-website/blob/development/verified-linux-download-link/README.md).
 
@@ -72,9 +73,11 @@ review these changes. Read [the game launcher runbook](GAME_LAUNCHER.md) and
   rejection when the expected prior version is wrong, second publish retaining
   the previous installer and patch, a byte-range download from the old release,
   and a launcher-only update.
-- A candidate-builder fixture verified that only reviewed asset bytes enter the
-  payload and changed bytes are rejected. It used an ELF fixture, not a public
-  game build.
+- The candidate command runs directly from a fresh checkout. Tests export only
+  the reviewed file bytes and reject untracked files or changed bytes. They use
+  a Linux ELF fixture rather than the public game build.
+- The read-only **Linux launcher release checks** workflow runs candidate,
+  installer, launcher and hosted-release tests for relevant changes.
 - Website `npm run check` passed. Static builds with the link off and on both
   passed, and the generated page was checked for the correct button or URL.
   The local environment used `ASTRO_TELEMETRY_DISABLED=1` as in CI.
