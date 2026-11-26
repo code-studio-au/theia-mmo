@@ -28,7 +28,7 @@ from state import DEFAULT_LOGIN_BIND, data_directory, game_launch_args, login_ad
 from state import read_settings, save_settings
 from browser_sign_in import SignInConfig, rehearse_sign_in
 from hosted_realm import HostedRealm
-from native_login_dialog import NativeLoginDialog
+from native_login_panel import NativeLoginPanel
 from news_feed import NEWS_URL, fetch_news
 
 
@@ -117,7 +117,7 @@ class Launcher:
         self.login_server = args.login_server or login_address(DEFAULT_LOGIN_BIND)
         self.realm = args.realm
         self.realm_feedback = None
-        self.login_dialog = None
+        self.login_panel = None
         self.cancelled = threading.Event()
         self.game_args = game_launch_args(game_args)
         self.test_login = args.test_login
@@ -152,6 +152,7 @@ class Launcher:
         self.window.connect('delete-event', self.close)
         self.window.connect('destroy', Gtk.main_quit)
         self.window.connect('window-state-event', self.window_state)
+        self.window.connect('key-press-event', self.login_key_press)
 
         chrome = Gtk.Overlay()
         self.window.add(chrome)
@@ -163,9 +164,15 @@ class Launcher:
         self.header = self.build_header()
         root.pack_start(self.header, False, False, 0)
 
+        body = box(spacing=0)
+        root.pack_start(body, True, True, 0)
         overlay = Gtk.Overlay()
         overlay.add(Scene())
-        root.pack_start(overlay, True, True, 0)
+        body.pack_start(overlay, True, True, 0)
+        self.login_host = style(box(vertical=True, spacing=0), 'sign-in-rail')
+        self.login_host.set_size_request(322, -1)
+        self.login_host.set_no_show_all(True)
+        body.pack_end(self.login_host, False, False, 0)
         surface = style(box(vertical=True), 'surface')
         surface.set_size_request(406, -1)
         surface.set_halign(Gtk.Align.END)
@@ -278,8 +285,9 @@ class Launcher:
         status.pack_end(actions, False, False, 0)
         self.cancel_button = button('Cancel', self.cancel, 'action', Glyph('close', 20), icon_only=True)
         actions.pack_start(self.cancel_button, False, False, 0)
-        actions.pack_start(button('Launcher Settings', lambda: self.select_page('Settings'), 'action',
-                                  picture('settings-icon', 22, 22), icon_only=True), False, False, 0)
+        self.settings_button = button('Launcher Settings', lambda: self.select_page('Settings'), 'action',
+                                      picture('settings-icon', 22, 22), icon_only=True)
+        actions.pack_start(self.settings_button, False, False, 0)
 
         self.primary_glyph = Glyph('install', 29)
         self.primary_button = button('Install Game', self.primary, 'primary', self.primary_glyph)
@@ -379,7 +387,8 @@ class Launcher:
         play = self.page('Play', 'Latest News')
         self.latest_news = box(vertical=True)
         play.pack_start(self.latest_news, False, False, 0)
-        play.pack_start(button('All News', lambda: self.select_page('News')), False, False, 0)
+        self.all_news_button = button('All News', lambda: self.select_page('News'))
+        play.pack_start(self.all_news_button, False, False, 0)
 
         news = self.page('News', 'News')
         self.news_articles = box(vertical=True)
@@ -446,6 +455,8 @@ class Launcher:
         return widget
 
     def select_page(self, page):
+        if self.login_panel is not None:
+            return
         self.stack.set_visible_child_name(page)
         for name, control in self.page_buttons.items():
             style = control.get_style_context()
@@ -467,6 +478,7 @@ class Launcher:
         busy = self.job is not None
         running = self.game is not None
         ready = not (busy or running)
+        signing_in = self.login_panel is not None
         transferring = self.job == 'install'
         update = bool(current and self.available)
         game_action = 'Play' if transferring or (current and not update) else (
@@ -482,12 +494,16 @@ class Launcher:
         }[game_action])
         self.install_glyph.show_kind('update' if launcher_action or update else 'ready' if current else 'install')
         can_act = play_ready if game_action == 'Play' else bool(self.library or self.hosted)
-        self.primary_button.set_sensitive(ready and bool(launcher_action or can_act))
+        self.primary_button.set_sensitive(ready and not signing_in and bool(launcher_action or can_act))
+        self.settings_button.set_sensitive(not signing_in)
+        self.all_news_button.set_sensitive(not signing_in)
+        for control in self.page_buttons.values():
+            control.set_sensitive(not signing_in)
         if self.test_login:
-            signing_in = self.job == 'test-login'
+            testing_login = self.job == 'test-login'
             self.test_login_label.set_text(self.test_login_status)
-            self.test_login_button.set_label('Cancel Sign-in' if signing_in else 'Test Sign-in')
-            self.test_login_button.set_sensitive(ready or (signing_in and not self.cancelled.is_set()))
+            self.test_login_button.set_label('Cancel Sign-in' if testing_login else 'Test Sign-in')
+            self.test_login_button.set_sensitive(ready or (testing_login and not self.cancelled.is_set()))
         self.check_button.set_sensitive(ready)
         if self.developer_tools:
             game_ready = ready and not launcher_action
@@ -495,7 +511,7 @@ class Launcher:
             self.play_installed.set_visible(update)
             self.play_installed.set_sensitive(game_ready and play_ready)
         self.root_button.set_sensitive(ready)
-        self.cancel_button.set_visible(transferring or bool(self.realm and self.job == 'play'))
+        self.cancel_button.set_visible(transferring or bool(self.realm and self.job == 'play' and not signing_in))
         self.cancel_button.set_sensitive(not self.cancelled.is_set())
         self.progress_row.set_visible(transferring)
         if self.job == 'launcher-update':
@@ -600,11 +616,11 @@ class Launcher:
             self.window.destroy()
             return GLib.SOURCE_REMOVE
         if error:
-            if job == 'play' and self.login_dialog is not None:
+            if job == 'play' and self.login_panel is not None:
                 if self.cancelled.is_set():
                     self.dismiss_login()
                 else:
-                    self.login_dialog.failed(error)
+                    self.login_panel.failed(error)
             elif job == 'launcher-update':
                 self.launcher_feedback = error
             elif job == 'test-login':
@@ -771,16 +787,21 @@ class Launcher:
                    lambda release: self.check(f'Client {release} restored'))
 
     def play(self):
-        if self.launcher_action or not self.record['current'] or self.job is not None or self.game is not None:
+        if (self.launcher_action or not self.record['current'] or self.job is not None
+                or self.game is not None or self.login_panel is not None):
             return
         if self.realm:
             if self.record['current'] != self.realm.client_version:
                 return
             if self.realm.native_sign_in:
-                if self.login_dialog is None:
-                    self.login_dialog = NativeLoginDialog(self)
-                else:
-                    self.login_dialog.present()
+                self.login_return_page = self.stack.get_visible_child_name()
+                self.select_page('Play')
+                self.login_panel = NativeLoginPanel(self, button, label)
+                self.login_host.pack_start(self.login_panel, True, True, 0)
+                self.login_panel.show_all()
+                self.login_host.show()
+                self.refresh_view()
+                self.login_panel.username.grab_focus()
             else:
                 self.start_hosted_play()
             return
@@ -798,15 +819,26 @@ class Launcher:
                    self.playing)
 
     def dismiss_login(self):
-        if self.login_dialog is not None:
-            dialog, self.login_dialog = self.login_dialog, None
-            dialog.dismiss()
+        if self.login_panel is not None:
+            panel, self.login_panel = self.login_panel, None
+            panel.dismiss()
+            panel.destroy()
+            self.login_host.hide()
+            self.select_page(self.login_return_page)
+            self.refresh_view()
+            self.primary_button.grab_focus()
+
+    def login_key_press(self, _, event):
+        if self.login_panel is not None and event.keyval == Gdk.KEY_Escape:
+            self.login_panel.cancel()
+            return True
+        return False
 
     def realm_progress(self, message):
         if self.job == 'play' and not self.cancelled.is_set():
             self.status.set_text(message)
-            if self.login_dialog is not None:
-                self.login_dialog.status.set_text(message)
+            if self.login_panel is not None:
+                self.login_panel.show_status(message)
         return GLib.SOURCE_REMOVE
 
     def playing(self, process):
@@ -827,6 +859,8 @@ class Launcher:
         return GLib.SOURCE_CONTINUE
 
     def close(self, *_):
+        if self.login_panel is not None:
+            self.login_panel.dismiss()
         if self.job == 'test-login' or (self.realm and self.job == 'play'):
             self.closing = True
             self.cancelled.set()

@@ -28,7 +28,7 @@ def package(output, release, public_keys=(), *, native_auth_bundle=None):
         assets.mkdir(parents=True)
         for filename in ('launcher.py', 'state.py', 'launcher_update.py', 'launcher.css', 'chrome.py',
                          'artwork.py', 'hosted_release.py', 'browser_sign_in.py', 'hosted_realm.py', 'realm_gateway.py',
-                         'cognito_native.py', 'native_login_dialog.py', 'news_feed.py'):
+                         'cognito_native.py', 'native_login_panel.py', 'news_feed.py'):
             shutil.copyfile(APP / filename, application / filename)
         if native_auth_bundle is not None:
             shutil.copyfile(native_auth_bundle, application / 'cognito-sign-in.cjs')
