@@ -13,6 +13,9 @@ test('native SRP and access token customization are opt-in on the existing publi
   template.hasParameter('NativePlayScopeArn', { Default: '' });
   template.hasResourceProperties('AWS::Cognito::UserPool', {
     UserPoolTier: 'ESSENTIALS',
+    AdminCreateUserConfig: { AllowAdminCreateUserOnly: true },
+    AccountRecoverySetting: { RecoveryMechanisms: [{ Name: 'verified_email', Priority: 1 }] },
+    MfaConfiguration: 'OPTIONAL', EnabledMfas: ['SOFTWARE_TOKEN_MFA'],
     LambdaConfig: { 'Fn::If': ['EnableNativeSignIn', {
       PreTokenGenerationConfig: { LambdaArn: { Ref: 'NativePlayScopeArn' }, LambdaVersion: 'V2_0' },
     }, { Ref: 'AWS::NoValue' }] },
@@ -24,6 +27,17 @@ test('native SRP and access token customization are opt-in on the existing publi
     ExplicitAuthFlows: { 'Fn::If': ['EnableNativeSignIn',
       ['ALLOW_REFRESH_TOKEN_AUTH', 'ALLOW_USER_SRP_AUTH'], ['ALLOW_REFRESH_TOKEN_AUTH']] },
   });
+});
+
+test('the website account client can authenticate with SRP and carries no play scope', () => {
+  const template = Template.fromStack(new TheiaCognitoStack(new App(), 'Cognito', { env }));
+  const client = template.findResources('AWS::Cognito::UserPoolClient', {
+    Properties: { ClientName: 'Theia Online account setup' },
+  }).WebsiteAccount.Properties;
+  assert.equal(client.GenerateSecret, false);
+  assert.equal(client.AllowedOAuthFlowsUserPoolClient, false);
+  assert.equal(client.AllowedOAuthScopes, undefined);
+  assert.deepEqual(client.ExplicitAuthFlows, ['ALLOW_REFRESH_TOKEN_AUTH', 'ALLOW_USER_SRP_AUTH']);
 });
 
 test('only the designated Cognito pool can invoke the native play scope trigger', () => {

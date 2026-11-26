@@ -66,8 +66,9 @@ def package(output, release, public_keys=(), *, native_auth_bundle=None):
             'Priority: optional\n'
             'Architecture: amd64\n'
             'Maintainer: Theia Online\n'
-            'Depends: apt, pkexec, python3 (>= 3.10), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, openssl (>= 3.0), ca-certificates\n' +
-            ('Recommends: zstd, nodejs (>= 18)\n' if native_auth_bundle else 'Recommends: zstd\n') +
+            'Depends: apt, pkexec, python3 (>= 3.10), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, openssl (>= 3.0), ca-certificates' +
+            (', nodejs (>= 18)' if native_auth_bundle else '') + '\n'
+            'Recommends: zstd\n'
             'Description: Theia Online client installer and launcher\n'
             ' Install and update the game client separately from this application.\n',
             encoding='utf-8',

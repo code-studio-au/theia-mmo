@@ -20,16 +20,16 @@ PROMPTS = {
 ERRORS = {
     'NotAuthorizedException': 'The username or password was not accepted.',
     'UserNotFoundException': 'The username or password was not accepted.',
-    'PasswordResetRequiredException': 'This account needs a password reset. Contact the tester administrator.',
+    'PasswordResetRequiredException': 'This account needs a password reset. Open Account help.',
     'UserNotConfirmedException': 'The account is not ready. Contact the tester administrator.',
     'CodeMismatchException': 'The verification code was not accepted. Sign in again to retry.',
     'ExpiredCodeException': 'The verification code expired. Sign in again to retry.',
     'InvalidPasswordException': 'The new password did not meet the account requirements. Try again.',
     'TooManyRequestsException': 'Too many sign-in attempts. Wait and try again.',
     'LimitExceededException': 'Too many sign-in attempts. Wait and try again.',
-    'BrowserRequired': 'Use browser sign-in to finish setting up this account.',
+    'BrowserRequired': 'Finish setting up this account using Account help.',
 }
-UNAVAILABLE = 'Native sign-in is unavailable. Try again or use browser sign-in.'
+UNAVAILABLE = 'Native sign-in is unavailable. Try again or update the launcher.'
 
 
 def bundle():

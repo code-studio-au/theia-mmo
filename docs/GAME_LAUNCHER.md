@@ -350,15 +350,17 @@ wake, play, idle stop and progress restoration check remain pending.
 ### Native Cognito sign-in
 
 **Play** switches the launcher's shared content panel to sign-in. It
-uses Cognito SRP and supports temporary password changes and SMS or
-authenticator app codes. **Use browser** opens managed login for account recovery and
-MFA enrollment. Passwords and Cognito tokens stay in process memory. The
+uses Cognito SRP and supports SMS or authenticator app codes. **Account help**
+opens the [Theia account page](https://theiaonline.com/account/) for first-time
+invite setup, optional authenticator enrollment and email password recovery.
+Click outside the sign-in panel or press Escape to cancel. Passwords and Cognito
+tokens stay in process memory. The
 gateway and game server still validate the tester group and play scope.
 
 The Pages workflow builds and includes the native helper in the signed launcher
 package. For local source testing, run the following from the repository root.
-The installed launcher uses `/usr/bin/node` version 18 or later. Browser sign-in
-opens directly if the native helper or Node.js is missing.
+Public launcher packages with the native helper require `/usr/bin/node` version
+18 or later.
 
 ```sh
 npm --prefix apps/launcher/native-auth ci
@@ -368,10 +370,11 @@ npm --prefix apps/launcher/native-auth test
 
 After [deploying native authentication in Sydney](../infrastructure/aws/README.md#native-launcher-authentication),
 set the top-level field `"native_sign_in": true` in the trusted `realm.json`
-passed through `--realm-config`. Verify native Play with a tester account, a
-temporary password, and configured MFA. Verify that a user outside
-`theia-testers` is denied and that a tester can still play through managed
-browser login. Remove the field to return that launcher to browser login.
+passed through `--realm-config`. Verify native Play with an activated tester
+account and configured MFA. Verify that a user outside
+`theia-testers` is denied. Trusted development realm overrides can omit the
+field to exercise browser sign-in, or use native sign-in to test temporary
+password challenges.
 
 ## Launcher artwork
 

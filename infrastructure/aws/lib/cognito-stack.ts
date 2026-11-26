@@ -8,6 +8,7 @@ export const CALLBACK = 'http://127.0.0.1:38691/callback';
 export const TESTER_GROUP = 'theia-testers';
 const RESOURCE = 'theia-development';
 const SCOPE = 'play';
+const ACCOUNT_URL = 'https://theiaonline.com/account/';
 
 export class TheiaCognitoStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
@@ -35,8 +36,18 @@ export class TheiaCognitoStack extends Stack {
       }, Aws.NO_VALUE) as unknown as cognito.CfnUserPool.LambdaConfigProperty,
       deletionProtection: 'ACTIVE',
       usernameConfiguration: { caseSensitive: false },
-      adminCreateUserConfig: { allowAdminCreateUserOnly: true },
-      accountRecoverySetting: { recoveryMechanisms: [{ name: 'admin_only', priority: 1 }] },
+      adminCreateUserConfig: {
+        allowAdminCreateUserOnly: true,
+        inviteMessageTemplate: {
+          emailSubject: 'Your Theia Online playtest invitation',
+          emailMessage: `Set up your account at ${ACCOUNT_URL}. Your username is {username} and your temporary password is {####}.`,
+        },
+      },
+      autoVerifiedAttributes: ['email'],
+      userAttributeUpdateSettings: { attributesRequireVerificationBeforeUpdate: ['email'] },
+      accountRecoverySetting: { recoveryMechanisms: [{ name: 'verified_email', priority: 1 }] },
+      mfaConfiguration: 'OPTIONAL',
+      enabledMfas: ['SOFTWARE_TOKEN_MFA'],
       policies: {
         passwordPolicy: {
           minimumLength: 16, requireLowercase: true, requireUppercase: true,
@@ -63,6 +74,15 @@ export class TheiaCognitoStack extends Stack {
       tokenValidityUnits: { accessToken: 'hours', idToken: 'hours', refreshToken: 'days' },
     });
     client.addResourceDependency(resource);
+    const websiteClient = new cognito.CfnUserPoolClient(this, 'WebsiteAccount', {
+      userPoolId: pool.ref, clientName: 'Theia Online account setup', generateSecret: false,
+      allowedOAuthFlowsUserPoolClient: false,
+      explicitAuthFlows: ['ALLOW_REFRESH_TOKEN_AUTH', 'ALLOW_USER_SRP_AUTH'],
+      readAttributes: ['email', 'email_verified'], writeAttributes: ['email'],
+      preventUserExistenceErrors: 'ENABLED', enableTokenRevocation: true,
+      accessTokenValidity: 15, idTokenValidity: 15, refreshTokenValidity: 1,
+      tokenValidityUnits: { accessToken: 'minutes', idToken: 'minutes', refreshToken: 'days' },
+    });
     const domain = new cognito.CfnUserPoolDomain(this, 'ManagedDomain', {
       userPoolId: pool.ref, domain: prefix.valueAsString, managedLoginVersion: 2,
     });
@@ -76,6 +96,7 @@ export class TheiaCognitoStack extends Stack {
 
     new CfnOutput(this, 'PoolId', { value: pool.ref });
     new CfnOutput(this, 'LauncherClientId', { value: client.ref });
+    new CfnOutput(this, 'WebsiteAccountClientId', { value: websiteClient.ref });
     new CfnOutput(this, 'Issuer', { value: `https://cognito-idp.${Aws.REGION}.${Aws.URL_SUFFIX}/${pool.ref}` });
     new CfnOutput(this, 'ManagedLogin', { value: `https://${domain.ref}.auth.${Aws.REGION}.amazoncognito.com` });
     new CfnOutput(this, 'RedirectUri', { value: CALLBACK });

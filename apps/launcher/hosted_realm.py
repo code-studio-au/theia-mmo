@@ -172,6 +172,8 @@ class HostedRealm:
             ticket = session / 'admission.token'
             args = [*self.game_arguments, *window_arguments,
                     '--game-front-end', str(session), '--renet-connect', '127.0.0.1:1', str(ticket)]
+            if cancelled():
+                raise KeyboardInterrupt
             process = client_install.launch(root, args, required_version=self.client_version,
                     env={**os.environ, 'THEIA_HOSTED_GAME_ADDRESS': self.address})
         except (AccountError, KeyboardInterrupt, OSError, client_install.InstallError) as error:

@@ -15,6 +15,15 @@ public launcher client uses authorization code with PKCE and the registered
 desktop callback. Add enrolled testers to `theia-testers`. The game server
 verifies the access token's signature, issuer, client, expiry, group and scope.
 
+Use the existing Cognito pool to create tester invitations with an email address.
+Its invitation message points to `https://theiaonline.com/account/`. Testers use
+that page to change their temporary password and verify their recovery email.
+They can also enable time-based authenticator codes. Add approved accounts to
+`theia-testers` in Cognito. The page uses the `PoolId` and `WebsiteAccountClientId`
+stack outputs as the GitHub Pages variables `THEIA_ACCOUNT_POOL_ID` and
+`THEIA_ACCOUNT_CLIENT_ID` in `theia-website`. The website client uses SRP and has
+no play scope. Existing testers can verify a recovery email on the same page.
+
 ```sh
 npm exec -- cdk synth --app 'node bin/theia-cognito.ts' \
   --no-lookups --output cdk.out/cognito --quiet
