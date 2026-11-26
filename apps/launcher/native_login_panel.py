@@ -12,7 +12,7 @@ ACCOUNT_URL = 'https://theiaonline.com/account/'
 
 class NativeLoginPanel(Gtk.Box):
     def __init__(self, launcher, button, label):
-        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         self.launcher = launcher
         self.reply = None
         self.get_style_context().add_class('sign-in-panel')
@@ -20,6 +20,9 @@ class NativeLoginPanel(Gtk.Box):
         heading.set_halign(Gtk.Align.START)
         self.pack_start(heading, False, False, 0)
         self.pack_start(Gtk.Separator(), False, False, 0)
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+        body.get_style_context().add_class('panel-body')
+        self.pack_start(body, False, False, 0)
         self.username_label = label('_Username', 'sign-in-label')
         self.username = Gtk.Entry()
         self.secret_label = label('_Password', 'sign-in-label')
@@ -27,6 +30,7 @@ class NativeLoginPanel(Gtk.Box):
         self.secret.set_visibility(False)
         self.secret.set_input_purpose(Gtk.InputPurpose.PASSWORD)
         self.field_labels = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
+        fields = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         for field, entry in ((self.username_label, self.username), (self.secret_label, self.secret)):
             field.set_use_underline(True)
             field.set_mnemonic_widget(entry)
@@ -36,19 +40,24 @@ class NativeLoginPanel(Gtk.Box):
             group = Gtk.Box(spacing=12)
             group.pack_start(field, False, False, 0)
             group.pack_start(entry, True, True, 0)
-            self.pack_start(group, False, False, 0)
+            fields.pack_start(group, False, False, 0)
+        body.pack_start(fields, False, False, 0)
         self.status = label('', 'sign-in-status')
         self.status.set_no_show_all(True)
-        self.pack_start(self.status, False, False, 0)
+        body.pack_start(self.status, False, False, 0)
         self.submit = button('Sign in', self.respond, 'sign-in-submit')
         self.help_button = button('Account help', self.open_account, 'sign-in-secondary')
         self.help_button.set_tooltip_text('Set up your account or reset your password on the Theia website')
-        self.pack_start(self.submit, False, False, 0)
-        self.pack_start(self.help_button, False, False, 0)
+        self.actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.actions.pack_start(self.submit, False, False, 0)
+        self.actions.pack_start(self.help_button, False, False, 0)
+        body.pack_start(self.actions, False, False, 0)
+        self.show_status('')
 
     def show_status(self, message):
         self.status.set_text(message)
         self.status.set_visible(bool(message))
+        self.actions.set_margin_top(0 if message else 5)
 
     def dismiss(self):
         self.secret.set_text('')

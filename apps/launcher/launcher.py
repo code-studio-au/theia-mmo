@@ -380,13 +380,15 @@ class Launcher:
         else:
             page.pack_start(heading, False, False, 0)
         page.pack_start(Gtk.Separator(), False, False, 1)
+        body = style(box(vertical=True, spacing=12), 'panel-body')
+        page.pack_start(body, False, False, 0)
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_propagate_natural_height(True)
         scroll.set_propagate_natural_width(True)
         scroll.add(page)
         self.stack.add_named(scroll, name)
-        return page
+        return body
 
     def build_pages(self):
         def open_news_page(_):

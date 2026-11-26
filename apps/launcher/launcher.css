@@ -79,6 +79,9 @@ button.window-control:hover drawingarea {
 .surface {
   border-width: 18px;
 }
+.panel-body {
+  padding: 0 10px;
+}
 .sign-in-panel label.sign-in-label {
   color: #efd7a6;
   font: 700 15px serif;
@@ -120,7 +123,8 @@ button.sign-in-submit:disabled {
   opacity: 0.55;
 }
 button.sign-in-secondary {
-  padding: 3px 7px;
+  min-height: 0;
+  padding: 2px 7px;
   color: #d3b988;
   font: 15px serif;
 }
@@ -196,11 +200,14 @@ label.unavailable {
   background-image: radial-gradient(circle at 35% 28%, #f6bb9d, #985747 65%, #5c3028);
 }
 .news-story {
-  padding: 8px 10px;
+  padding: 8px 0;
   border: 0;
 }
 .news-story:hover {
   background-color: rgba(213, 167, 87, 0.11);
+}
+button.news-link {
+  padding: 4px 0;
 }
 button.news-link label {
   color: #edc777;
