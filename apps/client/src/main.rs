@@ -325,12 +325,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let creature_asset =
         creature_visual::parse(&mut args, patrol_binding.is_some() || population.is_some())?;
-    let fantasy_ui = fantasy_ui::parse(&mut args, classic && combat_catalog.is_some())?;
+    let classic_combat = classic && combat_catalog.is_some();
+    let legacy_ui_source = fantasy_ui::parse(&mut args, classic_combat)?;
+    let fantasy_skin =
+        legacy_ui_source.is_some() || (cfg!(feature = "public-client") && classic_combat);
     let explicit_ui_scale = args.iter().any(|arg| arg == "--ui-scale");
-    let ui_scale = fantasy_ui::parse_scale(&mut args, fantasy_ui.is_some())?;
+    let ui_scale = fantasy_ui::parse_scale(&mut args, fantasy_skin)?;
     let ui_preferences = fantasy_ui::preferences::Config::parse(
         &mut args,
-        fantasy_ui.is_some(),
+        fantasy_skin,
         ui_scale,
         explicit_ui_scale,
     )?;
@@ -1219,7 +1222,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "public_avatar_life_profile": public_avatar_profile.as_ref().map(|p|p.hash()),
                 "public_creature_attack_profile": public_attack_profile.as_ref().filter(|_| public_population_attack_profile.is_none()).map(|p|p.hash()),
                 "public_population_attack_profile": public_population_attack_profile.as_ref().map(|p|p.hash()),
-                "interface": {"enabled": fantasy_ui.is_some(), "preferred_scale": ui_scale, "saved_preferences": ui_preferences.is_some(), "world_effects_visible": world_effects_visible},
+                "interface": {"enabled": fantasy_skin, "preferred_scale": ui_scale, "saved_preferences": ui_preferences.is_some(), "world_effects_visible": world_effects_visible},
                 "fixed_reward_catalog": journal_profile.as_ref().and_then(|p|p.item_rewards()).map(|r|r.id().as_str()),
                 "population": population.as_ref().map(|p| serde_json::json!({"count":p.count(), "respawn_ms":p.respawn_ms()})),
                 "creature_appearance": creature_asset.is_some(),
@@ -1232,6 +1235,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         && (frontend_directory.is_none() || args.first().is_none_or(|arg| arg != "--renet-connect"))
     {
         return Err(PUBLIC_ENTRY_ERROR.into());
+    }
+    if cfg!(feature = "public-client") && !fantasy_skin {
+        return Err("The public client requires the Classic combat HUD".into());
     }
     if frontend_directory.is_some() && (!connected || !classic) {
         return Err("Game front end requires Classic secure account entry".into());
@@ -1305,9 +1311,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         smoke::Run::from_args(args.into_iter())?
     };
     let scripted = smoke.is_some();
-    let fantasy_skin = fantasy_ui.is_some();
     let mut app = App::new();
-    if let Some(directory) = fantasy_ui {
+    if let Some(directory) = legacy_ui_source {
         fantasy_ui::register(&mut app, directory);
     }
     pursuit_qualification::install(&mut app)?;
