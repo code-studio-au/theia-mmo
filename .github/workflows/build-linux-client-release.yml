@@ -80,9 +80,10 @@ jobs:
           fi
           python3 tools/build_linux_client_candidate.py "$RUNNER_TEMP/client-export" \
             --version "$CLIENT_VERSION" "${bundle[@]}"
-      - name: Verify the exported client enables the public HUD
+      - name: Verify the exported client enables the full Theia playtest
         env:
           PUBLIC_REALM_PROFILE: ${{ vars.THEIA_PUBLIC_REALM_PROFILE }}
+          PYTHONPATH: tools
         run: |
           python3 - <<'PY'
           import json
@@ -91,9 +92,12 @@ jobs:
           import subprocess
           from tempfile import TemporaryDirectory
           from shutil import copyfile
+          from theia_playtest_profile import arguments, verify_report
 
           profile = json.loads(os.environ['PUBLIC_REALM_PROFILE'])
           payload = Path(os.environ['RUNNER_TEMP']) / 'client-export/payload'
+          if profile['game_arguments'] != arguments(payload, 'client'):
+              raise SystemExit('The signed realm profile must use the full Theia playtest arguments')
           with TemporaryDirectory() as directory:
               client = Path(directory) / 'theia-client'
               copyfile(payload / 'theia-client', client)
@@ -101,9 +105,10 @@ jobs:
               output = subprocess.check_output([client, *profile['game_arguments'], '--configuration-report'],
                                                cwd=payload, text=True, timeout=30)
           report = json.loads(output[output.rfind('\n{') + 1:])
-          if report['interface']['enabled'] is not True or report['renderer_started'] or report['network_started']:
-              raise SystemExit('Expected the public HUD to be enabled in the headless client report')
-          print('Verified embedded HUD with the public realm’s runtime configuration')
+          verify_report(report)
+          if bytes(report['world']).hex() != profile['gateway']['content']:
+              raise SystemExit('The exported client and signed realm profile disagree on gameplay identity')
+          print('Verified the full Theia playtest with the public realm’s runtime configuration')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

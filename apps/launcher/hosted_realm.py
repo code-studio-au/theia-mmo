@@ -21,9 +21,19 @@ from realm_gateway import GatewayUnavailable, RealmGateway
 PUBLIC_REALM_FORMAT = 'theia-public-realm-v1'
 PUBLIC_PATH_OPTIONS = {
     '--authored-world', '--population-config', '--combat-catalog', '--character-stats',
-    '--status-catalog', '--creature-retaliation', '--player-respawn', '--creature-asset', '--player-assets',
+    '--status-catalog', '--creature-retaliation', '--player-respawn', '--creature-asset',
+    '--player-assets', '--zone-map', '--spell-feedback', '--item-catalog', '--reward-catalog',
+    '--progression-catalog', '--quest-catalog', '--quest-areas', '--dialogue-catalog',
+    '--vendor-catalog', '--document-catalog', '--quest-item-rewards', '--melee-weapons',
+    '--physical-definitions', '--physical-stats', '--white-melee', '--ability-starting',
+    '--ability-damage', '--combat-membership', '--creature-credit', '--creature-reset',
+    '--creature-threat',
 }
-PUBLIC_SWITCHES = {'--prediction', '--classic'}
+PUBLIC_SWITCHES = {
+    '--prediction', '--classic', '--quest-journal', '--quest-items', '--quest-loot',
+    '--creature-loot', '--public-avatar-life', '--public-creature-attacks', '--parties',
+}
+PUBLIC_VALUE_OPTIONS = {'--chat-area', '--guide-position'}
 
 
 class HostedRealm:
@@ -107,11 +117,17 @@ class HostedRealm:
         seen = set()
         assets = []
         for option in arguments:
-            if option in seen or option not in PUBLIC_PATH_OPTIONS | PUBLIC_SWITCHES:
+            if option in seen or option not in PUBLIC_PATH_OPTIONS | PUBLIC_SWITCHES | PUBLIC_VALUE_OPTIONS:
                 raise client_install.InstallError('Unexpected public realm game option')
             seen.add(option)
             if option in PUBLIC_PATH_OPTIONS:
                 assets.append(client_install.relative(next(arguments, None)))
+            elif option == '--guide-position' and next(arguments, None) != 'authored':
+                raise client_install.InstallError('The public realm requires authored contact placement')
+            elif option == '--chat-area':
+                area = next(arguments, '')
+                if not re.fullmatch(r'[1-9][0-9]{0,9}', area) or int(area) > 0xffffffff:
+                    raise client_install.InstallError('Invalid public realm chat area')
         if not {'--authored-world', '--prediction', '--classic'} <= seen:
             raise client_install.InstallError('The public realm requires an authored Classic world')
         return tuple(assets)

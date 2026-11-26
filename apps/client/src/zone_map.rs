@@ -176,35 +176,70 @@ fn local_map(path: &std::path::Path) -> Result<(Data, Image), String> {
         &read("overview.png", 8 * 1024 * 1024)?,
     )
 }
-pub(crate) fn install(app: &mut App, source: &Source) {
-    let Some(store) = source.saved() else {
-        return;
+pub(crate) struct Prepared {
+    data: Data,
+    image: Image,
+    mask: Option<regions::Mask>,
+}
+
+pub(crate) fn prepare(source: &Source, args: &mut Vec<String>) -> Result<Option<Prepared>, String> {
+    let explicit = args.iter().position(|arg| arg == "--zone-map");
+    let directory = if let Some(index) = explicit {
+        args.remove(index);
+        if index >= args.len()
+            || args[index].starts_with("--")
+            || args.iter().any(|arg| arg == "--zone-map")
+        {
+            return Err("Choose one directory with --zone-map".into());
+        }
+        Some(std::path::PathBuf::from(args.remove(index)))
+    } else {
+        std::env::var_os("THEIA_ZONE_MAP_DIRECTORY").map(std::path::PathBuf::from)
     };
-    let loaded = if let Some(path) = std::env::var_os("THEIA_ZONE_MAP_DIRECTORY") {
-        local_map(std::path::Path::new(&path))
+    let Some(store) = source.saved() else {
+        return if explicit.is_some() {
+            Err("An explicit zone map requires saved terrain".into())
+        } else {
+            Ok(None)
+        };
+    };
+    let loaded = if let Some(path) = &directory {
+        local_map(path)
     } else {
         decode_map(MAP_JSON, MAP_PNG)
     };
     let (data, image) = match loaded {
         Ok(value) => value,
+        Err(error) if explicit.is_some() => return Err(error),
         Err(error) => {
-            warn!("Zone map unavailable: {error}");
-            return;
+            eprintln!("Zone map unavailable: {error}");
+            return Ok(None);
         }
     };
     if store.identity() != data.terrain_identity || store.bounds() != data.bounds {
-        return;
+        return if explicit.is_some() {
+            Err("Zone map does not match the saved terrain".into())
+        } else {
+            Ok(None)
+        };
     }
-    if let Some(path) = std::env::var_os("THEIA_ZONE_MAP_DIRECTORY") {
-        match regions::load(std::path::Path::new(&path), &data) {
-            Ok(Some(mask)) => {
-                app.insert_resource(mask);
-            }
-            Ok(None) => (),
+    let mask = match directory {
+        Some(path) => match regions::load(&path, &data) {
+            Ok(mask) => mask,
+            Err(error) if explicit.is_some() => return Err(error),
             Err(error) => {
-                warn!("Zone boundaries unavailable: {error}");
+                eprintln!("Zone boundaries unavailable: {error}");
+                None
             }
-        }
+        },
+        None => None,
+    };
+    Ok(Some(Prepared { data, image, mask }))
+}
+
+pub(crate) fn install(app: &mut App, Prepared { data, image, mask }: Prepared) {
+    if let Some(mask) = mask {
+        app.insert_resource(mask);
     }
     crate::world_input::install_gestures(app);
     app.insert_resource(data)
