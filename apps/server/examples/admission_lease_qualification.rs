@@ -1016,6 +1016,11 @@ async fn main() -> theia_network::Result<()> {
         )?;
         let network_xp = theia_network::progression_wire::Profile::from_json(xp_bytes)?;
         assert_eq!(
+            gate.progression_catalog()
+                .map(theia_persistence::ProgressionCatalog::hash),
+            Some(network_xp.hash()),
+        );
+        assert_eq!(
             q.hash(),
             theia_network::quest_journal::Profile::from_json(
                 include_bytes!("../../../content/quests/development-journal.json"),

@@ -8,6 +8,7 @@ use tokio::sync::Mutex;
 use url::Url;
 
 const PLAY_SCOPE: &str = "theia-development/play";
+const WEBSITE_SCOPE: &str = "aws.cognito.signin.user.admin";
 const TESTER_GROUP: &str = "theia-testers";
 const KEY_LIFETIME: Duration = Duration::from_secs(900);
 const REFRESH_INTERVAL: Duration = Duration::from_secs(30);
@@ -58,6 +59,7 @@ struct Keys {
 pub struct Verifier {
     issuer: String,
     client_id: String,
+    scope: &'static str,
     url: String,
     http: BoundedHttp,
     keys: Mutex<Keys>,
@@ -65,6 +67,18 @@ pub struct Verifier {
 
 impl Verifier {
     pub async fn discover(issuer: &str, client_id: &str) -> Result<Self> {
+        Self::discover_with_scope(issuer, client_id, PLAY_SCOPE).await
+    }
+
+    pub async fn discover_website(issuer: &str, client_id: &str) -> Result<Self> {
+        Self::discover_with_scope(issuer, client_id, WEBSITE_SCOPE).await
+    }
+
+    async fn discover_with_scope(
+        issuer: &str,
+        client_id: &str,
+        scope: &'static str,
+    ) -> Result<Self> {
         let origin = Url::parse(issuer).map_err(|_| Error::Configuration)?;
         let pool = issuer
             .strip_prefix("https://cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_")
@@ -79,6 +93,7 @@ impl Verifier {
         Ok(Self {
             issuer: issuer.to_owned(),
             client_id: client_id.to_owned(),
+            scope,
             url,
             http,
             keys: Mutex::new(Keys {
@@ -124,19 +139,25 @@ impl Verifier {
             .duration_since(UNIX_EPOCH)
             .map_err(|_| Error::Token)?
             .as_secs();
-        claims.identity(&self.issuer, &self.client_id, now)
+        claims.identity(&self.issuer, &self.client_id, self.scope, now)
     }
 }
 
 impl Claims {
-    fn identity(self, issuer: &str, client_id: &str, now: u64) -> Result<VerifiedIdentity> {
+    fn identity(
+        self,
+        issuer: &str,
+        client_id: &str,
+        scope: &str,
+        now: u64,
+    ) -> Result<VerifiedIdentity> {
         if self.iss != issuer
             || self.client_id != client_id
             || self.token_use != "access"
             || !self
                 .scope
                 .split_ascii_whitespace()
-                .any(|scope| scope == PLAY_SCOPE)
+                .any(|claim| claim == scope)
             || !self.groups.iter().any(|group| group == TESTER_GROUP)
             || !valid_id(&self.sub)
             || self.exp <= now
@@ -210,7 +231,7 @@ mod tests {
         let verify = |value| {
             serde_json::from_value::<Claims>(value)
                 .unwrap()
-                .identity("pool", "launcher", 90)
+                .identity("pool", "launcher", PLAY_SCOPE, 90)
         };
         assert_eq!(verify(valid.clone()).unwrap().subject(), "tester-id");
         for (field, invalid) in [
@@ -228,5 +249,28 @@ mod tests {
             token[field] = invalid;
             assert!(verify(token).is_err(), "{field}");
         }
+    }
+
+    #[test]
+    fn website_claims_require_the_website_client_and_remain_separate_from_play() {
+        let claims = json!({
+            "iss":"pool", "client_id":"website", "token_use":"access", "sub":"tester-id",
+            "scope":WEBSITE_SCOPE, "cognito:groups":["theia-testers"], "iat":30, "exp":100,
+        });
+        let verify = |value, client, scope| {
+            serde_json::from_value::<Claims>(value)
+                .unwrap()
+                .identity("pool", client, scope, 90)
+        };
+        assert_eq!(
+            verify(claims.clone(), "website", WEBSITE_SCOPE)
+                .unwrap()
+                .subject(),
+            "tester-id"
+        );
+        assert!(verify(claims.clone(), "launcher", PLAY_SCOPE).is_err());
+        let mut unapproved = claims;
+        unapproved["cognito:groups"] = json!([]);
+        assert!(verify(unapproved, "website", WEBSITE_SCOPE).is_err());
     }
 }

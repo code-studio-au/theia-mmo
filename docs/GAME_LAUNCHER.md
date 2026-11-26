@@ -376,6 +376,26 @@ account and configured MFA. Verify that a user outside
 field to exercise browser sign-in, or use native sign-in to test temporary
 password challenges.
 
+### Website character roster
+
+P3-01 / P3-02 / P6-08. The website can read the roster from the running realm's
+account service. Each character card shows the level and total XP from the active
+progression catalog and the timestamp of the last character record save. Level
+and XP are unavailable if the realm has no matching progression catalog. Set
+`THEIA_WEBSITE_COGNITO_CLIENT_ID` on the realm service
+to the `WebsiteAccountClientId` stack output to enable `GET /v1/me/characters`.
+The route requires an approved tester's website access token and resolves the
+existing PostgreSQL account by issuer and subject. A first-time player receives
+an empty list. The route issues no game sessions or wake requests.
+
+Publish the route through a publicly trusted HTTPS hostname under
+`theiaonline.com` on the realm host. Forward `GET` and `OPTIONS` for the exact
+path to the loopback account listener. Set the upstream `Host` to that listener's
+address and preserve `Origin` and `Authorization`. Set the website Actions
+variable `THEIA_CHARACTER_API_ORIGIN` to the HTTPS origin after verifying the
+route and then rebuild GitHub Pages. The profile remains available with its
+offline message while the host is stopped.
+
 ## Launcher artwork
 
 The launcher uses a graded [harbour](../content/ui/frontend/launcher-harbour-v2.png)

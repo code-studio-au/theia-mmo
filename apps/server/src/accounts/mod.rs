@@ -34,6 +34,8 @@ use tokio::{
 };
 const MAX_FLOWS: usize = 16;
 const FLOW_LIFETIME: Duration = Duration::from_secs(120);
+const WEBSITE_ORIGIN: &str = "https://theiaonline.com";
+const WEBSITE_ROSTER_PATH: &str = "/v1/me/characters";
 pub type Result<T> = std::result::Result<T, ApiError>;
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -41,6 +43,8 @@ pub struct Config {
     pub listen: SocketAddr,
     pub issuer: String,
     pub client_id: String,
+    #[serde(default)]
+    pub website_client_id: Option<String>,
     #[serde(default = "default_session_seconds")]
     pub session_seconds: u64,
 }
@@ -159,6 +163,7 @@ pub struct Stats {
 struct Inner {
     provider: Option<Arc<Provider>>,
     cognito: Option<cognito::Verifier>,
+    website_cognito: Option<cognito::Verifier>,
     lifecycle: bool,
     publisher: Publisher,
     sessions: Arc<Mutex<Sessions<OwnerId>>>,
@@ -377,9 +382,22 @@ impl AccountService {
         };
         let (fatal, fatal_receiver) = watch::channel(false);
         let hosted = cognito.is_some();
+        let website_cognito = if let Some(client_id) = config.website_client_id.as_deref() {
+            if !hosted || client_id == config.client_id {
+                return Err(ApiError::bad());
+            }
+            Some(
+                cognito::Verifier::discover_website(&config.issuer, client_id)
+                    .await
+                    .map_err(|_| ApiError::internal())?,
+            )
+        } else {
+            None
+        };
         let state = Arc::new(Inner {
             provider,
             cognito,
+            website_cognito,
             lifecycle: hosted && std::env::var_os("THEIA_REALM_LIFECYCLE_DIR").is_some(),
             publisher,
             sessions: Arc::new(Mutex::new(sessions)),
@@ -403,6 +421,14 @@ impl AccountService {
                 .route("/auth/poll", post(routes::poll))
                 .route("/auth/cancel", post(routes::cancel))
                 .route("/development/auth-metrics", get(routes::metrics))
+        };
+        let router = if state.website_cognito.is_some() {
+            router.route(
+                WEBSITE_ROSTER_PATH,
+                get(routes::website_roster).options(routes::website_preflight),
+            )
+        } else {
+            router
         };
         let router = router
             .route("/ready", get(routes::ready))

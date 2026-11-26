@@ -26,6 +26,10 @@ pub(super) struct Config {
     publisher: Publisher,
 }
 impl Config {
+    pub(super) fn catalog(&self) -> &ProgressionCatalog {
+        &self.profile
+    }
+
     pub(super) fn admission_profiles(&self) -> ([u8; 32], Option<[u8; 32]>, Option<[u8; 32]>) {
         (
             self.profile.hash(),

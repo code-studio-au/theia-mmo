@@ -12,7 +12,9 @@ mod rewards;
 mod store;
 mod vendors;
 mod worker;
-pub use characters::{Character, CharacterName, CharacterSummary, MAX_CHARACTERS_PER_OWNER};
+pub use characters::{
+    Character, CharacterName, CharacterSummary, MAX_CHARACTERS_PER_OWNER, WebsiteCharacterSummary,
+};
 pub use documents::{DocumentCatalog, DocumentOpenCommand};
 pub use gameplay_profiles::{GameplayProfiles, ProfileCompatibility};
 pub use inventory::{InventoryApplied, InventoryCatalog};

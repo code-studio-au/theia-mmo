@@ -2,7 +2,8 @@
 use super::{Publisher, WorkerStatus};
 use crate::{
     Binding, Character, CharacterName, CharacterSummary, Error, GameplayProfiles, OwnerId,
-    ProfileCompatibility, Result, Store, store::validate_identity,
+    ProfileCompatibility, ProgressionCatalog, Result, Store, WebsiteCharacterSummary,
+    store::validate_identity,
 };
 use theia_core::coordinates::GlobalPosition;
 use tokio::sync::oneshot;
@@ -30,6 +31,13 @@ pub(super) enum Request {
         owner: OwnerId,
         world: [u8; 32],
         reply: oneshot::Sender<Result<Vec<CharacterSummary>>>,
+    },
+    ListForIdentity {
+        issuer: String,
+        subject: String,
+        world: [u8; 32],
+        progression: Option<ProgressionCatalog>,
+        reply: oneshot::Sender<Result<Vec<WebsiteCharacterSummary>>>,
     },
     Select {
         binding: Binding,
@@ -126,6 +134,29 @@ impl Publisher {
             Request::List {
                 owner,
                 world,
+                reply,
+            },
+            answer,
+        )
+        .await
+    }
+
+    pub async fn list_characters_for_identity(
+        &self,
+        issuer: &str,
+        subject: &str,
+        world: [u8; 32],
+        progression: Option<ProgressionCatalog>,
+    ) -> Result<Vec<WebsiteCharacterSummary>> {
+        valid_world(world)?;
+        validate_identity(issuer, subject)?;
+        let (reply, answer) = oneshot::channel();
+        self.account_request(
+            Request::ListForIdentity {
+                issuer: issuer.to_owned(),
+                subject: subject.to_owned(),
+                world,
+                progression,
                 reply,
             },
             answer,
@@ -236,6 +267,30 @@ impl Request {
                 }
                 respond(
                     store.list_characters(owner, world).await,
+                    reply,
+                    status,
+                    Operation::List,
+                )
+            }
+            Self::ListForIdentity {
+                issuer,
+                subject,
+                world,
+                progression,
+                reply,
+            } => {
+                if reply.is_closed() {
+                    return Ok(());
+                }
+                respond(
+                    store
+                        .list_characters_for_identity(
+                            &issuer,
+                            &subject,
+                            world,
+                            progression.as_ref(),
+                        )
+                        .await,
                     reply,
                     status,
                     Operation::List,

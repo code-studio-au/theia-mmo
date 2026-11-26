@@ -49,6 +49,7 @@ async fn main() -> theia_network::Result<()> {
         listen: std::env::var("THEIA_TEST_ACCOUNT_BIND")?.parse()?,
         issuer: std::env::var("THEIA_TEST_OIDC_ISSUER")?,
         client_id: std::env::var("THEIA_TEST_OIDC_CLIENT")?,
+        website_client_id: None,
     };
     let socket = UdpSocket::bind("127.0.0.1:0")?;
     let address = socket.local_addr()?;

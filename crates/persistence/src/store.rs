@@ -1,6 +1,7 @@
 use crate::{
     Binding, Character, CharacterId, CharacterName, CharacterSummary, Error,
-    MAX_CHARACTERS_PER_OWNER, OwnerId, RealmId, Result, Saved, SavedCharacter,
+    MAX_CHARACTERS_PER_OWNER, OwnerId, ProgressionCatalog, RealmId, Result, Saved, SavedCharacter,
+    WebsiteCharacterSummary,
 };
 use ring::digest::{SHA256, digest};
 use std::{collections::BTreeSet, future::Future, net::IpAddr, str::FromStr, time::Duration};
@@ -272,6 +273,56 @@ impl Store {
             });
         }
         Ok(result)
+    }
+
+    /// Read saved characters and progression for an already verified identity.
+    pub async fn list_characters_for_identity(
+        &self,
+        issuer: &str,
+        subject: &str,
+        world: [u8; 32],
+        progression: Option<&ProgressionCatalog>,
+    ) -> Result<Vec<WebsiteCharacterSummary>> {
+        if world == [0; 32] {
+            return Err(Error::Invalid("World content identity must be nonzero"));
+        }
+        validate_identity(issuer, subject)?;
+        let limit = (MAX_CHARACTERS_PER_OWNER + 1) as i64;
+        let rows = bounded(self.client().query(
+            r#"SELECT c.world_id, n.display_name, p.world_id AS progression_world,
+                      p.profile_hash, p.revision, p.experience,
+                      FLOOR(EXTRACT(EPOCH FROM c.updated_at))::bigint AS last_saved_unix
+               FROM theia.accounts a
+               JOIN theia.characters c ON c.owner_id = a.owner_id
+               LEFT JOIN theia.character_names n USING (realm_id, character_id)
+               LEFT JOIN theia.progression p USING (realm_id, character_id)
+               WHERE a.issuer = $1 AND a.subject = $2 AND c.realm_id = $3
+               ORDER BY n.name_key COLLATE "C", c.character_id
+               LIMIT $4"#,
+            &[&issuer, &subject, &self.realm.value(), &limit],
+        ))
+        .await?;
+        if rows.len() > MAX_CHARACTERS_PER_OWNER {
+            return Err(Error::Invalid(
+                "Character list exceeds bounded owner capacity",
+            ));
+        }
+        rows.iter()
+            .map(|row| {
+                if row.get::<_, Vec<u8>>("world_id") != world {
+                    return Err(Error::WorldMismatch);
+                }
+                let name: String = row
+                    .get::<_, Option<String>>("display_name")
+                    .ok_or(Error::CharacterMissing)?;
+                Ok(WebsiteCharacterSummary {
+                    name: CharacterName::parse(&name)?,
+                    progression: progression
+                        .and_then(|catalog| progression::website_progress(row, world, catalog)),
+                    last_saved_unix: row.get("last_saved_unix"),
+                })
+            })
+            .collect()
     }
     /// Binding owner must come from a valid account session. UUID lookup alone
     /// is never authorization. Selection neither issues a ticket nor claims an

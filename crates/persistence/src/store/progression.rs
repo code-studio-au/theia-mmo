@@ -2,7 +2,7 @@
 //! neither queueing nor an uncommitted proposal is an XP-success observation.
 use super::{Store, bounded, inventory::authorize};
 use crate::{Binding, Error, ProgressionApplied, ProgressionCatalog, Result};
-use theia_core::progression::{KillEvent, MAX_KILL_EXPERIENCE, State};
+use theia_core::progression::{KillEvent, MAX_KILL_EXPERIENCE, Progress, State};
 use tokio_postgres::Row;
 fn checked(row: &Row, world: [u8; 32], catalog: &ProgressionCatalog) -> Result<State> {
     if row.get::<_, Vec<u8>>(0) != world {
@@ -18,6 +18,27 @@ fn checked(row: &Row, world: [u8; 32], catalog: &ProgressionCatalog) -> Result<S
     }
     State::new(catalog.profile(), revision as u64, experience as u32)
         .map_err(|_| Error::ProgressionData)
+}
+pub(super) fn website_progress(
+    row: &Row,
+    world: [u8; 32],
+    catalog: &ProgressionCatalog,
+) -> Option<Progress> {
+    let (revision, experience) = if let Some(hash) = row.get::<_, Option<Vec<u8>>>("profile_hash") {
+        let stored_world = row.get::<_, Option<Vec<u8>>>("progression_world")?;
+        if stored_world != world || hash != catalog.hash() {
+            return None;
+        }
+        let revision = u64::try_from(row.get::<_, Option<i64>>("revision")?).ok()?;
+        let experience = u32::try_from(row.get::<_, Option<i32>>("experience")?).ok()?;
+        (revision, experience)
+    } else {
+        // An unplayed character starts at zero XP. This read need not seed state.
+        (0, 0)
+    };
+    let profile = catalog.profile();
+    let state = State::new(profile, revision, experience).ok()?;
+    profile.progress(&state).ok()
 }
 impl Store {
     /// Missing state starts at zero. Existing XP is never silently reseeded.

@@ -1116,6 +1116,7 @@ async fn main() -> Result<()> {
             issuer: account_issuer.ok_or("Account login requires THEIA_OIDC_ISSUER")?,
             client_id: std::env::var("THEIA_OIDC_CLIENT_ID")
                 .map_err(|_| "Account login requires THEIA_OIDC_CLIENT_ID")?,
+            website_client_id: std::env::var("THEIA_WEBSITE_COGNITO_CLIENT_ID").ok(),
         };
         let socket = std::net::UdpSocket::bind(bind)?;
         let addresses = if config.hosted() {

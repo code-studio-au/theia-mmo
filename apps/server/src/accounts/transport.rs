@@ -2,7 +2,7 @@ use super::*;
 use axum::{
     body::Body,
     extract::State,
-    http::{Request, header},
+    http::{HeaderValue, Method, Request, header},
     middleware::Next,
     response::{IntoResponse, Response},
 };
@@ -47,29 +47,51 @@ pub(super) async fn guard(
             .fetch_add(1, Ordering::Relaxed);
         return finish(ApiError::bad().into_response());
     }
-    // Callback is a top-level provider navigation protected by state/nonce/PKCE.
-    // Native API requests omit Origin; browser API requests must be same-origin.
-    if request.uri().path() != "/callback" {
-        let mut origins = request.headers().get_all(header::ORIGIN).iter();
-        if origins
-            .next()
-            .is_some_and(|v| v.as_bytes() != state.base.as_bytes())
-            || origins.next().is_some()
-        {
-            state
-                .counters
-                .origin_rejections
-                .fetch_add(1, Ordering::Relaxed);
-            return finish(
-                ApiError(StatusCode::FORBIDDEN, "Request origin not allowed").into_response(),
-            );
-        }
+    let website_route = request.uri().path() == WEBSITE_ROSTER_PATH
+        && state.website_cognito.is_some()
+        && matches!(*request.method(), Method::GET | Method::OPTIONS);
+    let mut origins = request.headers().get_all(header::ORIGIN).iter();
+    let origin = origins.next();
+    let website_request =
+        website_route && origin.is_some_and(|v| v.as_bytes() == WEBSITE_ORIGIN.as_bytes());
+    // Callback navigation uses state/nonce/PKCE. Other game routes accept native or same-origin requests.
+    if request.uri().path() != "/callback"
+        && ((origin.is_some_and(|v| v.as_bytes() != state.base.as_bytes()) && !website_request)
+            || origins.next().is_some())
+    {
+        state
+            .counters
+            .origin_rejections
+            .fetch_add(1, Ordering::Relaxed);
+        return finish(
+            ApiError(StatusCode::FORBIDDEN, "Request origin not allowed").into_response(),
+        );
     }
-    let Ok(_permit) = state.request_slots.clone().try_acquire_owned() else {
-        state.counters.overload.fetch_add(1, Ordering::Relaxed);
-        return finish(ApiError::busy().into_response());
+    let response = match state.request_slots.clone().try_acquire_owned() {
+        Ok(_permit) => next.run(request).await,
+        Err(_) => {
+            state.counters.overload.fetch_add(1, Ordering::Relaxed);
+            ApiError::busy().into_response()
+        }
     };
-    finish(next.run(request).await)
+    let mut response = finish(response);
+    if website_request {
+        let headers = response.headers_mut();
+        headers.insert(
+            header::ACCESS_CONTROL_ALLOW_ORIGIN,
+            HeaderValue::from_static(WEBSITE_ORIGIN),
+        );
+        headers.insert(
+            header::ACCESS_CONTROL_ALLOW_METHODS,
+            HeaderValue::from_static("GET"),
+        );
+        headers.insert(
+            header::ACCESS_CONTROL_ALLOW_HEADERS,
+            HeaderValue::from_static("Authorization"),
+        );
+        headers.insert(header::VARY, HeaderValue::from_static("Origin"));
+    }
+    response
 }
 pub(super) async fn run(
     service: AccountService,
