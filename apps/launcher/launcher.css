@@ -202,10 +202,10 @@ label.unavailable {
 .news-story:hover {
   background-color: rgba(213, 167, 87, 0.11);
 }
-button.news-website-link label {
+button.news-link label {
   color: #edc777;
 }
-button.news-website-link:hover label {
+button.news-link:hover label {
   color: #fff0ce;
 }
 button.action {
@@ -213,6 +213,9 @@ button.action {
   background-size: 100% 100%;
   background-repeat: no-repeat;
   padding: 4px 11px;
+}
+.settings-panel button.action {
+  min-height: 36px;
 }
 button.action:hover {
   box-shadow: inset 0 0 11px rgba(250, 193, 107, 0.2);

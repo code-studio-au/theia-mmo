@@ -65,6 +65,12 @@ def button(text, action, theme='action', icon=None, icon_only=False):
     return widget
 
 
+def news_link(text):
+    widget = style(Gtk.LinkButton.new_with_label(NEWS_URL, text), 'news-link')
+    widget.set_halign(Gtk.Align.START)
+    return widget
+
+
 def size_text(amount):
     if amount >= 1024**3:
         return f'{amount / 1024**3:.2f} GiB'
@@ -383,23 +389,27 @@ class Launcher:
         return page
 
     def build_pages(self):
+        def open_news_page(_):
+            self.select_page('News')
+            return True
+
         play = self.page('Play', 'Latest News')
         self.latest_news = box(vertical=True)
         play.pack_start(self.latest_news, False, False, 0)
-        play.pack_start(button('All News', lambda: self.select_page('News')), False, False, 0)
+        all_news = news_link('All News')
+        all_news.set_tooltip_text('Open the launcher News tab')
+        all_news.connect('activate-link', open_news_page)
+        play.pack_start(all_news, False, False, 0)
 
         news = self.page('News', 'News')
         self.news_articles = box(vertical=True)
         news.pack_start(self.news_articles, False, False, 0)
-        website_link = style(Gtk.LinkButton.new_with_label(NEWS_URL, 'News on the Website'),
-                             'news-website-link')
-        website_link.set_halign(Gtk.Align.START)
-        news.pack_start(website_link, False, False, 0)
+        news.pack_start(news_link('News on the Website'), False, False, 0)
         for panel in (self.latest_news, self.news_articles):
             panel.add(label('Loading news…', 'detail'))
 
-        settings = self.page('Settings', 'Settings')
-        settings.pack_start(label(f'Launcher {VERSION}', 'detail'), False, False, 0)
+        settings = style(self.page('Settings', 'Settings'), 'settings-panel')
+        settings.pack_start(label(f'Launcher v{VERSION}', 'detail'), False, False, 0)
         self.check_button = button('Check for Updates', self.check)
         settings.pack_start(self.check_button, False, False, 0)
         self.launcher_release_label = label('', 'detail')
