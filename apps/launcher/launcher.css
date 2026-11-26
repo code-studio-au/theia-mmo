@@ -80,7 +80,7 @@ button.window-control:hover drawingarea {
   border-width: 18px;
 }
 .panel-body {
-  padding: 0 10px;
+  padding: 21px 10px 0;
 }
 .sign-in-panel label.sign-in-label {
   color: #efd7a6;
@@ -134,6 +134,15 @@ button.sign-in-secondary:hover {
 }
 button.sign-in-secondary:disabled {
   color: #9b9da0;
+}
+.compact .sign-in-panel entry {
+  min-height: 24px;
+}
+.compact button.sign-in-submit {
+  min-height: 25px;
+}
+.compact button.sign-in-secondary {
+  padding: 0 7px;
 }
 .status-card {
   min-height: 82px;
@@ -202,6 +211,9 @@ label.unavailable {
 .news-story {
   padding: 8px 0;
   border: 0;
+}
+.news-story:first-child {
+  padding-top: 0;
 }
 .news-story:hover {
   background-color: rgba(213, 167, 87, 0.11);

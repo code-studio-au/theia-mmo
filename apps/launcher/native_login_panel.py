@@ -12,14 +12,16 @@ ACCOUNT_URL = 'https://theiaonline.com/account/'
 
 class NativeLoginPanel(Gtk.Box):
     def __init__(self, launcher, button, label):
-        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.launcher = launcher
         self.reply = None
         self.get_style_context().add_class('sign-in-panel')
         heading = label('Sign in to Theia', 'heading')
         heading.set_halign(Gtk.Align.START)
         self.pack_start(heading, False, False, 0)
-        self.pack_start(Gtk.Separator(), False, False, 0)
+        divider = Gtk.Separator()
+        divider.set_margin_top(1)
+        self.pack_start(divider, False, False, 0)
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         body.get_style_context().add_class('panel-body')
         self.pack_start(body, False, False, 0)

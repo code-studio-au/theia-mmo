@@ -189,9 +189,17 @@ class Launcher:
         self.login_click.set_button(Gdk.BUTTON_PRIMARY)
         self.login_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         self.login_click.connect('pressed', self.login_outside_press)
+        surface_style = surface.get_style_context()
 
         def fit_panel(_, allocation):
             height = max(100, allocation.height - 63)
+            # Keep the shared inset when a sign-in message wraps at the minimum height.
+            compact = allocation.height < 320
+            if compact != surface_style.has_class('compact'):
+                if compact:
+                    surface_style.add_class('compact')
+                else:
+                    surface_style.remove_class('compact')
             for page in self.stack.get_children():
                 if isinstance(page, Gtk.ScrolledWindow) and page.get_max_content_height() != height:
                     GLib.idle_add(page.set_max_content_height, height)
@@ -370,7 +378,7 @@ class Launcher:
         return GLib.SOURCE_REMOVE
 
     def page(self, name, title):
-        page = box(vertical=True, spacing=12)
+        page = box(vertical=True, spacing=0)
         heading = label(title, 'heading')
         if name == 'Play':
             lead = box(spacing=7)
@@ -379,7 +387,9 @@ class Launcher:
             page.pack_start(lead, False, False, 0)
         else:
             page.pack_start(heading, False, False, 0)
-        page.pack_start(Gtk.Separator(), False, False, 1)
+        divider = Gtk.Separator()
+        divider.set_margin_top(13)
+        page.pack_start(divider, False, False, 0)
         body = style(box(vertical=True, spacing=12), 'panel-body')
         page.pack_start(body, False, False, 0)
         scroll = Gtk.ScrolledWindow()
