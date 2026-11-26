@@ -349,9 +349,9 @@ wake, play, idle stop and progress restoration check remain pending.
 
 ### Native Cognito sign-in
 
-Launcher 0.1.9 can sign testers in from the Play dialog using Cognito SRP.
-The dialog supports temporary password changes and SMS or authenticator app
-codes. **Sign in with browser** opens managed login for account recovery and
+**Play** opens a themed sign-in panel beside the artwork and latest news. It
+uses Cognito SRP and supports temporary password changes and SMS or
+authenticator app codes. **Use browser** opens managed login for account recovery and
 MFA enrollment. Passwords and Cognito tokens stay in process memory. The
 gateway and game server still validate the tester group and play scope.
 

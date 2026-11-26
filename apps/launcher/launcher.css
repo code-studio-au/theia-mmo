@@ -79,6 +79,70 @@ button.window-control:hover drawingarea {
 .surface {
   border-width: 18px;
 }
+.sign-in-rail {
+  background-image: linear-gradient(to bottom, #0a263e, #041525 76%, #071c2d);
+  border-left: 1px solid #98652d;
+}
+.sign-in-panel {
+  padding: 8px 17px;
+}
+.sign-in-panel label.sign-in-heading {
+  color: #ffe3a3;
+  font: 700 23px serif;
+  text-shadow: 0 2px 2px #000;
+}
+.sign-in-panel label.sign-in-label {
+  color: #efd7a6;
+  font: 700 15px serif;
+}
+.sign-in-panel label.sign-in-status {
+  color: #e8dfcd;
+  font: 14px sans-serif;
+}
+.sign-in-panel entry {
+  min-height: 30px;
+  padding: 0 10px;
+  color: #fff2d7;
+  caret-color: #ffdf9c;
+  font: 16px sans-serif;
+  background: #051320;
+  border: 1px solid #8b673b;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+.sign-in-panel entry:focus {
+  border-color: #ffcf77;
+  box-shadow: 0 0 0 1px rgba(255, 207, 119, 0.25);
+}
+.sign-in-panel entry selection {
+  color: #fff8e9;
+  background-color: #29516c;
+}
+button.sign-in-submit {
+  min-height: 29px;
+  padding: 3px 10px;
+  border: 1px solid #c89951;
+  border-radius: 4px;
+  background-image: linear-gradient(to bottom, #755226, #4d321b 50%, #372417);
+}
+button.sign-in-submit:hover {
+  background-image: linear-gradient(to bottom, #936734, #5a3d21 50%, #412b1a);
+}
+button.sign-in-submit:disabled {
+  opacity: 0.55;
+}
+button.sign-in-secondary {
+  padding: 3px 7px;
+  color: #d3b988;
+  font: 15px serif;
+}
+button.sign-in-secondary:hover {
+  color: #fff0ce;
+  background-color: rgba(255, 199, 107, 0.09);
+}
+button.sign-in-secondary:disabled {
+  color: #9b9da0;
+}
 .status-card {
   min-height: 82px;
   padding: 3px 11px;
