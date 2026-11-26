@@ -8,6 +8,10 @@ const stack = new Stack(app, 'TheiaDevelopmentRealmIngress', {
   synthesizer: new BootstraplessSynthesizer(),
 });
 const group = new CfnParameter(stack, 'HostSecurityGroupId', { type: 'AWS::EC2::SecurityGroup::Id' });
+new ec2.CfnSecurityGroupIngress(stack, 'AccountCertificateValidation', {
+  groupId: group.valueAsString, ipProtocol: 'tcp', fromPort: 80, toPort: 80,
+  cidrIp: '0.0.0.0/0', description: 'ACME HTTP challenge for the public Theia account API certificate',
+});
 new ec2.CfnSecurityGroupIngress(stack, 'AccountHttps', {
   groupId: group.valueAsString, ipProtocol: 'tcp', fromPort: 443, toPort: 443,
   cidrIp: '0.0.0.0/0', description: 'Theia tester authentication and character API over HTTPS',
