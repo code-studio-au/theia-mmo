@@ -391,7 +391,10 @@ class Launcher:
         news = self.page('News', 'News')
         self.news_articles = box(vertical=True)
         news.pack_start(self.news_articles, False, False, 0)
-        news.pack_start(button('News on the Website', lambda: webbrowser.open(NEWS_URL)), False, False, 0)
+        website_link = style(Gtk.LinkButton.new_with_label(NEWS_URL, 'News on the Website'),
+                             'news-website-link')
+        website_link.set_halign(Gtk.Align.START)
+        news.pack_start(website_link, False, False, 0)
         for panel in (self.latest_news, self.news_articles):
             panel.add(label('Loading news…', 'detail'))
 

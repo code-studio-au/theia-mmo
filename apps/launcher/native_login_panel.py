@@ -12,14 +12,12 @@ ACCOUNT_URL = 'https://theiaonline.com/account/'
 
 class NativeLoginPanel(Gtk.Box):
     def __init__(self, launcher, button, label):
-        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         self.launcher = launcher
         self.reply = None
         self.get_style_context().add_class('sign-in-panel')
         heading = label('Sign in to Theia', 'heading')
         heading.set_halign(Gtk.Align.START)
-        self.field_width = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
-        self.field_width.add_widget(heading)
         self.pack_start(heading, False, False, 0)
         self.pack_start(Gtk.Separator(), False, False, 0)
         self.username_label = label('_Username', 'sign-in-label')
@@ -34,24 +32,19 @@ class NativeLoginPanel(Gtk.Box):
             field.set_mnemonic_widget(entry)
             self.field_labels.add_widget(field)
             entry.set_width_chars(12)
-            entry.set_max_width_chars(12)
-            entry.set_halign(Gtk.Align.START)
-            self.field_width.add_widget(entry)
             entry.connect('activate', lambda _: self.respond())
             group = Gtk.Box(spacing=12)
             group.pack_start(field, False, False, 0)
-            group.pack_start(entry, False, False, 0)
+            group.pack_start(entry, True, True, 0)
             self.pack_start(group, False, False, 0)
         self.status = label('', 'sign-in-status')
         self.status.set_no_show_all(True)
         self.pack_start(self.status, False, False, 0)
-        actions = Gtk.Box(spacing=6)
         self.submit = button('Sign in', self.respond, 'sign-in-submit')
         self.help_button = button('Account help', self.open_account, 'sign-in-secondary')
         self.help_button.set_tooltip_text('Set up your account or reset your password on the Theia website')
-        actions.pack_start(self.help_button, False, False, 0)
-        actions.pack_end(self.submit, True, True, 0)
-        self.pack_start(actions, False, False, 0)
+        self.pack_start(self.submit, False, False, 0)
+        self.pack_start(self.help_button, False, False, 0)
 
     def show_status(self, message):
         self.status.set_text(message)
