@@ -8,12 +8,11 @@ from cognito_native import sign_in
 
 class NativeLoginPanel(Gtk.Box):
     def __init__(self, launcher, button, label):
-        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self.launcher = launcher
         self.reply = None
-        self.set_valign(Gtk.Align.CENTER)
         self.get_style_context().add_class('sign-in-panel')
-        heading = label('Sign in to Theia', 'sign-in-heading')
+        heading = label('Sign in to Theia', 'heading')
         heading.set_halign(Gtk.Align.START)
         self.field_width = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
         self.field_width.add_widget(heading)
@@ -25,15 +24,17 @@ class NativeLoginPanel(Gtk.Box):
         self.secret = Gtk.Entry()
         self.secret.set_visibility(False)
         self.secret.set_input_purpose(Gtk.InputPurpose.PASSWORD)
+        self.field_labels = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
         for field, entry in ((self.username_label, self.username), (self.secret_label, self.secret)):
             field.set_use_underline(True)
             field.set_mnemonic_widget(entry)
+            self.field_labels.add_widget(field)
             entry.set_width_chars(12)
             entry.set_max_width_chars(12)
             entry.set_halign(Gtk.Align.START)
             self.field_width.add_widget(entry)
             entry.connect('activate', lambda _: self.respond())
-            group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+            group = Gtk.Box(spacing=12)
             group.pack_start(field, False, False, 0)
             group.pack_start(entry, False, False, 0)
             self.pack_start(group, False, False, 0)
