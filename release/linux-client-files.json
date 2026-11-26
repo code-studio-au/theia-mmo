@@ -5,6 +5,30 @@
       "path": "licenses/liberation-fonts.txt",
       "bytes": 5756,
       "sha256": "f32df582a2aab128c07b2f7e36e7b928dc5f6bd82657b905c04f91459f9e5cf9"
+    },
+    {
+      "source": "release/theia/spell-feedback.json",
+      "path": "theia/spell-feedback.json",
+      "bytes": 3154,
+      "sha256": "95eb6f867310c704296b7113b6542345fe829455816fdc0c92ffbbf1fc9023e9"
+    },
+    {
+      "source": "release/theia/zone-map/overview.json",
+      "path": "theia/zone-map/overview.json",
+      "bytes": 2324,
+      "sha256": "f92cf6e2eff26f480516bf11dc6fd823ce075c9bb9fdfc2985a755cddd323a2d"
+    },
+    {
+      "source": "release/theia/zone-map/overview.png",
+      "path": "theia/zone-map/overview.png",
+      "bytes": 735813,
+      "sha256": "20d085e9a9f468c89d81968caace435a0f8307db266ac1c746756c3e7a9561e3"
+    },
+    {
+      "source": "release/theia/zone-map/regions.png",
+      "path": "theia/zone-map/regions.png",
+      "bytes": 9200,
+      "sha256": "6d5044dda48eb4ebbf78baad2da685bfc1013ec62b42404c63417ba9ca9a68d0"
     }
   ],
   "bundle": {

@@ -241,7 +241,8 @@ class HostedDelivery(unittest.TestCase):
                 'client_id': 'public-fixture', 'redirect_uri': 'http://127.0.0.1:4321/callback',
             },
             'address': '8.8.8.8:5000', 'certificate': self.cert.read_text(), 'client_version': version,
-            'game_arguments': ['--authored-world', 'terrain/millhaven', '--prediction', '--classic'],
+            'game_arguments': ['--authored-world', 'terrain/millhaven', '--prediction', '--classic',
+                               '--chat-area', '7', '--guide-position', 'authored', '--parties'],
             'gateway': {'origin': 'https://abcdefghij.execute-api.ap-southeast-2.amazonaws.com',
                         'protocol': 'fixture', 'content': 'fixture'},
         }
@@ -262,6 +263,12 @@ class HostedDelivery(unittest.TestCase):
         for overrides, error in (({'client_version': '0.1.0.12'}, 'approved client version'),
                                  ({'game_arguments': profile['game_arguments'] + ['--inspect-asset']},
                                   'Unexpected public realm game option'),
+                                 ({'game_arguments': ['--authored-world', 'terrain/millhaven', '--prediction',
+                                                      '--classic', '--chat-area', '4294967296']},
+                                  'Invalid public realm chat area'),
+                                 ({'game_arguments': ['--authored-world', 'terrain/millhaven', '--prediction',
+                                                      '--classic', '--guide-position', '2,3']},
+                                  'authored contact placement'),
                                  ({'game_arguments': ['--authored-world', 'missing', '--prediction', '--classic']},
                                   'asset is missing')):
             with self.subTest(overrides=overrides):

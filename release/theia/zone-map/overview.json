@@ -1,0 +1,144 @@
+{
+  "schema": 2,
+  "title": "Covenant",
+  "terrain_identity": [
+    60,
+    4,
+    106,
+    68,
+    229,
+    219,
+    117,
+    234,
+    113,
+    240,
+    2,
+    173,
+    107,
+    245,
+    189,
+    180,
+    22,
+    130,
+    78,
+    118,
+    41,
+    131,
+    24,
+    196,
+    180,
+    99,
+    128,
+    171,
+    173,
+    76,
+    43,
+    200
+  ],
+  "bounds": [
+    [
+      0,
+      0
+    ],
+    [
+      7296,
+      8192
+    ]
+  ],
+  "north_positive_z": false,
+  "landmarks": [
+    {
+      "name": "Millhaven",
+      "description": "Zone location in the gentler terrain test.",
+      "xz": [
+        1066.4243412297046,
+        3334.2514805696046
+      ],
+      "major": true
+    },
+    {
+      "name": "Stoneford",
+      "description": "Zone location in the gentler terrain test.",
+      "xz": [
+        3477.8875440365982,
+        4669.558832814379
+      ],
+      "major": true
+    },
+    {
+      "name": "Valecrown",
+      "description": "Zone location in the gentler terrain test.",
+      "xz": [
+        5950.363156255988,
+        4718.368094642174
+      ],
+      "major": true
+    },
+    {
+      "name": "Deepward Holds",
+      "description": "Zone location in the gentler terrain test.",
+      "xz": [
+        1848.0928678399096,
+        1412.2983583083542
+      ],
+      "major": true
+    },
+    {
+      "name": "Greenward",
+      "description": "Zone location in the gentler terrain test.",
+      "xz": [
+        1506.2913373838655,
+        6535.1295052563855
+      ],
+      "major": true
+    },
+    {
+      "name": "Canopy Marches",
+      "description": "Zone location in the gentler terrain test.",
+      "xz": [
+        3567.119252053022,
+        6884.553202464211
+      ],
+      "major": true
+    },
+    {
+      "name": "Treaty Marches",
+      "description": "Zone location in the gentler terrain test.",
+      "xz": [
+        3826.171875,
+        2970.703125
+      ],
+      "major": true
+    }
+  ],
+  "regions": [
+    {
+      "id": 1,
+      "name": "Millhaven"
+    },
+    {
+      "id": 2,
+      "name": "Stoneford"
+    },
+    {
+      "id": 3,
+      "name": "Valecrown"
+    },
+    {
+      "id": 4,
+      "name": "Deepward Holds"
+    },
+    {
+      "id": 10,
+      "name": "Greenward"
+    },
+    {
+      "id": 11,
+      "name": "Canopy Marches"
+    },
+    {
+      "id": 14,
+      "name": "Treaty Marches"
+    }
+  ]
+}

@@ -631,7 +631,6 @@ fn report(
     gray.last_report = Instant::now();
 }
 pub fn install(app: &mut App, source: procedural::Source) {
-    crate::zone_map::install(app, &source);
     if let procedural::Source::Authored(store) = &source {
         crate::authored_scene::install(app, store.clone());
     }

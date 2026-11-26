@@ -197,6 +197,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let classic_controller = classic_controls::Controller::from_args(&mut args, classic)?;
     let parties = party::parse(&mut args, classic)?;
     let chat_area = chat::parse(&mut args, classic)?;
+    let zone_map = zone_map::prepare(&source, &mut args)?;
     let test_controller = test_controller::from_args(&mut args, classic && graybox, &source)?;
     if classic && !prediction {
         return Err("Classic controls require predicted terrain".into());
@@ -1211,6 +1212,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "world": party::world_identity(chat::world_identity(theia_network::classic::profile_identity(content_identity), chat_area), parties),
                 "parties": parties,
                 "chat_area": chat_area.map(theia_core::chat::Area::value),
+                "zone_map": zone_map.is_some(),
+                "spell_feedback": feedback.is_some(),
+                "contacts": dialogue_profile.as_ref().map_or(0, |(profile, _)| profile.contacts().count()),
+                "ability_count": combat_catalog.as_ref().map_or(0, |(_, catalog)| catalog.abilities().len()),
+                "creature_loot": creature_loot,
                 "classic_source": content_identity,
                 "test_controller":test_controller.as_ref().map(|run|run.description()),
                 "inventory_profile": inventory_profile.as_ref().map(|p|p.hash()),
@@ -1338,6 +1344,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         camera::CollisionMode::Visual
     }));
     if graybox {
+        if let Some(map) = zone_map {
+            zone_map::install(&mut app, map);
+        }
         graybox::install(&mut app, source);
     }
     let material_diagnostic = std::env::var("THEIA_RUNTIME_TRIPLANAR_DIAGNOSTIC")

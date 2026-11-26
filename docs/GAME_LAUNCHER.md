@@ -214,6 +214,14 @@ Deliver client builds for playtesting through the signed GitHub Pages feed so
 testers can install and update from the launcher. A client release is ready
 when the public update is verified and the hosted realm accepts its version.
 
+Theia's public playtest uses the full authored gameplay export. Generate the
+client and server arguments with `python3 tools/theia_playtest_profile.py
+<client|server> <payload>`. Launch uses the signed profile automatically.
+The release check verifies NPC contacts, loot, inventory, journal, progression,
+combat abilities and effects, chat, parties, and the terrain-matched Covenant
+map, which covers seven zones including Millhaven. Keep the approved map and
+spell feedback data in `release/theia/`.
+
 1. Enable GitHub Actions as the Pages source on `theia-mmo`. Protect the
    `game-downloads-release` environment and configure its Ed25519
    `THEIA_RELEASE_SIGNING_KEY` secret.
