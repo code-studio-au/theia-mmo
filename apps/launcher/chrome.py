@@ -30,7 +30,6 @@ def load_skin(css_file):
                                               Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
     images = {
         'button.action': 'secondary',
-        'button.nav-active': 'selected',
         'button.primary': 'primary',
         'button.primary:hover': 'primary-hover',
         '.header-ornament': 'divider',

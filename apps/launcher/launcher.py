@@ -148,7 +148,7 @@ class Launcher:
                                       or self.developer_tools or args.login_server)
 
         load_skin(HERE / 'launcher.css')
-        self.window = Gtk.Window(title='Theia Online Launcher')
+        self.window = style(Gtk.Window(title='Theia Online Launcher'), 'launcher-window')
         self.window.set_icon_from_file(str(asset('icon')))
         self.window.set_decorated(False)
         self.window.set_default_size(1270, 720)
@@ -420,25 +420,25 @@ class Launcher:
         for panel in (self.latest_news, self.news_articles):
             panel.add(label('Loading news…', 'detail'))
 
-        settings = style(self.page('Settings', 'Settings'), 'settings-panel')
+        settings = self.page('Settings', 'Settings')
         settings.pack_start(label(f'Launcher v{VERSION}', 'detail'), False, False, 0)
-        self.check_button = button('Check for Updates', self.check)
+        self.check_button = button('Check for Updates', self.check, 'settings-action')
         settings.pack_start(self.check_button, False, False, 0)
         self.launcher_release_label = label('', 'detail')
         settings.pack_start(self.launcher_release_label, False, False, 0)
         settings.pack_start(label('Game installation', 'section'), False, False, 0)
         self.root_label = self.path_label(settings)
-        self.root_button = button('Choose Game Folder…', self.choose_install_root)
+        self.root_button = button('Choose Game Folder…', self.choose_install_root, 'settings-action')
         settings.pack_start(self.root_button, False, False, 0)
         if self.developer_tools:
-            self.rollback_button = button('Restore Previous Version', self.rollback)
+            self.rollback_button = button('Restore Previous Version', self.rollback, 'settings-action')
             settings.pack_start(self.rollback_button, False, False, 0)
-            self.play_installed = button('Play Installed Version', self.play)
+            self.play_installed = button('Play Installed Version', self.play, 'settings-action')
             settings.pack_start(self.play_installed, False, False, 0)
         if self.test_login:
             self.test_login_label = label(self.test_login_status, 'detail')
             settings.pack_start(self.test_login_label, False, False, 0)
-            self.test_login_button = button('Test Sign-in', self.start_test_login)
+            self.test_login_button = button('Test Sign-in', self.start_test_login, 'settings-action')
             settings.pack_start(self.test_login_button, False, False, 0)
 
     def load_news(self):

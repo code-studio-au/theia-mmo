@@ -16,7 +16,6 @@ ASSET_SOURCES = {
     'news-icon': f'{SPRITES}/icon/book.png',
     'settings-icon': 'content/ui/theme/standalone-v3/settings.png',
     'secondary': f'{SPRITES}/button/secondary/default.png',
-    'selected': f'{SPRITES}/button/secondary/selected.png',
     'primary': f'{SPRITES}/button/primary/hover.png',
     'primary-hover': f'{SPRITES}/button/primary/selected.png',
 }
