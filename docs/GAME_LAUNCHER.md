@@ -210,6 +210,10 @@ repository. Pass the exact Git commit as
 `asset_commit` when building. The workflow verifies the pinned archive and
 exports separate files. The launcher still downloads individual content blobs.
 
+Deliver client builds for playtesting through the signed GitHub Pages feed so
+testers can install and update from the launcher. A client release is ready
+when the public update is verified and the hosted realm accepts its version.
+
 1. Enable GitHub Actions as the Pages source on `theia-mmo`. Protect the
    `game-downloads-release` environment and configure its Ed25519
    `THEIA_RELEASE_SIGNING_KEY` secret.

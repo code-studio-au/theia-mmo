@@ -11,8 +11,11 @@ The shared `ui_theme` embeds all nine atlas pages and the versioned manifest.
 Sprites select explicit atlas rectangles; slicing uses the manifest's texture-pixel
 insets and 0.25 maximum corner scale (four texture pixels per UI unit). Images use
 sRGB, straight alpha and linear sampling. The client does not read the regeneration
-build folder or Downloads for these sprites. The retained `--fantasy-ui` launcher
-option still validates its legacy source for backwards compatibility.
+build folder or Downloads for these sprites. The public client enables the
+embedded HUD and Main Menu with Classic combat. Linux release qualification
+checks the exported executable against the public realm's runtime arguments.
+The retained `--fantasy-ui` option still validates its legacy source for
+development playtests.
 
 Shared panels, title plates, input fields, ordinary buttons, roster rows, tabs,
 close controls, inventory/action slots, checkboxes and sliders use the new art.

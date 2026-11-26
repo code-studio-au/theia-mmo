@@ -80,6 +80,31 @@ jobs:
           fi
           python3 tools/build_linux_client_candidate.py "$RUNNER_TEMP/client-export" \
             --version "$CLIENT_VERSION" "${bundle[@]}"
+      - name: Verify the exported client enables the public HUD
+        env:
+          PUBLIC_REALM_PROFILE: ${{ vars.THEIA_PUBLIC_REALM_PROFILE }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          from tempfile import TemporaryDirectory
+          from shutil import copyfile
+
+          profile = json.loads(os.environ['PUBLIC_REALM_PROFILE'])
+          payload = Path(os.environ['RUNNER_TEMP']) / 'client-export/payload'
+          with TemporaryDirectory() as directory:
+              client = Path(directory) / 'theia-client'
+              copyfile(payload / 'theia-client', client)
+              client.chmod(0o700)
+              output = subprocess.check_output([client, *profile['game_arguments'], '--configuration-report'],
+                                               cwd=payload, text=True, timeout=30)
+          report = json.loads(output[output.rfind('\n{') + 1:])
+          if report['interface']['enabled'] is not True or report['renderer_started'] or report['network_started']:
+              raise SystemExit('Expected the public HUD to be enabled in the headless client report')
+          print('Verified embedded HUD with the public realm’s runtime configuration')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: theia-linux-client-release
