@@ -333,6 +333,53 @@ pub(super) async fn list(
         .collect();
     Ok(Json(serde_json::json!({"characters":entries})))
 }
+
+pub(super) async fn website_preflight() -> StatusCode {
+    StatusCode::NO_CONTENT
+}
+
+pub(super) async fn website_roster(
+    State(state): State<Shared>,
+    headers: HeaderMap,
+) -> Result<Json<serde_json::Value>> {
+    let verifier = state
+        .website_cognito
+        .as_ref()
+        .ok_or_else(ApiError::unauthorized)?;
+    let identity = verifier
+        .verify(bearer(&headers)?)
+        .await
+        .map_err(|_| ApiError::unauthorized())?;
+    let progression = state
+        .game
+        .lock()
+        .map_err(|_| ApiError::internal())?
+        .as_ref()
+        .and_then(|game| game.progression_catalog())
+        .cloned();
+    let characters = state
+        .publisher
+        .list_characters_for_identity(
+            identity.issuer(),
+            identity.subject(),
+            state.world,
+            progression,
+        )
+        .await
+        .map_err(database)?;
+    let entries: Vec<_> = characters
+        .iter()
+        .map(|character| {
+            serde_json::json!({
+                "name": character.name.as_str(),
+                "level": character.progression.map(|progress| progress.level),
+                "total_xp": character.progression.map(|progress| progress.total),
+                "last_saved_unix": character.last_saved_unix,
+            })
+        })
+        .collect();
+    Ok(Json(serde_json::json!({"characters": entries})))
+}
 pub(super) async fn create(
     State(state): State<Shared>,
     headers: HeaderMap,

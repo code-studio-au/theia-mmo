@@ -31,10 +31,21 @@ npm exec -- cdk synth --app 'node bin/theia-realm-ingress.ts' \
   --no-lookups --output cdk.out/realm-ingress --quiet
 ```
 
-The approved `TheiaDevelopmentRealmIngress` stack adds TCP 443 and UDP 5000
+The approved `TheiaDevelopmentRealmIngress` stack adds TCP 80, TCP 443 and UDP 5000
 to the game's security group after the host TLS and admission checks pass.
 Removing the ingress stack closes tester access. Store the CA signing key and
 tester credentials privately. The launcher configuration carries the CA certificate.
+
+For the website roster, point `api.theiaonline.com` at the host's Elastic IP.
+Install `nginx/theia-account-acme.conf` on the host and create
+`/var/lib/theia-account-acme` as the Certbot webroot. Port 80 serves only ACME
+challenge files. Obtain the certificate with Certbot's webroot authenticator
+before installing `nginx/theia-account-api.conf`. Keep the existing launcher IP
+virtual host as the default on port 443 so connections without SNI receive its
+certificate. Check the Nginx configuration before each reload. Install the
+`systemd/certbot.timer.d/theia-realm.conf`
+drop-in, enable the Certbot timer, and reload Nginx on successful renewals.
+The timer checks on boot so a short playtest session can renew a certificate.
 
 ### Native launcher authentication
 

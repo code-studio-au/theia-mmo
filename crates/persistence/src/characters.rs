@@ -9,6 +9,12 @@ pub struct CharacterSummary {
     pub name: CharacterName,
     pub appearance: theia_core::appearance::Appearance,
 }
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WebsiteCharacterSummary {
+    pub name: CharacterName,
+    pub progression: Option<theia_core::progression::Progress>,
+    pub last_saved_unix: i64,
+}
 #[derive(Clone, Debug, PartialEq)]
 pub struct Character {
     pub saved: SavedCharacter,

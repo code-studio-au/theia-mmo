@@ -1,8 +1,14 @@
 //! Actual PostgreSQL account-owned character APIs; no avatars/native admission.
 mod support;
-use theia_core::coordinates::GlobalPosition;
+use theia_core::{
+    content::ContentId,
+    coordinates::GlobalPosition,
+    identity::{EntityId, EntityKey, WorldEpoch},
+    progression::{KillEvent, KillId},
+};
 use theia_persistence::{
-    Binding, CharacterName, Error, MAX_CHARACTERS_PER_OWNER, OwnerId, RealmId, Store, Worker,
+    Binding, CharacterName, Error, MAX_CHARACTERS_PER_OWNER, OwnerId, ProgressionCatalog, RealmId,
+    Store, Worker,
 };
 fn name(value: &str) -> CharacterName {
     CharacterName::parse(value).unwrap()
@@ -64,6 +70,70 @@ async fn owned_characters_names_quotas_selection_and_rejections_are_transactiona
     );
     assert_eq!(store.list_characters(alice, world).await.unwrap().len(), 1);
     assert!(store.list_characters(bob, world).await.unwrap().is_empty());
+    let data = include_bytes!("../../../content/gameplay/development-progression.json");
+    let catalog = ProgressionCatalog::from_json(data).unwrap();
+    let roster = store
+        .list_characters_for_identity(&issuer, "alice", world, Some(&catalog))
+        .await
+        .unwrap();
+    assert_eq!(roster.len(), 1);
+    assert_eq!(roster[0].name.as_str(), "Arden");
+    assert!(roster[0].last_saved_unix > 0);
+    let initial = roster[0].progression.unwrap();
+    assert_eq!((initial.level, initial.total), (1, 0));
+    assert!(matches!(
+        store
+            .load_progression(arden.saved.binding, world, &catalog)
+            .await,
+        Err(Error::ProgressionMissing)
+    ));
+    store
+        .ensure_progression(arden.saved.binding, world, &catalog)
+        .await
+        .unwrap();
+    for entity in 1..=4 {
+        let event = KillEvent {
+            id: KillId::from_victim(EntityKey {
+                epoch: WorldEpoch::new(1).unwrap(),
+                entity: EntityId::new(entity).unwrap(),
+            }),
+            creature: ContentId::new("theia.dev.training-creature").unwrap(),
+        };
+        store
+            .award_experience(arden.saved.binding, world, &catalog, &event)
+            .await
+            .unwrap();
+    }
+    let roster = store
+        .list_characters_for_identity(&issuer, "alice", world, Some(&catalog))
+        .await
+        .unwrap();
+    let saved = roster[0].progression.unwrap();
+    assert_eq!((saved.level, saved.total), (2, 100));
+    let unconfigured = store
+        .list_characters_for_identity(&issuer, "alice", world, None)
+        .await
+        .unwrap();
+    assert_eq!(unconfigured[0].progression, None);
+    for subject in ["bob", "new-website-user"] {
+        assert!(
+            store
+                .list_characters_for_identity(&issuer, subject, world, Some(&catalog))
+                .await
+                .unwrap()
+                .is_empty()
+        );
+    }
+    assert!(
+        admin
+            .query_opt(
+                "SELECT owner_id FROM theia.accounts WHERE issuer=$1 AND subject=$2",
+                &[&issuer, &"new-website-user"]
+            )
+            .await
+            .unwrap()
+            .is_none()
+    );
     assert!(matches!(
         store
             .select_character(

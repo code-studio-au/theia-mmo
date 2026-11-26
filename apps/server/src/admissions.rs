@@ -211,6 +211,9 @@ impl GameAdmissions {
             .ok_or("Vendor requires item owner")?
             .set_vendor(profile, wire)
     }
+    pub(crate) fn progression_catalog(&self) -> Option<&theia_persistence::ProgressionCatalog> {
+        self.progression.as_ref().map(progression::Config::catalog)
+    }
     pub(crate) fn with_quest(
         gate: &mut Arc<Self>,
         profile: theia_persistence::QuestCatalog,
