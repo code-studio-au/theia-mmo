@@ -41,8 +41,9 @@ Install `nginx/theia-account-acme.conf` on the host and create
 `/var/lib/theia-account-acme` as the Certbot webroot. Port 80 serves only ACME
 challenge files. Obtain the certificate with Certbot's webroot authenticator
 before installing `nginx/theia-account-api.conf`. Check the Nginx configuration
-before each reload. Enable the Certbot timer and reload Nginx on successful
-renewals. Certificate renewal requires the instance to be online.
+before each reload. Install the `systemd/certbot.timer.d/theia-realm.conf`
+drop-in, enable the Certbot timer, and reload Nginx on successful renewals.
+The timer checks on boot so a short playtest session can renew a certificate.
 
 ### Native launcher authentication
 
