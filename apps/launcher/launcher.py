@@ -148,7 +148,7 @@ class Launcher:
                                       or self.developer_tools or args.login_server)
 
         load_skin(HERE / 'launcher.css')
-        self.window = Gtk.Window(title='Theia Online Launcher')
+        self.window = style(Gtk.Window(title='Theia Online Launcher'), 'launcher-window')
         self.window.set_icon_from_file(str(asset('icon')))
         self.window.set_decorated(False)
         self.window.set_default_size(1270, 720)
@@ -189,9 +189,17 @@ class Launcher:
         self.login_click.set_button(Gdk.BUTTON_PRIMARY)
         self.login_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         self.login_click.connect('pressed', self.login_outside_press)
+        surface_style = surface.get_style_context()
 
         def fit_panel(_, allocation):
             height = max(100, allocation.height - 63)
+            # Keep the shared inset when a sign-in message wraps at the minimum height.
+            compact = allocation.height < 320
+            if compact != surface_style.has_class('compact'):
+                if compact:
+                    surface_style.add_class('compact')
+                else:
+                    surface_style.remove_class('compact')
             for page in self.stack.get_children():
                 if isinstance(page, Gtk.ScrolledWindow) and page.get_max_content_height() != height:
                     GLib.idle_add(page.set_max_content_height, height)
@@ -370,7 +378,7 @@ class Launcher:
         return GLib.SOURCE_REMOVE
 
     def page(self, name, title):
-        page = box(vertical=True, spacing=12)
+        page = box(vertical=True, spacing=0)
         heading = label(title, 'heading')
         if name == 'Play':
             lead = box(spacing=7)
@@ -379,7 +387,9 @@ class Launcher:
             page.pack_start(lead, False, False, 0)
         else:
             page.pack_start(heading, False, False, 0)
-        page.pack_start(Gtk.Separator(), False, False, 1)
+        divider = Gtk.Separator()
+        divider.set_margin_top(13)
+        page.pack_start(divider, False, False, 0)
         body = style(box(vertical=True, spacing=12), 'panel-body')
         page.pack_start(body, False, False, 0)
         scroll = Gtk.ScrolledWindow()
@@ -410,25 +420,25 @@ class Launcher:
         for panel in (self.latest_news, self.news_articles):
             panel.add(label('Loading news…', 'detail'))
 
-        settings = style(self.page('Settings', 'Settings'), 'settings-panel')
+        settings = self.page('Settings', 'Settings')
         settings.pack_start(label(f'Launcher v{VERSION}', 'detail'), False, False, 0)
-        self.check_button = button('Check for Updates', self.check)
+        self.check_button = button('Check for Updates', self.check, 'settings-action')
         settings.pack_start(self.check_button, False, False, 0)
         self.launcher_release_label = label('', 'detail')
         settings.pack_start(self.launcher_release_label, False, False, 0)
         settings.pack_start(label('Game installation', 'section'), False, False, 0)
         self.root_label = self.path_label(settings)
-        self.root_button = button('Choose Game Folder…', self.choose_install_root)
+        self.root_button = button('Choose Game Folder…', self.choose_install_root, 'settings-action')
         settings.pack_start(self.root_button, False, False, 0)
         if self.developer_tools:
-            self.rollback_button = button('Restore Previous Version', self.rollback)
+            self.rollback_button = button('Restore Previous Version', self.rollback, 'settings-action')
             settings.pack_start(self.rollback_button, False, False, 0)
-            self.play_installed = button('Play Installed Version', self.play)
+            self.play_installed = button('Play Installed Version', self.play, 'settings-action')
             settings.pack_start(self.play_installed, False, False, 0)
         if self.test_login:
             self.test_login_label = label(self.test_login_status, 'detail')
             settings.pack_start(self.test_login_label, False, False, 0)
-            self.test_login_button = button('Test Sign-in', self.start_test_login)
+            self.test_login_button = button('Test Sign-in', self.start_test_login, 'settings-action')
             settings.pack_start(self.test_login_button, False, False, 0)
 
     def load_news(self):
