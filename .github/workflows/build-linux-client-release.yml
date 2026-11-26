@@ -106,6 +106,8 @@ jobs:
                                                cwd=payload, text=True, timeout=30)
           report = json.loads(output[output.rfind('\n{') + 1:])
           verify_report(report)
+          if bytes(report['world']).hex() != profile['gateway']['content']:
+              raise SystemExit('The exported client and signed realm profile disagree on gameplay identity')
           print('Verified the full Theia playtest with the public realm’s runtime configuration')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
