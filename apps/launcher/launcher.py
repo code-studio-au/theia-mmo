@@ -164,15 +164,9 @@ class Launcher:
         self.header = self.build_header()
         root.pack_start(self.header, False, False, 0)
 
-        body = box(spacing=0)
-        root.pack_start(body, True, True, 0)
         overlay = Gtk.Overlay()
         overlay.add(Scene())
-        body.pack_start(overlay, True, True, 0)
-        self.login_host = style(box(vertical=True, spacing=0), 'sign-in-rail')
-        self.login_host.set_size_request(322, -1)
-        self.login_host.set_no_show_all(True)
-        body.pack_end(self.login_host, False, False, 0)
+        root.pack_start(overlay, True, True, 0)
         surface = style(box(vertical=True), 'surface')
         surface.set_size_request(406, -1)
         surface.set_halign(Gtk.Align.END)
@@ -184,17 +178,13 @@ class Launcher:
         self.stack.set_hhomogeneous(True)
         self.stack.set_vhomogeneous(False)
         self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-        scroll = Gtk.ScrolledWindow()
-        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scroll.set_propagate_natural_height(True)
-        scroll.set_propagate_natural_width(True)
-        scroll.add(self.stack)
-        surface.pack_start(scroll, True, True, 0)
+        surface.pack_start(self.stack, True, True, 0)
 
         def fit_panel(_, allocation):
             height = max(100, allocation.height - 63)
-            if scroll.get_max_content_height() != height:
-                GLib.idle_add(scroll.set_max_content_height, height)
+            for page in self.stack.get_children():
+                if isinstance(page, Gtk.ScrolledWindow) and page.get_max_content_height() != height:
+                    GLib.idle_add(page.set_max_content_height, height)
 
         overlay.connect('size-allocate', fit_panel)
         self.build_pages()
@@ -380,15 +370,19 @@ class Launcher:
         else:
             page.pack_start(heading, False, False, 0)
         page.pack_start(Gtk.Separator(), False, False, 1)
-        self.stack.add_named(page, name)
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_propagate_natural_height(True)
+        scroll.set_propagate_natural_width(True)
+        scroll.add(page)
+        self.stack.add_named(scroll, name)
         return page
 
     def build_pages(self):
         play = self.page('Play', 'Latest News')
         self.latest_news = box(vertical=True)
         play.pack_start(self.latest_news, False, False, 0)
-        self.all_news_button = button('All News', lambda: self.select_page('News'))
-        play.pack_start(self.all_news_button, False, False, 0)
+        play.pack_start(button('All News', lambda: self.select_page('News')), False, False, 0)
 
         news = self.page('News', 'News')
         self.news_articles = box(vertical=True)
@@ -455,12 +449,12 @@ class Launcher:
         return widget
 
     def select_page(self, page):
-        if self.login_panel is not None:
+        if self.login_panel is not None and page != 'Sign in':
             return
         self.stack.set_visible_child_name(page)
         for name, control in self.page_buttons.items():
             style = control.get_style_context()
-            if name == page:
+            if name == ('Play' if page == 'Sign in' else page):
                 style.add_class('nav-active')
             else:
                 style.remove_class('nav-active')
@@ -496,7 +490,6 @@ class Launcher:
         can_act = play_ready if game_action == 'Play' else bool(self.library or self.hosted)
         self.primary_button.set_sensitive(ready and not signing_in and bool(launcher_action or can_act))
         self.settings_button.set_sensitive(not signing_in)
-        self.all_news_button.set_sensitive(not signing_in)
         for control in self.page_buttons.values():
             control.set_sensitive(not signing_in)
         if self.test_login:
@@ -795,11 +788,10 @@ class Launcher:
                 return
             if self.realm.native_sign_in:
                 self.login_return_page = self.stack.get_visible_child_name()
-                self.select_page('Play')
                 self.login_panel = NativeLoginPanel(self, button, label)
-                self.login_host.pack_start(self.login_panel, True, True, 0)
+                self.stack.add_named(self.login_panel, 'Sign in')
                 self.login_panel.show_all()
-                self.login_host.show()
+                self.select_page('Sign in')
                 self.refresh_view()
                 self.login_panel.username.grab_focus()
             else:
@@ -822,9 +814,8 @@ class Launcher:
         if self.login_panel is not None:
             panel, self.login_panel = self.login_panel, None
             panel.dismiss()
-            panel.destroy()
-            self.login_host.hide()
             self.select_page(self.login_return_page)
+            panel.destroy()
             self.refresh_view()
             self.primary_button.grab_focus()
 

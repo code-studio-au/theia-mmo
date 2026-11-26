@@ -79,18 +79,6 @@ button.window-control:hover drawingarea {
 .surface {
   border-width: 18px;
 }
-.sign-in-rail {
-  background-image: linear-gradient(to bottom, #0a263e, #041525 76%, #071c2d);
-  border-left: 1px solid #98652d;
-}
-.sign-in-panel {
-  padding: 8px 17px;
-}
-.sign-in-panel label.sign-in-heading {
-  color: #ffe3a3;
-  font: 700 23px serif;
-  text-shadow: 0 2px 2px #000;
-}
 .sign-in-panel label.sign-in-label {
   color: #efd7a6;
   font: 700 15px serif;

@@ -349,7 +349,7 @@ wake, play, idle stop and progress restoration check remain pending.
 
 ### Native Cognito sign-in
 
-**Play** opens a themed sign-in panel beside the artwork and latest news. It
+**Play** switches the launcher's shared content panel to sign-in. It
 uses Cognito SRP and supports temporary password changes and SMS or
 authenticator app codes. **Use browser** opens managed login for account recovery and
 MFA enrollment. Passwords and Cognito tokens stay in process memory. The
