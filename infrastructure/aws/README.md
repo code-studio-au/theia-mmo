@@ -40,8 +40,10 @@ For the website roster, point `api.theiaonline.com` at the host's Elastic IP.
 Install `nginx/theia-account-acme.conf` on the host and create
 `/var/lib/theia-account-acme` as the Certbot webroot. Port 80 serves only ACME
 challenge files. Obtain the certificate with Certbot's webroot authenticator
-before installing `nginx/theia-account-api.conf`. Check the Nginx configuration
-before each reload. Install the `systemd/certbot.timer.d/theia-realm.conf`
+before installing `nginx/theia-account-api.conf`. Keep the existing launcher IP
+virtual host as the default on port 443 so connections without SNI receive its
+certificate. Check the Nginx configuration before each reload. Install the
+`systemd/certbot.timer.d/theia-realm.conf`
 drop-in, enable the Certbot timer, and reload Nginx on successful renewals.
 The timer checks on boot so a short playtest session can renew a certificate.
 
