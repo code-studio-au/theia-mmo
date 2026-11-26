@@ -167,7 +167,7 @@ class Launcher:
         overlay = Gtk.Overlay()
         overlay.add(Scene())
         root.pack_start(overlay, True, True, 0)
-        surface = style(box(vertical=True), 'surface')
+        surface = self.content_panel = style(box(vertical=True), 'surface')
         surface.set_size_request(406, -1)
         surface.set_halign(Gtk.Align.END)
         surface.set_valign(Gtk.Align.START)
@@ -179,6 +179,10 @@ class Launcher:
         self.stack.set_vhomogeneous(False)
         self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         surface.pack_start(self.stack, True, True, 0)
+        self.login_click = Gtk.GestureMultiPress.new(self.window)
+        self.login_click.set_button(Gdk.BUTTON_PRIMARY)
+        self.login_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        self.login_click.connect('pressed', self.login_outside_press)
 
         def fit_panel(_, allocation):
             height = max(100, allocation.height - 63)
@@ -608,12 +612,14 @@ class Launcher:
         if self.closing:
             self.window.destroy()
             return GLib.SOURCE_REMOVE
+        if job == 'play' and self.login_panel is not None and self.cancelled.is_set():
+            if result is not None and result.poll() is None:
+                result.terminate()
+            self.dismiss_login()
+            return GLib.SOURCE_REMOVE
         if error:
             if job == 'play' and self.login_panel is not None:
-                if self.cancelled.is_set():
-                    self.dismiss_login()
-                else:
-                    self.login_panel.failed(error)
+                self.login_panel.failed(error)
             elif job == 'launcher-update':
                 self.launcher_feedback = error
             elif job == 'test-login':
@@ -794,6 +800,9 @@ class Launcher:
                 self.select_page('Sign in')
                 self.refresh_view()
                 self.login_panel.username.grab_focus()
+            elif self.public_realm:
+                self.feedback = 'Native sign-in is unavailable. Reinstall the latest Theia launcher.'
+                self.refresh_view()
             else:
                 self.start_hosted_play()
             return
@@ -824,6 +833,20 @@ class Launcher:
             self.login_panel.cancel()
             return True
         return False
+
+    def login_outside_press(self, gesture, _count, x, y):
+        if self.login_panel is None:
+            gesture.set_state(Gtk.EventSequenceState.DENIED)
+            return
+        point = self.window.translate_coordinates(self.content_panel, int(x), int(y))
+        if point is not None:
+            px, py = point
+            if (0 <= px < self.content_panel.get_allocated_width()
+                    and 0 <= py < self.content_panel.get_allocated_height()):
+                gesture.set_state(Gtk.EventSequenceState.DENIED)
+                return
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        self.login_panel.cancel()
 
     def realm_progress(self, message):
         if self.job == 'play' and not self.cancelled.is_set():

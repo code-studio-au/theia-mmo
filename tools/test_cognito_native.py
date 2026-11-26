@@ -42,10 +42,10 @@ class NativeSignInTest(unittest.TestCase):
         self.assertEqual(self.sign_in('success'),
                          'e30.eyJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MjA1MDAwMDAwMH0.c2ln')
 
-    def test_errors_and_setup_fallback(self):
+    def test_errors_and_account_setup_link(self):
         with self.assertRaisesRegex(InstallError, '^The username or password was not accepted\\.$'):
             self.sign_in('invalid')
-        with self.assertRaisesRegex(InstallError, '^Use browser sign-in to finish setting up this account\\.$'):
+        with self.assertRaisesRegex(InstallError, '^Finish setting up this account using Account help\\.$'):
             self.sign_in('setup')
 
     def test_temporary_password_and_authenticator_challenge(self):

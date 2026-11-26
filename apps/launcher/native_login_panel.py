@@ -1,9 +1,13 @@
 """Embedded GTK sign-in and challenge prompts for the hosted Linux launcher."""
 from threading import Event
+import webbrowser
 
 from gi.repository import GLib, Gtk
 
+from client_install import InstallError
 from cognito_native import sign_in
+
+ACCOUNT_URL = 'https://theiaonline.com/account/'
 
 
 class NativeLoginPanel(Gtk.Box):
@@ -42,12 +46,10 @@ class NativeLoginPanel(Gtk.Box):
         self.status.set_no_show_all(True)
         self.pack_start(self.status, False, False, 0)
         actions = Gtk.Box(spacing=6)
-        self.back = button('Cancel', self.cancel, 'sign-in-secondary')
         self.submit = button('Sign in', self.respond, 'sign-in-submit')
-        self.browser = button('Use browser', self.use_browser, 'sign-in-secondary')
-        self.browser.set_tooltip_text('Sign in with browser')
-        actions.pack_start(self.back, False, False, 0)
-        actions.pack_start(self.browser, False, False, 0)
+        self.help_button = button('Account help', self.open_account, 'sign-in-secondary')
+        self.help_button.set_tooltip_text('Set up your account or reset your password on the Theia website')
+        actions.pack_start(self.help_button, False, False, 0)
         actions.pack_end(self.submit, True, True, 0)
         self.pack_start(actions, False, False, 0)
 
@@ -61,6 +63,8 @@ class NativeLoginPanel(Gtk.Box):
 
     def prompt(self, kind, message, check):
         """Called from the auth worker, with the panel updated by the GTK thread."""
+        if kind == 'new_password' and self.launcher.public_realm:
+            raise InstallError('Finish setting up this account using Account help.')
         ready = Event()
         value = []
 
@@ -89,7 +93,7 @@ class NativeLoginPanel(Gtk.Box):
         return value.pop()
 
     def busy(self, message):
-        self.browser.set_sensitive(False)
+        self.help_button.set_sensitive(False)
         self.submit.set_sensitive(False)
         self.username.set_sensitive(False)
         self.secret.set_sensitive(False)
@@ -103,9 +107,8 @@ class NativeLoginPanel(Gtk.Box):
         self.secret_label.set_text_with_mnemonic('_Password')
         self.secret.set_input_purpose(Gtk.InputPurpose.PASSWORD)
         self.submit.set_label('Sign in')
-        self.back.set_sensitive(True)
         self.submit.set_sensitive(True)
-        self.browser.set_sensitive(True)
+        self.help_button.set_sensitive(True)
         self.show_status(message)
         self.secret.grab_focus()
 
@@ -137,10 +140,14 @@ class NativeLoginPanel(Gtk.Box):
 
             self.launcher.start_hosted_play(authenticate)
 
-    def use_browser(self):
-        if self.launcher.job is None:
-            self.launcher.dismiss_login()
-            self.launcher.start_hosted_play()
+    def open_account(self):
+        self.secret.set_text('')
+        try:
+            if webbrowser.open(ACCOUNT_URL):
+                return
+        except (OSError, webbrowser.Error):
+            pass
+        self.show_status(f'Open {ACCOUNT_URL} in your browser for account help.')
 
     def cancel(self):
         self.dismiss()
@@ -149,4 +156,3 @@ class NativeLoginPanel(Gtk.Box):
         else:
             self.launcher.cancelled.set()
             self.busy('Cancelling…')
-            self.back.set_sensitive(False)
