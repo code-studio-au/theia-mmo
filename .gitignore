@@ -8,6 +8,3 @@
 *.key
 __pycache__/
 *.pyc
-
-# Private conversation exports retained locally after the theia-story migration.
-/docs/story/**/copilot-conversations/

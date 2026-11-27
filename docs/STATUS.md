@@ -3,15 +3,19 @@ Moved 201 narrative Markdown files and five supporting JSON files from
 `docs/story/` into the local sibling [theia-story repository](../../theia-story/README.md).
 Zone/location briefs, NPC/character cards, dialogue, campaigns, canon decisions
 and provenance are included. Runtime code, assets and engineering documentation
-remain here. Historical Git records and private local editor files are retained.
+remain here. Historical Git records are retained. The obsolete `docs/story/`
+folder and its tracked editor cache/skill links are removed. The two local
+conversation exports now live under `theia-story/Theia/copilot/copilot-conversations/`
+and remain ignored by Git.
 The new repository has an initial snapshot commit and a
 [SHA-256 migration inventory](../../theia-story/MIGRATION_MANIFEST.json).
 All 1,510 local Markdown links in the new repository and its JSON syntax pass
 validation; formatting passes. Workspace denied-warning Clippy is blocked by
 missing Wayland/ALSA development libraries. No rendering code changed.
-The user subsequently authorized committing and pushing both repositories.
-Publication targets are `code-studio-au/theia-story` on `main` and this
-repository's existing `feat/website-character-roster` branch.
+Both repositories are published on GitHub; `code-studio-au/theia-story` is private.
+The user subsequently authorized committing/pushing the cleanup and aligning
+the MMO migration branch with `main`. Navigation/Sprinkles integration and the
+Rerecast upgrade were discussed only; no runtime or editor changes were made.
 
 24 November 2026 — P3-01/P5-23/P6-09 Sydney tester launcher:
 Cognito Essentials managed login and an administrator-enrolled two-user group
