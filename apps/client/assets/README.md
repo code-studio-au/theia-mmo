@@ -1,7 +1,9 @@
 # Client assets
 
 Bevy's default asset reader uses this directory during Cargo development runs.
-The game scene generates original meshes in Rust and uses Bevy's embedded font.
+The no-argument offline sandbox generates meshes in Rust. The broader client also
+uses embedded UI artwork/fonts and separately prepared runtime asset packages; see
+[asset preparation](../../../docs/assets/README.md).
 The separate `reference/` folder now contains the user's compatibility test model;
 see its README for provenance and missing UVs/materials.
 
@@ -15,4 +17,4 @@ intermediate source for static models; conversion cannot reconstruct absent UVs,
 textures, rigs or animation. RAW heightmaps, if used, are terrain source data with
 explicit dimensions/precision, not a general model format. Textures, animation,
 general asset compatibility and gameplay collision are not qualified by the current
-geometry-only reference. See [the import guide](../../../docs/ASSET_IMPORT.md).
+geometry-only reference. See [the import guide](../../../docs/assets/ASSET_IMPORT.md).

@@ -166,7 +166,7 @@ The earlier panel/primary/secondary/selected artwork described above is historic
 supplemental standalone glyphs now use `../theme/standalone-v3/`, generated with
 the approved account-bust sprite as style reference. Exact prompts and source/final
 hashes are recorded in its `generation.json`. Earlier icon sheets are not loaded. Login/courtyard/loading artwork
-and Liberation fonts are retained. See `docs/UI_SPRITE_INTEGRATION.md`.
+and Liberation fonts are retained. See `docs/client/UI_SPRITE_INTEGRATION.md`.
 
 23 November preview controls: built-in image_gen produced `foot-arrow.png`,
 `zoom-out.png` and `zoom-in.png` under `content/ui/theme/standalone-v3`.

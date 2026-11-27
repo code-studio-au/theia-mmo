@@ -2,7 +2,7 @@
 """Capture pinned upstream and local Sprinkles previews at fixed simulation steps.
 
 Build the patched pinned upstream and the local deterministic_capture example
-first; see docs/SPRINKLES_PARITY.md. Runs on the current display.
+first; see docs/editor/SPRINKLES_PARITY.md. Runs on the current display.
 """
 import argparse
 import hashlib

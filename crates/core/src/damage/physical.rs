@@ -1,6 +1,6 @@
 //! Normal-contact physical reference policy. This independently expressed
 //! arithmetic follows the pinned emulator reference documented in
-//! docs/CLASSIC_DAMAGE_AUTHORITY.md; it does not claim all Blizzard rounding,
+//! docs/gameplay/CLASSIC_DAMAGE_AUTHORITY.md; it does not claim all Blizzard rounding,
 //! probabilities, criticals, blocks, resistance or absorption behavior.
 use super::{Amount, MAX_VALUE};
 

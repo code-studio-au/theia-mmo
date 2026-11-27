@@ -1,6 +1,6 @@
 """wow.export ADT/WMO placement transforms, expressed in the OBJ's Y-up frame.
 
-Derived from the upstream Blender importer; see docs/MAP_OBJECTS.md for provenance.
+Derived from the upstream Blender importer; see docs/world/MAP_OBJECTS.md for provenance.
 No Blender or scipy dependency: these are ordinary homogeneous transforms.
 """
 import math

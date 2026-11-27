@@ -1,333 +1,214 @@
-Zone authoring is the current focus. Run `python3 tools/edit_zone.py` to build and
-open the lightweight Bevy editor at **3440x1440 fullscreen**. It reopens
-`build/zone-draft.json` when present; a new draft is written on Save. Use
-`--draft FILE` for another default draft, or pass explicit editor arguments.
-
-Try the original editable example with `python3 tools/edit_zone.py --example`.
-It saves separately to `build/wayfarer-hollow.zone.json` and reopens your edits.
-
-Choose **Objects, Sculpt, Paint, Paths / streams, NPC / quest markers, or Vegetation**
-from the workspace bar. The left panel contains tools; the right column contains
-zone content and properties. **New zone, Save, Save As, Open, Reload, Undo, Redo, Frame selection and
-Playtest** are in the command bar, alongside the snap checkbox.
-**New zone** (Ctrl+N) creates an untitled empty zone; Undo restores the prior content.
-Its first **Save** opens Save As in the previous folder. It never writes to the
-previous file, and the active filename stays untitled through undo/redo until saved.
-Use **Open** (Ctrl+O) or **Save As** (Ctrl+Shift+S) to browse folders and zone
-JSON files. Save As asks before overwriting; Open remains undoable. **Reload**
-(Ctrl+Shift+O) reloads the active file. The footer always shows the active save
-path and saved/unsaved state, and the window title marks unsaved content with *.
-When placing primitives, Properties shows size sliders in metres (0.25–32 m).
-Boxes have X/Y/Z sizes, cylinders diameter/height, and spheres one diameter.
-Focused sliders use Left/Right and Home/End to adjust their values.
-These affect new stamps; existing objects use **Transform...**. New stamps rest
-on the ground or terrain at half their chosen height. Move over the scene to
-preview the stamp: blue is valid, red means placement will be refused. Hovering
-does not change source or history; moving over a panel hides the preview.
-Properties explains a refused candidate. Forms and playtest hide the ghost.
-Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.
-The **Grid** checkbox shows/hides references and displays their spacing in metres.
-Front/Right use adaptive vertical grids; zones without terrain also use an
-adaptive ground grid. Terrain keeps its surface-following sample grid in Top
-and Perspective. Grid spacing is visual and independent of the movement/placement step.
-Drag **middle mouse** to pan the scene in the current view plane. Start inside
-the viewport; reaching a panel or pressing Escape cancels the pan. The wheel
-zooms; WASD pans along the canonical view axes. RMB orbit returns to
-perspective. The camera stays still during a transform drag. Playtest uses its
-normal perspective camera and restores the editor view when you return.
-
-Select a primitive to reveal **red X, green Y and blue Z move arrows**. Drag an
-arrow to preview movement along that world axis, then release for one undo entry.
-Escape cancels. Choose **Move**, **Rotate Y** or **Scale uniformly** in the command bar. Rotation
-uses a green ring; drag the scale cube up/down to preserve proportions. **Snap**
-uses the selected move grid (1 m by default), 15-degree rotation steps or 10%
-scale steps, and
-**Handles** shows/hides them.
-The numeric Transform form remains available for exact values. In Move mode,
-you can also drag an already selected object body across its XZ plane. Stationary
-clicks preserve fractional coordinates; invalid previews retain the last valid pose.
-
-In Properties, **Move / placement step** chooses 0.125, 0.25, 0.5, 1, 2, 4 or 8 m.
-Snapped placement and move handles align to the zone origin; movement keys use
-the chosen relative increment. With Snap off, keys retain 0.1 m nudges. Exact
-numeric properties remain unsnapped, and changing the step preserves undo/redo.
-Terrain properties use sliders for radius, strength, blend and flatten level.
-In Vegetation, choose **Scatter trees** or **Scatter shrubs** to adjust scatter
-radius and plants per click in Properties. One ground click places the group
-as one undo entry.
-The content list has All / Objects / Guides / Markers / Plants / Terrain filters.
-They narrow the list while retaining the world and current selection.
-Use **Find...** (Ctrl+F) for a name, kind or `#ID` substring; Apply updates the list and
-**Clear search** restores entries within the current type filter. Double-click
-an entry to select and frame it; a single click selects it. The spawn row
-continues to frame the spawn immediately.
-Select an object, plant or NPC/quest marker in the content list, then use
-**Transform...** for exact numeric fields in the docked properties area. Objects
-expose position, yaw and XYZ size; plants expose position, yaw and scale; markers
-expose position, yaw and authoring radius. The yaw slider edits the pending form
-in 15-degree steps with Snap enabled or one-degree steps otherwise; exact numeric
-values remain available. Plant scale, marker radius and guide width also have
-quarter-step sliders. **Reset fields** restores the form’s original values
-without closing it. Apply commits one validated undo entry.
-For guides, **Whole guide** exposes width; **Previous point / Next point** select
-a point for exact XYZ and width editing. **Insert point / Remove point** expose
-topology edits directly, with the same validation and undo. Rename, Duplicate
-and Ground are also available there. **Shortcuts** reveals the
-keyboard reference. Visual and structured agent edits retain shared validation
-and undo; pending drafts are protected by workspace controls.
-
-**Edit spawn...** opens exact world X/Y/Z fields in Properties. Apply creates one
-validated undo entry; Cancel leaves the spawn unchanged. Clearance is checked
-when entering playtest.
-F5 enters/leaves offline Avian playtest. In Sculpt/Paint, P places the spawn at
-the ground cursor; the green pointer marks it and hides during playtest. Fast
-drags fill brush strokes every 2 m, with a visible 128-stamp cap. Earlier keyboard
-shortcuts remain available.
-
-Check a saved zone without opening a window using
-`python3 tools/edit_zone.py --zone FILE --check-playtest`. It reports source
-validity and actual offline capsule-spawn readiness as JSON, exits nonzero on
-refusal, and leaves files unchanged. Add `--commands JSONL` to check proposed
-edits in memory. This read-only mode excludes `--output` and `--export`.
-
-For structured commands, use `python3 tools/edit_zone.py --commands JSONL
---headless --output FILE`. Export a saved zone with `--zone FILE --export NEW_DIR
---content-id ID --revision N` for the existing server/client world pipeline.
-Inside an Apply command, `{"op":"translate","id":1,"offset":[0.25,0,-0.5]}`
-moves an object, plant, marker or whole guide without reconstructing its metadata.
-Batch several edits for one undo entry. Use `--commands -` to pipe JSONL through
-stdin instead of creating a command file; finish the stream with EOF. This works
-with both headless output and read-only `--check-playtest`.
-[Controls, contracts and qualification](docs/ZONE_EDITOR.md). Normal multiplayer
-uses the existing game launcher. Chat composer and speech bubbles are deferred.
-
-> Development target: the 16 km × 16 km saved graybox world with the POLYGON
-> Base Locomotion player. Bake terrain once, build release binaries, then run `python3 tools/play.py`.
-> See [graybox world](docs/GRAYBOX_WORLD.md) for controls, asset preparation,
-> developer travel and explicit legacy-map commands. Forest work is frozen.
-
 # Theia MMO
 
-The separate [theia-story repository](../theia-story/README.md) contains the
-world bible, zone briefs, NPCs, characters, campaign acts, quests and story
-decisions, including material awaiting creator review. Keep both repositories
-as sibling checkouts for cross-repository documentation links.
+Theia Online is a fantasy MMO in development, built in Rust with Bevy. This
+repository contains the game client, authoritative server, zone editor, runtime
+content and engineering tools. The gameplay direction is inspired by WoW Classic:
+persistent targets, manual facing, character-relative movement, weapon-timed
+autoattacks and hotkey abilities.
 
-The explicit [public player-life bundle](docs/PUBLIC_AVATAR_LIFE.md) also shows
-remote death and fresh-life animation while keeping owner controls authoritative.
+The project has playable development slices, including multiplayer movement,
+combat, quests and persistent characters. It is still a prototype: production
+content, broad platform qualification and MMO-scale capacity remain unfinished.
+[Current status](docs/STATUS.md) records what has actually been implemented and
+verified; [decisions](docs/DECISIONS.md) record the adopted direction.
 
-The explicit [public NPC attack bundle](docs/PUBLIC_CREATURE_ATTACKS.md) adds
-bystander-visible wolf attack timing to the normal account/quest development flow.
-Earlier bundles and the bare graybox launcher retain their behavior.
+## Related projects
 
-A Rust WoW-style MMO project using **Bevy 0.20.0**.
-The development world is a 16 km × 16 km saved graybox with the POLYGON
-Base Locomotion player. Original or appropriately licensed final world art remains
-planned; imported map experiments are retained as regressions.
+| Project | Purpose |
+| --- | --- |
+| [theia-story — README](https://github.com/code-studio-au/theia-story#readme) | The narrative home for the world bible, lore, campaigns, quests, zone briefs and NPC/character writing. It records canon decisions and approval states; narrative plans do not establish implemented gameplay. |
+| [theia-launcher — guide](docs/operations/GAME_LAUNCHER.md) | The Linux desktop launcher installs and updates the game, verifies release files, displays news and realm status, and starts hosted tester sign-in. Its source currently lives in [`apps/launcher/`](apps/launcher) in this repository. |
+| [theia-website — README](https://github.com/code-studio-au/theia-website#readme) | The public Theia Online website, built with Astro and TypeScript and published through GitHub Pages. It contains game and world information, artwork, Markdown news articles, an RSS feed and download links. |
 
-The application includes animated multiplayer movement, bounded continental
-terrain streaming and server-owned capsule collision, plus an explicit authenticated
-combat, persistence and multi-quest development loop. The bare launcher retains
-the walking sandbox; the [expanded quest setup and qualified local launch](docs/QUEST_ENGINE.md)
-use a versioned content bundle. The [offline quest pack workflow](docs/QUEST_PACK_AUTHORING.md)
-validates shared IDs and prerequisites before runtime pack adoption. Production content and MMO-scale capacity remain planned. See [status](docs/STATUS.md),
-[decisions](docs/DECISIONS.md) and the [engineering plan](docs/engineering/README.md).
-The [repository assessment](docs/engineering/REPOSITORY_ASSESSMENT.md) compares the
-current prototype with the October 19 handoff and identifies what to retain or
-replace. The [earlier playable roadmap](docs/ROADMAP.md) preserves milestone history.
+Keep `theia-story` beside this checkout for local cross-repository documentation
+links. Runtime code, executable content and engineering documentation remain here.
 
-The normal client and authoritative collision queries now use **Avian 0.8.0-dev**,
-pinned to revision `1070759b2145dc078abedace91dc7fe78013a45c`, with Bevy `=0.20.0`.
-See [physics migration and current limits](docs/PHYSICS_AVIAN.md).
+Browse the [documentation index](docs/README.md) for subject guides and archived evidence.
 
-## Development map
+## What is available
 
-The continental graybox is the world for ongoing development:
+Features depend on the selected world and gameplay bundle; the bare development
+launcher opens a movement sandbox.
+
+| Area | Implemented development scope | Details |
+| --- | --- | --- |
+| Multiplayer | Encrypted Renet sessions, authoritative movement and collision, client prediction and reconciliation | [Networking](docs/networking/NETWORKING_RENET.md), [prediction](docs/networking/PREDICTION_CONTRACT.md) |
+| World | Saved heightfield terrain, bounded streaming, static scenery collision and local origin rebasing | [Saved terrain](docs/world/SAVED_TERRAIN.md), [rebasing](docs/world/FLOATING_ORIGIN.md) |
+| Characters | Native login and roster, character creation, modular appearance and account-backed persistence | [Frontend](docs/client/GAME_FRONTEND.md), [customisation](docs/client/CHARACTER_CUSTOMISATION.md) |
+| Gameplay | Explicit combat profiles, NPC population, dialogue, quest journals, inventory, equipment and rewards | [Quest loop](docs/gameplay/QUEST_ENGINE.md), [authoring and population playtests](docs/editor/ZONE_EDITOR.md) |
+| Interface | Themed HUD and settings, Say/Area chat and confirmed Say speech bubbles | [HUD](docs/client/IN_GAME_HUD.md), [chat](docs/gameplay/LOCAL_CHAT.md) |
+| Authoring | Terrain sculpting/painting, scenery placement, group transforms, NPC/quest bindings, undo/redo and export | [Zone editor](docs/editor/ZONE_EDITOR.md) |
+| Distribution | Linux desktop launcher, client installation/updates and hosted tester sign-in | [Game launcher](docs/operations/GAME_LAUNCHER.md) |
+
+Millhaven is the current populated test zone. The 16 km × 16 km graybox remains a
+separate terrain and movement test world. Earlier imported-map experiments are
+retained as regression fixtures; forest reproduction is frozen.
+
+## Development setup
+
+Run commands from the repository root. Install Rust through rustup;
+[rust-toolchain.toml](rust-toolchain.toml) pins Rust **1.99.0**, rustfmt and Clippy.
+Python **3.11 or newer** is needed for the development tooling. Rendering requires
+a working GPU driver and graphical desktop session.
+
+On Ubuntu/Mint, install the native build dependencies used by Linux CI:
+
+```sh
+sudo apt install build-essential pkg-config libasound2-dev libwayland-dev \
+  libxkbcommon-dev libx11-dev libxi-dev libxrandr-dev libxcursor-dev
+```
+
+Linux is the primary development platform. Windows is a first-class target; use
+the Rust MSVC toolchain with Visual Studio C++ build tools and the Windows SDK.
+Build/test coverage and native graphical playtest evidence are separate; consult
+[validation](docs/engineering/VALIDATION.md) for recorded platform checks. Several local
+service and packaging helpers currently require Linux.
+
+Licensed source art and generated packages under `build/` are not included in a
+fresh checkout. Follow the relevant asset-preparation guide before using a
+workflow that requires them. Asset conversion has its own Python dependencies;
+see [asset import](docs/assets/ASSET_IMPORT.md) and
+[modular player assets](docs/client/MODULAR_HERO.md).
+
+### Start with the offline sandbox
+
+```sh
+cargo run --release --locked -p theia-client
+```
+
+The no-argument development client opens the offline sandbox without account
+services or a prepared multiplayer world. This is useful for checking that the
+client builds and renders. Local movement here does not exercise server authority.
+
+### Open the zone editor
+
+```sh
+python3 tools/edit_zone.py --example
+```
+
+This builds the debug editor and opens the editable Wayfarer Hollow example.
+It saves separately to `build/wayfarer-hollow.zone.json` and reopens that draft
+on later launches. Omit `--example` for `build/zone-draft.json`, or use
+`--draft FILE` to choose another draft. The editor defaults to 3440×1440 fullscreen.
+Locally staged scenery and player art are selected when available.
+
+Use the editor for terrain, objects, vegetation, paths and gameplay bindings.
+F5 enters or leaves offline playtest. To validate a saved zone and its capsule
+spawn without opening a window:
+
+```sh
+python3 tools/edit_zone.py --zone path/to/zone.json --check-playtest
+```
+
+The check reports JSON and leaves the zone unchanged. The
+[editor guide](docs/editor/ZONE_EDITOR.md) covers controls, structured commands, export,
+imported terrain and account population playtests. For populated scenes, use its
+optimized editor/client/server build and `tools/edit_local.py` workflow; the
+convenient debug editor is unsuitable for judging full-scene performance.
+
+### Run the multiplayer graybox
+
+First prepare licensed player assets following the
+[character conversion guide](docs/assets/SYNTY_CHARACTER_PREVIEW.md) or
+[modular hero guide](docs/client/MODULAR_HERO.md). Then bake the terrain once and build
+matching release binaries:
 
 ```sh
 cargo run --release --locked -p theia-network --example bake_terrain -- bake build/graybox-terrain-v1
 cargo build --release --locked --workspace
-python3 tools/play.py
+python3 tools/play.py --clients 2
 ```
 
-The launcher uses optimized `target/release` binaries. For deliberate debug runs,
-pass `--binaries target/debug`; unoptimized full-scene runs are unsuitable for
-judging interactive performance.
+The launcher uses `target/release`, saved graybox terrain and the available local
+player assets. Pass `--players PATH` to select a directory containing
+`character.glb`. Omit `--clients 2` for one client. Renet and movement prediction
+are enabled by default; `--no-prediction` selects server-pose interpolation.
 
-The default world uses the locally prepared `character.glb` under
-`build/synty-character-canonical-stage`. Add `--clients 2` for two connected players;
-see [graybox controls, travel and evidence](docs/GRAYBOX_WORLD.md). Client movement
-prediction is enabled by default; `--no-prediction` retains server-pose interpolation.
-Server authority remains unchanged. Terrain is loaded from checked saved height
-tiles; `--graybox-world` selects the retained generated baseline. See
-[saved terrain](docs/SAVED_TERRAIN.md) for preparation, format and qualification.
+This workflow starts local development sessions. It does not enable the full
+account/quest loop. See [graybox setup](docs/world/GRAYBOX_WORLD.md) for travel options
+and retained maps, and [saved terrain](docs/world/SAVED_TERRAIN.md) for the tile format.
+Quinn remains an explicit regression option through `--transport quinn`.
 
-The retained town is explicit:
-`python3 tools/play.py --world build/development-world-town-v3`. Its [farmhouse](docs/MAP_FARMHOUSE.md) and
-[blacksmith](docs/MAP_BLACKSMITH.md) remain collision/camera regressions. Prepared
-private legacy assets and manifests are required; see
-[preparation and limits](docs/DEVELOPMENT_WORLD.md). Forest reproduction is frozen;
-its existing packages can still be selected with `--chunk-world`.
+### Play with accounts, combat and quests
 
-## Run
+Use a prepared, versioned gameplay bundle with matching world, navigation and
+assets. The [zone editor guide](docs/editor/ZONE_EDITOR.md) documents disposable local
+account/population sessions; the [quest guide](docs/gameplay/QUEST_ENGINE.md) documents
+quest bundles and their prerequisites. These workflows add local identity and
+PostgreSQL services. Disposable editor sessions retain progress across Stop/Start
+within that session, but a new invocation creates a fresh account/database.
 
-Install Rust with rustup; `rust-toolchain.toml` pins Rust 1.99.0, formatting and
-Clippy. Linux also needs native windowing development packages. On Ubuntu/Mint:
+For the installed game and hosted tester flow, follow the
+[desktop launcher guide](docs/operations/GAME_LAUNCHER.md). It describes release installation,
+updates, realm configuration and the supported sign-in paths.
 
-```sh
-sudo apt install build-essential pkg-config libwayland-dev libxkbcommon-dev \
-  libx11-dev libxi-dev libxrandr-dev libxcursor-dev
-cargo run --locked -p theia-client
-```
+The adopted controls are defined in
+[THEIA-COMBAT-001](docs/gameplay/COMBAT_TARGETING_MOVEMENT_SPEC.md): W/S move, A/D turn,
+Q/E strafe, right mouse steers, left mouse orbits independently and Tab selects
+hostile targets. Earlier sandbox profiles retain their own controls; consult the
+selected mode's guide. Combat facing and hit validation belong to the server.
 
-Use a working graphics driver and desktop session. On Windows, use the Rust MSVC
-toolchain with Visual Studio C++ build tools/Windows SDK and a working GPU driver;
-the same Cargo command applies. Native Windows execution is not yet qualified.
-Audio and gamepad dependencies are intentionally absent from this bootstrap.
+## Architecture and repository layout
 
-The no-argument client is the offline sandbox. For default Renet multiplayer, use
-the development launcher above. The retained Quinn graybox diagnostic can also be
-run manually: build both apps, start the server and launch two clients:
+The workspace pins **Bevy 0.20.0** and **Avian 0.8.0-dev** at revision
+`1070759b2145dc078abedace91dc7fe78013a45c`. See
+[physics integration](docs/world/PHYSICS_AVIAN.md) for compatibility and limitations.
 
-```sh
-cargo build --locked --workspace
-cargo run --locked -p theia-server
-cargo run --locked -p theia-client -- --connect 127.0.0.1:5000 build/server-cert.der
-```
+The client uses standard Bevy rendering, assets, animation and UI. The headless
+server owns gameplay truth with a configurable fixed simulation step, normally
+30 Hz. Network and persistence work stay outside that step; critical economy
+transactions must be durable before success is acknowledged. Coordinates use
+checked global `f64` positions, bounded local `f32` frames and Y-up metres.
+Players and NPCs do not physically block one another; world collision, navigation
+and gameplay hit detection are separate systems.
 
-Run the final command twice. Each client shows its own blue pawn, other players in
-red, its server-assigned ID and the connected-player count. The server creates an
-ephemeral localhost identity and writes only its public certificate. Restart
-clients after restarting the server. These executables currently accept loopback
-addresses only; there is no account authentication or session resume.
+| Path | Purpose |
+| --- | --- |
+| `apps/client/` | Bevy game client and native interface |
+| `apps/server/` | Authoritative game server |
+| `apps/zone-editor/` | Zone authoring and playtest integration |
+| `apps/nav-bake/` | Offline navigation baking |
+| `crates/` | Shared gameplay, networking, authentication, persistence, zone data and effects |
+| `content/` | Runtime definitions, authoring examples and UI assets |
+| `tools/` | Launchers, asset conversion, packaging and qualification tools |
+| `infrastructure/` | Deployment configuration and realm gateway |
+| `third_party/` | Reviewed vendored integrations and provenance |
+| `docs/` | Engineering decisions, contracts, status and validation evidence |
+| `build/` | Generated local assets, packages and evidence; kept out of Git |
 
-WASD/arrows move, Shift runs, Escape exits. R resets only in offline mode.
-Hold right mouse to orbit, wheel to zoom and Home to reset the camera. Movement
-follows camera yaw in world XZ with Y up. The building, fixed door and rocks block
-movement; the camera pulls in around static scenery. The server owns connected
-movement; local prediction is not yet implemented.
-See [world/camera scope](docs/WORLD_AND_CAMERA.md), [network behaviour/provenance](docs/NETWORKING.md) and
-[game direction](docs/GAME_DIRECTION.md).
+The repository is independent of `theia-engine`. The
+[engineering architecture](docs/engineering/ARCHITECTURE.md) describes the adopted
+design; the [implementation plan](docs/engineering/IMPLEMENTATION_PLAN.md) and
+[task catalogue](docs/engineering/CODEX_TASKS.md) describe work still to do.
 
-The current scene is static, including doors. The adopted architecture allows
-future scripted platforms/elevators and vegetation effects. Players pass through
-other players and NPCs; environment collision and combat hit detection are separate.
+## Checks and contributing
 
-The first [architecture alignment](docs/engineering/ALIGNMENT.md) adds checked
-global/local coordinate contracts, configurable 20/30/60 Hz server simulation and
-secure Renet networking, now the launcher default after controlled local network
-qualification. Graybox/imported-map authority and the offline sandbox use the
-[shared capsule controller](docs/KINEMATIC_CONTROLLER.md), including gravity and
-Space to jump. Imported maps use validated cached development spawns and an
-explicit finite-world/fall-recovery policy.
-Chunk sessions use [coverage sweep boundaries](docs/CHUNK_BOUNDARIES.md) for
-unloaded edges, including gravity-driven sliding.
-[Geometry contributor bounds](docs/CHUNK_CONTRIBUTORS.md) now distinguish loaded
-packages from complete movement cells and validate actual static geometry before
-readiness/publication. Imported tile partitioning remains in development.
-Wire/ALPN version 10 adds authority offers and tagged readiness acknowledgements to per-client chunk readiness,
-held jump input, server tick rate, incarnation and frame origin; rebuild client
-and server together. [Opt-in paired handover](docs/CHUNK_HANDOVER.md) uses normal
-Bevy/Avian publication. [Shared image packages](docs/SHARED_IMAGES.md) bind
-compatible image paths and loader variants for standard Bevy reuse; real imported
-partitioning is still ahead. The launcher retains the monolithic development map.
-See [current status](docs/STATUS.md) for qualification. Server arguments
-accept `--tick-hz 20`, `30` (default) or `60` after the address/certificate.
+Read [AGENTS.md](AGENTS.md), [status](docs/STATUS.md),
+[decisions](docs/DECISIONS.md) and [roadmap](docs/ROADMAP.md) before editing.
+For feature work, also follow the engineering reading order in `AGENTS.md`.
+Identify the task IDs, prerequisites and concrete acceptance checks for each
+playable slice. Keep implemented behavior distinct from plans and historical
+experiments.
 
-## Inspect a GLB
-
-```sh
-cargo run --locked -p theia-client -- --inspect-asset apps/client/assets/reference/duskwoodhouse_medium.glb
-```
-
-The user's reference house loads in a separate visual inspector with orbit/zoom,
-actual bounds and a 1.8-unit scale capsule. It has **no UVs, materials or textures**;
-this export renders plain shaded. It does not replace the server's graybox world
-or establish collision. See [asset import/export guidance](docs/ASSET_IMPORT.md).
-
-Add `--capture build/asset-check` to save `asset.json` and `scene.png`, then run
-`python3 tools/verify_asset.py build/asset-check apps/client/assets/reference/duskwoodhouse_medium.glb`.
-
-Newer textured building/character exports were also checked. Add
-`--animation "Exact clip name"` to inspect a selected animation; stand, walk and
-run are tested for the user's human model. See [model results and commands](docs/ASSET_CHECK_2026_10_16.md)
-for the successful rendering and remaining character export errors.
-
-To use the local human players, idle wolf and static farmhouse together:
-
-```sh
-cargo run --locked -p theia-client -- --reference-scene build/reference-scene
-```
-
-This opt-in mode needs prepared local assets; see [preparation and scope](docs/REFERENCE_SCENE.md).
-Add the usual `--connect` arguments after the asset flag for multiplayer.
-
-A bounded imported terrain patch is also playable through the authoritative
-server, with source-triangle ground height and slope checks. See
-[terrain preparation, launch commands and limits](docs/TERRAIN_WALKING.md).
-Add `--player-assets build/reference-scene` after the terrain directory for animated
-human players. A [static farmhouse fixture](docs/TERRAIN_STATIC_OBJECTS.md) also
-adds shared world/camera collision. An [enterable ground-floor variant](docs/ENTERABLE_HOUSE.md)
-also provides a fixed ramp, open doorway and floor support. The [full development
-map](docs/DEVELOPMENT_WORLD.md) now connects the complete visual assembly to outdoor
-server-owned movement and conservative object/water boundaries.
-
-## Check
+Run the standard Rust checks:
 
 ```sh
 cargo fmt --check
 cargo clippy --locked --workspace --all-targets -- -D warnings
 cargo test --locked --workspace
+```
+
+Run the relevant Python tests for tooling changes. Rendering changes also need
+native GPU checks with the device, platform and limitations recorded. A basic
+client rendering smoke check is:
+
+```sh
 cargo run --release --locked -p theia-client -- --smoke-test build/smoke
+python3 tools/verify_smoke.py build/smoke
 ```
 
-The smoke mode scripts two movements, records checkpoints/device information and
-saves a real rendered `scene.png` before exiting. It requires a graphical display;
-a private headless compositor also works. Set `VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation`
-with the Vulkan validation layer installed for a separate Vulkan diagnostic run.
-This mode tests a local client, not a server or two-client connection.
-
-With Python 3 and Pillow installed, check its output using
-`python3 tools/verify_smoke.py build/smoke`. See the [local qualification record](docs/VALIDATION.md).
-After building, `target/debug/theia-client` (or `theia-client.exe` on Windows)
-also launches the sandbox directly.
-
-The static-world smoke walks into the fixed door, records camera obstruction and
-restoration, then saves a clear orbit view:
-
-```sh
-cargo run --locked -p theia-client -- --world-smoke build/world-smoke
-python3 tools/verify_smoke.py build/world-smoke
-```
-
-After building, run the actual two-client/server smoke test on a graphical display
-(or an independently prepared private headless compositor):
-
-```sh
-python3 tools/verify_multiplayer.py build/multiplayer
-```
-
-It launches a server on an ephemeral loopback port and two Bevy clients, scripts
-distinct movement intents, checks matching authoritative/rendered poses, saves
-both screenshots and cleans up the processes. For Vulkan qualification, also set
-`WGPU_BACKEND=vulkan WGPU_VALIDATION=1 WGPU_DEBUG=1`,
-`VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation` and `VK_LOADER_DEBUG=layer`.
-The checker proves layer activation from loader output when that layer is requested.
-
-The old `theia-engine` repository remains a separate research/reference project.
-This repository has no path dependencies on it and imports none of its private
-conversation exports or benchmark-specific rendering code.
-
-The next engineering gates follow the [foundation execution order](docs/engineering/EXECUTION_ORDER.md).
-The normal launcher now uses Renet: `python3 tools/play.py --clients 2`.
-Use `--transport quinn` for the retained regression baseline. See
-[network qualification](docs/RENET_QUALIFICATION.md) and [Renet scope](docs/NETWORKING_RENET.md).
-
-Connected authority now stores checked f64 global poses and uses explicit
-incarnation/frame contracts across replication and local presentation. See
-[runtime coordinates and identity](docs/COORDINATES_IDENTITY.md) for the tested
-large-origin slice and fixed-anchor limitations.
-
-Connected clients now rebase their local render/static-physics frame automatically
-(default 128 m span), keeping global authority and authored child poses intact.
-See [client rebasing](docs/FLOATING_ORIGIN.md) for verification and remaining scope.
+The verifier requires Pillow. The smoke test needs a graphical display and checks
+one offline client; it does not establish multiplayer, persistence or production
+capacity. See [validation](docs/engineering/VALIDATION.md) for broader checks and evidence.
+Keep credentials, private exports, licensed source assets and build outputs out
+of Git. Keep changes local until pushing is explicitly authorized.

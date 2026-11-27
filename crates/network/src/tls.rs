@@ -1,4 +1,4 @@
-//! Adapted from theia-engine's reviewed network fixture; see docs/NETWORKING.md.
+//! Adapted from theia-engine's reviewed network fixture; see docs/networking/NETWORKING.md.
 //! Exact public-certificate trust, no verification bypass and no stateful 0-RTT.
 use crate::Result;
 use quinn::{

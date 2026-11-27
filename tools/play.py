@@ -177,16 +177,16 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
         if persistence or (saved_terrain is None and authored_world is None) or not prediction or transport != 'renet' or clients != 1 or dev_tour or dev_speed != 1:
             raise ValueError('Account login requires one client, normal predicted saved or authored terrain and Renet; excludes development persistence/tour')
         if any(not os.environ.get(key) for key in ['THEIA_DATABASE_URL','THEIA_OIDC_ISSUER','THEIA_OIDC_CLIENT_ID']):
-            raise ValueError('Account login requires THEIA_DATABASE_URL, THEIA_OIDC_ISSUER and THEIA_OIDC_CLIENT_ID; see docs/AUTHENTICATED_ADMISSION.md')
+            raise ValueError('Account login requires THEIA_DATABASE_URL, THEIA_OIDC_ISSUER and THEIA_OIDC_CLIENT_ID; see docs/accounts/AUTHENTICATED_ADMISSION.md')
     if persistence and (saved_terrain is None or not prediction or transport != 'renet' or dev_tour or dev_speed != 1):
         raise ValueError('Persistence requires saved terrain, normal-speed prediction and Renet without a tour')
     if persistence and not os.environ.get('THEIA_DATABASE_URL'):
-        raise ValueError('Persistence requires a local PostgreSQL THEIA_DATABASE_URL; see docs/PERSISTENCE_FOUNDATION.md')
+        raise ValueError('Persistence requires a local PostgreSQL THEIA_DATABASE_URL; see docs/accounts/PERSISTENCE_FOUNDATION.md')
     if saved_terrain is not None:
         if world is not None or chunk_world is not None:
             raise ValueError('Choose saved terrain or an imported world')
         if not (saved_terrain / 'terrain.manifest.json').is_file():
-            raise ValueError(f'Missing saved terrain at {saved_terrain}; bake once with cargo run --release --locked -p theia-network --example bake_terrain -- bake "{saved_terrain}"; see docs/SAVED_TERRAIN.md')
+            raise ValueError(f'Missing saved terrain at {saved_terrain}; bake once with cargo run --release --locked -p theia-network --example bake_terrain -- bake "{saved_terrain}"; see docs/world/SAVED_TERRAIN.md')
         graybox = True
     if creature_profile and not (navigation / 'navigation.manifest.json').is_file():
         raise ValueError(f'Missing baked navigation at {navigation}; bake navigation for the selected world first (see apps/nav-bake/README.md)')
@@ -321,7 +321,7 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
                        *(['--dev-tour'] if dev_tour else [])] if graybox else [])
     for path in [*required, players / ('character.glb' if graybox else 'human.glb'), server_binary, client_binary]:
         if not path.is_file():
-            raise ValueError(f'Missing {path}; build with cargo build --release --locked --workspace; see docs/DEVELOPMENT_WORLD.md for asset preparation or select --binaries explicitly')
+            raise ValueError(f'Missing {path}; build with cargo build --release --locked --workspace; see docs/world/DEVELOPMENT_WORLD.md for asset preparation or select --binaries explicitly')
     if authored_world is not None and (creature_profile is not None or population_config is not None or test_route is not None):
         checked = subprocess.run([str(client_binary), *scene, *route_options, '--configuration-report'],
                                  env=client_environment(os.environ), capture_output=True, text=True, timeout=30)

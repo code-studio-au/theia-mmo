@@ -33,13 +33,13 @@ player/NPC collision, animation links or dynamic path service are introduced.
 Landmass's public query API has no node-expansion limit. Queries run offline or on
 the dedicated worker over a bounded package, never from `World::step`. Worker
 transport, expiry, identity and remaining limits are recorded in
-[the path worker contract](../../docs/CREATURE_PATH_WORKER.md).
+[the path worker contract](../../docs/gameplay/CREATURE_PATH_WORKER.md).
 
 API/pipeline provenance: [Rerecast](https://github.com/janhohenheim/rerecast) and
 its published 0.5.0 C++ comparison test, plus
 [Landmass 0.9.3](https://docs.rs/landmass/0.9.3/landmass/). Both packages are
 MIT OR Apache-2.0; exact registry checksums are in Cargo.lock. The libraries are
-unmodified. [Scope, measured proof and remaining work](../../docs/CREATURE_AI_FOUNDATION.md).
+unmodified. [Scope, measured proof and remaining work](../../docs/gameplay/CREATURE_AI_FOUNDATION.md).
 
 The authored adapter also bakes admitted editor terrain/model collision:
 

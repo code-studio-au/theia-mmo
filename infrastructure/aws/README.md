@@ -68,7 +68,7 @@ npm exec -- cdk synth --app 'node bin/theia-cognito.ts' \
    passing `ExistingPoolId` and `ExistingLauncherClientId`.
 2. Update `TheiaDevelopmentCognito` with the helper stack's `NativePlayScopeArn`
    output, reusing the existing `DomainPrefix` parameter value.
-3. Enable `native_sign_in` in the tester's [realm configuration](../../docs/GAME_LAUNCHER.md#native-cognito-sign-in).
+3. Enable `native_sign_in` in the tester's [realm configuration](../../docs/operations/GAME_LAUNCHER.md#native-cognito-sign-in).
 
 For AWS rollback, update `TheiaDevelopmentCognito` with an explicitly empty
 `NativePlayScopeArn` before removing the helper stack. A missing override on a

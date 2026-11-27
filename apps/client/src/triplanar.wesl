@@ -1,4 +1,4 @@
-// Source contract: docs/FOREST_TRIPLANAR.md. Standard Bevy PBR extension.
+// Source contract: docs/archive/forest/FOREST_TRIPLANAR.md. Standard Bevy PBR extension.
 import bevy_pbr::render::{
     forward_io::{VertexOutput, FragmentOutput},
     pbr_fragment::pbr_input_from_standard_material,

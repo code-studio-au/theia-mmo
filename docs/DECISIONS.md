@@ -1,3 +1,20 @@
+# Project decisions
+
+Adopted decisions, with later explicit supersessions taking precedence. Historical next steps and permissions apply to
+their recorded checkpoint. Use the [documentation index](README.md) for current
+subject guides and the [archive](archive/README.md) for retired handoffs.
+
+27 November 2026 — documentation ownership and archive:
+The user requested a review of all docs, archival of outdated material worth
+retaining, deletion of unnecessary documents and categorisation into subfolders.
+Group active guides by subject, retain top-level status/decision/roadmap records,
+and preserve unique historical evidence under docs/archive. Keep licenses and
+vendored provenance beside their source. Remove redundant status placeholders
+without inventing task completion. The user subsequently requested updating
+incoming story links to the moved quest guides and removing the two forwarding
+pages; use the direct `docs/gameplay/` paths in both repositories. See [documentation index](README.md) and
+[review record](engineering/DOCUMENTATION_REVIEW.md).
+
 27 November 2026 — separate narrative repository:
 At the user's request, move the complete story/lore, zone and NPC/character
 Markdown collection plus its supporting editorial/provenance JSON into the
@@ -819,7 +836,7 @@ RON particle assets. Returning restores focus/cursor/root/camera/title and manua
 preview pause behavior; retain the standalone host until later workflow slices
 replace its role. This implements the user's direct-reuse direction, without
 claiming world placement or full gameplay VFX/audio P2-13.
-[Implementation and native evidence](SPRINKLES_INTEGRATION.md).
+[Implementation and native evidence](editor/SPRINKLES_INTEGRATION.md).
 
 ## 10 November 2026 — first direct Sprinkles source host
 
@@ -831,7 +848,7 @@ window to finish saving if its parent closes. Keep standalone data under
 `.theia/particles`. This boundary establishes source reuse and native authoring;
 it is not same-window hosting or full gameplay VFX. Use standard Bevy line meshes
 for preview outlines after measured native gizmo upload synchronization hazards.
-[Implementation and evidence](SPRINKLES_INTEGRATION.md).
+[Implementation and evidence](editor/SPRINKLES_INTEGRATION.md).
 
 ## 10 November 2026 — accept a close Sprinkles match and begin direct integration
 
@@ -924,7 +941,7 @@ slice uses built-in Slider/Checkbox widgets for editor-local terrain presets and
 moves the exact numeric Transform transaction into a docked properties region.
 Source/schema/runtime pins remain unchanged. Names remain a conventional dialog;
 full docking, file browsing and viewport transform handles are subsequent work.
-[Contract/evidence](ZONE_EDITOR.md#application-style-workspaces-and-properties--9-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#application-style-workspaces-and-properties--9-november-2026).
 
 ## 8 November 2026 — editor marker visibility and terrain asset reuse
 
@@ -934,7 +951,7 @@ origin/patch inputs so unrelated document revisions do not replace resident
 surface/grid meshes. Native review caught an immediate blank world capture
 following an unchanged-terrain rebuild; pixel qualification now verifies the
 marker in the rendered world rather than relying on transform metadata alone.
-[Contract/evidence](ZONE_EDITOR.md#readable-spawn-marker-and-retained-terrain-meshes--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#readable-spawn-marker-and-retained-terrain-meshes--8-november-2026).
 
 ## 8 November 2026 — surface-supported playtest spawn shortcut
 
@@ -945,7 +962,7 @@ local/global conversion and surface sampler. Preserve pending strokes, modal/UI/
 playtest isolation and the shared command validation/history boundary. Cursor
 placement that equals the current spawn skips visual history; the existing button
 retains its transaction behavior. Physics still qualifies entry separately.
-[Contract/evidence](ZONE_EDITOR.md#surface-supported-playtest-spawn--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#surface-supported-playtest-spawn--8-november-2026).
 
 ## 8 November 2026 — spatially sampled bounded terrain drags
 
@@ -957,7 +974,7 @@ Leaving the canvas or terrain patch breaks continuity, preventing an unseen
 connecting stroke after reentry. Preserve preview validation, the 128 accepted
 edit cap, release commit and Escape cancellation. No time-dependent accumulation,
 new command/source schema or renderer is introduced.
-[Contract/evidence](ZONE_EDITOR.md#spatially-sampled-terrain-drags--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#spatially-sampled-terrain-drags--8-november-2026).
 
 ## 8 November 2026 — terrain-conforming sample influence
 
@@ -968,7 +985,7 @@ temporary stroke preview. Reuse one resident mesh and hide invalid/empty targets
 keep feedback outside picking, physics and document history. This shows potential
 grid influence, not an analytic radius outline or a prediction of tool-specific
 height/quantized-colour changes. No decal infrastructure or schema is introduced.
-[Contract/evidence](ZONE_EDITOR.md#terrain-conforming-sample-influence--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#terrain-conforming-sample-influence--8-november-2026).
 
 ## 8 November 2026 — exact numeric primitive transforms
 
@@ -981,7 +998,7 @@ that would capture the editor's existing object/guide cycling. No schema or
 coordinate-conversion path is added; numeric fields enter global truth directly.
 Both forms clear the previous attempt's status on actual text edits and restore
 pending instructions; only Apply judges the candidate.
-[Contract/evidence](ZONE_EDITOR.md#numeric-primitive-transform-fields--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#numeric-primitive-transform-fields--8-november-2026).
 
 ## 8 November 2026 — shared names and standard Bevy text input
 
@@ -992,7 +1009,7 @@ retain its prepared font/layout styles when resetting field text. Isolate world
 input and mailbox mutations during a name draft; invalid submissions retain the
 buffer for correction, unchanged visual submissions add no history. No schema,
 text-editing framework, engine/plugin pin or chat composer is introduced.
-[Contract/evidence](ZONE_EDITOR.md#shared-names-and-standard-bevy-text-input--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#shared-names-and-standard-bevy-text-input--8-november-2026).
 
 ## 8 November 2026 — adjustable sculpt and paint blends
 
@@ -1001,7 +1018,7 @@ editor-local blend presets bounded to the retained domain's 0.05..1 range.
 Preserve 0.5 sculpt / 1.0 paint defaults and existing raise/lower metre controls.
 Display exact percentages and pass presets through the same validated stroke
 commands/undo. Keep terrain colour weights normalized and collision independent.
-[Contract/evidence](ZONE_EDITOR.md#adjustable-sculpt-and-paint-blends--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#adjustable-sculpt-and-paint-blends--8-november-2026).
 
 ## 8 November 2026 — bounded standard-Bevy content list on the ultrawide editor
 
@@ -1011,7 +1028,7 @@ outside document history, refresh it from validated revisions, reveal selections
 and clamp shrinking pages. Exclude both side panels from world mouse actions and
 hide the content list during playtest. Preserve pending drafts on row selection
 attempts. No hierarchy, scene schema or custom renderer is added.
-[Contract/evidence](ZONE_EDITOR.md#paged-content-selection-at-3440x1440--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#paged-content-selection-at-3440x1440--8-november-2026).
 
 ## 8 November 2026 — structural guide-point edits with shared validation
 
@@ -1022,7 +1039,7 @@ committed point while preserving draft-pop behavior. Clear stale point selection
 when structural counts change, including agent edits/undo, then let successful
 visual edits select their new/next point. Use a shared opaque cyan point material
 to distinguish the selected handle from an amber ribbon.
-[Contract/evidence](ZONE_EDITOR.md#inserting-and-removing-guide-points--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#inserting-and-removing-guide-points--8-november-2026).
 
 ## 8 November 2026 — original replayable example and whole-terrain framing
 
@@ -1033,7 +1050,7 @@ source. Demonstrate existing terrain, grading, painting, props, vegetation,
 notes, collision and export together. F in Sculpt/Paint frames terrain through
 the same checked normal Bevy camera path. Keep source annotations/stream guides
 separate from live NPC/quest/water behavior and leave default game content alone.
-[Contract/evidence](ZONE_EDITOR.md#wayfarer-hollow-example-and-terrain-framing--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#wayfarer-hollow-example-and-terrain-framing--8-november-2026).
 
 ## 8 November 2026 — adjustable bounded raise/lower strength
 
@@ -1041,7 +1058,7 @@ Expose the retained brush domain's 0.05..8 m stamp amount with bracket keys to
 halve/double it, retaining the 2 m default. Display the actual amount on both
 buttons and keep this editor preset separate from saved terrain. Reuse the
 existing raise/lower command, validated previews and one-entry stroke history.
-[Contract/evidence](ZONE_EDITOR.md#adjustable-raise-lower-strength--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#adjustable-raiselower-strength--8-november-2026).
 
 ## 8 November 2026 — bounded duplicate command for greyboxing
 
@@ -1051,7 +1068,7 @@ geometry and schema; append a UTF-8-bounded copy suffix and revalidate the full
 candidate against existing ID, document and per-kind budgets. Ctrl-D uses the
 monotonic shared allocator, offsets one grid step in X/Z and selects the new
 copy. Keep draft/preview/playtest refusals and one-command undo semantics.
-[Contract/evidence](ZONE_EDITOR.md#shared-duplication-for-greyboxing--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#shared-duplication-for-greyboxing--8-november-2026).
 
 ## 8 November 2026 — sampled and adjustable flatten level
 
@@ -1060,7 +1077,7 @@ sampling and PageUp/Down adjustments. Use checked domain surface sampling from
 cursor X/Z, local height relative to zone-origin Y, bounded ±64 m, 1 m steps or
 0.1 m with snap off. Keep the preset editor-local; commit strokes through the
 retained brush command, candidate validation and history. Paint mode ignores the
-height sampler. [Contract/evidence](ZONE_EDITOR.md#sampled-and-adjustable-flatten-level--8-november-2026).
+height sampler. [Contract/evidence](editor/ZONE_EDITOR.md#sampled-and-adjustable-flatten-level--8-november-2026).
 
 ## 8 November 2026 — keyboard recovery and bounded selection framing
 
@@ -1069,7 +1086,7 @@ visibility, and extend F framing to objects, plants and markers. Keep existing
 guide-point/whole-guide controls and document history separate from camera state.
 Extend the bounded editor orbit range from 240 m to 512 m to frame the largest
 permitted primitive. Reuse checked global/local conversion and standard Bevy
-camera transforms. [Contract/evidence](ZONE_EDITOR.md#keyboard-selection-and-placement-framing--8-november-2026).
+camera transforms. [Contract/evidence](editor/ZONE_EDITOR.md#keyboard-selection-and-placement-framing--8-november-2026).
 
 ## 8 November 2026 — saved content comparison in the editor summary
 
@@ -1078,7 +1095,7 @@ history revision. Show unsaved state for differing content and pending drafts;
 restore clean state on exact undo, successful Save/Load or draft cancellation.
 Keep Save failure and accepted agent edits distinct from durable file success.
 Use standard Bevy text; retain explicit Save and existing formats.
-[Contract/evidence](ZONE_EDITOR.md#saved-and-unsaved-authoring-state--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#saved-and-unsaved-authoring-state--8-november-2026).
 
 ## 8 November 2026 — explicit terrain grounding through shared history
 
@@ -1087,7 +1104,7 @@ projection for typed placement IDs and guide-point indices, preserving X/Z and
 accounting for primitive centre versus foot anchors. Reuse exact terrain queries,
 whole-candidate validation and bounded transaction/history rules; a whole guide
 is one undo. Keep prop stacking, full footprint fitting and runtime collision
-independent. [Contract/evidence](ZONE_EDITOR.md#explicit-terrain-grounding--8-november-2026).
+independent. [Contract/evidence](editor/ZONE_EDITOR.md#explicit-terrain-grounding--8-november-2026).
 
 ## 8 November 2026 — optional finite 2 m terrain authoring grid
 
@@ -1099,7 +1116,7 @@ refinement and use full-document undo for coarsening's loss of intervening fine
 detail. Extend only the shared bounded generator's allowed cell counts; retain
 normal game procedural/saved-terrain 8/32-cell policies and existing runtime
 package format. No streaming, LOD or capacity claim follows from 4,225 vertices.
-[Contract/evidence](ZONE_EDITOR.md#optional-2-m-terrain-samples--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#optional-2-m-terrain-samples--8-november-2026).
 
 ## 8 November 2026 — one-command editor entry with nonwriting save-path selection
 
@@ -1108,7 +1125,7 @@ reopen. Reuse the existing Linux SDK when present and the client environment
 helper; preserve explicit editor/caller paths. Add `--save-path` to select the
 later GUI save destination without a startup write. Keep `--output` semantics
 for validated headless pipelines. Invalid source never falls back to replacing
-it with a blank draft. [Contract/evidence](ZONE_EDITOR.md#one-command-editor-launcher-and-deferred-save-destination--8-november-2026).
+it with a blank draft. [Contract/evidence](editor/ZONE_EDITOR.md#one-command-editor-launcher-and-deferred-save-destination--8-november-2026).
 
 ## 8 November 2026 — normalized terrain colour weights via standard vertex colours
 
@@ -1119,7 +1136,7 @@ through normal Bevy vertex colours/white PBR and export standard glTF COLOR_0 wi
 bound identity. Collision, heights and gameplay surface rules stay independent.
 Retain the finite patch/byte budgets and source compatibility. Texture/material
 catalogues, biomes and LOD require further scoped work.
-[Contract/evidence](ZONE_EDITOR.md#terrain-colour-painting--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#terrain-colour-painting--8-november-2026).
 
 ## 8 November 2026 — individual guide-point editing with standard Bevy handles
 
@@ -1129,7 +1146,7 @@ on one mesh. Preserve whole-guide moves and cycle point selection with Tab in
 both directions. Guide-only F focus uses bounded local coordinates and the full
 authoring extent. Keep handles out of playtest collision and exported content.
 A point move validates its adjacent segments and entire candidate before commit.
-[Contract/evidence](ZONE_EDITOR.md#individual-guide-point-editing--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#individual-guide-point-editing--8-november-2026).
 
 ## 8 November 2026 — grade existing terrain from committed guide heights
 
@@ -1141,7 +1158,7 @@ resulting heightfield for normal render, offline Avian and world-package export.
 The visual default grades 0.03 m below the selected ribbon with 4 m falloff. Drafts
 refuse without being discarded. Partial/falloff repetition is a new blend; exact
 mailbox retries remain cached. No new terrain/water/navigation runtime format.
-[Contract/evidence](ZONE_EDITOR.md#guide-driven-terrain-grading--8-november-2026).
+[Contract/evidence](editor/ZONE_EDITOR.md#guide-driven-terrain-grading--8-november-2026).
 
 ## 8 November 2026 — bounded seeded greybox vegetation
 
@@ -1153,7 +1170,7 @@ normal transformation for ellipsoid foliage. Keep vegetation nonblocking in this
 explicit greybox slice; collision/navigation/gameplay and production asset/LOD
 policies require separate implemented contracts. The 512-plant authoring cap is
 not evidence of population or MMO-scale capacity. Qualify the editor only at the
-user's 3440x1440 viewport. [Contract/evidence](ZONE_EDITOR.md#greybox-vegetation-placementscatter--8-november-2026).
+user's 3440x1440 viewport. [Contract/evidence](editor/ZONE_EDITOR.md#greybox-vegetation-placementscatter--8-november-2026).
 
 ## 8 November 2026 — NPC/quest markers remain explicit authoring annotations
 
@@ -1163,7 +1180,7 @@ Use normal Bevy badges/footprints for visual editing and the same atomic command
 history for agents. Hide annotations during playtest. Preserve them only as source
 metadata in exports; runtime geometry/identity stay unchanged until an explicit
 compiler validates and binds NPC/quest references to authoritative content.
-See [the marker contract and evidence](ZONE_EDITOR.md#npcquest-authoring-markers--8-november-2026).
+See [the marker contract and evidence](editor/ZONE_EDITOR.md#npcquest-authoring-markers--8-november-2026).
 
 ## 8 November 2026 — 3440x1440 editor and bounded road/stream guides
 
@@ -1175,7 +1192,7 @@ undo and save/load with primitive/terrain edits. Export standard render-only
 ribbons through the existing world package; terrain grading, water simulation,
 navigation and collision remain separate requirements. Explicit finite limits
 and the combined serialized byte budget apply before state/history mutation.
-See [the current contract and evidence](ZONE_EDITOR.md#roadstream-guides-and-3440x1440-tool--8-november-2026).
+See [the current contract and evidence](editor/ZONE_EDITOR.md#roadstream-guides-and-3440x1440-tool--8-november-2026).
 
 ## 8 November 2026 — authored zones export through the existing world pipeline
 
@@ -1190,7 +1207,7 @@ Actual headless validation, independent convex/glTF checks and native encrypted
 pairs pass, including direct hillside and far-instance traversal. This is the
 retained raw imported-world development profile; full Classic account/gameplay
 bundle integration and richer zone content remain separate.
-[Contract and evidence](ZONE_EDITOR.md#export-into-admitted-world-packages-p5-17--p3-15--p1-10--p2-0708).
+[Contract and evidence](editor/ZONE_EDITOR.md#export-into-admitted-world-packages-p5-17--p3-15--p1-10--p2-0708).
 
 ## 8 November 2026 — bounded terrain brushes share command validation
 
@@ -1203,7 +1220,7 @@ Bevy surface/grid meshes and Avian use the same existing regular triangulation.
 Keep terrain authoring outside authoritative simulation and preserve schema-1
 primitive documents. The actual Avian/ray and three-size native gates pass;
 normal server package export, multi-tile seams and richer tools remain open.
-[Contract and evidence](ZONE_EDITOR.md#bounded-terrain-brushes-p5-17--p3-15--p1-10--p2-0607).
+[Contract and evidence](editor/ZONE_EDITOR.md#bounded-terrain-brushes-p5-17--p3-15--p1-10--p2-0607).
 
 ## 8 November 2026 — live zone commands use an opt-in local mailbox
 
@@ -1214,7 +1231,7 @@ retry cannot reapply after visual undo. Refuse during drag/playtest; publish
 current validated document and bounded receipts outside fixed-step simulation.
 Receipt success means an editor edit, not a file save or server publication.
 No new network endpoint or gameplay authority is added. The shared core and
-native mixed-agent walkthrough pass; [contract and evidence](ZONE_EDITOR.md#live-local-agent-mailbox-p5-17--p3-15).
+native mixed-agent walkthrough pass; [contract and evidence](editor/ZONE_EDITOR.md#live-local-agent-mailbox-p5-17--p3-15).
 
 ## 8 November 2026 — zone authoring uses one validated command history
 
@@ -1227,7 +1244,7 @@ vegetation and NPC/quest markers follow; chat composer/bubbles are deferred.
 Keep the game stack and normal multiplayer path; no new renderer, ECS or network
 transport. Use bounded f64 authoring coordinates and existing local conversion.
 Local commits and desktop qualification are authorized; no push.
-[Contract, prerequisites and evidence](ZONE_EDITOR.md).
+[Contract, prerequisites and evidence](editor/ZONE_EDITOR.md).
 
 ## 8 November 2026 — client chat waits independently of gameplay
 
@@ -1238,7 +1255,7 @@ discards queued text and marks the chat view without disconnecting gameplay.
 Only a matching reply clears pending state; late replies cannot clear newer work.
 Keep the normal client opt-out until the composer and native/account acceptance
 pass. Stop at this completed worker checkpoint per the latest user request.
-[Evidence](LOCAL_CHAT.md#real-client-worker-integration--8-november-2026).
+[Evidence](gameplay/LOCAL_CHAT.md#real-client-worker-integration--8-november-2026).
 
 ## 8 November 2026 — world chat serial bounds long-lived client replay state
 
@@ -1247,7 +1264,7 @@ and channels, distinct from client request sequences. Keep64 received messages
 and one private reply; no per-speaker replay map grows across join/leave churn.
 Validate context before ignoring stale data; conflicting latest serials and
 regressing chat time fail before mutation. CD02/v3 is opt-in only; normal
-protocol13 remains unchanged. [Evidence](LOCAL_CHAT.md#bounded-client-inbox-and-world-delivery-serial--8-november-2026).
+protocol13 remains unchanged. [Evidence](gameplay/LOCAL_CHAT.md#bounded-client-inbox-and-world-delivery-serial--8-november-2026).
 
 ## 8 November 2026 — bounded private chat replies reserve gameplay capacity
 
@@ -1257,7 +1274,7 @@ priority publishing. Reserve half the shared reliable queue against chat use,
 since future gameplay arrives after the current publishing pass. Drop new replies
 under pressure with counters; a future one-pending composer must handle timeout.
 The explicit chat compatibility profile advances to v2; normal protocol13 remains
-unchanged. [Evidence](LOCAL_CHAT.md#private-replies-and-gameplay-queue-reserve--8-november-2026).
+unchanged. [Evidence](gameplay/LOCAL_CHAT.md#private-replies-and-gameplay-queue-reserve--8-november-2026).
 
 ## 8 November 2026 — opt-in server chat compatibility and priority
 
@@ -1269,7 +1286,7 @@ publishing; never await transport or persistence from the simulation step.
 Retain existing input limits and refuse forged/disabled uploads. Raw encrypted
 fixtures qualify this candidate; normal client chat and explicit submission
 replies remain separate work. The user has restored desktop access as needed.
-[Scope and evidence](LOCAL_CHAT.md#opt-in-encrypted-owner-loop-candidate--8-november-2026).
+[Scope and evidence](gameplay/LOCAL_CHAT.md#opt-in-encrypted-owner-loop-candidate--8-november-2026).
 
 ## 8 November 2026 — bounded Say/Area chat prerequisite
 
@@ -1280,7 +1297,7 @@ three-message/five-second budget. Those values are provisional Theia extensions.
 Keep plain text at256 UTF-8 bytes; reject controls and direction spoofing marks.
 Muted/rate-limited/no-area requests consume their sequence without spending
 accepted capacity. Persisted/account moderation, runtime routing and native
-composer/bubbles remain separate acceptance work. [Scope](LOCAL_CHAT.md).
+composer/bubbles remain separate acceptance work. [Scope](gameplay/LOCAL_CHAT.md).
 
 ## 8 November 2026 — action-bar bindings are local presentation state
 
@@ -1290,7 +1307,7 @@ authoritative cast path. Editing requires the open book and current focused,
 admitted actor context; stale or cancelled drags make no binding change.
 Persisted layouts and learned/class eligibility require separate work. Continue
 headlessly under the latest user restriction; synthetic event/loopback acceptance
-does not qualify native drag behavior. [Scope](ABILITY_BOOK_ACTION_BAR.md#action-bar-binding-candidate--8-november-2026).
+does not qualify native drag behavior. [Scope](client/ABILITY_BOOK_ACTION_BAR.md#action-bar-binding-candidate--8-november-2026).
 
 ## 8 November 2026 — selected character names are public scoped metadata
 
@@ -1301,7 +1318,7 @@ Defer under queue pressure and allow only one changed view per completed tick.
 Clients validate admitted owner/world/epoch and monotonic updates; UI additionally
 requires current snapshot membership. Names never establish authority. Protocol13
 is required for the integrated path; paired protocol12 playtest packs remain
-preserved. [Scope and qualification](PLAYER_DISPLAY_IDENTITY.md).
+preserved. [Scope and qualification](client/PLAYER_DISPLAY_IDENTITY.md).
 
 ## 7 November 2026 — shared player display-name validation
 
@@ -1313,7 +1330,7 @@ admitted actor/world, with no local launcher-name authority or account identifie
 NPC authored names retain their separate policy. Parser extraction and one actual
 SQL character contract pass; the standalone bounded codec is now qualified,
 while runtime replication remains planned and protocol12
-remains active. [Work and acceptance](PLAYER_DISPLAY_IDENTITY.md).
+remains active. [Work and acceptance](client/PLAYER_DISPLAY_IDENTITY.md).
 
 ## 2026-11-07 — focus gates fresh input, not accepted work
 
@@ -1353,7 +1370,7 @@ Keep the existing five-minute default. Permit an explicit server session policy
 of 60 seconds to 12 hours, always capped by signed identity expiry and retaining
 immediate revocation. Use a one-hour policy only for an intentionally configured
 local playtest issuer/session. Keep automatic renewal separate; don't bypass
-expiry in the game client. [Implementation and checks](AUTHENTICATED_ADMISSION.md).
+expiry in the game client. [Implementation and checks](accounts/AUTHENTICATED_ADMISSION.md).
 
 ## 2026-11-06 — session-only interface size controls
 
@@ -1362,7 +1379,7 @@ Expose 75/100/125/150% and both preferred/fitted sizes in Interface [F10]. Prese
 current small-window fitting, Classic controls and the existing panel/target
 Escape chain by giving Interface first close priority. Keep the setting local to
 the current session until a separate saved-preference slice; opening it does not
-pause an authoritative world. [Implementation and evidence](UI_FANTASY_WARRIOR.md#in-game-session-ui-scale--6-november-2026).
+pause an authoritative world. [Implementation and evidence](client/UI_FANTASY_WARRIOR.md#in-game-session-ui-scale--6-november-2026).
 
 ## 2026-11-06 — additional UI references refine panels and character screens
 
@@ -1372,7 +1389,7 @@ framed equipment/service windows, and future character-selection presentation.
 They guide appearance; visible repair, currency, faction/class or chat controls
 need their own working systems before being exposed. Assess licensed local art
 and portrait sourcing rather than treating reference pictures as runtime assets.
-[Reference mapping and immediate work](UI_FANTASY_WARRIOR.md#additional-panel-and-character-screen-references--6-november-2026).
+[Reference mapping and immediate work](client/UI_FANTASY_WARRIOR.md#additional-panel-and-character-screen-references--6-november-2026).
 
 ## 2026-11-06 — AntonilzUI screenshot guides the general HUD
 
@@ -1382,7 +1399,7 @@ upper-right circular minimap and objectives, readable world nameplates and an
 unobstructed centre. Use restrained local Synty art selectively. This refines
 UI-001 presentation; it does not change strict Classic controls or gameplay
 truth. The current opt-in skin is an earlier draft, not an implementation of the
-new reference. [Reference, exact gaps and next acceptance checks](UI_FANTASY_WARRIOR.md#adopted-visual-reference--6-november-2026).
+new reference. [Reference, exact gaps and next acceptance checks](client/UI_FANTASY_WARRIOR.md#adopted-visual-reference--6-november-2026).
 
 ## 2026-11-06 — preferred UI scale with bounded layout fitting
 
@@ -1392,7 +1409,7 @@ preference, default 100%; fit down when the current window cannot retain the
 coordinates, camera and window dimensions independent. Windowless physical-pixel
 exports and a headless Window-component test establish rendering/fit behavior;
 live pointer, native resize, DPI and complete-pane checks remain pending while
-the user uses the desktop. [Implementation and exact scope](UI_FANTASY_WARRIOR.md#preferred-ui-scale-and-resize-fitting).
+the user uses the desktop. [Implementation and exact scope](client/UI_FANTASY_WARRIOR.md#preferred-ui-scale-and-resize-fitting).
 
 ## 2026-11-06 — general UI with local Fantasy Warrior art
 
@@ -1402,7 +1419,7 @@ widgets and a separate asset source. Rebuild behavior rather than importing
 Unity prefabs. Keep the first skin opt-in pending normal connected and input
 qualification. Windowless GPU exports may proceed without desktop/mouse use;
 they are fixture previews and do not establish live interaction correctness.
-[Asset assessment, implementation and acceptance](UI_FANTASY_WARRIOR.md).
+[Asset assessment, implementation and acceptance](client/UI_FANTASY_WARRIOR.md).
 
 ## 2026-11-06 — explicit client content configuration report
 
@@ -1411,7 +1428,7 @@ network setup, returning before any network worker, App, window or renderer.
 Require exclusive predicted Classic graybox configuration and reject connection
 arguments. This permits exact normal client/server configuration comparisons while
 desktop testing is unavailable, without adding gameplay authority or duplicating
-the identity algorithm. [Headless proof and limits](QUEST_ITEM_REWARDS.md#actual-clientserver-configuration-identities-agree-headlessly).
+the identity algorithm. [Headless proof and limits](gameplay/QUEST_ITEM_REWARDS.md#actual-clientserver-configuration-identities-agree-headlessly).
 
 ## 2026-11-06 — opt-in exact fixed reward manifest role
 
@@ -1420,7 +1437,7 @@ and matching client/server `--quest-item-rewards` paths. Keep schema 20 and all
 older roles/hashes unchanged. Bind exact fixed reward bytes before conditional
 quest loot, and require the account service's stored/wire journal agreement
 before selecting reward ownership. Check prerequisite flags after parsing all
-arguments. [Configuration proof and limits](QUEST_ITEM_REWARDS.md#implemented-normal-configuration-prerequisite).
+arguments. [Configuration proof and limits](gameplay/QUEST_ITEM_REWARDS.md#implemented-normal-configuration-prerequisite).
 Reward UI and combined native proof remain pending while desktop testing is paused.
 
 ## 2026-11-06 — explicit fixed reward World admission
@@ -1430,7 +1447,7 @@ Validate exact inventory/XP, installed quest and reward namespaces, and inactive
 exclusive setup before changing World identity. The existing runtime client may
 then consume the reward-bound private journal under normal exact context and
 pending-command checks. All items, completion and XP still originate in the
-retained SQL owner. [Headless World/encrypted proof and limits](QUEST_ITEM_REWARDS.md#implemented-explicit-world-and-encrypted-bridge).
+retained SQL owner. [Headless World/encrypted proof and limits](gameplay/QUEST_ITEM_REWARDS.md#implemented-explicit-world-and-encrypted-bridge).
 Normal manifest/CLI/UI and combined native qualification remain separate.
 
 ## 2026-11-06 — explicit fixed reward owner and capacity refusal
@@ -1440,7 +1457,7 @@ retained inventory/progression owner. Keep ordinary owner constructors closed to
 reward-bearing profiles. Treat a full reward bag as a nonfatal inventory-full
 journal refusal and append code 10 without changing existing codes/frame sizes.
 Accepted SQL work and queued item operations retain the current logout drain;
-only committed projections can acknowledge success. [Qualified headless scope](QUEST_ITEM_REWARDS.md#implemented-retained-owner-adoption).
+only committed projections can acknowledge success. [Qualified headless scope](gameplay/QUEST_ITEM_REWARDS.md#implemented-retained-owner-adoption).
 World/client/manifest adoption remains separate, and desktop tests are paused.
 
 ## 2026-11-06 — atomic fixed quest reward storage
@@ -1453,7 +1470,7 @@ bag revision is added to the wire intent. Successful retries recover the origina
 receipt before fresh holdings checks and return current saved bag/journal state.
 No migration or parallel inventory API is needed. Store/worker support is now
 qualified; keep World, client and retained-owner admission closed until their
-separate ordering/ownership proofs pass. [Scope/evidence](QUEST_ITEM_REWARDS.md#implemented-atomic-storeworker-turn-in).
+separate ordering/ownership proofs pass. [Scope/evidence](gameplay/QUEST_ITEM_REWARDS.md#implemented-atomic-storeworker-turn-in).
 
 ## 2026-11-06 — explicit fixed quest item reward policy
 
@@ -1465,7 +1482,7 @@ checks the whole grant bundle and reconciles other quests against final holdings
 with one bag revision. Consume-before-capacity is an explicit Theia policy;
 choice rewards, currency, overflow mail and automatic equipment remain separate.
 Keep reward-bearing runtime/Store/owner admission closed until durable completion,
-items, XP and original receipts commit together. [Scope and evidence](QUEST_ITEM_REWARDS.md).
+items, XP and original receipts commit together. [Scope and evidence](gameplay/QUEST_ITEM_REWARDS.md).
 
 ## 2026-11-05 — original document-open receipts
 
@@ -1476,7 +1493,7 @@ commit. Exact successful retries recover that original authorization without
 becoming fresh reads; new requests require current ownership. Keep historical
 read credit separate from item possession and allow existing bound bag/journal
 transactions to operate without granting read credit. No extra storage migration
-or parallel item transaction API is needed. [Implemented headless scope](QUEST_DOCUMENTS.md#implemented-durable-authorized-document-opening).
+or parallel item transaction API is needed. [Implemented headless scope](gameplay/QUEST_DOCUMENTS.md#implemented-durable-authorized-document-opening).
 Retained owner/wire/UI adoption remains the next slice.
 
 ## 2026-11-05 — explicit quest-required development loot
@@ -1486,7 +1503,7 @@ loot modes. Bind exact item/journal/reward identities before admission; retain
 first committed generation rights and separately check fresh current need before
 paging or pickup. Do not reclassify ordinary drops as quest-only. Keep the 60% /
 25% provisional random content separate from guaranteed low-damage native fixtures.
-[Qualified scope and limits](LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
+[Qualified scope and limits](gameplay/LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
 Reading a note remains a separate planned historical objective; item possession
 alone must not grant read credit.
 
@@ -1499,7 +1516,7 @@ claim. Later acceptance, removal or replay does not replace the original rights.
 This is an explicit Theia commit-order policy; it does not claim an exact
 simulation death-tick snapshot. The Classic-targeted source stores initial corpse
 permissions, but does not define our asynchronous transaction ordering.
-[Storage semantics and remaining runtime work](LOOT_TABLES.md#quest-only-generation-storage-prerequisite--5-november-2026).
+[Storage semantics and remaining runtime work](gameplay/LOOT_TABLES.md#quest-only-generation-storage-prerequisite--5-november-2026).
 Preserve current-need checks before paging and pickup as separate requirements;
 generation grants availability only. No world-event log or whole-corpse atomic
 generation is established by these per-entry transactions.
@@ -1510,7 +1527,7 @@ Adopt opt-in manifest schema 18 and `--quest-items` only with the exact bound
 inventory/journal profiles. Count current backpack holdings across stacks,
 reverse Ready after removal, and recheck/consume required items atomically with
 turn-in and XP. Keep the three-pelt development quest and guaranteed native
-fixture distinct from ordinary random-loot content. [Qualified scope](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-qualification-complete--5-november-2026).
+fixture distinct from ordinary random-loot content. [Qualified scope](gameplay/QUEST_ITEM_OBJECTIVES.md#normal-item-quest-qualification-complete--5-november-2026).
 Quest-only generation rights remain a separate prerequisite; ordinary item drops
 must not silently acquire quest restrictions. Preserve older profile versions.
 
@@ -1533,7 +1550,7 @@ checked metric corpse position. Availability/viewing do not add inventory or
 possession progress. Pickup commits bag, claim receipt and affected journals
 together. Keep life receipts durable and load bounded pending pages; consumed
 history is not a resident owner list. Preserve once-character content and require
-live corpse/life/range checks before runtime adoption. [Storage proof and limits](QUEST_ITEM_OBJECTIVES.md#per-life-loot-storage-prerequisite-qualified--4-november-2026).
+live corpse/life/range checks before runtime adoption. [Storage proof and limits](gameplay/QUEST_ITEM_OBJECTIVES.md#per-life-loot-storage-prerequisite-qualified--4-november-2026).
 
 ## 2026-11-04 — explicit per-creature-life reward scope
 
@@ -1541,7 +1558,7 @@ Preserve schema-1 once-character recipes. Use schema 2 for explicit repeatable
 victim-life entitlements, reusing the authoritative progression KillId type.
 Pure selectors establish no kill/recipient authority. Keep runtime and storage
 admission closed until durable uniqueness, bounded availability and publication
-are installed. [Core evidence and next work](QUEST_ITEM_OBJECTIVES.md#per-life-loot-core-prerequisite--4-november-2026).
+are installed. [Core evidence and next work](gameplay/QUEST_ITEM_OBJECTIVES.md#per-life-loot-core-prerequisite--4-november-2026).
 
 ## 2026-11-04 — confirmed item destruction native adoption
 
@@ -1550,7 +1567,7 @@ IR02 destruction requests. Require a fresh confirmation after close/reopen or
 changed inventory. Preserve server-owned validation and committed views, including
 newer bags accompanying matching replies. Normal Linux native destruction and
 restart/rejoin now pass; per-life loot and possession-quest admission remain next.
-[Qualified scope](QUEST_ITEM_OBJECTIVES.md#confirmed-destruction-ui-qualified--4-november-2026).
+[Qualified scope](gameplay/QUEST_ITEM_OBJECTIVES.md#confirmed-destruction-ui-qualified--4-november-2026).
 
 ## 2026-11-04 — retained item-aware quest owner publication
 
@@ -1559,7 +1576,7 @@ through compound SQL. Publish only committed views through retained character
 generations; preserve higher bag/journal/XP versions and command replies across
 late responses. Keep live admission closed until remaining loot/UI/native slices
 pass. Treat reading a quest note as a separately authored historical condition,
-not an implicit consequence of possession. [Evidence and scope](QUEST_ITEM_OBJECTIVES.md).
+not an implicit consequence of possession. [Evidence and scope](gameplay/QUEST_ITEM_OBJECTIVES.md).
 
 ## 2026-11-03 — atomic inventory-bound quest storage
 
@@ -1568,7 +1585,7 @@ backpack, then journal; commit consumption, completion, XP and receipt together.
 Reconcile current holdings on acceptance/load/replay and in compound bag writes.
 Retain accepted compound jobs through response loss and shutdown. Keep live
 admission closed until all owners and mutation paths use coherent committed views.
-[Qualified storage evidence and remaining work](QUEST_ITEM_OBJECTIVES.md).
+[Qualified storage evidence and remaining work](gameplay/QUEST_ITEM_OBJECTIVES.md).
 
 ## 2026-11-03 — versioned final-stage item possession proposals
 
@@ -1580,7 +1597,7 @@ Recheck supplied current bags at pure turn-in, prepare consumption and completio
 together, and recalculate other quests sharing the materials. Permit codec
 readiness reversal only for that defined item scope. Keep live admission closed
 until the inventory-aware durable path is installed.
-[Qualified core/codec evidence and remaining work](QUEST_ITEM_OBJECTIVES.md).
+[Qualified core/codec evidence and remaining work](gameplay/QUEST_ITEM_OBJECTIVES.md).
 
 ## 2026-11-03 — qualified reach-area launch and batch snapshot heads
 
@@ -1591,7 +1608,7 @@ version at least as high as every contained logical revision, not a receipt
 count. Share that checked rule between storage and the encrypted fixture.
 Actual PostgreSQL overlap/rollback/replay/restart and normal native quest/rejoin
 proof pass. Do not migrate existing characters or claim general region support.
-[Qualified behavior, native proof and limits](QUEST_REACH_AREAS.md).
+[Qualified behavior, native proof and limits](gameplay/QUEST_REACH_AREAS.md).
 Next honor the user's possession-based item delivery request, allowing stack
 splits and recalculating readiness after committed item removal.
 
@@ -1602,7 +1619,7 @@ observation. Retry unavailable capacity without claiming credit; suppress
 unchanged accepted batches while waiting for commit. Reuse the ordered trusted
 producer sequence and retained async owner, leaving client wire actions at
 accept/turn-in. Publish only committed journals and preserve command replies.
-[Queue/encrypted fixture proof and remaining combined native work](QUEST_REACH_AREAS.md).
+[Queue/encrypted fixture proof and remaining combined native work](gameplay/QUEST_REACH_AREAS.md).
 
 ## 2026-11-03 — atomic stage-bound area observation receipts
 
@@ -1612,7 +1629,7 @@ original eligible quest/version/stage/area payload in separate hash domains.
 Commit all affected quests with their receipt; retain accepted work across
 response loss and shutdown. Reject unbound/empty batches and generic raw area
 events. Grant no occupancy XP; retain ordinary turn-in transactions.
-[Actual SQL/restart proof and remaining live integration](QUEST_REACH_AREAS.md).
+[Actual SQL/restart proof and remaining live integration](gameplay/QUEST_REACH_AREAS.md).
 
 ## 2026-11-03 — explicit area-aware quest profile and server sampling
 
@@ -1621,7 +1638,7 @@ hashes unchanged; share reference/namespace checks with persistence and require
 World bounds and installed-content checks before admission. Sample only current
 alive authoritative capsule feet with prepared collision and client footprint
 coverage, never client coordinates. Normal manifests remain unsupported until
-their area role and durable owner are connected. [Qualified scope](QUEST_REACH_AREAS.md).
+their area role and durable owner are connected. [Qualified scope](gameplay/QUEST_REACH_AREAS.md).
 
 ## 2026-11-03 — stage-scoped area objective proposals
 
@@ -1632,7 +1649,7 @@ stage; never retroactively credit later acceptance or cascade through stages.
 Any/at-least stages retain exactly their completion quorum. The observation is a
 pure proposal, not proof of position; World binding and durable publication remain
 required. Preserve existing schema-1 content and fail closed at live admission
-until that adapter is installed. [Evidence and remaining work](QUEST_REACH_AREAS.md).
+until that adapter is installed. [Evidence and remaining work](gameplay/QUEST_REACH_AREAS.md).
 
 ## 2026-11-03 — read-only executable quest update review
 
@@ -1642,7 +1659,7 @@ and stable IDs/versions; classify current schema-1 gameplay versus presentation/
 layout changes and flag definition/version issues without copying prose. A
 review-only normalized fingerprint never replaces runtime catalogue binding.
 Keep saved compatibility, World-reference validation and migration separate;
-source files and live behavior stay unchanged. [Workflow](QUEST_PACK_AUTHORING.md).
+source files and live behavior stay unchanged. [Workflow](gameplay/QUEST_PACK_AUTHORING.md).
 
 ## 2026-11-03 — normal public visual-life adoption
 
@@ -1653,7 +1670,7 @@ control/vitals barriers. Reset remote pose interpolation only on initial/fresh
 public life after an appropriately recent authoritative snapshot. Same-life
 movement keeps blending. Actual native finished-corpse/in-view and respawn proof,
 dead owner input/cast checks, normal quest/database-restart regression and all
-1,123 workspace tests pass. [Scope](PUBLIC_AVATAR_LIFE.md). No new death formula,
+1,123 workspace tests pass. [Scope](client/PUBLIC_AVATAR_LIFE.md). No new death formula,
 corpse-run rules, durable health, normal default/older version replacement or
 same-backend-endpoint reconnect qualification. All changes remain local.
 
@@ -1668,7 +1685,7 @@ at 20/30/60 Hz. Rejoin qualification uses a new endpoint and injects old encrypt
 traffic. One earlier same-relay-endpoint replacement timed out; immediate reuse
 of that endpoint remains separate unqualified transport investigation scope.
 Keep the five-second deadline and existing normal versions unchanged until the
-new normal/Bevy slice qualifies. [Evidence](PUBLIC_AVATAR_LIFE.md).
+new normal/Bevy slice qualifies. [Evidence](client/PUBLIC_AVATAR_LIFE.md).
 
 ## 2026-11-03 — separate public visual player lifecycle
 
@@ -1680,7 +1697,7 @@ health, results, incoming windups and movement-stream barriers private/unchanged
 Use bounded sorted full rosters under the current eight-player development cap.
 Bind a separate profile/World domain and qualify the World/codec prerequisite
 before transport, new normal bundle selection and standard Bevy adoption.
-[Boundary and acceptance](PUBLIC_AVATAR_LIFE.md). This is Theia presentation
+[Boundary and acceptance](client/PUBLIC_AVATAR_LIFE.md). This is Theia presentation
 metadata, not a new Classic formula or a population-capacity claim.
 
 ## 2026-11-03 — explicit normal public NPC timing adoption
@@ -1692,7 +1709,7 @@ Bevy wolf clips, suppress expired/cancelled windups and face the actual victim;
 never alter the player's target or manual facing. Owner-private vitals and
 incoming damage remain separate. Actual native victim/observer and normal
 quest/database-restart regressions pass, as do 1,106 workspace tests.
-[Qualified scope and checkpoint](PUBLIC_CREATURE_ATTACKS.md). No default/older
+[Qualified scope and checkpoint](client/PUBLIC_CREATURE_ATTACKS.md). No default/older
 bundle replacement, new combat formula or broader NPC capacity claim.
 
 ## 2026-11-03 — public attack stream uses optional priority transport
@@ -1704,7 +1721,7 @@ readiness, reject client uploads and retire/disconnect on capacity failure.
 Keep private life/damage facts on the owner path; no new authority command.
 The actual impaired victim/observer and refusal checks qualify the component;
 normal launcher/Bevy/native adoption is a separate next slice.
-[Contract and evidence](PUBLIC_CREATURE_ATTACKS.md).
+[Contract and evidence](client/PUBLIC_CREATURE_ATTACKS.md).
 
 ## 2026-11-03 — public NPC timing without private victim state
 
@@ -1715,7 +1732,7 @@ life/retaliation profile and a public version domain into World identity. Keep
 player targets/facing/controls and gameplay timing unchanged. Qualify observation
 and codec before a dedicated prioritized reliable stream and standard Bevy
 bystander animation. Default modes remain unchanged until normal adoption passes.
-[Implemented boundary and pending acceptance](PUBLIC_CREATURE_ATTACKS.md).
+[Implemented boundary and pending acceptance](client/PUBLIC_CREATURE_ATTACKS.md).
 
 ## 2026-11-03 — bounded closed-catalogue compilation
 
@@ -1725,7 +1742,7 @@ include every transitive prerequisite; refuse current runtime count/objective/
 byte overflow rather than dropping dependencies. Keep output metadata and exact
 provenance explicit, then run normal World-reference validation. This does not
 install content, load runtime packs, expand saved history or migrate character
-progress. [Qualified workflow and limits](QUEST_PACK_AUTHORING.md).
+progress. [Qualified workflow and limits](gameplay/QUEST_PACK_AUTHORING.md).
 
 ## 2026-11-03 — offline quest pack preflight before runtime adoption
 
@@ -1746,7 +1763,7 @@ empirical Classic research; exact equality/tie order, transfer visibility,
 recovery and tag-departure behavior remain explicit Theia policies. Keep metres,
 server-owned victim selection and independent credit/reward ownership. Preserve
 older modes until separately replaced. Healing, stances, taunts, social/group
-threat and population scaling remain future work. [Evidence and limitations](CREATURE_THREAT.md).
+threat and population scaling remain future work. [Evidence and limitations](gameplay/CREATURE_THREAT.md).
 
 ## 2026-11-02 — quest catalogue scale direction
 
@@ -1757,7 +1774,7 @@ a permanent 32-quest campaign cap. Bound active progress separately from retaine
 completion history; choose production budgets from measurements. Define explicit
 saved-version/catalogue compatibility and migrations before adopting production
 content updates. These are plans; current exact-byte single-catalogue validation
-and development limits remain implemented. [Scope](QUEST_ENGINE.md).
+and development limits remain implemented. [Scope](gameplay/QUEST_ENGINE.md).
 
 ## 2026-11-02 — quest-engine expansion and authoring agreement
 
@@ -1770,7 +1787,7 @@ idempotent XP completion; preserve legacy rows until replacement acceptance.
 Keep narrative Markdown separate from runtime definitions; do not silently turn
 story drafts into approved gameplay. Defer scripting, conditional branches,
 party/world scopes and general rewards until their own slices need them.
-[Implemented scope and acceptance](QUEST_ENGINE.md). No new crate/service split.
+[Implemented scope and acceptance](gameplay/QUEST_ENGINE.md). No new crate/service split.
 
 ## 2026-11-02 — explicit living-creature return reset
 
@@ -1778,7 +1795,7 @@ P3-07 / P3-06 / P4-08: schema-11 adds a bounded exact-byte policy restoring
 maximum living NPC health and clearing target effects once on Return/Blocked.
 It preserves entity life and existing navigation/leash rules; death/respawn stays
 separate. No kill or award comes from reset. This is an explicit Theia policy,
-not an exact Classic regeneration claim. [Qualified behavior and limits](CREATURE_RETURN_RESET.md).
+not an exact Classic regeneration claim. [Qualified behavior and limits](gameplay/CREATURE_RETURN_RESET.md).
 
 ## 2026-11-02 — opt-in creature-credit reset boundary
 
@@ -1789,7 +1806,7 @@ capture that generation so delayed old spells cannot retag. Death alone retains
 a connected session claim; pursuit reset independently abandons it. These are
 explicit initial Theia policies. Full evade/healing/immunity, party eligibility,
 shared credit and rewards are separate. Normal manifests retain their older
-behavior. [Implemented scope and proof](CREATURE_CREDIT.md).
+behavior. [Implemented scope and proof](gameplay/CREATURE_CREDIT.md).
 
 ## 2026-11-02 — temporary melee-contact leash refresh
 
@@ -1798,7 +1815,7 @@ soft allowance refreshed by authoritative visible melee reach. Retain the
 captured 35 m hard boundary, blocked-route and target-life checks, two-second
 LOS grace and bounded return travel. This is a Theia contact policy, not a claim
 of Classic's exact damage/threat refresh algorithm. Ranged refresh and full
-threat/evade/reset remain separate slices. [Behavior and acceptance](ENEMY_AI_REFERENCE.md).
+threat/evade/reset remain separate slices. [Behavior and acceptance](gameplay/ENEMY_AI_REFERENCE.md).
 
 ## 2026-11-01 — explicit ability eligibility and swing rules
 
@@ -1806,14 +1823,14 @@ Ability schema 7 requires declared minimum range, manual facing and an explicit
 continue/suspend/delay/reset interaction. Legacy profiles retain their behavior.
 The initial stationary 500ms Arcane Bolt suspends swings; instant Sword Slash
 continues them. These are versioned Theia fixtures, not verified Classic balance.
-[Qualified behavior and limits](CLASSIC_ABILITY_RULES.md) includes atomic costs,
+[Qualified behavior and limits](gameplay/CLASSIC_ABILITY_RULES.md) includes atomic costs,
 queued/completion revalidation and committed weapon swaps. No automatic facing,
 action camera or dodge is introduced. Follow with checked damage resolution.
 
 # World-system principles and working policies — 1 November 2026
 
 Adopt the supplied broader Classic-system notes as design direction, reconciled
-in [world systems / repo assessment](CLASSIC_WORLD_SYSTEMS_REFERENCE.md).
+in [world systems / repo assessment](gameplay/CLASSIC_WORLD_SYSTEMS_REFERENCE.md).
 Preserve the strict initial controls, metric scale and Classic evidence policy.
 Prioritize interacting combat, credit, population and recovery systems before
 building complete zones. Implement them within the authoritative modular World;
@@ -1845,11 +1862,11 @@ Follow WoW Classic formulas as closely as evidence permits. Preserve 1 world
 unit = 1 metre, m/km and m/s, checked f64 global positions and bounded f32 local
 frames. Record source ruleset, unit mapping, uncertainty and Theia extensions;
 do not mix expansion formulas or label fixtures as Classic balance. The level-80
-direction remains. [Evidence policy and sources](CLASSIC_FORMULAS.md).
+direction remains. [Evidence policy and sources](gameplay/CLASSIC_FORMULAS.md).
 
 # Locked decision — 1 November 2026: strict WoW Classic foundation
 
-Adopt [THEIA-COMBAT-001 v1.0](COMBAT_TARGETING_MOVEMENT_SPEC.md): traditional
+Adopt [THEIA-COMBAT-001 v1.0](gameplay/COMBAT_TARGETING_MOVEMENT_SPEC.md): traditional
 character-relative movement, independent LMB orbit, RMB steering, both-button
 forward, configurable bindings, persistent explicit targets, manual facing and
 weapon-timed persistent melee autoattack separate from abilities. The server
@@ -1861,7 +1878,7 @@ This supersedes the earlier WoW/GW2 hybrid for initial play. Defer all active
 dodge work, action camera/permanent mouse-look, reticle targeting, automatic
 facing/tracking and repeating weapon skills as basic attacks. Preserve existing
 experiments and evidence without treating them as the new accepted controls.
-[Migration, gaps and slice acceptance](MOVEMENT_CAMERA_TARGET.md) are recorded;
+[Migration, gaps and slice acceptance](gameplay/MOVEMENT_CAMERA_TARGET.md) are recorded;
 the runtime migration has not been implemented by this decision. Next define the
 fundamental combat loop, then prove the thirteen one-hostile milestone checks.
 No engine, network, coordinate or persistence architecture change is implied.
@@ -1878,7 +1895,7 @@ remains a later settings task. V is a bounded one-shot request, not auto-repeat.
 Stationary dodge goes backward relative to the camera view; moving dodge follows
 world travel. Existing server-owned grounded/collision/cooldown and casting
 rules apply. Native acceptance now passes at all three supported desktop sizes;
-[implementation and evidence](DODGE_MOVEMENT.md).
+[implementation and evidence](archive/experiments/DODGE_MOVEMENT.md).
 
 # Superseded direction — 2026-11-01: WoW/GW2 player feel
 
@@ -1886,22 +1903,22 @@ Adopt GW2-oriented responsive movement and third-person camera with optional
 action camera, retaining WoW-style tab targeting, action bars and interaction.
 Classic cursor mode remains the default. Preserve authoritative collision,
 prediction and mobile combat; UI/focus owns cursor release.
-[Concrete behavior, slice order and acceptance](MOVEMENT_CAMERA_TARGET.md).
-The first optional action-camera slice is now [qualified](PLAYER_CONTROLS.md);
+[Concrete behavior, slice order and acceptance](gameplay/MOVEMENT_CAMERA_TARGET.md).
+The first optional action-camera slice is now [qualified](client/PLAYER_CONTROLS.md);
 full movement/facing tuning and live dodge remain open.
 
 # Current decisions — 2026-11-01: quest markers and player controls
 
 Use standard Bevy text/picking/UI and current authoritative observations for
 initial one-guide quest markers. Markers have bounded visibility and static
-occlusion; they never grant interactions or quest progress. [Current validation](QUEST_MARKERS.md).
+occlusion; they never grant interactions or quest progress. [Current validation](client/QUEST_MARKERS.md).
 The user adopted mouse enemy/friendly selection, right-click basic attack or NPC
 interaction, Tab enemy cycling, 1–5 action slots, F context interaction and active
 dodge. Use Left Alt as the recommended default dodge binding. Distinguish camera
 dragging from clicks and let UI consume pointer events. Selection presentation
 cannot authorize damage or dialogue. Implement dodge with checked authoritative
 movement/prediction in its own slice; no implicit invulnerability is adopted.
-[Concrete requested scope](COMBAT_WORLD_FOLLOWUPS.md). These controls are planned,
+[Concrete requested scope](gameplay/COMBAT_WORLD_FOLLOWUPS.md). These controls are planned,
 not yet qualified. No engine/plugin or network choice changes.
 
 # Current decisions — 2026-10-31: finite authoritative magic travel
@@ -1912,7 +1929,7 @@ sweeps and finite accumulated distance/lifetime own outcomes. Reserve capacity
 before spending, retain started costs on cancelled travel and permit post-launch
 equipment changes. CE04 carries launch/terminal presentation. Use standard Bevy
 placeholder sphere travel with independent bounded cosmetic budgets.
-[Qualified contract, evidence and limits](PROJECTILE_TRAVEL.md). Ballistic arrows,
+[Qualified contract, evidence and limits](gameplay/PROJECTILE_TRAVEL.md). Ballistic arrows,
 bow equipment, ranged enemy casting and general projectile volumes remain open.
 No engine/plugin pins change. Stop after this slice as requested by the user.
 
@@ -1922,7 +1939,7 @@ Adopt the opt-in schema-5 direct-damage hit/miss/deflect slice. Use checked inte
 weights, pre-admission seeded ChaCha20, one draw only at valid resolution and
 explicit current defender eligibility. Preserve old guaranteed-damage catalogues
 and CE02 bytes; CE03 carries new outcomes. Cosmetic labels cannot alter results.
-[Qualified behavior, evidence and limits](HIT_OUTCOMES.md). Initial prototype
+[Qualified behavior, evidence and limits](gameplay/HIT_OUTCOMES.md). Initial prototype
 weights are 85/10/5, with no inferred shield/class stats. NPC outcomes and travelling
 projectiles remain separate work; engine/plugin pins are unchanged.
 
@@ -1934,7 +1951,7 @@ or cosmetic appearance never grants damage. Standard Bevy masks split upper-body
 strike presentation from locomotion. Greybox movement readiness checks actual
 terrain PBR specializations and GPU meshes, independently of whole-renderer
 screenshot readiness. Native evidence demonstrates cosmetic pipeline compilation
-without readiness withdrawal. [Contract and qualified evidence](PLAYER_MELEE.md).
+without readiness withdrawal. [Contract and qualified evidence](gameplay/PLAYER_MELEE.md).
 General weapon classes, hit outcomes, ranged enemy abilities and public remote
 player death remain later slices; no engine/plugin pins change.
 
@@ -1945,7 +1962,7 @@ retaliation, private health, dead-input suppression and supported fresh-stream
 respawn. Keep the existing manifests and playable checkpoints. Health resets on
 fresh admission in this development mode; durable vitals and production combat
 logout policy remain explicit future decisions. Death animation, chasing and
-general threat are not part of this slice. [Exact implementation and evidence](PLAYER_LIFE_NATIVE.md).
+general threat are not part of this slice. [Exact implementation and evidence](gameplay/PLAYER_LIFE_NATIVE.md).
 
 Two-account OIDC/native/SQL gameplay passes at three resolutions, along with
 normal launcher cleanup. Final unchanged-source workspace: 525 passes / 40 skips;
@@ -1969,7 +1986,7 @@ The next P3-07 / P3-04 extension holds the first exact attacker for bounded memo
 with one checked windup/recovery and life/reach/LOS checks at both boundaries.
 No chase or general threat service is introduced. First qualify pure policy and
 transient development health/respawn, then fixed-step/private-wire/standard Bevy
-adoption. [Contract and gates](CREATURE_RETALIATION.md). Existing patrol/training
+adoption. [Contract and gates](gameplay/CREATURE_RETALIATION.md). Existing patrol/training
 continues unchanged; durable vitals and production balance remain open.
 
 # Current checkpoint — 2026-10-31: existing-account character menu qualified
@@ -1980,7 +1997,7 @@ to selection without rewriting saves; temporary retirement conflicts keep their
 bounded retry. Actual OIDC creation on an existing account, incompatible-to-compatible
 menu recovery, two native players, rewarded gameplay and database/server restart
 pass at 1920×1200 windowed with zero Vulkan diagnostics. Normal eleven-profile
-launcher startup/cleanup passes all three modes. [Contract and proof](CHARACTER_LAUNCHER_MENU.md).
+launcher startup/cleanup passes all three modes. [Contract and proof](client/CHARACTER_LAUNCHER_MENU.md).
 
 Thirty focused Python checks, formatting and denied-warning workspace/all-target
 Clippy pass. Rust/content/binaries are byte-for-byte unchanged from the previous
@@ -2006,7 +2023,7 @@ reward checkpoint; a new three-size server test is not claimed.
 Final unchanged-source workspace: **476 tests / 40 explicit skips**
 in 108 groups. Formatting, denied-warning Clippy, 24 focused Python checks
 and 30 actual SQL contracts / 33 commands pass, including cancelled-answer and
-bounded-queue preflight tests. [Contract and proof](CHARACTER_PROFILE_PREFLIGHT.md). Matched binaries,
+bounded-queue preflight tests. [Contract and proof](accounts/CHARACTER_PROFILE_PREFLIGHT.md). Matched binaries,
 source, validator and evidence: `build/gameplay-profiles-qualified-v1-20261031`.
 All changes remain local. General migrations, complete saved-value validation,
 physical OS input and native Windows remain open. Prior checkpoints are preserved.
@@ -2033,7 +2050,7 @@ Final unchanged-source workspace passes **475 tests / 37 explicit skips**
 in 107 groups. Formatting, denied-warning workspace/all-target Clippy and
 23 focused Python checks pass. Separately retained prerequisites cover 27 actual
 SQL contracts / 32 commands and three actual OIDC/ticket/SQL retirement modes.
-[Exact scope, prerequisites and proof](QUEST_TURN_IN_XP.md). Immutable source, matched optimized
+[Exact scope, prerequisites and proof](gameplay/QUEST_TURN_IN_XP.md). Immutable source, matched optimized
 binaries, validator and public evidence: `build/quest-turn-in-xp-qualified-v1-20261031`.
 Native Windows, physical 4K, physical OS input and MMO population/performance
 capacity are not qualified. All changes remain local; no commit/push this session.
@@ -2046,7 +2063,7 @@ The combined two-account OIDC/encrypted/PostgreSQL native run passes at
 completes three kills, earns XP, claims one reward, barters and equips a distinct
 item. Exact bags, hands, progress and latest item receipts survive reconnect and
 database/server restart; ownership/replay fencing and backend-loss checks pass.
-[Scope, fixture settings and limits](PERSISTENT_ZONE_INTEGRATION.md).
+[Scope, fixture settings and limits](accounts/PERSISTENT_ZONE_INTEGRATION.md).
 
 **441 workspace tests pass / 30 explicit skips**, with unchanged final source.
 Formatting, denied-warning workspace/all-target Clippy and nine Python helper tests
@@ -2068,7 +2085,7 @@ Earlier notes below are historical.
 The ten-profile development bundle now has an offline validator using the actual
 core/runtime schemas. It checks item/NPC/creature references and ability/resource/
 status compatibility, bounds file reads/paths and reports deterministic exact-byte
-hashes. [Tool, acceptance and limits](GAMEPLAY_CONTENT_VALIDATION.md). Runtime profile loading stays as
+hashes. [Tool, acceptance and limits](gameplay/GAMEPLAY_CONTENT_VALIDATION.md). Runtime profile loading stays as
 qualified; this manifest is an authoring check, not an authoritative world identity.
 
 **441 workspace tests pass / 30 explicit skips**, with unchanged final source.
@@ -2093,7 +2110,7 @@ The guide offers one positive-cost barter through the existing shared item
 owner/sequence: one Training Token for three Training Stones. Live guide/session/
 range checks precede acceptance; accepted queued/executing work survives logout.
 The Bevy shop retains displayed offer/revisions and acknowledges committed items.
-[Exact current behavior, evidence and limitations](VENDOR_BARTER_FOUNDATION.md).
+[Exact current behavior, evidence and limitations](gameplay/VENDOR_BARTER_FOUNDATION.md).
 
 **433 workspace tests pass / 30 explicit skips**, with unchanged final source.
 Formatting, denied-warning workspace/all-target Clippy, nine Python helper tests,
@@ -2117,7 +2134,7 @@ concurrent story edits are untouched. Earlier notes below are historical.
 
 The positive-cost barter now has an atomic backpack cost/output/receipt transaction
 and uses the existing bounded critical worker. Exact latest retries recover without
-another charge; superseded/conflicting input rejects. [Exact scope/proof](VENDOR_BARTER_FOUNDATION.md).
+another charge; superseded/conflicting input rejects. [Exact scope/proof](gameplay/VENDOR_BARTER_FOUNDATION.md).
 
 **Twenty actual SQL contracts/twenty-six commands pass**, including three new
 purchase contracts: rollback, owner/world/byte binding, shared-revision races,
@@ -2139,7 +2156,7 @@ below are historical.
 One noncombat guide now supports private authoritative branches, bounded Renet
 requests/acknowledgements and a standard Bevy panel. E talks, F1–F4 or buttons choose,
 Esc closes without exiting, and walking away closes the session. Clicks retain the
-observed choice/revision. [Exact source/evidence/limits](NPC_DIALOGUE_FOUNDATION.md).
+observed choice/revision. [Exact source/evidence/limits](gameplay/NPC_DIALOGUE_FOUNDATION.md).
 
 **418 workspace tests pass / 27 explicit skips**, with unchanged final source.
 All seventeen SQL contracts/twenty-three commands separately pass; ten private-asset
@@ -2166,7 +2183,7 @@ are historical.
 One opt-in three-kill objective now uses trusted current-life facts, an atomic
 XP/objective transaction, accepted-work retirement, private committed observations
 and a standard Bevy journal. Completion grants no extra items or XP.
-[Exact behavior, evidence and limits](QUEST_OBJECTIVES_FOUNDATION.md).
+[Exact behavior, evidence and limits](gameplay/QUEST_OBJECTIVES_FOUNDATION.md).
 
 **396 workspace tests pass / 27 explicit skips**, with unchanged final source.
 All seventeen actual PostgreSQL contracts/twenty-three commands separately pass;
@@ -2185,7 +2202,7 @@ unqualified. No new performance or MMO population capacity claim is made.
 
 Exact source, four executables, documentation and proofs:
 `build/quests-qualified-v1-20261030`. Prior checkpoints remain preserved. Next is
-the bounded [P3-12 dialogue foundation](NPC_DIALOGUE_FOUNDATION.md), currently
+the bounded [P3-12 dialogue foundation](gameplay/NPC_DIALOGUE_FOUNDATION.md), currently
 plan only. General quest acceptance, dialogue/turn-in rewards and vendors remain
 open. P3-17/18 remain unspecified. All changes remain local/uncommitted; concurrent
 story edits are untouched. Nothing was pushed. Earlier notes below are historical.
@@ -2203,7 +2220,7 @@ unavailable collision, history overflow and incompatible readiness restore the
 latest authoritative pose. These policies now run through the actual Renet authority/client using the
 explicit TC01/TP01 movement profile alongside unchanged v11 snapshots/control.
 The graybox launcher adopts prediction after native/controller qualification;
-`--no-prediction` and imported maps retain the earlier movement path. [Scope](PREDICTION_CONTRACT.md).
+`--no-prediction` and imported maps retain the earlier movement path. [Scope](networking/PREDICTION_CONTRACT.md).
 
 ## Verify source slots and Editor topology before mixed-material promotion — 2026-10-21
 
@@ -2212,7 +2229,7 @@ Compare actual Editor submesh triangles; preserve source corner UVs/normals when
 matching quad diagonals. Keep strict limits and use direct standard glTF streams
 when editor normal re-encoding changes source directions. Crystal appearance is
 an explicit static PBR preview with refraction/view effects separately recorded.
-[Evidence](FOREST_MIXED_MATERIALS.md).
+[Evidence](archive/forest/FOREST_MIXED_MATERIALS.md).
 
 ## Adapt untextured glass explicitly through standard PBR blend — 2026-10-21
 
@@ -2220,7 +2237,7 @@ P1-10/P2-08/P2-10: keep opaque eligibility strict; require an explicit source-st
 profile for bounded glass tint/opacity/surface conversion. Use ordinary glTF/Bevy
 BLEND and record Unity premultiplied lighting/colour-space differences. This
 qualified visual adaptation does not establish shader equivalence or collision.
-[Evidence](FOREST_GLASS.md).
+[Evidence](archive/forest/FOREST_GLASS.md).
 
 ## Keep independent foliage texture roles on standard glTF UV channels — 2026-10-21
 
@@ -2229,7 +2246,7 @@ retain normal/AO UV0 and tangents. Verify source pixels, actual Editor frames,
 exact mesh/material groups and native loaded material channels before promotion.
 Prefab filenames do not identify renderer/material groups. The seventeen-draw
 replacement passes; ordinary world adoption remains separate.
-[Evidence](FOREST_COLOUR_UV.md).
+[Evidence](archive/forest/FOREST_COLOUR_UV.md).
 
 ## Resolve exact legacy sampler blocks through actual Editor evidence — 2026-10-21
 
@@ -2237,7 +2254,7 @@ P1-10/P2-08/P2-10: accept legacy sampler defaults only when hash-bound actual
 Editor imports resolve the exact source texture to the qualified sampler profile.
 Retain explicit source/metadata/collector identity and raw-source rejection without
 evidence. This does not establish Unity compression/mips/BRDF parity.
-[Evidence](FOREST_TEXTURE_DEFAULTS.md).
+[Evidence](archive/forest/FOREST_TEXTURE_DEFAULTS.md).
 
 ## Share identical material profiles while preserving image variants — 2026-10-21
 
@@ -2245,7 +2262,7 @@ P1-10/P2-08/P2-10: permit explicitly shared catalog IDs only for identical
 material descriptors across distinct qualified inputs. Preserve contained Standard
 image variants and verify exact source coverage before visual subset promotion.
 The seventeen-binding batch passes; runtime adoption remains separate.
-[Evidence](FOREST_TRIPLANAR_BATCH.md).
+[Evidence](archive/forest/FOREST_TRIPLANAR_BATCH.md).
 
 ## Compose bounded material profiles through standard Bevy assets — 2026-10-21
 
@@ -2256,7 +2273,7 @@ or malformed mappings. Bound profiles, distinct images and decoded RGBA8 bytes;
 report actual handles/material applications. Actual source composition, two-profile
 GPU/pixel checks and retained regressions now qualify this origin-zero inspector
 slice; rebase, streaming/mips and full forest adoption remain separate.
-[Evidence](FOREST_MATERIAL_CATALOG.md).
+[Evidence](archive/forest/FOREST_MATERIAL_CATALOG.md).
 
 ## Apply recorded mesh frames without changing shading streams — 2026-10-21
 
@@ -2269,7 +2286,7 @@ Corrected static subset and standalone moss qualification now pass; normal map
 adoption, multiple profiles and rebased texture phase remain separate gates.
 Pixel checks require geometric screen-space interior and front-surface consistency
 to exclude MSAA boundaries; colour limits remain unchanged.
-[Evidence and limits](FOREST_MESH_FRAMES.md).
+[Evidence and limits](archive/forest/FOREST_MESH_FRAMES.md).
 
 ## Use actual Editor data before changing FBX root/pivot policy — 2026-10-20
 
@@ -2284,7 +2301,7 @@ all 214 independent recorded-frame point-set checks now pass, covering all 112
 scene FBXs with original metadata unchanged. The unadjusted policy differs on
 19 meshes, affecting thirteen draws in the preserved current batch. Converter
 correction and native replacement qualification remain for resumption after the
-user's safe stop. [Contract and acceptance](FOREST_UNITY_REFERENCE.md).
+user's safe stop. [Contract and acceptance](archive/forest/FOREST_UNITY_REFERENCE.md).
 
 ## Bind conservative transformed mesh AABBs during authoring — 2026-10-20
 
@@ -2293,7 +2310,7 @@ client's transformed local AABB checks. Author the latter envelope from actual
 accessors and the static hierarchy; retain strict runtime validation. A new
 index changes dataset/admission identity while package/image bytes remain bound
 unchanged. Original fixtures and historical datasets stay available; the normal
-launcher remains monolithic. [Evidence](TOWN_CLIENT_RESOURCES.md).
+launcher remains monolithic. [Evidence](archive/validation/TOWN_CLIENT_RESOURCES.md).
 
 ## Bind finite playable bounds separately from chunk geometry — 2026-10-20
 
@@ -2303,7 +2320,7 @@ Convert capsule-centre planes conservatively into the local query frame and
 combine their sweeps with authority/readiness coverage in the shared movement
 solver. Preserve vertical motion and internal seams; clamp lookahead to the
 playable rectangle. Keep package geometry/contributor envelopes independent.
-The normal map default and wire/ALPN 11 remain unchanged. [Contract](WORLD_EDGES.md).
+The normal map default and wire/ALPN 11 remain unchanged. [Contract](world/WORLD_EDGES.md).
 
 ## Share immutable images through standard Bevy asset paths — 2026-10-20
 
@@ -2318,7 +2335,7 @@ of image I/O; server admission still binds the full manifest identity.
 Extract to new packages with original geometry/image bytes and material values;
 retain schema-1 identities and the monolithic default. Actual town extraction
 leaves a 5.48 MB GLB plus 488 shared resources, not a partitioned world or a
-compressed 5.48 MB map. [Contract and evidence](SHARED_IMAGES.md).
+compressed 5.48 MB map. [Contract and evidence](assets/SHARED_IMAGES.md).
 
 ## Retain spare residency until a new load requires the budget — 2026-10-20
 
@@ -2327,7 +2344,7 @@ an unload-only intermediate offer before the leading peer requested a neighbour.
 Retain existing spare packages when demand is already covered; replace them only
 when new providers are needed. Keep the same resident cap and explicit unload
 APIs. Deterministic signed-frame and actual encrypted UDP tests exercise that
-arrival order before final native qualification. [Handover](CHUNK_HANDOVER.md).
+arrival order before final native qualification. [Handover](world/CHUNK_HANDOVER.md).
 
 ## Derive complete cells from bound geometry contributors — 2026-10-20
 
@@ -2344,7 +2361,7 @@ packages. This bounded four-package/64-entry slice does not partition the town o
 prove mesh fidelity. Town inventory shows 698.7 MB of 704.1 MB is embedded images;
 shared immutable image binding is therefore a prerequisite to real imported
 partitioning. Use standard Bevy asset loading, with measured budgets before
-adoption. [Contract and scope](CHUNK_CONTRIBUTORS.md).
+adoption. [Contract and scope](world/CHUNK_CONTRIBUTORS.md).
 
 ## Pair authority offers with retained Bevy/Avian publication — 2026-10-20
 
@@ -2360,7 +2377,7 @@ lagging client's active coverage. Failed candidates retain the active pair.
 
 This is a bounded original-fixture path, not general map streaming. Keep the
 monolithic town default until geometry contributors/partitioning and measured
-content budgets qualify. [Contract and open checks](CHUNK_HANDOVER.md).
+content budgets qualify. [Contract and open checks](world/CHUNK_HANDOVER.md).
 
 ## Refine head-on wall contact with Avian feature manifolds — 2026-10-20
 
@@ -2371,7 +2388,7 @@ conservative CCD behavior for glancing contacts and incompatible features. Keep
 correction bounded and inside the requested sweep. Do not quantize movement axes
 or loosen exact persistent-contact assertions. Preserve tiny intentional tangent
 input, diagonal sliding, retreat, support validation and capsule/sole fallback.
-Final qualification is recorded separately in [validation](VALIDATION.md).
+Final qualification is recorded separately in [validation](engineering/VALIDATION.md).
 
 ## Sweep movement against transient chunk coverage — 2026-10-20
 
@@ -2381,7 +2398,7 @@ bounded checked cell footprints and infinite-height outer edges; keep shared
 seams open and prevent missing-corner/gap shortcuts. Preserve free vertical
 motion and release ordinary sliding when loading/readiness permits it. Do not use
 recovery as the loading barrier. Validate candidate ground snaps before applying
-imprecise convex support distances. [Contract](CHUNK_BOUNDARIES.md).
+imprecise convex support distances. [Contract](world/CHUNK_BOUNDARIES.md).
 
 ## Acknowledge readiness after simulation before allowing retirement — 2026-10-20
 
@@ -2390,7 +2407,7 @@ post-application simulation tick. Coalesce one pending reply per peer and respec
 reliable-channel capacity. Client confirmation requires both the latest report's
 acknowledgement and a snapshot at or after that tick; old acknowledgements cannot
 confirm a superseding request. Presentation/interpolation retention remains an
-additional gate before actual unloading. [Contract](CHUNK_READINESS.md).
+additional gate before actual unloading. [Contract](world/CHUNK_READINESS.md).
 
 ## Gate chunk movement on each client's actual initial readiness — 2026-10-20
 
@@ -2400,7 +2417,7 @@ authority residency and that actor's reported capsule-footprint coverage for
 intentional horizontal movement. Keep gravity, jump and acknowledgements running.
 Publish initial readiness only after standard Bevy assets and live Avian queries
 are ready. Keep dynamic unloading separate until withdrawal acknowledgements and
-presentation retention are implemented. [Contract](CHUNK_READINESS.md).
+presentation retention are implemented. [Contract](world/CHUNK_READINESS.md).
 
 ## Share chunk startup and bind its initial selection — 2026-10-20
 
@@ -2411,7 +2428,7 @@ through the explicit client content frame. Bind initial IDs in the version-2
 session fingerprint until paired dynamic readiness exists, rejecting a different
 initial set over actual Renet even when dataset identity matches. Keep ordinary
 Bevy assets/camera/presentation and the qualified monolithic launcher default.
-[Contract and adoption limit](CHUNK_STARTUP.md).
+[Contract and adoption limit](world/CHUNK_STARTUP.md).
 
 ## Revalidate current bodies before chunk publication — 2026-10-20
 
@@ -2421,7 +2438,7 @@ support and trusted recovery spawns at publication. Bound local owner-side
 management to one in-flight transaction; retain gravity/jump while an unloaded
 neighbor prevents horizontal crossing. Qualify through the existing actual Renet
 loop before pairing normal Bevy residency. Keep normal monolithic map selection
-until the paired adoption gate passes. [Contract](CHUNK_ACTIVATION.md).
+until the paired adoption gate passes. [Contract](world/CHUNK_ACTIVATION.md).
 
 ## Promote schema-3 town after actual native qualification — 2026-10-20
 
@@ -2433,7 +2450,7 @@ maps retain their boxes/floors; the original mesh fixture proves the general pat
 Refresh standard Avian query trees on zero-delta frame changes, and use mesh
 sweeps for schema-3 indoor cameras. Require visible local characters and useful
 camera distance in native acceptance, not only entity counts or image colours.
-See [qualification](GENERAL_COLLISION.md).
+See [qualification](world/GENERAL_COLLISION.md).
 
 ## General collision schema and explicit spawns before chunk activation — 2026-10-19
 
@@ -2443,7 +2460,7 @@ must provide validated support/headroom. Preserve legacy package behavior and
 normal launcher defaults while qualifying new content through real clients.
 Keep geometry/spawn identity in the existing versioned manifest. The user requested
 a safe stop before native qualification/default adoption; see the
-[checkpoint contract](GENERAL_COLLISION.md).
+[checkpoint contract](world/GENERAL_COLLISION.md).
 
 ## Adopt shared movement for imported development maps — 2026-10-19
 
@@ -2455,7 +2472,7 @@ ownership seams. Unsupported falls or solver rejection recover only the affected
 actor to its trusted spawn, preserving held jump and sequence/session identity.
 Make recovery observable and reject it during ordinary route qualification.
 This development policy is not gameplay death/respawn or final collision authoring.
-See [contract](KINEMATIC_CONTROLLER.md).
+See [contract](world/KINEMATIC_CONTROLLER.md).
 
 ## Share the capsule controller before migrating imported terrain — 2026-10-19
 
@@ -2466,7 +2483,7 @@ its poses. Qualify actual geometry and real secure replication before replacing
 the imported map's legacy walker. Wire v7 adds a jump level; no client pose,
 velocity or timestep becomes authoritative. Keep authored map routes as
 regressions. General map activation and chunk adoption remain separate gates.
-See [contract](KINEMATIC_CONTROLLER.md).
+See [contract](world/KINEMATIC_CONTROLLER.md).
 
 ## Qualify standard Bevy chunk publication before normal adoption — 2026-10-19
 
@@ -2476,7 +2493,7 @@ Avian bodies. Preserve retained roots; failed candidates retain old presentation
 collision. Check real rendered pixels and post-physics queries, not root counts
 alone. Use existing Reinhard tonemapping without introducing LUT dependencies.
 This is a bounded original-fixture gate; moving actor checks, authority activation
-and normal chunk adoption remain explicit work. See [contract](CHUNK_PRESENTATION.md).
+and normal chunk adoption remain explicit work. See [contract](world/CHUNK_PRESENTATION.md).
 
 ## Prove chunk ownership/residency on original geometry first — 2026-10-19
 
@@ -2486,7 +2503,7 @@ collision set. Start with synchronous, finite headless proof outside simulation;
 record actual queries and unload effects. A visual-root descriptor does not prove
 rendering or asynchronous streaming. Keep the normal imported tile intact while
 qualifying a standard-Bevy consumer and publication lifecycle separately.
-See [scope](CHUNK_RESIDENCY.md).
+See [scope](world/CHUNK_RESIDENCY.md).
 
 ## Stable package identity before chunk/controller expansion — 2026-10-19
 
@@ -2497,7 +2514,7 @@ The headless loader verifies collision only; the client additionally streams
 visual hashing before ordinary Bevy loading. Normal development launch requires
 the manifest; standalone legacy fixtures remain compatible, and malformed present
 manifests cannot downgrade. Preserve height-surface controller limits and wire v6.
-See [package contract](CONTENT_PACKAGES.md). Keep the qualified 30 Hz default.
+See [package contract](world/CONTENT_PACKAGES.md). Keep the qualified 30 Hz default.
 
 ## Qualify the existing scheduler and retain skip policy — 2026-10-19
 
@@ -2507,7 +2524,7 @@ unbounded catch-up. Gameplay input expiry remains simulation-time based. Add fix
 memory timing histograms and qualify the actual Renet loop with eight authenticated
 clients, burst/replay traffic, expiry, a controlled stall and input-budget removal.
 Keep simulation cost, transport pump cost, wall cadence and rendered evidence
-separate. [Scope and evidence](SCHEDULER_QUALIFICATION.md).
+separate. [Scope and evidence](networking/SCHEDULER_QUALIFICATION.md).
 
 ## Client render/Avian rebasing from canonical content — 2026-10-19
 
@@ -2517,7 +2534,7 @@ parent transforms alone do not move Avian bodies. Run this static client physics
 world in PostUpdate after placement so queries/transform propagation/camera
 refinement agree before extraction. This does not move server truth or change
 wire v6. Server queries keep the fixed bounded content frame; dynamic contacts and
-multi-chunk ownership remain separate work. See [implementation](FLOATING_ORIGIN.md).
+multi-chunk ownership remain separate work. See [implementation](world/FLOATING_ORIGIN.md).
 
 ## Global authority and explicit incarnation/frame contracts — 2026-10-19
 
@@ -2529,7 +2546,7 @@ random world incarnation; reject old-epoch traffic before sequence coalescing.
 Actor IDs are connection-owned, monotonic within an epoch, and distinct from
 transport/account IDs. Wire/ALPN becomes 6. This is a bounded fixture migration;
 automatic renderer/physics floating origin and region ownership remain later work.
-See [coordinate/identity contract](COORDINATES_IDENTITY.md).
+See [coordinate/identity contract](world/COORDINATES_IDENTITY.md).
 
 ## Renet becomes the local launcher default — 2026-10-19
 
@@ -2539,19 +2556,19 @@ fresh-ticket replacement and captured old-packet rejection. The normal launcher
 and multiplayer qualifier default to Renet; explicit Quinn and legacy standalone
 CLI behavior remain regression options. This is the planned architecture migration,
 not a Quinn fallback or production authentication/capacity claim. Native platform
-and remaining security limits are recorded in [qualification](RENET_QUALIFICATION.md).
+and remaining security limits are recorded in [qualification](networking/RENET_QUALIFICATION.md).
 The next foundation work follows live coordinate/identity contracts.
 
 ## Foundation order and opt-in Renet bridge — 2026-10-19
 
 The user currently prioritizes engineering foundations over playability. Reconcile
 and follow actual task dependencies, preserving the imported register and keeping
-partial work open. See [execution order](engineering/EXECUTION_ORDER.md).
+partial work open. See [execution order](archive/engineering/EXECUTION_ORDER.md).
 Renet now has an executable server/Bevy/launcher path, selected explicitly with
 `--transport renet`. Its local issuer keeps the signing key server-side and supplies
 short-lived, one-session tickets; this is not production account authentication.
 Retain Quinn as the launcher default until controlled network qualification passes.
-See [bridge contract](NETWORKING_RENET.md). No transport failure/fallback decision,
+See [bridge contract](networking/NETWORKING_RENET.md). No transport failure/fallback decision,
 new repository, commit or push is implied.
 
 ## Avian development revision adopted — 2026-10-19
@@ -2563,7 +2580,7 @@ floating branch. Standard Avian plugins/colliders are active in the normal clien
 Server and offline movement use the same Avian query backend. Renderer/window
 features belong to the client; the server remains headless. Existing profiles and
 grounded support policy remain compatibility inputs with explicit limitations.
-Wire/ALPN advances to 5. See [physics scope](PHYSICS_AVIAN.md).
+Wire/ALPN advances to 5. See [physics scope](world/PHYSICS_AVIAN.md).
 
 ## Active adoption and first foundation migration — 2026-10-19
 
@@ -2585,14 +2602,14 @@ declared fallback. Global runtime poses and Avian movement remain future slices.
 Published Avian 0.7 uses Bevy 0.19. Upstream 0.8-dev targets Bevy 0.20 and is a
 revision-pinned qualification candidate; do not mix engine versions or claim
 Avian integration merely from reading its manifest. See the
-[alignment record](engineering/ALIGNMENT.md) and [live task status](engineering/TASK_STATUS.md).
+[alignment record](engineering/ALIGNMENT.md) and [live task status](archive/engineering/TASK_STATUS.md).
 
 ## October 19 engineering handoff integration
 
 On 2026-10-19 the user requested that the supplied handoff be added as engineering
 planning material and that this repository be assessed against it. See the
 [engineering index](engineering/README.md) for the source documents, local
-interpretation and execution queue; the [assessment](engineering/REPOSITORY_ASSESSMENT.md)
+interpretation and execution queue; the [assessment](archive/engineering/REPOSITORY_ASSESSMENT.md)
 records current implementation evidence separately from intended architecture.
 
 The supplied initial targets are Renet, Avian, f64 global/f32 local frames and
@@ -2643,29 +2660,29 @@ use Rust 2024 and Rust 1.99.0, and keep keyboard
 movement explicitly offline until the authoritative slice. Keep changes local
 until the user authorizes a GitHub push.
 
-The user's subsequent direction is a WoW-style MMORPG. See [game direction](GAME_DIRECTION.md)
+The user's subsequent direction is a WoW-style MMORPG. See [game direction](gameplay/GAME_DIRECTION.md)
 for the intended gameplay and first starting-zone loop. The implementation uses
 original content and standard Bevy systems; these targets do not imply existing
 combat, quests or WoW asset compatibility. Local networking choices and reviewed
-code provenance are documented in [NETWORKING.md](NETWORKING.md).
+code provenance are documented in [NETWORKING.md](networking/NETWORKING.md).
 
 The graybox now has a single shared geometry definition for rendering and server
 collision, with a flat-ground box sweep and a local orbit camera. This qualifies
 only the current scene, not general terrain physics. Scope and limitations are
-recorded in [WORLD_AND_CAMERA.md](WORLD_AND_CAMERA.md).
+recorded in [WORLD_AND_CAMERA.md](world/WORLD_AND_CAMERA.md).
 
 Building/prop delivery target: glTF 2.0, preferably GLB, with original/intermediate
 sources retained. Standard Bevy loading is enabled, including its normal automatic
 reflected type registration. A separate visual inspector preserves source scale
 and never establishes server collision. The user's supplied house is a local
 compatibility reference; it is not original Theia world content. Current import
-scope and source provenance are recorded in [ASSET_IMPORT.md](ASSET_IMPORT.md).
+scope and source provenance are recorded in [ASSET_IMPORT.md](assets/ASSET_IMPORT.md).
 
 A bounded terrain-only walking fixture now qualifies authoritative ground height
 and sampled slope clearance using the same source triangles as its visual GLB.
 It is an opt-in implementation slice, with world consistency in wire version 2,
 not approval of general mesh physics or a new cooked-world architecture. See
-[TERRAIN_WALKING.md](TERRAIN_WALKING.md).
+[TERRAIN_WALKING.md](world/TERRAIN_WALKING.md).
 
 The terrain fixture can now use the already approved human player visuals through
 standard Bevy asset loading/animation. This optional presentation reuses the same
@@ -2676,14 +2693,14 @@ The first terrain static-object slice uses an explicitly authored solid farmhous
 foundation envelope shared by server movement and client camera clearance. This
 is conservative ground-blocking collision, not automatic general mesh collision,
 traversable housing or a change to nonblocking players/NPCs. See
-[TERRAIN_STATIC_OBJECTS.md](TERRAIN_STATIC_OBJECTS.md).
+[TERRAIN_STATIC_OBJECTS.md](world/TERRAIN_STATIC_OBJECTS.md).
 
 The user requested walking inside the house. A separate authored ground-floor
 fixture now qualifies a permanently open doorway, fixed access ramp, measured
 walls and source floor support for the fixed player size. The old solid-house
 fixtures stay available. This adds no movable environment or player/NPC blocking;
 general multi-floor physics and housing systems remain separate. See
-[ENTERABLE_HOUSE.md](ENTERABLE_HOUSE.md).
+[ENTERABLE_HOUSE.md](world/ENTERABLE_HOUSE.md).
 
 The user chose to keep the supplied WoW assets for gameplay development and use
 **the full supplied map tile** as the ongoing development world before targeting,
@@ -2692,20 +2709,20 @@ abilities and quests. `tools/play.py` is the normal development entry point;
 third-party content stays local and ignored. Original/replacement content remains
 future work. The full-map outdoor pass uses conservative M2 metadata bounds,
 solid WMO envelopes and no-entry water cells; it does not establish general
-interiors or swimming. See [development-world scope](DEVELOPMENT_WORLD.md).
+interiors or swimming. See [development-world scope](world/DEVELOPMENT_WORLD.md).
 
 The next map slice opens the original placed farmhouse's ground floor, retains
 its furnishings and original scale/rotation, and adds a fixed ramp. Other map
 buildings remain solid. The default launcher selects `build/development-world-access`;
 the prior outdoor profile remains selectable. Static map mesh ray casts supplement
 camera clearance only; authoritative movement still uses the shared profile.
-Terrain ambient fill is increased for visibility. [Scope](MAP_FARMHOUSE.md).
+Terrain ambient fill is increased for visibility. [Scope](world/MAP_FARMHOUSE.md).
 
 The next local map slice retains the farmhouse and opens the original blacksmith
 main room, with pinned source floors, conservative walls/exterior exclusions and
 a fixed ramp. The default launcher selects `build/development-world-town` and
 spawns near the blacksmith. Other interiors and the forge annex remain separate.
-No new movement authority or wire/profile version is introduced. [Scope](MAP_BLACKSMITH.md).
+No new movement authority or wire/profile version is introduced. [Scope](world/MAP_BLACKSMITH.md).
 
 ## Offline partitioning preserves contributors before runtime budget changes
 
@@ -2720,7 +2737,7 @@ The existing four-package runtime contract is not weakened to publish this data:
 only a candidate index is emitted. Qualify measured actor/lookahead/recovery/
 staging budgets, world-edge policy and real town publication before adoption.
 Offline/source comparisons and original-fixture native evidence are recorded
-separately in [validation](VALIDATION.md); neither closes a whole task or phase.
+separately in [validation](engineering/VALIDATION.md); neither closes a whole task or phase.
 
 ## Budget analysis precedes the wider runtime contract
 
@@ -2734,7 +2751,7 @@ Use a proposed 32-package hard ceiling and 26-package town session for the next
 qualified runtime slice. Bind budget to admission, validate checked chunk
 addresses and control-message sizes, define world edges and measure actual
 multi-root staging/resources before adoption. The current four-package contract
-and monolithic default remain active. [Design and acceptance](CHUNK_BUDGETS.md).
+and monolithic default remain active. [Design and acceptance](world/CHUNK_BUDGETS.md).
 
 ## Qualified finite runtime capacity and admission budget
 
@@ -2747,7 +2764,7 @@ authority qualifies ten-to-26-package publication, not rendered town adoption.
 
 The collider/index/local-frame/queue ceilings and 30 Hz default stay unchanged.
 Keep the monolithic default until explicit world-edge policy, actual-town client
-resources and remaining lifecycle cases pass. [Contract](CHUNK_CAPACITY.md).
+resources and remaining lifecycle cases pass. [Contract](world/CHUNK_CAPACITY.md).
 
 ## Preserve full source skins when previewing standard-renderer adaptation
 
@@ -2760,7 +2777,7 @@ Retain a full-influence reference GLB. The standard four-weight preview is an
 explicit measured approximation: Jump reaches 6.974 mm skin difference and fails
 the initial 5 mm gate. Preview rendering does not approve character adoption,
 foot planting or gameplay animation. Keep source/private outputs ignored and the
-normal game unchanged. [Contract](SYNTY_CHARACTER_PREVIEW.md).
+normal game unchanged. [Contract](assets/SYNTY_CHARACTER_PREVIEW.md).
 
 ## Resolve trusted recovery guesses and preserve exact metadata floats
 
@@ -2770,7 +2787,7 @@ feet as authority; raw metadata remains an identity input. Enable serde_json
 identity mismatch. Keep exact independent identity checks and existing wire
 layout. Observe bounded standard-Bevy root/asset lifetimes and synchronize native
 captures before declaring a live publication qualified. The monolithic launcher
-remains active. [Contract and scope](TOWN_LIVE_PUBLICATION.md).
+remains active. [Contract and scope](archive/validation/TOWN_LIVE_PUBLICATION.md).
 
 ## Use Enchanted Forest as the environment import target
 
@@ -2778,7 +2795,7 @@ remains active. [Contract and scope](TOWN_LIVE_PUBLICATION.md).
 Proceed with the available forest source and explicit standard-Bevy conversion;
 Elven missing-LFS recovery is superseded. Preserve current town functionality
 until forest geometry/material/collision and native multiplayer checks pass.
-[Evidence and acceptance](SYNTY_ENCHANTED_FOREST_IMPORT.md).
+[Evidence and acceptance](archive/forest/SYNTY_ENCHANTED_FOREST_IMPORT.md).
 
 ## Explicit source material profiles for forest conversion
 
@@ -2788,7 +2805,7 @@ backface culling and repeat/bilinear sampling. Reject unsupported active feature
 do not treat a custom shader as Standard merely because it exposes similar keys.
 Bind independent geometry/pixel/material checks to each qualified asset. This is
 PBR adaptation, not Unity shader/lighting equivalence or assembled-map adoption.
-[Contract and executed evidence](SYNTY_ENCHANTED_FOREST_IMPORT.md).
+[Contract and executed evidence](archive/forest/SYNTY_ENCHANTED_FOREST_IMPORT.md).
 
 
 ## Preserve source hierarchy and classify only proven unused flat overrides
@@ -2799,7 +2816,7 @@ Only absent target IDs in fully materialized flat prefabs with the matching
 source GUID are classified as unused serialized overrides. Keep nested/model
 inheritance and unknown live properties unresolved; never invent replacement
 transforms or material bindings. Geometry-axis and rendered/collision adoption
-gates remain separate. [Contract](UNITY_STATIC_PLACEMENTS.md).
+gates remain separate. [Contract](archive/forest/UNITY_STATIC_PLACEMENTS.md).
 
 
 ## Source-specific static foliage profiles through standard PBR
@@ -2810,7 +2827,7 @@ alpha, and use ordinary glTF MASK/double-sided/surface settings. Record mesh-nor
 and colour-workflow approximations explicitly. Keep preview LOD selection separate
 from the default highest-detail scene plan. Full vegetation and normal-map effects
 require their own qualification, not automatic material substitution.
-[Contract and evidence](FOREST_FOLIAGE.md).
+[Contract and evidence](archive/forest/FOREST_FOLIAGE.md).
 
 
 ## Compile model variants only from checked aliases and complete authored poses
@@ -2820,7 +2837,7 @@ materials and every final root TRS component in the outer instance. Bind inherit
 IDs to actual source references, preserve collider records as unqualified data,
 and reject missing pose components instead of inventing imported defaults.
 Verify category completeness and source matrices independently; geometry/importer
-axes and scene adoption remain separate. [Contract](UNITY_MODEL_VARIANTS.md).
+axes and scene adoption remain separate. [Contract](archive/forest/UNITY_MODEL_VARIANTS.md).
 
 
 ## Calibrated forest mesh poses through standard glTF TRS
@@ -2831,7 +2848,7 @@ explicit source-bound mismatches. Express affine shear as two ordinary TRS nodes
 and cache a winding-correct mirrored mesh variant for negative parity, keeping
 normal Bevy rendering and shared materials/images. Five actual source placements
 and an original asymmetric fixture qualify the bounded slice; full terrain,
-materials, collision and map adoption remain separate. [Evidence](UNITY_GEOMETRY.md).
+materials, collision and map adoption remain separate. [Evidence](archive/forest/UNITY_GEOMETRY.md).
 
 
 ## Preserve full TerrainData samples and qualify rendering differences explicitly
@@ -2842,7 +2859,7 @@ all height/control samples; represent ground with standard glTF. The initial
 five-layer colour bake is an explicit finite-resolution approximation with
 geometric normals, not terrain shader or normal-map parity. Preserve authored
 normal bindings and keep map adoption open. Partition full-sample collision to
-fit existing budgets rather than silently decimating. [Evidence](UNITY_TERRAIN.md).
+fit existing budgets rather than silently decimating. [Evidence](archive/forest/UNITY_TERRAIN.md).
 
 
 ## Full-sample forest ground through existing bounded packages
@@ -2854,7 +2871,7 @@ one image handle across roots. Add an explicit chunk-world launcher option while
 retaining the default town. Ground-only qualification does not adopt forest
 objects/materials or prove Unity TerrainCollider parity. Each package fills its
 current triangle allowance; review full-scene collision representation/budgets
-before adding object meshes. [Evidence](FOREST_TERRAIN_COLLISION.md).
+before adding object meshes. [Evidence](archive/forest/FOREST_TERRAIN_COLLISION.md).
 
 
 ## Explicit static full-vegetation PBR profiles and canonical prototypes
@@ -2866,7 +2883,7 @@ recording unapplied wind/highlights, filtering and Unity parity limits. Keep mes
 prototypes separate from source placement, preserving original instance matrices.
 Match exact f32 cyclic positions and bounded UV export rounding in the independent
 oracle after the tree exposed a quantized-key boundary issue.
-[Evidence and scope](FULL_FOREST_FOLIAGE.md).
+[Evidence and scope](archive/forest/FULL_FOREST_FOLIAGE.md).
 
 
 ## Bind foliage batches to source overrides and qualify the assembled subset
@@ -2878,7 +2895,7 @@ independently check every final source pose/material/attribute. Repair only uniq
 defined zero derived tangents and bounded quaternion rounding; source geometry
 remains unchanged. Standard Bevy MikkTSpace handles absent streams with documented
 glTF portability warnings. This qualifies a visual subset, not full scene collision
-or multiplayer adoption. [Contract and evidence](FOREST_FOLIAGE_BATCH.md).
+or multiplayer adoption. [Contract and evidence](archive/forest/FOREST_FOLIAGE_BATCH.md).
 
 
 ## Preserve mesh-local geometry separately from imported FBX node placement
@@ -2890,7 +2907,7 @@ Check canonical positions independently with ufbx. Compare normalized nonzero
 source normal directions against unit glTF normals, recording actual nonunit
 source samples; preserve geometry/UVs. Reuse terrain-only assembly bases when
 batched props already include ruins. Remaining variants/shaders and authored object
-collision still precede adoption. [Evidence](FOREST_STATIC_BATCH.md).
+collision still precede adoption. [Evidence](archive/forest/FOREST_STATIC_BATCH.md).
 
 
 ## Qualify explicit single-model variants without inventing imported root poses
@@ -2901,7 +2918,7 @@ source TRS; independently derive raw renderer/mesh/material references and verif
 all source-category poses. Reuse prior content only after source/final-scene/hash
 checks, in a new batch with recorded input hashes and unchanged prior bytes.
 General nested prefabs remain outside this profile. Full forest collision,
-materials and adoption remain open. [Evidence](FOREST_VARIANT_GEOMETRY.md).
+materials and adoption remain open. [Evidence](archive/forest/FOREST_VARIANT_GEOMETRY.md).
 
 
 ## Preserve world-projected material behavior through the standard PBR extension
@@ -2913,7 +2930,7 @@ epsilon blend and explicit texture/normal sampling policy. Qualify native colour
 normal diagnostics against independent camera rays/source pixels. Keep this bounded
 origin-zero, one-profile inspector path separate from normal chunk/rebase adoption.
 Treat large uncalibrated mesh/root-pivot offsets as an importer-reference gate;
-do not invent centering corrections. [Evidence and limits](FOREST_TRIPLANAR.md).
+do not invent centering corrections. [Evidence and limits](archive/forest/FOREST_TRIPLANAR.md).
 
 ## Forest source sky — 2026-10-21
 
@@ -2925,7 +2942,7 @@ two native failure paths and encrypted town/farmhouse regressions pass. Fresh fm
 denied-warning Clippy, 38 client Rust and 193 Python tests pass. Three Khronos
 files have zero errors/seven retained warnings. Seven water draws and one emissive
 willow remain, followed by lighting, rebase/resources/mips, collision and adoption.
-All work stays local. [Evidence](FOREST_SKY.md).
+All work stays local. [Evidence](archive/forest/FOREST_SKY.md).
 
 ## Forest static water — 2026-10-21
 
@@ -2937,7 +2954,7 @@ composition, eleven native Vulkan cases and four rehashed faults pass. Ten Khron
 files have zero errors/seven retained warnings. Fresh fmt, denied-warning Clippy
 and 197 Python tests pass; runtime binaries remain unchanged. Emissive willow,
 source water effects, lighting, rebase/resources/mips, collision and adoption remain
-open. All work stays local. [Evidence](FOREST_WATER.md).
+open. All work stays local. [Evidence](archive/forest/FOREST_WATER.md).
 
 ## Forest emissive/static coverage — 2026-10-21
 
@@ -2950,7 +2967,7 @@ fmt, denied-warning Clippy, 38 client Rust and 201 Python tests pass; four Khron
 files have zero errors/seven retained warnings. Source effects/particles, lighting,
 resources/rebase/mips, object collision and normal map adoption remain open. Next:
 qualify shared images against the measured duplicate-image inventory. All work
-stays local. [Evidence](FOREST_EMISSIVE.md).
+stays local. [Evidence](archive/forest/FOREST_EMISSIVE.md).
 
 ## Forest shared image resources — 2026-10-21
 
@@ -2963,7 +2980,7 @@ Clippy, 38 client Rust and 202 Python tests pass; Khronos has zero errors/seven
 retained warnings. All 18,659 static source draws remain covered. This is inspector
 sharing; package admission stays unchanged. Lighting, authored collision, rebase/
 mips and runtime adoption remain open. All work stays local.
-[Evidence](FOREST_RESOURCES.md).
+[Evidence](archive/forest/FOREST_RESOURCES.md).
 
 ## Forest source lighting boundary — 2026-10-21
 
@@ -2978,7 +2995,7 @@ farmhouse regressions pass. Four rehashed faults reject. Fresh fmt, denied-warni
 Clippy, 41 client Rust and 204 Python tests pass. This is an explicit lighting
 approximation; selective suns, authored collision, rebase/mips and normal forest
 adoption remain open. Next: source collider geometry and measured package capacity.
-All work stays local. [Evidence](FOREST_LIGHTING.md).
+All work stays local. [Evidence](archive/forest/FOREST_LIGHTING.md).
 
 ## Forest authored collision reference — 2026-10-21
 
@@ -2991,7 +3008,7 @@ pose/mesh/state/capsule faults reject; 213 Python tests pass. The invisible down
 water collider, nonuniform primitives, mirrored/sheared meshes and full terrain
 budgets remain explicit constraints. Next: native Avian object-query comparison
 and measured representation/capacity. Runtime object admission and forest adoption
-remain open. All work stays local. [Evidence](FOREST_COLLIDER_REFERENCE.md).
+remain open. All work stays local. [Evidence](archive/forest/FOREST_COLLIDER_REFERENCE.md).
 
 ## Forest Avian source geometry — 2026-10-21
 
@@ -3005,7 +3022,7 @@ differ; it is not promoted as parity. Fresh format/diff checks, denied-warning
 workspace/all-target Clippy and 215 Python tests pass. Terrain, package budgets,
 water policy, movement/camera and forest adoption remain separate gates. Next:
 measure the source representation against existing runtime package limits. All
-work stays local. [Evidence](FOREST_COLLISION_GEOMETRY.md).
+work stays local. [Evidence](archive/forest/FOREST_COLLISION_GEOMETRY.md).
 
 ## Forest full-sample heightfield prerequisite — 2026-10-21
 
@@ -3019,7 +3036,7 @@ pass. Offline collision-only layout measures at most 47,245 pooled input triangl
 259,623 instantiated triangles, 66,049 height samples per provider and eight
 contributors per finite terrain cell. These are not runtime capacity/publication
 claims. Next: bounded versioned shape/heightfield admission; existing packages and
-defaults remain preserved. All work stays local. [Evidence](FOREST_HEIGHTFIELDS.md).
+defaults remain preserved. All work stays local. [Evidence](archive/forest/FOREST_HEIGHTFIELDS.md).
 
 ## Bounded static-shape admission — 2026-10-21
 
@@ -3033,7 +3050,7 @@ farmhouse cases pass on Linux RX 7900 XTX with Vulkan validation. Fresh format,
 denied-warning Clippy, complete default network suite, 41 client and 226 Python
 tests pass. Existing budgets/defaults remain preserved. Forest visual/material
 publication, rebase/resources, water policy and actual-map adoption remain open.
-All work stays local. [Contract and evidence](STATIC_SHAPES.md).
+All work stays local. [Contract and evidence](world/STATIC_SHAPES.md).
 
 ## Forest complete reference packaging — 2026-10-21
 
@@ -3048,7 +3065,7 @@ faults, the complete default network suite and 41 client tests. Fresh fmt/diff,
 denied-warning Clippy and 227 Python tests pass. No forest session/default is
 published; custom material rebasing/admission, flags/lighting, resources/mips,
 water and actual map movement/camera remain open. All work stays local.
-[Packages](FOREST_SHAPE_PACKAGES.md), [standard materials](STATIC_MATERIALS.md).
+[Packages](archive/forest/FOREST_SHAPE_PACKAGES.md), [standard materials](assets/STATIC_MATERIALS.md).
 
 ## Forest source texture phase — 2026-10-21
 
@@ -3062,7 +3079,7 @@ diff, denied-warning Clippy, 42 client and 218 asset Python tests pass. This is
 bounded inspection qualification; normal-world automatic frame updates and bound
 runtime material/image admission remain next, followed by flags/lighting,
 resources/mips, water and actual-map movement/camera/adoption. All work stays local.
-[Evidence and scope](TRIPLANAR_PHASE.md).
+[Evidence and scope](assets/TRIPLANAR_PHASE.md).
 
 ## Bound runtime projection materials — 2026-10-21
 
@@ -3078,7 +3095,7 @@ existing movement/animation acceptance checks. Complete default network tests,
 44 client tests, 221 asset Python tests, fresh fmt/diff and denied-warning Clippy
 pass. This qualifies the original runtime slice; forest embedding, actual forest
 resources/rebase, flags/lighting/mips, water and movement/camera/adoption remain
-open. All work stays local. [Contract and evidence](RUNTIME_MATERIALS.md).
+open. All work stays local. [Contract and evidence](assets/RUNTIME_MATERIALS.md).
 
 ## Complete forest runtime candidate — 2026-10-21
 
@@ -3091,7 +3108,7 @@ Linux/Vulkan clients load the full scene, share four projection materials and
 RGBA CPU image data is 1,589,649,408 bytes (not total memory). The actual-map
 survey records 27 clear starts and 41 rejected routes; movement, lighting,
 mips/resources, water and broader camera/adoption remain open. Town stays the
-default. All work stays local. [Evidence and limits](FOREST_RUNTIME.md).
+default. All work stays local. [Evidence and limits](archive/forest/FOREST_RUNTIME.md).
 
 ## Interactive performance gate — 2026-10-22
 
@@ -3100,7 +3117,7 @@ measurements before scene adoption. Correctness runs with validation, functional
 screenshots and asset counts do not establish acceptable performance. Preserve
 legacy camera regressions and use the existing accelerated CAMERA query geometry
 for normal chunk worlds. Keep explicit debug/visual-refinement modes for diagnosis.
-Current measured scope and pending checks are in [the performance record](FOREST_PERFORMANCE.md).
+Current measured scope and pending checks are in [the performance record](archive/forest/FOREST_PERFORMANCE.md).
 
 
 ## 2026-10-29 — Initial transient periodic status effects (P3-06)
@@ -3117,7 +3134,7 @@ clears all its statuses, and fresh respawn carries none. No durable/offline comb
 credit is implied. Preserve CS01/CS02 resource observations; SS01 separately sends
 bounded status rows with admitted catalog identity and explicit authority tick
 rate. Client labels are observations only. Initial native Linux slice passes;
-[scope and evidence](STATUS_EFFECTS_FOUNDATION.md). Follow-on creature AI must define
+[scope and evidence](gameplay/STATUS_EFFECTS_FOUNDATION.md). Follow-on creature AI must define
 its navigation/steering prerequisite rather than treating task list order as proof
 of available pathfinding.
 
@@ -3133,7 +3150,7 @@ player travel. Death pauses the patrol; fresh runtime respawn returns home and
 restarts its wait. Moving-target visuals reuse existing interpolation with bounded
 normal catch-up, while server positions drive combat. The tested initial slice
 passes; general chasing requires separately bounded worker queries and generation
-fences. [Scope and qualification](CREATURE_AI_FOUNDATION.md).
+fences. [Scope and qualification](gameplay/CREATURE_AI_FOUNDATION.md).
 
 
 ## 2026-10-30 — Initial main-hand equipment and public appearance (P3-08)
@@ -3152,7 +3169,7 @@ pending stream and durable receipt boundary. Standard Bevy primitives parent to
 the inspected POLYGON Hand_R skin joint; source scale/joint mismatches are explicit
 errors, and no cosmetic prop becomes a collider or movement authority. Empty HUD
 layout containers pass pointer input through while child controls remain pickable.
-[Qualified behavior, driver/source/binary evidence and limits](EQUIPMENT_FOUNDATION.md).
+[Qualified behavior, driver/source/binary evidence and limits](gameplay/EQUIPMENT_FOUNDATION.md).
 
 
 ## 2026-10-31 — Initial animated creature presentation (P3-14)
@@ -3165,7 +3182,7 @@ fresh visual state per respawn key, and a 200 ms gait hold for short replication
 gaps. Owner-only windup remains owner-only; public NPC attack timing is separate
 future work. Read captured dimensions when qualifying ultrawide windows, and wait
 for opened/resized UI layout to settle before scripted clicks/bounds audits.
-[Qualified behavior, evidence and limits](WOLF_CREATURE.md).
+[Qualified behavior, evidence and limits](gameplay/WOLF_CREATURE.md).
 
 ## 2026-10-31 — Preserve authored prop sockets independently of body deformation
 
@@ -3176,7 +3193,7 @@ Do not treat zero deform weights as evidence that an attachment bone can be
 removed. Standard Bevy animation presents the owner's authoritative death and
 fresh life without adding gameplay movement or exposing private remote health.
 This remains an opt-in development conversion with a failed production 5 mm
-four-weight fidelity gate. [Behavior and actual qualification](PLAYER_ANIMATION_SOCKETS.md).
+four-weight fidelity gate. [Behavior and actual qualification](client/PLAYER_ANIMATION_SOCKETS.md).
 
 ## 2026-10-31 — Public equipped stance and masked moving finger grip
 
@@ -3186,7 +3203,7 @@ masks for the eleven authored right-hand digit poses, preserving the original
 wrist/socket/body gait. Pending/private UI selections are not equipment authority.
 Wand replacement/unequip removes the layer; death overrides it. Keep independent
 optional clip slots and the original rig fallback. Full upper-body mobile combat
-and authored equipped locomotion remain separate work. [Qualification](EQUIPPED_PLAYER_STANCE.md).
+and authored equipped locomotion remain separate work. [Qualification](client/EQUIPPED_PLAYER_STANCE.md).
 
 ## 2026-10-31 — Reuse reviewed static query behind one bounded path worker
 
@@ -3196,7 +3213,7 @@ the simulation, with one outstanding request/reply and bounded local package,
 route, lifetime and exact identity/revision checks. No package or engine version
 changes. Landmass has no hard CPU deadline; expired results do not publish, but
 expiry does not cancel searches. No NPC dynamic-path consumer or streamed-world
-navigation is implied. [Implemented contract and qualification](CREATURE_PATH_WORKER.md).
+navigation is implied. [Implemented contract and qualification](gameplay/CREATURE_PATH_WORKER.md).
 
 ## 2026-10-31 — Adopt initial pursuit in an opt-in development bundle
 
@@ -3205,7 +3222,7 @@ anchor for leash/return, and saved route/wait progress. Run checked local paths
 on the bounded worker and retain collision/grounding authority. Return cancels
 attacks; production threat/evade balance and streamed navigation remain open.
 Keep old profile bytes/checkpoints and reject incomplete life/retaliation setup.
-[Final playable qualification](CREATURE_PURSUIT_NATIVE.md). New player melee,
+[Final playable qualification](gameplay/CREATURE_PURSUIT_NATIVE.md). New player melee,
 projectiles, outcomes, quest markers, minimap and HUD work remains in the follow-on
 register; P3-17/P3-18 remain unspecified.
 
@@ -3225,7 +3242,7 @@ checks, 48 baseline/seeded repeated cases and normal OIDC/PostgreSQL/native
 quest/restart rejoin pass. Preserve the separate 46/48 periodic-loss diagnostic:
 it can erase essentially all snapshots after Welcome. Do not call that universal
 reconnect recovery or silently replace its evidence with seeded loss.
-[Contract and exact limits](RENET_CONNECTION_CONFIRMATION.md). Local only;
+[Contract and exact limits](networking/RENET_CONNECTION_CONFIRMATION.md). Local only;
 `build/connection-confirmation-client-qualified-v1-20261103`.
 
 ## 2026-11-03 — Build a bounded local map from resident render grids
@@ -3242,7 +3259,7 @@ quest/restart starts pass across the three supported sizes with zero GPU
 diagnostics. Measured raster maximum 329 us; visible idle refresh leaves
 81 tiles / one patch / 90 saved reads unchanged. Scope is the Classic greybox;
 legacy heading, native seam traversal and broader map layers remain follow-ups.
-[Exact evidence and limits](MINIMAP.md). Preserve
+[Exact evidence and limits](client/MINIMAP.md). Preserve
 `build/minimap-client-qualified-v1-20261103`; changes remain local.
 
 ## 2026-11-03 — Compare map coordinates with displayed presentation
@@ -3258,7 +3275,7 @@ without changing quest rewards. A separate accelerated development-ticket route
 covers the 16-km X extent with 125 origin changes and bounded retirement; it is
 not normal-speed/OIDC or MMO capacity evidence. Full 1,134-test workspace,
 strict Clippy/fmt and five native starts pass.
-[Exact evidence and scope](MINIMAP.md). Preserve
+[Exact evidence and scope](client/MINIMAP.md). Preserve
 `build/minimap-traversal-client-qualified-v1-20261103`; changes stay local.
 
 ## 3 November 2026 — version-bound Classic ground movement calibration
@@ -3270,7 +3287,7 @@ backward run 4.5, with normalized diagonals and backward selection from accepted
 manual character facing. The pinned Blizzard UI supports the base-7 reference
 and walk/run toggle; pinned CMaNGOS Classic supplies supporting directional
 speed evidence with its uncertainty retained. This is not proof of complete
-Blizzard movement parity. See [source/version/mapping detail](CLASSIC_GROUND_MOVEMENT.md).
+Blizzard movement parity. See [source/version/mapping detail](gameplay/CLASSIC_GROUND_MOVEMENT.md).
 
 Controls schema 2 uses a configurable walk/run toggle, default NumpadDivide,
 and running by default. Shift is no longer a Classic travel boost. Legacy
@@ -3293,7 +3310,7 @@ Use the supplied non-root-motion Base Locomotion clips as optional standard GLB
 animation, retaining the exact existing skin, sockets and eight clips. Fourteen
 additional walk/run directions pass source/retained-content checks and native
 inspection; do not infer live directional gameplay from converted art.
-[Exact proof and pending selection](CLASSIC_DIRECTIONAL_LOCOMOTION.md).
+[Exact proof and pending selection](client/CLASSIC_DIRECTIONAL_LOCOMOTION.md).
 The 5 mm production-fidelity gate remains failed; the measured four-weight
 preview limitation is unchanged. Preserve the ground-v3 playable until runtime
 selection, priority, grip and local/remote checks pass. No dodge work is resumed.
@@ -3308,7 +3325,7 @@ Preserve compatible normalized moving-clip phase; crossfades/stride calibration
 remain separate. Existing standard Bevy finger/upper-body masks cover all bases;
 life/critical pose and attack barriers retain priority.
 
-[Runtime evidence and exact fixture distinctions](CLASSIC_DIRECTIONAL_LOCOMOTION.md):
+[Runtime evidence and exact fixture distinctions](client/CLASSIC_DIRECTIONAL_LOCOMOTION.md):
 1,145 workspace tests / 50 skips, strict Clippy, two-account source-pose checks,
 new-art ultrawide controls, normal unmodified new/old-art quest and restart/rejoin
 flows, and actual new-art streamed traversal. Seven final native starts have

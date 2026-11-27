@@ -199,14 +199,14 @@ scene composition, embedded asset paths, WESL shaders and encoded shader buffers
 Preview bounds/collider outlines use standard Bevy line meshes after native
 gizmo synchronization failures; this is a measured compatibility adaptation,
 not replacement of the particle editor UI or simulation. User data is namespaced
-under `.theia/particles`. See `docs/SPRINKLES_INTEGRATION.md` for acceptance and
+under `.theia/particles`. See `docs/editor/SPRINKLES_INTEGRATION.md` for acceptance and
 remaining host/runtime integration boundaries.
 
 The original-widget acceptance slice also corrects the curve range handler's
 vector-root lookup and rejects inverted/non-finite input without a commit. This
 upstream functionality correction retains the original curve/gradient/colour UI
 and effect representation. Native source-preserving value edits are recorded in
-`docs/SPRINKLES_INTEGRATION.md`.
+`docs/editor/SPRINKLES_INTEGRATION.md`.
 
 The local variant editor retains an initially hidden fields container when a
 fieldless choice can switch to an editable variant. Selecting another option
@@ -214,7 +214,7 @@ shows or hides that container immediately, rebuilds its fields and restores its
 scrollbar. This fixes the missing-radius behavior observed in the integrated
 shape dropdown; the original effect format is unchanged. The imported source
 hash is refreshed in `source-files.json` and regression evidence is recorded in
-`docs/SPRINKLES_INTEGRATION.md`.
+`docs/editor/SPRINKLES_INTEGRATION.md`.
 
 The shared-window host adds an original-plugin wrapper, embedded-host settings,
 activity/root markers and a Zone return action built with the original ghost
@@ -223,7 +223,7 @@ Preview scene layers are isolated, and runtime emitter meshes honor their owner'
 explicit render layers on creation. Theia's existing theme excludes retained
 source widgets. These are host adapters; the original project/inspector/curve/
 gradient/colour/playback functionality remains directly reused. Native local/far
-shared-window and standalone acceptance is in `docs/SPRINKLES_INTEGRATION.md`.
+shared-window and standalone acceptance is in `docs/editor/SPRINKLES_INTEGRATION.md`.
 
 
 ## Upstream issue audit — 10 November 2026
@@ -235,7 +235,7 @@ and before visibility checking, and put the preview NoFrustumCulling marker on
 emitter meshes instead of its camera. Add actual Bevy asset-lifecycle, multi-emitter
 bounds/selection/culling-toggle and migration-save-reload regressions. These are
 local adaptations; the upstream revision stays unchanged. Source-file hashes are
-refreshed in source-files.json. See docs/SPRINKLES_UPSTREAM_REVIEW.md in Theia for
+refreshed in source-files.json. See docs/editor/SPRINKLES_UPSTREAM_REVIEW.md in Theia for
 issue links, validation evidence and explicit remaining scope. This does not
 claim the original hour-long idle-memory report is fully resolved. The audit
 also guards the imported custom-shader panic path: remove the unimplemented menu

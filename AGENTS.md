@@ -1,14 +1,17 @@
 # Theia MMO — contributor instructions
 
+Use `docs/README.md` to find subject guides; `docs/archive/` holds historical evidence,
+not current instructions.
+
 Read `docs/STATUS.md`, `docs/DECISIONS.md` and `docs/ROADMAP.md` before editing.
 For feature work, read `docs/engineering/README.md`, `ARCHITECTURE.md`,
 `IMPLEMENTATION_PLAN.md` and `CODEX_TASKS.md` under `docs/engineering/`, plus the
 current alignment record. The user adopted this architecture on 2026-10-19.
-For controls/combat, read `docs/COMBAT_TARGETING_MOVEMENT_SPEC.md`
+For controls/combat, read `docs/gameplay/COMBAT_TARGETING_MOVEMENT_SPEC.md`
 (THEIA-COMBAT-001 v1.0, adopted 2026-11-01) and
-`docs/MOVEMENT_CAMERA_TARGET.md`. This supersedes earlier hybrid WoW/GW2
+`docs/gameplay/MOVEMENT_CAMERA_TARGET.md`. This supersedes earlier hybrid WoW/GW2
 camera, movement and facing guidance for the initial playable version.
-Read `docs/CLASSIC_FORMULAS.md` for formula adoption: follow evidenced Classic
+Read `docs/gameplay/CLASSIC_FORMULAS.md` for formula adoption: follow evidenced Classic
 rules wherever possible, retain metric units and record source versions, unit
 mapping, uncertainty and explicit Theia extensions.
 The imported `AGENTS.reference.md` remains provenance; these are the active rules.
@@ -30,7 +33,7 @@ canon authority; runtime code, assets and engineering documentation remain here.
   failure. Target Avian initially, Rapier only after a documented need. Verify
   Bevy/plugin compatibility before pinning; do not silently mix engine versions.
   Current physics pins are Bevy `=0.20.0` and Avian `0.8.0-dev` revision
-  `1070759b2145dc078abedace91dc7fe78013a45c`; see `docs/PHYSICS_AVIAN.md`.
+  `1070759b2145dc078abedace91dc7fe78013a45c`; see `docs/world/PHYSICS_AVIAN.md`.
 - Use checked f64 global positions, bounded f32 local rendering/physics frames,
   Y-up metres, integer chunk/region IDs and centralized origin conversion.
 - World collision is predominantly static. Scripted authoritative elevators and
