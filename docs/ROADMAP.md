@@ -1,3 +1,10 @@
+27 November 2026 — narrative repository ownership:
+Story/lore, zone briefs, NPC/character cards and campaign planning now live in
+the sibling [theia-story repository](../../theia-story/README.md). Continue
+narrative authoring there and engineering/runtime work here. This documentation
+move changes no gameplay milestone or acceptance claim. See STATUS for migration
+verification and the authorized publication targets.
+
 23 November 2026 — P2-14 Stoneford HUD reference:
 Rounded unit frames, saved portrait choices, authoritative vitals and effects,
 a framed minimap and world map, a gold skill dock and a violet XP strip now use

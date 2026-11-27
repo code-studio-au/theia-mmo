@@ -9,5 +9,5 @@
 __pycache__/
 *.pyc
 
-# Local Obsidian Copilot conversation exports; story documents remain tracked.
+# Private conversation exports retained locally after the theia-story migration.
 /docs/story/**/copilot-conversations/

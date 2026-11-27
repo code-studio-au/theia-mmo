@@ -108,9 +108,10 @@ uses the existing game launcher. Chat composer and speech bubbles are deferred.
 
 # Theia MMO
 
-The [story and lore folder](docs/story/README.md) contains the world bible,
-characters, campaign acts, quests and story decisions, including material awaiting
-creator review.
+The separate [theia-story repository](../theia-story/README.md) contains the
+world bible, zone briefs, NPCs, characters, campaign acts, quests and story
+decisions, including material awaiting creator review. Keep both repositories
+as sibling checkouts for cross-repository documentation links.
 
 The explicit [public player-life bundle](docs/PUBLIC_AVATAR_LIFE.md) also shows
 remote death and fresh-life animation while keeping owner controls authoritative.

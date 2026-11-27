@@ -13,6 +13,10 @@ rules wherever possible, retain metric units and record source versions, unit
 mapping, uncertainty and explicit Theia extensions.
 The imported `AGENTS.reference.md` remains provenance; these are the active rules.
 
+Story, lore, zone briefs, NPC/character cards and narrative planning live in the
+sibling `../theia-story` repository. Read its `README.md` and `DECISIONS.md` for
+canon authority; runtime code, assets and engineering documentation remain here.
+
 - Build a playable MMO using Bevy. Prefer its standard renderer, assets, UI and
   animation over custom engine infrastructure unless measured game requirements
   justify an exception.

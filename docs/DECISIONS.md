@@ -1,3 +1,12 @@
+27 November 2026 — separate narrative repository:
+At the user's request, move the complete story/lore, zone and NPC/character
+Markdown collection plus its supporting editorial/provenance JSON into the
+sibling [theia-story repository](../../theia-story/README.md). Preserve its canon
+hierarchy and existing approval states. Keep executable content, runtime assets
+and engineering/system documentation in `theia-mmo`; narrative proposals do not
+establish working gameplay. The user subsequently authorized committing and
+pushing both repositories on 27 November 2026.
+
 23 November 2026 — P4-12 chat followed by P3-03/P2-14 character layout:
 The user authorized autonomous implementation, native mouse/display checks and
 local commits. Finish the Say/Area composer slice, then return to character

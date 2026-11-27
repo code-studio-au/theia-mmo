@@ -345,8 +345,9 @@ migration is implied by the development fixture.
 
 ## Authoring agreement for concurrent story work
 
-Cross-check the concurrent [Human Rust authoring contract](story/Theia/Campaigns/Human_Rust_Quest_Authoring_Contract.md)
-and [current planning manifest](story/Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json).
+Cross-check the [Human Rust authoring contract](../../theia-story/Theia/Campaigns/Human_Rust_Quest_Authoring_Contract.md)
+and [current planning manifest](../../theia-story/Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json)
+in the sibling `theia-story` repository.
 Those story documents remain proposed authoring material. Their Q-series ordering
 IDs, H-series crosswalk and production runtime IDs are deliberately unresolved;
 do not auto-assign them or treat illustrative null fields as executable content.

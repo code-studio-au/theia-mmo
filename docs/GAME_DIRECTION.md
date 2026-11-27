@@ -1,6 +1,6 @@
 # Game direction
 
-Theia's narrative design lives in [story and lore](story/README.md): worldbuilding,
+Theia's narrative design lives in [theia-story](../../theia-story/README.md): worldbuilding,
 characters, campaign acts, quests and their approval/decision records. Narrative
 plans remain separate from implemented gameplay.
 
